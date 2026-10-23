@@ -37,9 +37,10 @@ public partial class ToastWindow : Window
 
     private void Place()
     {
+        // A borda transparente de 12 px abriga a sombra; o cartão em si fica a 16 px da borda da tela.
         var wa = SystemParameters.WorkArea;
-        Left = wa.Right - ActualWidth - 16;
-        Top = wa.Bottom - ActualHeight - 16;
+        Left = wa.Right - ActualWidth - 4;
+        Top = wa.Bottom - ActualHeight - 4;
     }
 
     private void Fade(double to, Action? done)

@@ -10,15 +10,22 @@ public partial class MainWindow
         _settings.LightTheme = ThemeManager.IsLight;
         SaveSettings();
         UpdateThemeButton();
+        RedrawThemedVisuals();
     }
 
-    /// <summary>Mostra o ícone do modo para onde o clique leva (sol = ir para o claro, lua = ir para o escuro) e troca o logo.</summary>
+    /// <summary>Mostra o ícone do tema para onde o clique leva (sol = ir para o claro, lua = ir para o escuro).</summary>
     internal void UpdateThemeButton()
     {
         bool light = ThemeManager.IsLight;
-        BtnTheme.Content = light ? "\uE708" : "\uE706";
-        BtnTheme.ToolTip = light ? "Modo escuro" : "Modo claro";
-        TitleLogo.Source = new System.Windows.Media.Imaging.BitmapImage(
-            new Uri(light ? "pack://application:,,,/CoreBi.Desktop;component/Assets/logo-dark.png" : "pack://application:,,,/CoreBi.Desktop;component/Assets/logo.png"));
+        BtnTheme.Content = light ? "" : "";
+        BtnTheme.ToolTip = light ? "Tema escuro" : "Tema claro";
+    }
+
+    /// <summary>Gráficos desenhados em código guardam o pincel do momento do desenho: refaz com a paleta nova.</summary>
+    internal void RedrawThemedVisuals()
+    {
+        UpdateDashboard();
+        DrawChart();
+        UpdateCpuSensorWarning();
     }
 }

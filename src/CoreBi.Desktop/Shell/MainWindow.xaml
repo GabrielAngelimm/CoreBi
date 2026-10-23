@@ -1,187 +1,209 @@
-<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:views="clr-namespace:CoreBi.Desktop.Views" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.MainWindow" Title="CoreBi" Icon="/CoreBi.Desktop;component/Assets/corebi.ico" Width="1320" Height="840" MinWidth="1120" MinHeight="660" WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize" Background="{DynamicResource Bg}" Foreground="{DynamicResource Fg}" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:views="clr-namespace:CoreBi.Desktop.Views" xmlns:local="clr-namespace:CoreBi.Desktop" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.MainWindow" Title="CoreBi" Icon="/CoreBi.Desktop;component/Assets/corebi.ico" Width="1360" Height="860" MinWidth="1120" MinHeight="680" WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize" Background="{DynamicResource Bg}" Foreground="{DynamicResource Fg}" FontFamily="{StaticResource UiFont}" FontSize="13" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display" PreviewKeyDown="Window_PreviewKeyDown">
     <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="44" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+        <WindowChrome CaptionHeight="52" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
-    <Border x:Name="Root" BorderBrush="{DynamicResource Line}" BorderThickness="1">
+    <Border x:Name="Root" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1">
         <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="44" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="SideCol" Width="256" />
+                <ColumnDefinition x:Name="SideCol" Width="244" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal" Margin="30,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center">
-                <Image x:Name="TitleLogo" Source="/CoreBi.Desktop;component/Assets/logo.png" Width="22" Height="22" Margin="0,0,12,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality" />
-                <TextBlock Text="Core" FontWeight="Bold" FontSize="13" VerticalAlignment="Center" />
-                <TextBlock Text="Bi" FontWeight="Light" FontSize="13" VerticalAlignment="Center" />
-                <TextBlock x:Name="TitlePage" Foreground="{DynamicResource Faint}" FontSize="13" Margin="16,0,0,0" VerticalAlignment="Center" />
-            </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" WindowChrome.IsHitTestVisibleInChrome="True">
-                <Button x:Name="BtnTheme" Style="{StaticResource CaptionButton}" Content="" Click="Theme_Click" ToolTip="Modo claro" />
-                <Button Style="{StaticResource CaptionButton}" Content="" Click="Min_Click" ToolTip="Minimizar" />
-                <Button x:Name="BtnMax" Style="{StaticResource CaptionButton}" Content="" Click="Max_Click" ToolTip="Maximizar" />
-                <Button Style="{StaticResource CloseButton}" Content="" Click="Close_Click" ToolTip="Fechar" />
-            </StackPanel>
-            <Border x:Name="Sidebar" Grid.Row="1" Margin="14,0,0,14" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="20">
+
+            <!-- ================= Barra lateral ================= -->
+            <Border x:Name="Sidebar" Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0">
                 <DockPanel>
-                    <StackPanel DockPanel.Dock="Bottom" Margin="16,6,16,16">
-                        <Border x:Name="CpuSensorWarn" Visibility="Collapsed" BorderBrush="{DynamicResource Fg}" BorderThickness="1" CornerRadius="12" Padding="12,10" Margin="0,0,0,12">
-                            <StackPanel>
-                                <TextBlock Text="Sem temperatura e consumo da CPU" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap" />
-                                <TextBlock x:Name="CpuSensorWarnText" Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap" Margin="0,3,0,8" />
-                                <Button Style="{StaticResource PrimaryButton}" Content="CORRIGIR" Padding="10,5" FontSize="11" Click="BtnFixCpuSensors_Click" />
-                            </StackPanel>
-                        </Border>
-                        <Border Background="{DynamicResource Card}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="14" Padding="14,10">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="46" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition />
-                                    <RowDefinition />
-                                    <RowDefinition />
-                                </Grid.RowDefinitions>
-                                <TextBlock Text="CPU" Foreground="{DynamicResource Faint}" FontSize="10.5" FontWeight="Bold" Margin="0,3" VerticalAlignment="Center" />
-                                <TextBlock x:Name="SideTemp" Grid.Column="1" Text="—" FontFamily="{StaticResource Mono}" FontSize="12" Margin="0,3" />
-                                <TextBlock x:Name="SideLoad" Grid.Column="2" Text="—" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Muted}" Margin="0,3" />
-                                <TextBlock Grid.Row="1" Text="GPU" Foreground="{DynamicResource Faint}" FontSize="10.5" FontWeight="Bold" Margin="0,3" VerticalAlignment="Center" />
-                                <TextBlock x:Name="SideGpuTemp" Grid.Row="1" Grid.Column="1" Text="—" FontFamily="{StaticResource Mono}" FontSize="12" Margin="0,3" />
-                                <TextBlock x:Name="SideGpuLoad" Grid.Row="1" Grid.Column="2" Text="—" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Muted}" Margin="0,3" />
-                                <TextBlock Grid.Row="2" Text="TESTE" Foreground="{DynamicResource Faint}" FontSize="10.5" FontWeight="Bold" Margin="0,3" VerticalAlignment="Center" />
-                                <TextBlock x:Name="SideStress" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Text="parado" FontFamily="{StaticResource Mono}" FontSize="12" Margin="0,3" />
-                            </Grid>
-                        </Border>
-                        <TextBlock x:Name="SideVersion" Text="v0.1.1 · prévia" Foreground="{DynamicResource Faint}" FontSize="11" Margin="4,10,0,0" />
+                    <!-- Marca: símbolo vetorial (brand/geometry.json) + assinatura -->
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="24,0,0,0" Height="64" VerticalAlignment="Center">
+                        <Viewbox Width="26" Height="26" VerticalAlignment="Center">
+                            <Canvas Width="256" Height="256">
+                                <Polygon Points="141,35 81,35 34,82 34,174 81,221 141,221 141,195 93,195 60,162 60,94 93,61 141,61" Fill="{DynamicResource Fg}" />
+                                <Polygon Points="155,35 184,35 218,69 218,108 202,124 222,144 222,185 186,221 155,221 155,195 175,195 196,174 196,156 178,138 155,138 155,112 177,112 192,97 192,81 173,61 155,61" Fill="{DynamicResource Fg}" />
+                                <Polygon Points="95,84 117,84 117,106 95,106" Fill="{DynamicResource Accent}" />
+                                <Polygon Points="95,121 117,121 117,172 95,172" Fill="{DynamicResource Accent}" />
+                            </Canvas>
+                        </Viewbox>
+                        <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="19" Margin="11,0,0,1" VerticalAlignment="Center" />
                     </StackPanel>
-                    <ScrollViewer x:Name="NavScroll" VerticalScrollBarVisibility="Auto" Margin="0,2,0,0">
-                        <StackPanel Margin="0,0,0,10">
-                            <RadioButton x:Name="NavDash" Style="{StaticResource NavItem}" Tag="PageDash" Checked="Nav_Checked" IsChecked="True">
+
+                    <!-- Rodapé: leituras ao vivo, aviso de sensores e versão -->
+                    <StackPanel DockPanel.Dock="Bottom" Margin="14,6,14,14">
+                        <Border x:Name="CpuSensorWarn" Visibility="Collapsed" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource Warn}" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,10">
+                            <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                    <TextBlock Text="Visão geral" VerticalAlignment="Center" />
+                                    <TextBlock Text="&#xE7BA;" FontFamily="{StaticResource Icons}" FontSize="13" Foreground="{DynamicResource Warn}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock Text="CPU sem temperatura e consumo" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" />
                                 </StackPanel>
-                            </RadioButton>
-                            <ToggleButton x:Name="GrpMonitoring" Style="{StaticResource NavGroup}" Content="Monitoramento" />
-                            <StackPanel x:Name="GrpMonitoringItems" Margin="10,0,0,4" Visibility="{Binding IsChecked, ElementName=GrpMonitoring, Converter={StaticResource BoolVis}}">
-                                <RadioButton x:Name="NavSystem" Style="{StaticResource NavItem}" Tag="PageSystem" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Sistema" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="NavSensors" Style="{StaticResource NavItem}" Tag="PageSensors" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Sensores" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="NavGpu" Style="{StaticResource NavItem}" Tag="PageGpu" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Placa de vídeo" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="NavDisks" Style="{StaticResource NavItem}" Tag="PageDisks" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Discos" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="NavEnergy" Style="{StaticResource NavItem}" Tag="PageEnergy" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Energia" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="NavNet" Style="{StaticResource NavItem}" Tag="PageNet" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Rede" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
+                                <TextBlock x:Name="CpuSensorWarnText" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" Margin="21,3,0,8" />
+                                <Button Style="{StaticResource SecondaryButton}" Content="Corrigir" MinHeight="28" Padding="12,4" FontSize="12" HorizontalAlignment="Left" Margin="21,0,0,0" Click="BtnFixCpuSensors_Click" />
                             </StackPanel>
-                            <ToggleButton x:Name="GrpGames" Style="{StaticResource NavGroup}" Content="Jogos" />
-                            <StackPanel x:Name="GrpGamesItems" Margin="10,0,0,4" Visibility="{Binding IsChecked, ElementName=GrpGames, Converter={StaticResource BoolVis}}">
-                                <RadioButton x:Name="NavGames" Style="{StaticResource NavItem}" Tag="PageGames" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="FPS estimado" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="NavBottleneck" Style="{StaticResource NavItem}" Tag="PageBottleneck" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Gargalo" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="NavOverlay" Style="{StaticResource NavItem}" Tag="PageOverlay" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Overlay" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
+                        </Border>
+                        <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="10" Padding="14,12,14,10">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="CPU" Foreground="{DynamicResource Muted}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="SideTemp" Grid.Column="1" Text="—" Style="{StaticResource ReadoutText}" FontSize="15" />
+                                    <TextBlock x:Name="SideLoad" Grid.Column="2" Text="—" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Style="{StaticResource Num}" />
+                                </Grid>
+                                <Grid Height="6" Margin="0,6,0,12" OpacityMask="{StaticResource SegmentMask}">
+                                    <Border Background="{DynamicResource Line}" />
+                                    <Border Background="{DynamicResource Accent}" RenderTransformOrigin="0,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="SideCpuBar" ScaleX="0" />
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="GPU" Foreground="{DynamicResource Muted}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="SideGpuTemp" Grid.Column="1" Text="—" Style="{StaticResource ReadoutText}" FontSize="15" />
+                                    <TextBlock x:Name="SideGpuLoad" Grid.Column="2" Text="—" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Style="{StaticResource Num}" />
+                                </Grid>
+                                <Grid Height="6" Margin="0,6,0,12" OpacityMask="{StaticResource SegmentMask}">
+                                    <Border Background="{DynamicResource Line}" />
+                                    <Border Background="{DynamicResource Copper}" RenderTransformOrigin="0,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="SideGpuBar" ScaleX="0" />
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                                <Border Style="{StaticResource Divider}" Margin="0,0,0,9" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse x:Name="SideStressDot" Width="7" Height="7" Fill="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,8,0" />
+                                    <TextBlock Text="Teste de carga" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="SideStress" Text="parado" FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
                             </StackPanel>
-                            <ToggleButton x:Name="GrpPerf" Style="{StaticResource NavGroup}" Content="Desempenho" />
-                            <StackPanel x:Name="GrpPerfItems" Margin="10,0,0,4" Visibility="{Binding IsChecked, ElementName=GrpPerf, Converter={StaticResource BoolVis}}">
-                                <RadioButton x:Name="NavBench" Style="{StaticResource NavItem}" Tag="PageBench" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Benchmark" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="NavStress" Style="{StaticResource NavItem}" Tag="PageStress" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Stress test" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                            </StackPanel>
-                            <ToggleButton x:Name="GrpTools" Style="{StaticResource NavGroup}" Content="Ferramentas" />
-                            <StackPanel x:Name="GrpToolsItems" Margin="10,0,0,4" Visibility="{Binding IsChecked, ElementName=GrpTools, Converter={StaticResource BoolVis}}">
-                                <RadioButton x:Name="NavStartup" Style="{StaticResource NavItem}" Tag="PageStartup" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Inicialização" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="NavApps" Style="{StaticResource NavItem}" Tag="PageApps" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Instalar apps" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                                <RadioButton x:Name="NavDriver" Style="{StaticResource NavItem}" Tag="PageDriver" Checked="Nav_Checked">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="" FontFamily="{StaticResource Icons}" FontSize="14" Width="28" VerticalAlignment="Center" />
-                                        <TextBlock Text="Drivers" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                </RadioButton>
-                            </StackPanel>
+                        </Border>
+                        <TextBlock x:Name="SideVersion" Text="Versão 0.1.1, prévia técnica" Foreground="{DynamicResource Faint}" FontSize="11" Margin="4,10,0,0" />
+                    </StackPanel>
+
+                    <!-- Navegação -->
+                    <ScrollViewer x:Name="NavScroll" VerticalScrollBarVisibility="Auto" Focusable="False">
+                        <StackPanel x:Name="NavPanel" Margin="0,4,0,12">
+                            <RadioButton x:Name="NavDash" Style="{StaticResource NavItem}" Tag="PageDash" local:Ui.Icon="&#xE80F;" Content="Visão geral" Checked="Nav_Checked" IsChecked="True" />
+                            <TextBlock Text="Monitoramento" Style="{StaticResource NavHeader}" />
+                            <RadioButton x:Name="NavSystem" Style="{StaticResource NavItem}" Tag="PageSystem" local:Ui.Icon="&#xE7F8;" Content="Sistema" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavSensors" Style="{StaticResource NavItem}" Tag="PageSensors" local:Ui.Icon="&#xE9D9;" Content="Sensores" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavGpu" Style="{StaticResource NavItem}" Tag="PageGpu" local:Ui.Icon="&#xE7F4;" Content="Placa de vídeo" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavDisks" Style="{StaticResource NavItem}" Tag="PageDisks" local:Ui.Icon="&#xEDA2;" Content="Discos" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavEnergy" Style="{StaticResource NavItem}" Tag="PageEnergy" local:Ui.Icon="&#xE7E8;" Content="Energia" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavNet" Style="{StaticResource NavItem}" Tag="PageNet" local:Ui.Icon="&#xE839;" Content="Rede" Checked="Nav_Checked" />
+                            <TextBlock Text="Jogos" Style="{StaticResource NavHeader}" />
+                            <RadioButton x:Name="NavGames" Style="{StaticResource NavItem}" Tag="PageGames" local:Ui.Icon="&#xEC49;" Content="FPS estimado" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavBottleneck" Style="{StaticResource NavItem}" Tag="PageBottleneck" local:Ui.Icon="&#xE9D2;" Content="Gargalo" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavOverlay" Style="{StaticResource NavItem}" Tag="PageOverlay" local:Ui.Icon="&#xE81E;" Content="Overlay" Checked="Nav_Checked" />
+                            <TextBlock Text="Desempenho" Style="{StaticResource NavHeader}" />
+                            <RadioButton x:Name="NavBench" Style="{StaticResource NavItem}" Tag="PageBench" local:Ui.Icon="&#xE8B9;" Content="Benchmark" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavStress" Style="{StaticResource NavItem}" Tag="PageStress" local:Ui.Icon="&#xE945;" Content="Teste de carga" Checked="Nav_Checked" />
+                            <TextBlock Text="Ferramentas" Style="{StaticResource NavHeader}" />
+                            <RadioButton x:Name="NavStartup" Style="{StaticResource NavItem}" Tag="PageStartup" local:Ui.Icon="&#xE823;" Content="Inicialização" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavApps" Style="{StaticResource NavItem}" Tag="PageApps" local:Ui.Icon="&#xE719;" Content="Instalar apps" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavDriver" Style="{StaticResource NavItem}" Tag="PageDriver" local:Ui.Icon="&#xE896;" Content="Drivers" Checked="Nav_Checked" />
                         </StackPanel>
                     </ScrollViewer>
                 </DockPanel>
             </Border>
-            <Grid Grid.Row="1" Grid.Column="1">
-                <views:OverviewView x:Name="PageDash" Visibility="Visible" />
-                <views:SystemView x:Name="PageSystem" Visibility="Collapsed" />
-                <views:DisksView x:Name="PageDisks" Visibility="Collapsed" />
-                <views:PowerView x:Name="PageEnergy" Visibility="Collapsed" />
-                <views:NetworkView x:Name="PageNet" Visibility="Collapsed" />
-                <views:DriversView x:Name="PageDriver" Visibility="Collapsed" />
-                <views:SensorsView x:Name="PageSensors" Visibility="Collapsed" />
-                <views:GraphicsView x:Name="PageGpu" Visibility="Collapsed" />
-                <views:ForecastView x:Name="PageGames" Visibility="Collapsed" />
-                <views:BottleneckView x:Name="PageBottleneck" Visibility="Collapsed" />
-                <views:OverlayView x:Name="PageOverlay" Visibility="Collapsed" />
-                <views:BenchmarksView x:Name="PageBench" Visibility="Collapsed" />
-                <views:StartupView x:Name="PageStartup" Visibility="Collapsed" />
-                <views:AppsView x:Name="PageApps" Visibility="Collapsed" />
-                <views:StressView x:Name="PageStress" Visibility="Collapsed" />
+
+            <!-- ================= Área de conteúdo ================= -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="52" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <!-- Barra de título: atalho de navegação, estado da coleta e controles da janela -->
+                <Button x:Name="BtnCommand" Style="{StaticResource CommandButton}" Content="Ir para uma página ou ação" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="36,9,0,0" WindowChrome.IsHitTestVisibleInChrome="True" Click="BtnCommand_Click" ToolTip="Paleta de comandos (Ctrl + K)" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                    <Border x:Name="ShellStatusPill" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="14" Padding="10,4,12,5" VerticalAlignment="Top" Margin="0,9,10,0" ToolTip="Estado da coleta de sensores">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse x:Name="ShellStatusDot" Width="7" Height="7" Fill="{DynamicResource Warn}" VerticalAlignment="Center" Margin="0,1,8,0" />
+                            <TextBlock x:Name="ShellStatus" Text="Detectando o hardware" FontSize="12" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
+                        <Button x:Name="BtnTheme" Style="{StaticResource CaptionButton}" FontSize="13" Content="&#xE706;" Click="Theme_Click" ToolTip="Tema claro" />
+                        <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="Min_Click" ToolTip="Minimizar" />
+                        <Button x:Name="BtnMax" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="Max_Click" ToolTip="Maximizar" />
+                        <Button Style="{StaticResource CloseButton}" Content="&#xE8BB;" Click="Close_Click" ToolTip="Fechar" />
+                    </StackPanel>
+                </StackPanel>
+
+                <Grid x:Name="PageHost" Grid.Row="1">
+                    <views:OverviewView x:Name="PageDash" Visibility="Visible" />
+                    <views:SystemView x:Name="PageSystem" Visibility="Collapsed" />
+                    <views:DisksView x:Name="PageDisks" Visibility="Collapsed" />
+                    <views:PowerView x:Name="PageEnergy" Visibility="Collapsed" />
+                    <views:NetworkView x:Name="PageNet" Visibility="Collapsed" />
+                    <views:DriversView x:Name="PageDriver" Visibility="Collapsed" />
+                    <views:SensorsView x:Name="PageSensors" Visibility="Collapsed" />
+                    <views:GraphicsView x:Name="PageGpu" Visibility="Collapsed" />
+                    <views:ForecastView x:Name="PageGames" Visibility="Collapsed" />
+                    <views:BottleneckView x:Name="PageBottleneck" Visibility="Collapsed" />
+                    <views:OverlayView x:Name="PageOverlay" Visibility="Collapsed" />
+                    <views:BenchmarksView x:Name="PageBench" Visibility="Collapsed" />
+                    <views:StartupView x:Name="PageStartup" Visibility="Collapsed" />
+                    <views:AppsView x:Name="PageApps" Visibility="Collapsed" />
+                    <views:StressView x:Name="PageStress" Visibility="Collapsed" />
+                </Grid>
+            </Grid>
+
+            <!-- ================= Paleta de comandos (Ctrl + K) ================= -->
+            <Grid x:Name="PaletteLayer" Grid.ColumnSpan="2" Visibility="Collapsed" Background="{DynamicResource Scrim}" MouseLeftButtonDown="PaletteScrim_MouseDown">
+                <Border x:Name="PalettePanel" Width="580" VerticalAlignment="Top" Margin="0,84,0,0" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="14" MouseLeftButtonDown="PalettePanel_MouseDown">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="48" ShadowDepth="14" Direction="270" Opacity="0.45" Color="#000000" />
+                    </Border.Effect>
+                    <DockPanel>
+                        <Grid DockPanel.Dock="Top" Margin="18,12,14,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="&#xE721;" FontFamily="{StaticResource Icons}" FontSize="15" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" />
+                            <TextBox x:Name="PaletteSearch" Grid.Column="1" FontSize="15" BorderThickness="0" Background="Transparent" MinHeight="36" Padding="10,0" local:Ui.Placeholder="Buscar páginas e ações" TextChanged="PaletteSearch_TextChanged" PreviewKeyDown="PaletteSearch_PreviewKeyDown" />
+                            <Border Grid.Column="2" Style="{StaticResource KeyCap}" Margin="0"><TextBlock Text="Esc" Style="{StaticResource KeyCapText}" /></Border>
+                        </Grid>
+                        <Border DockPanel.Dock="Top" Style="{StaticResource Divider}" />
+                        <Grid DockPanel.Dock="Bottom" Margin="18,10,18,12">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Style="{StaticResource KeyCap}"><TextBlock Text="&#xE70E;" FontFamily="{StaticResource Icons}" Style="{StaticResource KeyCapText}" FontSize="9" Margin="0,2,0,1" /></Border>
+                                <Border Style="{StaticResource KeyCap}"><TextBlock Text="&#xE70D;" FontFamily="{StaticResource Icons}" Style="{StaticResource KeyCapText}" FontSize="9" Margin="0,2,0,1" /></Border>
+                                <TextBlock Text="navegar" Style="{StaticResource Caption}" Margin="4,0,16,0" VerticalAlignment="Center" />
+                                <Border Style="{StaticResource KeyCap}"><TextBlock Text="Enter" Style="{StaticResource KeyCapText}" /></Border>
+                                <TextBlock Text="abrir" Style="{StaticResource Caption}" Margin="4,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                        <Border DockPanel.Dock="Bottom" Style="{StaticResource Divider}" />
+                        <Grid>
+                            <ListBox x:Name="PaletteList" MaxHeight="400" Margin="8,8,8,6" ItemContainerStyle="{StaticResource ListNavItem}" ScrollViewer.VerticalScrollBarVisibility="Auto" PreviewMouseLeftButtonUp="PaletteList_MouseUp" Focusable="False">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="32" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Icon}" FontFamily="{StaticResource Icons}" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Section}" Foreground="{DynamicResource Faint}" FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <TextBlock x:Name="PaletteEmpty" Text="Nada encontrado. Tente o nome de uma página, como “discos” ou “overlay”." Style="{StaticResource Caption}" Margin="20,18" Visibility="Collapsed" />
+                        </Grid>
+                    </DockPanel>
+                </Border>
             </Grid>
         </Grid>
     </Border>

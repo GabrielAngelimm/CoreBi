@@ -8,6 +8,7 @@ namespace CoreBi.Desktop;
 // Migration adapter: pages own their XAML; shared telemetry and execution remain coordinated by the shell.
 public partial class MainWindow
 {
+    internal TextBlock DashMachine => PageDash.DashMachine;
     internal TextBlock DashChartLabel => PageDash.DashChartLabel;
     internal TextBlock DashChartDelta => PageDash.DashChartDelta;
     internal TextBlock DashChartValue => PageDash.DashChartValue;
@@ -80,12 +81,12 @@ public partial class MainWindow
     internal ItemsControl BnDistribution => PageBottleneck.BnDistribution;
     internal TextBlock BnResultAdvice => PageBottleneck.BnResultAdvice;
     internal CheckBox ChkOverlay => PageOverlay.ChkOverlay;
-    internal StackPanel OvCornerPanel => PageOverlay.OvCornerPanel;
+    internal Grid OvCornerPanel => PageOverlay.OvCornerPanel;
     internal StackPanel OvScalePanel => PageOverlay.OvScalePanel;
     internal StackPanel OvItemsPanel => PageOverlay.OvItemsPanel;
     internal TextBlock OvStatus => PageOverlay.OvStatus;
     internal TextBlock BenchSub => PageBench.BenchSub;
-    internal WrapPanel BenchTestPanel => PageBench.BenchTestPanel;
+    internal System.Windows.Controls.Primitives.UniformGrid BenchTestPanel => PageBench.BenchTestPanel;
     internal Grid BenchPanelRender => PageBench.BenchPanelRender;
     internal Image BenchImage => PageBench.BenchImage;
     internal Canvas BenchBuckets => PageBench.BenchBuckets;
