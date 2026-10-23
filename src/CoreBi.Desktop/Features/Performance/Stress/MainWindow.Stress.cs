@@ -194,8 +194,6 @@ public partial class MainWindow
         RamFractionPanel.IsEnabled = !running && ChkRam.IsChecked == true;
         GpuOptions.IsEnabled = GpuTempLimit.IsEnabled = !running && ChkGpu.IsChecked == true;
         TempLimit.IsEnabled = TxtDuration.IsEnabled = !running;
-        SideStress.Text = running ? "rodando" : "parado";
-        SideStressDot.SetResourceReference(Shape.FillProperty, running ? "Accent" : "Faint");
     }
 
     /// <summary>Estado do teste: em andamento ganha o tom do canal ao vivo; corte automático ganha o tom de perigo.</summary>
@@ -207,7 +205,6 @@ public partial class MainWindow
         StatusCard.SetResourceReference(Border.BorderBrushProperty, alert ? "Danger" : live ? "Accent" : "Line");
         StStatus.SetResourceReference(TextBlock.ForegroundProperty, alert ? "Danger" : live ? "Accent" : "Fg");
         StStatusLabel.SetResourceReference(TextBlock.ForegroundProperty, alert ? "Danger" : "Muted");
-        if (alert) SideStressDot.SetResourceReference(Shape.FillProperty, "Danger");
     }
 
     /// <summary>Temperatura do núcleo da GPU principal (dedicada).</summary>

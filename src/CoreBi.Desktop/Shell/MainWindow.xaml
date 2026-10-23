@@ -25,7 +25,7 @@
                         <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="19" Margin="11,0,0,1" VerticalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- Rodapé: aviso de sensores, tema, leituras ao vivo e versão -->
+                    <!-- Rodapé: aviso de sensores, tema, central de monitoramento e versão -->
                     <StackPanel DockPanel.Dock="Bottom" Margin="14,6,14,14">
                         <Border x:Name="CpuSensorWarn" Visibility="Collapsed" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource Warn}" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,10">
                             <StackPanel>
@@ -38,11 +38,12 @@
                             </StackPanel>
                         </Border>
                         <CheckBox x:Name="ThemeSwitch" Style="{StaticResource ThemeToggle}" Content="Modo escuro" Margin="0,0,0,8" Click="Theme_Click" AutomationProperties.Name="Modo escuro" />
-                        <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="10" Padding="14,12,14,10">
+                        <!-- Central de monitoramento: some na Visão geral, que já mostra tudo isso em tamanho grande -->
+                        <Border x:Name="SideMonitor" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="10" Padding="14,11,14,12">
                             <StackPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="44" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
@@ -50,7 +51,7 @@
                                     <TextBlock x:Name="SideTemp" Grid.Column="1" Text="—" Style="{StaticResource ReadoutText}" FontSize="15" />
                                     <TextBlock x:Name="SideLoad" Grid.Column="2" Text="—" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Style="{StaticResource Num}" />
                                 </Grid>
-                                <Grid Height="6" Margin="0,6,0,12" OpacityMask="{StaticResource SegmentMask}">
+                                <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
                                     <Border Background="{DynamicResource Accent}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
@@ -60,7 +61,7 @@
                                 </Grid>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="44" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
@@ -68,7 +69,7 @@
                                     <TextBlock x:Name="SideGpuTemp" Grid.Column="1" Text="—" Style="{StaticResource ReadoutText}" FontSize="15" />
                                     <TextBlock x:Name="SideGpuLoad" Grid.Column="2" Text="—" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Style="{StaticResource Num}" />
                                 </Grid>
-                                <Grid Height="6" Margin="0,6,0,12" OpacityMask="{StaticResource SegmentMask}">
+                                <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
                                     <Border Background="{DynamicResource Copper}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
@@ -76,15 +77,45 @@
                                         </Border.RenderTransform>
                                     </Border>
                                 </Grid>
-                                <Border Style="{StaticResource Divider}" Margin="0,0,0,9" />
-                                <StackPanel Orientation="Horizontal">
-                                    <Ellipse x:Name="SideStressDot" Width="7" Height="7" Fill="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,8,0" />
-                                    <TextBlock Text="Teste de carga" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" />
-                                    <TextBlock x:Name="SideStress" Text="parado" FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center" />
-                                </StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="44" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="RAM" Foreground="{DynamicResource Muted}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="SideRam" Grid.Column="1" Text="—" Style="{StaticResource ReadoutText}" FontSize="15" />
+                                    <TextBlock x:Name="SideRamLoad" Grid.Column="2" Text="—" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Style="{StaticResource Num}" />
+                                </Grid>
+                                <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
+                                    <Border Background="{DynamicResource Line}" />
+                                    <Border Background="{DynamicResource Steel}" RenderTransformOrigin="0,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="SideRamBar" ScaleX="0" />
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                                <Grid x:Name="SideDiskRow" Background="Transparent">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="44" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Disco" Foreground="{DynamicResource Muted}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="SideDisk" Grid.Column="1" Text="—" Style="{StaticResource ReadoutText}" FontSize="15" />
+                                    <TextBlock x:Name="SideDiskLoad" Grid.Column="2" Text="—" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Style="{StaticResource Num}" />
+                                </Grid>
+                                <Grid Height="5" Margin="0,5,0,0" OpacityMask="{StaticResource SegmentMask}">
+                                    <Border Background="{DynamicResource Line}" />
+                                    <Border Background="{DynamicResource Steel}" RenderTransformOrigin="0,0.5">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="SideDiskBar" ScaleX="0" />
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
                             </StackPanel>
                         </Border>
-                        <TextBlock x:Name="SideVersion" Text="Versão 0.2.0, prévia técnica" Foreground="{DynamicResource Faint}" FontSize="11" Margin="4,10,0,0" />
+                        <TextBlock x:Name="SideVersion" Text="0.2.0" Foreground="{DynamicResource Faint}" FontSize="11" Margin="4,10,0,0" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
                     </StackPanel>
 
                     <!-- Navegação -->

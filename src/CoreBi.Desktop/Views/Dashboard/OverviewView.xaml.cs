@@ -10,6 +10,8 @@ public partial class OverviewView : UserControl
     public OverviewView() => InitializeComponent();
     private void DashBench_Click(object sender, RoutedEventArgs e) => Owner?.DashBench_Click(sender, e);
     private void DashChart_SizeChanged(object sender, SizeChangedEventArgs e) => Owner?.DashChart_SizeChanged(sender, e);
+    private void DashChart_MouseMove(object sender, MouseEventArgs e) => Owner?.DashChart_MouseMove(sender, e);
+    private void DashChart_MouseLeave(object sender, MouseEventArgs e) => Owner?.DashChart_MouseLeave(sender, e);
     private void DashGo_Click(object sender, RoutedEventArgs e) => Owner?.DashGo_Click(sender, e);
     private void DashOption_Checked(object sender, RoutedEventArgs e) => Owner?.DashOption_Checked(sender, e);
     private void DashSensors_Click(object sender, RoutedEventArgs e) => Owner?.DashSensors_Click(sender, e);

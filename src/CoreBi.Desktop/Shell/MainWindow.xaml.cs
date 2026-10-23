@@ -50,7 +50,7 @@ public partial class MainWindow : Window
         SensorGrid.ItemsSource = _view;
         SystemSub.Text = "Lendo informações do sistema…";
         StatusText.Text = "Detectando o hardware…";
-        SideVersion.Text = $"Versão {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1"}, prévia técnica";
+        SideVersion.Text = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1";
 
         InitBench();
         SnapshotUsb();
@@ -75,6 +75,7 @@ public partial class MainWindow : Window
             if (_monitor.IsOpen) StatusText.Text = $"{_monitor.Rows.Count} sensores · atualizado às {DateTime.Now:HH:mm:ss}";
             UpdateStressPanel();
             UpdateGpuLive();
+            UpdateSideStorage();
             UpdateCpuSensorWarning();
             CollectDashSample();
             UpdateFrameMonitoring();
@@ -208,7 +209,32 @@ public partial class MainWindow : Window
             if (show && p.Visibility != Visibility.Visible) AnimateIn(p);
             p.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         }
+        SideMonitor.Visibility = name == "PageDash" ? Visibility.Collapsed : Visibility.Visible;
         UpdateFrameMonitoring();
+    }
+
+    /// <summary>Central da barra lateral: RAM em uso e ocupação do disco do sistema (CPU e GPU vêm do teste de carga e da GPU).</summary>
+    internal void UpdateSideStorage()
+    {
+        var (total, avail) = CoreBi.Engine.Monitoring.Memory.MemoryInfo.MemoryStatus();
+        if (total > 0)
+        {
+            double used = (double)(total - avail) / total;
+            SideRam.Text = $"{(total - avail) / 1073741824.0:0.0} GB";
+            SideRamLoad.Text = $"{used * 100:0} %";
+            SideRamBar.ScaleX = Math.Clamp(used, 0, 1);
+        }
+        try
+        {
+            var c = new System.IO.DriveInfo(System.IO.Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\");
+            if (!c.IsReady || c.TotalSize <= 0) return;
+            double used = (double)(c.TotalSize - c.TotalFreeSpace) / c.TotalSize;
+            SideDisk.Text = CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalFreeSpace) + " livres";
+            SideDiskLoad.Text = $"{used * 100:0} %";
+            SideDiskBar.ScaleX = Math.Clamp(used, 0, 1);
+            SideDiskRow.ToolTip = $"Disco {c.Name.TrimEnd('\\')}: {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize - c.TotalFreeSpace)} usados de {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize)}";
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { }
     }
 
     /// <summary>Entrada da página: resposta curta à navegação (respeita "mostrar animações" do Windows).</summary>

@@ -4,8 +4,9 @@
 
 - Janela maximizada respeita a barra de tarefas: antes ocupava a tela inteira e o rodapé de todas as páginas ficava escondido.
 - Selo "ao vivo" da barra de título removido; o tema virou uma chave animada ("Modo escuro") acima da telemetria na barra lateral.
+- Central de monitoramento na barra lateral com CPU, GPU, RAM e disco (no lugar do estado do teste de carga), oculta na Visão geral; a versão aparece só como número.
 - Seleção da navegação e das listas sem o traço lateral: fundo elevado e ícone em verde-água, com transição curta.
-- Visão geral cabe numa tela com a janela maximizada. Cartões de uso para processador e placa de vídeo e mostrador de anéis para RAM, VRAM e disco com uso e espaço livre, sem campos vazios. Saúde do PC com selo de resumo e altura conforme o conteúdo; a atividade recente mostra quantos eventos couberem.
+- Visão geral cabe numa tela com a janela maximizada. Cartões de uso para processador e placa de vídeo e mostrador de anéis para RAM, VRAM e disco com uso e espaço livre, sem campos vazios. Setas levam a Sistema (processador, memória), Placa de vídeo e Discos; o gráfico principal mostra a leitura exata sob o mouse. Saúde do PC com selo de resumo e altura conforme o conteúdo; a atividade recente mostra quantos eventos couberem.
 
 ## 0.2.0 — 2026-10-23
 

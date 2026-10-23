@@ -76,7 +76,7 @@
                                     <TextBlock x:Name="DashChartValue2" Text="—" Style="{StaticResource ReadoutHero}" Foreground="{DynamicResource Muted}" Margin="0,2,0,0" />
                                 </StackPanel>
                             </StackPanel>
-                            <Canvas x:Name="DashChart" MinHeight="150" ClipToBounds="True" SizeChanged="DashChart_SizeChanged" />
+                            <Canvas x:Name="DashChart" MinHeight="150" ClipToBounds="True" Background="Transparent" SizeChanged="DashChart_SizeChanged" MouseMove="DashChart_MouseMove" MouseLeave="DashChart_MouseLeave" />
                         </DockPanel>
                     </Border>
 
@@ -162,26 +162,28 @@
                                 </Grid.ColumnDefinitions>
                                 <Canvas x:Name="DashRings" Width="150" Height="150" VerticalAlignment="Center" Margin="0,0,24,0" />
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <Grid Margin="0,0,0,6">
-                                        <TextBlock Text="Memória e disco" FontWeight="SemiBold" VerticalAlignment="Center" />
-                                        <Button Style="{StaticResource IconButton}" Width="28" Height="28" FontSize="11" Content="&#xE76C;" Tag="PageSystem" Click="DashGo_Click" ToolTip="Abrir detalhes" HorizontalAlignment="Right" Margin="0,-4,-6,-4" />
-                                    </Grid>
-                                    <ItemsControl x:Name="DashRingLegend" Focusable="False">
+                                    <TextBlock Text="Memória e disco" FontWeight="SemiBold" Margin="0,0,0,4" />
+                                    <!-- Cada linha leva à seção do item: RAM ao Sistema, VRAM à Placa de vídeo, disco a Discos -->
+                                    <ItemsControl x:Name="DashRingLegend" Margin="-8,0,-8,-4" Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Grid Margin="0,7,0,0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <Border Width="10" Height="10" CornerRadius="3" Background="{Binding Swatch}" Margin="0,4,10,0" VerticalAlignment="Top" />
-                                                    <StackPanel Grid.Column="1">
-                                                        <TextBlock Text="{Binding Label}" />
-                                                        <TextBlock Text="{Binding Detail}" Style="{StaticResource StatSub}" ToolTip="{Binding Detail}" />
-                                                    </StackPanel>
-                                                    <TextBlock Grid.Column="2" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="17" VerticalAlignment="Top" Margin="10,0,0,0" />
-                                                </Grid>
+                                                <Button Style="{StaticResource RowButton}" Tag="{Binding Target}" Click="DashGo_Click" ToolTip="Abrir detalhes">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Width="10" Height="10" CornerRadius="3" Background="{Binding Swatch}" Margin="0,4,10,0" VerticalAlignment="Top" />
+                                                        <StackPanel Grid.Column="1">
+                                                            <TextBlock Text="{Binding Label}" />
+                                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource StatSub}" />
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="2" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="17" VerticalAlignment="Top" Margin="10,0,0,0" />
+                                                        <TextBlock Grid.Column="3" Text="&#xE76C;" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                                    </Grid>
+                                                </Button>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
