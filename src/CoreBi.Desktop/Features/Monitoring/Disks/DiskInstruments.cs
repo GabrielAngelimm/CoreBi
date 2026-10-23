@@ -25,6 +25,8 @@ public abstract class DiskInstrument : FrameworkElement
     public static readonly DependencyProperty WarnSoftBrushProperty = Paint(nameof(WarnSoftBrush));
     public static readonly DependencyProperty DangerBrushProperty = Paint(nameof(DangerBrush));
     public static readonly DependencyProperty DangerSoftBrushProperty = Paint(nameof(DangerSoftBrush));
+    public static readonly DependencyProperty RaisedBrushProperty = Paint(nameof(RaisedBrush));
+    public static readonly DependencyProperty LineStrongBrushProperty = Paint(nameof(LineStrongBrush));
 
     public Brush AccentBrush { get => (Brush)GetValue(AccentBrushProperty); set => SetValue(AccentBrushProperty, value); }
     public Brush TrackBrush { get => (Brush)GetValue(TrackBrushProperty); set => SetValue(TrackBrushProperty, value); }
@@ -37,6 +39,8 @@ public abstract class DiskInstrument : FrameworkElement
     public Brush WarnSoftBrush { get => (Brush)GetValue(WarnSoftBrushProperty); set => SetValue(WarnSoftBrushProperty, value); }
     public Brush DangerBrush { get => (Brush)GetValue(DangerBrushProperty); set => SetValue(DangerBrushProperty, value); }
     public Brush DangerSoftBrush { get => (Brush)GetValue(DangerSoftBrushProperty); set => SetValue(DangerSoftBrushProperty, value); }
+    public Brush RaisedBrush { get => (Brush)GetValue(RaisedBrushProperty); set => SetValue(RaisedBrushProperty, value); }
+    public Brush LineStrongBrush { get => (Brush)GetValue(LineStrongBrushProperty); set => SetValue(LineStrongBrushProperty, value); }
 
     protected DiskInstrument()
     {
@@ -52,6 +56,8 @@ public abstract class DiskInstrument : FrameworkElement
         SetResourceReference(WarnSoftBrushProperty, "WarnSoft");
         SetResourceReference(DangerBrushProperty, "Danger");
         SetResourceReference(DangerSoftBrushProperty, "DangerSoft");
+        SetResourceReference(RaisedBrushProperty, "Raised");
+        SetResourceReference(LineStrongBrushProperty, "LineStrong");
     }
 
     protected static DependencyProperty Number(string name, Type owner, double initial = double.NaN) =>
@@ -234,16 +240,44 @@ public sealed class TraceChart : DiskInstrument
     /// <summary>Janela do gráfico, em amostras (uma por segundo).</summary>
     public const int Capacity = 300;
     private IReadOnlyList<float?> _samples = Array.Empty<float?>();
+    private IReadOnlyList<float?>? _pending;
+    private double? _hoverX;
+
+    /// <summary>
+    /// Amostras do último 5 min. Enquanto o mouse está sobre o gráfico ele pausa (a leitura sob o cursor não escapa com a
+    /// atualização de 1 em 1 segundo) e retoma com o que chegou nesse tempo, como o gráfico da Visão geral.
+    /// </summary>
     public IReadOnlyList<float?> Samples
     {
         get => _samples;
-        set { _samples = value; InvalidateVisual(); }
+        set
+        {
+            if (_hoverX != null) { _pending = value; return; }
+            _samples = value;
+            InvalidateVisual();
+        }
+    }
+
+    protected override void OnMouseMove(System.Windows.Input.MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        _hoverX = e.GetPosition(this).X;
+        InvalidateVisual();
+    }
+
+    protected override void OnMouseLeave(System.Windows.Input.MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+        _hoverX = null;
+        if (_pending != null) { _samples = _pending; _pending = null; }
+        InvalidateVisual();
     }
 
     protected override void OnRender(DrawingContext dc)
     {
         double w = ActualWidth, h = ActualHeight;
         if (w < 80 || h < 50) return;
+        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, h)); // área clicável para o cursor
         const double left = 34, bottom = 20, top = 6, lo = 20;
         double plotW = w - left, plotH = h - top - bottom;
         var values = _samples.Where(v => v != null).Select(v => (double)v!.Value).ToList();
@@ -311,6 +345,37 @@ public sealed class TraceChart : DiskInstrument
         line.Freeze();
         dc.DrawGeometry(null, new Pen(AccentBrush, 2) { LineJoin = PenLineJoin.Round }, line);
         dc.DrawEllipse(SurfaceBrush, Stroke(AccentBrush, 2), points[^1], 4.5, 4.5);
+        DrawHover(dc, w, left, top, plotW, plotH, X, Y);
+    }
+
+    /// <summary>Cursor: linha tracejada na amostra mais próxima, um ponto na curva e um quadro com a hora e a temperatura exata.</summary>
+    private void DrawHover(DrawingContext dc, double w, double left, double top, double plotW, double plotH, Func<int, double> x, Func<double, double> y)
+    {
+        if (_hoverX is not double mx || mx < left) return;
+        int nearest = -1; double best = double.MaxValue;
+        for (int i = 0; i < _samples.Count; i++)
+        {
+            if (_samples[i] == null) continue;
+            double d = Math.Abs(x(i) - mx);
+            if (d < best) { best = d; nearest = i; }
+        }
+        if (nearest < 0 || best > Math.Max(12, plotW / Capacity * 4)) return;
+
+        double px = x(nearest), py = y(_samples[nearest]!.Value);
+        double lx = Math.Round(px) + 0.5;
+        dc.DrawLine(Stroke(FaintBrush, 1, new DashStyle(new double[] { 3, 3 }, 0)), new Point(lx, top), new Point(lx, top + plotH));
+        dc.DrawEllipse(SurfaceBrush, Stroke(AccentBrush, 2.5), new Point(px, py), 5.5, 5.5);
+
+        int ago = _samples.Count - 1 - nearest;
+        string when = ago <= 0 ? "agora" : ago >= 60 ? $"há {ago / 60} min {ago % 60:00} s" : $"há {ago} s";
+        var time = Text(when, 11.5, FaintBrush, readout: false);
+        var value = Text($"{_samples[nearest]!.Value:0.#} °C", 16, InkBrush);
+        double bw = Math.Max(time.Width, value.Width) + 22, bh = time.Height + value.Height + 14;
+        double bx = px + 14 + bw > w ? px - 14 - bw : px + 14;
+        double by = Math.Clamp(py - bh / 2, top, Math.Max(top, top + plotH - bh));
+        dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bw, bh), 8, 8);
+        dc.DrawText(time, new Point(bx + 11, by + 7));
+        dc.DrawText(value, new Point(bx + 11, by + 7 + time.Height));
     }
 }
 
@@ -329,7 +394,7 @@ public sealed class CapacityBar : DiskInstrument
 
     public CapacityBar()
     {
-        Height = 12;
+        Height = 16;
         SetResourceReference(FillBrushProperty, "Steel");
     }
 

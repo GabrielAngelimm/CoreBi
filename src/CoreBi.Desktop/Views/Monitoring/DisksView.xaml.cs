@@ -64,7 +64,8 @@ public partial class DisksView : UserControl
     }
 
     public sealed record DiskCheck(string Title, string Detail, string Value, string State);
-    public sealed record VolumeRow(string Letter, string Label, string Detail, bool IsRest);
+    /// <summary>Unidade no espaço por unidade: Percent é a fração livre em destaque; Line, "usados de total".</summary>
+    public sealed record VolumeRow(string Letter, string Label, string Line, string Percent, string PercentLabel, bool IsRest);
 
     /// <summary>Últimos 5 min de um disco no LibreHardwareMonitor: temperatura (1/s) e taxas atuais.</summary>
     private sealed class DiskTrace
@@ -234,47 +235,39 @@ public partial class DisksView : UserControl
         if (mine.Count == 0 || rest < d.SizeBytes * 0.02) rest = mine.Count == 0 ? d.SizeBytes : 0;
         DiskCapacity.SetVolumes(mine.Select(v => ((double)v.Total, (double)(v.Total - v.Free))).ToList(), rest);
         var rows = mine.Select(v => new VolumeRow(v.Letter, string.IsNullOrWhiteSpace(v.Label) ? v.FileSystem : v.Label,
-            $"{DriveCard.Fmt(v.Free)} livres · {v.UsedFraction * 100:0} %", false)).ToList();
+            $"{DriveCard.Fmt(v.Total - v.Free)} usados de {DriveCard.Fmt(v.Total)}",
+            $"{(1 - v.UsedFraction) * 100:0} %", "livre", false)).ToList();
         if (rest > 0) rows.Add(new VolumeRow("", mine.Count == 0 ? "Sem unidade com letra neste disco" : "Sem letra (sistema, recuperação, não alocado)",
-            DriveCard.Fmt((long)rest), true));
+            DriveCard.Fmt((long)rest), "", "", true));
         DiskVolumes.ItemsSource = rows;
         long used = mine.Sum(v => v.Total - v.Free), total = mine.Sum(v => v.Total);
-        DiskSpaceSummary.Text = total > 0 ? $"{DriveCard.Fmt(used)} usados de {DriveCard.Fmt(total)}" : "";
+        DiskSpaceSummary.Text = total > 0 ? $"{DriveCard.Fmt(total - used)} livres de {DriveCard.Fmt(total)}" : "";
     }
 
     private void ShowLife(DiskDetail d)
     {
         LifeDial.Value = d.Wear is double w ? Math.Clamp(100 - w, 0, 100) : double.NaN;
         LifeDial.Caption = d.Wear != null ? "vida útil restante" : "não informada";
-        LifeCaption.Text = d.Wear != null ? "Desgaste informado pelo próprio SSD"
-            : d.IsSsd ? "Este SSD não informa o desgaste ao Windows" : "HDDs não informam desgaste; veja erros e horas ligado";
-
         Readout(LifeWear, d.Wear is double wear ? $"{wear:0}" : "—", d.Wear != null ? "%" : "");
-        LifeWearSub.Text = d.Wear != null ? $"atenção a partir de {DiskDetail.WearWarnAt:0} %" : "não informado";
         Readout(LifeSpare, d.AvailableSpare is double sp ? $"{sp:0}" : "—", d.AvailableSpare != null ? "%" : "");
-        LifeSpareSub.Text = d.SpareThreshold is double min && min > 0 ? $"mínimo {min:0} %" : d.AvailableSpare != null ? "blocos de reserva" : "não informada";
 
         // Resistência: quanto o SSD aguenta gravar até 100 % de desgaste, no ritmo medido até aqui (estimativa linear).
         if (d.Wear is double ww && ww >= 1 && d.WrittenGb is double gb)
         {
             var (value, unit) = SplitData(gb * 100 / ww);
             Readout(LifeEndurance, "≈ " + value, unit);
-            LifeEnduranceSub.Text = "gravados até 100 %";
             LifeEnduranceBox.ToolTip = $"Estimativa linear: {SplitData(gb).Value} {SplitData(gb).Unit} gravados para {ww:0} % de desgaste. " +
                                        "O fabricante informa a resistência real (TBW) na garantia.";
         }
         else
         {
             Readout(LifeEndurance, "—", "");
-            LifeEnduranceSub.Text = d.Wear is 0 ? "desgaste ainda em 0 %" : "não informada";
             LifeEnduranceBox.ToolTip = null;
         }
     }
 
     private void ShowTemperature(DiskBay bay, DiskDetail d)
     {
-        string kind = d.IsSsd ? (d.Bus.Length > 0 ? $"SSD {d.Bus}" : "SSD") : d.Kind == "HDD" ? "HDD" : "este disco";
-        TempCaption.Text = $"Faixa ideal até {d.TempWarnAt:0} °C para {kind}";
         TempScale.WarnAt = d.TempWarnAt;
         TempScale.CritAt = d.TempCritAt;
         TempScale.Peak = d.TemperatureMax ?? double.NaN;
@@ -318,21 +311,40 @@ public partial class DisksView : UserControl
         };
     }
 
+    /// <summary>Só mostra o que o disco informa: um disco que não conta horas ou ciclos fica com menos células, não com traços.</summary>
     private void ShowOdometer(DiskDetail d)
     {
-        Readout(OdoHours, d.PowerOnHours is long h ? $"{h:N0}" : "—", d.PowerOnHours != null ? "h" : "");
-        OdoHoursSub.Text = d.PowerOnHours is long hh ? $"≈ {hh / 24.0:N0} dias ligado" : "não informado";
-        Readout(OdoCycles, d.StartStopCycles is long c ? $"{c:N0}" : "—", "");
-        OdoCyclesSub.Text = d.StartStopCycles is long cc && cc > 0 && d.PowerOnHours is long ch ? $"≈ {(double)ch / cc:0.#} h por ciclo"
-            : d.StartStopCycles != null ? "desde a fábrica" : "não informado";
-        var written = d.WrittenGb is double wg ? SplitData(wg) : ("—", "");
-        Readout(OdoWritten, written.Item1, written.Item2);
-        OdoWrittenSub.Text = d.WrittenGb is double wgb && d.PowerOnHours is long wh && wh > 0 ? $"≈ {wgb / wh:0.#} GB por hora ligado"
-            : d.WrittenGb != null ? "desde a fábrica" : "não informado";
-        var read = d.ReadGb is double rg ? SplitData(rg) : ("—", "");
-        Readout(OdoRead, read.Item1, read.Item2);
-        OdoReadSub.Text = d.ReadGb is double rgb && d.WrittenGb is double wgb2 && wgb2 > 0 ? $"{rgb / wgb2:0.#}× o que foi gravado"
-            : d.ReadGb != null ? "desde a fábrica" : "não informado";
+        var cells = new List<Border>();
+        void Cell(Border cell, TextBlock target, string? value, string unit)
+        {
+            if (value == null) return;
+            Readout(target, value, unit);
+            cells.Add(cell);
+        }
+        Cell(OdoCell0, OdoHours, d.PowerOnHours is long h ? $"{h:N0}" : null, "h");
+        Cell(OdoCell1, OdoCycles, d.StartStopCycles is long c ? $"{c:N0}" : null, "");
+        var written = d.WrittenGb is double wg ? SplitData(wg) : default;
+        Cell(OdoCell2, OdoWritten, d.WrittenGb != null ? written.Value : null, written.Unit);
+        var read = d.ReadGb is double rg ? SplitData(rg) : default;
+        Cell(OdoCell3, OdoRead, d.ReadGb != null ? read.Value : null, read.Unit);
+        _odoCells = cells;
+        LayoutOdometer();
+    }
+
+    private List<Border> _odoCells = new();
+
+    private void LayoutOdometer()
+    {
+        OdoCard.Visibility = _odoCells.Count == 0 || DiskCards.SelectedItem is not DiskBay { Disk: not null } ? Visibility.Collapsed : Visibility.Visible;
+        OdoGrid.Children.Clear();
+        int columns = Math.Max(1, Math.Min(_odoCells.Count, _wide ? 4 : 2));
+        OdoGrid.Columns = columns;
+        for (int i = 0; i < _odoCells.Count; i++)
+        {
+            _odoCells[i].BorderThickness = new Thickness(i % columns == 0 ? 0 : 1, 0, 0, 0);
+            _odoCells[i].Margin = new Thickness(0, i >= columns ? 18 : 0, 0, 0);
+            OdoGrid.Children.Add(_odoCells[i]);
+        }
     }
 
     private void ShowSummary()
@@ -362,14 +374,12 @@ public partial class DisksView : UserControl
         LifeColumn.Width = new GridLength(wide ? 370 : 330);
         CheckGap.Width = new GridLength(wide ? 16 : 0);
         CheckColumn.Width = new GridLength(wide ? 330 : 0);
-        SpaceColumn.Width = new GridLength(wide ? 420 : 330);
+        SpaceColumn.Width = new GridLength(wide ? 540 : 400);
         Grid.SetRow(CheckCard, wide ? 2 : 4);
         Grid.SetColumn(CheckCard, wide ? 4 : 0);
         Grid.SetColumn(OdoCard, wide ? 0 : 2);
         Grid.SetColumnSpan(OdoCard, wide ? 5 : 1);
-        OdoGrid.Columns = wide ? 4 : 2;
-        OdoCell2.BorderThickness = new Thickness(wide ? 1 : 0, 0, 0, 0);
-        OdoCell2.Margin = OdoCell3.Margin = new Thickness(0, wide ? 0 : 18, 0, 0);
+        LayoutOdometer();
         LifeDial.MinHeight = wide ? 210 : 190;
     }
 

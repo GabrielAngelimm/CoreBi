@@ -63,19 +63,26 @@
             </Border>
         </DataTemplate>
 
-        <!-- Unidade (letra) na legenda do espaço -->
+        <!-- Unidade (letra) no espaço por unidade: nome, % livre em destaque e usado de total -->
         <DataTemplate x:Key="VolumeRow">
-            <Grid Margin="0,0,0,5">
+            <Grid Margin="0,0,0,12">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Border x:Name="swatch" Width="9" Height="9" CornerRadius="2" Background="{DynamicResource Steel}" VerticalAlignment="Center" Margin="0,1,10,0" />
-                <TextBlock Grid.Column="1" Text="{Binding Letter}" FontWeight="SemiBold" Margin="0,0,8,0" />
-                <TextBlock Grid.Column="2" Text="{Binding Label}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" />
-                <TextBlock Grid.Column="3" Text="{Binding Detail}" Foreground="{DynamicResource Muted}" Style="{StaticResource Num}" Margin="12,0,0,0" />
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Border x:Name="swatch" Grid.RowSpan="2" Width="10" Height="10" CornerRadius="2" Background="{DynamicResource Steel}" VerticalAlignment="Top" Margin="0,5,12,0" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <TextBlock Text="{Binding Letter}" FontSize="15" FontWeight="SemiBold" Margin="0,0,9,0" />
+                    <TextBlock Text="{Binding Label}" FontSize="14" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Column="2" Text="{Binding Percent}" Style="{StaticResource ReadoutText}" FontSize="20" HorizontalAlignment="Right" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Line}" FontSize="13" Foreground="{DynamicResource Muted}" Style="{StaticResource Num}" Margin="0,2,0,0" />
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding PercentLabel}" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,2,0,0" />
             </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsRest}" Value="True">
@@ -95,12 +102,9 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Ellipse Style="{StaticResource DiskLed}" VerticalAlignment="Top" Margin="0,6,0,0" HorizontalAlignment="Left" />
-                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
-                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="{Binding Detail}" Style="{StaticResource StatSub}" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
-                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="SemiBold" Style="{StaticResource Num}" VerticalAlignment="Top" />
+                    <Ellipse Style="{StaticResource DiskLed}" HorizontalAlignment="Left" />
+                    <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="SemiBold" Style="{StaticResource Num}" />
                 </Grid>
             </Border>
         </DataTemplate>
@@ -217,7 +221,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition x:Name="SpaceColumn" Width="420" />
+                                    <ColumnDefinition x:Name="SpaceColumn" Width="540" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal">
@@ -245,10 +249,10 @@
                                 <Border x:Name="SpaceDivider" Grid.Column="1" Width="1" Background="{DynamicResource Line}" Margin="26,0" />
                                 <StackPanel x:Name="DiskSpace" Grid.Column="2">
                                     <Grid>
-                                        <TextBlock Text="Espaço por unidade" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="DiskSpaceSummary" Style="{StaticResource Caption}" Typography.NumeralAlignment="Tabular" HorizontalAlignment="Right" />
+                                        <TextBlock Text="Espaço por unidade" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock x:Name="DiskSpaceSummary" FontSize="13" Foreground="{DynamicResource Muted}" Typography.NumeralAlignment="Tabular" HorizontalAlignment="Right" VerticalAlignment="Center" />
                                     </Grid>
-                                    <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,11" />
+                                    <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,16" />
                                     <ItemsControl x:Name="DiskVolumes" ItemTemplate="{StaticResource VolumeRow}" Focusable="False" />
                                 </StackPanel>
                             </Grid>
@@ -262,27 +266,21 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <StackPanel>
-                                    <TextBlock Text="Vida útil" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock x:Name="LifeCaption" Style="{StaticResource Caption}" Margin="0,3,0,0" />
-                                </StackPanel>
+                                <TextBlock Text="Vida útil" Style="{StaticResource SectionTitle}" />
                                 <local:LifeGauge x:Name="LifeDial" Grid.Row="1" MinHeight="210" Margin="0,6" Caption="vida útil restante" />
                                 <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
                                     <UniformGrid Columns="3">
                                         <StackPanel Margin="0,0,10,0">
                                             <TextBlock Text="Desgaste" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeWear" Style="{StaticResource LifeValue}" />
-                                            <TextBlock x:Name="LifeWearSub" Style="{StaticResource StatSub}" />
+                                            <TextBlock x:Name="LifeWear" Style="{StaticResource LifeValue}" FontSize="26" />
                                         </StackPanel>
                                         <StackPanel Margin="0,0,10,0">
                                             <TextBlock Text="Reserva" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeSpare" Style="{StaticResource LifeValue}" />
-                                            <TextBlock x:Name="LifeSpareSub" Style="{StaticResource StatSub}" />
+                                            <TextBlock x:Name="LifeSpare" Style="{StaticResource LifeValue}" FontSize="26" />
                                         </StackPanel>
                                         <StackPanel x:Name="LifeEnduranceBox">
                                             <TextBlock Text="Resistência" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeEndurance" Style="{StaticResource LifeValue}" />
-                                            <TextBlock x:Name="LifeEnduranceSub" Style="{StaticResource StatSub}" />
+                                            <TextBlock x:Name="LifeEndurance" Style="{StaticResource LifeValue}" FontSize="26" />
                                         </StackPanel>
                                     </UniformGrid>
                                 </Border>
@@ -300,10 +298,7 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid>
-                                    <StackPanel>
-                                        <TextBlock Text="Temperatura" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock x:Name="TempCaption" Style="{StaticResource Caption}" Margin="0,3,0,0" />
-                                    </StackPanel>
+                                    <TextBlock Text="Temperatura" Style="{StaticResource SectionTitle}" />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0">
                                         <Ellipse x:Name="TempLiveDot" Width="7" Height="7" Fill="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,7,0" />
                                         <TextBlock x:Name="TempLiveText" Style="{StaticResource Caption}" Typography.NumeralAlignment="Tabular" />
@@ -346,10 +341,7 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <StackPanel Margin="0,0,0,12">
-                                    <TextBlock Text="Integridade" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock Text="S.M.A.R.T. e contadores do Windows" Style="{StaticResource Caption}" Margin="0,3,0,0" />
-                                </StackPanel>
+                                <TextBlock Text="Integridade" Style="{StaticResource SectionTitle}" Margin="0,0,0,12" />
                                 <ItemsControl x:Name="DiskChecks" Grid.Row="1" ItemTemplate="{StaticResource CheckRow}" Focusable="False">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
@@ -357,7 +349,6 @@
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                 </ItemsControl>
-                                <TextBlock Grid.Row="2" Style="{StaticResource Footnote}" Margin="0,10,0,0" Text="Erros corrigidos pelo próprio disco são normais; só os não corrigidos indicam dado perdido." />
                             </Grid>
                         </Border>
 
@@ -368,28 +359,24 @@
                                     <StackPanel>
                                         <TextBlock Text="Tempo ligado" Style="{StaticResource StatLabel}" />
                                         <TextBlock x:Name="OdoHours" Style="{StaticResource OdoValue}" />
-                                        <TextBlock x:Name="OdoHoursSub" Style="{StaticResource StatSub}" />
                                     </StackPanel>
                                 </Border>
                                 <Border x:Name="OdoCell1" Style="{StaticResource OdoCell}">
                                     <StackPanel>
                                         <TextBlock Text="Ciclos liga/desliga" Style="{StaticResource StatLabel}" />
                                         <TextBlock x:Name="OdoCycles" Style="{StaticResource OdoValue}" />
-                                        <TextBlock x:Name="OdoCyclesSub" Style="{StaticResource StatSub}" />
                                     </StackPanel>
                                 </Border>
                                 <Border x:Name="OdoCell2" Style="{StaticResource OdoCell}">
                                     <StackPanel>
                                         <TextBlock Text="Total gravado" Style="{StaticResource StatLabel}" />
                                         <TextBlock x:Name="OdoWritten" Style="{StaticResource OdoValue}" />
-                                        <TextBlock x:Name="OdoWrittenSub" Style="{StaticResource StatSub}" />
                                     </StackPanel>
                                 </Border>
                                 <Border x:Name="OdoCell3" Style="{StaticResource OdoCell}">
                                     <StackPanel>
                                         <TextBlock Text="Total lido" Style="{StaticResource StatLabel}" />
                                         <TextBlock x:Name="OdoRead" Style="{StaticResource OdoValue}" />
-                                        <TextBlock x:Name="OdoReadSub" Style="{StaticResource StatSub}" />
                                     </StackPanel>
                                 </Border>
                             </UniformGrid>
