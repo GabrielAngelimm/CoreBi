@@ -128,7 +128,6 @@ public partial class OverlayPanel : UserControl
         "gpu_power" or "cpu_power" => "999 W",
         "gpu_volt" => "9,999 V",
         "gpu_fan" => "99999 RPM",
-        "gpu_perfcap" => "Energia + Térmico + HW slowdown + Power brake",
         "vram_used" or "ram_used" => "999,9 GB",
         _ => "—"
     };

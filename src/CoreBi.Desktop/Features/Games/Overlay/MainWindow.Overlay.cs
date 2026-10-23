@@ -46,7 +46,6 @@ public partial class MainWindow
         ["gpu_hotspot"] = "Depende da placa de vídeo.",
         ["gpu_memclock"] = "Depende da placa de vídeo.",
         ["gpu_fan"] = "Depende da placa de vídeo.",
-        ["gpu_perfcap"] = "Só em placas NVIDIA.",
         ["hwnames"] = "Mostra o modelo ao lado de CPU e GPU e a quantidade de RAM (ex.: CPU Ryzen 7 5700X).",
         ["cpu_temp"] = "Precisa do CoreBi aberto como administrador.",
         ["cpu_clock"] = "Precisa do CoreBi aberto como administrador.",
@@ -61,7 +60,7 @@ public partial class MainWindow
     private static readonly Dictionary<string, HashSet<string>> OvPresets = new()
     {
         ["min"] = new() { "fps", "frametime", "low1" },
-        ["gargalo"] = new() { "hwnames", "fps", "low1", "graph", "gpu_load", "gpu_clock", "gpu_perfcap", "vram_used", "vram_pct", "cpu_load", "cpu_maxcore", "cpu_clock", "ram_pct" },
+        ["gargalo"] = new() { "hwnames", "fps", "low1", "graph", "gpu_load", "gpu_clock", "vram_used", "vram_pct", "cpu_load", "cpu_maxcore", "cpu_clock", "ram_pct" },
         ["termico"] = new() { "hwnames", "fps", "gpu_temp", "gpu_hotspot", "gpu_power", "gpu_fan", "vram_temp", "cpu_temp", "cpu_power", "cpu_clock", "clock" },
     };
 
@@ -247,7 +246,6 @@ public partial class MainWindow
         if (show.Contains("gpu_fan"))
             gpu.Add(GpuRow(SensorType.Fan, "GPU Fan", true)?.RawValue is float rpm && rpm > 0 ? $"{rpm:0} RPM"
                   : GpuRow(SensorType.Control, "GPU Fan", true)?.RawValue is float pct ? $"fan {pct:0}%" : "fan —");
-        if (show.Contains("gpu_perfcap")) gpu.Add(MainGpuPerfCap() is { Length: > 0 } cap ? cap : "—");
         Line("GPU", gpu, HwName(_gpus.Count > 0 ? GameCatalog.ShortGpuName(_gpus[0].Name) : null));
 
         var vram = new List<string>();

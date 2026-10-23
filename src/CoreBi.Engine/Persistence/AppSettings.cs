@@ -102,6 +102,7 @@ public sealed class AppSettings
         if (OverlayCorner is not ("TL" or "TR" or "BL" or "BR")) OverlayCorner = "TL";
         if (!double.IsFinite(OverlayScale) || OverlayScale is < 0.5 or > 3) OverlayScale = 1;
         if (!double.IsFinite(OverlayOpacity) || OverlayOpacity is < 0.3 or > 1) OverlayOpacity = 1;
-        OverlayItems = OverlayItems?.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().Take(100).ToList();
+        // O diagnóstico PerfCap saiu do overlay; seleções antigas mantêm os demais itens.
+        OverlayItems = OverlayItems?.Where(x => !string.IsNullOrWhiteSpace(x) && x != "gpu_perfcap").Distinct().Take(100).ToList();
     }
 }

@@ -27,7 +27,6 @@ public static class OverlayMetrics
         new("gpu_power", "GPU", "Consumo", true),
         new("gpu_volt", "GPU", "Tensão do núcleo", false),
         new("gpu_fan", "GPU", "Ventoinha", false),
-        new("gpu_perfcap", "GPU", "Limitador (NVIDIA)", false),
 
         new("vram_used", "VRAM", "Usada (GB)", true),
         new("vram_pct", "VRAM", "Uso (%)", true),
