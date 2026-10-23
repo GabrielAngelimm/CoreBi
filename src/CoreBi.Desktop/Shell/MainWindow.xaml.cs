@@ -85,7 +85,7 @@ public partial class MainWindow : Window
         };
         _timer.Start();
 
-        // Abre maximizada; Restaurar volta ao tamanho padrão (1360 × 860), centralizada.
+        // Abre maximizada. Não há botão de maximizar: restaurar é pelo duplo clique na barra de título ou pelos atalhos do Windows.
         StateChanged += (_, _) => UpdateMaximizeChrome();
         WindowState = WindowState.Maximized;
         UpdateMaximizeChrome();
@@ -174,18 +174,11 @@ public partial class MainWindow : Window
     // ---------------- Janela / navegação ----------------
 
     internal void Min_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
-    internal void Max_Click(object sender, RoutedEventArgs e)
-        => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     internal void Close_Click(object sender, RoutedEventArgs e) => Close();
 
     /// <summary>Maximizada, a janela ocupa exatamente o espaço de trabalho (MaximizeHook) e dispensa o contorno.</summary>
     private void UpdateMaximizeChrome()
-    {
-        bool max = WindowState == WindowState.Maximized;
-        Root.BorderThickness = max ? new Thickness(0) : new Thickness(1);
-        BtnMax.Content = max ? "" : "";
-        BtnMax.ToolTip = max ? "Restaurar" : "Maximizar";
-    }
+        => Root.BorderThickness = WindowState == WindowState.Maximized ? new Thickness(0) : new Thickness(1);
 
     internal async void Nav_Checked(object sender, RoutedEventArgs e)
     {
