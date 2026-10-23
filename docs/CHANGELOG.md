@@ -1,5 +1,16 @@
 # Mudanças
 
+## Não lançado
+
+- Documentação concentrada em docs, com somente README na raiz; licenças centralizadas em licenses e referências de apresentação à base removidas.
+
+- Disco, Energia e Rede com estado/handlers próprios, tarefas aguardáveis e proteção contra atualizações após fechamento.
+- Tema, benchmark de disco e exportação separados nos diretórios correspondentes; remoção de encaminhamentos e método sem uso no shell.
+- Executor WPF isolado da instância única do produto; cobertura de exclusão entre cargas e vida útil das páginas.
+- Resumo de saúde de disco distingue falta de dados de ausência de problemas detectados.
+- README exclusivamente técnico; contrato da interface movido para docs e documentação organizada por responsabilidade.
+- Exclusões de artefatos ancoradas na raiz para não ocultar fontes em Features/Reports.
+
 ## 0.1.1 — 2026-10-23
 
 - Isolamento de handlers/estado das três ferramentas administrativas em suas páginas, com contexto mínimo de vida útil.

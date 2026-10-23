@@ -1,8 +1,3 @@
-using LibreHardwareMonitor.Hardware;
-using System.ComponentModel;
-using System.Globalization;
-using System.Runtime.InteropServices;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Inventory;
@@ -28,7 +23,6 @@ public partial class MainWindow : Window
     private readonly CancellationTokenSource _lifetime = new();
     private readonly FeatureContext _features;
 
-    // Jogos
     internal readonly AppSettings _settings = AppSettings.Load();
 
     internal Brush Fg => (Brush)FindResource("Fg");
@@ -39,6 +33,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _monitor = new SensorMonitor();
         _features = new FeatureContext(this, _workloads, _lifetime.Token);
         ConnectViews();
         ThemeManager.Apply(_settings.LightTheme);
@@ -46,7 +41,6 @@ public partial class MainWindow : Window
         ShowPage("PageDash");
 
         // Sensores: a lista começa vazia e é preenchida quando a detecção do hardware termina (LoadHardwareAsync).
-        _monitor = new SensorMonitor();
         _view = CollectionViewSource.GetDefaultView(_monitor.Rows);
         _view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(SensorRow.Hardware)));
         SensorGrid.ItemsSource = _view;
@@ -105,7 +99,7 @@ public partial class MainWindow : Window
             _overlay?.Close();
             _toast?.Close();
             _frames.Dispose();
-            _gameFetch?.Cancel(); _netCts?.Cancel();
+            _gameFetch?.Cancel();
             UnregisterHotKey(new System.Windows.Interop.WindowInteropHelper(this).Handle, HotkeyId);
             _monitor.Dispose();
         };
@@ -193,8 +187,8 @@ public partial class MainWindow : Window
         switch (page)
         {
             case "PageDash": UpdateDashboard(); break;
-            case "PageDisks": RefreshDiskHealth(); break;
-            case "PageEnergy": RefreshEnergy(); break;
+            case "PageDisks": await PageDisks.RefreshAsync(); break;
+            case "PageEnergy": await PageEnergy.RefreshAsync(); break;
             case "PageDriver": PageDriver.InitDriver(); break;
             case "PageStartup": await PageStartup.ScanStartupAsync(); break;
             case "PageApps": await PageApps.InitAppsAsync(); break;
@@ -206,11 +200,6 @@ public partial class MainWindow : Window
         foreach (var p in new FrameworkElement[] { PageDash, PageSystem, PageSensors, PageGpu, PageGames, PageBottleneck, PageOverlay, PageBench, PageDriver, PageStartup, PageApps, PageDisks, PageEnergy, PageNet, PageStress })
             p.Visibility = p.Name == name ? Visibility.Visible : Visibility.Collapsed;
         UpdateFrameMonitoring();
-    }
-
-    internal bool RequireAdmin()
-    {
-        return PermissionGuard.RequireAdmin(this);
     }
 
     internal bool SaveSettings()

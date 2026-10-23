@@ -1,10 +1,10 @@
 # Componentes de terceiros
 
-Inventário gerado a partir de `project.assets.json` e metadados NuGet restaurados. Inclui dependências transitivas; nem todos os ativos de plataformas listados são embarcados no executável Windows. Avisos originais e textos SPDX ficam em `licenses/`; autores, copyright e links de origem completos em `licenses/packages.json`.
+Inventário gerado a partir de `project.assets.json` e metadados NuGet restaurados. Inclui dependências transitivas; nem todos os ativos de plataformas listados são embarcados no executável Windows. Avisos originais e textos SPDX ficam nesta pasta; autores, copyright e links de origem completos em `packages.json`.
 
 LibreHardwareMonitorLib é distribuído sem modificações na biblioteca, sob MPL-2.0. Seu código-fonte correspondente está no commit indicado na tabela. CoreBi não incorpora uma cópia modificada dessas fontes. A licença MIT do aplicativo não altera a licença dessas bibliotecas.
 
-`System.IO.Ports` permanece como dependência transitiva do monitoramento. A seção Maker, seu gerenciamento COM e os instaladores de drivers seriais foram removidos.
+`System.IO.Ports` é uma dependência transitiva do monitoramento de hardware.
 
 O pacote publicado acompanha estes avisos, as licenças originais disponíveis e as licenças dos runtimes .NET/WPF. As fontes de terceiros continuam disponíveis nos endereços abaixo.
 

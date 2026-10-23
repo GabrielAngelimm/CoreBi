@@ -24,6 +24,17 @@ using LibreHardwareMonitor.Hardware;
 
 internal static partial class Program
 {
+    private sealed class TestApplication : Application
+    {
+        public TestApplication()
+        {
+            // Use production resources without claiming the app's mutex or creating a foreground window.
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            foreach (string resource in new[] { "Theme.xaml", "FeatureTemplates.xaml" })
+                Resources.MergedDictionaries.Add(new ResourceDictionary
+                { Source = new Uri($"/CoreBi.Desktop;component/Shell/{resource}", UriKind.Relative) });
+        }
+    }
     private static readonly List<object> Results = new();
     private static string Output = "";
     private static int Failures;
@@ -113,19 +124,28 @@ internal static partial class Program
     {
         Check("WPF: all 15 selected pages load and navigate", () =>
         {
-            var app = new App(); app.InitializeComponent(); app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            var app = new TestApplication();
             SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
             var window = new MainWindow();
             string[] pages = { "PageDash", "PageSystem", "PageSensors", "PageGpu", "PageDisks", "PageEnergy", "PageNet", "PageGames", "PageBottleneck", "PageOverlay", "PageBench", "PageStress", "PageStartup", "PageDriver", "PageApps" };
             foreach (string page in pages) { window.ShowPage(page); Require(((FrameworkElement)window.FindName(page)).Visibility == Visibility.Visible, "Navigation failed: " + page); }
             foreach (string page in new[] { "PageOc", "PageOptimize", "PageInteg", "PageLauncher", "PageMakerDrv", "PageMakerPorts" }) Require(window.FindName(page) == null, "Removed page remained: " + page);
-            using (var held = window._workloads.TryBegin("test")) { window.StartStress(); Require(window.StressHint.Text.Contains("benchmark"), "Stress ignored coordinator"); }
+            using (var held = window._workloads.TryBegin("test"))
+            {
+                window.StartStress(); Require(window.StressHint.Text.Contains("benchmark"), "Stress ignored coordinator");
+                window.PageNet.RunOrCancelAsync().GetAwaiter().GetResult();
+                Require(window.PageNet.NetStatus.Text.Contains("Termine") && window.PageNet.LastResult == null, "Network ignored coordinator");
+            }
             window.NavBench.IsChecked = true; Require(window.PageBench.Visibility == Visibility.Visible, "Sidebar event did not navigate");
             Require(window.PageBench.Owner == window, "Page not connected to shell");
             Require(window.Title == "CoreBi", "Original title remained");
             ThemeManager.Apply(true); ThemeManager.Apply(false);
             var overlay = new OverlayWindow(); overlay.Close();
+            string diskStatus = window.PageDisks.DiskHealthStatus.Text, energyStatus = window.PageEnergy.EnergyStatus.Text;
             window.Close();
+            Task.WhenAll(window.PageDisks.RefreshAsync(), window.PageEnergy.RefreshAsync(), window.PageNet.RunOrCancelAsync()).GetAwaiter().GetResult();
+            Require(window.PageDisks.DiskHealthStatus.Text == diskStatus && window.PageEnergy.EnergyStatus.Text == energyStatus,
+                "Closed monitoring pages accepted a new collection");
             return new { pages = pages.Length, removed = 6, sharedSensors = true, themeRoundTrip = true, stressBlockedDuringPreparation = true };
         });
     }
@@ -133,17 +153,15 @@ internal static partial class Program
     {
         Check("WPF startup: real initialization and timer ticks without foreground activation", () =>
         {
-            var app = new App(); app.InitializeComponent(); app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            var app = new TestApplication();
             SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
             var window = new MainWindow();
             try
             {
-                var load = window.LoadHardwareAsync();
-                var frame = new DispatcherFrame(); var watch = Stopwatch.StartNew();
-                var poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
-                poll.Tick += (_, _) => { if (load.IsCompleted || watch.Elapsed.TotalSeconds > 40) frame.Continue = false; };
-                poll.Start(); Dispatcher.PushFrame(frame); poll.Stop();
-                Require(load.IsCompleted, "Startup exceeded 40 seconds"); load.GetAwaiter().GetResult();
+                PumpDispatcher(window.LoadHardwareAsync());
+                PumpDispatcher(Task.WhenAll(window.PageDisks.RefreshAsync(), window.PageEnergy.RefreshAsync()));
+                Require(window.PageDisks.DiskCards.Items.Count > 0 && window.PageEnergy.EnergyCards.Items.Count > 0,
+                    $"Monitoring pages: disks={window.PageDisks.DiskCards.Items.Count} ({window.PageDisks.DiskHealthStatus.Text}); power={window.PageEnergy.EnergyCards.Items.Count} ({window.PageEnergy.EnergyStatus.Text})");
                 var sampleFrame = new DispatcherFrame();
                 var sampleTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
                 sampleTimer.Tick += (_, _) => sampleFrame.Continue = false;
@@ -154,6 +172,8 @@ internal static partial class Program
                 {
                     sensorRows = window._monitor.Rows.Count,
                     gpus = window._gpus.Count,
+                    diskCards = window.PageDisks.DiskCards.Items.Count,
+                    powerCards = window.PageEnergy.EnergyCards.Items.Count,
                     window.StatusText.Text,
                     elevated = SensorMonitor.IsElevated,
                     pawnIO = SensorMonitor.IsPawnIOInstalled,
@@ -163,6 +183,17 @@ internal static partial class Program
             }
             finally { window.Close(); }
         });
+    }
+    private static void PumpDispatcher(Task task)
+    {
+        var frame = new DispatcherFrame(); var watch = Stopwatch.StartNew();
+        var poll = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
+        poll.Tick += (_, _) => { if (task.IsCompleted || watch.Elapsed.TotalSeconds > 40) frame.Continue = false; };
+        poll.Start();
+        try { Dispatcher.PushFrame(frame); }
+        finally { poll.Stop(); }
+        Require(task.IsCompleted, "WPF background collection exceeded 40 seconds");
+        task.GetAwaiter().GetResult();
     }
     private static void Hardware()
     {

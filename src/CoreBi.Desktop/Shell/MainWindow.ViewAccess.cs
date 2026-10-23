@@ -1,5 +1,3 @@
-using System.Windows;
-using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 
 using System.Windows.Controls;
@@ -39,16 +37,6 @@ public partial class MainWindow
     internal TextBlock DrivesSummary => PageSystem.DrivesSummary;
     internal ItemsControl DriveCards => PageSystem.DriveCards;
     internal ItemsControl InfoDetails => PageSystem.InfoDetails;
-    internal TextBlock DiskHealthStatus => PageDisks.DiskHealthStatus;
-    internal Button BtnDiskRefresh => PageDisks.BtnDiskRefresh;
-    internal ItemsControl DiskCards => PageDisks.DiskCards;
-    internal TextBlock EnergyStatus => PageEnergy.EnergyStatus;
-    internal Button BtnEnergyRefresh => PageEnergy.BtnEnergyRefresh;
-    internal ItemsControl EnergyCards => PageEnergy.EnergyCards;
-    internal Button BtnNetTest => PageNet.BtnNetTest;
-    internal ScaleTransform NetProgress => PageNet.NetProgress;
-    internal TextBlock NetStatus => PageNet.NetStatus;
-    internal ItemsControl NetCards => PageNet.NetCards;
     internal TextBlock StatusText => PageSensors.StatusText;
     internal TextBox SensorSearch => PageSensors.SensorSearch;
     internal WrapPanel CategoryChips => PageSensors.CategoryChips;
@@ -195,9 +183,9 @@ public partial class MainWindow
     {
         PageDash.Owner = this;
         PageSystem.Owner = this;
-        PageDisks.Owner = this;
-        PageEnergy.Owner = this;
-        PageNet.Owner = this;
+        PageDisks.Initialize(_features, _monitor);
+        PageEnergy.Initialize(_features, _monitor);
+        PageNet.Context = _features;
         PageDriver.Context = _features;
         PageSensors.Owner = this;
         PageGpu.Owner = this;

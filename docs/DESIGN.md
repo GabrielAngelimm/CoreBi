@@ -68,11 +68,11 @@ components:
 
 ## Overview
 
-Um instrumento de bancada para ler o hardware com clareza: informação técnica densa, navegação previsível e marca geométrica discreta. Público inicial: o autor e amigos, em PCs Windows, conforme o pedido do projeto. Conteúdo em português brasileiro; modelos de hardware, APIs e unidades mantêm seus nomes técnicos. Não há proposta de expansão regional nesta etapa.
+Um instrumento de bancada para ler o hardware com clareza: informação técnica densa, navegação previsível e marca geométrica discreta. Público inicial: o autor e amigos, em PCs Windows, conforme o pedido do projeto. Conteúdo em português brasileiro; modelos de hardware, APIs e unidades mantêm seus nomes técnicos.
 
-O usuário aprovou o nome CoreBi e pediu o C e o B com mesma altura e centros alinhados. O ponto e a haste centralizados formam o i no espaço interno. A marca foi desenhada em polígonos próprios; não usa um ícone de chip pronto.
+A geometria da marca está em `brand/geometry.json`: C e B têm a mesma altura e centro; ponto e haste formam o i centralizado.
 
-**Escopo visual aprovado:** marca, ícone e nomes das seções. A revisão completa de UI/UX foi adiada por instrução explícita. O layout e os componentes herdados continuam; não se introduz um novo dashboard, novos fluxos ou animações decorativas nesta migração.
+**Escopo atual:** preservar layout e componentes. Uma reformulação de UI/UX será tratada separadamente, sem alterar as regras das ferramentas.
 
 ## Colors
 
@@ -122,4 +122,4 @@ O auditor estático premium analisa contratos e fontes web; não interpreta XAML
 
 ## Maintenance boundary
 
-As páginas administrativas são donas de seus handlers e recebem FeatureContext; as demais conservam a ponte tipada com MainWindow. A revisão 0.1.1 não mudou o layout. Falha de persistência usa a notificação existente; sucesso parcial, hardware desconhecido e indisponibilidade são expressos em texto.
+As páginas administrativas, Disco, Energia e Rede são donas de seus handlers e recebem FeatureContext; as demais conservam a ponte tipada com MainWindow. A organização da apresentação está documentada em [arquitetura](ARCHITECTURE.md). Falha de persistência usa a notificação existente; sucesso parcial, hardware desconhecido e indisponibilidade são expressos em texto.
