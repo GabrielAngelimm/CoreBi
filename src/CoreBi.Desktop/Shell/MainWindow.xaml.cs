@@ -81,6 +81,7 @@ public partial class MainWindow : Window
             UpdateFrameMonitoring();
             UpdateBottleneck();
             if (PageBench.IsVisible) UpdateBenchLive();
+            UpdateOverlayPreview();
         };
         _timer.Start();
 
@@ -191,6 +192,7 @@ public partial class MainWindow : Window
         switch (page)
         {
             case "PageDash": UpdateDashboard(); break;
+            case "PageOverlay": UpdateOverlayPreview(); break;
             case "PageDisks": await PageDisks.RefreshAsync(); break;
             case "PageEnergy": await PageEnergy.RefreshAsync(); break;
             case "PageDriver": PageDriver.InitDriver(); break;

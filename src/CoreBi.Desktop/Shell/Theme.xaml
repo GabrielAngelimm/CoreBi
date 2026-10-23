@@ -924,6 +924,48 @@
         </Setter>
     </Style>
 
+    <!--
+        Opção em pílula (itens do overlay): ligada = fundo verde-água suave com visto; desligada = contorno e "+".
+        O estado fica claro pela forma e pelo glifo, não só pela cor.
+    -->
+    <Style x:Key="OptionChip" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,0,6,6"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Border x:Name="b" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="14"
+                            Padding="9,4,12,5" Background="Transparent" SnapsToDevicePixels="True">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="mark" Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="10"
+                                       Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,7,0"/>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Steel}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource AccentSoft}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="mark" Property="Text" Value="&#xE73E;"/>
+                            <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Accent}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ===================== Campos ===================== -->
     <!-- Ui.Placeholder = texto de espera · Ui.Icon = glifo à esquerda · Ui.Suffix = unidade à direita -->
     <Style TargetType="TextBox">

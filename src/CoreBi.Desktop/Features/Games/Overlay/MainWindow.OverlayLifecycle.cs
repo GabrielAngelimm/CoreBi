@@ -61,7 +61,9 @@ public partial class MainWindow
         {
             _overlayTimer?.Stop();
             _overlay?.Hide();
+            UpdateOverlayStatus(null);
         }
+        UpdateOverlayPreview();
     }
 
     internal void OvOption_Changed(object sender, RoutedEventArgs e)
@@ -71,6 +73,7 @@ public partial class MainWindow
         _settings.OverlayScale = double.Parse(CheckedTag(OvScalePanel) ?? "1", CultureInfo.InvariantCulture);
         SaveSettings();
         ApplyOverlayOptions();
+        PageOverlay.LayoutPreview(_settings.OverlayCorner, _settings.OverlayScale);
     }
 
     internal void ApplyOverlayOptions()
@@ -92,11 +95,16 @@ public partial class MainWindow
         UpdateOverlayStatus(f);
     }
 
+    /// <summary>Estado da detecção de FPS, com ponto de veredito: medindo um jogo, aguardando, desligada ou com erro.</summary>
     internal void UpdateOverlayStatus(FrameStats? f)
     {
-        if (_frames.Error != null) OvStatus.Text = $"Detecção de FPS indisponível: {_frames.Error}";
-        else if (f != null) OvStatus.Text = $"Ativa · {f.ProcessName}: {f.Fps:0} FPS ({f.FrameTimeMs:0.0} ms) · 1% low {f.Low1Fps:0}";
-        else OvStatus.Text = "Ativa · aguardando um jogo em primeiro plano";
+        (string text, string brush) = _frames.Error != null ? ($"Indisponível: {_frames.Error}", "Danger")
+            : !_frames.Running ? ("Desligada · começa quando o overlay é ligado", "Faint")
+            : f != null ? ($"{f.ProcessName}: {f.Fps:0} FPS ({f.FrameTimeMs:0.0} ms) · 1% low {f.Low1Fps:0}", "Ok")
+            : ("Ativa · aguardando um jogo em primeiro plano", "Accent");
+        OvStatus.Text = text;
+        OvStatus.ToolTip = text;
+        OvStatusDot.SetResourceReference(Shape.FillProperty, brush);
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]

@@ -81,8 +81,10 @@ public partial class MainWindow
     internal CheckBox ChkOverlay => PageOverlay.ChkOverlay;
     internal Grid OvCornerPanel => PageOverlay.OvCornerPanel;
     internal StackPanel OvScalePanel => PageOverlay.OvScalePanel;
-    internal StackPanel OvItemsPanel => PageOverlay.OvItemsPanel;
+    internal SpreadPanel OvItemsPanel => PageOverlay.OvItemsPanel;
+    internal StackPanel OvPresetPanel => PageOverlay.OvPresetPanel;
     internal TextBlock OvStatus => PageOverlay.OvStatus;
+    internal System.Windows.Shapes.Ellipse OvStatusDot => PageOverlay.OvStatusDot;
     internal TextBlock BenchSub => PageBench.BenchSub;
     internal System.Windows.Controls.Primitives.UniformGrid BenchTestPanel => PageBench.BenchTestPanel;
     internal Grid BenchPanelRender => PageBench.BenchPanelRender;

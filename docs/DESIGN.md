@@ -116,6 +116,7 @@ Números em texto comum usam `Typography.NumeralAlignment="Tabular"` (estilo `Nu
 - Barra de título de 52 px: atalho da paleta de comandos à esquerda; número da versão e controles da janela à direita. O estado da coleta aparece na própria página de Sensores.
 - Página: margem de 36 px, cabeçalho com título e subtítulo (o subtítulo carrega o estado vivo da página quando existe) e a ação principal à direita. Painéis com 16 px entre si.
 - Visão geral cabe numa tela com a janela maximizada: o gráfico e a atividade recente ocupam a sobra de altura; em janelas menores a página rola e os componentes passam a duas colunas. Processador e placa de vídeo têm cartão de uso (leitura, medidor e grandezas); RAM, VRAM e disco do sistema dividem um mostrador de anéis concêntricos com quanto está em uso e o que sobra, sem campos que não se aplicam a eles. As setas e as linhas dos anéis levam à seção de cada item, e o gráfico mostra, sob o mouse, a hora e o valor exato de cada canal; enquanto o mouse está sobre ele o gráfico pausa e retoma ao sair.
+- Overlay cabe numa tela com a janela maximizada: interruptor e atalho no cabeçalho; o monitor (desenho fixo escalado por `Viewbox` dentro de `FillBox`) ocupa a sobra de altura e tem um canto tracejado clicável em cada quarto da tela; o canto escolhido mostra a prévia, que é a mesma `OverlayPanel` do jogo com os itens marcados. "O que mostrar" fica ao lado, uma linha por componente distribuída por `SpreadPanel`; a detecção de FPS é uma faixa no rodapé. Em janelas estreitas os dois painéis ficam um embaixo do outro e a página rola.
 - Telas de teste (Benchmark, Teste de carga) usam a mesma composição: palco ou leitura principal à esquerda e uma coluna de 320–330 px com configuração, resultado e histórico.
 
 ## Profundidade e forma
@@ -145,7 +146,8 @@ Todos em `Shell/Theme.xaml`; templates de dados compartilhados em `Shell/Feature
 | Componente a carregar | `ToggleCard` | Teste de carga |
 | Ligar e desligar | `Switch` | Overlay, programas da inicialização, Driver Studio |
 | Tema | `ThemeToggle` | Linha da barra lateral; ligada = modo escuro |
-| Seleção múltipla | `CheckBox` padrão | Apps, itens do overlay |
+| Seleção múltipla | `CheckBox` padrão | Apps |
+| Opção em pílula | `OptionChip` | Itens do overlay (visto quando marcado, "+" quando não) |
 | Veredito | `CardTemplate` | Discos, Energia, Rede (faixa lateral + selo colorido) |
 | Medidor | `Meter`, máscara `SegmentMask` | Gargalo, histórico de benchmarks |
 

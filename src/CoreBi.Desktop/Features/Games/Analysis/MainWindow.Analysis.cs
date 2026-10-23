@@ -38,6 +38,7 @@ public partial class MainWindow
         foreach (var rb in OvScalePanel.Children.OfType<RadioButton>())
             rb.IsChecked = Math.Abs(double.Parse((string)rb.Tag, CultureInfo.InvariantCulture) - _settings.OverlayScale) < 0.01;
         BuildOverlayPicker();
+        PageOverlay.LayoutPreview(_settings.OverlayCorner, _settings.OverlayScale);
         _overlayReady = true;
         UpdateOverlayStatus(null);
     }

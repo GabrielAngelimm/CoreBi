@@ -82,3 +82,57 @@ public sealed class SentenceCaseConverter : IValueConverter
     }
     public object ConvertBack(object value, Type target, object parameter, CultureInfo culture) => throw new NotSupportedException();
 }
+
+/// <summary>
+/// Ocupa o espaço que a página der sem pedir altura própria (além do MinHeight). Serve para um Viewbox numa linha "*":
+/// sozinho, ele pediria a altura da largura toda e faria a página rolar com a janela maximizada.
+/// </summary>
+public sealed class FillBox : System.Windows.Controls.Decorator
+{
+    protected override Size MeasureOverride(Size constraint)
+    {
+        // Mede o filho no mínimo; no arranjo um Viewbox cresce sozinho até o espaço que a página der.
+        Child?.Measure(new Size(constraint.Width, Math.Min(constraint.Height, MinHeight)));
+        return new Size(0, 0);
+    }
+
+    protected override Size ArrangeOverride(Size arrangeSize)
+    {
+        Child?.Arrange(new Rect(arrangeSize));
+        return arrangeSize;
+    }
+}
+
+/// <summary>
+/// Pilha vertical que reparte a sobra de altura igualmente entre os filhos (cada um cresce e centraliza o conteúdo),
+/// em vez de deixar um vão vazio no fim do painel. Sem sobra, comporta-se como um StackPanel.
+/// </summary>
+public sealed class SpreadPanel : System.Windows.Controls.Panel
+{
+    protected override Size MeasureOverride(Size available)
+    {
+        double w = 0, h = 0;
+        foreach (UIElement child in InternalChildren)
+        {
+            child.Measure(new Size(available.Width, double.PositiveInfinity));
+            w = Math.Max(w, child.DesiredSize.Width);
+            h += child.DesiredSize.Height;
+        }
+        return new Size(w, h);
+    }
+
+    protected override Size ArrangeOverride(Size final)
+    {
+        var visible = InternalChildren.Cast<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
+        double used = visible.Sum(c => c.DesiredSize.Height);
+        double extra = visible.Count > 0 ? Math.Max(0, final.Height - used) / visible.Count : 0;
+        double y = 0;
+        foreach (var child in visible)
+        {
+            double h = child.DesiredSize.Height + extra;
+            child.Arrange(new Rect(0, y, final.Width, h));
+            y += h;
+        }
+        return final;
+    }
+}
