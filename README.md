@@ -31,9 +31,11 @@ As ferramentas de monitoramento e benchmark usam leituras ou cargas reais. FPS e
 
 ## Instalar e executar
 
-Baixe o pacote `CoreBi-*-win-x64.zip` em [Releases](https://github.com/GabrielAngelimm/CoreBi/releases), extraia **todo o conteúdo** e abra `CoreBi.exe`. O runtime .NET está incluído; o SDK é necessário apenas para desenvolvimento.
+Baixe `CoreBi-*-win-x64-setup.exe` em [Releases](https://github.com/GabrielAngelimm/CoreBi/releases) e execute o instalador. Ele instala em `Program Files`, cria atalhos e registra o CoreBi para desinstalação. O componente do driver PawnIO vem marcado e é instalado pelo winget; pode ser desmarcado. O runtime .NET está incluído; o SDK é necessário apenas para desenvolvimento.
 
-O aplicativo solicita administrador para sensores, ETW e ferramentas administrativas. Sensores internos de CPU dependem de PawnIO e do suporte do LibreHardwareMonitor ao equipamento. Instalar esse driver é uma ação explícita na interface.
+Sem instalador, extraia **todo o conteúdo** de `CoreBi-*-win-x64.zip` e abra `CoreBi.exe`.
+
+O aplicativo solicita administrador para sensores, ETW e ferramentas administrativas. Sensores internos de CPU dependem de PawnIO e do suporte do LibreHardwareMonitor ao equipamento. Pela versão zip, instalar esse driver é uma ação explícita na interface. Pelo instalador, ele é uma escolha feita durante a instalação.
 
 ## Configuração
 

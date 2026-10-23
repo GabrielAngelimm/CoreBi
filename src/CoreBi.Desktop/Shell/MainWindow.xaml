@@ -83,7 +83,7 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
-                        <TextBlock x:Name="SideVersion" Text="Versão 0.1.1, prévia técnica" Foreground="{DynamicResource Faint}" FontSize="11" Margin="4,10,0,0" />
+                        <TextBlock x:Name="SideVersion" Text="Versão 0.2.0, prévia técnica" Foreground="{DynamicResource Faint}" FontSize="11" Margin="4,10,0,0" />
                     </StackPanel>
 
                     <!-- Navegação -->
