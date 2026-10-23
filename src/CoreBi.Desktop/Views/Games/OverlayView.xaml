@@ -1,140 +1,472 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.OverlayView" xmlns:local="clr-namespace:CoreBi.Desktop">
     <UserControl.Resources>
         <!--
-            Canto da tela: a própria prévia é o seletor. Clicar num canto do "monitor" posiciona o overlay ali;
-            o canto escolhido mostra uma miniatura da leitura de FPS.
+            Canto da tela: cada quarto da tela do monitor é um botão. O canto livre mostra um contorno tracejado
+            (o lugar onde o overlay pode ficar); sob o mouse ele acende com "Mover para cá". O canto escolhido some
+            e dá lugar à prévia do próprio overlay. A tela é um "jogo", então as cores aqui são fixas, como no overlay.
         -->
-        <Style x:Key="CornerSpot" TargetType="RadioButton">
+        <Style x:Key="CornerZone" TargetType="RadioButton">
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="b" Width="104" Height="50" CornerRadius="6" BorderThickness="1" BorderBrush="Transparent" Background="Transparent" Padding="9,6">
-                            <Grid>
-                                <StackPanel x:Name="mini" Visibility="Collapsed">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="144" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="17" Foreground="{DynamicResource Accent}" />
-                                        <TextBlock Text="FPS" FontSize="9" Foreground="#9FB0BC" VerticalAlignment="Bottom" Margin="4,0,0,3" />
-                                    </StackPanel>
-                                    <Border Height="3" Width="70" HorizontalAlignment="Left" Background="#2C3B47" CornerRadius="1.5" Margin="0,3,0,0" />
-                                    <Border Height="3" Width="52" HorizontalAlignment="Left" Background="#2C3B47" CornerRadius="1.5" Margin="0,3,0,0" />
+                        <Grid Background="Transparent">
+                            <Grid x:Name="zone" Width="150" Height="86" Margin="14"
+                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                                <Rectangle x:Name="dash" RadiusX="8" RadiusY="8" Stroke="#66B4C4CF" StrokeThickness="1.5" StrokeDashArray="3 2.5" Fill="#260A1015" />
+                                <TextBlock x:Name="plus" Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="13" Foreground="#99B4C4CF"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <StackPanel x:Name="hint" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0">
+                                    <TextBlock Text="&#xE7C2;" FontFamily="{StaticResource Icons}" FontSize="15" Foreground="#27C9BC" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Mover para cá" FontSize="12" FontWeight="SemiBold" Foreground="#E6EEF1" Margin="0,6,0,0" />
                                 </StackPanel>
-                                <TextBlock x:Name="hint" Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="12" Foreground="#5E6E7A" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
                             </Grid>
-                        </Border>
+                            <!-- Foco de teclado: o mesmo contorno, em verde-água -->
+                            <Rectangle x:Name="focus" Width="158" Height="94" Margin="10" RadiusX="11" RadiusY="11" Stroke="#27C9BC" StrokeThickness="2" Visibility="Collapsed"
+                                       HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="BorderBrush" Value="#3A4A56" />
-                                <Setter TargetName="hint" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="dash" Property="Stroke" Value="#27C9BC" />
+                                <Setter TargetName="dash" Property="Fill" Value="#3327C9BC" />
+                                <Setter TargetName="plus" Property="Visibility" Value="Collapsed" />
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="hint" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="hint" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.1" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="focus" Property="Visibility" Value="Visible" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="#CC0F1820" />
-                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Accent}" />
-                                <Setter TargetName="mini" Property="Visibility" Value="Visible" />
-                                <Setter TargetName="hint" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="focus" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="zone" Property="Visibility" Value="Hidden" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Controle deslizante fino: trilho, parte preenchida em verde-água e botão redondo -->
+        <Style x:Key="OpacitySlider" TargetType="Slider">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Height="22" Background="Transparent">
+                            <Border Height="4" CornerRadius="2" Background="{DynamicResource Line}" />
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge" Focusable="False" IsTabStop="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Grid Background="Transparent"><Border Height="4" CornerRadius="2" Background="{DynamicResource Accent}" /></Grid>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge" Focusable="False" IsTabStop="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton"><Grid Background="Transparent" /></ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Focusable="False">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Ellipse x:Name="e" Width="14" Height="14" Fill="{DynamicResource Fg}" Stroke="{DynamicResource Accent}" StrokeThickness="2" />
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="e" Property="Fill" Value="{DynamicResource Accent}" /></Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Compatibilidade da detecção de FPS: selo com glifo e cor de veredito -->
+        <Style x:Key="CompatText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style x:Key="CompatGlyph" TargetType="TextBlock" BasedOn="{StaticResource IconGlyph}">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Margin" Value="0,1,8,0" />
+        </Style>
+        <Style x:Key="CompatRow" TargetType="Border">
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="Padding" Value="10,5,12,6" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+        </Style>
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Style="{StaticResource Page}">
-            <Grid Style="{StaticResource PageHeader}">
-                <StackPanel>
-                    <TextBlock Text="Overlay" Style="{StaticResource PageTitle}" />
-                    <TextBlock Text="FPS, frametime e sensores por cima do jogo, sem injetar nada no processo." Style="{StaticResource PageSubtitle}" />
-                </StackPanel>
-            </Grid>
+    <!--
+        Uma tela: com a janela maximizada tudo cabe sem rolar (o monitor ocupa a sobra de altura);
+        em janelas menores a página volta a rolar e os dois painéis do meio ficam um embaixo do outro.
+    -->
+    <ScrollViewer x:Name="OvScroll" VerticalScrollBarVisibility="Auto">
+        <Grid MinHeight="{Binding ViewportHeight, ElementName=OvScroll}">
+            <Grid Style="{StaticResource PageGrid}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="16" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-            <!-- Interruptor principal + atalho -->
-            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16" Padding="24,20">
-                <Grid>
+                <!-- Cabeçalho: título à esquerda, interruptor e atalho à direita -->
+                <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,22">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <CheckBox x:Name="ChkOverlay" Style="{StaticResource Switch}" Content="Mostrar overlay" FontSize="15" FontWeight="SemiBold" Checked="ChkOverlay_Changed" Unchecked="ChkOverlay_Changed" />
-                        <TextBlock Text="Funciona em tela cheia sem bordas e na maioria dos jogos DirectX 11 e 12." Style="{StaticResource Caption}" Margin="49,4,0,0" />
+                        <TextBlock Text="OverlayBi" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="FPS, frametime e sensores por cima do jogo, sem injetar nada no processo." Style="{StaticResource PageSubtitle}" />
                     </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Atalho global" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                        <Border Style="{StaticResource KeyCap}"><TextBlock Text="Ctrl" Style="{StaticResource KeyCapText}" /></Border>
-                        <Border Style="{StaticResource KeyCap}"><TextBlock Text="Shift" Style="{StaticResource KeyCapText}" /></Border>
-                        <Border Style="{StaticResource KeyCap}" Margin="0"><TextBlock Text="O" Style="{StaticResource KeyCapText}" /></Border>
-                    </StackPanel>
+                    <Border Grid.Column="1" Style="{StaticResource CardBorder}" Padding="18,12" VerticalAlignment="Center" Margin="16,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox x:Name="ChkOverlay" Style="{StaticResource Switch}" Content="Mostrar overlay" FontSize="14" FontWeight="SemiBold"
+                                      Checked="ChkOverlay_Changed" Unchecked="ChkOverlay_Changed" />
+                            <Border Width="1" Height="22" Background="{DynamicResource Line}" Margin="18,0" />
+                            <TextBlock Text="Atalho global" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <Border Style="{StaticResource KeyCap}"><TextBlock Text="Ctrl" Style="{StaticResource KeyCapText}" /></Border>
+                            <Border Style="{StaticResource KeyCap}"><TextBlock Text="Shift" Style="{StaticResource KeyCapText}" /></Border>
+                            <Border Style="{StaticResource KeyCap}" Margin="0"><TextBlock Text="O" Style="{StaticResource KeyCapText}" /></Border>
+                        </StackPanel>
+                    </Border>
                 </Grid>
-            </Border>
 
-            <Grid Margin="0,0,0,16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="16" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Border Style="{StaticResource CardBorder}" Padding="24,20">
-                    <StackPanel>
-                        <TextBlock Text="Posição e tamanho" Style="{StaticResource SectionTitle}" />
-                        <TextBlock Text="Clique no canto do monitor onde o overlay deve ficar." Style="{StaticResource Caption}" Margin="0,3,0,14" />
-                        <!-- Monitor em miniatura (16:9) -->
-                        <Border Width="384" Height="216" CornerRadius="10" Background="#0A1015" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" HorizontalAlignment="Left">
-                            <Grid x:Name="OvCornerPanel" Margin="8">
-                                <RadioButton Style="{StaticResource CornerSpot}" GroupName="OvCorner" Tag="TL" ToolTip="Superior esquerdo" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="OvOption_Changed" />
-                                <RadioButton Style="{StaticResource CornerSpot}" GroupName="OvCorner" Tag="TR" ToolTip="Superior direito" HorizontalAlignment="Right" VerticalAlignment="Top" Checked="OvOption_Changed" />
-                                <RadioButton Style="{StaticResource CornerSpot}" GroupName="OvCorner" Tag="BL" ToolTip="Inferior esquerdo" HorizontalAlignment="Left" VerticalAlignment="Bottom" Checked="OvOption_Changed" />
-                                <RadioButton Style="{StaticResource CornerSpot}" GroupName="OvCorner" Tag="BR" ToolTip="Inferior direito" HorizontalAlignment="Right" VerticalAlignment="Bottom" Checked="OvOption_Changed" />
-                            </Grid>
-                        </Border>
-                        <Border Width="64" Height="10" Background="{DynamicResource LineStrong}" CornerRadius="0,0,4,4" HorizontalAlignment="Left" Margin="160,0,0,0" />
-                        <Grid Margin="0,16,0,0">
-                            <TextBlock Text="Tamanho" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0" />
-                            <Border Style="{StaticResource SegmentGroup}" HorizontalAlignment="Right">
-                                <StackPanel x:Name="OvScalePanel" Orientation="Horizontal">
-                                    <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Pequeno" Tag="0.85" Checked="OvOption_Changed" />
-                                    <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Médio" Tag="1" Checked="OvOption_Changed" />
-                                    <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Grande" Tag="1.3" Checked="OvOption_Changed" />
+                <!-- Meio: posição (com a prévia) e o que mostrar, lado a lado -->
+                <Grid x:Name="OvMain" Grid.Row="1" SizeChanged="OvMain_SizeChanged">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="6*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="5*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border x:Name="OvPositionCard" Style="{StaticResource CardBorder}" Padding="24,20,24,18">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="0,0,16,0">
+                                    <TextBlock Text="Posição e tamanho" Style="{StaticResource SectionTitle}" />
+                                    <TextBlock Text="Clique num dos cantos tracejados da tela para levar o overlay até lá. A prévia segue o que está marcado em O que mostrar."
+                                               Style="{StaticResource Caption}" Margin="0,3,0,0" />
                                 </StackPanel>
-                            </Border>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-                <Border Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,20">
-                    <StackPanel>
-                        <TextBlock Text="Detecção de FPS" Style="{StaticResource SectionTitle}" />
-                        <TextBlock x:Name="OvStatus" FontSize="15" FontWeight="SemiBold" Margin="0,12,0,0" TextWrapping="Wrap" Typography.NumeralAlignment="Tabular" />
-                        <Border Style="{StaticResource Divider}" Margin="0,16" />
-                        <TextBlock Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Text="O FPS é medido pelos eventos de apresentação do Windows (ETW): nada é injetado no jogo, mas a compatibilidade com cada anti-cheat depende do jogo." />
-                        <TextBlock Style="{StaticResource Footnote}" Margin="0,10,0,0" Text="Funciona com DirectX 9 a 12. Jogos em Vulkan ou OpenGL só aparecem se o driver apresentar via DXGI. A tela cheia exclusiva antiga não mostra o overlay." />
-                    </StackPanel>
-                </Border>
-            </Grid>
+                                <Border Grid.Column="1" Style="{StaticResource Badge}" Margin="0,1,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse x:Name="OvPreviewDot" Width="6" Height="6" Fill="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,6,0" />
+                                        <TextBlock x:Name="OvPreviewNote" Text="Prévia com FPS de exemplo" Style="{StaticResource BadgeText}" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
 
-            <Border Style="{StaticResource CardBorder}" Padding="24,20">
-                <StackPanel>
+                            <!-- Monitor: desenho fixo em 820 de largura, escalado para o espaço que sobrar -->
+                            <local:FillBox x:Name="OvMonitorBox" Grid.Row="1" MinHeight="300" Margin="0,18,0,16">
+                                <Viewbox Stretch="Uniform">
+                                    <StackPanel Width="820">
+                                        <Border CornerRadius="16" Background="#06090C" BorderBrush="#2B3944" BorderThickness="1" Padding="10,10,10,0">
+                                            <StackPanel>
+                                                <Grid Width="798" Height="449">
+                                                    <Grid.Clip>
+                                                        <RectangleGeometry Rect="0,0,798,449" RadiusX="7" RadiusY="7" />
+                                                    </Grid.Clip>
+                                                    <!-- Cena de jogo: céu ao entardecer, serras e chão, em tons apagados para não brigar com o overlay -->
+                                                    <Rectangle>
+                                                        <Rectangle.Fill>
+                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                <GradientStop Color="#111B24" Offset="0" />
+                                                                <GradientStop Color="#1F2E3B" Offset="0.32" />
+                                                                <GradientStop Color="#3A4852" Offset="0.55" />
+                                                                <GradientStop Color="#5A5852" Offset="0.66" />
+                                                                <GradientStop Color="#2A3036" Offset="0.8" />
+                                                            </LinearGradientBrush>
+                                                        </Rectangle.Fill>
+                                                    </Rectangle>
+                                                    <Canvas IsHitTestVisible="False">
+                                                        <Ellipse Canvas.Left="360" Canvas.Top="150" Width="380" Height="210">
+                                                            <Ellipse.Fill>
+                                                                <RadialGradientBrush>
+                                                                    <GradientStop Color="#4DE3A57C" Offset="0" />
+                                                                    <GradientStop Color="#00E3A57C" Offset="1" />
+                                                                </RadialGradientBrush>
+                                                            </Ellipse.Fill>
+                                                        </Ellipse>
+                                                        <Path Fill="#34424D" Data="M0,292 L64,250 L122,272 L204,212 L282,258 L352,228 L440,276 L532,222 L612,254 L694,214 L798,258 L798,449 L0,449 Z" />
+                                                        <Path Fill="#222D36" Data="M0,334 L86,286 L168,318 L258,272 L346,326 L428,296 L516,338 L606,292 L698,326 L798,296 L798,449 L0,449 Z" />
+                                                        <Path Fill="#121A20" Data="M0,388 C150,362 292,378 418,370 C556,360 676,382 798,366 L798,449 L0,449 Z" />
+                                                    </Canvas>
+                                                    <!-- Vinheta e reflexo do vidro -->
+                                                    <Rectangle IsHitTestVisible="False">
+                                                        <Rectangle.Fill>
+                                                            <RadialGradientBrush RadiusX="0.72" RadiusY="0.78">
+                                                                <GradientStop Color="#00000000" Offset="0.55" />
+                                                                <GradientStop Color="#99030507" Offset="1" />
+                                                            </RadialGradientBrush>
+                                                        </Rectangle.Fill>
+                                                    </Rectangle>
+                                                    <Rectangle IsHitTestVisible="False">
+                                                        <Rectangle.Fill>
+                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0.6,1">
+                                                                <GradientStop Color="#12FFFFFF" Offset="0" />
+                                                                <GradientStop Color="#00FFFFFF" Offset="0.45" />
+                                                            </LinearGradientBrush>
+                                                        </Rectangle.Fill>
+                                                    </Rectangle>
+
+                                                    <!-- Os quatro cantos (um quarto da tela cada) -->
+                                                    <Grid x:Name="OvCornerPanel">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="*" />
+                                                            <RowDefinition Height="*" />
+                                                        </Grid.RowDefinitions>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <RadioButton Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="TL" ToolTip="Superior esquerdo"
+                                                                     HorizontalContentAlignment="Left" VerticalContentAlignment="Top" Checked="OvOption_Changed" />
+                                                        <RadioButton Grid.Column="1" Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="TR" ToolTip="Superior direito"
+                                                                     HorizontalContentAlignment="Right" VerticalContentAlignment="Top" Checked="OvOption_Changed" />
+                                                        <RadioButton Grid.Row="1" Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="BL" ToolTip="Inferior esquerdo"
+                                                                     HorizontalContentAlignment="Left" VerticalContentAlignment="Bottom" Checked="OvOption_Changed" />
+                                                        <RadioButton Grid.Row="1" Grid.Column="1" Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="BR" ToolTip="Inferior direito"
+                                                                     HorizontalContentAlignment="Right" VerticalContentAlignment="Bottom" Checked="OvOption_Changed" />
+                                                    </Grid>
+
+                                                    <!-- Prévia: a mesma caixa do overlay real, com os itens marcados e os sensores ao vivo -->
+                                                    <Grid x:Name="OvPreviewHost" IsHitTestVisible="False" Margin="14" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                                        <Rectangle Margin="-5" RadiusX="11" RadiusY="11" Stroke="#27C9BC" StrokeThickness="1.5" StrokeDashArray="3 2.5" Opacity="0.85" />
+                                                        <Decorator>
+                                                            <Decorator.LayoutTransform>
+                                                                <ScaleTransform x:Name="OvPreviewScale" ScaleX="0.72" ScaleY="0.72" />
+                                                            </Decorator.LayoutTransform>
+                                                            <local:OverlayPanel x:Name="OvPreview" />
+                                                        </Decorator>
+                                                    </Grid>
+                                                </Grid>
+                                                <!-- Moldura inferior com o LED: aceso quando o overlay está ligado -->
+                                                <Grid Height="22">
+                                                    <Ellipse x:Name="OvLed" Width="5" Height="5" Fill="#33414C" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                        <!-- Pé: coluna afunilada e base -->
+                                        <Path HorizontalAlignment="Center" Data="M14,0 L110,0 L124,58 L0,58 Z" Stretch="None">
+                                            <Path.Fill>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                    <GradientStop Color="#0B1014" Offset="0" />
+                                                    <GradientStop Color="#1D272F" Offset="0.25" />
+                                                    <GradientStop Color="#26313A" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Path.Fill>
+                                        </Path>
+                                        <Border Width="270" Height="12" CornerRadius="6,6,8,8" HorizontalAlignment="Center" BorderBrush="#33424E" BorderThickness="0,1,0,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                    <GradientStop Color="#2B3740" Offset="0" />
+                                                    <GradientStop Color="#151C22" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                    </StackPanel>
+                                </Viewbox>
+                            </local:FillBox>
+
+                            <Grid Grid.Row="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE81E;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Accent}" Margin="0,0,8,0" />
+                                    <TextBlock Text="Posição" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                    <TextBlock x:Name="OvCornerName" Text="Superior esquerdo" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <TextBlock Text="Opacidade" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <Slider x:Name="OvOpacity" Style="{StaticResource OpacitySlider}" Minimum="30" Maximum="100" SmallChange="5" LargeChange="10"
+                                            TickFrequency="5" IsSnapToTickEnabled="True" Width="130" VerticalAlignment="Center" ValueChanged="OvOpacity_Changed" />
+                                    <TextBlock x:Name="OvOpacityText" Text="100%" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" FontSize="12"
+                                               Width="38" TextAlignment="Right" VerticalAlignment="Center" Margin="6,0,22,0" />
+                                    <TextBlock Text="Tamanho" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <Border Style="{StaticResource SegmentGroup}">
+                                        <StackPanel x:Name="OvScalePanel" Orientation="Horizontal">
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Pequeno" Tag="1" Checked="OvOption_Changed" />
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Médio" Tag="1.35" Checked="OvOption_Changed" />
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Grande" Tag="1.75" Checked="OvOption_Changed" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- O que mostrar: uma linha por componente, com os itens em pílulas (marcado = visto verde-água) -->
+                    <Border x:Name="OvItemsCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,20,24,18">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Margin="0,0,16,0">
+                                    <TextBlock Text="O que mostrar" Style="{StaticResource SectionTitle}" />
+                                    <TextBlock Text="Cada componente vira uma linha do overlay, só com os itens marcados. Vale na hora e fica salvo." Style="{StaticResource Caption}" Margin="0,3,0,0" />
+                                </StackPanel>
+                                <Border Grid.Column="1" Style="{StaticResource SegmentGroup}" VerticalAlignment="Top">
+                                    <StackPanel x:Name="OvPresetPanel" Orientation="Horizontal">
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Essencial" Tag="default" Click="OvPreset_Click">
+                                            <RadioButton.ToolTip>
+                                                <StackPanel MaxWidth="290">
+                                                    <TextBlock Text="Essencial" FontWeight="SemiBold" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="O básico para jogar sem poluir a tela: o que a placa de vídeo e o processador estão fazendo agora, e quanta memória está em uso." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS, frametime e 1% low · GPU: uso, temperatura, clock e consumo · VRAM · CPU: uso, temperatura, clock e consumo · RAM · nome do hardware" />
+                                                </StackPanel>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Só FPS" Tag="min" Click="OvPreset_Click">
+                                            <RadioButton.ToolTip>
+                                                <StackPanel MaxWidth="290">
+                                                    <TextBlock Text="Só FPS" FontWeight="SemiBold" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="O overlay mais discreto possível: só o contador e a estabilidade dos quadros." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS, frametime e 1% low" />
+                                                </StackPanel>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Gargalo" Tag="gargalo" Click="OvPreset_Click">
+                                            <RadioButton.ToolTip>
+                                                <StackPanel MaxWidth="290">
+                                                    <TextBlock Text="Gargalo" FontWeight="SemiBold" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="Para descobrir quem está limitando o jogo: compara o uso da GPU com o do núcleo de CPU mais ocupado e mostra se a memória aperta." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS, 1% low e gráfico · GPU: uso, clock e limitador · VRAM · CPU: uso, núcleo mais ocupado e clock · RAM em %" />
+                                                </StackPanel>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Térmico" Tag="termico" Click="OvPreset_Click">
+                                            <RadioButton.ToolTip>
+                                                <StackPanel MaxWidth="290">
+                                                    <TextBlock Text="Térmico" FontWeight="SemiBold" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="Para acompanhar calor e consumo em sessões longas e testar a refrigeração." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS · GPU: temperatura, hotspot, consumo e ventoinha · VRAM: temperatura · CPU: temperatura, consumo e clock · hora" />
+                                                </StackPanel>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Tudo" Tag="all" Click="OvPreset_Click">
+                                            <RadioButton.ToolTip>
+                                                <StackPanel MaxWidth="290">
+                                                    <TextBlock Text="Tudo" FontWeight="SemiBold" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="Liga todos os itens disponíveis. Fica grande: combina melhor com o tamanho Pequeno." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="Todos os grupos: FPS, GPU, VRAM, CPU, RAM e rodapé" />
+                                                </StackPanel>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                            <local:SpreadPanel x:Name="OvItemsPanel" Grid.Row="1" Margin="0,10,0,6" />
+                            <TextBlock Grid.Row="2" Style="{StaticResource Footnote}"
+                                       Text="Hotspot, clock da memória e ventoinha dependem da placa; o limitador é só NVIDIA. Clock, temperatura e consumo da CPU precisam do CoreBi aberto como administrador." />
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- Detecção de FPS: estado, como funciona e onde funciona, numa faixa só -->
+                <Border Grid.Row="3" Style="{StaticResource CardBorder}" Padding="22,16,22,8">
                     <Grid>
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" MinWidth="300" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Margin="0,0,16,0">
-                            <TextBlock Text="O que mostrar" Style="{StaticResource SectionTitle}" />
-                            <TextBlock Text="A mudança vale na hora e fica salva. Cada componente vira uma linha só com os itens marcados." Style="{StaticResource Caption}" Margin="0,3,0,0" />
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Top" Margin="0,0,0,8">
+                            <Border Style="{StaticResource IconTile}" VerticalAlignment="Top">
+                                <TextBlock Text="&#xEC4A;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{DynamicResource Accent}" />
+                            </Border>
+                            <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="Detecção de FPS" Style="{StaticResource SectionTitle}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                    <Ellipse x:Name="OvStatusDot" Width="7" Height="7" Fill="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,8,0" />
+                                    <TextBlock x:Name="OvStatus" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="460" Style="{StaticResource Num}" />
+                                </StackPanel>
+                            </StackPanel>
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                            <TextBlock Text="Predefinições" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                            <Button Style="{StaticResource GhostButton}" Content="Só FPS" Tag="min" Click="OvPreset_Click" />
-                            <Button Style="{StaticResource GhostButton}" Content="Padrão" Tag="default" Click="OvPreset_Click" />
-                            <Button Style="{StaticResource GhostButton}" Content="Tudo" Tag="all" Click="OvPreset_Click" />
-                        </StackPanel>
+                        <Border Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="22,0" Margin="24,0,16,8" VerticalAlignment="Center">
+                            <TextBlock Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" FontSize="12.5" LineHeight="18"
+                                       Text="O FPS vem dos eventos de apresentação do Windows (ETW): nada é injetado no jogo. A compatibilidade com cada anti-cheat depende do jogo." />
+                        </Border>
+                        <!-- Onde funciona: verde = sim, âmbar = depende, vermelho = não -->
+                        <WrapPanel Grid.Column="2" Width="404" VerticalAlignment="Center">
+                            <Border Style="{StaticResource CompatRow}" Background="{DynamicResource OkSoft}" Width="190">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE73E;" Style="{StaticResource CompatGlyph}" Foreground="{DynamicResource Ok}" />
+                                    <TextBlock Text="DirectX 9 a 12" Style="{StaticResource CompatText}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource CompatRow}" Background="{DynamicResource OkSoft}" Width="190">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE73E;" Style="{StaticResource CompatGlyph}" Foreground="{DynamicResource Ok}" />
+                                    <TextBlock Text="Tela cheia sem bordas" Style="{StaticResource CompatText}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource CompatRow}" Background="{DynamicResource WarnSoft}" Width="190"
+                                    ToolTip="Jogos em Vulkan ou OpenGL só aparecem se o driver apresentar os quadros via DXGI (comum em drivers recentes, não garantido).">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE7BA;" Style="{StaticResource CompatGlyph}" Foreground="{DynamicResource Warn}" />
+                                    <TextBlock Text="Vulkan e OpenGL via DXGI" Style="{StaticResource CompatText}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource CompatRow}" Background="{DynamicResource DangerSoft}" Width="190"
+                                    ToolTip="No modo de tela cheia exclusiva antigo o jogo fica por cima de qualquer janela, então o overlay não aparece. Prefira tela cheia sem bordas.">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE711;" Style="{StaticResource CompatGlyph}" Foreground="{DynamicResource Danger}" />
+                                    <TextBlock Text="Tela cheia exclusiva" Style="{StaticResource CompatText}" />
+                                </StackPanel>
+                            </Border>
+                        </WrapPanel>
                     </Grid>
-                    <StackPanel x:Name="OvItemsPanel" Margin="0,8,0,0" />
-                    <TextBlock Style="{StaticResource Footnote}" Margin="0,14,0,0" Text="Clock da memória, hotspot e ventoinha dependem da placa. O limitador (PerfCap) é só NVIDIA. Clock e temperatura da CPU precisam do CoreBi aberto como administrador." />
-                </StackPanel>
-            </Border>
-        </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
     </ScrollViewer>
 </UserControl>

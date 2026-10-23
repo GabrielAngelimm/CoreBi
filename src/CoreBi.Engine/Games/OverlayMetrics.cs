@@ -3,8 +3,11 @@ namespace CoreBi.Engine.Games;
 /// <summary>Item que pode aparecer no overlay. Group: "FPS", "GPU", "VRAM", "CPU", "RAM" ou "Outros".</summary>
 public sealed record OverlayMetric(string Key, string Group, string Label, bool Default);
 
-/// <summary>Linha do overlay já pronta para mostrar (ex.: "GPU" · "98%  65 °C  2790 MHz").</summary>
-public sealed record OverlayLine(string Label, string Value);
+/// <summary>Linha do overlay já pronta para mostrar (ex.: "GPU" · "98%", "65 °C", "2790 MHz"); a interface separa as partes.</summary>
+public sealed record OverlayLine(string Label, IReadOnlyList<string> Parts, string? Detail = null)
+{
+    public string Value => string.Join("  ", Parts);
+}
 
 /// <summary>Catálogo do que o overlay pode mostrar, na ordem em que aparece.</summary>
 public static class OverlayMetrics
@@ -14,7 +17,7 @@ public static class OverlayMetrics
         new("fps", "FPS", "FPS", true),
         new("frametime", "FPS", "Frametime (ms)", true),
         new("low1", "FPS", "1% low", true),
-        new("graph", "FPS", "Gráfico de frametime", true),
+        new("graph", "FPS", "Gráfico de frametime", false),
 
         new("gpu_load", "GPU", "Uso", true),
         new("gpu_temp", "GPU", "Temperatura", true),
@@ -27,7 +30,7 @@ public static class OverlayMetrics
         new("gpu_perfcap", "GPU", "Limitador (NVIDIA)", false),
 
         new("vram_used", "VRAM", "Usada (GB)", true),
-        new("vram_pct", "VRAM", "Uso (%)", false),
+        new("vram_pct", "VRAM", "Uso (%)", true),
         new("vram_temp", "VRAM", "Temperatura", false),
 
         new("cpu_load", "CPU", "Uso total", true),
@@ -38,9 +41,10 @@ public static class OverlayMetrics
         new("cpu_power", "CPU", "Consumo", true),
 
         new("ram_used", "RAM", "Usada (GB)", true),
-        new("ram_pct", "RAM", "Uso (%)", false),
+        new("ram_pct", "RAM", "Uso (%)", true),
 
-        new("game", "Outros", "Nome do jogo", true),
+        new("hwnames", "Outros", "Nome do hardware", true),
+        new("game", "Outros", "Nome do jogo", false),
         new("clock", "Outros", "Hora", false),
     };
 

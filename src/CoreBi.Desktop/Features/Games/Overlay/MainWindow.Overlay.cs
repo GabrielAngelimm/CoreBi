@@ -13,46 +13,146 @@ namespace CoreBi.Desktop;
 public partial class MainWindow
 {
     internal HashSet<string>? _ovShow;
-    internal HashSet<string> OvShow => _ovShow ??= _settings.OverlayItems is { } l ? l.ToHashSet() : OverlayMetrics.Defaults();
+    internal HashSet<string> OvShow => _ovShow ??= LoadOvShow();
 
-    /// <summary>Cria as caixas de seleção da aba Overlay, agrupadas por componente.</summary>
+    private HashSet<string> LoadOvShow()
+    {
+        var set = _settings.OverlayItems is { } l ? l.ToHashSet() : OverlayMetrics.Defaults();
+        // Quem já tinha uma seleção salva recebe "Nome do hardware" ligado uma vez; depois vale a escolha dele.
+        if (!_settings.OverlayNamesOffered)
+        {
+            set.Add("hwnames");
+            _settings.OverlayNamesOffered = true;
+            _settings.OverlayItems = OverlayMetrics.All.Select(x => x.Key).Where(set.Contains).ToList();
+            SaveSettings();
+        }
+        return set;
+    }
+
+    /// <summary>Componentes na ordem do overlay: o que cada linha mede, glifo e cor do canal (CPU verde-água, GPU cobre).</summary>
+    private static readonly (string Group, string Caption, string Icon, string Brush)[] OvGroups =
+    {
+        ("FPS", "Quadros por segundo e estabilidade", "\uEC4A", "Accent"),
+        ("GPU", "Placa de vídeo principal", "\uE7F4", "Copper"),
+        ("VRAM", "Memória da placa de vídeo", "\uE964", "Copper"),
+        ("CPU", "Processador", "\uE950", "Accent"),
+        ("RAM", "Memória do sistema", "\uEEA0", "Steel"),
+        ("Outros", "Nomes e rodapé do overlay", "\uE823", "Steel"),
+    };
+
+    /// <summary>Itens que dependem da placa ou de permissão: a dica explica por que podem aparecer com travessão.</summary>
+    private static readonly Dictionary<string, string> OvItemHints = new()
+    {
+        ["gpu_hotspot"] = "Depende da placa de vídeo.",
+        ["gpu_memclock"] = "Depende da placa de vídeo.",
+        ["gpu_fan"] = "Depende da placa de vídeo.",
+        ["gpu_perfcap"] = "Só em placas NVIDIA.",
+        ["hwnames"] = "Mostra o modelo ao lado de CPU e GPU e a quantidade de RAM (ex.: CPU Ryzen 7 5700X).",
+        ["cpu_temp"] = "Precisa do CoreBi aberto como administrador.",
+        ["cpu_clock"] = "Precisa do CoreBi aberto como administrador.",
+        ["cpu_clockmax"] = "Precisa do CoreBi aberto como administrador.",
+        ["cpu_power"] = "Precisa do CoreBi aberto como administrador.",
+    };
+
+    /// <summary>
+    /// Predefinições: "Essencial" (o padrão do catálogo) e "Só FPS" são o básico; "Gargalo" junta o que mostra quem limita o jogo (uso da GPU e do
+    /// núcleo mais ocupado, memória) e "Térmico" o que importa para temperatura, consumo e ventoinha.
+    /// </summary>
+    private static readonly Dictionary<string, HashSet<string>> OvPresets = new()
+    {
+        ["min"] = new() { "fps", "frametime", "low1" },
+        ["gargalo"] = new() { "hwnames", "fps", "low1", "graph", "gpu_load", "gpu_clock", "gpu_perfcap", "vram_used", "vram_pct", "cpu_load", "cpu_maxcore", "cpu_clock", "ram_pct" },
+        ["termico"] = new() { "hwnames", "fps", "gpu_temp", "gpu_hotspot", "gpu_power", "gpu_fan", "vram_temp", "cpu_temp", "cpu_power", "cpu_clock", "clock" },
+    };
+
+    /// <summary>Monta "O que mostrar": uma linha por componente (glifo, nome, o que mede) com os itens em pílulas e a contagem.</summary>
     internal void BuildOverlayPicker()
     {
         OvItemsPanel.Children.Clear();
-        foreach (var group in OverlayMetrics.All.GroupBy(m => m.Group))
+        var groups = OverlayMetrics.All.GroupBy(m => m.Group).ToList();
+        for (int i = 0; i < groups.Count; i++)
         {
-            // Uma linha por componente: nome à esquerda, itens à direita (igual às linhas do próprio overlay).
-            var row = new Grid { Margin = new Thickness(0, 12, 0, 0) };
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(96) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            row.Children.Add(new TextBlock
+            string group = groups[i].Key;
+            var items = groups[i].ToList();
+            var meta = OvGroups.FirstOrDefault(g => g.Group == group);
+            var row = new Border { BorderThickness = new Thickness(0, 0, 0, i < groups.Count - 1 ? 1 : 0), Padding = new Thickness(0, 10, 0, 10) };
+            row.SetResourceReference(Border.BorderBrushProperty, "Line");
+            var grid = new Grid { VerticalAlignment = VerticalAlignment.Center };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var glyph = new TextBlock { Text = meta.Icon ?? "\uE946" };
+            glyph.SetResourceReference(StyleProperty, "IconGlyph");
+            glyph.FontSize = 14;
+            var tile = new Border { Child = glyph, VerticalAlignment = VerticalAlignment.Top };
+            tile.SetResourceReference(StyleProperty, "IconTile");
+            grid.Children.Add(tile);
+
+            var name = new StackPanel { Margin = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
+            name.Children.Add(new TextBlock { Text = group, FontSize = 13.5, FontWeight = FontWeights.SemiBold });
+            var caption = new TextBlock { Text = meta.Caption ?? "", FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 1, 0, 0) };
+            caption.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
+            name.Children.Add(caption);
+            Grid.SetColumn(name, 1);
+            grid.Children.Add(name);
+
+            var count = new TextBlock { FontSize = 12, Margin = new Thickness(12, 7, 0, 0), VerticalAlignment = VerticalAlignment.Top };
+            System.Windows.Documents.Typography.SetNumeralAlignment(count, FontNumeralAlignment.Tabular);
+            Grid.SetColumn(count, 3);
+            grid.Children.Add(count);
+
+            void Refresh()
             {
-                Text = group.Key,
-                FontWeight = FontWeights.SemiBold,
-                Margin = new Thickness(0, 1, 12, 0),
-            });
-            var wrap = new WrapPanel();
-            Grid.SetColumn(wrap, 1);
-            foreach (var m in group)
+                int on = items.Count(m => OvShow.Contains(m.Key));
+                count.Text = $"{on}/{items.Count}";
+                count.ToolTip = on == 0 ? $"Nada marcado: a linha {group} não aparece no overlay." : $"{on} de {items.Count} itens no overlay.";
+                count.SetResourceReference(TextBlock.ForegroundProperty, on > 0 ? "Muted" : "Faint");
+                glyph.SetResourceReference(TextBlock.ForegroundProperty, on > 0 ? meta.Brush ?? "Accent" : "Faint");
+            }
+
+            var wrap = new WrapPanel { Margin = new Thickness(0, 3, 0, 0) };
+            foreach (var m in items)
             {
-                var cb = new CheckBox { Content = m.Label, Tag = m.Key, IsChecked = OvShow.Contains(m.Key), Margin = new Thickness(0, 0, 20, 10) };
-                cb.Click += (_, _) =>
+                var chip = new CheckBox { Content = m.Label, Tag = m.Key, IsChecked = OvShow.Contains(m.Key) };
+                chip.SetResourceReference(StyleProperty, "OptionChip");
+                if (OvItemHints.TryGetValue(m.Key, out var hint)) chip.ToolTip = hint;
+                chip.Click += (_, _) =>
                 {
-                    if (cb.IsChecked == true) OvShow.Add(m.Key); else OvShow.Remove(m.Key);
+                    if (chip.IsChecked == true) OvShow.Add(m.Key); else OvShow.Remove(m.Key);
+                    Refresh();
                     SaveOverlayItems();
                 };
-                wrap.Children.Add(cb);
+                wrap.Children.Add(chip);
             }
-            row.Children.Add(wrap);
+            Grid.SetColumn(wrap, 2);
+            grid.Children.Add(wrap);
+
+            Refresh();
+            row.Child = grid;
             OvItemsPanel.Children.Add(row);
         }
+        SyncOverlayPreset();
+    }
+
+    /// <summary>Marca a predefinição que bate com a seleção atual (nenhuma, se a seleção for personalizada).</summary>
+    internal void SyncOverlayPreset()
+    {
+        string? match = OvPresets.FirstOrDefault(p => OvShow.SetEquals(p.Value)).Key
+                      ?? (OvShow.SetEquals(OverlayMetrics.Defaults()) ? "default"
+                        : OvShow.Count == OverlayMetrics.All.Length ? "all" : null);
+        foreach (var rb in OvPresetPanel.Children.OfType<RadioButton>())
+            rb.IsChecked = (string)rb.Tag == match;
     }
 
     internal void SaveOverlayItems()
     {
         _settings.OverlayItems = OverlayMetrics.All.Select(m => m.Key).Where(OvShow.Contains).ToList();
         SaveSettings();
+        SyncOverlayPreset();
         UpdateOverlay();
+        UpdateOverlayPreview();
     }
 
     internal void OvPreset_Click(object sender, RoutedEventArgs e)
@@ -60,12 +160,29 @@ public partial class MainWindow
         var keys = (string)((FrameworkElement)sender).Tag switch
         {
             "all" => OverlayMetrics.All.Select(m => m.Key).ToHashSet(),
-            "min" => new HashSet<string> { "fps", "frametime", "low1" },
+            var k when OvPresets.TryGetValue(k, out var set) => set.ToHashSet(),
             _ => OverlayMetrics.Defaults(),
         };
         _ovShow = keys;
         SaveOverlayItems();
         BuildOverlayPicker();
+    }
+
+    // ------------------------------------------------------------------ prévia
+
+    /// <summary>FPS de exemplo da prévia quando não há jogo na frente: 144 FPS estáveis com dois engasgos.</summary>
+    private static readonly FrameStats OvSampleFrames = new(0, "Seu jogo", 144, 6.9, 118,
+        Enumerable.Range(0, 120).Select(i => 6.9 + Math.Sin(i * 1.7) * 0.35 + Math.Sin(i * 0.43) * 0.25 + (i is 38 or 91 ? 6.2 : i is 39 or 92 ? 2.1 : 0)).ToList());
+
+    /// <summary>Prévia da aba Overlay: a mesma caixa do jogo, com os itens marcados, os sensores ao vivo e o FPS do jogo se houver.</summary>
+    internal void UpdateOverlayPreview()
+    {
+        if (!PageOverlay.IsVisible) return;
+        var live = _frames.Running ? _frames.GetForegroundStats() : null;
+        var f = live ?? OvSampleFrames;
+        PageOverlay.ShowPreview(f, BuildOverlayLines(f), OvShow, OvShow.Contains("clock") ? DateTime.Now.ToString("HH:mm") : null,
+                                live == null, ChkOverlay.IsChecked == true);
+        UpdateOverlayStatus(live);
     }
 
     // ------------------------------------------------------------------ leitura dos sensores
@@ -99,6 +216,14 @@ public partial class MainWindow
         return cores.Count > 0 ? (cores.Average(), cores.Max()) : (null, null);
     }
 
+    /// <summary>Nome do hardware para o rótulo: vazio vira nada (a linha volta a mostrar só "CPU"/"GPU") e nome longo é cortado.</summary>
+    internal static string? HwName(string? name)
+    {
+        name = name?.Trim();
+        if (string.IsNullOrEmpty(name)) return null;
+        return name.Length <= 20 ? name : name[..19].TrimEnd() + "…";
+    }
+
     /// <summary>Monta as linhas GPU / VRAM / CPU / RAM só com o que foi escolhido; linha vazia não aparece.</summary>
     internal List<OverlayLine> BuildOverlayLines(FrameStats? f)
     {
@@ -107,7 +232,8 @@ public partial class MainWindow
         var lines = new List<OverlayLine>();
         string T(float? v) => v is float x ? $"{x:0} °C" : "—";
         string P(double? v) => v is double x ? $"{x:0}%" : "—";
-        void Line(string label, List<string> parts) { if (parts.Count > 0) lines.Add(new OverlayLine(label, string.Join("  ", parts))); }
+        bool names = show.Contains("hwnames");
+        void Line(string label, List<string> parts, string? detail = null) { if (parts.Count > 0) lines.Add(new OverlayLine(label, parts, names ? detail : null)); }
 
         var gpu = new List<string>();
         if (show.Contains("gpu_load")) gpu.Add(P(s.GpuLoad));
@@ -121,7 +247,7 @@ public partial class MainWindow
             gpu.Add(GpuRow(SensorType.Fan, "GPU Fan", true)?.RawValue is float rpm && rpm > 0 ? $"{rpm:0} RPM"
                   : GpuRow(SensorType.Control, "GPU Fan", true)?.RawValue is float pct ? $"fan {pct:0}%" : "fan —");
         if (show.Contains("gpu_perfcap") && MainGpuPerfCap() is { Length: > 0 } cap) gpu.Add(cap);
-        Line("GPU", gpu);
+        Line("GPU", gpu, HwName(_gpus.Count > 0 ? GameCatalog.ShortGpuName(_gpus[0].Name) : null));
 
         var vram = new List<string>();
         var vr = MainGpuVram();
@@ -138,13 +264,13 @@ public partial class MainWindow
         if (show.Contains("cpu_clock")) cpu.Add(avg is float ca ? $"{ca / 1000:0.00} GHz" : "— GHz");
         if (show.Contains("cpu_clockmax")) cpu.Add(max is float cm ? $"pico {cm / 1000:0.00} GHz" : "pico —");
         if (show.Contains("cpu_power")) cpu.Add(_monitor.CpuPower is float cw && cw > 0 ? $"{cw:0} W" : "— W"); // 0 = sem leitura (precisa de administrador)
-        Line("CPU", cpu);
+        Line("CPU", cpu, HwName(GameCatalog.ShortCpuName(_cpuName)));
 
         var ram = new List<string>();
         var (total, availB) = MemoryInfo.MemoryStatus();
         if (show.Contains("ram_used")) ram.Add(total > 0 ? $"{(total - availB) / 1073741824.0:0.0} GB" : "—");
         if (show.Contains("ram_pct")) ram.Add(P(s.RamPct));
-        Line("RAM", ram);
+        Line("RAM", ram, total > 0 ? $"{Math.Round(total / 1073741824.0):0} GB" : null);
         return lines;
     }
 }
