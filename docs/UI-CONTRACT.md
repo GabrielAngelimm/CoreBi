@@ -6,11 +6,11 @@
 | --- | --- | --- | --- | --- |
 | Table Selection | WPF DataGrid/ListBox e estilos compartilhados | src/CoreBi.Desktop/Shell/Theme.xaml | Seleção simples ou múltipla conforme operação original | tests/CoreBi.Tests/Program.cs constrói todas as páginas; teclado completo pendente |
 | Select/Listbox | WPF ComboBox/ListBox e chips RadioButton | src/CoreBi.Desktop/Shell/Theme.xaml | Chips para poucas opções; lista para inventário | Construção e navegação WPF; revisão manual de foco pendente |
-| Form | Controles WPF, handlers próprios em ferramentas administrativas, eventos por feature nas demais e validação do Engine | src/CoreBi.Desktop/Views e Features | PasswordBox para chave; campos de filtros e opções originais | Teste de persistência DPAPI e regras; instalações não executadas |
+| Form | Controles WPF, handlers próprios em ferramentas administrativas, Disco, Energia e Rede, eventos por feature nas demais e validação do Engine | src/CoreBi.Desktop/Views e Features | PasswordBox para chave; campos de filtros e opções originais | Teste de persistência DPAPI e regras; instalações não executadas |
 | Scrollbar | WPF ScrollViewer/ScrollBar com estilo herdado | src/CoreBi.Desktop/Shell/Theme.xaml | Rolagem da navegação e do conteúdo independentes | XAML compilado; múltiplos DPI pendentes |
 | Toast | ToastWindow | src/CoreBi.Desktop/Shell/ToastWindow.xaml | Janela escura para eventos USB e falhas de persistência | Construção dos recursos; conexão física pendente |
 
-Não há CRUD de registros de negócio ou seletor de datas. Operações administrativas são comandos específicos e não entram em um fluxo CRUD genérico. Não há HTML/select/date nativo do navegador; as exceções de plataforma são os controles WPF e diálogos Windows acima.
+Operações administrativas usam comandos específicos e diálogos Windows. Seleção, rolagem e foco seguem os controles WPF nativos.
 
 ## Estados e consistência
 

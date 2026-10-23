@@ -1,6 +1,6 @@
 # Contribuir e manter
 
-Use Windows x64 e o SDK de `global.json`. Leia [arquitetura](docs/ARCHITECTURE.md), [DESIGN.md](DESIGN.md) e [UX-CONTRACT.md](UX-CONTRACT.md). Preserve o layout atual até a etapa de UI/UX e mantenha créditos/licenças.
+Use Windows x64 e o SDK de `global.json`. Leia [arquitetura](docs/ARCHITECTURE.md), [DESIGN.md](DESIGN.md) e [docs/UI-CONTRACT.md](docs/UI-CONTRACT.md). Preserve o layout atual até a etapa de UI/UX e mantenha créditos/licenças.
 
 ## Antes de enviar uma alteração
 
@@ -14,6 +14,18 @@ dotnet format whitespace CoreBi.slnx --no-restore --verify-no-changes
 ```
 
 Use testes com cenários e falhas relevantes; não replique a implementação nas asserções. Hardware, Startup, Integrations e Bench são modos optativos conforme a mudança. Informe equipamento, preset, permissões e dependências; remova IDs pessoais dos relatórios. A CI não instala drivers/apps nem modifica inicialização. Nunca execute cargas longas ou instalações administrativas como efeito de um teste padrão.
+
+## Modos de teste
+
+| Comando | Alcance |
+| --- | --- |
+| `.\tools\Test.ps1` | Regressões de regras/falhas e composição/navegação das páginas WPF |
+| `.\tools\Test.ps1 -Mode Hardware` | Leituras reais; com administrador inclui abertura/parada de ETW |
+| `.\tools\Test.ps1 -Mode Startup` | Carga do sistema, sensores, Disco e Energia no dispatcher WPF, sem ativar a janela |
+| `.\tools\Test.ps1 -Mode Integrations` | Consultas winget/NVIDIA ou AMD/Windows Update; com administrador inclui ACL |
+| `.\tools\Test.ps1 -Mode Bench` | Cargas reais curtas e arquivos temporários; não certifica estabilidade térmica |
+
+Execute `Bench` com outras cargas pesadas encerradas. Resultados JSON ficam em `artifacts/tests`; configurações de teste ficam isoladas em `artifacts/tests/settings`. O override `COREBI_DATA_DIR` é definido pelo executor, sem alterar os dados pessoais do aplicativo.
 
 ## Regras de implementação
 
@@ -35,4 +47,4 @@ Ações da CI são fixadas por SHA. Gitleaks é baixado em versão fixada com SH
 
 ## Dados e publicação
 
-Não inclua `artifacts`, relatórios locais, credenciais, dumps, `.env`, chaves ou executáveis pessoais. Testes têm diretório isolado por execução e chaves artificiais. Nunca inclua a chave real da API ou um dump de configuração em issue. Use o canal de [segurança](SECURITY.md) para material sensível. Releases devem conter binário completo, licenças, código correspondente e SHA256, identificados pela mesma versão/commit validado na CI.
+Não inclua `artifacts`, relatórios locais, credenciais, dumps, `.env`, chaves ou executáveis pessoais. Testes usam configurações separadas dos dados pessoais e chaves artificiais. Nunca inclua a chave real da API ou um dump de configuração em issue. Use o canal de [segurança](SECURITY.md) para material sensível. Releases devem conter binário completo, licenças, código correspondente e SHA256, identificados pela mesma versão/commit validado na CI.

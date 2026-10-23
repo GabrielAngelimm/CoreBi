@@ -17,8 +17,8 @@ CoreBi/
       Reports/                   Relatórios a partir de leituras coletadas
     CoreBi.Desktop/              WPF: apresentação e composição
       Shell/                     Janela, navegação, tema, recursos e adaptador
-      Views/                     15 páginas; ferramentas com handlers próprios
-      Features/                  Apresentação por domínio ainda ligada ao shell
+      Views/                     15 páginas; 6 já possuem handlers/estado próprios
+      Features/                  Apresentação por domínio e exportação de relatórios
       Services/                  Contexto mínimo de vida útil, permissões e links
       Assets/                    Marca e ícone
   tests/CoreBi.Tests/             Executor de regressões, integração, WPF e hardware
@@ -39,9 +39,13 @@ Uma instância de `SensorMonitor` atende as páginas e o overlay. A abertura é 
 
 Shaders HLSL ficam em arquivos próprios incorporados ao assembly. A extração preservou os algoritmos e foi validada executando as cenas reais. A compilação dos shaders continua em tempo de execução por D3DCompiler/DXC.
 
-## Ferramentas administrativas
+## Páginas com responsabilidade própria
 
-`AppsView`, `DriversView` e `StartupView` possuem seus próprios handlers e estado de apresentação. Recebem `FeatureContext`, que fornece somente janela proprietária, coordenador, token e controle de operação crítica. Esse controle impede fechar o app durante uma instalação que já foi iniciada. Serviços Windows permanecem no Engine.
+`AppsView`, `DriversView`, `StartupView`, `DisksView`, `PowerView` e `NetworkView` possuem seus próprios handlers e estado de apresentação. `FeatureContext` compartilha apenas janela proprietária, coordenador, token de vida útil e operações críticas. Disco e Energia recebem o mesmo coletor de sensores; não abrem coletores adicionais. Rede mantém seu último resultado para a exportação e usa o coordenador comum para impedir cargas concorrentes.
+
+Chamadas assíncronas de atualização retornam `Task`, permitindo aguardar e validar o carregamento. Coletas em andamento deixam de atualizar a página após o fechamento. Tema pertence ao shell; benchmark de disco pertence a `Features/Performance/DiskBenchmark`; exportação pertence a `Features/Reports`. Os arquivos de Rede/Disco não concentram mais esses fluxos sem relação.
+
+As operações críticas bloqueiam o fechamento enquanto são gerenciadas pelo aplicativo. Um instalador oficial que já foi aberto continua em seu próprio processo. Serviços Windows permanecem no Engine.
 
 - `AppInstaller`: catálogo, detecção local e argumentos explícitos de winget.
 - `DriverManager`: inventário e metadados oficiais; `DriverInstaller`: download/assinatura/execução; `WindowsUpdateService`: escopo COM, identidades e resultados individuais.
@@ -53,7 +57,7 @@ O download percorre somente HTTPS em domínios oficiais NVIDIA/AMD, valida cada 
 
 ## Apresentação preservada
 
-A migração **não é uma conversão completa para MVVM**. As demais ferramentas ainda usam arquivos parciais de `MainWindow`, páginas que encaminham eventos e acessos tipados em `MainWindow.ViewAccess.cs`. É uma dívida localizada e documentada, mantida para preservar a UI e os fluxos nesta etapa. As três ferramentas administrativas já dispensam essa ponte.
+A migração **não é uma conversão completa para MVVM**. As demais ferramentas ainda usam arquivos parciais de `MainWindow`, páginas que encaminham eventos e acessos tipados em `MainWindow.ViewAccess.cs`. É uma dívida localizada e documentada, mantida para preservar a UI e os fluxos nesta etapa. As seis páginas listadas acima já dispensam essa ponte.
 
 Novas regras entram no Engine. Ao evoluir uma página, mova seu estado/handlers para a própria página ou um presenter enxuto e elimine os acessos correspondentes da ponte. Um viewmodel deve resolver uma necessidade concreta, sem introduzir outro framework só para uniformidade. Templates e tema continuam compartilhados em `Shell`.
 
@@ -63,7 +67,7 @@ Novas regras entram no Engine. Ao evoluir uma página, mova seu estado/handlers 
 
 Logs locais limitados conservam operação, tipo e stack da exceção; omitem mensagens que possam carregar credenciais. Erros de gravação são informados na interface. Logs não são enviados automaticamente.
 
-Backups antigos contidos no JSON editável não são automaticamente convertidos em comandos elevados de restauração. Eles são preservados; uma futura importação precisaria revalidar dados e origem. A revisão local encontrou zero backups nesse formato antigo.
+Backups antigos contidos no JSON editável não são automaticamente convertidos em comandos elevados de restauração. Eles são preservados; uma futura importação precisaria revalidar dados e origem.
 
 ## Personalizar sem quebrar outras páginas
 

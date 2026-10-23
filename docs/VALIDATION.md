@@ -1,49 +1,44 @@
-# Validação 0.1.1
+# Validação
 
-Revisão local em 23/10/2026, Windows x64, Ryzen 7 5700X, RTX 4060 Ti, 32 GiB e SSD XPG GAMMIX S70 BLADE. SDK 10.0.402 portátil; nenhuma alteração no SDK global ou no repositório original. Resultados são fotografias dessa execução, não garantias para todos os equipamentos.
+## Revisão de organização
 
-## Comprovado por execução
+Verificações locais em 23/10/2026, Windows x64, SDK 10.0.402, Ryzen 7 5700X, RTX 4060 Ti, 32 GiB e SSD XPG GAMMIX S70 BLADE.
+
+- As 24 regressões passaram, incluindo construção/navegação das 15 páginas, alternância de tema e exclusão entre cargas.
+- A página de Rede recusou iniciar enquanto outra carga detinha o coordenador. Após fechar a janela, Disco/Energia/Rede recusaram novas coletas sem alterar os controles.
+- O carregamento WPF real passou com administrador: 299 sensores, uma GPU, um cartão de disco e um de energia. Disco e Energia preencheram seus próprios controles usando o coletor compartilhado.
+- O executor WPF usa os recursos reais da interface com um ciclo de aplicação isolado, sem disputar a instância única nem abrir outra janela do produto. A verificação passou com o CoreBi normal aberto.
+- O build Release passou sem erros/avisos. Links relativos dos 12 documentos do projeto foram conferidos; avisos/licenças de terceiros permanecem preservados.
+
+Os algoritmos de coleta e medição não foram alterados nesta revisão. As cargas gráficas/benchmarks e instalações externas não foram repetidas apenas por mudança de localização de arquivos. A compilação, as regressões e o carregamento real cobrem os fluxos reorganizados.
+
+## Referência da versão 0.1.1
+
+A [versão publicada](https://github.com/GabrielAngelimm/CoreBi/releases/tag/v0.1.1), commit `71d7cc9`, passou por **41 verificações distintas** na mesma máquina:
 
 | Grupo | Resultado | Alcance |
 | --- | --- | --- |
-| Regressões e WPF | 24/24 passaram | 8 regras originais, 15 cenários de robustez e composição/navegação das 15 páginas |
-| Hardware administrativo | 4/4 passaram | Sessão ETW inicia/para; sistema/GPU, inventários, sensores/armazenamento reais |
-| Inicialização WPF administrativa | 1/1 passou | Coleta, binding e timer no dispatcher real sem ativar uma janela em primeiro plano; ETW ocioso sem consumidor |
-| Integrações administrativas | 4/4 passaram | winget --version, metadados NVIDIA, busca de drivers WU, ACL e arquivo temporário próprio na área protegida |
-| Cargas reais reduzidas | 8/8 passaram | Disco, simulação CPU, RAM, carregamento, raster D3D11, DXR, início/parada de stress GPU e CPU |
-| Build Release | Zero erros/avisos | Engine, Desktop e testes; avisos tratados como erros |
-| NuGet | Sem avisos conhecidos retornados | Consulta incluindo transitivas à fonte NuGet em 23/10/2026; não certifica ausência de vulnerabilidades |
-| Locks | Restauração bloqueada passou | Build normal e publicação single-file possuem locks próprios |
+| Regressões e WPF | 24/24 | Regras, falhas e composição/navegação das páginas |
+| Hardware administrativo | 4/4 | Sessão ETW inicia/para, inventário, sensores e armazenamento |
+| Inicialização WPF | 1/1 | Coleta, binding e timer; ETW ocioso sem consumidor |
+| Integrações | 4/4 | winget --version, metadados NVIDIA, busca de drivers WU, ACL e arquivo temporário próprio |
+| Cargas reais reduzidas | 8/8 | Disco, simulação CPU, RAM, carregamento, D3D11, DXR e início/parada do stress GPU/CPU |
 
-Total: **41 verificações funcionais/regressões distintas**, além de build, restauração, formato, auditorias e publicação. Os testes padrão são determinísticos e usam backends/HTTP isolados onde necessário; os outros modos executam APIs Windows e cargas reais explicitamente.
+Os testes de disco usaram 64 MiB; raster usou 640 × 360 por 3 s; DXR, três passagens de 1 s a 320 × 180. São verificações funcionais, sem equivalência aos presets completos de outros utilitários. A consulta NuGet com transitivas não retornou vulnerabilidades conhecidas em 23/10/2026. O executável self-contained abriu e respondeu; seus ZIPs foram publicados com SHA256.
 
-### Amostras observadas
+A [CI daquela versão](https://github.com/GabrielAngelimm/CoreBi/actions/runs/39909144675) passou. O estado do código atual está no [workflow Verify](https://github.com/GabrielAngelimm/CoreBi/actions/workflows/verify.yml), que repete varredura do histórico, restore bloqueado, formato, build, 24 regressões/WPF e publicação Windows.
 
-- 299 linhas de sensores, 294 com valor; PawnIO instalado, CPU a 51,25 °C / 58,89 W em uma amostra. Não houve comparação externa de calibração nesta rodada.
-- 22 entradas de inicialização e 91 drivers inventariados; somente leitura.
-- SSD: 38 °C, 3% de desgaste, 97% de vida restante segundo os provedores disponíveis. O veredito não garante ausência de falhas.
-- Disco 64 MiB: aproximadamente 2735/3139 MiB/s sequenciais e 98,5 mil IOPS de leitura 4 KiB com 8 workers. Execução curta, sujeita ao estado do sistema/cache do dispositivo; não é o preset do CrystalDiskMark.
-- Shaders extraídos para recursos incorporados renderizaram frames reais: raster a 640 × 360 por 3 s e três passagens DXR de 1 s a 320 × 180. Stress GPU leve e CPU por 1 s iniciaram/pararam.
-- winget respondeu com versão válida; NVIDIA retornou metadados/link oficial; Windows Update concluiu a busca com zero drivers disponíveis naquele momento. Isso não testa uma instalação.
+## Falhas cobertas e limites
 
-## Falhas verificadas por testes isolados
+As regressões verificam falha de gravação/serialização, backup antes da remoção, restauração canônica e conflitos, cancelamento e saída de processos, vida útil dos sensores, dados não finitos, política de domínio/publicador, parcialidade do Windows Update, cache/API e hardware sem referência. Operações de inicialização usam backend isolado e persistência real de teste; a ACL foi testada com administrador e arquivo próprio temporário.
 
-Gravação JSON que falha preserva o arquivo anterior e elimina temporário; backup que falha impede remoção; restauração ignora campos editados e preserva backup após falha. Processos não travam com stdout/stderr cheios, mantêm argumentos literais e encerram o filho no cancelamento. Dados de sensores não finitos tornam-se indisponíveis; fechar durante a abertura libera recursos uma única vez. Políticas recusam domínios/publicadores parecidos com os oficiais. Resultados parciais do WU não viram sucesso completo. Cache de API valida números, separa credenciais e rejeita redirect. Modelos desconhecidos não geram FPS fictício; HTTP funcional não é rotulado offline só por ICMP bloqueado.
-
-As operações de inicialização foram testadas com backend isolado e persistência real em pasta de teste. Nenhuma entrada real foi removida, restaurada ou ativada. ACL foi exercitada com administrador e apenas um arquivo próprio temporário.
-
-## Limites ainda abertos
-
-| Fluxo | Validação restante |
+| Área | Validação ainda necessária |
 | --- | --- |
-| Overlay/FPS em jogos | Comparação simultânea com contador confiável, modos de tela e APIs; ETW mede apresentações, não reconstrói todo o pipeline de frames exibidos |
-| FPS estimado | Calibração das tabelas; contrato/autenticação HowManyFPS com chave real. HTTP simulado testa o cliente, não o serviço externo |
-| Stress longo e presets completos | Estabilidade, repetibilidade, temperaturas e comparação com métodos compatíveis; a revisão executou cargas curtas |
-| Inicialização real | Remover/restaurar entradas de teste controladas, falhas parciais, Registro/atalhos e reboot em ambiente dedicado |
-| Instalações/backup de drivers | NVIDIA/AMD, WU com atualizações reais, pnputil, reboot, falha de instalador; consulta AMD não foi executada nesta GPU NVIDIA |
-| Apps/PawnIO | Instalação, cancelamento e efeitos de instaladores reais; nenhum pacote foi instalado nesta revisão |
-| Rede, bateria e USB | Sequência completa de tráfego, comparação externa, notebook e conexão/desconexão física |
-| UI e distribuição | Foco/teclado, leitor de tela, alto contraste, DPI e outras máquinas. Construção XAML não é auditoria de acessibilidade |
-| Arquitetura de apresentação | Ferramentas administrativas independentes; demais páginas conservam ponte com MainWindow, sem alegação de MVVM completo |
+| Overlay e estimativas | Comparação de FPS em jogos, APIs/modos de tela e calibração das tabelas; HowManyFPS com contrato/chave reais |
+| Stress e benchmarks | Sessões longas, presets completos, repetibilidade e outros equipamentos |
+| Inicialização | Remover/restaurar entradas de teste controladas, falhas parciais e reboot em ambiente dedicado |
+| Drivers/apps/PawnIO | Instalações reais NVIDIA/AMD/WU/winget, backup pnputil, cancelamento, falhas e reboot |
+| Rede, bateria e USB | Tráfego completo/comparação externa, notebook e conexão/desconexão física |
+| Interface | Teclado, leitor de tela, alto contraste, DPI e outras máquinas; construção XAML não certifica acessibilidade |
 
-A CI Windows e os resultados do commit publicado ficam em [Actions](https://github.com/GabrielAngelimm/CoreBi/actions/workflows/verify.yml). A CI cobre build, 24 regressões/WPF, verificação do histórico e publicação; hardware/cargas reais exigem evidência local. Arquivos brutos podem conter caminhos e identificadores e não são incluídos no código público.
+Nenhuma entrada pessoal de inicialização foi modificada e nenhum driver/app foi instalado pelos testes. O repositório original permaneceu intacto. Resultados brutos locais podem conter caminhos/identificadores e não são incluídos no código público. Os mecanismos e limites de cada ferramenta estão em [FEATURES.md](FEATURES.md).
