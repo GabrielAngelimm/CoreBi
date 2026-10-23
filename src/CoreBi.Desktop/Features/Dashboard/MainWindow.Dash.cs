@@ -126,7 +126,8 @@ public partial class MainWindow
 
     internal void UpdateDashboard(bool full = true)
     {
-        DrawDashChart();
+        // Com o mouse sobre o gráfico ele fica parado na leitura que a pessoa está olhando; volta a andar ao sair.
+        if (_dashHoverX == null) DrawDashChart();
         UpdateDashComponents();
         UpdateDashRings();
         if (full)
@@ -323,14 +324,16 @@ public partial class MainWindow
         bool entering = _dashHoverX == null;
         _dashHoverX = e.GetPosition(DashChart).X;
         DrawDashHover();
-        if (entering && _hoverTip is { Visibility: Visibility.Visible } tip)
+        if (!entering) return;
+        DashChartDelta.Text = "Pausado enquanto o mouse está sobre o gráfico";
+        if (_hoverTip is { Visibility: Visibility.Visible } tip)
             tip.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
     }
 
     internal void DashChart_MouseLeave(object sender, MouseEventArgs e)
     {
         _dashHoverX = null;
-        DrawDashHover();
+        DrawDashChart(); // retoma com as amostras que chegaram durante a pausa
     }
 
     /// <summary>
