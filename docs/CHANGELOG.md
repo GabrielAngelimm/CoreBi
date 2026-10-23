@@ -3,7 +3,7 @@
 ## Em desenvolvimento
 
 - O limitador de desempenho NVIDIA (`gpu_perfcap`) saiu do OverlayBi; seleções salvas com ele são migradas sem perder os demais itens.
-- O instalador ganhou explicação por componente e o componente opcional RTSS (desmarcado), instalado pelo winget junto do PawnIO (marcado). Nada de terceiros é incluído no setup.
+- O instalador ganhou explicação por componente e o componente RTSS, instalado em silêncio pelo winget junto do PawnIO (ambos marcados; a instalação "Somente o aplicativo" os dispensa). Nada de terceiros é incluído no setup.
 
 - OverlayBi integra opcionalmente com RTSS aberto para apresentar o OSD dentro de jogos em tela cheia, inclusive exclusiva quando o jogo/driver/anticheat permitem. Usa memória compartilhada a 2 Hz, slot próprio, publicação não bloqueante e retorno ao painel WPF em falhas; sem novos pacotes, injeção própria ou alteração de perfis. Projeta as medidas do painel atual, com fonte/zoom próprios e cartão arredondado, preservando dados, cores, seleção e controles. Guia e limites em `docs/OVERLAY.md`.
 

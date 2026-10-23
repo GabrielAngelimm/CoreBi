@@ -47,7 +47,7 @@ Name: "custom"; Description: "Personalizada"; Flags: iscustom
 [Components]
 Name: "app"; Description: "CoreBi"; Types: full compact custom; Flags: fixed
 Name: "pawnio"; Description: "Driver de sensores PawnIO (recomendado)"; Types: full
-Name: "rtss"; Description: "RivaTuner Statistics Server (RTSS) para o overlay em tela cheia"
+Name: "rtss"; Description: "RivaTuner Statistics Server (RTSS) para o overlay em tela cheia (recomendado)"; Types: full
 
 [Tasks]
 Name: "desktopicon"; Description: "Criar atalho na área de trabalho"; GroupDescription: "Atalhos:"; Flags: unchecked
@@ -67,7 +67,7 @@ Filename: "{app}\CoreBi.exe"; Description: "Abrir o CoreBi"; WorkingDir: "{app}"
 const
   UninstallRoot = 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\';
   DescPawnIO = 'Driver assinado que permite ler a temperatura, o consumo e o clock internos da CPU. Sem ele o CoreBi funciona, mas esses sensores ficam indisponíveis. Baixado do repositório oficial do winget (não vem dentro deste instalador).';
-  DescRtss = 'Serviço de OSD (o mesmo do MSI Afterburner) que permite exibir o OverlayBi dentro de jogos em tela cheia exclusiva. Opcional: sem ele o overlay continua funcionando em jogos em janela e sem bordas. Baixado pelo winget (Guru3D.RTSS); a licença do RTSS não permite redistribuí-lo no instalador.';
+  DescRtss = 'Serviço de OSD (o mesmo do MSI Afterburner) que permite exibir o OverlayBi dentro de jogos em tela cheia exclusiva. Pode ser desmarcado: sem ele o overlay continua funcionando em jogos em janela e sem bordas. Baixado pelo winget (Guru3D.RTSS); a licença do RTSS não permite redistribuí-lo no instalador.';
 
 var
   DescLabel: TNewStaticText;
@@ -83,8 +83,8 @@ var
 begin
   { Mesmo caminho que o app usa na página de Sensores; 3010 significa que o Windows pede reinício. }
   if not Exec(ExpandConstant('{cmd}'),
-    '/C winget install --id ' + Id + ' --exact --source winget --accept-package-agreements --accept-source-agreements',
-    '', SW_SHOW, ewWaitUntilTerminated, ResultCode) or ((ResultCode <> 0) and (ResultCode <> 3010)) then
+    '/C winget install --id ' + Id + ' --exact --source winget --accept-package-agreements --silent --accept-source-agreements',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or ((ResultCode <> 0) and (ResultCode <> 3010)) then
     MsgBox('Não foi possível instalar ' + Nome + ' agora. O CoreBi funciona normalmente, mas ' + Consequencia + ' Você pode instalar depois pelo winget (' + Id + ') ou pelo site oficial.', mbInformation, MB_OK);
 end;
 

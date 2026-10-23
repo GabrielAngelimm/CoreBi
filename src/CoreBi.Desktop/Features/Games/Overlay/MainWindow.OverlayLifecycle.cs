@@ -136,6 +136,7 @@ public partial class MainWindow
             _rtssShowing = false;
             _rtssLastUpdate = 0;
             _rtssLastAck = 0;
+            _rtssPendingSince = 0;
             _rtssPublishedFrame = 0;
             _rtssProcess = pid;
         }
@@ -150,6 +151,7 @@ public partial class MainWindow
             if (status == RtssStatus.Ready)
             {
                 _rtssLastUpdate = now;
+                if (_rtssPendingSince == 0) _rtssPendingSince = now;
                 // Só oculta a janela WPF depois que o jogo consumiu uma atualização OSD anterior.
                 if (_rtssPublishedFrame != 0 && unchecked((int)(target.RenderedFrame - _rtssPublishedFrame)) >= 0)
                 {
@@ -163,7 +165,9 @@ public partial class MainWindow
                     _rtssPublishedFrame = 0;
                 }
                 if (_rtssPublishedFrame == 0) _rtssPublishedFrame = _rtssOverlay.PublishedFrame;
-                _rtssShowing = _rtssLastAck != 0 && now - _rtssLastAck <= 2000;
+                // Esconde a janela WPF já na primeira publicação (carência de 2 s até o jogo consumir o OSD),
+                // para não exibir os dois painéis sobrepostos; sem confirmação, a janela WPF volta.
+                _rtssShowing = _rtssLastAck != 0 ? now - _rtssLastAck <= 2000 : now - _rtssPendingSince <= 2000;
             }
         }
         else if (status == RtssStatus.Ready)
@@ -172,6 +176,7 @@ public partial class MainWindow
             _rtssShowing = false;
             _rtssPublishedFrame = 0;
             _rtssLastAck = 0;
+            _rtssPendingSince = 0;
         }
         _rtssStatus = status;
         // Uma disputa curta pelo lock não alterna os renderizadores nem bloqueia o dispatcher.
@@ -181,11 +186,13 @@ public partial class MainWindow
             _rtssShowing = false;
             _rtssPublishedFrame = 0;
             _rtssLastAck = 0;
+            _rtssPendingSince = 0;
             if (status is RtssStatus.Unavailable or RtssStatus.Incompatible) _rtssRetryAfter = now + 5000;
         }
     }
 
     private uint _rtssPublishedFrame;
+    private long _rtssPendingSince;
 
     /// <summary>Estado da detecção de FPS, com ponto de veredito: medindo um jogo, aguardando, desligada ou com erro.</summary>
     internal void UpdateOverlayStatus(FrameStats? f)
