@@ -214,12 +214,12 @@
                                     <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,14" />
                                     <UniformGrid Columns="3">
                                         <StackPanel>
-                                            <TextBlock Text="Usado" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
-                                        </StackPanel>
-                                        <StackPanel>
                                             <TextBlock Text="Capacidade" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="SpaceTotal" Style="{StaticResource LifeValue}" />
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Usado" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
                                         </StackPanel>
                                         <StackPanel>
                                             <TextBlock Text="Livre" Style="{StaticResource StatLabel}" />
