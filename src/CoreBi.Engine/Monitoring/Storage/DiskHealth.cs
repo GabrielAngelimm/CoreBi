@@ -30,6 +30,48 @@ public sealed class DiskHealthCard
     public bool IsAlert => Verdict != DiskVerdict.Good;
     public string Reasons { get; init; } = "";
     public List<KeyValuePair<string, string>> Metrics { get; init; } = new();
+    /// <summary>Leituras numéricas do disco (só nos cartões de Discos), para a página desenhar os instrumentos.</summary>
+    public DiskDetail? Disk { get; init; }
+}
+
+/// <summary>Leituras de um disco físico como números; null quando o disco não informa a grandeza.</summary>
+public sealed class DiskDetail
+{
+    /// <summary>Desgaste (%) a partir do qual o veredito vira atenção e crítico.</summary>
+    public const double WearWarnAt = 80, WearCritAt = 95;
+
+    public string Model { get; init; } = "";
+    /// <summary>SSD, HDD, SCM ou vazio quando o Windows não informa.</summary>
+    public string Kind { get; init; } = "";
+    public string Bus { get; init; } = "";
+    public long SizeBytes { get; init; }
+    public IReadOnlyList<string> Letters { get; init; } = Array.Empty<string>();
+    public string Serial { get; init; } = "";
+    public string Firmware { get; init; } = "";
+    public bool IsSsd { get; init; }
+    public double? Temperature { get; init; }
+    public double? TemperatureMax { get; init; }
+    /// <summary>Limites de temperatura usados no veredito (dependem do tipo de disco).</summary>
+    public double TempWarnAt { get; init; }
+    public double TempCritAt { get; init; }
+    public double? Wear { get; init; }
+    public double? AvailableSpare { get; init; }
+    public double? SpareThreshold { get; init; }
+    public long? PowerOnHours { get; init; }
+    public long? StartStopCycles { get; init; }
+    public long? ReadErrors { get; init; }
+    public long? WriteErrors { get; init; }
+    public long? ReadUncorrected { get; init; }
+    public long? WriteUncorrected { get; init; }
+    public double? WrittenGb { get; init; }
+    public double? ReadGb { get; init; }
+    public bool? PredictFailure { get; init; }
+    /// <summary>HealthStatus do Windows: 0 saudável, 1 atenção, 2 não saudável, 5 desconhecido.</summary>
+    public int WindowsHealth { get; init; } = 5;
+    /// <summary>Nome do disco no LibreHardwareMonitor, para a leitura ao vivo; null quando não há par único.</summary>
+    public string? SensorHardware { get; init; }
+    /// <summary>Relatório de saúde lido direto do SSD NVMe; null quando o disco não é NVMe ou não respondeu.</summary>
+    public NvmeLog? Nvme { get; init; }
 }
 
 /// <summary>
@@ -50,12 +92,14 @@ public static class DiskHealth
         public bool? PredictFail;
         public double? Temp, TempMax, Wear;
         public long? PowerOnHours, ReadErr, WriteErr, ReadErrUncorrected, WriteErrUncorrected, StartStop;
-        public double? WrittenGb, ReadGb;
+        public double? WrittenGb, ReadGb, Spare, SpareThreshold;
         public string Letters = "";
+        public string? SensorHardware;
+        public NvmeLog? Nvme;
         public string? Error = null;
     }
 
-    public static List<DiskHealthCard> Read(IEnumerable<SensorReading>? sensors = null)
+    public static List<DiskHealthCard> Read(IEnumerable<SensorReading>? sensors = null, IReadOnlyDictionary<string, NvmeLog>? nvme = null)
     {
         var raws = new Dictionary<int, Raw>();
 
@@ -147,6 +191,8 @@ public static class DiskHealth
                 var mine = list.Where(x => x.Hardware.Contains(r.Model, StringComparison.OrdinalIgnoreCase) ||
                                            r.Model.Contains(x.Hardware, StringComparison.OrdinalIgnoreCase)).ToList();
                 if (mine.Count == 0) continue;
+                r.SensorHardware = mine[0].Hardware;
+                if (nvme != null && nvme.TryGetValue(r.SensorHardware, out var log)) r.Nvme = log;
                 if (r.Temp == null)
                     r.Temp = mine.FirstOrDefault(x => x.Type == SensorType.Temperature && x.RawValue is > 0)?.RawValue;
                 if (r.Wear == null)
@@ -160,6 +206,13 @@ public static class DiskHealth
                                                        x.Name.Contains("Host Writes", StringComparison.OrdinalIgnoreCase))?.RawValue;
                 r.ReadGb = mine.FirstOrDefault(x => x.Name.Contains("Data Read", StringComparison.OrdinalIgnoreCase) ||
                                                     x.Name.Contains("Host Reads", StringComparison.OrdinalIgnoreCase))?.RawValue;
+                // Contadores que o Windows nem sempre repassa (comum em NVMe): o LibreHardwareMonitor lê do próprio disco.
+                if (r.PowerOnHours == null && mine.FirstOrDefault(x => x.Name.Equals("Power On Hours", StringComparison.OrdinalIgnoreCase))?.RawValue is > 0 and float hours)
+                    r.PowerOnHours = (long)hours;
+                if (r.StartStop == null && mine.FirstOrDefault(x => x.Name.Equals("Power On Count", StringComparison.OrdinalIgnoreCase))?.RawValue is > 0 and float cycles)
+                    r.StartStop = (long)cycles;
+                r.Spare = mine.FirstOrDefault(x => x.Name.Equals("Available Spare", StringComparison.OrdinalIgnoreCase))?.RawValue;
+                r.SpareThreshold = mine.FirstOrDefault(x => x.Name.Equals("Available Spare Threshold", StringComparison.OrdinalIgnoreCase))?.RawValue;
             }
         }
 
@@ -220,7 +273,7 @@ public static class DiskHealth
         bool isUsb = r.Bus == "USB";
         var crit = new List<string>();
         var warn = new List<string>();
-        bool anyData = r.Health != 5 || r.PredictFail != null || r.Wear != null;
+        bool anyData = r.Health != 5 || r.PredictFail != null || r.Wear != null || r.Nvme != null;
 
         if (r.PredictFail == true) crit.Add("O próprio disco avisa (S.M.A.R.T.) que deve falhar em breve. Faça backup agora.");
         if (r.Health == 2) crit.Add("O Windows classifica o disco como NÃO saudável.");
@@ -228,15 +281,19 @@ public static class DiskHealth
 
         if (r.Wear is double w)
         {
-            if (w >= 95) crit.Add($"Desgaste de {w:0}%: o SSD está no fim da vida útil. Troque e faça backup.");
-            else if (w >= 80) warn.Add($"Desgaste de {w:0}%: o SSD já gastou boa parte da vida útil. Planeje a troca.");
+            if (w >= DiskDetail.WearCritAt) crit.Add($"Desgaste de {w:0}%: o SSD está no fim da vida útil. Troque e faça backup.");
+            else if (w >= DiskDetail.WearWarnAt) warn.Add($"Desgaste de {w:0}%: o SSD já gastou boa parte da vida útil. Planeje a troca.");
         }
+        double okMax = isSsd ? 70 : 55, critMax = isSsd ? 85 : 65;
         if (r.Temp is double t)
         {
-            double okMax = isSsd ? 70 : 55, critMax = isSsd ? 85 : 65;
             if (t >= critMax) crit.Add($"Temperatura de {t:0} °C é muito alta para este disco.");
             else if (t >= okMax) warn.Add($"Temperatura de {t:0} °C está alta. Melhore a ventilação.");
         }
+        if (r.Nvme?.CriticalWarning is > 0) crit.Add("O SSD acusa um aviso crítico no próprio relatório de saúde NVMe. Faça backup agora.");
+        if (r.Nvme?.MediaErrors is > 0) warn.Add($"O SSD registrou {r.Nvme.MediaErrors:N0} erro(s) de mídia e integridade dos dados.");
+        if (r.Spare is double sp && r.SpareThreshold is double st && st > 0 && sp < st)
+            crit.Add($"Os blocos de reserva do SSD estão em {sp:0}%, abaixo do mínimo de {st:0}% definido pelo fabricante. Faça backup.");
         if (r.ReadErrUncorrected > 0 || r.WriteErrUncorrected > 0)
             warn.Add($"Erros não corrigidos: {r.ReadErrUncorrected ?? 0} de leitura e {r.WriteErrUncorrected ?? 0} de escrita.");
 
@@ -264,6 +321,10 @@ public static class DiskHealth
         M("Erros de escrita", r.WriteErr is long we ? $"{we:N0}" + (r.WriteErrUncorrected is long wu && wu > 0 ? $" ({wu:N0} não corrigidos)" : "") : null);
         M("Total gravado", r.WrittenGb is double wg && wg > 0 ? $"{wg:N0} GB" : null);
         M("Total lido", r.ReadGb is double rg && rg > 0 ? $"{rg:N0} GB" : null);
+        M("Blocos de reserva", r.Spare is double spare ? $"{spare:0}%" + (r.SpareThreshold is double min && min > 0 ? $" (mínimo {min:0}%)" : "") : null);
+        M("Aviso crítico (NVMe)", r.Nvme?.CriticalWarning is ulong cw ? (cw == 0 ? "Nenhum" : $"0x{cw:X2}") : null);
+        M("Erros de mídia (NVMe)", r.Nvme?.MediaErrors is ulong me ? $"{me:N0}" : null);
+        M("Desligamentos inesperados", r.Nvme?.UnsafeShutdowns is ulong us ? $"{us:N0}" : null);
         M("Falha prevista (S.M.A.R.T.)", r.PredictFail is bool pf ? (pf ? "SIM" : "Não") : null);
         M("Saúde segundo o Windows", r.Health switch { 0 => "Saudável", 1 => "Atenção", 2 => "Não saudável", _ => null });
         M("Firmware", r.Firmware.Length > 0 ? r.Firmware : null);
@@ -277,6 +338,37 @@ public static class DiskHealth
             Verdict = isUsb && !anyData ? DiskVerdict.Unknown : v,
             Reasons = string.Join(" ", reasons),
             Metrics = metrics,
+            Disk = new DiskDetail
+            {
+                Model = r.Model,
+                Kind = kind,
+                Bus = r.Bus,
+                SizeBytes = r.Size,
+                Letters = r.Letters.Split(' ', StringSplitOptions.RemoveEmptyEntries),
+                Serial = r.Serial,
+                Firmware = r.Firmware,
+                IsSsd = isSsd,
+                Temperature = r.Temp,
+                // Alguns drivers devolvem o limite do disco (100 °C) no lugar da máxima registrada: acima do crítico não é leitura.
+                TemperatureMax = r.TempMax is > 0 && r.TempMax < critMax ? r.TempMax : null,
+                TempWarnAt = okMax,
+                TempCritAt = critMax,
+                Wear = r.Wear,
+                AvailableSpare = r.Spare,
+                SpareThreshold = r.SpareThreshold,
+                PowerOnHours = r.PowerOnHours,
+                StartStopCycles = r.StartStop,
+                ReadErrors = r.ReadErr,
+                WriteErrors = r.WriteErr,
+                ReadUncorrected = r.ReadErrUncorrected,
+                WriteUncorrected = r.WriteErrUncorrected,
+                WrittenGb = r.WrittenGb is > 0 ? r.WrittenGb : null,
+                ReadGb = r.ReadGb is > 0 ? r.ReadGb : null,
+                PredictFailure = r.PredictFail,
+                WindowsHealth = r.Health,
+                SensorHardware = r.SensorHardware,
+                Nvme = r.Nvme,
+            },
         };
     }
 

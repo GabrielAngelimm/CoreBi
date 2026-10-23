@@ -25,6 +25,37 @@ public sealed class SensorMonitor : IDisposable
             return Rows.Select(r => new SensorReading(r.Id, r.Hardware, r.Name, r.Type, r.HardwareType, r.RawValue, r.Category, r.Value, r.Min, r.Max)).ToArray();
     }
 
+    /// <summary>
+    /// Relatório de saúde do próprio SSD NVMe (aviso crítico, erros de mídia, desligamentos inesperados), por nome do disco.
+    /// O Windows nem sempre repassa esses contadores; a biblioteca de sensores os lê direto do disco a cada atualização.
+    /// </summary>
+    public IReadOnlyDictionary<string, NvmeLog> NvmeLogs()
+    {
+        var logs = new Dictionary<string, NvmeLog>(StringComparer.Ordinal);
+        lock (_lifecycle)
+        {
+            if (!_open || _disposed) return logs;
+            foreach (var hw in _source.Hardware)
+            {
+                if (hw.HardwareType != HardwareType.Storage || hw is not LibreHardwareMonitor.Hardware.Storage.StorageDevice device) continue;
+                try
+                {
+                    var smart = device.Storage?.Smart?.SmartAttributes;
+                    if (smart == null) continue;
+                    ulong? Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType type) =>
+                        smart.FirstOrDefault(a => a.Info?.Type == type)?.Attribute.RawValueULong;
+                    var log = new NvmeLog(Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType.CriticalWarning),
+                        Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType.MediaAndDataIntegrityErrors),
+                        Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType.UnsafeShutdownCount),
+                        Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType.NumberOfErrorInformationLogEntries));
+                    if (log.CriticalWarning != null || log.MediaErrors != null) logs[hw.Name] = log;
+                }
+                catch (Exception ex) { DiagnosticLog.Write("sensors.nvme", ex); }
+            }
+        }
+        return logs;
+    }
+
     public SensorMonitor() : this(new LibreHardwareSource()) { }
     internal SensorMonitor(IHardwareSource source) => _source = source;
 
@@ -186,6 +217,9 @@ public sealed class SensorMonitor : IDisposable
         catch (Exception ex) { DiagnosticLog.Write("sensors.close", ex); }
     }
 }
+
+/// <summary>Campos do log de saúde NVMe; null quando o disco não traz o campo.</summary>
+public sealed record NvmeLog(ulong? CriticalWarning, ulong? MediaErrors, ulong? UnsafeShutdowns, ulong? ErrorLogEntries);
 
 internal interface IHardwareSource
 {
