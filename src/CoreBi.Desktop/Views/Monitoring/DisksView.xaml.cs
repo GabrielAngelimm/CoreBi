@@ -46,7 +46,7 @@ public partial class DisksView : UserControl
         }
     }
 
-    public sealed record DiskCheck(string Title, string Value, string State);
+    public sealed record DiskCheck(string Title, string Value, string State, string? Tip = null);
     /// <summary>Unidade no espaço por unidade: Percent é a fração livre em destaque; Line, "usados de total".</summary>
     public sealed record VolumeRow(string Letter, string Label, string Line, string Percent, string PercentLabel, bool IsRest);
 
@@ -55,6 +55,8 @@ public partial class DisksView : UserControl
     {
         public readonly List<float?> Temps = new();
         public float? Read, Write;
+        /// <summary>Maior temperatura vista desde que o CoreBi abriu (inclui o que já saiu da janela de 5 min do gráfico).</summary>
+        public float? Peak;
         public float? Last => Temps.Count > 0 ? Temps[^1] : null;
     }
 
@@ -133,7 +135,11 @@ public partial class DisksView : UserControl
                 if (trace.Temps.Count > TraceChart.Capacity) trace.Temps.RemoveAt(0);
                 trace.Read = trace.Write = null;
             }
-            if (row.Type == SensorType.Temperature && trace.Temps[^1] == null && row.RawValue is > 0) trace.Temps[^1] = row.RawValue;
+            if (row.Type == SensorType.Temperature && trace.Temps[^1] == null && row.RawValue is > 0)
+            {
+                trace.Temps[^1] = row.RawValue;
+                trace.Peak = Math.Max(trace.Peak ?? 0, row.RawValue.Value);
+            }
             else if (row.Type == SensorType.Throughput && row.Name.Contains("Read", StringComparison.OrdinalIgnoreCase)) trace.Read = row.RawValue;
             else if (row.Type == SensorType.Throughput && row.Name.Contains("Write", StringComparison.OrdinalIgnoreCase)) trace.Write = row.RawValue;
         }
@@ -158,6 +164,9 @@ public partial class DisksView : UserControl
         TempLiveText.Text = live ? "Ao vivo" : $"Leitura do Windows às {_readAt:HH:mm}";
         TempLiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, live ? "Accent" : "Faint");
         TempTrace.Samples = trace?.Temps.ToList() ?? new List<float?>();
+        double? peak = trace?.Peak ?? d.TemperatureMax;
+        TempPeak.Text = peak is double pk ? $"{pk:0} °C" : "—";
+        TempScale.Peak = peak ?? double.NaN;
         DiskActivity.Text = trace?.Read == null && trace?.Write == null ? "sem sensor de atividade para este disco"
             : $"Leitura {Rate(trace!.Read)}     Escrita {Rate(trace.Write)}";
     }
@@ -180,8 +189,11 @@ public partial class DisksView : UserControl
         DiskBadge.SetResourceReference(Border.BackgroundProperty, soft);
         DiskBadge.SetResourceReference(Border.BorderBrushProperty, tone.Length > 0 ? tone : "LineStrong");
         DiskBadgeText.SetResourceReference(TextBlock.ForegroundProperty, tone.Length > 0 ? tone : "Muted");
-        DiskReasons.Text = card.Reasons;
-        DiskReasonIcon.Text = card.Verdict switch { DiskVerdict.Good => "", DiskVerdict.Unknown => "", _ => "" };
+        // Veredito saudável não precisa de texto: o selo já diz. Só atenção, crítico e "sem dados" explicam o motivo.
+        bool healthy = card.Verdict == DiskVerdict.Good;
+        DiskReasons.Text = healthy ? "" : card.Reasons;
+        DiskReasons.Visibility = DiskReasonIcon.Visibility = healthy ? Visibility.Collapsed : Visibility.Visible;
+        DiskReasonIcon.Text = card.Verdict == DiskVerdict.Unknown ? "\uE946" : "\uE7BA";
         DiskReasonIcon.SetResourceReference(TextBlock.ForegroundProperty, tone.Length > 0 ? tone : "Faint");
 
         // Erro de leitura: só a placa com o motivo
@@ -220,7 +232,9 @@ public partial class DisksView : UserControl
         Gb(SpaceUsed, used);
         Gb(SpaceTotal, total);
         Gb(SpaceFree, free);
-        SpaceFreePercent.Text = known ? $"{(double)free / total * 100:0} %" : "";
+        double freeShare = known ? (double)free / total * 100 : 0;
+        SpaceFreePercent.Text = $"{freeShare:0} %";
+        SpaceFreeDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, freeShare < 10 ? "Danger" : freeShare < 20 ? "Warn" : "Ok");
         SpaceFreeBadge.Visibility = known ? Visibility.Visible : Visibility.Collapsed;
 
         // Mais de uma unidade no disco: uma linha por letra com quanto ainda está livre
@@ -240,7 +254,7 @@ public partial class DisksView : UserControl
         // Resistência: quanto o SSD aguenta gravar até 100 % de desgaste, no ritmo medido até aqui (estimativa linear).
         if (d.Wear is double ww && ww >= 1 && d.WrittenGb is double gb)
         {
-            var (value, unit) = SplitData(gb * 100 / ww);
+            var (value, unit) = SplitData(gb * 100 / ww, decimals: false);
             Readout(LifeEndurance, "≈ " + value, unit);
             LifeEnduranceBox.ToolTip = $"Estimativa linear: {SplitData(gb).Value} {SplitData(gb).Unit} gravados para {ww:0} % de desgaste. " +
                                        "O fabricante informa a resistência real (TBW) na garantia.";
@@ -258,12 +272,10 @@ public partial class DisksView : UserControl
         TempCaption.Text = $"Faixa ideal até {d.TempWarnAt:0} °C para {kind}";
         TempScale.WarnAt = d.TempWarnAt;
         TempScale.CritAt = d.TempCritAt;
-        TempScale.Peak = d.TemperatureMax ?? double.NaN;
         TempTrace.WarnAt = d.TempWarnAt;
         TempTrace.EmptyText = d.SensorHardware == null
             ? "Sem sensor ao vivo para este disco: a temperatura acima é a leitura do Windows."
             : "Coletando as primeiras amostras…";
-        TempPeak.Text = d.TemperatureMax is double max ? $"{max:0} °C" : "—";
         TempLimits.Text = $"{d.TempWarnAt:0} · {d.TempCritAt:0} °C";
     }
 
@@ -282,12 +294,15 @@ public partial class DisksView : UserControl
 
     /// <summary>
     /// Cada linha só ganha o verde quando o disco ou o Windows realmente informou o valor. Sem leitura aparece
-    /// "Não informado" em tom apagado: dizer "normal" sem ter verificado esconderia um disco que não reporta nada.
+    /// NotReported em tom apagado: dizer "normal" sem ter verificado esconderia um disco que não reporta nada.
     /// </summary>
+    private const string NotReported = "Windows não informa";
+    private const string NotReportedTip = "O Windows não tem este dado para este disco. Isso não indica falha: só que não há leitura para conferir.";
+
     private void ShowChecks(DiskDetail d)
     {
         static DiskCheck Count(string title, long? n, string good = "Nenhum") =>
-            n is long v ? new(title, v == 0 ? good : $"{v:N0}", v == 0 ? "Ok" : "Warn") : new(title, "Não informado", "");
+            n is long v ? new(title, v == 0 ? good : $"{v:N0}", v == 0 ? "Ok" : "Warn") : new(title, NotReported, "", NotReportedTip);
         long? uncorrected = d.ReadUncorrected == null && d.WriteUncorrected == null ? null : (d.ReadUncorrected ?? 0) + (d.WriteUncorrected ?? 0);
         DiskChecks.ItemsSource = new List<DiskCheck>
         {
@@ -296,13 +311,13 @@ public partial class DisksView : UserControl
                 0 => new("Saúde segundo o Windows", "Saudável", "Ok"),
                 1 => new("Saúde segundo o Windows", "Atenção", "Warn"),
                 2 => new("Saúde segundo o Windows", "Não saudável", "Danger"),
-                _ => new("Saúde segundo o Windows", "Não informado", ""),
+                _ => new("Saúde segundo o Windows", NotReported, "", NotReportedTip),
             },
             d.PredictFailure switch
             {
                 true => new("Falha prevista (S.M.A.R.T.)", "Sim", "Danger"),
                 false => new("Falha prevista (S.M.A.R.T.)", "Não", "Ok"),
-                _ => new("Falha prevista (S.M.A.R.T.)", "Não informado", ""),
+                _ => new("Falha prevista (S.M.A.R.T.)", NotReported, "", NotReportedTip),
             },
             Count("Erros de leitura", d.ReadErrors),
             Count("Erros de escrita", d.WriteErrors),
@@ -383,8 +398,8 @@ public partial class DisksView : UserControl
     }
 
     /// <summary>GB (decimais, como o S.M.A.R.T. informa) → valor e unidade; TB a partir de 1000 GB.</summary>
-    private static (string Value, string Unit) SplitData(double gb) =>
-        gb >= 1000 ? ($"{gb / 1000:N1}", "TB") : ($"{gb:N0}", "GB");
+    private static (string Value, string Unit) SplitData(double gb, bool decimals = true) =>
+        gb >= 1000 ? (decimals ? $"{gb / 1000:N1}" : $"{gb / 1000:N0}", "TB") : ($"{gb:N0}", "GB");
 
     private static string Rate(float? bytesPerSecond) => bytesPerSecond switch
     {

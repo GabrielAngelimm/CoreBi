@@ -66,7 +66,7 @@
                     </Grid.ColumnDefinitions>
                     <Ellipse Style="{StaticResource DiskLed}" HorizontalAlignment="Left" />
                     <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
-                    <Border x:Name="pill" Grid.Column="2" Style="{StaticResource Badge}" VerticalAlignment="Center" Padding="9,2,9,3">
+                    <Border x:Name="pill" Grid.Column="2" Style="{StaticResource Badge}" VerticalAlignment="Center" Padding="9,2,9,3" ToolTip="{Binding Tip}">
                         <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource BadgeText}" Typography.NumeralAlignment="Tabular" />
                     </Border>
                 </Grid>
@@ -225,9 +225,10 @@
                                             <TextBlock Text="Livre" Style="{StaticResource StatLabel}" />
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" />
-                                                <Border x:Name="SpaceFreeBadge" Style="{StaticResource Badge}" Margin="10,0,0,1" VerticalAlignment="Bottom" Padding="7,1,7,2">
-                                                    <TextBlock x:Name="SpaceFreePercent" Style="{StaticResource BadgeText}" Typography.NumeralAlignment="Tabular" />
-                                                </Border>
+                                                <StackPanel x:Name="SpaceFreeBadge" Orientation="Horizontal" Margin="12,0,0,3" VerticalAlignment="Bottom">
+                                                    <Ellipse x:Name="SpaceFreeDot" Width="7" Height="7" Fill="{DynamicResource Ok}" VerticalAlignment="Center" Margin="0,1,6,0" />
+                                                    <TextBlock x:Name="SpaceFreePercent" FontSize="14" Foreground="{DynamicResource Muted}" Typography.NumeralAlignment="Tabular" />
+                                                </StackPanel>
                                             </StackPanel>
                                         </StackPanel>
                                     </UniformGrid>
@@ -247,20 +248,25 @@
                                 <TextBlock Text="Vida útil" Style="{StaticResource SectionTitle}" />
                                 <local:LifeGauge x:Name="LifeDial" Grid.Row="1" MinHeight="210" Margin="0,6" Caption="vida útil restante" />
                                 <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
-                                    <UniformGrid Columns="3">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="1.4*" />
+                                        </Grid.ColumnDefinitions>
                                         <StackPanel Margin="0,0,10,0">
                                             <TextBlock Text="Desgaste" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeWear" Style="{StaticResource LifeValue}" FontSize="26" />
+                                            <TextBlock x:Name="LifeWear" Style="{StaticResource LifeValue}" FontSize="23" />
                                         </StackPanel>
-                                        <StackPanel Margin="0,0,10,0">
+                                        <StackPanel Grid.Column="1" Margin="0,0,10,0">
                                             <TextBlock Text="Reserva" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeSpare" Style="{StaticResource LifeValue}" FontSize="26" />
+                                            <TextBlock x:Name="LifeSpare" Style="{StaticResource LifeValue}" FontSize="23" />
                                         </StackPanel>
-                                        <StackPanel x:Name="LifeEnduranceBox">
+                                        <StackPanel x:Name="LifeEnduranceBox" Grid.Column="2">
                                             <TextBlock Text="Resistência" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeEndurance" Style="{StaticResource LifeValue}" FontSize="26" />
+                                            <TextBlock x:Name="LifeEndurance" Style="{StaticResource LifeValue}" FontSize="23" />
                                         </StackPanel>
-                                    </UniformGrid>
+                                    </Grid>
                                 </Border>
                             </Grid>
                         </Border>
