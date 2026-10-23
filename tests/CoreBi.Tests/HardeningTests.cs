@@ -160,6 +160,15 @@ internal static partial class Program
             Require(!CoreBi.Engine.Monitoring.Network.NetworkTest.HasHttpEvidence(null, null), "Missing HTTP treated as success");
             return new { icmpAndHttpDistinguished = true };
         });
+        Check("network: lost pings count as loss and stay out of latency and jitter", () =>
+        {
+            var ping = new CoreBi.Engine.Monitoring.Network.PingResult("Roteador", "192.168.0.1", new double?[] { 10, null, 14, 12 });
+            Require(ping.Sent == 4 && ping.Lost == 1 && ping.LossPct == 25, "Loss miscounted");
+            Require(ping.Avg == 12 && ping.Min == 10 && ping.Max == 14 && ping.Jitter == 3, "Latency or jitter used a lost sample");
+            var silent = new CoreBi.Engine.Monitoring.Network.PingResult("Internet", "1.1.1.1", new double?[] { null, null });
+            Require(!silent.Answered && silent.Text == "não responde", "Silent target presented as answered");
+            return new { lossPct = ping.LossPct, jitter = ping.Jitter };
+        });
     }
 
     private sealed class CaseFolder : IDisposable

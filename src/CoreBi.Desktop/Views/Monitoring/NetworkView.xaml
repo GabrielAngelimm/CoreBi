@@ -1,32 +1,357 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.NetworkView" xmlns:local="clr-namespace:CoreBi.Desktop">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Style="{StaticResource Page}">
-            <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,18">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="Rede" Style="{StaticResource PageTitle}" />
-                    <TextBlock Text="Descubra se o lag vem do seu PC, do Wi-Fi ou do provedor." Style="{StaticResource PageSubtitle}" />
-                </StackPanel>
-                <Button x:Name="BtnNetTest" Grid.Column="1" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE768;" Content="Testar a rede" VerticalAlignment="Top" Click="BtnNetTest_Click" />
-            </Grid>
-            <!-- Progresso do teste: barra contínua (tarefa), não medidor -->
-            <Border Style="{StaticResource CardBorder}" Padding="20,16" Margin="0,0,0,16">
-                <StackPanel>
-                    <TextBlock x:Name="NetStatus" Text="Pronto. O teste leva cerca de 30 segundos." Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="0,0,0,12" />
-                    <Grid Style="{StaticResource ProgressTrack}">
-                        <Border Style="{StaticResource ProgressFill}">
-                            <Border.RenderTransform>
-                                <ScaleTransform x:Name="NetProgress" ScaleX="0" />
-                            </Border.RenderTransform>
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.NetworkView" xmlns:local="clr-namespace:CoreBi.Desktop"
+             IsVisibleChanged="NetworkView_IsVisibleChanged">
+    <!--
+        Rede: o teste é comandado por um console logo abaixo do título (botão, etapa atual, barra com as três estações e
+        porcentagem). O diagnóstico é um instrumento só: download e upload em dois arcos espelhados de escala logarítmica,
+        latência no centro, grandezas de apoio numa régua de quatro células e o veredito no rodapé do painel.
+        Abaixo, com menos peso: o caminho PC → roteador → internet (onde está o atraso) e os dados da conexão.
+        Cabe numa tela com a janela maximizada: o console fica ao lado do título e o diagnóstico ocupa a sobra de altura;
+        em janelas menores a página rola, e em janelas estreitas o console desce para baixo do título.
+    -->
+    <UserControl.Resources>
+        <Style x:Key="NetReadout" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
+            <Setter Property="FontSize" Value="76" />
+            <Setter Property="FontWeight" Value="Light" />
+            <Setter Property="LineHeight" Value="76" />
+            <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
+        </Style>
+        <Style x:Key="NetStatValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
+            <Setter Property="FontSize" Value="27" />
+            <Setter Property="FontWeight" Value="Light" />
+        </Style>
+        <Style x:Key="NetStatCell" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
+            <Setter Property="BorderThickness" Value="1,0,0,0" />
+            <Setter Property="Padding" Value="24,12,16,14" />
+        </Style>
+        <Style x:Key="NetStage" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource Faint}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="NetStageCheck" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Icons}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,1,6,0" />
+            <Setter Property="Text" Value="&#xE73E;" />
+            <Setter Property="Visibility" Value="Collapsed" />
+        </Style>
+        <Style x:Key="NetNodeTile" TargetType="Border">
+            <Setter Property="Width" Value="42" />
+            <Setter Property="Height" Value="42" />
+            <Setter Property="CornerRadius" Value="21" />
+            <Setter Property="Background" Value="{DynamicResource Raised}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style x:Key="NetNodeValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,3,0,0" />
+        </Style>
+        <Style x:Key="NetNodeSub" TargetType="TextBlock" BasedOn="{StaticResource StatSub}">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <!-- Dados da conexão: linhas com fio entre elas, valor à direita -->
+        <DataTemplate x:Key="NetInfoRow">
+            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Key}" Foreground="{DynamicResource Muted}" Margin="0,0,16,0" />
+                    <TextBlock Grid.Column="1" Text="{Binding Value}" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" Style="{StaticResource Num}" ToolTip="{Binding Value}" />
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ScrollViewer x:Name="NetScroll" VerticalScrollBarVisibility="Auto">
+        <Grid MinHeight="{Binding ViewportHeight, ElementName=NetScroll}">
+            <Grid Margin="36,10,36,28">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="16" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid x:Name="NetHeader" Style="{StaticResource PageHeader}" Margin="0,0,0,18" SizeChanged="NetHeader_SizeChanged">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Rede" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="Descubra se o lag vem do seu PC, do Wi-Fi ou do provedor." Style="{StaticResource PageSubtitle}" MaxWidth="400" />
+                    </StackPanel>
+
+                    <!-- Console do teste: ação principal, etapa e progresso real (barra contínua com as três estações) -->
+                    <Border x:Name="NetConsole" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="14,14,22,14" Margin="40,0,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="96" />
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="BtnNetTest" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE768;" Content="Testar a rede"
+                                    Width="172" Height="46" FontSize="14" VerticalAlignment="Center" Click="BtnNetTest_Click"
+                                    ToolTip="Envia pings ao roteador e aos DNS 1.1.1.1 e 8.8.8.8 e baixa e envia cerca de 100 MB de speed.cloudflare.com" />
+                            <StackPanel Grid.Column="1" Margin="22,0,0,0" VerticalAlignment="Center">
+                                <Grid Margin="0,0,0,9">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="NetStatus" Text="Pronto para testar" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock x:Name="NetDetail" Grid.Column="1" Style="{StaticResource Caption}"
+                                               TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" HorizontalAlignment="Right" Margin="16,0,0,0" />
+                                </Grid>
+                                <Grid>
+                                    <Grid Style="{StaticResource ProgressTrack}">
+                                        <Border Style="{StaticResource ProgressFill}">
+                                            <Border.RenderTransform>
+                                                <ScaleTransform x:Name="NetProgress" ScaleX="0" />
+                                            </Border.RenderTransform>
+                                        </Border>
+                                    </Grid>
+                                    <!-- Cortes entre as estações, na cor do painel; as frações são as do motor (NetworkTest.LatencyEnd e DownloadEnd) -->
+                                    <Grid Margin="0,-1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="33*" />
+                                            <ColumnDefinition Width="3" />
+                                            <ColumnDefinition Width="38*" />
+                                            <ColumnDefinition Width="3" />
+                                            <ColumnDefinition Width="29*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="1" Background="{DynamicResource Surface}" />
+                                        <Border Grid.Column="3" Background="{DynamicResource Surface}" />
+                                    </Grid>
+                                </Grid>
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="33*" />
+                                        <ColumnDefinition Width="3" />
+                                        <ColumnDefinition Width="38*" />
+                                        <ColumnDefinition Width="3" />
+                                        <ColumnDefinition Width="29*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock x:Name="NetStage1Check" Style="{StaticResource NetStageCheck}" />
+                                        <TextBlock x:Name="NetStage1" Text="Latência" Style="{StaticResource NetStage}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                        <TextBlock x:Name="NetStage2Check" Style="{StaticResource NetStageCheck}" />
+                                        <TextBlock x:Name="NetStage2" Text="Download" Style="{StaticResource NetStage}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal">
+                                        <TextBlock x:Name="NetStage3Check" Style="{StaticResource NetStageCheck}" />
+                                        <TextBlock x:Name="NetStage3" Text="Upload" Style="{StaticResource NetStage}" />
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock x:Name="NetPercent" Text="—" Style="{StaticResource ReadoutText}" FontSize="30" FontWeight="Light" Foreground="{DynamicResource Faint}" />
+                                <TextBlock x:Name="NetPercentUnit" Text="%" Style="{StaticResource Unit}" Margin="3,0,0,6" Visibility="Collapsed" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- Diagnóstico: o instrumento principal da página; o mostrador ocupa a sobra de altura -->
+                <Border Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid Margin="24,20,24,0">
+                            <StackPanel>
+                                <TextBlock Text="Diagnóstico de rede" Style="{StaticResource SectionTitle}" />
+                                <TextBlock x:Name="NetMeta" Text="Ainda não testado nesta sessão" Style="{StaticResource Caption}" Margin="0,3,0,0" />
+                            </StackPanel>
+                            <Border x:Name="NetBadge" Style="{StaticResource Badge}" HorizontalAlignment="Right" Visibility="Collapsed">
+                                <TextBlock x:Name="NetBadgeText" Style="{StaticResource BadgeText}" />
+                            </Border>
+                        </Grid>
+
+                        <Grid Grid.Row="1" Margin="24,0,24,0" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="320" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <!-- Canal A: download -->
+                            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="Download" Foreground="{DynamicResource Muted}" />
+                                    <Border Width="12" Height="3" CornerRadius="1.5" Background="{DynamicResource Accent}" VerticalAlignment="Center" Margin="8,1,0,0" />
+                                </StackPanel>
+                                <TextBlock x:Name="NetDown" Text="—" Style="{StaticResource NetReadout}" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right" Margin="0,12,0,0" />
+                                <TextBlock Text="Mbps" Foreground="{DynamicResource Muted}" FontSize="14" HorizontalAlignment="Right" Margin="0,6,0,0" />
+                            </StackPanel>
+                            <!-- Mostrador: arcos desenhados em código (NetworkView.DrawDial), latência no centro -->
+                            <Grid Grid.Column="1" Width="320" Height="260">
+                                <Canvas x:Name="NetDial" />
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="Latência" Foreground="{DynamicResource Muted}" FontSize="12.5" HorizontalAlignment="Center" />
+                                    <TextBlock x:Name="NetLatency" Text="—" Style="{StaticResource ReadoutText}" FontSize="60" FontWeight="Light" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" Margin="0,-2,0,-4" />
+                                    <TextBlock x:Name="NetLatencyCaption" Text="ms" Foreground="{DynamicResource Muted}" FontSize="12.5" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Grid>
+                            <!-- Canal B: upload -->
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="6,0,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="12" Height="3" CornerRadius="1.5" Background="{DynamicResource Copper}" VerticalAlignment="Center" Margin="0,1,8,0" />
+                                    <TextBlock Text="Upload" Foreground="{DynamicResource Muted}" />
+                                </StackPanel>
+                                <TextBlock x:Name="NetUp" Text="—" Style="{StaticResource NetReadout}" Foreground="{DynamicResource Faint}" Margin="0,12,0,0" />
+                                <TextBlock Text="Mbps" Foreground="{DynamicResource Muted}" FontSize="14" Margin="0,6,0,0" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Régua de apoio: o que explica a latência -->
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0">
+                            <UniformGrid Rows="1">
+                                <Border Style="{StaticResource NetStatCell}" BorderThickness="0">
+                                    <StackPanel>
+                                        <TextBlock Text="Jitter" Style="{StaticResource StatLabel}" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock x:Name="NetJitter" Text="—" Style="{StaticResource NetStatValue}" />
+                                            <TextBlock Text="ms" Style="{StaticResource Unit}" Margin="5,0,0,4" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource NetStatCell}">
+                                    <StackPanel>
+                                        <TextBlock Text="Perda de pacotes" Style="{StaticResource StatLabel}" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock x:Name="NetLoss" Text="—" Style="{StaticResource NetStatValue}" />
+                                            <TextBlock Text="%" Style="{StaticResource Unit}" Margin="5,0,0,4" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource NetStatCell}">
+                                    <StackPanel>
+                                        <TextBlock Text="Latência sob carga" Style="{StaticResource StatLabel}" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock x:Name="NetLoaded" Text="—" Style="{StaticResource NetStatValue}" />
+                                            <TextBlock Text="ms" Style="{StaticResource Unit}" Margin="5,0,0,4" />
+                                        </StackPanel>
+                                        <TextBlock x:Name="NetLoadedSub" Style="{StaticResource StatSub}" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource NetStatCell}">
+                                    <StackPanel>
+                                        <TextBlock Text="Resolução de nome" Style="{StaticResource StatLabel}" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock x:Name="NetDns" Text="—" Style="{StaticResource NetStatValue}" />
+                                            <TextBlock Text="ms" Style="{StaticResource Unit}" Margin="5,0,0,4" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+                        </Border>
+
+                        <!-- Veredito: um achado por linha, com o ícone na cor do estado -->
+                        <Border x:Name="NetVerdict" Grid.Row="3" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="24,14,24,16" Visibility="Collapsed">
+                            <StackPanel x:Name="NetNotes" />
                         </Border>
                     </Grid>
-                </StackPanel>
-            </Border>
-            <ItemsControl x:Name="NetCards" ItemTemplate="{StaticResource CardTemplate}" />
-            <TextBlock Style="{StaticResource Footnote}" Margin="0,6,0,0" Text="O teste envia pings ao roteador e aos DNS públicos 1.1.1.1 e 8.8.8.8 e baixa e envia dados de teste do servidor público speed.cloudflare.com (cerca de 100 MB no total). Feche downloads, streaming e jogos antes para um resultado fiel." />
-        </StackPanel>
+                </Border>
+
+                <!-- Informações secundárias: onde está o atraso e dados da conexão -->
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="340" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Style="{StaticResource CardBorder}" Padding="22,18,22,16">
+                        <StackPanel>
+                            <TextBlock Text="Caminho até a internet" Style="{StaticResource SectionTitle}" />
+                            <Grid Margin="0,16,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="124" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="124" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="124" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <Border Style="{StaticResource NetNodeTile}">
+                                        <TextBlock Text="&#xE7F8;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Steel}" />
+                                    </Border>
+                                    <TextBlock Text="Este PC" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,9,0,0" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock x:Name="NetPcLink" Text="—" Style="{StaticResource NetNodeValue}" />
+                                        <TextBlock x:Name="NetPcLinkUnit" Text="de link" Style="{StaticResource Unit}" Margin="4,0,0,3" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="NetPcDetail" Text="—" Style="{StaticResource NetNodeSub}" />
+                                </StackPanel>
+                                <Grid Grid.Column="1" Margin="2,0">
+                                    <TextBlock Text="Rede local" Style="{StaticResource Caption}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,-1,0,0" />
+                                    <Border x:Name="NetLinkLocal" Height="2" CornerRadius="1" Background="{DynamicResource LineStrong}" VerticalAlignment="Top" Margin="0,20,0,0" />
+                                    <TextBlock x:Name="NetLinkLocalText" Text="—" Style="{StaticResource StatSub}" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,27,0,0" />
+                                </Grid>
+                                <StackPanel Grid.Column="2">
+                                    <Border Style="{StaticResource NetNodeTile}">
+                                        <TextBlock Text="&#xE839;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Steel}" />
+                                    </Border>
+                                    <TextBlock Text="Roteador" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,9,0,0" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock x:Name="NetRouterMs" Text="—" Style="{StaticResource NetNodeValue}" />
+                                        <TextBlock Text="ms" Style="{StaticResource Unit}" Margin="4,0,0,3" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="NetRouterIp" Text="—" Style="{StaticResource NetNodeSub}" />
+                                </StackPanel>
+                                <Grid Grid.Column="3" Margin="2,0">
+                                    <TextBlock Text="Provedor" Style="{StaticResource Caption}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,-1,0,0" />
+                                    <Border x:Name="NetLinkWan" Height="2" CornerRadius="1" Background="{DynamicResource LineStrong}" VerticalAlignment="Top" Margin="0,20,0,0" />
+                                    <TextBlock x:Name="NetLinkWanText" Text="—" Style="{StaticResource StatSub}" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,27,0,0" />
+                                </Grid>
+                                <StackPanel Grid.Column="4">
+                                    <Border Style="{StaticResource NetNodeTile}">
+                                        <TextBlock Text="&#xE774;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Steel}" />
+                                    </Border>
+                                    <TextBlock Text="Internet" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,9,0,0" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock x:Name="NetWanMs" Text="—" Style="{StaticResource NetNodeValue}" />
+                                        <TextBlock Text="ms" Style="{StaticResource Unit}" Margin="4,0,0,3" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="NetWanDetail" Text="1.1.1.1 e 8.8.8.8" Style="{StaticResource NetNodeSub}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Pings até 1.1.1.1 em repouso e com a conexão cheia: o bufferbloat aparece como o salto entre os dois blocos -->
+                            <Border Style="{StaticResource Divider}" Margin="0,16,0,12" />
+                            <Grid Height="100">
+                                <Canvas x:Name="NetTrace" ClipToBounds="True" SizeChanged="NetTrace_SizeChanged" />
+                                <TextBlock x:Name="NetTraceEmpty" Text="Os pings aparecem aqui ao fim do teste." Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" VerticalAlignment="Center" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource CardBorder}" Padding="22,18,22,10">
+                        <StackPanel>
+                            <TextBlock Text="Conexão" Style="{StaticResource SectionTitle}" Margin="0,0,0,10" />
+                            <ItemsControl x:Name="NetInfo" ItemTemplate="{StaticResource NetInfoRow}" Focusable="False" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
     </ScrollViewer>
 </UserControl>
