@@ -78,6 +78,7 @@ public partial class MainWindow : Window
             UpdateSideStorage();
             UpdateCpuSensorWarning();
             CollectDashSample();
+            PageDisks.Sample();
             UpdateFrameMonitoring();
             UpdateBottleneck();
             if (PageBench.IsVisible) UpdateBenchLive();
@@ -85,14 +86,10 @@ public partial class MainWindow : Window
         };
         _timer.Start();
 
-        StateChanged += (_, _) =>
-        {
-            // Maximizada, a janela ocupa exatamente o espaço de trabalho (MaximizeHook) e dispensa o contorno.
-            bool max = WindowState == WindowState.Maximized;
-            Root.BorderThickness = max ? new Thickness(0) : new Thickness(1);
-            BtnMax.Content = max ? "" : "";
-            BtnMax.ToolTip = max ? "Restaurar" : "Maximizar";
-        };
+        // Abre maximizada; Restaurar volta ao tamanho padrão (1360 × 860), centralizada.
+        StateChanged += (_, _) => UpdateMaximizeChrome();
+        WindowState = WindowState.Maximized;
+        UpdateMaximizeChrome();
         Closing += (_, e) =>
         {
             if (_features.HasCriticalOperation)
@@ -181,6 +178,15 @@ public partial class MainWindow : Window
     internal void Max_Click(object sender, RoutedEventArgs e)
         => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     internal void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>Maximizada, a janela ocupa exatamente o espaço de trabalho (MaximizeHook) e dispensa o contorno.</summary>
+    private void UpdateMaximizeChrome()
+    {
+        bool max = WindowState == WindowState.Maximized;
+        Root.BorderThickness = max ? new Thickness(0) : new Thickness(1);
+        BtnMax.Content = max ? "" : "";
+        BtnMax.ToolTip = max ? "Restaurar" : "Maximizar";
+    }
 
     internal async void Nav_Checked(object sender, RoutedEventArgs e)
     {
