@@ -14,8 +14,8 @@ using System.Windows.Shapes;
 namespace CoreBi.Desktop;
 
 /// <summary>
-/// Visão geral: painel de blocos com gráfico de área (CPU × GPU), desempenho, tabela de componentes, anéis de
-/// memória/disco, eventos recentes e lista de verificação da saúde do PC.
+/// Visão geral: osciloscópio de dois canais (CPU × GPU), desempenho, componentes, anéis de memória e disco,
+/// eventos recentes e lista de verificação da saúde do PC.
 /// </summary>
 public partial class MainWindow
 {
@@ -68,8 +68,8 @@ public partial class MainWindow
     {
         foreach (var r in _settings.BenchRuns)
         {
-            if (r.Multi is double m) yield return new DashEvent("", "Benchmark", "Render · multi-core", $"{m:N0} pts", r.Date);
-            else if (r.Single is double s) yield return new DashEvent("", "Benchmark", "Render · single-core", $"{s:N0} pts", r.Date);
+            if (r.Multi is double m) yield return new DashEvent("", "Benchmark", "Render multi-core", $"{m:N0} pts", r.Date);
+            else if (r.Single is double s) yield return new DashEvent("", "Benchmark", "Render single-core", $"{s:N0} pts", r.Date);
         }
         foreach (var r in _settings.BenchRecords)
         {
@@ -157,15 +157,15 @@ public partial class MainWindow
         if (runs.Count > 0)
         {
             DashScore.Text = $"{runs[0].Multi:N0}";
-            DashScoreSub.Text = $"pts · render multi-core · {runs[0].Date:dd/MM HH:mm}";
+            DashScoreSub.Text = $"Render multi-core, medido em {runs[0].Date:dd/MM 'às' HH:mm}";
             if (runs.Count > 1)
             {
                 double d = runs[0].Multi!.Value - runs[1].Multi!.Value;
-                DashScoreDelta.Text = d >= 0 ? $"▲ {d:N0}" : $"▼ {-d:N0}";
+                DashScoreDelta.Text = d >= 0 ? $"+{d:N0} desde o anterior" : $"−{-d:N0} desde o anterior";
             }
             else DashScoreDelta.Text = "";
         }
-        else { DashScore.Text = "—"; DashScoreDelta.Text = ""; DashScoreSub.Text = "rode o Benchmark para ter uma nota"; }
+        else { DashScore.Text = "—"; DashScoreDelta.Text = ""; DashScoreSub.Text = "Rode o benchmark para ter uma nota de referência."; }
 
         string Last(string test) => _settings.BenchRecords.FirstOrDefault(r => r.Test == test)?.Summary.Split('·')[0].Trim() ?? "—";
         var single = _settings.BenchRuns.FirstOrDefault(r => r.Single != null)?.Single;
@@ -177,10 +177,16 @@ public partial class MainWindow
         };
         DashCpuName.Text = GameCatalog.ShortCpuName(_cpuName);
         DashGpuName.Text = _gpus.Count > 0 ? GameCatalog.ShortGpuName(_gpus[0].Name) : "—";
+        if (_cpuName.Length > 0 && _gpus.Count > 0)
+            DashMachine.Text = $"Leituras ao vivo de {Environment.MachineName}: {DashCpuName.Text} e {DashGpuName.Text}.";
     }
 
-    // ---------------- gráfico de área ----------------
+    // ---------------- osciloscópio (CPU × GPU) ----------------
 
+    /// <summary>
+    /// Gráfico em retícula, como a tela de um instrumento: canal A (processador, verde-água, com área)
+    /// e canal B (placa de vídeo, cobre). O valor atual fica nas leituras grandes acima, não no gráfico.
+    /// </summary>
     internal void DrawDashChart()
     {
         DashChart.Children.Clear();
@@ -192,50 +198,57 @@ public partial class MainWindow
         Func<DashSample, float?> cpu = metric switch { "load" => s => s.CpuL, "power" => s => s.CpuW, _ => s => s.CpuT };
         Func<DashSample, float?> gpu = metric switch { "load" => s => s.GpuL, "power" => s => s.GpuW, _ => s => s.GpuT };
         string unit = metric switch { "load" => " %", "power" => " W", _ => " °C" };
-        string name = metric switch { "load" => "CARGA", "power" => "CONSUMO", _ => "TEMPERATURA" };
+        string name = metric switch { "load" => "Carga", "power" => "Consumo", _ => "Temperatura" };
+        string span = range >= 60 ? $"{range / 60} min" : $"{range} s";
         var data = _dash.Skip(Math.Max(0, _dash.Count - range)).ToList();
 
-        // Cabeçalho: valor atual grande + variação no período (como o par e a cotação da referência).
         float? cNow = data.Count > 0 ? cpu(data[^1]) : null, gNow = data.Count > 0 ? gpu(data[^1]) : null;
-        DashChartLabel.Text = $"CPU · {name}";
+        DashChartLabel.Text = $"{name} nos últimos {span}";
         DashChartValue.Text = cNow is float cv ? $"{cv:0.#}{unit}" : "—";
         DashChartValue2.Text = gNow is float gv ? $"{gv:0.#}{unit}" : "—";
         var firstC = data.Select(cpu).FirstOrDefault(v => v != null);
         DashChartDelta.Text = cNow is float a && firstC is float b
-            ? $"{(a - b >= 0 ? "+" : "")}{a - b:0.#}{unit} em {(range >= 60 ? $"{range / 60} min" : $"{range} s")}"
-            : cNow == null && metric != "load" ? "sem leitura da CPU (veja o aviso no menu)" : "coletando…";
+            ? $"Processador {(a - b >= 0 ? "+" : "−")}{Math.Abs(a - b):0.#}{unit} no período"
+            : cNow == null && metric != "load" ? "Sem leitura do processador. Veja o aviso na barra lateral." : "Coletando as primeiras amostras…";
 
         var all = data.SelectMany(s => new[] { cpu(s), gpu(s) }).Where(v => v != null).Select(v => (double)v!.Value).ToList();
         double yMin = metric == "temp" ? 20 : 0;
         double yMax = metric switch
         {
             "load" => 100,
-            "power" => Math.Max(50, all.Count > 0 ? all.Max() * 1.2 : 50),
-            _ => Math.Max(90, all.Count > 0 ? all.Max() + 5 : 90)
+            "power" => Math.Max(50, all.Count > 0 ? Math.Ceiling(all.Max() * 1.2 / 10) * 10 : 50),
+            _ => Math.Max(100, all.Count > 0 ? Math.Ceiling((all.Max() + 5) / 10) * 10 : 100)
         };
-        const double left = 48, bottom = 22, top = 8;
+        const double left = 44, bottom = 22, top = 6;
         double plotW = w - left, plotH = h - top - bottom;
-        double X(int i) => left + plotW * i / Math.Max(1, range - 1) + plotW * (range - data.Count) / Math.Max(1, range - 1);
+        double X(int i) => left + plotW * (i + range - data.Count) / Math.Max(1, range - 1);
         double Y(double v) => top + plotH * (1 - (Math.Clamp(v, yMin, yMax) - yMin) / (yMax - yMin));
 
-        var fg = (SolidColorBrush)FindResource("Fg");
-        var faint = (Brush)FindResource("Faint");
-        var mono = (FontFamily)FindResource("Mono");
+        var line = Palette("Line");
+        var faint = Palette("Faint");
+        var readout = (FontFamily)FindResource("Readout");
 
-        // Grade tracejada horizontal + rótulos (como na referência)
-        for (int k = 0; k <= 2; k++)
+        // Retícula: 4 divisões em cada eixo, com a borda do quadro um tom acima
+        for (int k = 0; k <= 4; k++)
         {
-            double v = yMin + (yMax - yMin) * k / 2, y = Y(v);
-            DashChart.Children.Add(new Line { X1 = left, X2 = w, Y1 = y, Y2 = y, Stroke = (Brush)FindResource("Line"), StrokeDashArray = new DoubleCollection { 5, 5 } });
-            var lbl = new TextBlock { Text = $"{v:0}{unit.Trim()}", FontSize = 11, Foreground = faint, FontFamily = mono };
-            Canvas.SetLeft(lbl, 0); Canvas.SetTop(lbl, y - 8);
-            DashChart.Children.Add(lbl);
+            double v = yMin + (yMax - yMin) * k / 4, y = Y(v);
+            DashChart.Children.Add(new Line { X1 = left, X2 = w, Y1 = y, Y2 = y, Stroke = line, StrokeThickness = 1, SnapsToDevicePixels = true });
+            if (k % 2 == 0)
+            {
+                var lbl = new TextBlock { Text = $"{v:0}{unit.Trim()}", FontSize = 11, Foreground = faint, FontFamily = readout };
+                Canvas.SetLeft(lbl, 0); Canvas.SetTop(lbl, y - 8);
+                DashChart.Children.Add(lbl);
+            }
         }
-        // Eixo de tempo
-        string[] xs = { range >= 60 ? $"-{range / 60} min" : $"-{range} s", range >= 120 ? $"-{range / 120} min" : $"-{range / 2} s", "agora" };
+        for (int k = 0; k <= 4; k++)
+        {
+            double x = left + plotW * k / 4;
+            DashChart.Children.Add(new Line { X1 = x, X2 = x, Y1 = top, Y2 = top + plotH, Stroke = line, StrokeThickness = 1, SnapsToDevicePixels = true });
+        }
+        string[] xs = { $"−{span}", range >= 120 ? $"−{range / 120} min" : $"−{range / 2} s", "agora" };
         for (int k = 0; k < 3; k++)
         {
-            var t = new TextBlock { Text = xs[k], FontSize = 11, Foreground = faint };
+            var t = new TextBlock { Text = xs[k], FontSize = 11, Foreground = faint, FontFamily = readout };
             t.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             Canvas.SetLeft(t, Math.Clamp(left + plotW * k / 2 - t.DesiredSize.Width / 2, left, w - t.DesiredSize.Width));
             Canvas.SetTop(t, h - 16);
@@ -244,45 +257,39 @@ public partial class MainWindow
 
         if (data.Count < 2) return;
 
-        // GPU: linha tracejada discreta
-        var gLine = new Polyline { Stroke = (Brush)FindResource("Muted"), StrokeThickness = 1.5, StrokeDashArray = new DoubleCollection { 3, 2 }, StrokeLineJoin = PenLineJoin.Round };
+        // Canal B: placa de vídeo
+        var copper = Palette("Copper");
+        var gLine = new Polyline { Stroke = copper, StrokeThickness = 1.6, StrokeLineJoin = PenLineJoin.Round };
         for (int i = 0; i < data.Count; i++) if (gpu(data[i]) is float g) gLine.Points.Add(new Point(X(i), Y(g)));
         DashChart.Children.Add(gLine);
 
-        // CPU: área com degradê monocromático + linha
+        // Canal A: processador, com área em degradê do próprio tom
+        var accent = Palette("Accent");
         var pts = new List<Point>();
         for (int i = 0; i < data.Count; i++) if (cpu(data[i]) is float c) pts.Add(new Point(X(i), Y(c)));
         if (pts.Count < 2) return;
-        var col = fg.Color;
+        var col = accent.Color;
         var area = new Polygon
         {
-            Fill = new LinearGradientBrush(Color.FromArgb(0x55, col.R, col.G, col.B), Color.FromArgb(0x00, col.R, col.G, col.B), 90)
+            Fill = new LinearGradientBrush(Color.FromArgb(0x44, col.R, col.G, col.B), Color.FromArgb(0x00, col.R, col.G, col.B), 90)
         };
         foreach (var p in pts) area.Points.Add(p);
         area.Points.Add(new Point(pts[^1].X, top + plotH));
         area.Points.Add(new Point(pts[0].X, top + plotH));
         DashChart.Children.Add(area);
-        var line = new Polyline { Stroke = fg, StrokeThickness = 2, StrokeLineJoin = PenLineJoin.Round };
-        foreach (var p in pts) line.Points.Add(p);
-        DashChart.Children.Add(line);
+        var cLine = new Polyline { Stroke = accent, StrokeThickness = 2, StrokeLineJoin = PenLineJoin.Round };
+        foreach (var p in pts) cLine.Points.Add(p);
+        DashChart.Children.Add(cLine);
 
-        // Marcador do valor atual com balão (como o "76,000 B" da referência)
-        var last = pts[^1];
-        DashChart.Children.Add(new Line { X1 = last.X, X2 = last.X, Y1 = top, Y2 = top + plotH, Stroke = faint, StrokeDashArray = new DoubleCollection { 3, 3 } });
-        var dot = new Ellipse { Width = 11, Height = 11, Stroke = fg, StrokeThickness = 2, Fill = (Brush)FindResource("Card") };
-        Canvas.SetLeft(dot, last.X - 5.5); Canvas.SetTop(dot, last.Y - 5.5);
-        DashChart.Children.Add(dot);
-        var bubble = new Border
+        // Ponto de leitura atual em cada canal
+        void Cursor(Point p, Brush stroke)
         {
-            Background = (Brush)FindResource("Hover"),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(10, 5, 10, 5),
-            Child = new TextBlock { Text = DashChartValue.Text, FontFamily = mono, FontWeight = FontWeights.SemiBold, Foreground = fg }
-        };
-        bubble.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        Canvas.SetLeft(bubble, Math.Max(left, last.X - bubble.DesiredSize.Width - 10));
-        Canvas.SetTop(bubble, Math.Clamp(last.Y - bubble.DesiredSize.Height - 10, 0, h - bubble.DesiredSize.Height));
-        DashChart.Children.Add(bubble);
+            var dot = new Ellipse { Width = 9, Height = 9, Stroke = stroke, StrokeThickness = 2, Fill = Palette("Surface") };
+            Canvas.SetLeft(dot, p.X - 4.5); Canvas.SetTop(dot, p.Y - 4.5);
+            DashChart.Children.Add(dot);
+        }
+        if (gLine.Points.Count > 0) Cursor(gLine.Points[^1], copper);
+        Cursor(pts[^1], accent);
     }
 
     // ---------------- anéis concêntricos ----------------
@@ -297,43 +304,43 @@ public partial class MainWindow
         var c0 = _drives.FirstOrDefault(d => d.Letter.StartsWith("C", StringComparison.OrdinalIgnoreCase));
 
         DashMemHero.Text = total > 0 ? $"{(total - avail) / 1073741824.0:0.0} GB" : "—";
-        DashMemSub.Text = total > 0 ? $"de RAM em uso · {total / 1073741824.0:0} GB instalados" : "";
+        DashMemSub.Text = total > 0 ? $"de RAM em uso, de {total / 1073741824.0:0} GB instalados" : "";
 
-        Brush fg = (Brush)FindResource("Fg"), muted = (Brush)FindResource("Muted"), faint = (Brush)FindResource("Faint");
-        var rings = new List<(double Frac, Brush Brush, string Label)> { (ram, fg, "RAM") };
-        if (vram is double v) rings.Add((v, muted, "VRAM"));
-        if (c0 != null) rings.Add((c0.UsedFraction, faint, $"Disco {c0.Letter}"));
+        // Mesmos canais do resto do app: RAM no verde-água, VRAM (placa de vídeo) no cobre, disco no aço
+        Brush accent = Palette("Accent"), copper = Palette("Copper"), steel = Palette("Steel");
+        var rings = new List<(double Frac, Brush Brush, string Label)> { (ram, accent, "RAM") };
+        if (vram is double v) rings.Add((v, copper, "VRAM"));
+        if (c0 != null) rings.Add((c0.UsedFraction, steel, $"Disco {c0.Letter}"));
 
         DashRings.Children.Clear();
         double cx = DashRings.Width / 2, cy = DashRings.Height / 2;
         for (int i = 0; i < rings.Count; i++)
         {
-            double r = 86 - i * 22;
+            double r = 88 - i * 20;
             DashRings.Children.Add(new Ellipse
             {
                 Width = r * 2,
                 Height = r * 2,
-                Stroke = (Brush)FindResource("Line"),
-                StrokeThickness = 12,
+                Stroke = Palette("Line"),
+                StrokeThickness = 10,
                 Margin = new Thickness(cx - r, cy - r, 0, 0)
             });
-            var arc = new Path
+            DashRings.Children.Add(new Path
             {
                 Data = RingArc(rings[i].Frac, cx, cy, r),
                 Stroke = rings[i].Brush,
-                StrokeThickness = 12,
+                StrokeThickness = 10,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round
-            };
-            DashRings.Children.Add(arc);
+            });
         }
         var center = new TextBlock
         {
             Text = $"{ram:P0}",
-            FontFamily = (FontFamily)FindResource("Mono"),
-            FontSize = 16,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = fg
+            FontFamily = (FontFamily)FindResource("Readout"),
+            FontStretch = FontStretches.SemiCondensed,
+            FontSize = 24,
+            Foreground = Palette("Fg")
         };
         center.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(center, cx - center.DesiredSize.Width / 2); Canvas.SetTop(center, cy - center.DesiredSize.Height / 2);

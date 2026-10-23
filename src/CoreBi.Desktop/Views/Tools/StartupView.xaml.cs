@@ -36,11 +36,11 @@ public partial class StartupView : UserControl
 
         StartupList.ItemsSource = list;
         int on = list.Count(e => e.Enabled);
-        StartupSummary.Text = list.Count == 0 ? "NENHUM PROGRAMA NA INICIALIZAÇÃO"
-                            : $"{list.Count} PROGRAMAS · {on} ATIVADOS · {list.Count - on} DESATIVADOS";
+        StartupSummary.Text = list.Count == 0 ? "Nenhum programa abre com o Windows"
+                            : $"{list.Count} programas, {on} ligados e {list.Count - on} desligados";
         BtnStartupRestore.IsEnabled = _removed.Count > 0;
         BtnStartupRestore.Content = _removed.Count > 0
-            ? $"RESTAURAR REMOVIDOS ({_removed.Count})" : "RESTAURAR REMOVIDOS";
+            ? $"Restaurar removidos ({_removed.Count})" : "Restaurar removidos";
     }
 
     internal async void BtnStartupScan_Click(object sender, RoutedEventArgs e)

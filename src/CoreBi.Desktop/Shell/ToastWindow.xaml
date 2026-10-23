@@ -4,22 +4,29 @@
         Title="CoreBi aviso" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ShowActivated="False" ResizeMode="NoResize" Focusable="False"
         SizeToContent="WidthAndHeight" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display" Opacity="0">
-    <Border Background="#F2080808" BorderBrush="#40FFFFFF" BorderThickness="1" CornerRadius="4" Padding="16,12" Width="340">
+    <!--
+        O aviso aparece sobre qualquer coisa (inclusive jogos), então tem paleta fixa de grafite em vez de seguir o tema:
+        fica legível em fundo claro ou escuro. Cores iguais às do tema escuro do app.
+    -->
+    <Border Background="#F2121B23" BorderBrush="#2C3B47" BorderThickness="1" CornerRadius="12" Padding="16,14" Width="348" Margin="12">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="24" ShadowDepth="6" Direction="270" Opacity="0.35" Color="#000000"/>
+        </Border.Effect>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Border Width="34" Height="34" Background="#F5F5F5" CornerRadius="3" VerticalAlignment="Top" Margin="0,2,14,0">
-                <TextBlock x:Name="TIcon" Text="&#xE88E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="17"
-                           Foreground="#000000" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <Border Width="36" Height="36" Background="#1F27C9BC" CornerRadius="10" VerticalAlignment="Top" Margin="0,1,14,0">
+                <TextBlock x:Name="TIcon" Text="&#xE88E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                           Foreground="#27C9BC" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
             <StackPanel Grid.Column="1">
-                <TextBlock x:Name="TTitle" Foreground="#F5F5F5" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13.5"
+                <TextBlock x:Name="TTitle" Foreground="#E6EEF1" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13.5"
                            FontWeight="SemiBold" TextWrapping="Wrap"/>
-                <TextBlock x:Name="TText" Foreground="#9A9A9A" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12"
-                           TextWrapping="Wrap" Margin="0,3,0,0"/>
-                <TextBlock Text="CoreBi" Foreground="#4A4A4A" FontSize="9.5" FontWeight="Bold" Margin="0,6,0,0"/>
+                <TextBlock x:Name="TText" Foreground="#93A4B0" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12.5"
+                           TextWrapping="Wrap" LineHeight="18" Margin="0,3,0,0"/>
+                <TextBlock Text="CoreBi" Foreground="#5E6E7A" FontFamily="Bahnschrift" FontStretch="SemiCondensed" FontSize="11" FontWeight="SemiBold" Margin="0,8,0,0"/>
             </StackPanel>
         </Grid>
     </Border>

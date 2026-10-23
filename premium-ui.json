@@ -29,5 +29,5 @@
   "evidence": {
     "failurePaths": "tests/CoreBi.Tests/Program.cs"
   },
-  "scopeNotes": "XAML não é analisado pelo auditor web. Compilação e testes WPF são executados separadamente. A revisão completa de UI/UX foi adiada pelo usuário. Documentação canônica de design: docs/DESIGN.md. Por organização do projeto, apenas README.md permanece na raiz."
+  "scopeNotes": "XAML não é analisado pelo auditor web. Compilação e testes WPF são executados separadamente; tools/check_resources.py confere as chaves de recurso do XAML. A interface foi reformulada (direção Bancada); acessibilidade por teclado, leitor de tela, alto contraste e DPI ainda exigem revisão manual em Windows. Documentação canônica de design: docs/DESIGN.md. Por organização do projeto, apenas README.md permanece na raiz."
 }

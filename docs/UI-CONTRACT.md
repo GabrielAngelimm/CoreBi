@@ -5,10 +5,10 @@
 | Capability | Canonical owner | Source of truth | Allowed variants | Verification |
 | --- | --- | --- | --- | --- |
 | Table Selection | WPF DataGrid/ListBox e estilos compartilhados | src/CoreBi.Desktop/Shell/Theme.xaml | Seleção simples ou múltipla conforme operação original | tests/CoreBi.Tests/Program.cs constrói todas as páginas; teclado completo pendente |
-| Select/Listbox | WPF ComboBox/ListBox e chips RadioButton | src/CoreBi.Desktop/Shell/Theme.xaml | Chips para poucas opções; lista para inventário | Construção e navegação WPF; revisão manual de foco pendente |
+| Select/Listbox | WPF ListBox, controle segmentado, chips e ladrilhos (RadioButton) | src/CoreBi.Desktop/Shell/Theme.xaml | Segmentos para opções fixas; chips para listas geradas; ladrilhos para escolher o teste; lista para inventário e paleta de comandos | Construção e navegação WPF; revisão manual de foco pendente |
 | Form | Controles WPF, handlers próprios em ferramentas administrativas, Disco, Energia e Rede, eventos por feature nas demais e validação do Engine | src/CoreBi.Desktop/Views e Features | PasswordBox para chave; campos de filtros e opções originais | Teste de persistência DPAPI e regras; instalações não executadas |
-| Scrollbar | WPF ScrollViewer/ScrollBar com estilo herdado | src/CoreBi.Desktop/Shell/Theme.xaml | Rolagem da navegação e do conteúdo independentes | XAML compilado; múltiplos DPI pendentes |
-| Toast | ToastWindow | src/CoreBi.Desktop/Shell/ToastWindow.xaml | Janela escura para eventos USB e falhas de persistência | Construção dos recursos; conexão física pendente |
+| Scrollbar | WPF ScrollViewer/ScrollBar com estilo do tema | src/CoreBi.Desktop/Shell/Theme.xaml | Rolagem da navegação e do conteúdo independentes | XAML compilado; múltiplos DPI pendentes |
+| Toast | ToastWindow | src/CoreBi.Desktop/Shell/ToastWindow.xaml | Cartão de grafite fixo (independe do tema) para eventos USB e falhas de persistência | Construção dos recursos; conexão física pendente |
 
 Operações administrativas usam comandos específicos e diálogos Windows. Seleção, rolagem e foco seguem os controles WPF nativos.
 
@@ -20,6 +20,9 @@ Operações administrativas usam comandos específicos e diálogos Windows. Sele
 - Relatórios e configurações pertencem ao CoreBi. Nome original pode aparecer nos créditos legais e documentação de origem, sem marca na interface.
 - FPS estimado local, resposta da API e apresentação ETW têm fontes distintas; não converter a estimativa em leitura medida.
 
-## Preservação e pendências
+- Botões de iniciar e parar trocam de papel no mesmo lugar (`Ui.SetRunning`): cor, glifo e texto mudam juntos.
+- Veredito usa somente `Ok`, `Warn` e `Danger`; o acento verde-água indica leitura ao vivo ou seleção, nunca saúde.
 
-O usuário pediu preservar a interface nesta etapa. Recursos de acessibilidade e detalhes visuais herdados não foram certificados só por compilar. A futura etapa de UI/UX deve revisar foco/atalhos, leitura por tecnologia assistiva, contraste, DPI e legibilidade, preservando os comandos reais do Engine.
+## Reformulação e pendências
+
+A interface foi redesenhada (direção "Bancada", descrita em [DESIGN.md](DESIGN.md)) mantendo nomes de elementos, handlers e fluxos usados pelo código e pelos testes. Compilar não certifica acessibilidade: falta revisar em Windows a navegação completa por teclado (a paleta de comandos Ctrl + K cobre a navegação entre páginas), leitor de tela, alto contraste e DPI em vários monitores.

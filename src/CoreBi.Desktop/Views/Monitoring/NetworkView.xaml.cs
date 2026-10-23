@@ -25,7 +25,7 @@ public partial class NetworkView : UserControl
         _running = true;
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(Context.Lifetime);
         _cancellation = cancellation;
-        BtnNetTest.Content = "CANCELAR";
+        Ui.SetRunning(BtnNetTest, true, "Testar a rede", "Cancelar");
         NetCards.ItemsSource = null;
         NetProgress.ScaleX = 0;
         try
@@ -58,7 +58,7 @@ public partial class NetworkView : UserControl
         {
             _running = false;
             _cancellation = null;
-            if (!Context.IsClosing) BtnNetTest.Content = "TESTAR";
+            if (!Context.IsClosing) Ui.SetRunning(BtnNetTest, false, "Testar a rede");
         }
     }
 }

@@ -54,8 +54,7 @@ public partial class MainWindow
 
         _benchCts = CancellationTokenSource.CreateLinkedTokenSource(_features.Lifetime);
         var ct = _benchCts.Token;
-        BtnBench.Content = "PARAR";
-        BtnBench.Style = (Style)FindResource("OutlineButton");
+        Ui.SetRunning(BtnBench, true, "Iniciar");
         BenchModePanel.IsEnabled = BenchDurationPanel.IsEnabled = BenchTestPanel.IsEnabled = false;
         BenchHint.Text = "";
         BenchIdle.Visibility = Visibility.Collapsed;
@@ -90,8 +89,7 @@ public partial class MainWindow
         UpdateBenchView();
         bool cancelled = ct.IsCancellationRequested;
         _benchCts = null;
-        BtnBench.Content = "INICIAR";
-        BtnBench.Style = (Style)FindResource("PrimaryButton");
+        Ui.SetRunning(BtnBench, false, "Iniciar");
         BenchModePanel.IsEnabled = BenchDurationPanel.IsEnabled = BenchTestPanel.IsEnabled = true;
         BenchBuckets.Children.Clear();
 
@@ -125,7 +123,7 @@ public partial class MainWindow
         {
             if (b < 0) continue;
             var (x, y, w, h) = _bench.Buckets[b];
-            var rect = new Rectangle { Width = w, Height = h, Stroke = Brushes.White, StrokeThickness = 1.5 };
+            var rect = new Rectangle { Width = w, Height = h, Stroke = Palette("Accent"), StrokeThickness = 2 };
             Canvas.SetLeft(rect, x); Canvas.SetTop(rect, y);
             BenchBuckets.Children.Add(rect);
         }

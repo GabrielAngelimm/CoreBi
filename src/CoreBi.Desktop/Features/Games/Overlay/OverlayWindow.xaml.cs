@@ -128,11 +128,11 @@ public partial class OverlayWindow : Window
     {
         OGraph.Children.Clear();
         double w = OGraph.Width, h = OGraph.Height;
-        OGraph.Children.Add(new Line { X1 = 0, X2 = w, Y1 = h - 0.5, Y2 = h - 0.5, Stroke = new SolidColorBrush(Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF)) });
+        OGraph.Children.Add(new Line { X1 = 0, X2 = w, Y1 = h - 0.5, Y2 = h - 0.5, Stroke = new SolidColorBrush(Color.FromArgb(0x40, 0x82, 0x97, 0xA6)) });
         if (ft == null || ft.Count < 2) return;
 
         double max = Math.Max(ft.Max(), ft.Average() * 2); // escala que mostra picos sem achatar o normal
-        var line = new Polyline { Stroke = Brushes.White, StrokeThickness = 1 };
+        var line = new Polyline { Stroke = new SolidColorBrush(Color.FromRgb(0x27, 0xC9, 0xBC)), StrokeThickness = 1.2 };
         double step = w / (ft.Count - 1);
         for (int i = 0; i < ft.Count; i++)
             line.Points.Add(new Point(i * step, h - 1 - (h - 2) * Math.Min(1, ft[i] / max)));

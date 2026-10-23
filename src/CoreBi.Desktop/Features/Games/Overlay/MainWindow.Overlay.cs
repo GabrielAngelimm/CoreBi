@@ -21,16 +21,21 @@ public partial class MainWindow
         OvItemsPanel.Children.Clear();
         foreach (var group in OverlayMetrics.All.GroupBy(m => m.Group))
         {
-            OvItemsPanel.Children.Add(new TextBlock
+            // Uma linha por componente: nome à esquerda, itens à direita (igual às linhas do próprio overlay).
+            var row = new Grid { Margin = new Thickness(0, 12, 0, 0) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(96) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.Children.Add(new TextBlock
             {
-                Text = group.Key.ToUpperInvariant(),
-                Style = (Style)FindResource("Label"),
-                Margin = new Thickness(0, 10, 0, 4),
+                Text = group.Key,
+                FontWeight = FontWeights.SemiBold,
+                Margin = new Thickness(0, 1, 12, 0),
             });
             var wrap = new WrapPanel();
+            Grid.SetColumn(wrap, 1);
             foreach (var m in group)
             {
-                var cb = new CheckBox { Content = m.Label, Tag = m.Key, IsChecked = OvShow.Contains(m.Key), Margin = new Thickness(0, 0, 18, 6) };
+                var cb = new CheckBox { Content = m.Label, Tag = m.Key, IsChecked = OvShow.Contains(m.Key), Margin = new Thickness(0, 0, 20, 10) };
                 cb.Click += (_, _) =>
                 {
                     if (cb.IsChecked == true) OvShow.Add(m.Key); else OvShow.Remove(m.Key);
@@ -38,7 +43,8 @@ public partial class MainWindow
                 };
                 wrap.Children.Add(cb);
             }
-            OvItemsPanel.Children.Add(wrap);
+            row.Children.Add(wrap);
+            OvItemsPanel.Children.Add(row);
         }
     }
 

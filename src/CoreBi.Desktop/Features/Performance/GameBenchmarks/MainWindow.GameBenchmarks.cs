@@ -43,12 +43,12 @@ public partial class MainWindow
         if (test == "disk") InitDiskBench();
         BenchSub.Text = test switch
         {
-            "gpu" => "Cena de jogo em Direct3D 11 para medir a placa de vídeo, no estilo 3DMark / Unigine",
-            "rt" => "Ray tracing por hardware (DXR 1.1, Direct3D 12): usa os núcleos de RT da placa, com 3 passadas e nota pela mediana",
-            "sim" => "Quanto FPS a CPU aguenta numa simulação de jogo com milhares de unidades",
-            "mem" => "Latência e banda da RAM e velocidade de carregamento do disco",
-            "disk" => "Velocidade de leitura e escrita do disco: sequencial e acessos aleatórios de 4 KB, no estilo CrystalDiskMark",
-            _ => "Benchmark de CPU por renderização 3D (path tracing), no mesmo princípio do Cinebench",
+            "gpu" => "Cena de jogo em Direct3D 11 para medir a placa de vídeo, no estilo 3DMark e Unigine.",
+            "rt" => "Ray tracing por hardware (DXR 1.1, Direct3D 12) nos núcleos de RT da placa, com 3 passadas e nota pela mediana.",
+            "sim" => "Quanto FPS o processador aguenta numa simulação de jogo com milhares de unidades.",
+            "mem" => "Latência e banda da memória RAM e velocidade de carregamento do disco.",
+            "disk" => "Leitura e escrita do disco, sequenciais e aleatórias de 4 KB, no estilo CrystalDiskMark.",
+            _ => "Renderização 3D por path tracing no processador, no mesmo princípio do Cinebench.",
         };
         UpdateGameBenchHistory();
     }
@@ -82,8 +82,7 @@ public partial class MainWindow
     internal void SetGameBenchRunning(Button btn, bool running)
     {
         _gameBenchRunning = running;
-        btn.Content = running ? "CANCELAR" : "INICIAR";
-        btn.Style = (Style)FindResource(running ? "OutlineButton" : "PrimaryButton");
+        Ui.SetRunning(btn, running, "Iniciar", "Cancelar");
         BenchTestPanel.IsEnabled = !running;
     }
 
@@ -274,7 +273,7 @@ public partial class MainWindow
             rows.Add(new MemRow("Carregamento do mapa", $"{load.MapLoadSeconds:0.00} s", "Pacote + assets: quanto menor, mais rápido o jogo carrega."));
             Show();
 
-            MemStatus.Text = "Concluído · arquivos de teste apagados";
+            MemStatus.Text = "Concluído. Os arquivos de teste foram apagados.";
             // Nota para a barra do histórico: mais rápido = maior (inverso da latência × velocidade de carga).
             SaveBenchRecord("mem", 1000 / lat + 10 / load.MapLoadSeconds,
                             $"{lat:0} ns · {bw.Read:0} GB/s · mapa {load.MapLoadSeconds:0.00} s");

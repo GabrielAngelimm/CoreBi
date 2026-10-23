@@ -55,9 +55,11 @@ As operações críticas bloqueiam o fechamento enquanto são gerenciadas pelo a
 
 O download percorre somente HTTPS em domínios oficiais NVIDIA/AMD, valida cada redirecionamento e exige Authenticode confiável com publicador exato. O instalador é iniciado com um handle de leitura que impede substituição do arquivo entre validação e lançamento. Esses controles têm testes de política e ACL; a instalação real ainda exige ensaio separado.
 
-## Apresentação preservada
+## Apresentação
 
-A migração **não é uma conversão completa para MVVM**. As demais ferramentas ainda usam arquivos parciais de `MainWindow`, páginas que encaminham eventos e acessos tipados em `MainWindow.ViewAccess.cs`. É uma dívida localizada e documentada, mantida para preservar a UI e os fluxos nesta etapa. As seis páginas listadas acima já dispensam essa ponte.
+A interface foi redesenhada por completo (design system em [DESIGN.md](DESIGN.md)), mas a camada de apresentação **não foi convertida para MVVM**: a reformulação manteve os nomes de elementos, os handlers e o contrato dos testes, para trocar a aparência sem arriscar os fluxos. As demais ferramentas ainda usam arquivos parciais de `MainWindow`, páginas que encaminham eventos e acessos tipados em `MainWindow.ViewAccess.cs`. As seis páginas listadas acima já dispensam essa ponte.
+
+O shell concentra o que é transversal: tema (`ThemeManager`, `Theme.xaml`), propriedades anexadas do design system (`Ui.cs`), paleta de comandos (`MainWindow.Palette.cs`), telemetria da barra lateral e a pílula de estado da coleta. Cores de estados definidos em código usam `SetResourceReference`; desenhos em código (gráficos, anéis) usam `MainWindow.Palette(chave)` e são refeitos em `RedrawThemedVisuals` na troca de tema. `tools/check_resources.py` confere as chaves de recurso, que o compilador de XAML não valida.
 
 Novas regras entram no Engine. Ao evoluir uma página, mova seu estado/handlers para a própria página ou um presenter enxuto e elimine os acessos correspondentes da ponte. Um viewmodel deve resolver uma necessidade concreta, sem introduzir outro framework só para uniformidade. Templates e tema continuam compartilhados em `Shell`.
 

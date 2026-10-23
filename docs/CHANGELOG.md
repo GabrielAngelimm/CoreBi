@@ -2,6 +2,13 @@
 
 ## Não lançado
 
+- Reformulação completa da interface (direção "Bancada"): novo design system com paleta de dois canais (verde-água para CPU e leitura ao vivo, cobre para GPU), cores de veredito reservadas a estados, Bahnschrift com algarismos tabulares para leituras, medidores segmentados, tema claro e escuro revisados e textos em caixa de frase.
+- Shell novo: marca vetorial, navegação com ícones, telemetria permanente na barra lateral, pílula de estado dos sensores, cantos arredondados do Windows 11 e paleta de comandos (Ctrl + K) com busca sem acento.
+- As 15 páginas redesenhadas: Visão geral com osciloscópio de dois canais, Benchmark com ladrilhos por teste, Teste de carga com cartões de componente e limites com unidade, Overlay com seletor de posição na prévia do monitor, selos de veredito coloridos em Discos, Energia, Rede e FPS estimado.
+- Botões de iniciar e parar trocam cor, glifo e texto juntos; estados de alerta acompanham a troca de tema.
+- Toast e overlay de jogo em grafite com números de largura fixa.
+- `tools/check_resources.py` valida as chaves de recurso de XAML e C#.
+
 - TraceEvent 4.0.0, System.Management e EventLog 10.0.13; locks completos e licenças de dependências sincronizados.
 
 - Documentação concentrada em docs, com somente README na raiz; licenças centralizadas em licenses e referências de apresentação à base removidas.

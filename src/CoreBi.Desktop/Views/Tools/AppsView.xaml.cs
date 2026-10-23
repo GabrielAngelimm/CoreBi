@@ -86,7 +86,7 @@ public partial class AppsView : UserControl
         }
 
         _appsBusy = true; _appsStop = false;
-        BtnAppsInstall.Content = "PARAR";
+        Ui.SetRunning(BtnAppsInstall, true, "Instalar selecionados", "Parar depois do atual", "\uE896");
         foreach (var a in sel) a.Status = "Na fila.";
         int ok = 0, done = 0;
         var failed = new List<string>();
@@ -116,7 +116,7 @@ public partial class AppsView : UserControl
         finally
         {
             _appsBusy = false;
-            BtnAppsInstall.Content = "INSTALAR SELECIONADOS";
+            Ui.SetRunning(BtnAppsInstall, false, "Instalar selecionados", idleIcon: "\uE896");
             BtnAppsInstall.IsEnabled = AppInstaller.WingetAvailable;
         }
         AppsStatus.Text = $"{ok} de {sel.Count} instalados." +
