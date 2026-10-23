@@ -15,7 +15,7 @@ public enum NetworkPhase { Preparing, Latency, Download, Upload, Analysis, Done 
 /// Progresso do teste: a fração vem do trabalho real (pings enviados, segundos medidos de cada fase) e as leituras
 /// parciais são o que já foi medido até aqui (latência média, Mbps acumulados).
 /// </summary>
-public sealed record NetworkProgress(NetworkPhase Phase, double Fraction, string Text, string Detail,
+public sealed record NetworkProgress(NetworkPhase Phase, double Fraction, string Text,
     double? LatencyMs = null, double? DownloadMbps = null, double? UploadMbps = null);
 
 /// <summary>Adaptador com rota para o roteador, como o Windows informa.</summary>
@@ -92,7 +92,7 @@ public static class NetworkTest
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
-    private const int PingCount = 30, PingIntervalMs = 200, DownloadSeconds = 8, UploadSeconds = 6, TickMs = 200;
+    private const int PingCount = 30, PingIntervalMs = 200, DownloadSeconds = 8, UploadSeconds = 6, TickMs = 200, RetryDelayMs = 400;
     private const int DownloadStreams = 4, UploadStreams = 3;
 
     // Faixas da barra de progresso, proporcionais ao tempo de cada fase (≈ 6 s, 8 s e 6 s).
@@ -103,6 +103,7 @@ public static class NetworkTest
     private sealed class Transfer
     {
         public long Bytes;
+        public volatile string? Error;
         public readonly Stopwatch Clock = new();
         public double? Mbps()
         {
@@ -148,10 +149,10 @@ public static class NetworkTest
         cts.CancelAfter(DownloadSeconds * 1000);
         var tasks = Enumerable.Range(0, DownloadStreams).Select(_ => Task.Run(async () =>
         {
-            try
+            var buf = new byte[81920];
+            while (!cts.IsCancellationRequested)
             {
-                var buf = new byte[81920];
-                while (!cts.IsCancellationRequested)
+                try
                 {
                     using var resp = await Http.GetAsync("https://speed.cloudflare.com/__down?bytes=25000000", HttpCompletionOption.ResponseHeadersRead, cts.Token);
                     resp.EnsureSuccessStatusCode();
@@ -159,9 +160,14 @@ public static class NetworkTest
                     int n;
                     while ((n = await st.ReadAsync(buf, cts.Token)) > 0) Interlocked.Add(ref transfer.Bytes, n);
                 }
+                catch (OperationCanceledException) { }
+                catch (Exception ex) when (ex is HttpRequestException or IOException)
+                {
+                    // O servidor pode recusar conexões em sequência (limite de requisições): espera um pouco e tenta de novo.
+                    transfer.Error = (ex as HttpRequestException)?.StatusCode?.ToString() ?? ex.Message;
+                    try { await Task.Delay(RetryDelayMs, cts.Token); } catch (OperationCanceledException) { }
+                }
             }
-            catch (OperationCanceledException) { }
-            catch (HttpRequestException) { }
         })).ToArray();
         await Task.WhenAll(tasks);
         transfer.Clock.Stop();
@@ -178,17 +184,21 @@ public static class NetworkTest
         new Random(1).NextBytes(payload);
         var tasks = Enumerable.Range(0, UploadStreams).Select(_ => Task.Run(async () =>
         {
-            try
+            while (!cts.IsCancellationRequested)
             {
-                while (!cts.IsCancellationRequested)
+                try
                 {
                     using var resp = await Http.PostAsync("https://speed.cloudflare.com/__up", new ByteArrayContent(payload), cts.Token);
                     resp.EnsureSuccessStatusCode();
                     Interlocked.Add(ref transfer.Bytes, payload.Length);
                 }
+                catch (OperationCanceledException) { }
+                catch (Exception ex) when (ex is HttpRequestException or IOException)
+                {
+                    transfer.Error = (ex as HttpRequestException)?.StatusCode?.ToString() ?? ex.Message;
+                    try { await Task.Delay(RetryDelayMs, cts.Token); } catch (OperationCanceledException) { }
+                }
             }
-            catch (OperationCanceledException) { }
-            catch (HttpRequestException) { }
         })).ToArray();
         await Task.WhenAll(tasks);
         transfer.Clock.Stop();
@@ -229,7 +239,7 @@ public static class NetworkTest
 
     public static async Task<NetworkResult> Run(Action<NetworkProgress> progress, CancellationToken ct)
     {
-        progress(new(NetworkPhase.Preparing, 0, "Procurando a conexão ativa", "Lendo o adaptador do Windows"));
+        progress(new(NetworkPhase.Preparing, 0, "Procurando a conexão ativa"));
         var adapter = ReadAdapter();
         if (adapter == null)
         {
@@ -256,14 +266,13 @@ public static class NetworkTest
             ("Roteador", adapter.Gateway, new()), ("Internet · Cloudflare", IPAddress.Parse("1.1.1.1"), new()), ("Internet · Google", IPAddress.Parse("8.8.8.8"), new()),
         };
         const string pingText = "Medindo latência e perda de pacotes";
-        string pingDetail = $"{PingCount} pings ao roteador, a 1.1.1.1 e a 8.8.8.8";
-        progress(new(NetworkPhase.Latency, LatencyStart, pingText, pingDetail));
+        progress(new(NetworkPhase.Latency, LatencyStart, pingText));
         await Track(Task.WhenAll(targets.Select(t => PingLoop(t.Addr, PingCount, PingIntervalMs, t.Samples, ct))), () =>
         {
             var lists = targets.Select(t => Snapshot(t.Samples)).ToList();
             double done = lists.Sum(l => l.Count) / (double)(PingCount * targets.Length);
             var internet = lists.Skip(1).SelectMany(l => l).Where(v => v != null).Select(v => v!.Value).ToList();
-            progress(new(NetworkPhase.Latency, LatencyStart + (DnsStart - LatencyStart) * Math.Min(1, done), pingText, pingDetail,
+            progress(new(NetworkPhase.Latency, LatencyStart + (DnsStart - LatencyStart) * Math.Min(1, done), pingText,
                 LatencyMs: internet.Count > 0 ? internet.Average() : null));
         });
         ct.ThrowIfCancellationRequested();
@@ -273,7 +282,7 @@ public static class NetworkTest
         double? netAvg = net.Count > 0 ? net.Average(p => p.Avg) : null;
 
         // 2) DNS
-        progress(new(NetworkPhase.Latency, DnsStart, "Testando o DNS", "Resolvendo www.cloudflare.com", LatencyMs: netAvg));
+        progress(new(NetworkPhase.Latency, DnsStart, "Testando o DNS", LatencyMs: netAvg));
         double? dnsMs = null;
         try
         {
@@ -286,8 +295,7 @@ public static class NetworkTest
 
         // 3) Download com ping em paralelo (latência sob carga)
         const string downText = "Medindo a velocidade de download";
-        string downDetail = $"{DownloadSeconds} s com {DownloadStreams} conexões a speed.cloudflare.com";
-        progress(new(NetworkPhase.Download, LatencyEnd, downText, downDetail, LatencyMs: netAvg));
+        progress(new(NetworkPhase.Download, LatencyEnd, downText, LatencyMs: netAvg));
         using var loadStop = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var loaded = new List<double?>();
         var loadedPing = PingLoop(IPAddress.Parse("1.1.1.1"), 0, PingIntervalMs, loaded, loadStop.Token);
@@ -298,7 +306,7 @@ public static class NetworkTest
         {
             await Track(downTask, () => progress(new(NetworkPhase.Download,
                 LatencyEnd + (DownloadEnd - LatencyEnd) * Math.Min(1, downT.Clock.Elapsed.TotalSeconds / DownloadSeconds),
-                downText, downDetail, LatencyMs: netAvg, DownloadMbps: downT.Mbps())));
+                downText, LatencyMs: netAvg, DownloadMbps: downT.Mbps())));
             down = await downTask;
         }
         catch (OperationCanceledException) { loadStop.Cancel(); throw; }
@@ -311,8 +319,7 @@ public static class NetworkTest
 
         // 4) Upload
         const string upText = "Medindo a velocidade de upload";
-        string upDetail = $"{UploadSeconds} s com {UploadStreams} conexões a speed.cloudflare.com";
-        progress(new(NetworkPhase.Upload, DownloadEnd, upText, upDetail, LatencyMs: netAvg, DownloadMbps: down));
+        progress(new(NetworkPhase.Upload, DownloadEnd, upText, LatencyMs: netAvg, DownloadMbps: down));
         var upT = new Transfer();
         double? up = null;
         var upTask = Upload(upT, ct);
@@ -320,13 +327,13 @@ public static class NetworkTest
         {
             await Track(upTask, () => progress(new(NetworkPhase.Upload,
                 DownloadEnd + (UploadEnd - DownloadEnd) * Math.Min(1, upT.Clock.Elapsed.TotalSeconds / UploadSeconds),
-                upText, upDetail, LatencyMs: netAvg, DownloadMbps: down, UploadMbps: upT.Mbps())));
+                upText, LatencyMs: netAvg, DownloadMbps: down, UploadMbps: upT.Mbps())));
             up = await upTask;
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) { netErr ??= ex.Message; }
 
-        progress(new(NetworkPhase.Analysis, UploadEnd, "Analisando", "Comparando roteador, internet e latência sob carga",
+        progress(new(NetworkPhase.Analysis, UploadEnd, "Analisando",
             LatencyMs: netAvg, DownloadMbps: down, UploadMbps: up));
 
         // ---- Veredito ----
@@ -359,7 +366,9 @@ public static class NetworkTest
             warn.Add($"A latência sobe para {loadedMs:0} ms quando a conexão está cheia (bufferbloat). Ative SQM/QoS no roteador ou limite a velocidade a ~90%.");
         if (dnsMs > 150) warn.Add($"A resolução do nome demorou {dnsMs:0} ms. O resultado pode incluir cache do Windows e atrasos da rede.");
         if (down is < 10) warn.Add($"Download baixo ({down:0.#} Mbps) para jogos, streaming e atualizações.");
-        if (netErr != null && down == null) warn.Add("Não foi possível medir a velocidade (speed.cloudflare.com inacessível ou bloqueado).");
+        if (down == null && up == null) warn.Add("Não foi possível medir a velocidade (speed.cloudflare.com inacessível ou bloqueado).");
+        else if (down == null) warn.Add($"Não foi possível medir o download{Reason(downT.Error ?? netErr)}. Se o teste foi repetido há pouco, o servidor pode estar limitando as conexões: tente de novo em alguns instantes.");
+        else if (up == null) warn.Add($"Não foi possível medir o upload{Reason(upT.Error ?? netErr)}.");
 
         var verdict = bad ? DiskVerdict.Critical : warn.Any(w => !w.StartsWith("O roteador não responde")) ? DiskVerdict.Warning : DiskVerdict.Good;
         string label = verdict switch { DiskVerdict.Critical => "RUIM", DiskVerdict.Warning => "ATENÇÃO", _ => "ESTÁVEL" };
@@ -376,7 +385,7 @@ public static class NetworkTest
         m.Add(new("IP / Gateway / DNS", $"{adapter.LocalIp} / {adapter.Gateway} / {adapter.Dns}"));
 
         var now = DateTime.Now;
-        progress(new(NetworkPhase.Done, 1, "Concluído", "", LatencyMs: netAvg, DownloadMbps: down, UploadMbps: up));
+        progress(new(NetworkPhase.Done, 1, "Concluído", LatencyMs: netAvg, DownloadMbps: down, UploadMbps: up));
         return new NetworkResult
         {
             Card = new DiskHealthCard
@@ -406,6 +415,8 @@ public static class NetworkTest
             TestedAt = now,
         };
     }
+
+    private static string Reason(string? error) => string.IsNullOrEmpty(error) ? "" : $" ({error})";
 
     internal static bool HasHttpEvidence(double? download, double? upload) => download is > 0 || upload is > 0;
 }

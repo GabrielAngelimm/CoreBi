@@ -27,6 +27,21 @@ public partial class NetworkView : UserControl
         DrawDial(null, null);
     }
 
+    // Largura da página abaixo da qual o console desce para baixo do título.
+    private const double NarrowHeader = 1040;
+    private bool _narrowHeader;
+
+    private void NetHeader_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        bool narrow = NetHeader.ActualWidth < NarrowHeader;
+        if (narrow == _narrowHeader) return;
+        _narrowHeader = narrow;
+        Grid.SetRow(NetConsole, narrow ? 1 : 0);
+        Grid.SetColumn(NetConsole, narrow ? 0 : 1);
+        Grid.SetColumnSpan(NetConsole, narrow ? 2 : 1);
+        NetConsole.Margin = narrow ? new Thickness(0, 16, 0, 0) : new Thickness(40, 0, 0, 0);
+    }
+
     private async void BtnNetTest_Click(object sender, RoutedEventArgs e) => await RunOrCancelAsync();
 
     internal async Task RunOrCancelAsync()
@@ -34,7 +49,7 @@ public partial class NetworkView : UserControl
         if (Context.IsClosing) return;
         if (_running) { _cancellation?.Cancel(); return; }
         using var workload = Context.Workloads.TryBegin("Network test");
-        if (workload == null) { NetStatus.Text = "Termine o outro teste antes."; NetDetail.Text = "Só um teste pesado roda por vez para não contaminar a medição."; return; }
+        if (workload == null) { NetStatus.Text = "Termine o outro teste antes."; NetDetail.Text = ""; return; }
 
         _running = true;
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(Context.Lifetime);
@@ -58,13 +73,13 @@ public partial class NetworkView : UserControl
             LastResult = new[] { result.Card };
             ShowResult(result);
             NetStatus.Text = $"Concluído às {result.TestedAt:HH:mm:ss}";
-            NetDetail.Text = "O resultado entra no relatório exportado.";
+            NetDetail.Text = "";
             SetStage(NetworkPhase.Done);
             SetProgress(1, animate: true);
         }
         catch (OperationCanceledException)
         {
-            if (!Context.IsClosing) Reset("Teste cancelado", "Nada foi medido até o fim; rode de novo quando quiser.");
+            if (!Context.IsClosing) Reset("Teste cancelado", "");
         }
         catch (Exception ex)
         {
@@ -93,7 +108,7 @@ public partial class NetworkView : UserControl
     private void ShowProgress(NetworkProgress p)
     {
         NetStatus.Text = p.Text;
-        NetDetail.Text = p.Detail;
+        NetDetail.Text = "";
         SetStage(p.Phase);
         SetProgress(p.Fraction, animate: true);
         // Leituras parciais: só o que já foi medido; o restante continua com travessão.
@@ -186,11 +201,9 @@ public partial class NetworkView : UserControl
         SetReadout(NetJitter, r?.JitterMs);
         NetLoss.Text = r?.LossPct is { } loss ? loss.ToString("0.#", PtBr) : "—";
         NetLoss.SetResourceReference(TextBlock.ForegroundProperty, r?.LossPct == null ? "Faint" : r.LossPct > 1 ? "Warn" : "Fg");
-        int internetPings = r?.Internet.Sum(p => p.Sent) ?? 0;
-        NetLossSub.Text = internetPings > 0 ? $"{internetPings} pings até a internet" : "pings até a internet";
         SetReadout(NetLoaded, r?.LoadedLatencyMs);
         if (r?.Bufferbloat == true) NetLoaded.SetResourceReference(TextBlock.ForegroundProperty, "Warn");
-        NetLoadedSub.Text = r?.BufferbloatMs is { } bloat ? $"{(bloat >= 0 ? "+" : "−")}{Math.Abs(bloat):0} ms durante o download" : "durante o download";
+        NetLoadedSub.Text = r?.BufferbloatMs is { } bloat ? $"{(bloat >= 0 ? "+" : "−")}{Math.Abs(bloat):0} ms durante o download" : "";
         SetReadout(NetDns, r?.DnsMs is { } dns ? Math.Round(dns) : null);
 
         if (r == null)
@@ -258,9 +271,9 @@ public partial class NetworkView : UserControl
         NetWanMs.Text = r?.LatencyMs is { } wan ? Format(wan) : "—";
         NetWanMs.SetResourceReference(TextBlock.ForegroundProperty, r?.LatencyMs != null ? "Fg" : "Faint");
         var answered = r?.Internet.Where(p => p.Answered).ToList() ?? [];
-        NetWanDetail.Text = answered.Count > 0
-            ? string.Join("\n", answered.Select(p => $"{p.Name.Replace("Internet · ", "")} {Format(p.Avg)} ms"))
-            : "1.1.1.1 e 8.8.8.8";
+        NetWanDetail.ToolTip = answered.Count > 0
+            ? string.Join("\n", answered.Select(p => $"{p.Name.Replace("Internet · ", "")} {p.Address}: {Format(p.Avg)} ms"))
+            : null;
 
         if (r == null)
         {
@@ -339,7 +352,7 @@ public partial class NetworkView : UserControl
 
     // Dois arcos de 136° espelhados (esquerda = download, direita = upload), de baixo (1 Mbps) para cima (1 Gbps), em escala
     // logarítmica: cada década ocupa um terço do arco. Segmentos na proporção 70/30 dos medidores do app.
-    private const double DialCx = 160, DialCy = 150, DialR1 = 121, DialR2 = 138, DialGap = 22;
+    private const double DialCx = 160, DialCy = 130, DialR1 = 121, DialR2 = 138, DialGap = 22;
     private const int DialSegments = 36;
 
     private static double DialAngle(int dir, double t) => dir < 0
@@ -356,8 +369,6 @@ public partial class NetworkView : UserControl
         NetDial.Children.Clear();
         DrawSide(-1, down, "Accent");
         DrawSide(1, up, "Copper");
-        AddDialLabel("1 G", DialCx - 20, DialCy - DialR2 - 3, 40, TextAlignment.Center);
-        AddDialLabel("1", DialCx - 20, DialCy + DialR2 - 14, 40, TextAlignment.Center);
     }
 
     private void DrawSide(int dir, double? value, string channel)
@@ -388,27 +399,6 @@ public partial class NetworkView : UserControl
         onPath.SetResourceReference(Shape.FillProperty, channel);
         NetDial.Children.Add(offPath);
         NetDial.Children.Add(onPath);
-
-        // Marcas das décadas intermediárias, por dentro do arco
-        foreach (var (t, text) in new[] { (1 / 3.0, "10"), (2 / 3.0, "100") })
-        {
-            double a = DialAngle(dir, t);
-            Point p0 = DialPoint(a, DialR1 - 8), p1 = DialPoint(a, DialR1 - 3), pt = DialPoint(a, DialR1 - 17);
-            var tick = new Line { X1 = p0.X, Y1 = p0.Y, X2 = p1.X, Y2 = p1.Y, StrokeThickness = 1.5 };
-            tick.SetResourceReference(Shape.StrokeProperty, "LineStrong");
-            NetDial.Children.Add(tick);
-            AddDialLabel(text, dir < 0 ? pt.X : pt.X - 30, pt.Y - 8, 30, dir < 0 ? TextAlignment.Left : TextAlignment.Right);
-        }
-    }
-
-    private void AddDialLabel(string text, double left, double top, double width, TextAlignment align)
-    {
-        var label = new TextBlock { Text = text, Width = width, TextAlignment = align, FontSize = 11, FontStretch = FontStretches.SemiCondensed };
-        label.SetResourceReference(TextBlock.FontFamilyProperty, "Readout");
-        label.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
-        Canvas.SetLeft(label, left);
-        Canvas.SetTop(label, top);
-        NetDial.Children.Add(label);
     }
 
     // ---------------- Traço de pings ----------------
@@ -423,9 +413,11 @@ public partial class NetworkView : UserControl
         bool has = idle.Count + loaded.Count > 0;
         NetTraceEmpty.Visibility = has ? Visibility.Collapsed : Visibility.Visible;
         double w = NetTrace.ActualWidth;
-        if (!has || w <= 0) return;
+        if (w <= 0) return;
+        AddTraceText("Pings até 1.1.1.1", 0, 0, "Muted", null, readout: false);
+        if (!has) return;
 
-        const double top = 16, bottom = 82, gapW = 18;
+        const double top = 20, bottom = 82, gapW = 18;
         double peak = idle.Concat(loaded).Where(v => v != null).Select(v => v!.Value).DefaultIfEmpty(10).Max();
         double max = new[] { 10.0, 20, 50, 100, 200, 500, 1000, 2000 }.FirstOrDefault(s => s >= peak * 1.1, 2000);
         int n = idle.Count + loaded.Count;
@@ -433,7 +425,7 @@ public partial class NetworkView : UserControl
 
         AddTraceLine(0, w, top, "Line", dashed: true);
         AddTraceLine(0, w, bottom, "Line", dashed: false);
-        AddTraceText($"{max:0} ms", 0, 0, "Faint", null, readout: true);
+        AddTraceText($"{max:0} ms", w - 40, 0, "Faint", null, readout: true, align: TextAlignment.Right, width: 40);
 
         var idleGeo = new StreamGeometry();
         var loadGeo = new StreamGeometry();
@@ -498,9 +490,10 @@ public partial class NetworkView : UserControl
         NetTrace.Children.Add(line);
     }
 
-    private void AddTraceText(string text, double x, double y, string key, string? value, bool readout, string valueKey = "Fg")
+    private void AddTraceText(string text, double x, double y, string key, string? value, bool readout, string valueKey = "Fg",
+        TextAlignment align = TextAlignment.Left, double width = double.NaN)
     {
-        var block = new TextBlock { FontSize = readout ? 10.5 : 11.5 };
+        var block = new TextBlock { FontSize = readout ? 10.5 : 11.5, TextAlignment = align, Width = width };
         if (readout)
         {
             block.SetResourceReference(TextBlock.FontFamilyProperty, "Readout");
