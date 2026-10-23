@@ -35,7 +35,7 @@ public partial class MainWindow
         _gpuName = _gpus.Count > 0 ? _gpus[0].Name : "";
         _gpuIdx = GameCatalog.GpuPerf(_gpuName) ?? 0;
         _cpuIdx = GameCatalog.CpuPerf(_cpuName) ?? 0;
-        GamesSub.Text = $"FPS esperado no seu PC · {GameCatalog.ShortGpuName(_gpuName)} · {GameCatalog.ShortCpuName(_cpuName)}";
+        GamesSub.Text = $"FPS esperado no seu PC com {GameCatalog.ShortGpuName(_gpuName)} e {GameCatalog.ShortCpuName(_cpuName)}.";
 
         _fpsApi.ApiKey = _settings.HowManyFpsKey;
         if (_fpsApi.Configured) ApiKeyBox.Password = _settings.HowManyFpsKey;
@@ -87,7 +87,7 @@ public partial class MainWindow
                 Bottleneck.Engine => $"trava do jogo em {row.Game.EngineCap:0} FPS",
                 _ => ""
             };
-            row.Set(est.Avg, 0, est.Limiter == Bottleneck.Unknown ? "SEM REFERÊNCIA" : "ESTIMATIVA",
+            row.Set(est.Avg, 0, est.Limiter == Bottleneck.Unknown ? "Sem referência" : "Estimativa local",
                 est.Limiter == Bottleneck.Unknown ? "CPU/GPU fora da base; nenhum FPS local foi presumido." : limiter);
         }
 
@@ -96,19 +96,19 @@ public partial class MainWindow
         _gameFetch = null;
         if (_fpsApi.Configured)
         {
-            GameSourceTitle.Text = "Fonte: HowManyFPS (API externa)";
+            GameSourceTitle.Text = "Dados da HowManyFPS (API externa)";
             GameSourceText.Text = "Valores devolvidos pela API externa; compatibilidade requer validação com sua chave. Cache de 7 dias. " +
                                   "A API usa as configurações gráficas dela; \"Gráficos\" vale só para a estimativa.";
-            BtnApiKey.Content = "ATUALIZAR CHAVE";
+            BtnApiKey.Content = "Atualizar chave";
             _gameFetch = CancellationTokenSource.CreateLinkedTokenSource(_features.Lifetime);
             _ = FetchGamesAsync(res, up, _gameFetch.Token);
         }
         else
         {
-            GameSourceTitle.Text = "Fonte: estimativa local (aproximada)";
+            GameSourceTitle.Text = "Estimativa local, aproximada";
             GameSourceText.Text = "Aproximação por referências de CPU/GPU. Modelos fora da base ficam sem estimativa. " +
                                   "A integração opcional HowManyFPS requer chave e validação do serviço.";
-            BtnApiKey.Content = "SALVAR CHAVE";
+            BtnApiKey.Content = "Salvar chave";
         }
     }
 
@@ -123,14 +123,14 @@ public partial class MainWindow
             {
                 var r = await _fpsApi.GetAsync(cpu, gpu, row.Name, res, up, ct);
                 ct.ThrowIfCancellationRequested();
-                row.Set(r.AvgFps, r.Min1Fps, "HOWMANYFPS", "");
+                row.Set(r.AvgFps, r.Min1Fps, "HowManyFPS", "");
                 ok++;
             }
             catch (OperationCanceledException) { return; }
             catch (Exception ex)
             {
                 if (ct.IsCancellationRequested) return;
-                row.Set(row.Fps, 0, "ESTIMATIVA", $"API: {ex.Message}");
+                row.Set(row.Fps, 0, "Estimativa local", $"API: {ex.Message}");
                 if (ex.Message.Contains("chave") || ex.Message.Contains("cota"))
                 {
                     GameSourceText.Text = $"A API recusou a consulta ({ex.Message}). Mostrando a estimativa local.";

@@ -25,7 +25,7 @@ public partial class MainWindow
         bool json = string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase);
 
         BtnReport.IsEnabled = false;
-        BtnReport.Content = "GERANDO…";
+        BtnReport.Content = "Gerando…";
         try
         {
             // Dados que vivem na interface são copiados aqui (thread da tela); a leitura dos discos roda em segundo plano.
@@ -62,7 +62,7 @@ public partial class MainWindow
         }
         finally
         {
-            BtnReport.Content = "EXPORTAR RELATÓRIO";
+            BtnReport.Content = "Exportar relatório";
             BtnReport.IsEnabled = true;
         }
     }

@@ -28,8 +28,8 @@ public partial class MainWindow
     {
         var (ratio, text) = BottleneckAnalyzer.Balance(_gpuIdx, _cpuIdx);
         _balanceRatio = ratio;
-        BnCpuName.Text = $"CPU · {GameCatalog.ShortCpuName(_cpuName)}";
-        BnGpuName.Text = $"GPU · {GameCatalog.ShortGpuName(_gpuName)}";
+        BnCpuName.Text = GameCatalog.ShortCpuName(_cpuName);
+        BnGpuName.Text = GameCatalog.ShortGpuName(_gpuName);
         BnBalanceText.Text = text;
 
         // Preferências do overlay
@@ -75,9 +75,10 @@ public partial class MainWindow
                 ? $"{frames.ProcessName} · {frames.Fps:0} FPS · 1% low {frames.Low1Fps:0}"
                 : "Nenhum jogo em primeiro plano (o FPS aparece quando o jogo estiver na tela)";
             bool alert = lim is Limiter.Cpu or Limiter.Vram or Limiter.Ram or Limiter.Thermal;
-            BnLiveCard.Background = alert ? Fg : Card;
-            BnLiveTitle.Foreground = alert ? Ink : Fg;
-            BnLiveLabel.Foreground = BnLiveGame.Foreground = BnLiveAdvice.Foreground = alert ? Ink : Muted;
+            // Limitador que pede ação (CPU, memória, temperatura) ganha o tom de aviso; GPU no limite é o estado esperado num jogo.
+            BnLiveCard.SetResourceReference(Border.BackgroundProperty, alert ? "WarnSoft" : "Surface");
+            BnLiveCard.SetResourceReference(Border.BorderBrushProperty, alert ? "Warn" : "Line");
+            BnLiveTitle.SetResourceReference(TextBlock.ForegroundProperty, alert ? "Warn" : "Fg");
 
             BnMeters.ItemsSource = new[]
             {
@@ -107,16 +108,14 @@ public partial class MainWindow
         if (_bnSession != null)
         {
             _bnSession = null;
-            BtnBnSession.Content = "INICIAR ANÁLISE";
-            BtnBnSession.Style = (Style)FindResource("PrimaryButton");
+            Ui.SetRunning(BtnBnSession, false, "Iniciar análise");
             BnSessionStatus.Text = "Análise cancelada.";
             return;
         }
         int minutes = int.Parse(CheckedTag(BnDurationPanel) ?? "1");
         _bnSession = new BottleneckSession { Duration = TimeSpan.FromMinutes(minutes) };
         BnResult.Visibility = Visibility.Collapsed;
-        BtnBnSession.Content = "CANCELAR";
-        BtnBnSession.Style = (Style)FindResource("OutlineButton");
+        Ui.SetRunning(BtnBnSession, true, "Iniciar análise", "Cancelar");
         BnSessionStatus.Text = "Coletando… abra o jogo agora.";
     }
 
@@ -124,8 +123,7 @@ public partial class MainWindow
     {
         var sess = _bnSession!;
         _bnSession = null;
-        BtnBnSession.Content = "INICIAR ANÁLISE";
-        BtnBnSession.Style = (Style)FindResource("PrimaryButton");
+        Ui.SetRunning(BtnBnSession, false, "Iniciar análise");
         BnSessionStatus.Text = $"Análise concluída às {DateTime.Now:HH:mm} ({sess.Count} amostras).";
 
         var main = sess.Main ?? Limiter.Unknown;
@@ -139,7 +137,7 @@ public partial class MainWindow
         if (sess.Max(x => x.GpuTemp) is double gt) parts.Add($"GPU máx. {gt:0} °C");
         BnResultSummary.Text = string.Join(" · ", parts);
         BnDistribution.ItemsSource = sess.Distribution()
-            .Select(d => new MeterItem($"{BottleneckAnalyzer.Title(d.Limiter)} — % do tempo", $"{d.Pct:0} %", d.Pct / 100)).ToList();
+            .Select(d => new MeterItem($"{BottleneckAnalyzer.Title(d.Limiter)}, % do tempo", $"{d.Pct:0} %", d.Pct / 100)).ToList();
         BnResultAdvice.Text = BottleneckAnalyzer.Advice(main);
         BnResult.Visibility = Visibility.Visible;
     }

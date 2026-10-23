@@ -51,6 +51,7 @@ public partial class MainWindow
                                                          && r.Name == "GPU Core");
             SideGpuTemp.Text = MainGpuTemp() is float t ? $"{t:0.#} °C" : "—";
             SideGpuLoad.Text = load?.RawValue is float l ? $"{l:0} %" : "—";
+            SideGpuBar.ScaleX = Math.Clamp((load?.RawValue ?? 0) / 100.0, 0, 1);
         }
         if (_gpu != null && PageGpu.IsVisible) GpuExtras.ItemsSource = _gpu.LiveExtras();
     }

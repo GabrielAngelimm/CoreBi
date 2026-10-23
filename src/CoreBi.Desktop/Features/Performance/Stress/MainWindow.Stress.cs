@@ -189,22 +189,25 @@ public partial class MainWindow
 
     internal void SetStressControls(bool running)
     {
-        BtnStress.Content = running ? "PARAR" : "INICIAR";
-        BtnStress.Style = (Style)FindResource(running ? "OutlineButton" : "PrimaryButton");
+        Ui.SetRunning(BtnStress, running, "Iniciar teste");
         ChkCpu.IsEnabled = ChkRam.IsEnabled = ChkGpu.IsEnabled = !running;
         RamFractionPanel.IsEnabled = !running && ChkRam.IsChecked == true;
         GpuOptions.IsEnabled = GpuTempLimit.IsEnabled = !running && ChkGpu.IsChecked == true;
         TempLimit.IsEnabled = TxtDuration.IsEnabled = !running;
         SideStress.Text = running ? "rodando" : "parado";
+        SideStressDot.SetResourceReference(Shape.FillProperty, running ? "Accent" : "Faint");
     }
 
-    /// <summary>Alerta = cartão invertido (branco com texto preto).</summary>
+    /// <summary>Estado do teste: em andamento ganha o tom do canal ao vivo; corte automático ganha o tom de perigo.</summary>
     internal void SetStatus(string text, bool alert)
     {
         StStatus.Text = text;
-        StatusCard.Background = alert ? Fg : Card;
-        StStatus.Foreground = alert ? Ink : Fg;
-        StStatusLabel.Foreground = alert ? Ink : Muted;
+        bool live = !alert && TestRunning;
+        StatusCard.SetResourceReference(Border.BackgroundProperty, alert ? "DangerSoft" : live ? "AccentSoft" : "Surface");
+        StatusCard.SetResourceReference(Border.BorderBrushProperty, alert ? "Danger" : live ? "Accent" : "Line");
+        StStatus.SetResourceReference(TextBlock.ForegroundProperty, alert ? "Danger" : live ? "Accent" : "Fg");
+        StStatusLabel.SetResourceReference(TextBlock.ForegroundProperty, alert ? "Danger" : "Muted");
+        if (alert) SideStressDot.SetResourceReference(Shape.FillProperty, "Danger");
     }
 
     /// <summary>Temperatura do núcleo da GPU principal (dedicada).</summary>
@@ -256,6 +259,7 @@ public partial class MainWindow
         StTemp.Text = SideTemp.Text = temp == null ? "—" : $"{temp:0.#} °C";
         StTempMax.Text = _stressMaxTemp > 0 ? $"máx. {_stressMaxTemp:0.#} °C" : "máx. —";
         SideLoad.Text = load == null ? "—" : $"{load:0} %";
+        SideCpuBar.ScaleX = Math.Clamp((load ?? 0) / 100.0, 0, 1);
         StLoad.Text = load == null ? "carga —" : $"carga {load:0} %";
         StPower.Text = power == null ? "—" : $"{power:0.#} W";
 
@@ -299,7 +303,7 @@ public partial class MainWindow
 
     internal void TempChart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
 
-    /// <summary>Desenha o histórico de temperatura da CPU (branco) e da GPU (cinza) com as linhas de limite.</summary>
+    /// <summary>Histórico de temperatura: CPU no canal A (verde-água, com área), GPU no canal B (cobre), limites tracejados.</summary>
     internal void DrawChart()
     {
         TempChart.Children.Clear();
@@ -311,7 +315,7 @@ public partial class MainWindow
         double yMin = 20, yMax = Math.Max(110, Math.Max(_tempLimit, _gpuTempLimit) + 10);
         double Y(double v) => top + plotH * (1 - (Math.Clamp(v, yMin, yMax) - yMin) / (yMax - yMin));
 
-        var gridBrush = (Brush)FindResource("Line");
+        var gridBrush = Palette("Line");
         for (double v = yMin; v <= yMax; v += 20)
         {
             TempChart.Children.Add(new Line { X1 = left, X2 = w, Y1 = Y(v), Y2 = Y(v), Stroke = gridBrush });
@@ -319,8 +323,8 @@ public partial class MainWindow
             {
                 Text = $"{v:0}°",
                 FontSize = 10,
-                Foreground = (Brush)FindResource("Faint"),
-                FontFamily = (FontFamily)FindResource("Mono")
+                Foreground = Palette("Faint"),
+                FontFamily = (FontFamily)FindResource("Readout")
             };
             Canvas.SetLeft(lbl, 0); Canvas.SetTop(lbl, Y(v) - 7);
             TempChart.Children.Add(lbl);
@@ -336,20 +340,20 @@ public partial class MainWindow
             StrokeThickness = 1,
             StrokeDashArray = new DoubleCollection { 4, 3 }
         });
-        LimitLine(_tempLimit, Muted);
-        if (ChkGpu.IsChecked == true) LimitLine(_gpuTempLimit, (Brush)FindResource("Faint"));
+        if (ChkCpu.IsChecked == true || ChkRam.IsChecked == true) LimitLine(_tempLimit, Palette("Warn"));
+        if (ChkGpu.IsChecked == true) LimitLine(_gpuTempLimit, new SolidColorBrush(ThemeManager.WithAlpha("Warn", 0x99)));
 
         double step = plotW / (HistoryLength - 1);
         void Series(List<double> data, Brush stroke, bool fill)
         {
             if (data.Count < 2) return;
             int offset = HistoryLength - data.Count; // alinha à direita
-            var line = new Polyline { Stroke = stroke, StrokeThickness = 1.6, StrokeLineJoin = PenLineJoin.Round };
+            var line = new Polyline { Stroke = stroke, StrokeThickness = 1.8, StrokeLineJoin = PenLineJoin.Round };
             for (int i = 0; i < data.Count; i++)
                 line.Points.Add(new Point(left + (offset + i) * step, Y(data[i])));
             if (fill)
             {
-                var area = new Polygon { Fill = new SolidColorBrush(Color.FromArgb(0x16, ((SolidColorBrush)FindResource("Fg")).Color.R, ((SolidColorBrush)FindResource("Fg")).Color.G, ((SolidColorBrush)FindResource("Fg")).Color.B)) };
+                var area = new Polygon { Fill = new SolidColorBrush(ThemeManager.WithAlpha("Accent", 0x22)) };
                 foreach (var p in line.Points) area.Points.Add(p);
                 area.Points.Add(new Point(line.Points[^1].X, top + plotH));
                 area.Points.Add(new Point(line.Points[0].X, top + plotH));
@@ -357,8 +361,8 @@ public partial class MainWindow
             }
             TempChart.Children.Add(line);
         }
-        Series(_gpuTempHistory, Muted, fill: false);
-        Series(_tempHistory, Fg, fill: true);
+        Series(_gpuTempHistory, Palette("Copper"), fill: false);
+        Series(_tempHistory, Palette("Accent"), fill: true);
     }
 
 }
