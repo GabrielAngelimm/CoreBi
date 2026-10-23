@@ -19,15 +19,19 @@
             <!-- Gráfico de frametime -->
             <Canvas x:Name="OGraph" Width="190" Height="30" Margin="0,6,0,4" ClipToBounds="True" HorizontalAlignment="Left"/>
             <!-- Linhas de sensores: GPU, VRAM, CPU, RAM... montadas pelo que foi escolhido -->
-            <ItemsControl x:Name="ORows" Margin="0,2,0,0">
+            <ItemsControl x:Name="ORows" Margin="0,2,0,0" Grid.IsSharedSizeScope="True">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Grid Margin="0,1.5">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="46"/>
+                                <ColumnDefinition Width="Auto" MinWidth="46" SharedSizeGroup="lbl"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding Label}" Foreground="#8297A6" FontWeight="SemiBold"/>
+                            <!-- Rótulo da linha e, se escolhido, o nome do hardware; a coluna tem a largura da linha mais longa -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,6,0">
+                                <TextBlock Text="{Binding Label}" Foreground="#8297A6" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="det" Text="{Binding Detail}" Foreground="#E6EEF1" FontWeight="SemiBold" Margin="7,0,0,0"/>
+                            </StackPanel>
                             <!-- Cada dado da linha é separado por um traço vertical discreto -->
                             <ItemsControl Grid.Column="1" ItemsSource="{Binding Parts}" AlternationCount="100">
                                 <ItemsControl.ItemsPanel>
@@ -48,6 +52,11 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                         </Grid>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Detail}" Value="{x:Null}">
+                                <Setter TargetName="det" Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

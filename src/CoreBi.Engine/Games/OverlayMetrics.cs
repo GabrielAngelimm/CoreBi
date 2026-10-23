@@ -4,7 +4,7 @@ namespace CoreBi.Engine.Games;
 public sealed record OverlayMetric(string Key, string Group, string Label, bool Default);
 
 /// <summary>Linha do overlay já pronta para mostrar (ex.: "GPU" · "98%", "65 °C", "2790 MHz"); a interface separa as partes.</summary>
-public sealed record OverlayLine(string Label, IReadOnlyList<string> Parts)
+public sealed record OverlayLine(string Label, IReadOnlyList<string> Parts, string? Detail = null)
 {
     public string Value => string.Join("  ", Parts);
 }
@@ -43,6 +43,7 @@ public static class OverlayMetrics
         new("ram_used", "RAM", "Usada (GB)", true),
         new("ram_pct", "RAM", "Uso (%)", true),
 
+        new("hwnames", "Outros", "Nome do hardware", true),
         new("game", "Outros", "Nome do jogo", false),
         new("clock", "Outros", "Hora", false),
     };

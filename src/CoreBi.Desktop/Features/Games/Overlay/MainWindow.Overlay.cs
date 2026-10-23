@@ -13,7 +13,21 @@ namespace CoreBi.Desktop;
 public partial class MainWindow
 {
     internal HashSet<string>? _ovShow;
-    internal HashSet<string> OvShow => _ovShow ??= _settings.OverlayItems is { } l ? l.ToHashSet() : OverlayMetrics.Defaults();
+    internal HashSet<string> OvShow => _ovShow ??= LoadOvShow();
+
+    private HashSet<string> LoadOvShow()
+    {
+        var set = _settings.OverlayItems is { } l ? l.ToHashSet() : OverlayMetrics.Defaults();
+        // Quem já tinha uma seleção salva recebe "Nome do hardware" ligado uma vez; depois vale a escolha dele.
+        if (!_settings.OverlayNamesOffered)
+        {
+            set.Add("hwnames");
+            _settings.OverlayNamesOffered = true;
+            _settings.OverlayItems = OverlayMetrics.All.Select(x => x.Key).Where(set.Contains).ToList();
+            SaveSettings();
+        }
+        return set;
+    }
 
     /// <summary>Componentes na ordem do overlay: o que cada linha mede, glifo e cor do canal (CPU verde-água, GPU cobre).</summary>
     private static readonly (string Group, string Caption, string Icon, string Brush)[] OvGroups =
@@ -23,7 +37,7 @@ public partial class MainWindow
         ("VRAM", "Memória da placa de vídeo", "\uE964", "Copper"),
         ("CPU", "Processador", "\uE950", "Accent"),
         ("RAM", "Memória do sistema", "\uEEA0", "Steel"),
-        ("Outros", "Rodapé do overlay", "\uE823", "Steel"),
+        ("Outros", "Nomes e rodapé do overlay", "\uE823", "Steel"),
     };
 
     /// <summary>Itens que dependem da placa ou de permissão: a dica explica por que podem aparecer com travessão.</summary>
@@ -33,6 +47,7 @@ public partial class MainWindow
         ["gpu_memclock"] = "Depende da placa de vídeo.",
         ["gpu_fan"] = "Depende da placa de vídeo.",
         ["gpu_perfcap"] = "Só em placas NVIDIA.",
+        ["hwnames"] = "Mostra o modelo ao lado de CPU e GPU e a quantidade de RAM (ex.: CPU Ryzen 7 5700X).",
         ["cpu_temp"] = "Precisa do CoreBi aberto como administrador.",
         ["cpu_clock"] = "Precisa do CoreBi aberto como administrador.",
         ["cpu_clockmax"] = "Precisa do CoreBi aberto como administrador.",
@@ -46,8 +61,8 @@ public partial class MainWindow
     private static readonly Dictionary<string, HashSet<string>> OvPresets = new()
     {
         ["min"] = new() { "fps", "frametime", "low1" },
-        ["gargalo"] = new() { "fps", "low1", "graph", "gpu_load", "gpu_clock", "gpu_perfcap", "vram_used", "vram_pct", "cpu_load", "cpu_maxcore", "cpu_clock", "ram_pct" },
-        ["termico"] = new() { "fps", "gpu_temp", "gpu_hotspot", "gpu_power", "gpu_fan", "vram_temp", "cpu_temp", "cpu_power", "cpu_clock", "clock" },
+        ["gargalo"] = new() { "hwnames", "fps", "low1", "graph", "gpu_load", "gpu_clock", "gpu_perfcap", "vram_used", "vram_pct", "cpu_load", "cpu_maxcore", "cpu_clock", "ram_pct" },
+        ["termico"] = new() { "hwnames", "fps", "gpu_temp", "gpu_hotspot", "gpu_power", "gpu_fan", "vram_temp", "cpu_temp", "cpu_power", "cpu_clock", "clock" },
     };
 
     /// <summary>Monta "O que mostrar": uma linha por componente (glifo, nome, o que mede) com os itens em pílulas e a contagem.</summary>
@@ -201,6 +216,14 @@ public partial class MainWindow
         return cores.Count > 0 ? (cores.Average(), cores.Max()) : (null, null);
     }
 
+    /// <summary>Nome do hardware para o rótulo: vazio vira nada (a linha volta a mostrar só "CPU"/"GPU") e nome longo é cortado.</summary>
+    internal static string? HwName(string? name)
+    {
+        name = name?.Trim();
+        if (string.IsNullOrEmpty(name)) return null;
+        return name.Length <= 20 ? name : name[..19].TrimEnd() + "…";
+    }
+
     /// <summary>Monta as linhas GPU / VRAM / CPU / RAM só com o que foi escolhido; linha vazia não aparece.</summary>
     internal List<OverlayLine> BuildOverlayLines(FrameStats? f)
     {
@@ -209,7 +232,8 @@ public partial class MainWindow
         var lines = new List<OverlayLine>();
         string T(float? v) => v is float x ? $"{x:0} °C" : "—";
         string P(double? v) => v is double x ? $"{x:0}%" : "—";
-        void Line(string label, List<string> parts) { if (parts.Count > 0) lines.Add(new OverlayLine(label, parts)); }
+        bool names = show.Contains("hwnames");
+        void Line(string label, List<string> parts, string? detail = null) { if (parts.Count > 0) lines.Add(new OverlayLine(label, parts, names ? detail : null)); }
 
         var gpu = new List<string>();
         if (show.Contains("gpu_load")) gpu.Add(P(s.GpuLoad));
@@ -223,7 +247,7 @@ public partial class MainWindow
             gpu.Add(GpuRow(SensorType.Fan, "GPU Fan", true)?.RawValue is float rpm && rpm > 0 ? $"{rpm:0} RPM"
                   : GpuRow(SensorType.Control, "GPU Fan", true)?.RawValue is float pct ? $"fan {pct:0}%" : "fan —");
         if (show.Contains("gpu_perfcap") && MainGpuPerfCap() is { Length: > 0 } cap) gpu.Add(cap);
-        Line("GPU", gpu);
+        Line("GPU", gpu, HwName(_gpus.Count > 0 ? GameCatalog.ShortGpuName(_gpus[0].Name) : null));
 
         var vram = new List<string>();
         var vr = MainGpuVram();
@@ -240,13 +264,13 @@ public partial class MainWindow
         if (show.Contains("cpu_clock")) cpu.Add(avg is float ca ? $"{ca / 1000:0.00} GHz" : "— GHz");
         if (show.Contains("cpu_clockmax")) cpu.Add(max is float cm ? $"pico {cm / 1000:0.00} GHz" : "pico —");
         if (show.Contains("cpu_power")) cpu.Add(_monitor.CpuPower is float cw && cw > 0 ? $"{cw:0} W" : "— W"); // 0 = sem leitura (precisa de administrador)
-        Line("CPU", cpu);
+        Line("CPU", cpu, HwName(GameCatalog.ShortCpuName(_cpuName)));
 
         var ram = new List<string>();
         var (total, availB) = MemoryInfo.MemoryStatus();
         if (show.Contains("ram_used")) ram.Add(total > 0 ? $"{(total - availB) / 1073741824.0:0.0} GB" : "—");
         if (show.Contains("ram_pct")) ram.Add(P(s.RamPct));
-        Line("RAM", ram);
+        Line("RAM", ram, total > 0 ? $"{Math.Round(total / 1073741824.0):0} GB" : null);
         return lines;
     }
 }

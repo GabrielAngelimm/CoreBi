@@ -361,7 +361,7 @@
                                                 <StackPanel MaxWidth="290">
                                                     <TextBlock Text="Essencial" FontWeight="SemiBold" />
                                                     <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="O básico para jogar sem poluir a tela: o que a placa de vídeo e o processador estão fazendo agora, e quanta memória está em uso." />
-                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS, frametime e 1% low · GPU: uso, temperatura, clock e consumo · VRAM · CPU: uso, temperatura, clock e consumo · RAM" />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS, frametime e 1% low · GPU: uso, temperatura, clock e consumo · VRAM · CPU: uso, temperatura, clock e consumo · RAM · nome do hardware" />
                                                 </StackPanel>
                                             </RadioButton.ToolTip>
                                         </RadioButton>

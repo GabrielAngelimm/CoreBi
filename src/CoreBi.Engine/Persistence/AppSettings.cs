@@ -39,6 +39,8 @@ public sealed class AppSettings
     public double OverlayOpacity { get; set; } = 1.0;
     /// <summary>Itens escolhidos para o overlay (chaves de OverlayMetrics); null = padrão.</summary>
     public List<string>? OverlayItems { get; set; }
+    /// <summary>Já oferecemos "Nome do hardware" a quem tinha uma seleção salva (entra ligado uma única vez).</summary>
+    public bool OverlayNamesOffered { get; set; }
 
     [System.Text.Json.Serialization.JsonIgnore] // nunca gravar a chave em texto puro
     public string? HowManyFpsKey
