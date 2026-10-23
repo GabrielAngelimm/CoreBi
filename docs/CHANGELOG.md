@@ -3,7 +3,7 @@
 ## Em desenvolvimento
 
 - Janela maximizada respeita a barra de tarefas: antes ocupava a tela inteira e o rodapé de todas as páginas ficava escondido.
-- O CoreBi abre sempre maximizado, com a barra de tarefas visível. O botão Maximizar saiu da barra de título: para restaurar, use o duplo clique na barra de título ou os atalhos do Windows.
+- O CoreBi abre sempre maximizado (com a barra de tarefas visível); Restaurar volta à janela de 1360 × 860 centralizada.
 - Selo "ao vivo" da barra de título removido; o tema virou uma chave animada ("Modo escuro") acima da telemetria na barra lateral.
 - Central de monitoramento na barra lateral com CPU, GPU, RAM e disco (no lugar do estado do teste de carga), oculta na Visão geral; marca maior no topo e a versão, só o número, na barra de título ao lado do botão de minimizar.
 - Seleção da navegação e das listas sem o traço lateral: fundo elevado e ícone em verde-água, com transição curta.
