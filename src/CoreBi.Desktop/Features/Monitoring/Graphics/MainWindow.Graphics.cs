@@ -20,6 +20,7 @@ public partial class MainWindow
     // Placa de vídeo
     internal List<GpuInfo> _gpus = new();
     internal GpuInfo? _gpu;
+    private readonly WindowsGpuUsage _windowsGpuUsage = new();
 
     // ---------------- Placa de vídeo ----------------
 
@@ -44,14 +45,14 @@ public partial class MainWindow
 
     internal void UpdateGpuLive()
     {
+        foreach (var gpu in _gpus) gpu.WindowsLoad = _windowsGpuUsage.GetLoad(gpu.AdapterLuid);
         // Barra lateral: GPU principal (dedicada = primeira da lista).
         if (_gpus.Count > 0)
         {
-            var load = _monitor.Rows.FirstOrDefault(r => r.Hardware == _gpus[0].Name && r.Type == SensorType.Load
-                                                         && r.Name == "GPU Core");
+            var load = MainGpuLoad();
             SideGpuTemp.Text = MainGpuTemp() is float t ? $"{t:0.#} °C" : "—";
-            SideGpuLoad.Text = load?.RawValue is float l ? $"{l:0} %" : "—";
-            SideGpuBar.ScaleX = Math.Clamp((load?.RawValue ?? 0) / 100.0, 0, 1);
+            SideGpuLoad.Text = load is float l ? $"{l:0} %" : "—";
+            SideGpuBar.ScaleX = Math.Clamp((load ?? 0) / 100.0, 0, 1);
         }
         if (_gpu != null && PageGpu.IsVisible) GpuExtras.ItemsSource = _gpu.LiveExtras();
     }

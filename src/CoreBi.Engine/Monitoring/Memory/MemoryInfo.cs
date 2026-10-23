@@ -4,6 +4,22 @@ namespace CoreBi.Engine.Monitoring.Memory;
 /// <summary>Read-only memory status. Does not empty working sets or caches.</summary>
 public static class MemoryInfo
 {
+    public readonly record struct PhysicalUsage(long Total, long Available)
+    {
+        public long Used => Total - Available;
+        public float UsedPercent => (float)(100.0 * Used / Total);
+    }
+
+    /// <summary>GB e percentual devem vir desta mesma amostra de RAM física do Windows.</summary>
+    public static PhysicalUsage? ReadPhysicalUsage()
+    {
+        var (total, available) = MemoryStatus();
+        return PhysicalUsageFrom(total, available);
+    }
+
+    internal static PhysicalUsage? PhysicalUsageFrom(long total, long available)
+        => total > 0 && available >= 0 && available <= total ? new(total, available) : null;
+
     public static (long Total, long Available) MemoryStatus()
     {
         var status = new NativeMemoryStatus { Length = (uint)Marshal.SizeOf<NativeMemoryStatus>() };

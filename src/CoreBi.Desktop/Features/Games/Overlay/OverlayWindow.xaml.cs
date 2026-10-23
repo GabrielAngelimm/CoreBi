@@ -67,6 +67,13 @@ public partial class OverlayWindow : Window
         var r = mi.rcMonitor;
         int x = Corner.EndsWith("R") ? r.Right - w - m : r.Left + m;
         int y = Corner.StartsWith("B") ? r.Bottom - h - m : r.Top + m;
+        // Uma atualização de texto não precisa reenviar posição/z-order ao compositor.
+        var foreground = GetForegroundWindow();
+        bool foregroundAbove = false;
+        var above = GetWindow(_hwnd, 3); // GW_HWNDPREV
+        for (int i = 0; above != IntPtr.Zero && i < 128; i++, above = GetWindow(above, 3))
+            if (above == foreground) { foregroundAbove = true; break; }
+        if (wr.Left == x && wr.Top == y && (GetWindowLong(_hwnd, GWL_EXSTYLE) & 0x8) != 0 && !foregroundAbove) return;
         SetWindowPos(_hwnd, HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
     }
 
@@ -108,6 +115,7 @@ public partial class OverlayWindow : Window
 
     [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
     [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr h, out RECT r);
+    [DllImport("user32.dll")] private static extern IntPtr GetWindow(IntPtr h, uint command);
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
     [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr h, uint flags);

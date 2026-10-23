@@ -1,5 +1,6 @@
 using LibreHardwareMonitor.Hardware;
 using CoreBi.Engine.Monitoring.Graphics;
+using CoreBi.Engine.Monitoring.Memory;
 
 using CoreBi.Engine.Monitoring.Sensors;
 
@@ -32,8 +33,11 @@ public sealed record LoadSample(
 
 public static class BottleneckAnalyzer
 {
-    /// <summary>Lê os sensores atuais (LibreHardwareMonitor + NVML) da GPU principal e da CPU.</summary>
+    /// <summary>Sensores atuais de CPU/GPU, carga WDDM da GPU e RAM física do Windows.</summary>
     public static LoadSample Sample(SensorMonitor m, GpuInfo? gpu, FrameStats? frames)
+        => Sample(m, gpu, frames, MemoryInfo.ReadPhysicalUsage());
+
+    internal static LoadSample Sample(SensorMonitor m, GpuInfo? gpu, FrameStats? frames, MemoryInfo.PhysicalUsage? memory)
     {
         var rows = m.Rows;
         float? gpuLoad = null, gpuTemp = null;
@@ -41,7 +45,7 @@ public static class BottleneckAnalyzer
         bool thermal = false;
         if (gpu != null)
         {
-            gpuLoad = rows.FirstOrDefault(r => r.Hardware == gpu.Name && r.Type == SensorType.Load && r.Name == "GPU Core")?.RawValue;
+            gpuLoad = gpu.WindowsLoad;
             var temps = rows.Where(r => r.Hardware == gpu.Name && r.Type == SensorType.Temperature).ToList();
             gpuTemp = (temps.FirstOrDefault(r => r.Name == "GPU Core") ?? temps.FirstOrDefault())?.RawValue;
 
@@ -60,7 +64,7 @@ public static class BottleneckAnalyzer
         var cores = rows.Where(r => r.HardwareType == HardwareType.Cpu && r.Type == SensorType.Load &&
                                     r.Name.StartsWith("CPU Core #") && !r.Name.Contains("Thread") && r.RawValue != null).ToList();
         var busiest = cores.OrderByDescending(r => r.RawValue).FirstOrDefault();
-        float? ram = rows.FirstOrDefault(r => r.HardwareType == HardwareType.Memory && r.Type == SensorType.Load && r.Name == "Memory")?.RawValue;
+        float? ram = memory?.UsedPercent;
 
         return new LoadSample(gpuLoad, m.CpuLoad, busiest?.RawValue, busiest?.Name.Replace("CPU Core #", "núcleo "),
                               vramPct, ram, gpuTemp, m.CpuTemperature, thermal, frames?.Fps);
