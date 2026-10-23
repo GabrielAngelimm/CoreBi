@@ -13,8 +13,8 @@
             <Border x:Name="Sidebar" Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0">
                 <DockPanel>
                     <!-- Marca: símbolo vetorial (brand/geometry.json), assinatura e versão -->
-                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="24,0,0,0" Height="64" VerticalAlignment="Center">
-                        <Viewbox Width="26" Height="26" VerticalAlignment="Center">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="22,0,0,0" Height="68" VerticalAlignment="Center">
+                        <Viewbox Width="34" Height="34" VerticalAlignment="Center">
                             <Canvas Width="256" Height="256">
                                 <Polygon Points="141,35 81,35 34,82 34,174 81,221 141,221 141,195 93,195 60,162 60,94 93,61 141,61" Fill="{DynamicResource Fg}" />
                                 <Polygon Points="155,35 184,35 218,69 218,108 202,124 222,144 222,185 186,221 155,221 155,195 175,195 196,174 196,156 178,138 155,138 155,112 177,112 192,97 192,81 173,61 155,61" Fill="{DynamicResource Fg}" />
@@ -22,8 +22,10 @@
                                 <Polygon Points="95,121 117,121 117,172 95,172" Fill="{DynamicResource Accent}" />
                             </Canvas>
                         </Viewbox>
-                        <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="19" Margin="11,0,0,1" VerticalAlignment="Center" />
-                        <TextBlock x:Name="SideVersion" Text="0.2.0" Foreground="{DynamicResource Faint}" FontSize="11" Margin="8,3,0,0" VerticalAlignment="Center" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
+                        <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="23" LineHeight="24" LineStackingStrategy="BlockLineHeight" />
+                            <TextBlock x:Name="SideVersion" Text="0.2.0" Foreground="{DynamicResource Faint}" FontSize="11" Margin="1,1,0,0" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
+                        </StackPanel>
                     </StackPanel>
 
                     <!-- Rodapé: aviso de sensores, tema e central de monitoramento -->
