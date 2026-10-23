@@ -183,7 +183,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition x:Name="SpaceColumn" Width="560" />
+                                    <ColumnDefinition x:Name="SpaceColumn" Width="520" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal">
@@ -212,47 +212,20 @@
                                 <StackPanel x:Name="DiskSpace" Grid.Column="2" VerticalAlignment="Center">
                                     <TextBlock Text="Espaço" Style="{StaticResource SectionTitle}" />
                                     <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,14" />
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="1.6*" />
-                                            <ColumnDefinition Width="1.6*" />
-                                        </Grid.ColumnDefinitions>
+                                    <UniformGrid Columns="3">
                                         <StackPanel>
                                             <TextBlock Text="Capacidade" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="SpaceTotal" Style="{StaticResource LifeValue}" />
                                         </StackPanel>
-                                        <StackPanel Grid.Column="1">
+                                        <StackPanel>
                                             <TextBlock Text="Usado" Style="{StaticResource StatLabel}" />
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
-                                                <Grid Width="30" Height="6" Margin="12,0,10,8" VerticalAlignment="Bottom" OpacityMask="{StaticResource SegmentMask}">
-                                                    <Border Background="{DynamicResource Line}" />
-                                                    <Border Background="{DynamicResource Steel}" RenderTransformOrigin="0,0.5">
-                                                        <Border.RenderTransform>
-                                                            <ScaleTransform x:Name="SpaceUsedScale" ScaleX="0" />
-                                                        </Border.RenderTransform>
-                                                    </Border>
-                                                </Grid>
-                                                <TextBlock x:Name="SpaceUsedPercent" Style="{StaticResource LifeValue}" FontSize="23" />
-                                            </StackPanel>
+                                            <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
                                         </StackPanel>
-                                        <StackPanel Grid.Column="2">
+                                        <StackPanel>
                                             <TextBlock Text="Livre" Style="{StaticResource StatLabel}" />
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" />
-                                                <Grid Width="30" Height="6" Margin="12,0,10,8" VerticalAlignment="Bottom" OpacityMask="{StaticResource SegmentMask}">
-                                                    <Border Background="{DynamicResource Line}" />
-                                                    <Border x:Name="SpaceFreeFill" Background="{DynamicResource Ok}" RenderTransformOrigin="0,0.5">
-                                                        <Border.RenderTransform>
-                                                            <ScaleTransform x:Name="SpaceFreeScale" ScaleX="0" />
-                                                        </Border.RenderTransform>
-                                                    </Border>
-                                                </Grid>
-                                                <TextBlock x:Name="SpaceFreePercent" Style="{StaticResource LifeValue}" FontSize="23" />
-                                            </StackPanel>
+                                            <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" />
                                         </StackPanel>
-                                    </Grid>
+                                    </UniformGrid>
                                     <ItemsControl x:Name="DiskVolumes" ItemTemplate="{StaticResource VolumeRow}" Focusable="False" Margin="0,14,0,0" />
                                 </StackPanel>
                             </Grid>
@@ -311,21 +284,21 @@
                                 </Grid>
                                 <Grid Grid.Row="1" Margin="0,16,0,0">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1.25*" />
+                                        <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock x:Name="TempNow" Style="{StaticResource ReadoutHero}" FontSize="72" Text="—" />
                                         <TextBlock Text="°C" Style="{StaticResource Unit}" FontSize="20" Margin="6,0,0,13" />
                                     </StackPanel>
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="0,0,0,12">
-                                        <TextBlock Text="Situação" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="TempState" FontSize="22" FontWeight="SemiBold" Margin="0,4,0,0" />
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="Situação" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                        <TextBlock x:Name="TempState" FontSize="24" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center" />
                                     </StackPanel>
-                                    <StackPanel Grid.Column="2" VerticalAlignment="Bottom" Margin="0,0,0,12">
-                                        <TextBlock Text="Máx. registrado" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="TempPeak" Style="{StaticResource ReadoutText}" FontSize="26" Margin="0,3,0,0" />
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                        <TextBlock Text="Máx. registrado" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                        <TextBlock x:Name="TempPeak" Style="{StaticResource ReadoutText}" FontSize="28" Margin="0,3,0,0" HorizontalAlignment="Center" />
                                     </StackPanel>
                                 </Grid>
                                 <local:ThermalScale x:Name="TempScale" Grid.Row="2" Margin="0,18,0,0" />

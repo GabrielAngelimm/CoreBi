@@ -228,16 +228,24 @@ public partial class DisksView : UserControl
 
         long total = mine.Sum(v => v.Total), free = mine.Sum(v => v.Free), used = total - free;
         bool known = total > 0;
-        void Gb(TextBlock target, long bytes) => Readout(target, known ? $"{bytes / 1073741824.0:N1}" : "—", known ? "GB" : "");
-        Gb(SpaceUsed, used);
+        void Gb(TextBlock target, long bytes, double? share = null)
+        {
+            Readout(target, known ? $"{bytes / 1073741824.0:N1}" : "—", known ? "GB" : "");
+            if (share is not double pct || !known) return;
+            // "316,3 GB / 33 %": a barra separa os dois e a porcentagem usa a mesma fonte do valor
+            var slash = new Run("  /  ") { FontWeight = FontWeights.Light };
+            slash.SetResourceReference(TextElement.ForegroundProperty, "Faint");
+            target.Inlines.Add(slash);
+            target.Inlines.Add(new Run($"{pct:0}"));
+            var unit = new Run(" %") { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.4)) };
+            unit.SetResourceReference(TextElement.ForegroundProperty, "Muted");
+            unit.SetResourceReference(TextElement.FontFamilyProperty, "UiFont");
+            target.Inlines.Add(unit);
+        }
+        double freeShare = known ? (double)free / total * 100 : 0;
         Gb(SpaceTotal, total);
-        Gb(SpaceFree, free);
-        double freeShare = known ? (double)free / total * 100 : 0, usedShare = known ? 100 - freeShare : 0;
-        Readout(SpaceFreePercent, known ? $"{freeShare:0}" : "—", known ? "%" : "");
-        Readout(SpaceUsedPercent, known ? $"{usedShare:0}" : "—", known ? "%" : "");
-        SpaceFreeScale.ScaleX = freeShare / 100;
-        SpaceUsedScale.ScaleX = usedShare / 100;
-        SpaceFreeFill.SetResourceReference(Border.BackgroundProperty, freeShare < 10 ? "Danger" : freeShare < 20 ? "Warn" : "Ok");
+        Gb(SpaceUsed, used, 100 - freeShare);
+        Gb(SpaceFree, free, freeShare);
 
         // Mais de uma unidade no disco: uma linha por letra com quanto ainda está livre
         DiskVolumes.ItemsSource = mine.Count > 1
@@ -388,7 +396,7 @@ public partial class DisksView : UserControl
         LifeColumn.Width = new GridLength(wide ? 370 : 330);
         CheckGap.Width = new GridLength(wide ? 16 : 0);
         CheckColumn.Width = new GridLength(wide ? 330 : 0);
-        SpaceColumn.Width = new GridLength(wide ? 560 : 440);
+        SpaceColumn.Width = new GridLength(wide ? 520 : 420);
         Grid.SetRow(CheckCard, wide ? 2 : 4);
         Grid.SetColumn(CheckCard, wide ? 4 : 0);
         Grid.SetColumn(OdoCard, wide ? 0 : 2);
