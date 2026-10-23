@@ -129,9 +129,9 @@
                             <RadioButton x:Name="NavEnergy" Style="{StaticResource NavItem}" Tag="PageEnergy" local:Ui.Icon="&#xE7E8;" Content="Energia" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavNet" Style="{StaticResource NavItem}" Tag="PageNet" local:Ui.Icon="&#xE839;" Content="Rede" Checked="Nav_Checked" />
                             <TextBlock Text="Jogos" Style="{StaticResource NavHeader}" />
+                            <RadioButton x:Name="NavOverlay" Style="{StaticResource NavItem}" Tag="PageOverlay" local:Ui.Icon="&#xE81E;" Content="OverlayBi" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavGames" Style="{StaticResource NavItem}" Tag="PageGames" local:Ui.Icon="&#xEC49;" Content="FPS estimado" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavBottleneck" Style="{StaticResource NavItem}" Tag="PageBottleneck" local:Ui.Icon="&#xE9D2;" Content="Gargalo" Checked="Nav_Checked" />
-                            <RadioButton x:Name="NavOverlay" Style="{StaticResource NavItem}" Tag="PageOverlay" local:Ui.Icon="&#xE81E;" Content="Overlay" Checked="Nav_Checked" />
                             <TextBlock Text="Desempenho" Style="{StaticResource NavHeader}" />
                             <RadioButton x:Name="NavBench" Style="{StaticResource NavItem}" Tag="PageBench" local:Ui.Icon="&#xE8B9;" Content="Benchmark" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavStress" Style="{StaticResource NavItem}" Tag="PageStress" local:Ui.Icon="&#xE945;" Content="Teste de carga" Checked="Nav_Checked" />

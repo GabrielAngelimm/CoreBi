@@ -143,7 +143,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="Overlay" Style="{StaticResource PageTitle}" />
+                        <TextBlock Text="OverlayBi" Style="{StaticResource PageTitle}" />
                         <TextBlock Text="FPS, frametime e sensores por cima do jogo, sem injetar nada no processo." Style="{StaticResource PageSubtitle}" />
                     </StackPanel>
                     <Border Grid.Column="1" Style="{StaticResource CardBorder}" Padding="18,12" VerticalAlignment="Center" Margin="16,0,0,0">
@@ -354,15 +354,53 @@
                                     <TextBlock Text="O que mostrar" Style="{StaticResource SectionTitle}" />
                                     <TextBlock Text="Cada componente vira uma linha do overlay, só com os itens marcados. Vale na hora e fica salvo." Style="{StaticResource Caption}" Margin="0,3,0,0" />
                                 </StackPanel>
-                                <Border Grid.Column="1" Style="{StaticResource SegmentGroup}" VerticalAlignment="Top" ToolTip="Predefinições">
+                                <Border Grid.Column="1" Style="{StaticResource SegmentGroup}" VerticalAlignment="Top">
                                     <StackPanel x:Name="OvPresetPanel" Orientation="Horizontal">
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Só FPS" Tag="min" Click="OvPreset_Click" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Padrão" Tag="default" Click="OvPreset_Click" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Gargalo" Tag="gargalo" Click="OvPreset_Click"
-                                                     ToolTip="Uso da GPU e do núcleo mais ocupado, clocks, limitador e memória: mostra quem limita o FPS." />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Térmico" Tag="termico" Click="OvPreset_Click"
-                                                     ToolTip="Temperaturas, hotspot, consumo e ventoinha da GPU e da CPU, mais a hora." />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Tudo" Tag="all" Click="OvPreset_Click" />
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Essencial" Tag="default" Click="OvPreset_Click">
+                                            <RadioButton.ToolTip>
+                                                <StackPanel MaxWidth="290">
+                                                    <TextBlock Text="Essencial" FontWeight="SemiBold" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="O básico para jogar sem poluir a tela: o que a placa de vídeo e o processador estão fazendo agora, e quanta memória está em uso." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS, frametime e 1% low · GPU: uso, temperatura, clock e consumo · VRAM · CPU: uso, temperatura, clock e consumo · RAM" />
+                                                </StackPanel>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Só FPS" Tag="min" Click="OvPreset_Click">
+                                            <RadioButton.ToolTip>
+                                                <StackPanel MaxWidth="290">
+                                                    <TextBlock Text="Só FPS" FontWeight="SemiBold" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="O overlay mais discreto possível: só o contador e a estabilidade dos quadros." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS, frametime e 1% low" />
+                                                </StackPanel>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Gargalo" Tag="gargalo" Click="OvPreset_Click">
+                                            <RadioButton.ToolTip>
+                                                <StackPanel MaxWidth="290">
+                                                    <TextBlock Text="Gargalo" FontWeight="SemiBold" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="Para descobrir quem está limitando o jogo: compara o uso da GPU com o do núcleo de CPU mais ocupado e mostra se a memória aperta." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS, 1% low e gráfico · GPU: uso, clock e limitador · VRAM · CPU: uso, núcleo mais ocupado e clock · RAM em %" />
+                                                </StackPanel>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Térmico" Tag="termico" Click="OvPreset_Click">
+                                            <RadioButton.ToolTip>
+                                                <StackPanel MaxWidth="290">
+                                                    <TextBlock Text="Térmico" FontWeight="SemiBold" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="Para acompanhar calor e consumo em sessões longas e testar a refrigeração." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS · GPU: temperatura, hotspot, consumo e ventoinha · VRAM: temperatura · CPU: temperatura, consumo e clock · hora" />
+                                                </StackPanel>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Tudo" Tag="all" Click="OvPreset_Click">
+                                            <RadioButton.ToolTip>
+                                                <StackPanel MaxWidth="290">
+                                                    <TextBlock Text="Tudo" FontWeight="SemiBold" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="Liga todos os itens disponíveis. Fica grande: combina melhor com o tamanho Pequeno." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="Todos os grupos: FPS, GPU, VRAM, CPU, RAM e rodapé" />
+                                                </StackPanel>
+                                            </RadioButton.ToolTip>
+                                        </RadioButton>
                                     </StackPanel>
                                 </Border>
                             </Grid>

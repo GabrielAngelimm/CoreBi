@@ -40,7 +40,7 @@ public partial class MainWindow
     };
 
     /// <summary>
-    /// Predefinições: "Só FPS" e "Padrão" são o básico; "Gargalo" junta o que mostra quem limita o jogo (uso da GPU e do
+    /// Predefinições: "Essencial" (o padrão do catálogo) e "Só FPS" são o básico; "Gargalo" junta o que mostra quem limita o jogo (uso da GPU e do
     /// núcleo mais ocupado, memória) e "Térmico" o que importa para temperatura, consumo e ventoinha.
     /// </summary>
     private static readonly Dictionary<string, HashSet<string>> OvPresets = new()

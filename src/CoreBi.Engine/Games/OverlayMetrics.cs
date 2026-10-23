@@ -17,7 +17,7 @@ public static class OverlayMetrics
         new("fps", "FPS", "FPS", true),
         new("frametime", "FPS", "Frametime (ms)", true),
         new("low1", "FPS", "1% low", true),
-        new("graph", "FPS", "Gráfico de frametime", true),
+        new("graph", "FPS", "Gráfico de frametime", false),
 
         new("gpu_load", "GPU", "Uso", true),
         new("gpu_temp", "GPU", "Temperatura", true),
@@ -30,7 +30,7 @@ public static class OverlayMetrics
         new("gpu_perfcap", "GPU", "Limitador (NVIDIA)", false),
 
         new("vram_used", "VRAM", "Usada (GB)", true),
-        new("vram_pct", "VRAM", "Uso (%)", false),
+        new("vram_pct", "VRAM", "Uso (%)", true),
         new("vram_temp", "VRAM", "Temperatura", false),
 
         new("cpu_load", "CPU", "Uso total", true),
@@ -41,9 +41,9 @@ public static class OverlayMetrics
         new("cpu_power", "CPU", "Consumo", true),
 
         new("ram_used", "RAM", "Usada (GB)", true),
-        new("ram_pct", "RAM", "Uso (%)", false),
+        new("ram_pct", "RAM", "Uso (%)", true),
 
-        new("game", "Outros", "Nome do jogo", true),
+        new("game", "Outros", "Nome do jogo", false),
         new("clock", "Outros", "Hora", false),
     };
 
