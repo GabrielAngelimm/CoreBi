@@ -26,6 +26,7 @@ public partial class OverlayView : UserControl
     private void OvOption_Changed(object sender, RoutedEventArgs e) => Owner?.OvOption_Changed(sender, e);
     private void OvOpacity_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
+        if (OvOpacityText == null || OvPreviewHost == null) return; // disparado durante InitializeComponent
         OvOpacityText.Text = $"{e.NewValue:0}%";
         OvPreviewHost.Opacity = OpacityOf(e.NewValue);
         Owner?.OvOpacity_Changed(OpacityOf(e.NewValue));
