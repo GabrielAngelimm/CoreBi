@@ -6,7 +6,7 @@ exceção (ou pincel vazio) quando a tela abre. Este script cruza cada referênc
 - Theme.xaml: StaticResource precisa estar definido antes, no próprio arquivo (é carregado em ordem).
 - FeatureTemplates.xaml: pode usar o que vem antes nele mesmo ou qualquer chave do Theme.xaml.
 - Demais XAML: chaves do Theme.xaml, do FeatureTemplates.xaml ou definidas antes no próprio arquivo.
-- C#: FindResource/TryFindResource/Palette/SetResourceReference/SetShellStatus com literais de texto.
+- C#: FindResource/TryFindResource/Palette/SetResourceReference com literais de texto.
 
 Uso: python tools/check_resources.py   (sai com código 1 se encontrar chave inexistente)
 """
@@ -67,9 +67,6 @@ def main() -> int:
             literals: list[str] = []
             for m in CS_CALL.finditer(line):
                 literals += LITERAL.findall(m.group(2))
-            if "SetShellStatus(" in line:
-                found = LITERAL.findall(line.split("SetShellStatus(", 1)[1])
-                literals += found[-1:]
             if "SetRunning(" in line:
                 continue
             for key in literals:

@@ -1,5 +1,13 @@
 # Mudanças
 
+## Em desenvolvimento
+
+- Janela maximizada respeita a barra de tarefas: antes ocupava a tela inteira e o rodapé de todas as páginas ficava escondido.
+- Selo "ao vivo" da barra de título removido; o tema virou uma chave animada ("Modo escuro") acima da telemetria na barra lateral.
+- Central de monitoramento na barra lateral com CPU, GPU, RAM e disco (no lugar do estado do teste de carga), oculta na Visão geral; marca maior no topo e a versão, só o número, na barra de título ao lado do botão de minimizar.
+- Seleção da navegação e das listas sem o traço lateral: fundo elevado e ícone em verde-água, com transição curta.
+- Visão geral cabe numa tela com a janela maximizada. Cartões de uso para processador e placa de vídeo e mostrador de anéis para RAM, VRAM e disco com uso e espaço livre, sem campos vazios. Setas levam a Sistema (processador, memória), Placa de vídeo e Discos; o gráfico principal mostra a leitura exata sob o mouse e pausa enquanto o mouse está sobre ele. Saúde do PC com selo de resumo e altura conforme o conteúdo; a atividade recente mostra quantos eventos couberem.
+
 ## 0.2.0 — 2026-10-23
 
 - Instalador `CoreBi-0.2.0-win-x64-setup.exe` (Inno Setup): instala em `Program Files`, cria atalhos e desinstalador e traz o driver PawnIO como componente marcado, instalado pelo winget. A desinstalação pergunta antes de apagar configurações e backups.
