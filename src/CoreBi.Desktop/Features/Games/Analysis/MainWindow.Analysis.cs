@@ -39,6 +39,7 @@ public partial class MainWindow
             rb.IsChecked = Math.Abs(double.Parse((string)rb.Tag, CultureInfo.InvariantCulture) - _settings.OverlayScale) < 0.01;
         BuildOverlayPicker();
         PageOverlay.LayoutPreview(_settings.OverlayCorner, _settings.OverlayScale);
+        PageOverlay.SetOpacity(_settings.OverlayOpacity);
         _overlayReady = true;
         UpdateOverlayStatus(null);
     }

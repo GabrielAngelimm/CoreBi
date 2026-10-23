@@ -35,6 +35,8 @@ public sealed class AppSettings
     // Overlay
     public string OverlayCorner { get; set; } = "TL";
     public double OverlayScale { get; set; } = 1.0;
+    /// <summary>Opacidade do overlay (0,3 a 1).</summary>
+    public double OverlayOpacity { get; set; } = 1.0;
     /// <summary>Itens escolhidos para o overlay (chaves de OverlayMetrics); null = padrão.</summary>
     public List<string>? OverlayItems { get; set; }
 
@@ -97,6 +99,7 @@ public sealed class AppSettings
         StartupRemoved = StartupRemoved.Where(x => x != null).ToList();
         if (OverlayCorner is not ("TL" or "TR" or "BL" or "BR")) OverlayCorner = "TL";
         if (!double.IsFinite(OverlayScale) || OverlayScale is < 0.5 or > 3) OverlayScale = 1;
+        if (!double.IsFinite(OverlayOpacity) || OverlayOpacity is < 0.3 or > 1) OverlayOpacity = 1;
         OverlayItems = OverlayItems?.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().Take(100).ToList();
     }
 }

@@ -76,11 +76,20 @@ public partial class MainWindow
         PageOverlay.LayoutPreview(_settings.OverlayCorner, _settings.OverlayScale);
     }
 
+    internal void OvOpacity_Changed(double opacity)
+    {
+        if (!_overlayReady) return;
+        _settings.OverlayOpacity = opacity;
+        SaveSettings();
+        ApplyOverlayOptions();
+    }
+
     internal void ApplyOverlayOptions()
     {
         if (_overlay == null) return;
         _overlay.Corner = _settings.OverlayCorner;
         _overlay.SetScale(_settings.OverlayScale);
+        _overlay.Opacity = _settings.OverlayOpacity;
         _overlay.Reposition();
     }
 

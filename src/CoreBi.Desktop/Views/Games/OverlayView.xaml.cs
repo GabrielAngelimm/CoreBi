@@ -11,10 +11,10 @@ namespace CoreBi.Desktop.Views;
 public partial class OverlayView : UserControl
 {
     /// <summary>
-    /// Escala da prévia em relação ao overlay real. O monitor desenhado tem 820 de largura para uma tela de 1920:
-    /// na proporção exata o texto ficaria ilegível, então a caixa aparece um pouco maior que a "verdadeira".
+    /// Escala da prévia em relação ao overlay real: largura da tela desenhada (798) pela do monitor principal,
+    /// com 10% de folga para o texto continuar legível. A caixa ocupa na prévia a mesma fatia da tela que ocupa no jogo.
     /// </summary>
-    private const double PreviewFactor = 0.72;
+    private static readonly double PreviewFactor = 798.0 / Math.Max(1280, SystemParameters.PrimaryScreenWidth) * 1.1;
     private static readonly Brush LedOn = Frozen(Color.FromRgb(0x27, 0xC9, 0xBC));
     private static readonly Brush LedOff = Frozen(Color.FromRgb(0x33, 0x41, 0x4C));
 
@@ -24,6 +24,22 @@ public partial class OverlayView : UserControl
     public OverlayView() => InitializeComponent();
     private void ChkOverlay_Changed(object sender, RoutedEventArgs e) => Owner?.ChkOverlay_Changed(sender, e);
     private void OvOption_Changed(object sender, RoutedEventArgs e) => Owner?.OvOption_Changed(sender, e);
+    private void OvOpacity_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        OvOpacityText.Text = $"{e.NewValue:0}%";
+        OvPreviewHost.Opacity = OpacityOf(e.NewValue);
+        Owner?.OvOpacity_Changed(OpacityOf(e.NewValue));
+    }
+
+    private static double OpacityOf(double percent) => Math.Clamp(percent / 100, 0.3, 1);
+
+    /// <summary>Posição inicial do controle.</summary>
+    internal void SetOpacity(double opacity)
+    {
+        OvOpacity.Value = Math.Round(opacity * 100);
+        OvPreviewHost.Opacity = opacity;
+    }
+
     private void OvPreset_Click(object sender, RoutedEventArgs e) => Owner?.OvPreset_Click(sender, e);
 
     /// <summary>Com largura (janela maximizada) os dois painéis ficam lado a lado; senão, o que mostrar desce para baixo do monitor.</summary>
@@ -53,7 +69,7 @@ public partial class OverlayView : UserControl
             _ => "Superior esquerdo",
         };
         if (_corner != null && _corner != corner && SystemParameters.ClientAreaAnimation)
-            OvPreviewHost.BeginAnimation(OpacityProperty, new DoubleAnimation(0.25, 1, TimeSpan.FromMilliseconds(180)));
+            OvPreviewHost.BeginAnimation(OpacityProperty, new DoubleAnimation(0.25, OpacityOf(OvOpacity.Value), TimeSpan.FromMilliseconds(180)) { FillBehavior = FillBehavior.Stop });
         _corner = corner;
     }
 

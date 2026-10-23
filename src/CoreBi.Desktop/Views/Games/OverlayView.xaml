@@ -50,9 +50,55 @@
                                 <Setter TargetName="focus" Property="Visibility" Value="Visible" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="focus" Property="Visibility" Value="Collapsed" />
                                 <Setter TargetName="zone" Property="Visibility" Value="Hidden" />
                             </Trigger>
                         </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Controle deslizante fino: trilho, parte preenchida em verde-água e botão redondo -->
+        <Style x:Key="OpacitySlider" TargetType="Slider">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Height="22" Background="Transparent">
+                            <Border Height="4" CornerRadius="2" Background="{DynamicResource Line}" />
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge" Focusable="False" IsTabStop="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Grid Background="Transparent"><Border Height="4" CornerRadius="2" Background="{DynamicResource Accent}" /></Grid>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge" Focusable="False" IsTabStop="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton"><Grid Background="Transparent" /></ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Focusable="False">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Ellipse x:Name="e" Width="14" Height="14" Fill="{DynamicResource Fg}" Stroke="{DynamicResource Accent}" StrokeThickness="2" />
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="e" Property="Fill" Value="{DynamicResource Accent}" /></Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -273,6 +319,11 @@
                                     <TextBlock x:Name="OvCornerName" Text="Superior esquerdo" FontWeight="SemiBold" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <TextBlock Text="Opacidade" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                    <Slider x:Name="OvOpacity" Style="{StaticResource OpacitySlider}" Minimum="30" Maximum="100" SmallChange="5" LargeChange="10"
+                                            TickFrequency="5" IsSnapToTickEnabled="True" Width="130" VerticalAlignment="Center" ValueChanged="OvOpacity_Changed" />
+                                    <TextBlock x:Name="OvOpacityText" Text="100%" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" FontSize="12"
+                                               Width="38" TextAlignment="Right" VerticalAlignment="Center" Margin="6,0,22,0" />
                                     <TextBlock Text="Tamanho" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
                                     <Border Style="{StaticResource SegmentGroup}">
                                         <StackPanel x:Name="OvScalePanel" Orientation="Horizontal">
