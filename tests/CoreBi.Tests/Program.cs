@@ -54,7 +54,7 @@ internal static partial class Program
         Environment.SetEnvironmentVariable("COREBI_DATA_DIR", Path.Combine(Output, "settings"));
         CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("pt-BR");
         if (args.Contains("--overlay-telemetry")) OverlayTelemetry();
-        else if (args.Contains("--bench")) Benches(); else if (args.Contains("--hardware")) Hardware(); else if (args.Contains("--startup")) Startup(); else if (args.Contains("--integrations")) Integrations(); else { Logic(); TelemetryTests(); Hardening(); Ui(); }
+        else if (args.Contains("--bench")) Benches(); else if (args.Contains("--hardware")) Hardware(); else if (args.Contains("--startup")) Startup(); else if (args.Contains("--integrations")) Integrations(); else { Logic(); TelemetryTests(); RtssTests(); Hardening(); Ui(); }
         var text = JsonSerializer.Serialize(Results, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(Path.Combine(Output, args.Contains("--bench") ? "bench.json" : args.Contains("--hardware") ? "hardware.json" : args.Contains("--startup") ? "startup.json" : args.Contains("--integrations") ? "integrations.json" : "tests.json"), text);
         return Failures == 0 ? 0 : 1;

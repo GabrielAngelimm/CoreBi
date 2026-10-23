@@ -2,6 +2,8 @@
 
 ## Em desenvolvimento
 
+- OverlayBi integra opcionalmente com RTSS aberto para apresentar o OSD dentro de jogos em tela cheia, inclusive exclusiva quando o jogo/driver/anticheat permitem. Usa memória compartilhada a 2 Hz, slot próprio, publicação não bloqueante e retorno ao painel WPF em falhas; sem novos pacotes, injeção própria ou alteração de perfis. Projeta as medidas do painel atual, com fonte/zoom próprios e cartão arredondado, preservando dados, cores, seleção e controles. Guia e limites em `docs/OVERLAY.md`.
+
 - OverlayBi atualiza os textos e o gráfico sem recriar os elementos a cada amostra; os campos reservam espaço para a troca de dígitos e a janela só reaplica a posição quando necessário. Cores, fontes, tamanhos de texto, ordem e controles mantidos.
 - RAM do overlay usa a mesma amostra física do Windows para GB e percentual: sensores de memória física e virtual do LibreHardwareMonitor têm o mesmo nome e podiam selecionar a memória virtual. Carga da GPU passa a usar os contadores de motores do Windows (motor mais ocupado, processos somados por motor e adaptador), compartilhada com a Visão geral, barra lateral e análise de gargalo. Temperaturas, clocks e demais sensores preservados.
 - Janela maximizada respeita a barra de tarefas: antes ocupava a tela inteira e o rodapé de todas as páginas ficava escondido.

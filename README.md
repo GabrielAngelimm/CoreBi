@@ -12,11 +12,13 @@ Desenvolvido em C#/.NET 10 e WPF. As regras, os coletores e as integrações sã
 | --- | --- |
 | Visão geral | Resumo do computador, histórico de sensores e alertas |
 | Monitoramento | Sistema, sensores, placa de vídeo, discos, energia e rede |
-| Jogos | FPS estimado, análise de gargalo e overlay por ETW |
+| Jogos | FPS estimado, análise de gargalo e overlay com ETW e integração opcional RTSS para tela cheia |
 | Desempenho | Benchmarks de CPU, GPU, DXR, simulação, RAM, carregamento e disco; stress de CPU, RAM e GPU |
 | Ferramentas | Inicialização, drivers e instalação de apps via winget |
 
 As ferramentas de monitoramento e benchmark usam leituras ou cargas reais. FPS estimado e classificação de gargalo são aproximações. Consulte [implementação, fontes e limites](docs/FEATURES.md).
+
+Para overlay em tela cheia exclusiva, abra o RTSS antes do jogo e ative o OverlayBi normalmente. O RTSS é instalado separadamente; compatibilidade depende do jogo e anticheat. Veja [configuração, arquitetura e custo do overlay](docs/OVERLAY.md).
 
 ## Tecnologias
 

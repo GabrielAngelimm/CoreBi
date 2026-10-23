@@ -8,9 +8,9 @@ using System.Windows.Media;
 namespace CoreBi.Desktop;
 
 /// <summary>
-/// OSD sobre o jogo (estilo RTSS/Afterburner): janela transparente, sempre no topo, que ignora cliques
+/// OSD do desktop: janela transparente, sempre no topo, que ignora cliques
 /// e nunca rouba o foco. Aparece sobre jogos em tela cheia "sem bordas" e na maioria dos DX11/12 em
-/// tela cheia (que o Windows apresenta via flip); não aparece em tela cheia exclusiva legada.
+/// tela cheia (que o Windows apresenta via flip). O caminho opcional RTSS atende a tela cheia exclusiva.
 /// </summary>
 public partial class OverlayWindow : Window
 {
