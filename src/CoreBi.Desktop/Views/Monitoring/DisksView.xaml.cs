@@ -189,12 +189,13 @@ public partial class DisksView : UserControl
         DiskBadge.SetResourceReference(Border.BackgroundProperty, soft);
         DiskBadge.SetResourceReference(Border.BorderBrushProperty, tone.Length > 0 ? tone : "LineStrong");
         DiskBadgeText.SetResourceReference(TextBlock.ForegroundProperty, tone.Length > 0 ? tone : "Muted");
-        // Veredito saudável não precisa de texto: o selo já diz. Só atenção, crítico e "sem dados" explicam o motivo.
+        // Saudável: uma linha discreta no pé da placa, só quando o veredito vem de leituras reais. Atenção, crítico e "sem dados" explicam o motivo.
         bool healthy = card.Verdict == DiskVerdict.Good;
-        DiskReasons.Text = healthy ? "" : card.Reasons;
-        DiskReasons.Visibility = DiskReasonIcon.Visibility = healthy ? Visibility.Collapsed : Visibility.Visible;
-        DiskReasonIcon.Text = card.Verdict == DiskVerdict.Unknown ? "\uE946" : "\uE7BA";
+        DiskReasons.Text = healthy ? "Nenhum problema encontrado nas leituras disponíveis" : card.Reasons;
+        DiskReasons.Visibility = DiskReasonIcon.Visibility = Visibility.Visible;
+        DiskReasonIcon.Text = healthy ? "\uE73E" : card.Verdict == DiskVerdict.Unknown ? "\uE946" : "\uE7BA";
         DiskReasonIcon.SetResourceReference(TextBlock.ForegroundProperty, tone.Length > 0 ? tone : "Faint");
+        DiskReasons.SetResourceReference(TextBlock.ForegroundProperty, healthy ? "Muted" : "Fg");
 
         // Erro de leitura: só a placa com o motivo
         var instruments = d == null ? Visibility.Collapsed : Visibility.Visible;
@@ -335,7 +336,15 @@ public partial class DisksView : UserControl
             // NVMe não separa leitura e escrita: um contador só, de erros de mídia e integridade
             rows.Add(Count("Erros de mídia", (long)media));
             if (d.Nvme.UnsafeShutdowns is ulong unsafeCount)
-                rows.Add(new("Desligamentos inesperados", $"{unsafeCount:N0}", "Info", "Quedas de energia ou desligamentos sem avisar o SSD, somados desde a fábrica."));
+            {
+                // Quedas de energia e resets forçados acontecem em qualquer PC: o que preocupa é a frequência (por hora ligado), não o total.
+                double perHour = d.PowerOnHours is > 0 ? (double)unsafeCount / d.PowerOnHours.Value : 0;
+                (string text, string state) = unsafeCount >= 200 && perHour > 0.1 ? ("alto", "Danger")
+                    : unsafeCount >= 50 && perHour > 0.02 ? ("atenção", "Warn")
+                    : ("ok", "Ok");
+                rows.Add(new("Desligamentos inesperados", $"{unsafeCount:N0} · {text}", state,
+                    "Quedas de energia ou desligamentos sem avisar o SSD, somados desde a fábrica. Avaliado pela frequência: ok é raro, atenção é frequente, alto é muito frequente."));
+            }
         }
         else
         {

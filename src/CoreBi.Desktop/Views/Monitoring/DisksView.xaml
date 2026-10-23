@@ -185,6 +185,12 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition x:Name="SpaceColumn" Width="520" />
                                 </Grid.ColumnDefinitions>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock x:Name="DiskModel" FontFamily="{StaticResource DisplayFont}" FontSize="23" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
@@ -199,7 +205,8 @@
                                             </ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
                                     </ItemsControl>
-                                    <Grid Margin="0,4,0,0">
+                                </StackPanel>
+                                    <Grid Grid.Row="2" Margin="0,10,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
@@ -207,7 +214,7 @@
                                         <TextBlock x:Name="DiskReasonIcon" Style="{StaticResource IconGlyph}" FontSize="14" VerticalAlignment="Top" Margin="0,2,9,0" />
                                         <TextBlock x:Name="DiskReasons" Grid.Column="1" Style="{StaticResource Body}" />
                                     </Grid>
-                                </StackPanel>
+                                </Grid>
                                 <Border x:Name="SpaceDivider" Grid.Column="1" Width="1" Background="{DynamicResource Line}" Margin="26,0" />
                                 <StackPanel x:Name="DiskSpace" Grid.Column="2" VerticalAlignment="Center">
                                     <TextBlock Text="Espaço" Style="{StaticResource SectionTitle}" />
