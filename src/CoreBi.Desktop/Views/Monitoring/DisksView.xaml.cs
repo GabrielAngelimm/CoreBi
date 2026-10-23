@@ -216,12 +216,12 @@ public partial class DisksView : UserControl
 
         long total = mine.Sum(v => v.Total), free = mine.Sum(v => v.Free), used = total - free;
         bool known = total > 0;
-        (string Value, string Unit) Size(long b) { var t = DriveCard.Fmt(b).Split(' '); return (t[0], t.Length > 1 ? t[1] : ""); }
-        void Value(TextBlock target, string? number, string unit) => Readout(target, number ?? "—", number == null ? "" : unit);
-        Value(SpaceUsed, known ? Size(used).Value : null, Size(used).Unit);
-        Value(SpaceTotal, known ? Size(total).Value : null, Size(total).Unit);
-        Value(SpaceFree, known ? Size(free).Value : null, Size(free).Unit);
-        Value(SpaceFreePercent, known ? $"{(double)free / total * 100:0}" : null, "%");
+        void Gb(TextBlock target, long bytes) => Readout(target, known ? $"{bytes / 1073741824.0:N1}" : "—", known ? "GB" : "");
+        Gb(SpaceUsed, used);
+        Gb(SpaceTotal, total);
+        Gb(SpaceFree, free);
+        SpaceFreePercent.Text = known ? $"{(double)free / total * 100:0} %" : "";
+        SpaceFreeBadge.Visibility = known ? Visibility.Visible : Visibility.Collapsed;
 
         // Mais de uma unidade no disco: uma linha por letra com quanto ainda está livre
         DiskVolumes.ItemsSource = mine.Count > 1
@@ -254,6 +254,8 @@ public partial class DisksView : UserControl
 
     private void ShowTemperature(DiskBay bay, DiskDetail d)
     {
+        string kind = d.IsSsd ? (d.Bus.Length > 0 ? $"SSD {d.Bus}" : "SSD") : d.Kind == "HDD" ? "HDD" : "este disco";
+        TempCaption.Text = $"Faixa ideal até {d.TempWarnAt:0} °C para {kind}";
         TempScale.WarnAt = d.TempWarnAt;
         TempScale.CritAt = d.TempCritAt;
         TempScale.Peak = d.TemperatureMax ?? double.NaN;

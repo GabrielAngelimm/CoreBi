@@ -340,7 +340,8 @@ public static class DiskHealth
                 Firmware = r.Firmware,
                 IsSsd = isSsd,
                 Temperature = r.Temp,
-                TemperatureMax = r.TempMax is > 0 ? r.TempMax : null,
+                // Alguns drivers devolvem o limite do disco (100 °C) no lugar da máxima registrada: acima do crítico não é leitura.
+                TemperatureMax = r.TempMax is > 0 && r.TempMax < critMax ? r.TempMax : null,
                 TempWarnAt = okMax,
                 TempCritAt = critMax,
                 Wear = r.Wear,

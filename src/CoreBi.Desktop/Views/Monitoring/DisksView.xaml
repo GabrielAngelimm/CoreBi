@@ -66,13 +66,32 @@
                     </Grid.ColumnDefinitions>
                     <Ellipse Style="{StaticResource DiskLed}" HorizontalAlignment="Left" />
                     <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
-                    <TextBlock x:Name="value" Grid.Column="2" Text="{Binding Value}" FontWeight="SemiBold" Style="{StaticResource Num}" />
+                    <Border x:Name="pill" Grid.Column="2" Style="{StaticResource Badge}" VerticalAlignment="Center" Padding="9,2,9,3">
+                        <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource BadgeText}" Typography.NumeralAlignment="Tabular" />
+                    </Border>
                 </Grid>
             </Border>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding State}" Value="">
+                    <Setter TargetName="pill" Property="Background" Value="Transparent" />
+                    <Setter TargetName="pill" Property="BorderBrush" Value="Transparent" />
                     <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Faint}" />
                     <Setter TargetName="value" Property="FontWeight" Value="Normal" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="Ok">
+                    <Setter TargetName="pill" Property="Background" Value="{DynamicResource OkSoft}" />
+                    <Setter TargetName="pill" Property="BorderBrush" Value="{DynamicResource Ok}" />
+                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Ok}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="Warn">
+                    <Setter TargetName="pill" Property="Background" Value="{DynamicResource WarnSoft}" />
+                    <Setter TargetName="pill" Property="BorderBrush" Value="{DynamicResource Warn}" />
+                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Warn}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="Danger">
+                    <Setter TargetName="pill" Property="Background" Value="{DynamicResource DangerSoft}" />
+                    <Setter TargetName="pill" Property="BorderBrush" Value="{DynamicResource Danger}" />
+                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Danger}" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -193,7 +212,7 @@
                                 <StackPanel x:Name="DiskSpace" Grid.Column="2" VerticalAlignment="Center">
                                     <TextBlock Text="Espaço" Style="{StaticResource SectionTitle}" />
                                     <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,14" />
-                                    <UniformGrid Columns="4">
+                                    <UniformGrid Columns="3">
                                         <StackPanel>
                                             <TextBlock Text="Usado" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
@@ -204,11 +223,12 @@
                                         </StackPanel>
                                         <StackPanel>
                                             <TextBlock Text="Livre" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" />
-                                        </StackPanel>
-                                        <StackPanel>
-                                            <TextBlock Text="Livre (%)" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="SpaceFreePercent" Style="{StaticResource LifeValue}" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" />
+                                                <Border x:Name="SpaceFreeBadge" Style="{StaticResource Badge}" Margin="10,0,0,1" VerticalAlignment="Bottom" Padding="7,1,7,2">
+                                                    <TextBlock x:Name="SpaceFreePercent" Style="{StaticResource BadgeText}" Typography.NumeralAlignment="Tabular" />
+                                                </Border>
+                                            </StackPanel>
                                         </StackPanel>
                                     </UniformGrid>
                                     <ItemsControl x:Name="DiskVolumes" ItemTemplate="{StaticResource VolumeRow}" Focusable="False" Margin="0,14,0,0" />
@@ -256,7 +276,10 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid>
-                                    <TextBlock Text="Temperatura" Style="{StaticResource SectionTitle}" />
+                                    <StackPanel>
+                                        <TextBlock Text="Temperatura" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock x:Name="TempCaption" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" Margin="0,3,0,0" />
+                                    </StackPanel>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0">
                                         <Ellipse x:Name="TempLiveDot" Width="7" Height="7" Fill="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,7,0" />
                                         <TextBlock x:Name="TempLiveText" Style="{StaticResource Caption}" Typography.NumeralAlignment="Tabular" />
