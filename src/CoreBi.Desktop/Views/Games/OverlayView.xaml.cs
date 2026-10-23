@@ -12,9 +12,9 @@ public partial class OverlayView : UserControl
 {
     /// <summary>
     /// Escala da prévia em relação ao overlay real: largura da tela desenhada (798) pela do monitor principal,
-    /// com 10% de folga para o texto continuar legível. A caixa ocupa na prévia a mesma fatia da tela que ocupa no jogo.
+    /// com 25% de folga para o texto continuar legível. A caixa ocupa na prévia a mesma fatia da tela que ocupa no jogo.
     /// </summary>
-    private static readonly double PreviewFactor = 798.0 / Math.Max(1280, SystemParameters.PrimaryScreenWidth) * 1.1;
+    private static readonly double PreviewFactor = 798.0 / Math.Max(1280, SystemParameters.PrimaryScreenWidth) * 1.25;
     private static readonly Brush LedOn = Frozen(Color.FromRgb(0x27, 0xC9, 0xBC));
     private static readonly Brush LedOff = Frozen(Color.FromRgb(0x33, 0x41, 0x4C));
 

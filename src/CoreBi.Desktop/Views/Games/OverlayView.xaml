@@ -327,9 +327,9 @@
                                     <TextBlock Text="Tamanho" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
                                     <Border Style="{StaticResource SegmentGroup}">
                                         <StackPanel x:Name="OvScalePanel" Orientation="Horizontal">
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Pequeno" Tag="0.85" Checked="OvOption_Changed" />
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Médio" Tag="1" Checked="OvOption_Changed" />
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Grande" Tag="1.3" Checked="OvOption_Changed" />
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Pequeno" Tag="1" Checked="OvOption_Changed" />
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Médio" Tag="1.35" Checked="OvOption_Changed" />
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Grande" Tag="1.75" Checked="OvOption_Changed" />
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -358,6 +358,10 @@
                                     <StackPanel x:Name="OvPresetPanel" Orientation="Horizontal">
                                         <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Só FPS" Tag="min" Click="OvPreset_Click" />
                                         <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Padrão" Tag="default" Click="OvPreset_Click" />
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Gargalo" Tag="gargalo" Click="OvPreset_Click"
+                                                     ToolTip="Uso da GPU e do núcleo mais ocupado, clocks, limitador e memória: mostra quem limita o FPS." />
+                                        <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Térmico" Tag="termico" Click="OvPreset_Click"
+                                                     ToolTip="Temperaturas, hotspot, consumo e ventoinha da GPU e da CPU, mais a hora." />
                                         <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Tudo" Tag="all" Click="OvPreset_Click" />
                                     </StackPanel>
                                 </Border>

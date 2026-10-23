@@ -39,7 +39,16 @@ public partial class MainWindow
         ["cpu_power"] = "Precisa do CoreBi aberto como administrador.",
     };
 
-    private static readonly HashSet<string> OvMinimal = new() { "fps", "frametime", "low1" };
+    /// <summary>
+    /// Predefinições: "Só FPS" e "Padrão" são o básico; "Gargalo" junta o que mostra quem limita o jogo (uso da GPU e do
+    /// núcleo mais ocupado, memória) e "Térmico" o que importa para temperatura, consumo e ventoinha.
+    /// </summary>
+    private static readonly Dictionary<string, HashSet<string>> OvPresets = new()
+    {
+        ["min"] = new() { "fps", "frametime", "low1" },
+        ["gargalo"] = new() { "fps", "low1", "graph", "gpu_load", "gpu_clock", "gpu_perfcap", "vram_used", "vram_pct", "cpu_load", "cpu_maxcore", "cpu_clock", "ram_pct" },
+        ["termico"] = new() { "fps", "gpu_temp", "gpu_hotspot", "gpu_power", "gpu_fan", "vram_temp", "cpu_temp", "cpu_power", "cpu_clock", "clock" },
+    };
 
     /// <summary>Monta "O que mostrar": uma linha por componente (glifo, nome, o que mede) com os itens em pílulas e a contagem.</summary>
     internal void BuildOverlayPicker()
@@ -115,9 +124,9 @@ public partial class MainWindow
     /// <summary>Marca a predefinição que bate com a seleção atual (nenhuma, se a seleção for personalizada).</summary>
     internal void SyncOverlayPreset()
     {
-        string? match = OvShow.SetEquals(OvMinimal) ? "min"
-                      : OvShow.SetEquals(OverlayMetrics.Defaults()) ? "default"
-                      : OvShow.Count == OverlayMetrics.All.Length ? "all" : null;
+        string? match = OvPresets.FirstOrDefault(p => OvShow.SetEquals(p.Value)).Key
+                      ?? (OvShow.SetEquals(OverlayMetrics.Defaults()) ? "default"
+                        : OvShow.Count == OverlayMetrics.All.Length ? "all" : null);
         foreach (var rb in OvPresetPanel.Children.OfType<RadioButton>())
             rb.IsChecked = (string)rb.Tag == match;
     }
@@ -136,7 +145,7 @@ public partial class MainWindow
         var keys = (string)((FrameworkElement)sender).Tag switch
         {
             "all" => OverlayMetrics.All.Select(m => m.Key).ToHashSet(),
-            "min" => OvMinimal.ToHashSet(),
+            var k when OvPresets.TryGetValue(k, out var set) => set.ToHashSet(),
             _ => OverlayMetrics.Defaults(),
         };
         _ovShow = keys;
@@ -200,7 +209,7 @@ public partial class MainWindow
         var lines = new List<OverlayLine>();
         string T(float? v) => v is float x ? $"{x:0} °C" : "—";
         string P(double? v) => v is double x ? $"{x:0}%" : "—";
-        void Line(string label, List<string> parts) { if (parts.Count > 0) lines.Add(new OverlayLine(label, string.Join("  ", parts))); }
+        void Line(string label, List<string> parts) { if (parts.Count > 0) lines.Add(new OverlayLine(label, parts)); }
 
         var gpu = new List<string>();
         if (show.Contains("gpu_load")) gpu.Add(P(s.GpuLoad));

@@ -6,7 +6,7 @@
         exatamente a mesma caixa. Paleta fixa de grafite translúcido (independe do tema do app) e números em
         Bahnschrift com algarismos de largura fixa, para os valores não "dançarem" a cada atualização.
     -->
-    <Border x:Name="Box" Background="#D90D141A" BorderBrush="#2C3B47" BorderThickness="1" CornerRadius="8" Padding="12,10">
+    <Border x:Name="Box" Background="#0D141A" BorderBrush="#2C3B47" BorderThickness="1" CornerRadius="8" Padding="12,10">
         <StackPanel TextElement.FontFamily="Bahnschrift" TextElement.FontStretch="SemiCondensed" TextElement.FontSize="13"
                     TextElement.Foreground="#E6EEF1" Typography.NumeralAlignment="Tabular">
             <!-- FPS em destaque (cada parte aparece só se escolhida na aba Overlay) -->
@@ -22,13 +22,31 @@
             <ItemsControl x:Name="ORows" Margin="0,2,0,0">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Grid Margin="0,1">
+                        <Grid Margin="0,1.5">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="46"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="{Binding Label}" Foreground="#8297A6" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="1" Text="{Binding Value}"/>
+                            <!-- Cada dado da linha é separado por um traço vertical discreto -->
+                            <ItemsControl Grid.Column="1" ItemsSource="{Binding Parts}" AlternationCount="100">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border x:Name="bar" Width="1" Height="11" Margin="8,0,8,0" Background="#3F505C" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding}"/>
+                                        </StackPanel>
+                                        <DataTemplate.Triggers>
+                                            <Trigger Property="ItemsControl.AlternationIndex" Value="0">
+                                                <Setter TargetName="bar" Property="Visibility" Value="Collapsed"/>
+                                            </Trigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

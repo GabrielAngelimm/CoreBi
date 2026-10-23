@@ -35,8 +35,10 @@ public partial class MainWindow
         // Preferências do overlay
         foreach (var rb in OvCornerPanel.Children.OfType<RadioButton>())
             rb.IsChecked = (string)rb.Tag == _settings.OverlayCorner;
-        foreach (var rb in OvScalePanel.Children.OfType<RadioButton>())
-            rb.IsChecked = Math.Abs(double.Parse((string)rb.Tag, CultureInfo.InvariantCulture) - _settings.OverlayScale) < 0.01;
+        // O tamanho salvo vai para a opção mais próxima (os três tamanhos já mudaram de valor uma vez).
+        var scales = OvScalePanel.Children.OfType<RadioButton>().ToList();
+        var nearest = scales.MinBy(rb => Math.Abs(double.Parse((string)rb.Tag, CultureInfo.InvariantCulture) - _settings.OverlayScale));
+        foreach (var rb in scales) rb.IsChecked = rb == nearest;
         BuildOverlayPicker();
         PageOverlay.LayoutPreview(_settings.OverlayCorner, _settings.OverlayScale);
         PageOverlay.SetOpacity(_settings.OverlayOpacity);

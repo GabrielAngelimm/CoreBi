@@ -3,8 +3,11 @@ namespace CoreBi.Engine.Games;
 /// <summary>Item que pode aparecer no overlay. Group: "FPS", "GPU", "VRAM", "CPU", "RAM" ou "Outros".</summary>
 public sealed record OverlayMetric(string Key, string Group, string Label, bool Default);
 
-/// <summary>Linha do overlay já pronta para mostrar (ex.: "GPU" · "98%  65 °C  2790 MHz").</summary>
-public sealed record OverlayLine(string Label, string Value);
+/// <summary>Linha do overlay já pronta para mostrar (ex.: "GPU" · "98%", "65 °C", "2790 MHz"); a interface separa as partes.</summary>
+public sealed record OverlayLine(string Label, IReadOnlyList<string> Parts)
+{
+    public string Value => string.Join("  ", Parts);
+}
 
 /// <summary>Catálogo do que o overlay pode mostrar, na ordem em que aparece.</summary>
 public static class OverlayMetrics
