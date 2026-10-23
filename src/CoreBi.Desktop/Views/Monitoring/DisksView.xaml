@@ -183,7 +183,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition x:Name="SpaceColumn" Width="520" />
+                                    <ColumnDefinition x:Name="SpaceColumn" Width="560" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal">
@@ -212,26 +212,47 @@
                                 <StackPanel x:Name="DiskSpace" Grid.Column="2" VerticalAlignment="Center">
                                     <TextBlock Text="Espaço" Style="{StaticResource SectionTitle}" />
                                     <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,14" />
-                                    <UniformGrid Columns="3">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="1.6*" />
+                                            <ColumnDefinition Width="1.6*" />
+                                        </Grid.ColumnDefinitions>
                                         <StackPanel>
                                             <TextBlock Text="Capacidade" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="SpaceTotal" Style="{StaticResource LifeValue}" />
                                         </StackPanel>
-                                        <StackPanel>
+                                        <StackPanel Grid.Column="1">
                                             <TextBlock Text="Usado" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
+                                                <Grid Width="30" Height="6" Margin="12,0,10,8" VerticalAlignment="Bottom" OpacityMask="{StaticResource SegmentMask}">
+                                                    <Border Background="{DynamicResource Line}" />
+                                                    <Border Background="{DynamicResource Steel}" RenderTransformOrigin="0,0.5">
+                                                        <Border.RenderTransform>
+                                                            <ScaleTransform x:Name="SpaceUsedScale" ScaleX="0" />
+                                                        </Border.RenderTransform>
+                                                    </Border>
+                                                </Grid>
+                                                <TextBlock x:Name="SpaceUsedPercent" Style="{StaticResource LifeValue}" FontSize="23" />
+                                            </StackPanel>
                                         </StackPanel>
-                                        <StackPanel>
+                                        <StackPanel Grid.Column="2">
                                             <TextBlock Text="Livre" Style="{StaticResource StatLabel}" />
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" />
-                                                <StackPanel x:Name="SpaceFreeBadge" Orientation="Horizontal" Margin="12,0,0,3" VerticalAlignment="Bottom">
-                                                    <Ellipse x:Name="SpaceFreeDot" Width="7" Height="7" Fill="{DynamicResource Ok}" VerticalAlignment="Center" Margin="0,1,6,0" />
-                                                    <TextBlock x:Name="SpaceFreePercent" FontSize="14" Foreground="{DynamicResource Muted}" Typography.NumeralAlignment="Tabular" />
-                                                </StackPanel>
+                                                <Grid Width="30" Height="6" Margin="12,0,10,8" VerticalAlignment="Bottom" OpacityMask="{StaticResource SegmentMask}">
+                                                    <Border Background="{DynamicResource Line}" />
+                                                    <Border x:Name="SpaceFreeFill" Background="{DynamicResource Ok}" RenderTransformOrigin="0,0.5">
+                                                        <Border.RenderTransform>
+                                                            <ScaleTransform x:Name="SpaceFreeScale" ScaleX="0" />
+                                                        </Border.RenderTransform>
+                                                    </Border>
+                                                </Grid>
+                                                <TextBlock x:Name="SpaceFreePercent" Style="{StaticResource LifeValue}" FontSize="23" />
                                             </StackPanel>
                                         </StackPanel>
-                                    </UniformGrid>
+                                    </Grid>
                                     <ItemsControl x:Name="DiskVolumes" ItemTemplate="{StaticResource VolumeRow}" Focusable="False" Margin="0,14,0,0" />
                                 </StackPanel>
                             </Grid>
@@ -282,33 +303,31 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid>
-                                    <StackPanel>
-                                        <TextBlock Text="Temperatura" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock x:Name="TempCaption" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" Margin="0,3,0,0" />
-                                    </StackPanel>
+                                    <TextBlock Text="Temperatura" Style="{StaticResource SectionTitle}" />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0">
                                         <Ellipse x:Name="TempLiveDot" Width="7" Height="7" Fill="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,7,0" />
                                         <TextBlock x:Name="TempLiveText" Style="{StaticResource Caption}" Typography.NumeralAlignment="Tabular" />
                                     </StackPanel>
                                 </Grid>
-                                <WrapPanel Grid.Row="1" Margin="0,14,0,0">
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,30,0">
-                                        <TextBlock x:Name="TempNow" Style="{StaticResource ReadoutHero}" FontSize="56" Text="—" />
-                                        <TextBlock Text="°C" Style="{StaticResource Unit}" FontSize="17" Margin="6,0,0,9" />
+                                <Grid Grid.Row="1" Margin="0,16,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.25*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock x:Name="TempNow" Style="{StaticResource ReadoutHero}" FontSize="72" Text="—" />
+                                        <TextBlock Text="°C" Style="{StaticResource Unit}" FontSize="20" Margin="6,0,0,13" />
                                     </StackPanel>
-                                    <StackPanel Margin="0,0,26,6" VerticalAlignment="Bottom">
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Bottom" Margin="0,0,0,12">
                                         <TextBlock Text="Situação" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="TempState" FontWeight="SemiBold" Margin="0,2,0,0" />
+                                        <TextBlock x:Name="TempState" FontSize="22" FontWeight="SemiBold" Margin="0,4,0,0" />
                                     </StackPanel>
-                                    <StackPanel Margin="0,0,26,6" VerticalAlignment="Bottom">
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Bottom" Margin="0,0,0,12">
                                         <TextBlock Text="Máx. registrado" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="TempPeak" FontWeight="SemiBold" Style="{StaticResource Num}" Margin="0,2,0,0" />
+                                        <TextBlock x:Name="TempPeak" Style="{StaticResource ReadoutText}" FontSize="26" Margin="0,3,0,0" />
                                     </StackPanel>
-                                    <StackPanel Margin="0,0,0,6" VerticalAlignment="Bottom">
-                                        <TextBlock Text="Atenção · crítico" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="TempLimits" FontWeight="SemiBold" Style="{StaticResource Num}" Margin="0,2,0,0" />
-                                    </StackPanel>
-                                </WrapPanel>
+                                </Grid>
                                 <local:ThermalScale x:Name="TempScale" Grid.Row="2" Margin="0,18,0,0" />
                                 <local:TraceChart x:Name="TempTrace" Grid.Row="3" MinHeight="150" Margin="0,12,0,0" />
                                 <Border Grid.Row="4" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,11,0,0" Margin="0,12,0,0">

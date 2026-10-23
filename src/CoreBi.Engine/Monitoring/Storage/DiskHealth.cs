@@ -70,6 +70,8 @@ public sealed class DiskDetail
     public int WindowsHealth { get; init; } = 5;
     /// <summary>Nome do disco no LibreHardwareMonitor, para a leitura ao vivo; null quando não há par único.</summary>
     public string? SensorHardware { get; init; }
+    /// <summary>Relatório de saúde lido direto do SSD NVMe; null quando o disco não é NVMe ou não respondeu.</summary>
+    public NvmeLog? Nvme { get; init; }
 }
 
 /// <summary>
@@ -93,10 +95,11 @@ public static class DiskHealth
         public double? WrittenGb, ReadGb, Spare, SpareThreshold;
         public string Letters = "";
         public string? SensorHardware;
+        public NvmeLog? Nvme;
         public string? Error = null;
     }
 
-    public static List<DiskHealthCard> Read(IEnumerable<SensorReading>? sensors = null)
+    public static List<DiskHealthCard> Read(IEnumerable<SensorReading>? sensors = null, IReadOnlyDictionary<string, NvmeLog>? nvme = null)
     {
         var raws = new Dictionary<int, Raw>();
 
@@ -189,6 +192,7 @@ public static class DiskHealth
                                            r.Model.Contains(x.Hardware, StringComparison.OrdinalIgnoreCase)).ToList();
                 if (mine.Count == 0) continue;
                 r.SensorHardware = mine[0].Hardware;
+                if (nvme != null && nvme.TryGetValue(r.SensorHardware, out var log)) r.Nvme = log;
                 if (r.Temp == null)
                     r.Temp = mine.FirstOrDefault(x => x.Type == SensorType.Temperature && x.RawValue is > 0)?.RawValue;
                 if (r.Wear == null)
@@ -269,7 +273,7 @@ public static class DiskHealth
         bool isUsb = r.Bus == "USB";
         var crit = new List<string>();
         var warn = new List<string>();
-        bool anyData = r.Health != 5 || r.PredictFail != null || r.Wear != null;
+        bool anyData = r.Health != 5 || r.PredictFail != null || r.Wear != null || r.Nvme != null;
 
         if (r.PredictFail == true) crit.Add("O próprio disco avisa (S.M.A.R.T.) que deve falhar em breve. Faça backup agora.");
         if (r.Health == 2) crit.Add("O Windows classifica o disco como NÃO saudável.");
@@ -286,6 +290,8 @@ public static class DiskHealth
             if (t >= critMax) crit.Add($"Temperatura de {t:0} °C é muito alta para este disco.");
             else if (t >= okMax) warn.Add($"Temperatura de {t:0} °C está alta. Melhore a ventilação.");
         }
+        if (r.Nvme?.CriticalWarning is > 0) crit.Add("O SSD acusa um aviso crítico no próprio relatório de saúde NVMe. Faça backup agora.");
+        if (r.Nvme?.MediaErrors is > 0) warn.Add($"O SSD registrou {r.Nvme.MediaErrors:N0} erro(s) de mídia e integridade dos dados.");
         if (r.Spare is double sp && r.SpareThreshold is double st && st > 0 && sp < st)
             crit.Add($"Os blocos de reserva do SSD estão em {sp:0}%, abaixo do mínimo de {st:0}% definido pelo fabricante. Faça backup.");
         if (r.ReadErrUncorrected > 0 || r.WriteErrUncorrected > 0)
@@ -316,6 +322,9 @@ public static class DiskHealth
         M("Total gravado", r.WrittenGb is double wg && wg > 0 ? $"{wg:N0} GB" : null);
         M("Total lido", r.ReadGb is double rg && rg > 0 ? $"{rg:N0} GB" : null);
         M("Blocos de reserva", r.Spare is double spare ? $"{spare:0}%" + (r.SpareThreshold is double min && min > 0 ? $" (mínimo {min:0}%)" : "") : null);
+        M("Aviso crítico (NVMe)", r.Nvme?.CriticalWarning is ulong cw ? (cw == 0 ? "Nenhum" : $"0x{cw:X2}") : null);
+        M("Erros de mídia (NVMe)", r.Nvme?.MediaErrors is ulong me ? $"{me:N0}" : null);
+        M("Desligamentos inesperados", r.Nvme?.UnsafeShutdowns is ulong us ? $"{us:N0}" : null);
         M("Falha prevista (S.M.A.R.T.)", r.PredictFail is bool pf ? (pf ? "SIM" : "Não") : null);
         M("Saúde segundo o Windows", r.Health switch { 0 => "Saudável", 1 => "Atenção", 2 => "Não saudável", _ => null });
         M("Firmware", r.Firmware.Length > 0 ? r.Firmware : null);
@@ -358,6 +367,7 @@ public static class DiskHealth
                 PredictFailure = r.PredictFail,
                 WindowsHealth = r.Health,
                 SensorHardware = r.SensorHardware,
+                Nvme = r.Nvme,
             },
         };
     }

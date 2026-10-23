@@ -88,7 +88,8 @@ public partial class DisksView : UserControl
         try
         {
             var sensors = _monitor.Snapshot();
-            var cardsTask = Task.Run(() => DiskHealth.Read(sensors));
+            var nvme = _monitor.NvmeLogs();
+            var cardsTask = Task.Run(() => DiskHealth.Read(sensors, nvme));
             var drivesTask = Task.Run(DriveMap.Read);
             var cards = await cardsTask;
             List<DriveCard> drives;
@@ -166,7 +167,6 @@ public partial class DisksView : UserControl
         TempTrace.Samples = trace?.Temps.ToList() ?? new List<float?>();
         double? peak = trace?.Peak ?? d.TemperatureMax;
         TempPeak.Text = peak is double pk ? $"{pk:0} °C" : "—";
-        TempScale.Peak = peak ?? double.NaN;
         DiskActivity.Text = trace?.Read == null && trace?.Write == null ? "sem sensor de atividade para este disco"
             : $"Leitura {Rate(trace!.Read)}     Escrita {Rate(trace.Write)}";
     }
@@ -232,10 +232,12 @@ public partial class DisksView : UserControl
         Gb(SpaceUsed, used);
         Gb(SpaceTotal, total);
         Gb(SpaceFree, free);
-        double freeShare = known ? (double)free / total * 100 : 0;
-        SpaceFreePercent.Text = $"{freeShare:0} %";
-        SpaceFreeDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, freeShare < 10 ? "Danger" : freeShare < 20 ? "Warn" : "Ok");
-        SpaceFreeBadge.Visibility = known ? Visibility.Visible : Visibility.Collapsed;
+        double freeShare = known ? (double)free / total * 100 : 0, usedShare = known ? 100 - freeShare : 0;
+        Readout(SpaceFreePercent, known ? $"{freeShare:0}" : "—", known ? "%" : "");
+        Readout(SpaceUsedPercent, known ? $"{usedShare:0}" : "—", known ? "%" : "");
+        SpaceFreeScale.ScaleX = freeShare / 100;
+        SpaceUsedScale.ScaleX = usedShare / 100;
+        SpaceFreeFill.SetResourceReference(Border.BackgroundProperty, freeShare < 10 ? "Danger" : freeShare < 20 ? "Warn" : "Ok");
 
         // Mais de uma unidade no disco: uma linha por letra com quanto ainda está livre
         DiskVolumes.ItemsSource = mine.Count > 1
@@ -268,15 +270,12 @@ public partial class DisksView : UserControl
 
     private void ShowTemperature(DiskBay bay, DiskDetail d)
     {
-        string kind = d.IsSsd ? (d.Bus.Length > 0 ? $"SSD {d.Bus}" : "SSD") : d.Kind == "HDD" ? "HDD" : "este disco";
-        TempCaption.Text = $"Faixa ideal até {d.TempWarnAt:0} °C para {kind}";
         TempScale.WarnAt = d.TempWarnAt;
         TempScale.CritAt = d.TempCritAt;
         TempTrace.WarnAt = d.TempWarnAt;
         TempTrace.EmptyText = d.SensorHardware == null
             ? "Sem sensor ao vivo para este disco: a temperatura acima é a leitura do Windows."
             : "Coletando as primeiras amostras…";
-        TempLimits.Text = $"{d.TempWarnAt:0} · {d.TempCritAt:0} °C";
     }
 
     private void ShowTempState(double? t, DiskDetail d)
@@ -303,8 +302,7 @@ public partial class DisksView : UserControl
     {
         static DiskCheck Count(string title, long? n, string good = "Nenhum") =>
             n is long v ? new(title, v == 0 ? good : $"{v:N0}", v == 0 ? "Ok" : "Warn") : new(title, NotReported, "", NotReportedTip);
-        long? uncorrected = d.ReadUncorrected == null && d.WriteUncorrected == null ? null : (d.ReadUncorrected ?? 0) + (d.WriteUncorrected ?? 0);
-        DiskChecks.ItemsSource = new List<DiskCheck>
+        var rows = new List<DiskCheck>
         {
             d.WindowsHealth switch
             {
@@ -313,16 +311,32 @@ public partial class DisksView : UserControl
                 2 => new("Saúde segundo o Windows", "Não saudável", "Danger"),
                 _ => new("Saúde segundo o Windows", NotReported, "", NotReportedTip),
             },
-            d.PredictFailure switch
-            {
-                true => new("Falha prevista (S.M.A.R.T.)", "Sim", "Danger"),
-                false => new("Falha prevista (S.M.A.R.T.)", "Não", "Ok"),
-                _ => new("Falha prevista (S.M.A.R.T.)", NotReported, "", NotReportedTip),
-            },
-            Count("Erros de leitura", d.ReadErrors),
-            Count("Erros de escrita", d.WriteErrors),
-            Count("Erros não corrigidos", uncorrected),
         };
+
+        // Falha prevista: o aviso S.M.A.R.T. do Windows ou, em NVMe, o "aviso crítico" do próprio relatório do disco
+        bool? failing = d.PredictFailure ?? (d.Nvme?.CriticalWarning is ulong cw ? cw != 0 : null);
+        rows.Add(failing switch
+        {
+            true => new("Falha prevista (S.M.A.R.T.)", "Sim", "Danger"),
+            false => new("Falha prevista (S.M.A.R.T.)", "Não", "Ok"),
+            _ => new("Falha prevista (S.M.A.R.T.)", NotReported, "", NotReportedTip),
+        });
+
+        if (d.Nvme?.MediaErrors is ulong media)
+        {
+            // NVMe não separa leitura e escrita: um contador só, de erros de mídia e integridade
+            rows.Add(Count("Erros de mídia", (long)media));
+            if (d.Nvme.UnsafeShutdowns is ulong unsafeCount)
+                rows.Add(new("Desligamentos inesperados", $"{unsafeCount:N0}", "Info", "Quedas de energia ou desligamentos sem avisar o SSD, somados desde a fábrica."));
+        }
+        else
+        {
+            long? uncorrected = d.ReadUncorrected == null && d.WriteUncorrected == null ? null : (d.ReadUncorrected ?? 0) + (d.WriteUncorrected ?? 0);
+            rows.Add(Count("Erros de leitura", d.ReadErrors));
+            rows.Add(Count("Erros de escrita", d.WriteErrors));
+            rows.Add(Count("Erros não corrigidos", uncorrected));
+        }
+        DiskChecks.ItemsSource = rows;
     }
 
     /// <summary>Só mostra o que o disco informa: um disco que não conta horas ou ciclos fica com menos células, não com traços.</summary>
@@ -374,7 +388,7 @@ public partial class DisksView : UserControl
         LifeColumn.Width = new GridLength(wide ? 370 : 330);
         CheckGap.Width = new GridLength(wide ? 16 : 0);
         CheckColumn.Width = new GridLength(wide ? 330 : 0);
-        SpaceColumn.Width = new GridLength(wide ? 520 : 400);
+        SpaceColumn.Width = new GridLength(wide ? 560 : 440);
         Grid.SetRow(CheckCard, wide ? 2 : 4);
         Grid.SetColumn(CheckCard, wide ? 4 : 0);
         Grid.SetColumn(OdoCard, wide ? 0 : 2);

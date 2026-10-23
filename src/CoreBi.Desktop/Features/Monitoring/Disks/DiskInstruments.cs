@@ -160,27 +160,25 @@ public sealed class LifeGauge : DiskInstrument
 
 /// <summary>
 /// Régua térmica: medidor segmentado de 20 °C até 10 °C além do limite crítico, com a faixa ideal, a de atenção e a
-/// crítica sublinhadas, o ponteiro da leitura atual e a marca da máxima registrada pelo disco.
+/// crítica sublinhadas e o ponteiro da leitura atual.
 /// </summary>
 public sealed class ThermalScale : DiskInstrument
 {
     public static readonly DependencyProperty ValueProperty = Number(nameof(Value), typeof(ThermalScale));
-    public static readonly DependencyProperty PeakProperty = Number(nameof(Peak), typeof(ThermalScale));
     public static readonly DependencyProperty WarnAtProperty = Number(nameof(WarnAt), typeof(ThermalScale), 70);
     public static readonly DependencyProperty CritAtProperty = Number(nameof(CritAt), typeof(ThermalScale), 85);
 
     public double Value { get => (double)GetValue(ValueProperty); set => SetValue(ValueProperty, value); }
-    public double Peak { get => (double)GetValue(PeakProperty); set => SetValue(PeakProperty, value); }
     public double WarnAt { get => (double)GetValue(WarnAtProperty); set => SetValue(WarnAtProperty, value); }
     public double CritAt { get => (double)GetValue(CritAtProperty); set => SetValue(CritAtProperty, value); }
 
-    public ThermalScale() => Height = 58;
+    public ThermalScale() => Height = 44;
 
     protected override void OnRender(DrawingContext dc)
     {
         double w = ActualWidth;
         if (w < 80) return;
-        const double lo = 20, period = 5, gap = 1.5, barTop = 14, barH = 16;
+        const double lo = 20, period = 5, gap = 1.5, barTop = 4, barH = 16;
         double hi = CritAt + 10;
         double X(double v) => (Math.Clamp(v, lo, hi) - lo) / (hi - lo) * w;
         bool known = !double.IsNaN(Value);
@@ -206,22 +204,6 @@ public sealed class ThermalScale : DiskInstrument
             dc.DrawText(t, new Point(x, zoneY + 8));
         }
 
-        if (!double.IsNaN(Peak) && Peak > 0)
-        {
-            double xp = X(Peak);
-            var tri = new StreamGeometry();
-            using (var g = tri.Open())
-            {
-                g.BeginFigure(new Point(xp - 5, 1), true, true);
-                g.LineTo(new Point(xp + 5, 1), false, false);
-                g.LineTo(new Point(xp, 8), false, false);
-            }
-            tri.Freeze();
-            dc.DrawGeometry(MutedBrush, null, tri);
-            var t = Text($"máx. {Peak:0}", 11, MutedBrush);
-            double tx = xp + 8 + t.Width > w ? xp - 8 - t.Width : xp + 8;
-            dc.DrawText(t, new Point(tx, -2));
-        }
         if (known) dc.DrawRectangle(InkBrush, null, new Rect(X(Value) - 1, barTop - 4, 2, barH + 8));
     }
 }
