@@ -1,125 +1,164 @@
 ---
-version: alpha
+version: beta
 name: CoreBi
-description: Diagnóstico de hardware com marca própria e interface WPF preservada nesta etapa.
+description: 'Bancada: a interface do CoreBi como um instrumento de medição, com dois canais de leitura, mostradores segmentados e grafite.'
 colors:
-  primary: "#F5F5F5"
-  brand-graphite: "#111B24"
-  brand-signal: "#27C9BC"
-  brand-paper: "#EDF4F4"
-  brand-steel: "#8295A3"
-  brand-ink: "#172E3A"
-  brand-signal-light: "#087E78"
-  background: "#000000"
-  panel: "#080808"
-  card: "#0E0E0E"
-  foreground: "#F5F5F5"
-  muted: "#8C8C8C"
-  border: "#1F1F1F"
+  bg: "#0D141A"
+  sidebar: "#0A1015"
+  surface: "#121B23"
+  raised: "#18232D"
+  line: "#1F2B35"
+  line-strong: "#2D3D4A"
+  foreground: "#E6EEF1"
+  muted: "#93A4B0"
+  faint: "#61717D"
+  accent: "#27C9BC"
+  copper: "#D99067"
+  steel: "#7F93A2"
+  ok: "#5FC385"
+  warn: "#E8B550"
+  danger: "#EF6B5E"
+  light-bg: "#F2F5F6"
+  light-foreground: "#122029"
+  light-accent: "#087E78"
+  light-copper: "#A35F37"
 typography:
-  sans:
+  text:
     fontFamily: "Segoe UI Variable Text, Segoe UI"
+  display:
+    fontFamily: "Segoe UI Variable Display, Segoe UI"
+  readout:
+    fontFamily: "Bahnschrift, Segoe UI"
+    fontStretch: "SemiCondensed"
+    numerals: "tabular"
   mono:
     fontFamily: "Cascadia Mono, Consolas"
-  brand:
-    fontFamily: "Bahnschrift, Segoe UI"
+  icons:
+    fontFamily: "Segoe Fluent Icons, Segoe MDL2 Assets"
 rounded:
-  DEFAULT: "10px"
-  card: "16px"
-  sidebar: "20px"
+  control: "8px"
+  inset: "9px"
+  card: "12px"
+  palette: "14px"
 spacing:
-  card-padding: "20px"
-  title-height: "44px"
-  sidebar-width: "256px"
+  page-gutter: "36px"
+  card-gap: "16px"
+  card-padding: "22px 20px"
+  title-height: "52px"
+  sidebar-width: "244px"
 components:
-  button:
-    backgroundColor: "{colors.primary}"
-    textColor: "{colors.background}"
+  primary-button:
+    backgroundColor: "{colors.accent}"
+    textColor: "#04211E"
+  secondary-button:
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.foreground}"
+  stop-button:
+    backgroundColor: "{colors.danger} 15%"
+    textColor: "{colors.danger}"
   card:
-    backgroundColor: "{colors.card}"
+    backgroundColor: "{colors.surface}"
     textColor: "{colors.foreground}"
-  divider:
-    backgroundColor: "{colors.border}"
   navigation:
-    backgroundColor: "{colors.panel}"
+    backgroundColor: "{colors.sidebar}"
     textColor: "{colors.muted}"
-  table:
-    backgroundColor: "{colors.card}"
-    textColor: "{colors.foreground}"
-  dialog:
-    textColor: "{colors.foreground}"
   toast:
-    backgroundColor: "{colors.background}"
-  brand-dark:
-    backgroundColor: "{colors.brand-graphite}"
-    textColor: "{colors.brand-paper}"
-  brand-signal:
-    textColor: "{colors.brand-signal}"
-  brand-caption:
-    textColor: "{colors.brand-steel}"
-  brand-light:
-    backgroundColor: "{colors.brand-paper}"
-    textColor: "{colors.brand-ink}"
-  brand-signal-light:
-    textColor: "{colors.brand-signal-light}"
+    backgroundColor: "{colors.surface}"
+  overlay:
+    backgroundColor: "#D90D141A"
 ---
 
-# CoreBi Design System
+# CoreBi Design System: Bancada
 
-## Overview
+## Ideia central
 
-Um instrumento de bancada para ler o hardware com clareza: informação técnica densa, navegação previsível e marca geométrica discreta. Público inicial: o autor e amigos, em PCs Windows, conforme o pedido do projeto. Conteúdo em português brasileiro; modelos de hardware, APIs e unidades mantêm seus nomes técnicos.
+O CoreBi mede hardware. Em vez de parecer um painel administrativo genérico, a interface se comporta como um **instrumento de bancada**: tela escura de grafite, leituras grandes em fonte de mostrador, retícula de osciloscópio e dois canais de sinal com cores fixas. Quem usa um multímetro ou um osciloscópio reconhece a linguagem; quem não usa percebe só que os números são fáceis de ler.
 
-A geometria da marca está em `brand/geometry.json`: C e B têm a mesma altura e centro; ponto e haste formam o i centralizado.
+Três regras resumem o sistema:
 
-**Escopo atual:** preservar layout e componentes. Uma reformulação de UI/UX será tratada separadamente, sem alterar as regras das ferramentas.
+1. **Cor é canal, não decoração.** Verde-água é o canal A (processador e leitura ao vivo), cobre é o canal B (placa de vídeo). As cores aparecem nos gráficos, nos medidores, nas legendas, nos anéis e na barra lateral sempre com o mesmo significado.
+2. **Verde, âmbar e vermelho só para veredito.** Saudável, atenção e crítico (disco, bateria, rede, FPS jogável, corte por temperatura). Nunca para enfeitar.
+3. **Grandeza medida é segmentada; tarefa é contínua.** Carga, temperatura e FPS aparecem em medidores segmentados (como um VU). O progresso de um teste usa uma barra contínua fina.
 
-## Colors
+Conteúdo em português brasileiro, em caixa de frase. Nomes de hardware, APIs e unidades mantêm a grafia técnica.
 
-A marca combina graphite `#111B24`, signal `#27C9BC`, paper `#EDF4F4` e steel `#8295A3`. A variante clara usa ink `#172E3A` e signal-light `#087E78` para manter o símbolo legível. Acento representa leitura/sinal, não estado de saúde.
+## Cores
 
-A interface atual permanece monocromática: fundo `#000000`, painel `#080808`, cartão `#0E0E0E`, texto `#F5F5F5`, secundário `#8C8C8C` e borda `#1F1F1F`. O modo claro troca os recursos em tempo de execução. Sobreposições e notificações conservam o fundo escuro.
+A fonte canônica é `src/CoreBi.Desktop/Shell/ThemeManager.cs` (pares escuro/claro) com os nomes usados em `Theme.xaml`. Os valores do cabeçalho deste arquivo são o tema escuro.
 
-**Fonte canônica:** `brand/geometry.json` para a marca; `src/CoreBi.Desktop/Shell/Theme.xaml` e `ThemeManager.cs` para a interface. Este documento descreve esses valores; não gera tokens. Valores em pixels correspondem a unidades independentes de dispositivo WPF. O build verifica a resolução dos recursos; o roundtrip de tema é exercitado em `tests/CoreBi.Tests/Program.cs`.
+| Papel | Chaves | Uso |
+| --- | --- | --- |
+| Superfícies | `Bg`, `Sidebar`, `Surface`, `Raised`, `Well` | Fundo da janela, barra lateral, painel, controle elevado, palco escuro de imagens renderizadas |
+| Interação | `Hover`, `Selected`, `Line`, `LineStrong`, `Scrim` | Realce, seleção, fios de divisão, contorno de controles, fundo da paleta de comandos |
+| Texto | `Fg`, `Muted`, `Faint` | Texto principal, secundário, notas e eixos |
+| Canal A | `Accent`, `AccentHover`, `AccentSoft`, `AccentFg` | Processador, leitura ao vivo, ação principal, seleção |
+| Canal B | `Copper`, `CopperSoft` | Placa de vídeo nos gráficos, medidores, anéis e legendas |
+| Neutro técnico | `Steel` | Terceiro canal (disco nos anéis), ícones de categoria |
+| Veredito | `Ok`, `Warn`, `Danger` e as variantes `Soft` | Selos, faixas laterais de cartões, avisos, corte automático |
 
-## Typography
+O tema claro ("papel") troca todos os pincéis em tempo de execução. O que é desenhado em código (gráficos, anéis) é refeito na troca de tema; estados de controles definidos em código usam `SetResourceReference`, que acompanha o tema sozinho. Toast e overlay têm paleta fixa de grafite porque aparecem por cima de qualquer coisa, inclusive jogos.
 
-Segoe UI Variable Text/Segoe UI para leitura e controles. Cascadia Mono/Consolas para métricas. Bahnschrift apenas para a assinatura CoreBi e sua prancha de marca; fonte não é redistribuída. SVGs de wordmark usam texto com fallback; o símbolo é inteiramente vetorial e independente de fonte. A versão PNG/ICO fixa a aparência.
+## Tipografia
 
-Corpo atual de 13 unidades, títulos de 26, métricas de 22. Preservar nomes técnicos e unidades explícitas. FPS estimado, medido e indisponível devem ser distinguíveis por texto.
+| Papel | Família | Onde |
+| --- | --- | --- |
+| Texto | Segoe UI Variable Text | Corpo, rótulos, controles (13 px) |
+| Título | Segoe UI Variable Display | Título da página (28), destaques de resultado (21–30) |
+| Mostrador | Bahnschrift SemiCondensed, algarismos tabulares | Leituras ao vivo (`ReadoutText` 22, `ReadoutLarge` 36, `ReadoutHero` 52), eixos de gráfico, assinatura CoreBi |
+| Código | Cascadia Mono | Somente registro do teste de carga e linhas de comando da Inicialização |
+
+Números em texto comum usam `Typography.NumeralAlignment="Tabular"` (estilo `Num`) para não "dançar" quando o valor muda. Rótulos são curtos e em caixa de frase; não há rótulos em caixa alta. Botões dizem exatamente o que acontece ("Iniciar teste", "Exportar relatório", "Ler novamente").
 
 ## Layout
 
-Janela de referência 1320 × 840, mínimo 1120 × 660. Barra de título de 44 e lateral de 256, com rolagem própria. As 15 páginas são UserControls. Navegação agrupada em Monitoramento, Jogos, Desempenho e Ferramentas; Visão geral permanece acessível diretamente. Cartões mantêm padding de 20.
+- Janela de 1360 × 860 (mínimo 1120 × 680), sem moldura nativa, cantos arredondados do Windows 11 via DWM.
+- Barra lateral de 244 px: marca, navegação agrupada (Monitoramento, Jogos, Desempenho, Ferramentas) e, no rodapé, a telemetria permanente (CPU e GPU com medidor segmentado) e o estado do teste de carga.
+- Barra de título de 52 px: atalho da paleta de comandos à esquerda, pílula com o estado da coleta de sensores e os controles da janela à direita.
+- Página: margem de 36 px, cabeçalho com título e subtítulo (o subtítulo carrega o estado vivo da página quando existe) e a ação principal à direita. Painéis com 16 px entre si.
+- Telas de teste (Benchmark, Teste de carga) usam a mesma composição: palco ou leitura principal à esquerda e uma coluna de 320–330 px com configuração, resultado e histórico.
 
-Operações assíncronas usam o estado/progresso existente; a dimensão de botões e do conteúdo não deve depender do tamanho de uma mensagem de progresso. Páginas não precisam reiniciar o coletor de sensores. A reforma de densidade/espaçamento para telas menores fica para UI/UX.
+## Profundidade e forma
 
-## Elevation & Depth
+Sem sombras nos painéis: a hierarquia vem do tom (fundo → painel → elevado) e de fios de 1 px. A única sombra do app é a da paleta de comandos, que flutua acima de tudo (e a do toast, fora da janela).
 
-Hierarquia por tons, bordas de 1 unidade e tipografia, sem efeitos tridimensionais na marca. O desenho do ícone é plano. Janela e cartões preservam o tratamento original; nenhuma camada decorativa foi adicionada.
+Raios: 8 em controles, 9 em poços internos, 12 em painéis, 14 na paleta. Selos e teclas usam 5. A marca segue a malha 256 × 256 de `brand/geometry.json`, desenhada em vetor na barra lateral.
 
-## Shapes
+## Componentes
 
-Marca em malha 256 × 256; C e B têm limites verticais 35–221. O i tem ponto quadrado e haste retangular, com centro vertical do conjunto em 128. Usar a geometria canônica para variantes. Não esticar um eixo do símbolo isoladamente.
+Todos em `Shell/Theme.xaml`; templates de dados compartilhados em `Shell/FeatureTemplates.xaml`. As propriedades anexadas de `Shell/Ui.cs` evitam estilos duplicados:
 
-Interface: botões com raio 10, cartões 16 e lateral 20, conforme recursos existentes. Evitar novos raios arbitrários nesta fase.
+- `Ui.Icon`: glifo Segoe Fluent em botões, itens de navegação, ladrilhos de teste, cartões de componente e campos.
+- `Ui.Caption`: legenda de ladrilhos e cartões de seleção.
+- `Ui.Placeholder` e `Ui.Suffix`: texto de espera e unidade (°C, min) dentro do campo.
+- `Ui.SetRunning(botão, rodando, …)`: o botão de iniciar vira botão de parar (cor, glifo e texto juntos).
 
-## Components
+| Componente | Estilo | Quando usar |
+| --- | --- | --- |
+| Ação principal | `PrimaryButton` | Uma por tela |
+| Ação secundária | `SecondaryButton`, `GhostButton` | Ler novamente, abrir página, predefinições |
+| Interromper | `StopButton` | Teste em andamento |
+| Remover em lista | `DangerGhostButton` | Inicialização |
+| Opções exclusivas | `SegmentGroup` + `Segment` | Resolução, duração, preset (poucas opções fixas) |
+| Filtro gerado | `Chip` | Categorias de sensores, GPUs, unidades de disco |
+| Escolha de teste | `TestTile` | Benchmark |
+| Componente a carregar | `ToggleCard` | Teste de carga |
+| Ligar e desligar | `Switch` | Overlay, programas da inicialização, Driver Studio |
+| Seleção múltipla | `CheckBox` padrão | Apps, itens do overlay |
+| Veredito | `CardTemplate` | Discos, Energia, Rede (faixa lateral + selo colorido) |
+| Medidor | `Meter`, máscara `SegmentMask` | Gargalo, histórico de benchmarks |
 
-Botões, chips, grupos e listas reutilizam `Theme.xaml`. Templates de dados compartilhados usam `FeatureTemplates.xaml`. Seleção, desabilitado, hover e pressionado mantêm os estilos atuais. A verificação automatizada cobre construção e navegação, mas não certifica toda a acessibilidade dos templates herdados.
+Paleta de comandos (Ctrl + K): busca sem acento entre as páginas (lidas da própria navegação) e ações como alternar tema, exportar relatório, mostrar o overlay e testar a rede.
 
-Diálogos de arquivo e mensagens são nativos WPF/Windows. Lista/tabela usa DataGrid/ListBox; seleção é do controle. Campos numéricos são WPF, sem reconstruir controles de navegador. Datas são informações de leitura, não há seletor de calendário.
+## Movimento
 
-Toast é `ToastWindow`; overlay é uma janela própria e independente da navegação. Ícones de ações usam Segoe Fluent Icons/Segoe MDL2 Assets; ações de janela têm tooltip. A marca não substitui rótulos funcionais.
+Apenas em resposta a uma ação: a página entra com 170 ms de opacidade e 230 ms de deslocamento curto, respeitando a opção "Mostrar animações no Windows" (`SystemParameters.ClientAreaAnimation`). Não há animação contínua: o app fica aberto durante jogos e benchmarks, e qualquer custo de CPU/GPU contaminaria a medição.
 
-Não adicionar animação nesta etapa. Gráficos e indicadores devem refletir dados reais e ficar vazios/indisponíveis quando não houver amostra. Falta de sensores não pode parecer um valor zero válido. Sucesso parcial não deve usar uma mensagem de sucesso total.
+## Dados e honestidade
 
-## Verification
+Gráficos e indicadores refletem só dados reais e ficam vazios ou com travessão quando não há amostra. Falta de sensor nunca aparece como zero. FPS estimado, resposta da API e FPS medido por ETW são identificados por texto. Sucesso parcial não usa mensagem de sucesso total.
 
-Compilação WPF, teste de todas as páginas, ida/volta de tema, regras de indisponibilidade e cargas curtas estão no executor de testes. Evidências e limites em `docs/VALIDATION.md`.
+## Verificação
 
-O auditor estático premium analisa contratos e fontes web; não interpreta XAML. Seu resultado não certifica contraste, foco, leitor de tela ou interação real WPF. Revisão de teclado, leitores de tela, alto contraste e DPI em vários monitores continua pendente para a etapa de UI/UX.
-
-## Maintenance boundary
-
-As páginas administrativas, Disco, Energia e Rede são donas de seus handlers e recebem FeatureContext; as demais conservam a ponte tipada com MainWindow. A organização da apresentação está documentada em [arquitetura](ARCHITECTURE.md). Falha de persistência usa a notificação existente; sucesso parcial, hardware desconhecido e indisponibilidade são expressos em texto.
+- `tools/check_resources.py` cruza cada `{StaticResource}`/`{DynamicResource}` e cada chave usada em C# com as definidas no tema, respeitando a ordem de carga (o compilador de XAML não detecta chave inexistente).
+- Compilação WPF, construção e navegação das 15 páginas, ida e volta de tema e regras de indisponibilidade estão no executor de testes (`tests/CoreBi.Tests`).
+- Ainda pendente de revisão manual em Windows: navegação completa por teclado, leitor de tela, alto contraste e DPI em vários monitores.
