@@ -202,6 +202,11 @@ public static class DiskHealth
                                                        x.Name.Contains("Host Writes", StringComparison.OrdinalIgnoreCase))?.RawValue;
                 r.ReadGb = mine.FirstOrDefault(x => x.Name.Contains("Data Read", StringComparison.OrdinalIgnoreCase) ||
                                                     x.Name.Contains("Host Reads", StringComparison.OrdinalIgnoreCase))?.RawValue;
+                // Contadores que o Windows nem sempre repassa (comum em NVMe): o LibreHardwareMonitor lê do próprio disco.
+                if (r.PowerOnHours == null && mine.FirstOrDefault(x => x.Name.Equals("Power On Hours", StringComparison.OrdinalIgnoreCase))?.RawValue is > 0 and float hours)
+                    r.PowerOnHours = (long)hours;
+                if (r.StartStop == null && mine.FirstOrDefault(x => x.Name.Equals("Power On Count", StringComparison.OrdinalIgnoreCase))?.RawValue is > 0 and float cycles)
+                    r.StartStop = (long)cycles;
                 r.Spare = mine.FirstOrDefault(x => x.Name.Equals("Available Spare", StringComparison.OrdinalIgnoreCase))?.RawValue;
                 r.SpareThreshold = mine.FirstOrDefault(x => x.Name.Equals("Available Spare Threshold", StringComparison.OrdinalIgnoreCase))?.RawValue;
             }
