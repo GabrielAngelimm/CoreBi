@@ -39,16 +39,16 @@
   },
   {
     "package": "Microsoft.Diagnostics.NETCore.Client",
-    "version": "0.2.510501",
+    "version": "0.2.661903",
     "license": "MIT",
     "authors": "Microsoft",
     "copyright": "© Microsoft Corporation. All rights reserved.",
-    "source": "https://github.com/dotnet/diagnostics/tree/8c08c89a0643d31db91e119b1adb463be3e0ffe5",
+    "source": "https://github.com/dotnet/diagnostics/tree/d7b455b46332b31fd9ba3a3f3e020387984c511a",
     "notices": []
   },
   {
     "package": "Microsoft.Diagnostics.Tracing.TraceEvent",
-    "version": "3.2.8",
+    "version": "4.0.0",
     "license": "MIT",
     "authors": "Microsoft",
     "copyright": "© Microsoft Corporation. All rights reserved.",
@@ -57,74 +57,26 @@
   },
   {
     "package": "Microsoft.Extensions.DependencyInjection.Abstractions",
-    "version": "6.0.0",
+    "version": "8.0.2",
     "license": "MIT",
     "authors": "Microsoft",
     "copyright": "© Microsoft Corporation. All rights reserved.",
-    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
+    "source": "https://github.com/dotnet/runtime/tree/81cabf2857a01351e5ab578947c7403a5b128ad1",
     "notices": [
-      "licenses/Microsoft.Extensions.DependencyInjection.Abstractions/6.0.0/LICENSE.TXT",
-      "licenses/Microsoft.Extensions.DependencyInjection.Abstractions/6.0.0/THIRD-PARTY-NOTICES.TXT"
-    ]
-  },
-  {
-    "package": "Microsoft.Extensions.DependencyInjection",
-    "version": "6.0.0",
-    "license": "MIT",
-    "authors": "Microsoft",
-    "copyright": "© Microsoft Corporation. All rights reserved.",
-    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
-    "notices": [
-      "licenses/Microsoft.Extensions.DependencyInjection/6.0.0/LICENSE.TXT",
-      "licenses/Microsoft.Extensions.DependencyInjection/6.0.0/THIRD-PARTY-NOTICES.TXT"
+      "licenses/Microsoft.Extensions.DependencyInjection.Abstractions/8.0.2/LICENSE.TXT",
+      "licenses/Microsoft.Extensions.DependencyInjection.Abstractions/8.0.2/THIRD-PARTY-NOTICES.TXT"
     ]
   },
   {
     "package": "Microsoft.Extensions.Logging.Abstractions",
-    "version": "6.0.0",
+    "version": "8.0.3",
     "license": "MIT",
     "authors": "Microsoft",
     "copyright": "© Microsoft Corporation. All rights reserved.",
-    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
+    "source": "https://github.com/dotnet/runtime/tree/eba546b0f0d448e0176a2222548fd7a2fbf464c0",
     "notices": [
-      "licenses/Microsoft.Extensions.Logging.Abstractions/6.0.0/LICENSE.TXT",
-      "licenses/Microsoft.Extensions.Logging.Abstractions/6.0.0/THIRD-PARTY-NOTICES.TXT"
-    ]
-  },
-  {
-    "package": "Microsoft.Extensions.Logging",
-    "version": "6.0.0",
-    "license": "MIT",
-    "authors": "Microsoft",
-    "copyright": "© Microsoft Corporation. All rights reserved.",
-    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
-    "notices": [
-      "licenses/Microsoft.Extensions.Logging/6.0.0/LICENSE.TXT",
-      "licenses/Microsoft.Extensions.Logging/6.0.0/THIRD-PARTY-NOTICES.TXT"
-    ]
-  },
-  {
-    "package": "Microsoft.Extensions.Options",
-    "version": "6.0.0",
-    "license": "MIT",
-    "authors": "Microsoft",
-    "copyright": "© Microsoft Corporation. All rights reserved.",
-    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
-    "notices": [
-      "licenses/Microsoft.Extensions.Options/6.0.0/LICENSE.TXT",
-      "licenses/Microsoft.Extensions.Options/6.0.0/THIRD-PARTY-NOTICES.TXT"
-    ]
-  },
-  {
-    "package": "Microsoft.Extensions.Primitives",
-    "version": "6.0.0",
-    "license": "MIT",
-    "authors": "Microsoft",
-    "copyright": "© Microsoft Corporation. All rights reserved.",
-    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
-    "notices": [
-      "licenses/Microsoft.Extensions.Primitives/6.0.0/LICENSE.TXT",
-      "licenses/Microsoft.Extensions.Primitives/6.0.0/THIRD-PARTY-NOTICES.TXT"
+      "licenses/Microsoft.Extensions.Logging.Abstractions/8.0.3/LICENSE.TXT",
+      "licenses/Microsoft.Extensions.Logging.Abstractions/8.0.3/THIRD-PARTY-NOTICES.TXT"
     ]
   },
   {
@@ -409,13 +361,13 @@
   },
   {
     "package": "System.Management",
-    "version": "10.0.2",
+    "version": "10.0.13",
     "license": "MIT",
     "authors": "Microsoft",
     "copyright": "© Microsoft Corporation. All rights reserved.",
-    "source": "https://github.com/dotnet/dotnet/tree/44525024595742ebe09023abe709df51de65009b",
+    "source": "https://github.com/dotnet/dotnet/tree/4099f83977f4d29604a9aeb971fb0a7bc1d5f699",
     "notices": [
-      "licenses/System.Management/10.0.2/THIRD-PARTY-NOTICES.TXT"
+      "licenses/System.Management/10.0.13/THIRD-PARTY-NOTICES.TXT"
     ]
   },
   {

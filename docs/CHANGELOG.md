@@ -2,6 +2,8 @@
 
 ## Não lançado
 
+- TraceEvent 4.0.0, System.Management e EventLog 10.0.13; locks completos e licenças de dependências sincronizados.
+
 - Documentação concentrada em docs, com somente README na raiz; licenças centralizadas em licenses e referências de apresentação à base removidas.
 
 - Disco, Energia e Rede com estado/handlers próprios, tarefas aguardáveis e proteção contra atualizações após fechamento.

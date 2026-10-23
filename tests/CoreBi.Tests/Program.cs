@@ -198,6 +198,13 @@ internal static partial class Program
     private static void Hardware()
     {
         if (SensorMonitor.IsElevated)
+            Check("EventLog: real read-only hardware diagnostic query", () =>
+            {
+                var errors = CoreBi.Engine.Monitoring.Diagnostics.HardwareEventReader.ErrorsSince(DateTime.Now.AddDays(-1));
+                Require(errors.Error == null, errors.Error ?? "EventLog query failed");
+                return new { errors.Whea, errors.GpuResets, scope = "read-only System log; no events cleared or written" };
+            });
+        if (SensorMonitor.IsElevated)
             Check("ETW: real session start and stop", () =>
             {
                 using var frames = new FrameMonitor();
