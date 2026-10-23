@@ -1,0 +1,104 @@
+; CoreBi - instalador para Windows x64 (Inno Setup 6).
+; Compilado por tools\Installer.ps1 a partir de artifacts\publish\win-x64.
+
+#ifndef AppVersion
+  #define AppVersion "0.2.0"
+#endif
+#ifndef PublishDir
+  #define PublishDir "..\artifacts\publish\win-x64"
+#endif
+#ifndef OutputDir
+  #define OutputDir "..\artifacts\installer"
+#endif
+
+[Setup]
+AppId={{8E4A1C3B-6F2D-4B7A-9D15-3C0E7A92F4B8}
+AppName=CoreBi
+AppVersion={#AppVersion}
+AppVerName=CoreBi {#AppVersion}
+AppPublisher=CoreBi contributors
+AppPublisherURL=https://github.com/GabrielAngelimm/CoreBi
+AppSupportURL=https://github.com/GabrielAngelimm/CoreBi/issues
+DefaultDirName={autopf}\CoreBi
+DefaultGroupName=CoreBi
+DisableProgramGroupPage=yes
+OutputDir={#OutputDir}
+OutputBaseFilename=CoreBi-{#AppVersion}-win-x64-setup
+SetupIconFile=..\src\CoreBi.Desktop\Assets\corebi.ico
+UninstallDisplayIcon={app}\CoreBi.exe
+VersionInfoVersion={#AppVersion}.0
+PrivilegesRequired=admin
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+MinVersion=10.0
+Compression=lzma2/ultra64
+SolidCompression=yes
+WizardStyle=modern
+CloseApplications=yes
+
+[Languages]
+Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
+
+[Types]
+Name: "full"; Description: "Instalação completa"
+Name: "compact"; Description: "Somente o aplicativo"
+Name: "custom"; Description: "Personalizada"; Flags: iscustom
+
+[Components]
+Name: "app"; Description: "CoreBi"; Types: full compact custom; Flags: fixed
+Name: "pawnio"; Description: "Driver PawnIO: temperatura e consumo da CPU (instalado pelo winget)"; Types: full
+
+[Tasks]
+Name: "desktopicon"; Description: "Criar atalho na área de trabalho"; GroupDescription: "Atalhos:"; Flags: unchecked
+
+[Files]
+Source: "{#PublishDir}\*"; DestDir: "{app}"; Components: app; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Icons]
+Name: "{group}\CoreBi"; Filename: "{app}\CoreBi.exe"; WorkingDir: "{app}"; Components: app
+Name: "{group}\Desinstalar CoreBi"; Filename: "{uninstallexe}"; Components: app
+Name: "{autodesktop}\CoreBi"; Filename: "{app}\CoreBi.exe"; WorkingDir: "{app}"; Components: app; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\CoreBi.exe"; Description: "Abrir o CoreBi"; WorkingDir: "{app}"; Components: app; Flags: nowait postinstall skipifsilent
+
+[Code]
+const
+  PawnIOUninstallKey = 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO';
+
+function PawnIOInstalado: Boolean;
+begin
+  Result := RegKeyExists(HKLM64, PawnIOUninstallKey) or RegKeyExists(HKLM32, PawnIOUninstallKey);
+end;
+
+procedure InstalarPawnIO;
+var
+  ResultCode: Integer;
+begin
+  { Mesmo comando que o app usa na página de Sensores; 3010 significa que o Windows pede reinício. }
+  if not Exec(ExpandConstant('{cmd}'),
+    '/C winget install --id namazso.PawnIO --exact --source winget --accept-package-agreements --accept-source-agreements',
+    '', SW_SHOW, ewWaitUntilTerminated, ResultCode) or ((ResultCode <> 0) and (ResultCode <> 3010)) then
+    MsgBox('Não foi possível instalar o driver PawnIO agora. O CoreBi funciona, mas os sensores internos da CPU ficam indisponíveis. Você pode instalar o driver depois pela página de Sensores do próprio app.', mbInformation, MB_OK);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if (CurStep = ssPostInstall) and WizardIsComponentSelected('pawnio') and not PawnIOInstalado then
+    InstalarPawnIO;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if (CurUninstallStep = usPostUninstall) and not UninstallSilent then
+  begin
+    { Os backups em ProgramData restauram entradas de inicialização removidas pelo app; por isso o padrão é manter. }
+    if MsgBox('Remover também as configurações, o histórico e os backups de inicialização do CoreBi?' + #13#10#13#10 +
+      'Os backups em ProgramData são necessários para restaurar entradas de inicialização removidas pelo app.',
+      mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
+    begin
+      DelTree(ExpandConstant('{userappdata}\CoreBi'), True, True, True);
+      DelTree(ExpandConstant('{commonappdata}\CoreBi'), True, True, True);
+    end;
+  end;
+end;
