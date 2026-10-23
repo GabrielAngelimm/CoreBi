@@ -122,4 +122,4 @@ O auditor estático premium analisa contratos e fontes web; não interpreta XAML
 
 ## Maintenance boundary
 
-As páginas administrativas, Disco, Energia e Rede são donas de seus handlers e recebem FeatureContext; as demais conservam a ponte tipada com MainWindow. A organização da apresentação está documentada em [arquitetura](docs/ARCHITECTURE.md). Falha de persistência usa a notificação existente; sucesso parcial, hardware desconhecido e indisponibilidade são expressos em texto.
+As páginas administrativas, Disco, Energia e Rede são donas de seus handlers e recebem FeatureContext; as demais conservam a ponte tipada com MainWindow. A organização da apresentação está documentada em [arquitetura](ARCHITECTURE.md). Falha de persistência usa a notificação existente; sucesso parcial, hardware desconhecido e indisponibilidade são expressos em texto.

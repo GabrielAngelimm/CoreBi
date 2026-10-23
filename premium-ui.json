@@ -1,13 +1,33 @@
 {
   "profile": "product-admin",
   "platform": "windows-wpf",
-  "sourceRoots": ["src/CoreBi.Desktop"],
+  "sourceRoots": [
+    "src/CoreBi.Desktop"
+  ],
   "locale": "pt-BR",
   "canonicalMap": "docs/UI-CONTRACT.md",
-  "requiredCapabilities": ["Table Selection", "Select/Listbox", "Form", "Scrollbar", "Toast"],
-  "ownership": { "Select/Listbox": "native", "Form": "native", "Scrollbar": "native" },
-  "requiredCommands": ["build", "unit"],
-  "commands": { "build": "pwsh -File tools/Build.ps1", "unit": "pwsh -File tools/Test.ps1" },
-  "evidence": { "failurePaths": "tests/CoreBi.Tests/Program.cs" },
-  "scopeNotes": "XAML não é analisado pelo auditor web. Compilação e testes WPF são executados separadamente. A revisão completa de UI/UX foi adiada pelo usuário."
+  "requiredCapabilities": [
+    "Table Selection",
+    "Select/Listbox",
+    "Form",
+    "Scrollbar",
+    "Toast"
+  ],
+  "ownership": {
+    "Select/Listbox": "native",
+    "Form": "native",
+    "Scrollbar": "native"
+  },
+  "requiredCommands": [
+    "build",
+    "unit"
+  ],
+  "commands": {
+    "build": "pwsh -File tools/Build.ps1",
+    "unit": "pwsh -File tools/Test.ps1"
+  },
+  "evidence": {
+    "failurePaths": "tests/CoreBi.Tests/Program.cs"
+  },
+  "scopeNotes": "XAML não é analisado pelo auditor web. Compilação e testes WPF são executados separadamente. A revisão completa de UI/UX foi adiada pelo usuário. Documentação canônica de design: docs/DESIGN.md. Por organização do projeto, apenas README.md permanece na raiz."
 }

@@ -23,7 +23,7 @@ CoreBi/
       Assets/                    Marca e ícone
   tests/CoreBi.Tests/             Executor de regressões, integração, WPF e hardware
   tools/                         Build, testes, publicação, licenças e marca
-  docs/                          Contratos, fontes e validação
+  docs/                          Guias, contratos, segurança e validação
   licenses/                      Textos e avisos redistribuídos com o binário
 ```
 

@@ -1,11 +1,10 @@
 # CoreBi
 
 [![Verify](https://github.com/GabrielAngelimm/CoreBi/actions/workflows/verify.yml/badge.svg)](https://github.com/GabrielAngelimm/CoreBi/actions/workflows/verify.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Aplicativo open source de monitoramento, diagnóstico e testes de hardware para Windows x64. Reúne informações do sistema, sensores, benchmarks e utilitários em uma aplicação local.
 
-Desenvolvido em C#/.NET 10 e WPF, a partir de [ResetExplode](https://github.com/GustavoReset/ResetExplode). As regras, os coletores e as integrações são separados da interface. Créditos e licenças estão em [NOTICE.md](NOTICE.md) e [THIRD-PARTY.md](THIRD-PARTY.md).
+Desenvolvido em C#/.NET 10 e WPF. As regras, os coletores e as integrações são separados da interface.
 
 ## Funcionalidades
 
@@ -42,7 +41,7 @@ O aplicativo solicita administrador para sensores, ETW e ferramentas administrat
 - Downloads administrativos e backups de inicialização: `%ProgramData%\CoreBi\<SID>`. Preserve essa pasta para restaurar entradas removidas.
 - API opcional de FPS: credencial própria configurada na página da ferramenta e protegida por DPAPI. A integração ainda requer validação com uma chave real.
 
-As pastas são criadas automaticamente. Consulte [privacidade](PRIVACY.md) e [segurança](SECURITY.md) para detalhes de armazenamento, conexões e permissões.
+As pastas são criadas automaticamente. Consulte [privacidade](docs/PRIVACY.md) e [segurança](docs/SECURITY.md) para detalhes de armazenamento, conexões e permissões.
 
 ## Compilar a partir do código
 
@@ -76,7 +75,7 @@ src/CoreBi.Engine/       Coletores, regras, benchmarks, integrações e persist�
 src/CoreBi.Desktop/      Shell WPF, páginas, apresentação e serviços da interface
 tests/CoreBi.Tests/      Regressões, WPF e verificações opcionais de hardware
 tools/                   Compilação, testes, publicação e manutenção
-docs/                    Arquitetura, funcionamento e evidências de validação
+docs/                    Guias, arquitetura, manutenção, segurança e validação
 licenses/                Licenças e avisos dos componentes distribuídos
 ```
 
@@ -86,10 +85,10 @@ licenses/                Licenças e avisos dos componentes distribuídos
 .\tools\Test.ps1
 ```
 
-O modo padrão executa 24 regressões e verificações WPF. Os modos `Hardware`, `Startup`, `Integrations` e `Bench` são optativos; veja os comandos, o alcance e os cuidados em [CONTRIBUTING.md](CONTRIBUTING.md).
+O modo padrão executa 24 regressões e verificações WPF. Os modos `Hardware`, `Startup`, `Integrations` e `Bench` são optativos; veja os comandos, o alcance e os cuidados em [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 - [Arquitetura e responsabilidades](docs/ARCHITECTURE.md)
 - [Validações realizadas e pendências](docs/VALIDATION.md)
-- [Histórico de mudanças](CHANGELOG.md)
+- [Histórico de mudanças](docs/CHANGELOG.md)
 
 A versão distribuída é uma prévia técnica. Instalações administrativas, precisão do FPS em jogos, stress prolongado e compatibilidade em outros equipamentos ainda exigem validações específicas.
