@@ -14,22 +14,19 @@ using System.Windows.Shapes;
 namespace CoreBi.Desktop;
 
 /// <summary>
-/// Visão geral: osciloscópio de dois canais (CPU × GPU), componentes (uso ao vivo do processador e da placa de vídeo,
-/// ocupação da memória e do disco), desempenho, lista de verificação da saúde do PC e eventos recentes.
+/// Visão geral: osciloscópio de dois canais (CPU × GPU), uso ao vivo do processador e da placa de vídeo, anéis de
+/// ocupação (RAM, VRAM e disco), desempenho, lista de verificação da saúde do PC e eventos recentes.
 /// </summary>
 public partial class MainWindow
 {
-    /// <summary>
-    /// Cartão de componente. Uso ao vivo (Capacity = false): Hero é a carga, com medidor segmentado e as grandezas do
-    /// componente. Ocupação (Capacity = true): anel com a fração usada (Hero no centro), Amount em uso e o que sobra.
-    /// Stats só traz leituras que existem para o componente.
-    /// </summary>
-    public sealed record DashComponent(string Icon, string Name, string Model, string Target, Brush Channel, bool Capacity,
-                                       string Hero, string HeroUnit, string Amount, double Fraction, IReadOnlyList<KeyValuePair<string, string>> Stats);
+    /// <summary>Cartão de uso ao vivo: Hero é a carga, com medidor segmentado; Stats só traz leituras que existem para o componente.</summary>
+    public sealed record DashComponent(string Icon, string Name, string Model, string Target, Brush Channel,
+                                       string Hero, string HeroUnit, double Fraction, IReadOnlyList<KeyValuePair<string, string>> Stats);
     public sealed record DashEvent(string Icon, string Title, string Detail, string Value, DateTime At)
     {
         public string When => At.Date == DateTime.Today ? $"hoje {At:HH:mm}" : $"{At:dd/MM HH:mm}";
     }
+    public sealed record DashRingItem(Brush Swatch, string Label, string Value, string Detail);
     public sealed record DashCheck(string Title, string Detail, bool Ok);
 
     internal readonly record struct DashSample(float? CpuT, float? GpuT, float? CpuL, float? GpuL, float? CpuW, float? GpuW);
@@ -121,6 +118,7 @@ public partial class MainWindow
     {
         DrawDashChart();
         UpdateDashComponents();
+        UpdateDashRings();
         if (full)
         {
             UpdateDashScores();
@@ -134,16 +132,12 @@ public partial class MainWindow
     internal void UpdateDashComponents()
     {
         static KeyValuePair<string, string> Stat(string label, string value) => new(label, value);
-        static string Gb(double bytes) => $"{bytes / 1073741824.0:0.0} GB";
-        float? Sensor(HardwareType hw, SensorType type, string name, string? hardware = null) =>
-            _monitor.Rows.FirstOrDefault(r => r.HardwareType == hw && r.Type == type && r.Name == name &&
-                                              (hardware == null || r.Hardware == hardware))?.RawValue;
 
         var cpuLoad = _monitor.CpuLoad;
         var rows = new List<DashComponent>
         {
-            new("", "Processador", GameCatalog.ShortCpuName(_cpuName), "PageSensors", Palette("Accent"), false,
-                F(cpuLoad, "0", " %"), "em uso", "", (cpuLoad ?? 0) / 100.0,
+            new("", "Processador", GameCatalog.ShortCpuName(_cpuName), "PageSensors", Palette("Accent"),
+                F(cpuLoad, "0", " %"), "em uso", (cpuLoad ?? 0) / 100.0,
                 new[] { Stat("Temp.", F(_monitor.CpuTemperature, "0", " °C")), Stat("Clock", F(CpuClockAvg(), "0", " MHz")),
                         Stat("Consumo", F(_monitor.CpuPower, "0", " W")) }),
         };
@@ -151,34 +145,11 @@ public partial class MainWindow
         {
             var gpu = _gpus[0];
             uint? clk = gpu.NvmlHandle != IntPtr.Zero ? Nvml.Clock(gpu.NvmlHandle, Nvml.ClockGraphics) : null;
-            var stats = new List<KeyValuePair<string, string>>
-            {
-                Stat("Temp.", F(MainGpuTemp(), "0", " °C")), Stat("Clock", clk is uint c ? $"{c} MHz" : "—"), Stat("Consumo", F(MainGpuPower(), "0", " W")),
-            };
-            if (gpu.NvmlHandle != IntPtr.Zero && Nvml.MemoryInfo(gpu.NvmlHandle) is Nvml.Memory m && m.Total > 0)
-                stats.Add(Stat("VRAM", Gb(m.Used)));
             var gpuLoad = MainGpuLoad();
-            rows.Add(new("", "Placa de vídeo", GameCatalog.ShortGpuName(gpu.Name), "PageGpu", Palette("Copper"), false,
-                         F(gpuLoad, "0", " %"), "em uso", "", (gpuLoad ?? 0) / 100.0, stats));
-        }
-
-        // Memória e disco não têm temperatura nem clock: o cartão mostra ocupação (anel), quanto está em uso e o que sobra.
-        var (total, avail) = MemoryInfo.MemoryStatus();
-        if (total > 0)
-        {
-            double used = (double)(total - avail) / total;
-            var stats = new List<KeyValuePair<string, string>> { Stat("Disponível", Gb(avail)) };
-            if (Sensor(HardwareType.Memory, SensorType.Load, "Memory", "Virtual Memory") is float virt) stats.Add(Stat("Memória virtual", $"{virt:0} %"));
-            rows.Add(new("", "Memória RAM", $"{total / 1073741824.0:0} GB instalados", "PageSystem", Palette("Accent"), true,
-                         $"{used:P0}", $"em uso de {total / 1073741824.0:0} GB", Gb(total - avail), used, stats));
-        }
-        if (_drives.FirstOrDefault(d => d.Letter.StartsWith("C", StringComparison.OrdinalIgnoreCase)) is { } c0)
-        {
-            var stats = new List<KeyValuePair<string, string>> { Stat("Livre", DriveCard.Fmt(c0.Free)) };
-            if (c0.Disk.Length > 0 && Sensor(HardwareType.Storage, SensorType.Load, "Total Activity", c0.Disk) is float act) stats.Add(Stat("Atividade", $"{act:0} %"));
-            else if (c0.FileSystem.Length > 0) stats.Add(Stat("Formato", c0.FileSystem));
-            rows.Add(new("", $"Disco {c0.Letter}", c0.Disk.Length > 0 ? c0.Disk : c0.Kind, "PageDisks", Palette("Steel"), true,
-                         c0.UsedPercent, $"usados de {DriveCard.Fmt(c0.Total)}", DriveCard.Fmt(c0.Total - c0.Free), c0.UsedFraction, stats));
+            rows.Add(new("", "Placa de vídeo", GameCatalog.ShortGpuName(gpu.Name), "PageGpu", Palette("Copper"),
+                         F(gpuLoad, "0", " %"), "em uso", (gpuLoad ?? 0) / 100.0,
+                         new[] { Stat("Temp.", F(MainGpuTemp(), "0", " °C")), Stat("Clock", clk is uint c ? $"{c} MHz" : "—"),
+                                 Stat("Consumo", F(MainGpuPower(), "0", " W")) }));
         }
         DashComponents.ItemsSource = rows;
     }
@@ -320,6 +291,80 @@ public partial class MainWindow
         }
         if (gLine.Points.Count > 0) Cursor(gLine.Points[^1], copper);
         Cursor(pts[^1], accent);
+    }
+
+    // ---------------- anéis concêntricos (ocupação) ----------------
+
+    /// <summary>
+    /// Mostrador de anéis: RAM no verde-água, VRAM no cobre e disco do sistema no aço. Memória e disco não têm
+    /// temperatura nem clock, então o mostrador fala só de ocupação: fração usada, quanto está em uso e o que sobra.
+    /// </summary>
+    internal void UpdateDashRings()
+    {
+        static string Gb(double bytes) => $"{bytes / 1073741824.0:0.0} GB";
+        var (total, avail) = MemoryInfo.MemoryStatus();
+        double ram = total > 0 ? (double)(total - avail) / total : 0;
+        Brush accent = Palette("Accent"), copper = Palette("Copper"), steel = Palette("Steel");
+
+        var rings = new List<(double Frac, DashRingItem Item)>();
+        if (total > 0) rings.Add((ram, new(accent, "RAM", $"{ram:P0}", $"{Gb(total - avail)} de {total / 1073741824.0:0} GB · {Gb(avail)} livres")));
+        if (_gpus.Count > 0 && _gpus[0].NvmlHandle != IntPtr.Zero && Nvml.MemoryInfo(_gpus[0].NvmlHandle) is Nvml.Memory m && m.Total > 0)
+        {
+            double vram = (double)m.Used / m.Total;
+            rings.Add((vram, new(copper, "VRAM", $"{vram:P0}", $"{Gb(m.Used)} de {m.Total / 1073741824.0:0} GB · placa de vídeo")));
+        }
+        if (_drives.FirstOrDefault(d => d.Letter.StartsWith("C", StringComparison.OrdinalIgnoreCase)) is { } c0)
+            rings.Add((c0.UsedFraction, new(steel, $"Disco {c0.Letter}", c0.UsedPercent, $"{DriveCard.Fmt(c0.Free)} livres de {DriveCard.Fmt(c0.Total)}")));
+
+        DashRings.Children.Clear();
+        const double thickness = 9, step = 17;
+        double cx = DashRings.Width / 2, cy = DashRings.Height / 2;
+        for (int i = 0; i < rings.Count; i++)
+        {
+            double r = cx - thickness / 2 - 1 - i * step;
+            DashRings.Children.Add(new Ellipse
+            {
+                Width = r * 2,
+                Height = r * 2,
+                Stroke = Palette("Line"),
+                StrokeThickness = thickness,
+                Margin = new Thickness(cx - r, cy - r, 0, 0)
+            });
+            DashRings.Children.Add(new Path
+            {
+                Data = RingArc(rings[i].Frac, cx, cy, r),
+                Stroke = rings[i].Item.Swatch,
+                StrokeThickness = thickness,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round
+            });
+        }
+        var center = new TextBlock
+        {
+            Text = total > 0 ? $"{ram:P0}" : "—",
+            FontFamily = (FontFamily)FindResource("Readout"),
+            FontStretch = FontStretches.SemiCondensed,
+            FontSize = 21,
+            Foreground = Palette("Fg"),
+            ToolTip = "RAM em uso"
+        };
+        center.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Canvas.SetLeft(center, cx - center.DesiredSize.Width / 2); Canvas.SetTop(center, cy - center.DesiredSize.Height / 2);
+        DashRings.Children.Add(center);
+
+        DashRingLegend.ItemsSource = rings.Select(r => r.Item).ToList();
+    }
+
+    internal static Geometry RingArc(double frac, double cx, double cy, double r)
+    {
+        frac = Math.Clamp(frac, 0, 0.9999);
+        if (frac <= 0.001) return Geometry.Empty;
+        double a = frac * 2 * Math.PI;
+        var fig = new PathFigure { StartPoint = new Point(cx, cy - r) };
+        fig.Segments.Add(new ArcSegment(new Point(cx + r * Math.Sin(a), cy - r * Math.Cos(a)), new Size(r, r), 0, frac > 0.5, SweepDirection.Clockwise, true));
+        var g = new PathGeometry(new[] { fig });
+        g.Freeze();
+        return g;
     }
 
     // ---------------- saúde do PC ----------------

@@ -1,8 +1,6 @@
 using System.Windows.Input;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Media;
 
 namespace CoreBi.Desktop.Views;
 
@@ -17,21 +15,16 @@ public partial class OverviewView : UserControl
     private void DashSensors_Click(object sender, RoutedEventArgs e) => Owner?.DashSensors_Click(sender, e);
     private void DashEvents_SizeChanged(object sender, SizeChangedEventArgs e) => Owner?.DashEvents_SizeChanged(sender, e);
 
-    /// <summary>Quatro componentes lado a lado quando há largura (janela maximizada); senão, dois por linha.</summary>
-    private void DashComponents_SizeChanged(object sender, SizeChangedEventArgs e)
+    /// <summary>Com largura (janela maximizada) tudo numa linha; senão, os anéis descem para baixo dos dois cartões.</summary>
+    private void DashComponentsRow_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (!e.WidthChanged || FindPanel(DashComponents) is not UniformGrid grid) return;
-        grid.Columns = e.NewSize.Width >= 1000 ? 4 : 2;
-    }
-
-    private static Panel? FindPanel(DependencyObject parent)
-    {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-        {
-            var child = VisualTreeHelper.GetChild(parent, i);
-            if (child is Panel { IsItemsHost: true } panel) return panel;
-            if (FindPanel(child) is Panel found) return found;
-        }
-        return null;
+        if (!e.WidthChanged) return;
+        bool wide = e.NewSize.Width >= 1000;
+        Grid.SetRow(DashMemoryCard, wide ? 0 : 1);
+        Grid.SetColumn(DashMemoryCard, wide ? 1 : 0);
+        Grid.SetColumnSpan(DashMemoryCard, wide ? 1 : 2);
+        DashMemoryCard.Margin = new Thickness(0, wide ? 0 : 16, 0, 0);
+        Grid.SetColumnSpan(DashComponents, wide ? 1 : 2);
+        DashComponents.Margin = new Thickness(0, 0, wide ? 0 : -16, 0);
     }
 }

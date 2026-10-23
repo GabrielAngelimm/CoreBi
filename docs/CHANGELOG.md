@@ -5,7 +5,7 @@
 - Janela maximizada respeita a barra de tarefas: antes ocupava a tela inteira e o rodapé de todas as páginas ficava escondido.
 - Selo "ao vivo" da barra de título removido; o tema virou uma chave animada ("Modo escuro") acima da telemetria na barra lateral.
 - Seleção da navegação e das listas sem o traço lateral: fundo elevado e ícone em verde-água, com transição curta.
-- Visão geral cabe numa tela com a janela maximizada. Cartões de uso para processador e placa de vídeo (com VRAM) e de ocupação para memória (disponível e memória virtual) e disco (livre e atividade ou formato), sem campos vazios. Saúde do PC com selo de resumo e altura conforme o conteúdo; a atividade recente mostra quantos eventos couberem.
+- Visão geral cabe numa tela com a janela maximizada. Cartões de uso para processador e placa de vídeo e mostrador de anéis para RAM, VRAM e disco com uso e espaço livre, sem campos vazios. Saúde do PC com selo de resumo e altura conforme o conteúdo; a atividade recente mostra quantos eventos couberem.
 
 ## 0.2.0 — 2026-10-23
 

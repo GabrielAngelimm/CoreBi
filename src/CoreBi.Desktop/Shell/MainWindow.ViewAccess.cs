@@ -21,6 +21,8 @@ public partial class MainWindow
     internal TextBlock DashScoreSub => PageDash.DashScoreSub;
     internal ItemsControl DashScores => PageDash.DashScores;
     internal ItemsControl DashComponents => PageDash.DashComponents;
+    internal Canvas DashRings => PageDash.DashRings;
+    internal ItemsControl DashRingLegend => PageDash.DashRingLegend;
     internal TextBlock DashEventsEmpty => PageDash.DashEventsEmpty;
     internal ItemsControl DashEvents => PageDash.DashEvents;
     internal ItemsControl DashHealth => PageDash.DashHealth;

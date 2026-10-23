@@ -80,35 +80,46 @@
                         </DockPanel>
                     </Border>
 
-                    <!-- Componentes: medidores de uso (processador, placa de vídeo) e de ocupação (memória, disco) -->
-                    <ItemsControl x:Name="DashComponents" Grid.Row="2" Margin="0,0,-16,-16" Focusable="False" SizeChanged="DashComponents_SizeChanged">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Columns="4" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Style="{StaticResource CardBorder}" Margin="0,0,16,16" Padding="18,16,18,18">
-                                    <DockPanel>
-                                        <Grid DockPanel.Dock="Top">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Border Style="{StaticResource IconTile}">
-                                                <TextBlock Text="{Binding Icon}" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{Binding Channel}" />
-                                            </Border>
-                                            <StackPanel Grid.Column="1" Margin="12,0,6,0" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding Model}" Style="{StaticResource StatSub}" Margin="0,1,0,0" ToolTip="{Binding Model}" />
-                                            </StackPanel>
-                                            <Button Grid.Column="2" Style="{StaticResource IconButton}" Width="28" Height="28" FontSize="11" Content="&#xE76C;" Tag="{Binding Target}" Click="DashGo_Click" ToolTip="Abrir detalhes" VerticalAlignment="Top" />
-                                        </Grid>
-                                        <Grid Margin="0,16,0,0">
+                    <!--
+                        Componentes: uso ao vivo do processador e da placa de vídeo, e um mostrador de anéis para o que é
+                        ocupação (RAM, VRAM e disco do sistema). Em janelas estreitas os anéis descem para uma linha própria.
+                    -->
+                    <Grid x:Name="DashComponentsRow" Grid.Row="2" SizeChanged="DashComponentsRow_SizeChanged">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ItemsControl x:Name="DashComponents" Focusable="False">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource CardBorder}" Margin="0,0,16,0" Padding="18,16,18,18">
+                                        <DockPanel>
+                                            <Grid DockPanel.Dock="Top">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Border Style="{StaticResource IconTile}">
+                                                    <TextBlock Text="{Binding Icon}" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{Binding Channel}" />
+                                                </Border>
+                                                <StackPanel Grid.Column="1" Margin="12,0,6,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{Binding Model}" Style="{StaticResource StatSub}" Margin="0,1,0,0" ToolTip="{Binding Model}" />
+                                                </StackPanel>
+                                                <Button Grid.Column="2" Style="{StaticResource IconButton}" Width="28" Height="28" FontSize="11" Content="&#xE76C;" Tag="{Binding Target}" Click="DashGo_Click" ToolTip="Abrir detalhes" VerticalAlignment="Top" />
+                                            </Grid>
                                             <!-- Uso ao vivo: leitura grande, medidor segmentado e grandezas do componente -->
-                                            <StackPanel x:Name="live" VerticalAlignment="Bottom">
+                                            <StackPanel Margin="0,16,0,0" VerticalAlignment="Bottom">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Text="{Binding Hero}" Style="{StaticResource ReadoutLarge}" />
                                                     <TextBlock Text="{Binding HeroUnit}" Style="{StaticResource Unit}" Margin="8,0,0,7" />
@@ -137,35 +148,47 @@
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
                                             </StackPanel>
-                                            <!-- Ocupação: anel com a fração usada, quantidade em uso e o que sobra -->
-                                            <Grid x:Name="capacity" Visibility="Collapsed" VerticalAlignment="Center">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <Grid Width="84" Height="84" Margin="0,0,16,0" VerticalAlignment="Center">
-                                                    <Ellipse Width="72" Height="72" Stroke="{DynamicResource Line}" StrokeThickness="7" />
-                                                    <Path Data="{Binding Fraction, Converter={StaticResource DriveArc}}" Stroke="{Binding Channel}" StrokeThickness="7" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                                                    <TextBlock Text="{Binding Hero}" Style="{StaticResource ReadoutText}" FontSize="17" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Border x:Name="DashMemoryCard" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="20,16,22,16">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Canvas x:Name="DashRings" Width="150" Height="150" VerticalAlignment="Center" Margin="0,0,24,0" />
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <Grid Margin="0,0,0,6">
+                                        <TextBlock Text="Memória e disco" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <Button Style="{StaticResource IconButton}" Width="28" Height="28" FontSize="11" Content="&#xE76C;" Tag="PageSystem" Click="DashGo_Click" ToolTip="Abrir detalhes" HorizontalAlignment="Right" Margin="0,-4,-6,-4" />
+                                    </Grid>
+                                    <ItemsControl x:Name="DashRingLegend" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,7,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Width="10" Height="10" CornerRadius="3" Background="{Binding Swatch}" Margin="0,4,10,0" VerticalAlignment="Top" />
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding Label}" />
+                                                        <TextBlock Text="{Binding Detail}" Style="{StaticResource StatSub}" ToolTip="{Binding Detail}" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="17" VerticalAlignment="Top" Margin="10,0,0,0" />
                                                 </Grid>
-                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Amount}" Style="{StaticResource ReadoutText}" FontSize="24" TextTrimming="CharacterEllipsis" />
-                                                    <TextBlock Text="{Binding HeroUnit}" Style="{StaticResource StatSub}" Margin="0,0,0,6" />
-                                                    <ItemsControl ItemsSource="{Binding Stats}" ItemTemplate="{StaticResource KeyValueRow}" Focusable="False" />
-                                                </StackPanel>
-                                            </Grid>
-                                        </Grid>
-                                    </DockPanel>
-                                </Border>
-                                <DataTemplate.Triggers>
-                                    <DataTrigger Binding="{Binding Capacity}" Value="True">
-                                        <Setter TargetName="live" Property="Visibility" Value="Collapsed" />
-                                        <Setter TargetName="capacity" Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
                 </Grid>
 
                 <!-- Coluna da direita: desempenho, saúde e atividade (a atividade ocupa o que sobra) -->

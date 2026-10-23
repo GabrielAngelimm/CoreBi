@@ -115,7 +115,7 @@ Números em texto comum usam `Typography.NumeralAlignment="Tabular"` (estilo `Nu
 - Barra lateral de 244 px: marca, navegação agrupada (Monitoramento, Jogos, Desempenho, Ferramentas) e, no rodapé, a chave de tema ("Modo escuro"), a telemetria permanente (CPU e GPU com medidor segmentado) e o estado do teste de carga.
 - Barra de título de 52 px: atalho da paleta de comandos à esquerda e os controles da janela à direita. O estado da coleta aparece na própria página de Sensores.
 - Página: margem de 36 px, cabeçalho com título e subtítulo (o subtítulo carrega o estado vivo da página quando existe) e a ação principal à direita. Painéis com 16 px entre si.
-- Visão geral cabe numa tela com a janela maximizada: o gráfico e a atividade recente ocupam a sobra de altura; em janelas menores a página rola e os componentes passam a duas colunas. Processador e placa de vídeo têm cartão de uso (leitura, medidor e grandezas); memória e disco têm cartão de ocupação (anel, quanto está em uso e o que sobra), sem campos que não se aplicam a eles.
+- Visão geral cabe numa tela com a janela maximizada: o gráfico e a atividade recente ocupam a sobra de altura; em janelas menores a página rola e os componentes passam a duas colunas. Processador e placa de vídeo têm cartão de uso (leitura, medidor e grandezas); RAM, VRAM e disco do sistema dividem um mostrador de anéis concêntricos com quanto está em uso e o que sobra, sem campos que não se aplicam a eles.
 - Telas de teste (Benchmark, Teste de carga) usam a mesma composição: palco ou leitura principal à esquerda e uma coluna de 320–330 px com configuração, resultado e histórico.
 
 ## Profundidade e forma
