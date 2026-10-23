@@ -2,7 +2,6 @@ using CoreBi.Desktop.Services;
 using CoreBi.Engine.Monitoring.Sensors;
 using CoreBi.Engine.Monitoring.Storage;
 using LibreHardwareMonitor.Hardware;
-using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -17,7 +16,7 @@ namespace CoreBi.Desktop.Views;
 public partial class DisksView : UserControl
 {
     /// <summary>Baia do rack: o cartão lido e a temperatura ao vivo (quando o disco tem sensor).</summary>
-    public sealed class DiskBay : INotifyPropertyChanged
+    public sealed class DiskBay
     {
         public DiskBay(DiskHealthCard card)
         {
@@ -25,14 +24,6 @@ public partial class DisksView : UserControl
             var d = card.Disk;
             Meta = d == null ? card.Meta
                 : string.Join(" · ", new[] { d.Kind, d.Bus, FmtSize(d.SizeBytes), string.Join(" ", d.Letters) }.Where(s => s.Length > 0));
-            if (d?.Wear is double wear)
-            {
-                double rem = Math.Clamp(100 - wear, 0, 100);
-                LifeFraction = rem / 100;
-                LifeText = $"{rem:0} % vida";
-                LifeState = wear >= DiskDetail.WearCritAt ? "Danger" : wear >= DiskDetail.WearWarnAt ? "Warn" : "Ok";
-            }
-            else LifeText = d == null ? "" : d.IsSsd ? "sem dado de desgaste" : "HDD, sem desgaste";
             _temp = d?.Temperature;
         }
 
@@ -42,11 +33,6 @@ public partial class DisksView : UserControl
         public string Meta { get; }
         public string VerdictText => Sentence(Card.VerdictText);
         public string State => Card.Verdict switch { DiskVerdict.Good => "Ok", DiskVerdict.Warning => "Warn", DiskVerdict.Critical => "Danger", _ => "" };
-        public bool HasLife => Disk?.Wear != null;
-        public double LifeFraction { get; }
-        public string LifeText { get; } = "";
-        public string LifeState { get; } = "Ok";
-
         private double? _temp;
         /// <summary>Temperatura atual: a do sensor quando há, senão a lida pelo Windows.</summary>
         public double? Temperature
@@ -56,14 +42,11 @@ public partial class DisksView : UserControl
             {
                 if (_temp == value) return;
                 _temp = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(TempText)));
             }
         }
-        public string TempText => _temp is double t ? $"{t:0} °C" : "— °C";
-        public event PropertyChangedEventHandler? PropertyChanged;
     }
 
-    public sealed record DiskCheck(string Title, string Detail, string Value, string State);
+    public sealed record DiskCheck(string Title, string Value, string State);
     /// <summary>Unidade no espaço por unidade: Percent é a fração livre em destaque; Line, "usados de total".</summary>
     public sealed record VolumeRow(string Letter, string Label, string Line, string Percent, string PercentLabel, bool IsRest);
 
@@ -116,7 +99,6 @@ public partial class DisksView : UserControl
             DiskCards.ItemsSource = _bays;
             DiskCards.SelectedItem = _bays.FirstOrDefault(b => b.Card.Index == keep) ?? _bays.FirstOrDefault();
             RackCount.Text = _bays.Count.ToString();
-            ShowSummary();
 
             int bad = cards.Count(c => c.Verdict is DiskVerdict.Warning or DiskVerdict.Critical);
             int unknown = cards.Count(c => c.Verdict == DiskVerdict.Unknown);
@@ -165,9 +147,6 @@ public partial class DisksView : UserControl
     {
         foreach (var bay in _bays)
             if (TraceOf(bay)?.Last is float t) bay.Temperature = t;
-
-        var hottest = _bays.Where(b => b.Temperature != null).OrderByDescending(b => b.Temperature).FirstOrDefault();
-        SumHottest.Text = hottest == null ? "—" : $"{ShortName(hottest.Title)} · {hottest.Temperature:0} °C";
 
         if (DiskCards.SelectedItem is not DiskBay sel || sel.Disk is not DiskDetail d) return;
         var trace = TraceOf(sel);
@@ -234,14 +213,21 @@ public partial class DisksView : UserControl
         double rest = Math.Max(0, d.SizeBytes - mine.Sum(v => (double)v.Total));
         if (mine.Count == 0 || rest < d.SizeBytes * 0.02) rest = mine.Count == 0 ? d.SizeBytes : 0;
         DiskCapacity.SetVolumes(mine.Select(v => ((double)v.Total, (double)(v.Total - v.Free))).ToList(), rest);
-        var rows = mine.Select(v => new VolumeRow(v.Letter, string.IsNullOrWhiteSpace(v.Label) ? v.FileSystem : v.Label,
-            $"{DriveCard.Fmt(v.Total - v.Free)} usados de {DriveCard.Fmt(v.Total)}",
-            $"{(1 - v.UsedFraction) * 100:0} %", "livre", false)).ToList();
-        if (rest > 0) rows.Add(new VolumeRow("", mine.Count == 0 ? "Sem unidade com letra neste disco" : "Sem letra (sistema, recuperação, não alocado)",
-            DriveCard.Fmt((long)rest), "", "", true));
-        DiskVolumes.ItemsSource = rows;
-        long used = mine.Sum(v => v.Total - v.Free), total = mine.Sum(v => v.Total);
-        DiskSpaceSummary.Text = total > 0 ? $"{DriveCard.Fmt(total - used)} livres de {DriveCard.Fmt(total)}" : "";
+
+        long total = mine.Sum(v => v.Total), free = mine.Sum(v => v.Free), used = total - free;
+        bool known = total > 0;
+        (string Value, string Unit) Size(long b) { var t = DriveCard.Fmt(b).Split(' '); return (t[0], t.Length > 1 ? t[1] : ""); }
+        void Value(TextBlock target, string? number, string unit) => Readout(target, number ?? "—", number == null ? "" : unit);
+        Value(SpaceUsed, known ? Size(used).Value : null, Size(used).Unit);
+        Value(SpaceTotal, known ? Size(total).Value : null, Size(total).Unit);
+        Value(SpaceFree, known ? Size(free).Value : null, Size(free).Unit);
+        Value(SpaceFreePercent, known ? $"{(double)free / total * 100:0}" : null, "%");
+
+        // Mais de uma unidade no disco: uma linha por letra com quanto ainda está livre
+        DiskVolumes.ItemsSource = mine.Count > 1
+            ? mine.Select(v => new VolumeRow(v.Letter, string.IsNullOrWhiteSpace(v.Label) ? v.FileSystem : v.Label,
+                $"{DriveCard.Fmt(v.Free)} livres de {DriveCard.Fmt(v.Total)}", "", "", false)).ToList()
+            : null;
     }
 
     private void ShowLife(DiskDetail d)
@@ -292,22 +278,33 @@ public partial class DisksView : UserControl
         TempState.SetResourceReference(TextBlock.ForegroundProperty, key);
     }
 
+    /// <summary>
+    /// Cada linha só ganha o verde quando o disco ou o Windows realmente informou o valor. Sem leitura aparece
+    /// "Não informado" em tom apagado: dizer "normal" sem ter verificado esconderia um disco que não reporta nada.
+    /// </summary>
     private void ShowChecks(DiskDetail d)
     {
-        static string Count(long? n) => n is long v ? $"{v:N0}" : "—";
+        static DiskCheck Count(string title, long? n, string good = "Nenhum") =>
+            n is long v ? new(title, v == 0 ? good : $"{v:N0}", v == 0 ? "Ok" : "Warn") : new(title, "Não informado", "");
         long? uncorrected = d.ReadUncorrected == null && d.WriteUncorrected == null ? null : (d.ReadUncorrected ?? 0) + (d.WriteUncorrected ?? 0);
         DiskChecks.ItemsSource = new List<DiskCheck>
         {
-            new("Falha prevista (S.M.A.R.T.)", "Aviso do próprio disco de que vai falhar",
-                d.PredictFailure switch { true => "Sim", false => "Não", _ => "—" },
-                d.PredictFailure switch { true => "Danger", false => "Ok", _ => "" }),
-            new("Saúde segundo o Windows", "Classificação da API de armazenamento",
-                d.WindowsHealth switch { 0 => "Saudável", 1 => "Atenção", 2 => "Não saudável", _ => "—" },
-                d.WindowsHealth switch { 0 => "Ok", 1 => "Warn", 2 => "Danger", _ => "" }),
-            new("Erros de leitura", "Total, inclusive os corrigidos pelo disco", Count(d.ReadErrors), d.ReadErrors is 0 ? "Ok" : ""),
-            new("Erros de escrita", "Total, inclusive os corrigidos pelo disco", Count(d.WriteErrors), d.WriteErrors is 0 ? "Ok" : ""),
-            new("Erros não corrigidos", "Leituras e gravações que falharam de vez", Count(uncorrected),
-                uncorrected switch { 0 => "Ok", > 0 => "Warn", _ => "" }),
+            d.WindowsHealth switch
+            {
+                0 => new("Saúde segundo o Windows", "Saudável", "Ok"),
+                1 => new("Saúde segundo o Windows", "Atenção", "Warn"),
+                2 => new("Saúde segundo o Windows", "Não saudável", "Danger"),
+                _ => new("Saúde segundo o Windows", "Não informado", ""),
+            },
+            d.PredictFailure switch
+            {
+                true => new("Falha prevista (S.M.A.R.T.)", "Sim", "Danger"),
+                false => new("Falha prevista (S.M.A.R.T.)", "Não", "Ok"),
+                _ => new("Falha prevista (S.M.A.R.T.)", "Não informado", ""),
+            },
+            Count("Erros de leitura", d.ReadErrors),
+            Count("Erros de escrita", d.WriteErrors),
+            Count("Erros não corrigidos", uncorrected),
         };
     }
 
@@ -347,20 +344,6 @@ public partial class DisksView : UserControl
         }
     }
 
-    private void ShowSummary()
-    {
-        var disks = _bays.Select(b => b.Disk).OfType<DiskDetail>().ToList();
-        RackSummary.Visibility = disks.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        int ssd = disks.Count(d => d.IsSsd), hdd = disks.Count(d => d.Kind == "HDD");
-        string mix = string.Join(", ", new[] { ssd > 0 ? $"{ssd} SSD" : "", hdd > 0 ? $"{hdd} HDD" : "" }.Where(s => s.Length > 0));
-        SumCapacity.Text = FmtSize(disks.Sum(d => d.SizeBytes)) + (mix.Length > 0 ? $" · {mix}" : "");
-        var letters = disks.SelectMany(d => d.Letters).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var mounted = _drives.Where(v => letters.Contains(v.Letter)).ToList();
-        SumUsed.Text = mounted.Count == 0 ? "—"
-            : $"{DriveCard.Fmt(mounted.Sum(v => v.Total - v.Free))} de {DriveCard.Fmt(mounted.Sum(v => v.Total))}";
-        SumHottest.Text = "—";
-    }
-
     // ---------------- layout ----------------
 
     /// <summary>Larga: integridade ao lado da temperatura. Estreita: integridade desce para o lado do odômetro (2 × 2).</summary>
@@ -374,7 +357,7 @@ public partial class DisksView : UserControl
         LifeColumn.Width = new GridLength(wide ? 370 : 330);
         CheckGap.Width = new GridLength(wide ? 16 : 0);
         CheckColumn.Width = new GridLength(wide ? 330 : 0);
-        SpaceColumn.Width = new GridLength(wide ? 540 : 400);
+        SpaceColumn.Width = new GridLength(wide ? 520 : 400);
         Grid.SetRow(CheckCard, wide ? 2 : 4);
         Grid.SetColumn(CheckCard, wide ? 4 : 0);
         Grid.SetColumn(OdoCard, wide ? 0 : 2);
@@ -415,12 +398,6 @@ public partial class DisksView : UserControl
         double v = bytes; string[] u = { "B", "KB", "MB", "GB", "TB" }; int i = 0;
         while (v >= 1000 && i < u.Length - 1) { v /= 1000; i++; }
         return bytes > 0 ? $"{v:0.#} {u[i]}" : "";
-    }
-
-    private static string ShortName(string model)
-    {
-        var first = model.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? model;
-        return first.Length > 14 ? first[..14] : first;
     }
 
     private static string Sentence(string text) => text.Length == 0 ? text : text[..1].ToUpper() + text[1..].ToLower();

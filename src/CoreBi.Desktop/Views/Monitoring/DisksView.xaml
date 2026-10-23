@@ -13,9 +13,9 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Baia do rack: um disco, com a temperatura ao vivo e a vida útil em medidor segmentado -->
+        <!-- Baia do rack: só o nome do disco e as características principais -->
         <DataTemplate x:Key="DiskBay">
-            <Grid Margin="4,4,2,4">
+            <Grid Margin="4,3,2,3">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="24" />
                     <ColumnDefinition Width="*" />
@@ -24,34 +24,12 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock Text="&#xEDA2;" Style="{StaticResource ListNavIcon}" FontSize="15" HorizontalAlignment="Left" />
+                <TextBlock Text="&#xEDA2;" Style="{StaticResource ListNavIcon}" FontSize="15" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,2,0,0" />
                 <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                 <Ellipse Grid.Column="2" Style="{StaticResource DiskLed}" Margin="10,0,0,0" ToolTip="{Binding VerdictText}" />
                 <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Meta}" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
-                <Grid Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,10,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="{Binding TempText}" Style="{StaticResource ReadoutText}" FontSize="17" VerticalAlignment="Center" MinWidth="44" />
-                    <Grid Grid.Column="1" Height="6" Margin="14,0,10,0" OpacityMask="{StaticResource SegmentMask}" VerticalAlignment="Center" Visibility="{Binding HasLife, Converter={StaticResource BoolVis}}">
-                        <Border Background="{DynamicResource Line}" />
-                        <Border x:Name="life" Background="{DynamicResource Accent}" RenderTransformOrigin="0,0.5">
-                            <Border.RenderTransform>
-                                <ScaleTransform ScaleX="{Binding LifeFraction}" />
-                            </Border.RenderTransform>
-                        </Border>
-                    </Grid>
-                    <TextBlock Grid.Column="2" Text="{Binding LifeText}" Style="{StaticResource Caption}" Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" />
-                </Grid>
             </Grid>
-            <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding LifeState}" Value="Warn"><Setter TargetName="life" Property="Background" Value="{DynamicResource Warn}" /></DataTrigger>
-                <DataTrigger Binding="{Binding LifeState}" Value="Danger"><Setter TargetName="life" Property="Background" Value="{DynamicResource Danger}" /></DataTrigger>
-            </DataTemplate.Triggers>
         </DataTemplate>
 
         <!-- Selo de especificação na placa do disco -->
@@ -63,34 +41,18 @@
             </Border>
         </DataTemplate>
 
-        <!-- Unidade (letra) no espaço por unidade: nome, % livre em destaque e usado de total -->
+        <!-- Unidade (letra), só quando o disco tem mais de uma: nome e quanto está livre -->
         <DataTemplate x:Key="VolumeRow">
-            <Grid Margin="0,0,0,12">
+            <Grid Margin="0,0,0,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <Border x:Name="swatch" Grid.RowSpan="2" Width="10" Height="10" CornerRadius="2" Background="{DynamicResource Steel}" VerticalAlignment="Top" Margin="0,5,12,0" />
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <TextBlock Text="{Binding Letter}" FontSize="15" FontWeight="SemiBold" Margin="0,0,9,0" />
-                    <TextBlock Text="{Binding Label}" FontSize="14" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Column="2" Text="{Binding Percent}" Style="{StaticResource ReadoutText}" FontSize="20" HorizontalAlignment="Right" />
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Line}" FontSize="13" Foreground="{DynamicResource Muted}" Style="{StaticResource Num}" Margin="0,2,0,0" />
-                <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding PercentLabel}" Style="{StaticResource Caption}" HorizontalAlignment="Right" Margin="0,2,0,0" />
+                <TextBlock Text="{Binding Letter}" FontWeight="SemiBold" Margin="0,0,9,0" />
+                <TextBlock Grid.Column="1" Text="{Binding Label}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="2" Text="{Binding Line}" Foreground="{DynamicResource Muted}" Style="{StaticResource Num}" Margin="12,0,0,0" />
             </Grid>
-            <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding IsRest}" Value="True">
-                    <Setter TargetName="swatch" Property="Background" Value="Transparent" />
-                    <Setter TargetName="swatch" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
-                    <Setter TargetName="swatch" Property="BorderThickness" Value="1" />
-                </DataTrigger>
-            </DataTemplate.Triggers>
         </DataTemplate>
 
         <!-- Linha da integridade: LED, o que é verificado e o valor lido -->
@@ -104,9 +66,15 @@
                     </Grid.ColumnDefinitions>
                     <Ellipse Style="{StaticResource DiskLed}" HorizontalAlignment="Left" />
                     <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Grid.Column="2" Text="{Binding Value}" FontWeight="SemiBold" Style="{StaticResource Num}" />
+                    <TextBlock x:Name="value" Grid.Column="2" Text="{Binding Value}" FontWeight="SemiBold" Style="{StaticResource Num}" />
                 </Grid>
             </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding State}" Value="">
+                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Faint}" />
+                    <Setter TargetName="value" Property="FontWeight" Value="Normal" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
 
         <!-- Célula do odômetro: rótulo, leitura grande e uma linha de contexto -->
@@ -164,7 +132,6 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid Margin="2,0,2,8">
                             <TextBlock Text="Instalados" Style="{StaticResource Label}" Margin="0" />
@@ -172,30 +139,6 @@
                         </Grid>
                         <ListBox x:Name="DiskCards" Grid.Row="1" ItemTemplate="{StaticResource DiskBay}" ItemContainerStyle="{StaticResource ListNavItem}"
                                  ScrollViewer.VerticalScrollBarVisibility="Disabled" SelectionChanged="DiskCards_SelectionChanged" AutomationProperties.Name="Discos instalados" />
-                        <StackPanel x:Name="RackSummary" Grid.Row="3" Margin="0,18,0,0" Visibility="Collapsed">
-                            <TextBlock Text="Conjunto" Style="{StaticResource Label}" Margin="2,0,0,8" />
-                            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="2,7">
-                                <Grid>
-                                    <TextBlock Text="Capacidade" Foreground="{DynamicResource Muted}" />
-                                    <TextBlock x:Name="SumCapacity" HorizontalAlignment="Right" Style="{StaticResource Num}" />
-                                </Grid>
-                            </Border>
-                            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="2,7">
-                                <Grid>
-                                    <TextBlock Text="Ocupado" Foreground="{DynamicResource Muted}" />
-                                    <TextBlock x:Name="SumUsed" HorizontalAlignment="Right" Style="{StaticResource Num}" />
-                                </Grid>
-                            </Border>
-                            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="2,7">
-                                <Grid>
-                                    <TextBlock Text="Mais quente agora" Foreground="{DynamicResource Muted}" />
-                                    <TextBlock x:Name="SumHottest" HorizontalAlignment="Right" Style="{StaticResource Num}" />
-                                </Grid>
-                            </Border>
-                            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="2,10,2,0">
-                                <TextBlock Style="{StaticResource Footnote}" Text="Os dados vêm do Windows (S.M.A.R.T. e API de armazenamento) e dos sensores do disco. Pendrives e alguns HDs externos não informam saúde. O veredito é uma estimativa: faça backup de qualquer disco com aviso, não só dos críticos." />
-                            </Border>
-                        </StackPanel>
                     </Grid>
 
                     <!-- Disco escolhido -->
@@ -221,7 +164,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition x:Name="SpaceColumn" Width="540" />
+                                    <ColumnDefinition x:Name="SpaceColumn" Width="520" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal">
@@ -247,13 +190,28 @@
                                     </Grid>
                                 </StackPanel>
                                 <Border x:Name="SpaceDivider" Grid.Column="1" Width="1" Background="{DynamicResource Line}" Margin="26,0" />
-                                <StackPanel x:Name="DiskSpace" Grid.Column="2">
-                                    <Grid>
-                                        <TextBlock Text="Espaço por unidade" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock x:Name="DiskSpaceSummary" FontSize="13" Foreground="{DynamicResource Muted}" Typography.NumeralAlignment="Tabular" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                                    </Grid>
-                                    <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,16" />
-                                    <ItemsControl x:Name="DiskVolumes" ItemTemplate="{StaticResource VolumeRow}" Focusable="False" />
+                                <StackPanel x:Name="DiskSpace" Grid.Column="2" VerticalAlignment="Center">
+                                    <TextBlock Text="Espaço" Style="{StaticResource SectionTitle}" />
+                                    <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,14" />
+                                    <UniformGrid Columns="4">
+                                        <StackPanel>
+                                            <TextBlock Text="Usado" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Capacidade" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="SpaceTotal" Style="{StaticResource LifeValue}" />
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Livre" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" />
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <TextBlock Text="Livre (%)" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="SpaceFreePercent" Style="{StaticResource LifeValue}" />
+                                        </StackPanel>
+                                    </UniformGrid>
+                                    <ItemsControl x:Name="DiskVolumes" ItemTemplate="{StaticResource VolumeRow}" Focusable="False" Margin="0,14,0,0" />
                                 </StackPanel>
                             </Grid>
                         </Border>
