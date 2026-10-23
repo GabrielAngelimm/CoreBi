@@ -12,7 +12,7 @@
             <!-- ================= Barra lateral ================= -->
             <Border x:Name="Sidebar" Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0">
                 <DockPanel>
-                    <!-- Marca: símbolo vetorial (brand/geometry.json) + assinatura -->
+                    <!-- Marca: símbolo vetorial (brand/geometry.json), assinatura e versão -->
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="24,0,0,0" Height="64" VerticalAlignment="Center">
                         <Viewbox Width="26" Height="26" VerticalAlignment="Center">
                             <Canvas Width="256" Height="256">
@@ -23,9 +23,10 @@
                             </Canvas>
                         </Viewbox>
                         <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="19" Margin="11,0,0,1" VerticalAlignment="Center" />
+                        <TextBlock x:Name="SideVersion" Text="0.2.0" Foreground="{DynamicResource Faint}" FontSize="11" Margin="8,3,0,0" VerticalAlignment="Center" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
                     </StackPanel>
 
-                    <!-- Rodapé: aviso de sensores, tema, central de monitoramento e versão -->
+                    <!-- Rodapé: aviso de sensores, tema e central de monitoramento -->
                     <StackPanel DockPanel.Dock="Bottom" Margin="14,6,14,14">
                         <Border x:Name="CpuSensorWarn" Visibility="Collapsed" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource Warn}" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,10">
                             <StackPanel>
@@ -115,7 +116,6 @@
                                 </Grid>
                             </StackPanel>
                         </Border>
-                        <TextBlock x:Name="SideVersion" Text="0.2.0" Foreground="{DynamicResource Faint}" FontSize="11" Margin="4,10,0,0" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
                     </StackPanel>
 
                     <!-- Navegação -->
