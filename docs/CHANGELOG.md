@@ -2,6 +2,8 @@
 
 ## Em desenvolvimento
 
+- OverlayBi atualiza os textos e o gráfico sem recriar os elementos a cada amostra; os campos reservam espaço para a troca de dígitos e a janela só reaplica a posição quando necessário. Cores, fontes, tamanhos de texto, ordem e controles mantidos.
+- RAM do overlay usa a mesma amostra física do Windows para GB e percentual: sensores de memória física e virtual do LibreHardwareMonitor têm o mesmo nome e podiam selecionar a memória virtual. Carga da GPU passa a usar os contadores de motores do Windows (motor mais ocupado, processos somados por motor e adaptador), compartilhada com a Visão geral, barra lateral e análise de gargalo. Temperaturas, clocks e demais sensores preservados.
 - Janela maximizada respeita a barra de tarefas: antes ocupava a tela inteira e o rodapé de todas as páginas ficava escondido.
 - O CoreBi abre sempre maximizado (com a barra de tarefas visível); Restaurar volta à janela de 1360 × 860 centralizada.
 - Selo "ao vivo" da barra de título removido; o tema virou uma chave animada ("Modo escuro") acima da telemetria na barra lateral.

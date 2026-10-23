@@ -6,7 +6,7 @@ namespace CoreBi.Engine.Monitoring.Graphics;
 internal static class Dxgi
 {
     public record Adapter(string Description, uint VendorId, uint DeviceId,
-                          ulong DedicatedVideo, ulong DedicatedSystem, ulong SharedSystem, string? FeatureLevel);
+                          ulong DedicatedVideo, ulong DedicatedSystem, ulong SharedSystem, string? FeatureLevel, ulong Luid);
 
     public static List<Adapter> Enumerate()
     {
@@ -20,7 +20,7 @@ internal static class Dxgi
                 if (a.GetDesc1(out var d) == 0 && (d.Flags & 2) == 0) // ignora o adaptador de software (WARP)
                     list.Add(new Adapter(d.Description, d.VendorId, d.DeviceId,
                                          d.DedicatedVideoMemory, d.DedicatedSystemMemory, d.SharedSystemMemory,
-                                         FeatureLevel(a)));
+                                         FeatureLevel(a), ((ulong)(uint)d.LuidHigh << 32) | d.LuidLow));
                 Marshal.ReleaseComObject(a);
             }
             Marshal.ReleaseComObject(factory);

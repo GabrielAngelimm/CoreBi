@@ -108,6 +108,7 @@ public partial class MainWindow : Window
             _overlay?.Close();
             _toast?.Close();
             _frames.Dispose();
+            _windowsGpuUsage.Dispose();
             _gameFetch?.Cancel();
             UnregisterHotKey(new System.Windows.Interop.WindowInteropHelper(this).Handle, HotkeyId);
             _monitor.Dispose();

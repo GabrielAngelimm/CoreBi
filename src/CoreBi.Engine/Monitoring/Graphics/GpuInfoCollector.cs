@@ -17,6 +17,8 @@ public sealed class GpuInfo
     public List<InfoNode> Sections { get; } = new();
     internal IntPtr NvmlHandle { get; set; }
     internal ulong VramBytes { get; set; }
+    internal ulong? AdapterLuid { get; set; }
+    public float? WindowsLoad { get; internal set; }
 
     /// <summary>Leituras dinâmicas que o LibreHardwareMonitor não traz (P-state, PerfCap...).</summary>
     public List<KeyValuePair<string, string>> LiveExtras()
@@ -108,7 +110,13 @@ public static class GpuInfoCollector
         var pnpProps = PnpProperties(pnp);
         var reg = DriverRegistry(pnpProps.GetValueOrDefault("DEVPKEY_Device_Driver") as string);
 
-        var gpu = new GpuInfo { Name = name, Vendor = vendor, NvmlHandle = h };
+        var gpu = new GpuInfo
+        {
+            Name = name,
+            Vendor = vendor,
+            NvmlHandle = h,
+            AdapterLuid = adapters.Count(a => a.VendorId.ToString("X4") == ven && a.DeviceId.ToString("X4") == dev) == 1 ? dx?.Luid : null
+        };
 
         // ---------- Identificação ----------
         var id = Section(gpu, "IDENTIFICAÇÃO");

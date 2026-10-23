@@ -228,7 +228,8 @@ public partial class MainWindow
     internal List<OverlayLine> BuildOverlayLines(FrameStats? f)
     {
         var show = OvShow;
-        var s = BottleneckAnalyzer.Sample(_monitor, _gpus.FirstOrDefault(), f);
+        var memory = MemoryInfo.ReadPhysicalUsage();
+        var s = BottleneckAnalyzer.Sample(_monitor, _gpus.FirstOrDefault(), f, memory);
         var lines = new List<OverlayLine>();
         string T(float? v) => v is float x ? $"{x:0} °C" : "—";
         string P(double? v) => v is double x ? $"{x:0}%" : "—";
@@ -246,7 +247,7 @@ public partial class MainWindow
         if (show.Contains("gpu_fan"))
             gpu.Add(GpuRow(SensorType.Fan, "GPU Fan", true)?.RawValue is float rpm && rpm > 0 ? $"{rpm:0} RPM"
                   : GpuRow(SensorType.Control, "GPU Fan", true)?.RawValue is float pct ? $"fan {pct:0}%" : "fan —");
-        if (show.Contains("gpu_perfcap") && MainGpuPerfCap() is { Length: > 0 } cap) gpu.Add(cap);
+        if (show.Contains("gpu_perfcap")) gpu.Add(MainGpuPerfCap() is { Length: > 0 } cap ? cap : "—");
         Line("GPU", gpu, HwName(_gpus.Count > 0 ? GameCatalog.ShortGpuName(_gpus[0].Name) : null));
 
         var vram = new List<string>();
@@ -267,10 +268,9 @@ public partial class MainWindow
         Line("CPU", cpu, HwName(GameCatalog.ShortCpuName(_cpuName)));
 
         var ram = new List<string>();
-        var (total, availB) = MemoryInfo.MemoryStatus();
-        if (show.Contains("ram_used")) ram.Add(total > 0 ? $"{(total - availB) / 1073741824.0:0.0} GB" : "—");
-        if (show.Contains("ram_pct")) ram.Add(P(s.RamPct));
-        Line("RAM", ram, total > 0 ? $"{Math.Round(total / 1073741824.0):0} GB" : null);
+        if (show.Contains("ram_used")) ram.Add(memory is { } used ? $"{used.Used / 1073741824.0:0.0} GB" : "—");
+        if (show.Contains("ram_pct")) ram.Add(P(memory?.UsedPercent));
+        Line("RAM", ram, memory is { } capacity ? $"{Math.Round(capacity.Total / 1073741824.0):0} GB" : null);
         return lines;
     }
 }

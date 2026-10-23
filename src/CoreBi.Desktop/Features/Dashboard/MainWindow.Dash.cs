@@ -44,8 +44,7 @@ public partial class MainWindow
 
     // ---------------- coleta (a cada segundo, mesmo com a página fechada) ----------------
 
-    internal float? MainGpuLoad() => _gpus.Count == 0 ? null :
-        _monitor.Rows.FirstOrDefault(r => r.Hardware == _gpus[0].Name && r.Type == SensorType.Load && r.Name == "GPU Core")?.RawValue;
+    internal float? MainGpuLoad() => _gpus.FirstOrDefault()?.WindowsLoad;
 
     internal float? CpuClockAvg()
     {
