@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CoreBi.Desktop/CoreBi.Desktop.csproj" />
+    <Project Path="src/CoreBi.Engine/CoreBi.Engine.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CoreBi.Tests/CoreBi.Tests.csproj" />
+  </Folder>
+</Solution>

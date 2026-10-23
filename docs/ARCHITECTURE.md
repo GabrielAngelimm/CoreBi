@@ -1,0 +1,70 @@
+# Arquitetura
+
+## Dependências e responsabilidades
+
+```text
+CoreBi/
+  brand/                         Geometria autoral, SVGs, PNGs e ícone Windows
+  src/
+    CoreBi.Engine/               Regras, coleta, algoritmos e integrações Windows
+      Monitoring/                Inventory, Sensors, Graphics, Storage, Power,
+                                 Network, Memory, Devices e Diagnostics
+      Performance/               Benchmarks, Stress, Graphics, Shaders e coordenador
+      Games/                     ETW, métricas, gargalo, catálogo e API opcional
+      Tools/                     Startup, Drivers e Apps
+      Infrastructure/            JSON atômico, processos, ACL e diagnóstico local
+      Persistence/               Configurações, normalização e proteção DPAPI
+      Reports/                   Relatórios a partir de leituras coletadas
+    CoreBi.Desktop/              WPF: apresentação e composição
+      Shell/                     Janela, navegação, tema, recursos e adaptador
+      Views/                     15 páginas; ferramentas com handlers próprios
+      Features/                  Apresentação por domínio ainda ligada ao shell
+      Services/                  Contexto mínimo de vida útil, permissões e links
+      Assets/                    Marca e ícone
+  tests/CoreBi.Tests/             Executor de regressões, integração, WPF e hardware
+  tools/                         Build, testes, publicação, licenças e marca
+  docs/                          Contratos, fontes e validação
+  licenses/                      Textos e avisos redistribuídos com o binário
+```
+
+`Desktop → Engine`; `Engine` não referencia WPF. `Tests` acessa membros internos para verificar regras e composição sem expor APIs públicas só para teste. Tipos ficam próximos de seus consumidores. Não há contêiner de DI, projeto por classe, ORM ou framework adicional sem necessidade.
+
+## Coleta e vida útil
+
+Uma instância de `SensorMonitor` atende as páginas e o overlay. A abertura é idempotente; fechar durante a abertura libera o hardware ao concluir. A coleta protege operações de abrir/atualizar/fechar e isola falhas por dispositivo. O dispatcher atualiza a interface; consumidores de background recebem `SensorReading` imutáveis de `Snapshot()`, evitando enumerar a coleção WPF enquanto ela muda. Valores não finitos ficam indisponíveis.
+
+`FrameMonitor` inicia ETW sob demanda para gargalo/overlay/sessão, com nome exclusivo por processo. A parada descarta a sessão e aguarda seu worker. A janela possui token de vida útil; callbacks assíncronos verificam o fechamento antes de alterar a apresentação. O coletor USB aplica debounce. Falhas de coleta não são convertidas em medidas válidas.
+
+`WorkloadCoordinator` permite uma única carga pesada, incluindo preparação e limpeza. O lease é idempotente e pertence à operação que o recebeu. Stress continua ocupando o coordenador enquanto seus workers ainda estão parando. Falhas de worker e cancelamento são propagados; não se retorna uma medição parcial como teste concluído.
+
+Shaders HLSL ficam em arquivos próprios incorporados ao assembly. A extração preservou os algoritmos e foi validada executando as cenas reais. A compilação dos shaders continua em tempo de execução por D3DCompiler/DXC.
+
+## Ferramentas administrativas
+
+`AppsView`, `DriversView` e `StartupView` possuem seus próprios handlers e estado de apresentação. Recebem `FeatureContext`, que fornece somente janela proprietária, coordenador, token e controle de operação crítica. Esse controle impede fechar o app durante uma instalação que já foi iniciada. Serviços Windows permanecem no Engine.
+
+- `AppInstaller`: catálogo, detecção local e argumentos explícitos de winget.
+- `DriverManager`: inventário e metadados oficiais; `DriverInstaller`: download/assinatura/execução; `WindowsUpdateService`: escopo COM, identidades e resultados individuais.
+- `StartupService`: backup durável antes de remover, registro canônico protegido e restauração por ID. `StartupManager`: acesso ao Registro/atalhos e verificação de conflitos. A interface não fornece caminhos arbitrários para restaurar.
+- `ProcessRunner`: `ArgumentList`, leitura concorrente/buffer limitado de stdout e stderr, cancelamento da árvore de processo criada pelo CoreBi.
+- `ProtectedWorkspace`: diretórios administrativos sem herança ampla, com proprietário e ACL verificados; recusa reparse points.
+
+O download percorre somente HTTPS em domínios oficiais NVIDIA/AMD, valida cada redirecionamento e exige Authenticode confiável com publicador exato. O instalador é iniciado com um handle de leitura que impede substituição do arquivo entre validação e lançamento. Esses controles têm testes de política e ACL; a instalação real ainda exige ensaio separado.
+
+## Apresentação preservada
+
+A migração **não é uma conversão completa para MVVM**. As demais ferramentas ainda usam arquivos parciais de `MainWindow`, páginas que encaminham eventos e acessos tipados em `MainWindow.ViewAccess.cs`. É uma dívida localizada e documentada, mantida para preservar a UI e os fluxos nesta etapa. As três ferramentas administrativas já dispensam essa ponte.
+
+Novas regras entram no Engine. Ao evoluir uma página, mova seu estado/handlers para a própria página ou um presenter enxuto e elimine os acessos correspondentes da ponte. Um viewmodel deve resolver uma necessidade concreta, sem introduzir outro framework só para uniformidade. Templates e tema continuam compartilhados em `Shell`.
+
+## Persistência e erro
+
+`AtomicJsonFile` serializa em temporário exclusivo no mesmo diretório, sincroniza e substitui o destino. Falha de serialização preserva o arquivo anterior. Configurações são normalizadas; arquivo inválido é preservado para diagnóstico. Cache da API tem prazo, tamanho e quantidade limitados, valida valores e usa hash dos parâmetros/credencial na chave.
+
+Logs locais limitados conservam operação, tipo e stack da exceção; omitem mensagens que possam carregar credenciais. Erros de gravação são informados na interface. Logs não são enviados automaticamente.
+
+Backups antigos contidos no JSON editável não são automaticamente convertidos em comandos elevados de restauração. Eles são preservados; uma futura importação precisaria revalidar dados e origem. A revisão local encontrou zero backups nesse formato antigo.
+
+## Personalizar sem quebrar outras páginas
+
+Remova página, navegação, handlers e acessos correspondentes; depois elimine apenas serviços/dependências sem consumidores. Sensores, inventário, configurações e coordenador são compartilhados. Vortice atende raster/DXR/stress; TraceEvent atende ETW; LibreHardwareMonitor atende diversas leituras. Atualize testes e documentação quando alterar algoritmo, unidade ou suporte. Nenhuma regra de produto deve ficar no adaptador de controles.

@@ -1,0 +1,509 @@
+[
+  {
+    "package": "BlackSharp.Core",
+    "version": "1.0.7",
+    "license": "MPL-2.0",
+    "authors": "BlackSharp.Core",
+    "copyright": "Florian K.",
+    "source": "https://github.com/Blacktempel/BlackSharp/tree/c70b735c6cec123ee8a046ac4a0bc6c606f52cf0",
+    "notices": []
+  },
+  {
+    "package": "DiskInfoToolkit",
+    "version": "1.1.2",
+    "license": "MPL-2.0",
+    "authors": "DiskInfoToolkit",
+    "copyright": "Florian K.",
+    "source": "https://github.com/Blacktempel/DiskInfoToolkit/tree/25319eae5781e75bcf141e844ceab2afe94d40ea",
+    "notices": []
+  },
+  {
+    "package": "HidSharp",
+    "version": "2.6.4",
+    "license": "LICENSE.txt",
+    "authors": "James F. Bellinger",
+    "copyright": "Copyright 2010-2025 James Bellinger",
+    "source": "https://software.seekye.com/hidsharp",
+    "notices": [
+      "licenses/HidSharp/2.6.4/LICENSE.txt"
+    ]
+  },
+  {
+    "package": "LibreHardwareMonitorLib",
+    "version": "0.9.6",
+    "license": "MPL-2.0",
+    "authors": "LibreHardwareMonitorLib",
+    "copyright": "LibreHardwareMonitor",
+    "source": "https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/tree/3d331e3370efb858411f19511373eff65a218701",
+    "notices": []
+  },
+  {
+    "package": "Microsoft.Diagnostics.NETCore.Client",
+    "version": "0.2.510501",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/diagnostics/tree/8c08c89a0643d31db91e119b1adb463be3e0ffe5",
+    "notices": []
+  },
+  {
+    "package": "Microsoft.Diagnostics.Tracing.TraceEvent",
+    "version": "3.2.8",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/Microsoft/perfview",
+    "notices": []
+  },
+  {
+    "package": "Microsoft.Extensions.DependencyInjection.Abstractions",
+    "version": "6.0.0",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
+    "notices": [
+      "licenses/Microsoft.Extensions.DependencyInjection.Abstractions/6.0.0/LICENSE.TXT",
+      "licenses/Microsoft.Extensions.DependencyInjection.Abstractions/6.0.0/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "Microsoft.Extensions.DependencyInjection",
+    "version": "6.0.0",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
+    "notices": [
+      "licenses/Microsoft.Extensions.DependencyInjection/6.0.0/LICENSE.TXT",
+      "licenses/Microsoft.Extensions.DependencyInjection/6.0.0/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "Microsoft.Extensions.Logging.Abstractions",
+    "version": "6.0.0",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
+    "notices": [
+      "licenses/Microsoft.Extensions.Logging.Abstractions/6.0.0/LICENSE.TXT",
+      "licenses/Microsoft.Extensions.Logging.Abstractions/6.0.0/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "Microsoft.Extensions.Logging",
+    "version": "6.0.0",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
+    "notices": [
+      "licenses/Microsoft.Extensions.Logging/6.0.0/LICENSE.TXT",
+      "licenses/Microsoft.Extensions.Logging/6.0.0/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "Microsoft.Extensions.Options",
+    "version": "6.0.0",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
+    "notices": [
+      "licenses/Microsoft.Extensions.Options/6.0.0/LICENSE.TXT",
+      "licenses/Microsoft.Extensions.Options/6.0.0/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "Microsoft.Extensions.Primitives",
+    "version": "6.0.0",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/runtime/tree/4822e3c3aa77eb82b2fb33c9321f923cf11ddde6",
+    "notices": [
+      "licenses/Microsoft.Extensions.Primitives/6.0.0/LICENSE.TXT",
+      "licenses/Microsoft.Extensions.Primitives/6.0.0/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "Microsoft.NET.ILLink.Tasks",
+    "version": "10.0.13",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/4099f83977f4d29604a9aeb971fb0a7bc1d5f699",
+    "notices": [
+      "licenses/Microsoft.NET.ILLink.Tasks/10.0.13/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "Microsoft.NETCore.App.Runtime.win-x64",
+    "version": "10.0.13",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/4099f83977f4d29604a9aeb971fb0a7bc1d5f699",
+    "notices": [
+      "licenses/Microsoft.NETCore.App.Runtime.win-x64/10.0.13/LICENSE.TXT",
+      "licenses/Microsoft.NETCore.App.Runtime.win-x64/10.0.13/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
+    "version": "10.0.13",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/4099f83977f4d29604a9aeb971fb0a7bc1d5f699",
+    "notices": [
+      "licenses/Microsoft.WindowsDesktop.App.Runtime.win-x64/10.0.13/LICENSE"
+    ]
+  },
+  {
+    "package": "Mono.Posix.NETStandard",
+    "version": "1.0.0",
+    "license": "https://go.microsoft.com/fwlink/?linkid=869050",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://go.microsoft.com/fwlink/?linkid=869051",
+    "notices": []
+  },
+  {
+    "package": "RAMSPDToolkit-NDD",
+    "version": "1.4.2",
+    "license": "MPL-2.0",
+    "authors": "RAMSPDToolkit-NDD",
+    "copyright": "Florian K.",
+    "source": "https://github.com/Blacktempel/RAMSPDToolkit/tree/3b47b960e0830fef344624ad5e389675d5f0a1ce",
+    "notices": []
+  },
+  {
+    "package": "runtime.android-arm.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.android-arm.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.android-arm64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.android-arm64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.android-x64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.android-x64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.android-x86.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.android-x86.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.linux-arm.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.linux-arm.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.linux-arm64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.linux-arm64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.linux-bionic-arm64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.linux-bionic-arm64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.linux-bionic-x64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.linux-bionic-x64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.linux-musl-arm.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.linux-musl-arm.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.linux-musl-arm64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.linux-musl-arm64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.linux-musl-x64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.linux-musl-x64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.linux-x64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.linux-x64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.maccatalyst-arm64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.maccatalyst-arm64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.maccatalyst-x64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.maccatalyst-x64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.osx-arm64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.osx-arm64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "runtime.osx-x64.runtime.native.System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/runtime.osx-x64.runtime.native.System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "SharpGen.Runtime.COM",
+    "version": "2.4.2-beta",
+    "license": "MIT",
+    "authors": "jkoritzinsky",
+    "copyright": "(c) 2010-2017 Alexandre Mutel, 2017-2023 Jeremy Koritzinsky, 2023-2024 Amer Koleci",
+    "source": "https://github.com/SharpGenTools/SharpGenTools/tree/6990bcafe124a4c22515ad19cee5a081da8db67b",
+    "notices": []
+  },
+  {
+    "package": "SharpGen.Runtime",
+    "version": "2.4.2-beta",
+    "license": "MIT",
+    "authors": "jkoritzinsky",
+    "copyright": "(c) 2010-2017 Alexandre Mutel, 2017-2023 Jeremy Koritzinsky, 2023-2024 Amer Koleci",
+    "source": "https://github.com/SharpGenTools/SharpGenTools/tree/6990bcafe124a4c22515ad19cee5a081da8db67b",
+    "notices": []
+  },
+  {
+    "package": "System.IO.FileSystem.AccessControl",
+    "version": "5.0.0",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "git://github.com/dotnet/runtime",
+    "notices": [
+      "licenses/System.IO.FileSystem.AccessControl/5.0.0/LICENSE.TXT",
+      "licenses/System.IO.FileSystem.AccessControl/5.0.0/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "System.IO.Ports",
+    "version": "10.0.3",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/c2435c3e0f46de784341ac3ed62863ce77e117b4",
+    "notices": [
+      "licenses/System.IO.Ports/10.0.3/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "System.Management",
+    "version": "10.0.2",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/dotnet/tree/44525024595742ebe09023abe709df51de65009b",
+    "notices": [
+      "licenses/System.Management/10.0.2/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "System.Reflection.TypeExtensions",
+    "version": "4.7.0",
+    "license": "MIT",
+    "authors": "Microsoft",
+    "copyright": "© Microsoft Corporation. All rights reserved.",
+    "source": "https://github.com/dotnet/corefx",
+    "notices": [
+      "licenses/System.Reflection.TypeExtensions/4.7.0/LICENSE.TXT",
+      "licenses/System.Reflection.TypeExtensions/4.7.0/THIRD-PARTY-NOTICES.TXT"
+    ]
+  },
+  {
+    "package": "Vortice.D3DCompiler",
+    "version": "3.8.3",
+    "license": "MIT",
+    "authors": "Amer Koleci",
+    "copyright": "Copyright (c) Amer Koleci and Contributors",
+    "source": "https://github.com/amerkoleci/Vortice.Windows/tree/9e609cb9439c9872aa1b339f177e40ec96f77239",
+    "notices": []
+  },
+  {
+    "package": "Vortice.Direct3D11",
+    "version": "3.8.3",
+    "license": "MIT",
+    "authors": "Amer Koleci",
+    "copyright": "Copyright (c) Amer Koleci and Contributors",
+    "source": "https://github.com/amerkoleci/Vortice.Windows/tree/9e609cb9439c9872aa1b339f177e40ec96f77239",
+    "notices": []
+  },
+  {
+    "package": "Vortice.Direct3D12",
+    "version": "3.8.3",
+    "license": "MIT",
+    "authors": "Amer Koleci",
+    "copyright": "Copyright (c) Amer Koleci and Contributors",
+    "source": "https://github.com/amerkoleci/Vortice.Windows/tree/9e609cb9439c9872aa1b339f177e40ec96f77239",
+    "notices": []
+  },
+  {
+    "package": "Vortice.DirectX",
+    "version": "3.8.3",
+    "license": "MIT",
+    "authors": "Amer Koleci",
+    "copyright": "Copyright (c) Amer Koleci and Contributors",
+    "source": "https://github.com/amerkoleci/Vortice.Windows/tree/9e609cb9439c9872aa1b339f177e40ec96f77239",
+    "notices": []
+  },
+  {
+    "package": "Vortice.Dxc.Native",
+    "version": "1.0.5",
+    "license": "LICENSE-MS.txt",
+    "authors": "Amer Koleci and Contributors",
+    "copyright": "Copyright (c) Amer Koleci and Contributors",
+    "source": "https://github.com/microsoft/DirectXShaderCompiler/tree/327e67bcb739190a7acf035c6b700bdb6b00a544",
+    "notices": [
+      "licenses/Vortice.Dxc.Native/1.0.5/LICENSE-LLVM.txt",
+      "licenses/Vortice.Dxc.Native/1.0.5/LICENSE-MIT.txt",
+      "licenses/Vortice.Dxc.Native/1.0.5/LICENSE-MS.txt"
+    ]
+  },
+  {
+    "package": "Vortice.Dxc",
+    "version": "3.8.3",
+    "license": "MIT",
+    "authors": "Amer Koleci",
+    "copyright": "Copyright (c) Amer Koleci and Contributors",
+    "source": "https://github.com/amerkoleci/Vortice.Windows/tree/9e609cb9439c9872aa1b339f177e40ec96f77239",
+    "notices": []
+  },
+  {
+    "package": "Vortice.DXGI",
+    "version": "3.8.3",
+    "license": "MIT",
+    "authors": "Amer Koleci",
+    "copyright": "Copyright (c) Amer Koleci and Contributors",
+    "source": "https://github.com/amerkoleci/Vortice.Windows/tree/9e609cb9439c9872aa1b339f177e40ec96f77239",
+    "notices": []
+  },
+  {
+    "package": "Vortice.Mathematics",
+    "version": "2.1.0",
+    "license": "MIT",
+    "authors": "Amer Koleci",
+    "copyright": "Copyright (c) Amer Koleci and Contributors",
+    "source": "https://github.com/amerkoleci/Vortice.Mathematics/tree/fa05ec6dcba48f3f7331791da6dc7f3d866b2ad6",
+    "notices": []
+  }
+]
