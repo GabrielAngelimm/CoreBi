@@ -22,7 +22,7 @@
                                 <Polygon Points="95,121 117,121 117,172 95,172" Fill="{DynamicResource Accent}" />
                             </Canvas>
                         </Viewbox>
-                        <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="27" Margin="12,0,0,2" VerticalAlignment="Center" />
+                        <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="27" Margin="12,4,0,0" VerticalAlignment="Center" />
                     </StackPanel>
 
                     <!-- Rodapé: aviso de sensores, tema e central de monitoramento -->
