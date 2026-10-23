@@ -25,7 +25,7 @@
                         <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="19" Margin="11,0,0,1" VerticalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- Rodapé: leituras ao vivo, aviso de sensores e versão -->
+                    <!-- Rodapé: aviso de sensores, tema, leituras ao vivo e versão -->
                     <StackPanel DockPanel.Dock="Bottom" Margin="14,6,14,14">
                         <Border x:Name="CpuSensorWarn" Visibility="Collapsed" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource Warn}" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,10">
                             <StackPanel>
@@ -37,6 +37,7 @@
                                 <Button Style="{StaticResource SecondaryButton}" Content="Corrigir" MinHeight="28" Padding="12,4" FontSize="12" HorizontalAlignment="Left" Margin="21,0,0,0" Click="BtnFixCpuSensors_Click" />
                             </StackPanel>
                         </Border>
+                        <CheckBox x:Name="ThemeSwitch" Style="{StaticResource ThemeToggle}" Content="Modo escuro" Margin="0,0,0,8" Click="Theme_Click" AutomationProperties.Name="Modo escuro" />
                         <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="10" Padding="14,12,14,10">
                             <StackPanel>
                                 <Grid>
@@ -119,21 +120,12 @@
                     <RowDefinition Height="52" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <!-- Barra de título: atalho de navegação, estado da coleta e controles da janela -->
+                <!-- Barra de título: atalho de navegação e controles da janela -->
                 <Button x:Name="BtnCommand" Style="{StaticResource CommandButton}" Content="Ir para uma página ou ação" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="36,9,0,0" WindowChrome.IsHitTestVisibleInChrome="True" Click="BtnCommand_Click" ToolTip="Paleta de comandos (Ctrl + K)" />
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-                    <Border x:Name="ShellStatusPill" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="14" Padding="10,4,12,5" VerticalAlignment="Top" Margin="0,9,10,0" ToolTip="Estado da coleta de sensores">
-                        <StackPanel Orientation="Horizontal">
-                            <Ellipse x:Name="ShellStatusDot" Width="7" Height="7" Fill="{DynamicResource Warn}" VerticalAlignment="Center" Margin="0,1,8,0" />
-                            <TextBlock x:Name="ShellStatus" Text="Detectando o hardware" FontSize="12" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Border>
-                    <StackPanel Orientation="Horizontal" WindowChrome.IsHitTestVisibleInChrome="True">
-                        <Button x:Name="BtnTheme" Style="{StaticResource CaptionButton}" FontSize="13" Content="&#xE706;" Click="Theme_Click" ToolTip="Tema claro" />
-                        <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="Min_Click" ToolTip="Minimizar" />
-                        <Button x:Name="BtnMax" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="Max_Click" ToolTip="Maximizar" />
-                        <Button Style="{StaticResource CloseButton}" Content="&#xE8BB;" Click="Close_Click" ToolTip="Fechar" />
-                    </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="Min_Click" ToolTip="Minimizar" />
+                    <Button x:Name="BtnMax" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="Max_Click" ToolTip="Maximizar" />
+                    <Button Style="{StaticResource CloseButton}" Content="&#xE8BB;" Click="Close_Click" ToolTip="Fechar" />
                 </StackPanel>
 
                 <Grid x:Name="PageHost" Grid.Row="1">
@@ -193,7 +185,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding Icon}" FontFamily="{StaticResource Icons}" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Left" />
+                                            <TextBlock Text="{Binding Icon}" Style="{StaticResource ListNavIcon}" FontSize="14" HorizontalAlignment="Left" />
                                             <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                             <TextBlock Grid.Column="2" Text="{Binding Section}" Foreground="{DynamicResource Faint}" FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0" />
                                         </Grid>

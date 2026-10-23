@@ -14,22 +14,29 @@ using System.Windows.Shapes;
 namespace CoreBi.Desktop;
 
 /// <summary>
-/// Visão geral: osciloscópio de dois canais (CPU × GPU), desempenho, componentes, anéis de memória e disco,
-/// eventos recentes e lista de verificação da saúde do PC.
+/// Visão geral: osciloscópio de dois canais (CPU × GPU), componentes (uso ao vivo do processador e da placa de vídeo,
+/// ocupação da memória e do disco), desempenho, lista de verificação da saúde do PC e eventos recentes.
 /// </summary>
 public partial class MainWindow
 {
-    public sealed record DashComponent(string Icon, string Name, string Model, string Temp, string Load, string Clock, string Power, string Target);
+    /// <summary>
+    /// Cartão de componente. Uso ao vivo (Capacity = false): Hero é a carga, com medidor segmentado e as grandezas do
+    /// componente. Ocupação (Capacity = true): anel com a fração usada (Hero no centro), Amount em uso e o que sobra.
+    /// Stats só traz leituras que existem para o componente.
+    /// </summary>
+    public sealed record DashComponent(string Icon, string Name, string Model, string Target, Brush Channel, bool Capacity,
+                                       string Hero, string HeroUnit, string Amount, double Fraction, IReadOnlyList<KeyValuePair<string, string>> Stats);
     public sealed record DashEvent(string Icon, string Title, string Detail, string Value, DateTime At)
     {
         public string When => At.Date == DateTime.Today ? $"hoje {At:HH:mm}" : $"{At:dd/MM HH:mm}";
     }
-    public sealed record DashRingItem(Brush Swatch, string Label, string Value);
     public sealed record DashCheck(string Title, string Detail, bool Ok);
 
     internal readonly record struct DashSample(float? CpuT, float? GpuT, float? CpuL, float? GpuL, float? CpuW, float? GpuW);
 
     internal const int DashMax = 900; // 15 min a 1 amostra/s
+    /// <summary>Altura de uma linha da atividade recente: a lista mostra quantas couberem no cartão.</summary>
+    public const double DashEventHeight = 56;
     internal readonly List<DashSample> _dash = new();
     internal readonly List<DashEvent> _events = new();
     internal List<DashCheck> _health = new();
@@ -89,7 +96,8 @@ public partial class MainWindow
 
     internal void ShowEvents()
     {
-        var list = _events.Concat(SavedEvents()).OrderByDescending(e => e.At).Take(4).ToList();
+        int slots = DashEvents.ActualHeight > 0 ? Math.Max(1, (int)(DashEvents.ActualHeight / DashEventHeight)) : 4;
+        var list = _events.Concat(SavedEvents()).OrderByDescending(e => e.At).Take(slots).ToList();
         DashEvents.ItemsSource = list;
         DashEventsEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -98,6 +106,7 @@ public partial class MainWindow
 
     internal void DashOption_Checked(object sender, RoutedEventArgs e) { if (DashChart != null) DrawDashChart(); }
     internal void DashChart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawDashChart();
+    internal void DashEvents_SizeChanged(object sender, SizeChangedEventArgs e) { if (e.HeightChanged) ShowEvents(); }
     internal void DashBench_Click(object sender, RoutedEventArgs e) => NavBench.IsChecked = true;
     internal void DashSensors_Click(object sender, RoutedEventArgs e) => NavSensors.IsChecked = true;
 
@@ -112,7 +121,6 @@ public partial class MainWindow
     {
         DrawDashChart();
         UpdateDashComponents();
-        UpdateDashRings();
         if (full)
         {
             UpdateDashScores();
@@ -125,29 +133,53 @@ public partial class MainWindow
 
     internal void UpdateDashComponents()
     {
+        static KeyValuePair<string, string> Stat(string label, string value) => new(label, value);
+        static string Gb(double bytes) => $"{bytes / 1073741824.0:0.0} GB";
+        float? Sensor(HardwareType hw, SensorType type, string name, string? hardware = null) =>
+            _monitor.Rows.FirstOrDefault(r => r.HardwareType == hw && r.Type == type && r.Name == name &&
+                                              (hardware == null || r.Hardware == hardware))?.RawValue;
+
+        var cpuLoad = _monitor.CpuLoad;
         var rows = new List<DashComponent>
         {
-            new("", "Processador", GameCatalog.ShortCpuName(_cpuName),
-                F(_monitor.CpuTemperature, "0", " °C"), F(_monitor.CpuLoad, "0", " %"), F(CpuClockAvg(), "0", " MHz"),
-                F(_monitor.CpuPower, "0", " W"), "PageSensors"),
+            new("", "Processador", GameCatalog.ShortCpuName(_cpuName), "PageSensors", Palette("Accent"), false,
+                F(cpuLoad, "0", " %"), "em uso", "", (cpuLoad ?? 0) / 100.0,
+                new[] { Stat("Temp.", F(_monitor.CpuTemperature, "0", " °C")), Stat("Clock", F(CpuClockAvg(), "0", " MHz")),
+                        Stat("Consumo", F(_monitor.CpuPower, "0", " W")) }),
         };
         if (_gpus.Count > 0)
         {
-            uint? clk = _gpus[0].NvmlHandle != IntPtr.Zero ? Nvml.Clock(_gpus[0].NvmlHandle, Nvml.ClockGraphics) : null;
-            rows.Add(new("", "Placa de vídeo", GameCatalog.ShortGpuName(_gpus[0].Name),
-                         F(MainGpuTemp(), "0", " °C"), F(MainGpuLoad(), "0", " %"), clk is uint c ? $"{c} MHz" : "—",
-                         F(MainGpuPower(), "0", " W"), "PageGpu"));
+            var gpu = _gpus[0];
+            uint? clk = gpu.NvmlHandle != IntPtr.Zero ? Nvml.Clock(gpu.NvmlHandle, Nvml.ClockGraphics) : null;
+            var stats = new List<KeyValuePair<string, string>>
+            {
+                Stat("Temp.", F(MainGpuTemp(), "0", " °C")), Stat("Clock", clk is uint c ? $"{c} MHz" : "—"), Stat("Consumo", F(MainGpuPower(), "0", " W")),
+            };
+            if (gpu.NvmlHandle != IntPtr.Zero && Nvml.MemoryInfo(gpu.NvmlHandle) is Nvml.Memory m && m.Total > 0)
+                stats.Add(Stat("VRAM", Gb(m.Used)));
+            var gpuLoad = MainGpuLoad();
+            rows.Add(new("", "Placa de vídeo", GameCatalog.ShortGpuName(gpu.Name), "PageGpu", Palette("Copper"), false,
+                         F(gpuLoad, "0", " %"), "em uso", "", (gpuLoad ?? 0) / 100.0, stats));
         }
+
+        // Memória e disco não têm temperatura nem clock: o cartão mostra ocupação (anel), quanto está em uso e o que sobra.
         var (total, avail) = MemoryInfo.MemoryStatus();
         if (total > 0)
         {
-            double used = total - avail;
-            rows.Add(new("", "Memória RAM", $"{total / 1073741824.0:0} GB instalados", "—", $"{used / total:P0}", "—",
-                         $"{used / 1073741824.0:0.0} GB", "PageSystem"));
+            double used = (double)(total - avail) / total;
+            var stats = new List<KeyValuePair<string, string>> { Stat("Disponível", Gb(avail)) };
+            if (Sensor(HardwareType.Memory, SensorType.Load, "Memory", "Virtual Memory") is float virt) stats.Add(Stat("Memória virtual", $"{virt:0} %"));
+            rows.Add(new("", "Memória RAM", $"{total / 1073741824.0:0} GB instalados", "PageSystem", Palette("Accent"), true,
+                         $"{used:P0}", $"em uso de {total / 1073741824.0:0} GB", Gb(total - avail), used, stats));
         }
         if (_drives.FirstOrDefault(d => d.Letter.StartsWith("C", StringComparison.OrdinalIgnoreCase)) is { } c0)
-            rows.Add(new("", $"Disco {c0.Letter}", c0.Disk.Length > 0 ? c0.Disk : c0.Kind, "—", c0.UsedPercent, "—",
-                         $"{DriveCard.Fmt(c0.Free)} livres", "PageDisks"));
+        {
+            var stats = new List<KeyValuePair<string, string>> { Stat("Livre", DriveCard.Fmt(c0.Free)) };
+            if (c0.Disk.Length > 0 && Sensor(HardwareType.Storage, SensorType.Load, "Total Activity", c0.Disk) is float act) stats.Add(Stat("Atividade", $"{act:0} %"));
+            else if (c0.FileSystem.Length > 0) stats.Add(Stat("Formato", c0.FileSystem));
+            rows.Add(new("", $"Disco {c0.Letter}", c0.Disk.Length > 0 ? c0.Disk : c0.Kind, "PageDisks", Palette("Steel"), true,
+                         c0.UsedPercent, $"usados de {DriveCard.Fmt(c0.Total)}", DriveCard.Fmt(c0.Total - c0.Free), c0.UsedFraction, stats));
+        }
         DashComponents.ItemsSource = rows;
     }
 
@@ -175,10 +207,8 @@ public partial class MainWindow
             new KeyValuePair<string, string>("Cena de jogo (GPU)", Last("gpu")),
             new KeyValuePair<string, string>("Simulação de jogo", Last("sim")),
         };
-        DashCpuName.Text = GameCatalog.ShortCpuName(_cpuName);
-        DashGpuName.Text = _gpus.Count > 0 ? GameCatalog.ShortGpuName(_gpus[0].Name) : "—";
         if (_cpuName.Length > 0 && _gpus.Count > 0)
-            DashMachine.Text = $"Leituras ao vivo de {Environment.MachineName}: {DashCpuName.Text} e {DashGpuName.Text}.";
+            DashMachine.Text = $"Leituras ao vivo de {Environment.MachineName}: {GameCatalog.ShortCpuName(_cpuName)} e {GameCatalog.ShortGpuName(_gpus[0].Name)}.";
     }
 
     // ---------------- osciloscópio (CPU × GPU) ----------------
@@ -292,75 +322,6 @@ public partial class MainWindow
         Cursor(pts[^1], accent);
     }
 
-    // ---------------- anéis concêntricos ----------------
-
-    internal void UpdateDashRings()
-    {
-        var (total, avail) = MemoryInfo.MemoryStatus();
-        double ram = total > 0 ? (double)(total - avail) / total : 0;
-        double? vram = null;
-        if (_gpus.Count > 0 && _gpus[0].NvmlHandle != IntPtr.Zero && Nvml.MemoryInfo(_gpus[0].NvmlHandle) is Nvml.Memory m && m.Total > 0)
-            vram = (double)m.Used / m.Total;
-        var c0 = _drives.FirstOrDefault(d => d.Letter.StartsWith("C", StringComparison.OrdinalIgnoreCase));
-
-        DashMemHero.Text = total > 0 ? $"{(total - avail) / 1073741824.0:0.0} GB" : "—";
-        DashMemSub.Text = total > 0 ? $"de RAM em uso, de {total / 1073741824.0:0} GB instalados" : "";
-
-        // Mesmos canais do resto do app: RAM no verde-água, VRAM (placa de vídeo) no cobre, disco no aço
-        Brush accent = Palette("Accent"), copper = Palette("Copper"), steel = Palette("Steel");
-        var rings = new List<(double Frac, Brush Brush, string Label)> { (ram, accent, "RAM") };
-        if (vram is double v) rings.Add((v, copper, "VRAM"));
-        if (c0 != null) rings.Add((c0.UsedFraction, steel, $"Disco {c0.Letter}"));
-
-        DashRings.Children.Clear();
-        double cx = DashRings.Width / 2, cy = DashRings.Height / 2;
-        for (int i = 0; i < rings.Count; i++)
-        {
-            double r = 88 - i * 20;
-            DashRings.Children.Add(new Ellipse
-            {
-                Width = r * 2,
-                Height = r * 2,
-                Stroke = Palette("Line"),
-                StrokeThickness = 10,
-                Margin = new Thickness(cx - r, cy - r, 0, 0)
-            });
-            DashRings.Children.Add(new Path
-            {
-                Data = RingArc(rings[i].Frac, cx, cy, r),
-                Stroke = rings[i].Brush,
-                StrokeThickness = 10,
-                StrokeStartLineCap = PenLineCap.Round,
-                StrokeEndLineCap = PenLineCap.Round
-            });
-        }
-        var center = new TextBlock
-        {
-            Text = $"{ram:P0}",
-            FontFamily = (FontFamily)FindResource("Readout"),
-            FontStretch = FontStretches.SemiCondensed,
-            FontSize = 24,
-            Foreground = Palette("Fg")
-        };
-        center.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        Canvas.SetLeft(center, cx - center.DesiredSize.Width / 2); Canvas.SetTop(center, cy - center.DesiredSize.Height / 2);
-        DashRings.Children.Add(center);
-
-        DashRingLegend.ItemsSource = rings.Select(r => new DashRingItem(r.Brush, r.Label, $"{r.Frac:P0}")).ToList();
-    }
-
-    internal static Geometry RingArc(double frac, double cx, double cy, double r)
-    {
-        frac = Math.Clamp(frac, 0, 0.9999);
-        if (frac <= 0.001) return Geometry.Empty;
-        double a = frac * 2 * Math.PI;
-        var fig = new PathFigure { StartPoint = new Point(cx, cy - r) };
-        fig.Segments.Add(new ArcSegment(new Point(cx + r * Math.Sin(a), cy - r * Math.Cos(a)), new Size(r, r), 0, frac > 0.5, SweepDirection.Clockwise, true));
-        var g = new PathGeometry(new[] { fig });
-        g.Freeze();
-        return g;
-    }
-
     // ---------------- saúde do PC ----------------
 
     internal void UpdateDashHealth()
@@ -384,5 +345,13 @@ public partial class MainWindow
 
         _health = list;
         DashHealth.ItemsSource = _health;
+
+        // Selo no título: resume a lista sem precisar ler item por item
+        int alerts = list.Count(c => !c.Ok);
+        DashHealthBadge.Visibility = list.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        DashHealthBadgeText.Text = alerts == 0 ? "Tudo certo" : alerts == 1 ? "1 alerta" : $"{alerts} alertas";
+        DashHealthBadge.SetResourceReference(Border.BackgroundProperty, alerts == 0 ? "OkSoft" : "WarnSoft");
+        DashHealthBadge.SetResourceReference(Border.BorderBrushProperty, alerts == 0 ? "OkSoft" : "WarnSoft");
+        DashHealthBadgeText.SetResourceReference(TextBlock.ForegroundProperty, alerts == 0 ? "Ok" : "Warn");
     }
 }

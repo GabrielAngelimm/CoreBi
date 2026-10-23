@@ -26,7 +26,7 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding Header, Converter={StaticResource CategoryIcon}}" Style="{StaticResource IconGlyph}" FontSize="14" Width="18" Margin="0,0,12,0" Foreground="{DynamicResource Steel}" />
+                            <TextBlock Text="{Binding Header, Converter={StaticResource CategoryIcon}}" Style="{StaticResource ListNavIcon}" FontSize="14" Width="18" Margin="0,0,12,0" />
                             <TextBlock Text="{Binding Header}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </DataTemplate>

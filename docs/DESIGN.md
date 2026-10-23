@@ -111,10 +111,11 @@ Números em texto comum usam `Typography.NumeralAlignment="Tabular"` (estilo `Nu
 
 ## Layout
 
-- Janela de 1360 × 860 (mínimo 1120 × 680), sem moldura nativa, cantos arredondados do Windows 11 via DWM.
-- Barra lateral de 244 px: marca, navegação agrupada (Monitoramento, Jogos, Desempenho, Ferramentas) e, no rodapé, a telemetria permanente (CPU e GPU com medidor segmentado) e o estado do teste de carga.
-- Barra de título de 52 px: atalho da paleta de comandos à esquerda, pílula com o estado da coleta de sensores e os controles da janela à direita.
+- Janela de 1360 × 860 (mínimo 1120 × 680), sem moldura nativa, cantos arredondados do Windows 11 via DWM. Maximizada, ocupa exatamente o espaço de trabalho do monitor (`WM_GETMINMAXINFO`), sem passar por baixo da barra de tarefas.
+- Barra lateral de 244 px: marca, navegação agrupada (Monitoramento, Jogos, Desempenho, Ferramentas) e, no rodapé, a chave de tema ("Modo escuro"), a telemetria permanente (CPU e GPU com medidor segmentado) e o estado do teste de carga.
+- Barra de título de 52 px: atalho da paleta de comandos à esquerda e os controles da janela à direita. O estado da coleta aparece na própria página de Sensores.
 - Página: margem de 36 px, cabeçalho com título e subtítulo (o subtítulo carrega o estado vivo da página quando existe) e a ação principal à direita. Painéis com 16 px entre si.
+- Visão geral cabe numa tela com a janela maximizada: o gráfico e a atividade recente ocupam a sobra de altura; em janelas menores a página rola e os componentes passam a duas colunas. Processador e placa de vídeo têm cartão de uso (leitura, medidor e grandezas); memória e disco têm cartão de ocupação (anel, quanto está em uso e o que sobra), sem campos que não se aplicam a eles.
 - Telas de teste (Benchmark, Teste de carga) usam a mesma composição: palco ou leitura principal à esquerda e uma coluna de 320–330 px com configuração, resultado e histórico.
 
 ## Profundidade e forma
@@ -143,6 +144,7 @@ Todos em `Shell/Theme.xaml`; templates de dados compartilhados em `Shell/Feature
 | Escolha de teste | `TestTile` | Benchmark |
 | Componente a carregar | `ToggleCard` | Teste de carga |
 | Ligar e desligar | `Switch` | Overlay, programas da inicialização, Driver Studio |
+| Tema | `ThemeToggle` | Linha da barra lateral; ligada = modo escuro |
 | Seleção múltipla | `CheckBox` padrão | Apps, itens do overlay |
 | Veredito | `CardTemplate` | Discos, Energia, Rede (faixa lateral + selo colorido) |
 | Medidor | `Meter`, máscara `SegmentMask` | Gargalo, histórico de benchmarks |
@@ -151,7 +153,7 @@ Paleta de comandos (Ctrl + K): busca sem acento entre as páginas (lidas da pró
 
 ## Movimento
 
-Apenas em resposta a uma ação: a página entra com 170 ms de opacidade e 230 ms de deslocamento curto, respeitando a opção "Mostrar animações no Windows" (`SystemParameters.ClientAreaAnimation`). Não há animação contínua: o app fica aberto durante jogos e benchmarks, e qualquer custo de CPU/GPU contaminaria a medição.
+Apenas em resposta a uma ação: a página entra com 170 ms de opacidade e 230 ms de deslocamento curto, respeitando a opção "Mostrar animações no Windows" (`SystemParameters.ClientAreaAnimation`). Item de navegação selecionado ganha fundo elevado e ícone verde-água em 160 ms, sem barra lateral; a chave de tema desliza em 240 ms e troca sol e lua com um giro curto. Não há animação contínua: o app fica aberto durante jogos e benchmarks, e qualquer custo de CPU/GPU contaminaria a medição.
 
 ## Dados e honestidade
 
