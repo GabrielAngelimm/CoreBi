@@ -2,6 +2,8 @@
 
 ## Em desenvolvimento
 
+- OverlayBi: o controle de opacidade ficou mais fácil e fluido: clique no trilho leva o botão direto ao ponto, a roda do mouse ajusta de 5 em 5 (Shift: de 1 em 1) sem rolar a página, o passo é de 1 ponto e a área de pegar é maior. O overlay acompanha a mudança na hora, e a configuração só é gravada em disco quando o movimento para (antes cada passo gravava e reposicionava a janela, o que travava).
+
 - Navegação instantânea: ao abrir Sensores, Discos, Sistema, Energia, Inicialização ou Instalar apps pela primeira vez, a página troca no mesmo instante e mostra um esqueleto de carregamento enquanto monta e lê os dados em segundo plano. A leitura NVMe de Discos saiu da thread da janela.
 
 ## 0.2.1 — 2026-10-24

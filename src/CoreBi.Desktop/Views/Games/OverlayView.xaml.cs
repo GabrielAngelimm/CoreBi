@@ -2,6 +2,7 @@ using CoreBi.Engine.Games;
 
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
@@ -30,6 +31,14 @@ public partial class OverlayView : UserControl
         OvOpacityText.Text = $"{e.NewValue:0}%";
         OvPreviewHost.Opacity = OpacityOf(e.NewValue);
         Owner?.OvOpacity_Changed(OpacityOf(e.NewValue));
+    }
+
+    /// <summary>Roda do mouse sobre o controle ajusta a opacidade (5 pontos por clique) em vez de rolar a página.</summary>
+    private void OvOpacity_Wheel(object sender, MouseWheelEventArgs e)
+    {
+        double step = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 1 : 5;
+        OvOpacity.Value = Math.Clamp(OvOpacity.Value + Math.Sign(e.Delta) * step, OvOpacity.Minimum, OvOpacity.Maximum);
+        e.Handled = true;
     }
 
     private static double OpacityOf(double percent) => Math.Clamp(percent / 100, 0.3, 1);

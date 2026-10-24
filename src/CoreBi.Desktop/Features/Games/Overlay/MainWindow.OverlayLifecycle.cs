@@ -90,8 +90,21 @@ public partial class MainWindow
     {
         if (!_overlayReady) return;
         _settings.OverlayOpacity = opacity;
+        // Arrastar dispara dezenas de mudanças por segundo: o overlay acompanha na hora, mas o disco só é gravado quando o movimento para.
+        if (_overlay != null) _overlay.Opacity = opacity;
+        _opacitySave ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+        _opacitySave.Tick -= OpacitySave_Tick;
+        _opacitySave.Tick += OpacitySave_Tick;
+        _opacitySave.Stop();
+        _opacitySave.Start();
+    }
+
+    private DispatcherTimer? _opacitySave;
+
+    private void OpacitySave_Tick(object? sender, EventArgs e)
+    {
+        _opacitySave?.Stop();
         SaveSettings();
-        ApplyOverlayOptions();
     }
 
     internal void ApplyOverlayOptions()
