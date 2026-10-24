@@ -402,7 +402,7 @@ public partial class DisksView : UserControl
             if (_wide)
             {
                 cell.BorderThickness = new Thickness(0, i == 0 ? 0 : 1, 0, 0);
-                cell.Padding = new Thickness(26, 0, 26, 0);
+                cell.Padding = new Thickness(12, 0, 12, 0);
                 cell.Margin = new Thickness(0);
                 ((StackPanel)cell.Child).VerticalAlignment = VerticalAlignment.Center;
             }
@@ -413,6 +413,10 @@ public partial class DisksView : UserControl
                 cell.Margin = new Thickness(0, i >= columns ? 18 : 0, 0, 0);
                 ((StackPanel)cell.Child).VerticalAlignment = VerticalAlignment.Top;
             }
+            // leituras centralizadas: a mesma folga à esquerda e à direita
+            var stack = (StackPanel)cell.Child;
+            stack.HorizontalAlignment = HorizontalAlignment.Center;
+            foreach (TextBlock t in stack.Children) { t.HorizontalAlignment = HorizontalAlignment.Center; t.TextAlignment = TextAlignment.Center; }
             OdoGrid.Children.Add(cell);
         }
     }

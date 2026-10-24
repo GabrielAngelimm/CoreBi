@@ -138,7 +138,7 @@ public sealed class SpreadPanel : System.Windows.Controls.Panel
 }
 
 /// <summary>
-/// Linhas de itens que dividem a sobra de largura em vãos iguais entre eles (primeiro à esquerda, último à direita, sem sobra vazia);
+/// Linhas de itens que dividem a sobra de largura em vãos iguais, inclusive o vão antes do primeiro item (o último encosta na direita);
 /// quando não cabem, quebram em mais linhas, cada uma distribuída do mesmo jeito.
 /// </summary>
 public sealed class JustifyPanel : System.Windows.Controls.Panel
@@ -174,8 +174,8 @@ public sealed class JustifyPanel : System.Windows.Controls.Panel
         {
             if (line.Count == 0) continue;
             double lineH = line.Max(c => c.DesiredSize.Height);
-            double gap = line.Count > 1 ? Math.Max(0, (final.Width - line.Sum(c => c.DesiredSize.Width)) / (line.Count - 1)) : 0;
-            double x = 0;
+            double gap = line.Count > 1 ? Math.Max(0, (final.Width - line.Sum(c => c.DesiredSize.Width)) / line.Count) : 0;
+            double x = gap;
             foreach (var c in line)
             {
                 c.Arrange(new Rect(x, y, c.DesiredSize.Width, lineH));
