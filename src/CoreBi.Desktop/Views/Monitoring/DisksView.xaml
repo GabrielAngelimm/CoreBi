@@ -57,20 +57,18 @@
 
         <!-- Linha da integridade: LED, o que é verificado e o valor lido -->
         <DataTemplate x:Key="CheckRow">
-            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,10">
-                <Grid VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="18" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <Ellipse Style="{StaticResource DiskLed}" HorizontalAlignment="Left" />
-                    <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="0,0,12,0" TextTrimming="CharacterEllipsis" />
-                    <Border x:Name="pill" Grid.Column="2" Style="{StaticResource Badge}" VerticalAlignment="Center" Padding="9,2,9,3" ToolTip="{Binding Tip}">
-                        <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource BadgeText}" Typography.NumeralAlignment="Tabular" />
-                    </Border>
-                </Grid>
-            </Border>
+            <Grid Margin="0,3,30,3" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="15" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Ellipse Style="{StaticResource DiskLed}" HorizontalAlignment="Left" />
+                <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="0,0,10,0" VerticalAlignment="Center" />
+                <Border x:Name="pill" Grid.Column="2" Style="{StaticResource Badge}" VerticalAlignment="Center" Padding="8,1,8,2" ToolTip="{Binding Tip}">
+                    <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource BadgeText}" Typography.NumeralAlignment="Tabular" />
+                </Border>
+            </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding State}" Value="">
                     <Setter TargetName="pill" Property="Background" Value="Transparent" />
@@ -115,8 +113,8 @@
 
     <!--
         Uma tela: com a janela maximizada tudo cabe sem rolar (os instrumentos ocupam a sobra de altura). À esquerda, o rack
-        com uma baia por disco; à direita, o disco escolhido: placa de identificação, vida útil, temperatura, integridade e
-        odômetro. Em janelas menores a integridade desce para o lado do odômetro e a página rola.
+        com uma baia por disco; à direita, o disco escolhido: placa de identificação, vida útil, temperatura, odômetro e, numa faixa
+        discreta embaixo, a integridade. Em janelas menores o odômetro desce em faixa 2 × 2 e a página rola.
     -->
     <ScrollViewer x:Name="DiskScroll" VerticalScrollBarVisibility="Auto">
         <Grid MinHeight="{Binding ViewportHeight, ElementName=DiskScroll}">
@@ -166,14 +164,16 @@
                             <ColumnDefinition x:Name="LifeColumn" Width="370" />
                             <ColumnDefinition Width="16" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition x:Name="CheckGap" Width="16" />
-                            <ColumnDefinition x:Name="CheckColumn" Width="330" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="300" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="16" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition x:Name="CheckGapRow" Height="0" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
@@ -319,27 +319,8 @@
                             </Grid>
                         </Border>
 
-                        <!-- Integridade: S.M.A.R.T. e contadores de erro -->
-                        <Border x:Name="CheckCard" Grid.Row="2" Grid.Column="4" Style="{StaticResource CardBorder}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <TextBlock Text="Integridade" Style="{StaticResource SectionTitle}" Margin="0,0,0,12" />
-                                <ItemsControl x:Name="DiskChecks" Grid.Row="1" ItemTemplate="{StaticResource CheckRow}" Focusable="False">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <local:SpreadPanel />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                </ItemsControl>
-                            </Grid>
-                        </Border>
-
                         <!-- Odômetro: uso acumulado desde a fábrica -->
-                        <Border x:Name="OdoCard" Grid.Row="4" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}" Padding="0,18">
+                        <Border x:Name="OdoCard" Grid.Row="2" Grid.Column="4" Style="{StaticResource CardBorder}" Padding="0">
                             <UniformGrid x:Name="OdoGrid" Columns="4">
                                 <Border x:Name="OdoCell0" Style="{StaticResource OdoCell}" BorderThickness="0">
                                     <StackPanel>
@@ -367,7 +348,24 @@
                                 </Border>
                             </UniformGrid>
                         </Border>
-                    </Grid>
+                    <!-- Integridade: S.M.A.R.T. e contadores de erro, numa faixa discreta -->
+                        <Border x:Name="CheckCard" Grid.Row="4" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}" Padding="22,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Integridade" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="0,0,28,0" />
+                                <ItemsControl x:Name="DiskChecks" Grid.Column="1" ItemTemplate="{StaticResource CheckRow}" Focusable="False" VerticalAlignment="Center">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </Grid>
+                        </Border>
+                        </Grid>
                 </Grid>
             </Grid>
         </Grid>

@@ -377,23 +377,39 @@ public partial class DisksView : UserControl
 
     private List<Border> _odoCells = new();
 
+    /// <summary>Larga: quatro leituras empilhadas na coluna à direita. Estreita: faixa 2 × 2 abaixo da temperatura.</summary>
     private void LayoutOdometer()
     {
         OdoCard.Visibility = _odoCells.Count == 0 || DiskCards.SelectedItem is not DiskBay { Disk: not null } ? Visibility.Collapsed : Visibility.Visible;
         OdoGrid.Children.Clear();
-        int columns = Math.Max(1, Math.Min(_odoCells.Count, _wide ? 4 : 2));
+        int columns = _wide ? 1 : Math.Max(1, Math.Min(_odoCells.Count, 2));
         OdoGrid.Columns = columns;
+        OdoCard.Padding = _wide ? new Thickness(0) : new Thickness(0, 18, 0, 18);
         for (int i = 0; i < _odoCells.Count; i++)
         {
-            _odoCells[i].BorderThickness = new Thickness(i % columns == 0 ? 0 : 1, 0, 0, 0);
-            _odoCells[i].Margin = new Thickness(0, i >= columns ? 18 : 0, 0, 0);
-            OdoGrid.Children.Add(_odoCells[i]);
+            var cell = _odoCells[i];
+            cell.VerticalAlignment = VerticalAlignment.Stretch;
+            if (_wide)
+            {
+                cell.BorderThickness = new Thickness(0, i == 0 ? 0 : 1, 0, 0);
+                cell.Padding = new Thickness(26, 0, 26, 0);
+                cell.Margin = new Thickness(0);
+                ((StackPanel)cell.Child).VerticalAlignment = VerticalAlignment.Center;
+            }
+            else
+            {
+                cell.BorderThickness = new Thickness(i % columns == 0 ? 0 : 1, 0, 0, 0);
+                cell.Padding = new Thickness(24, 0, 24, 0);
+                cell.Margin = new Thickness(0, i >= columns ? 18 : 0, 0, 0);
+                ((StackPanel)cell.Child).VerticalAlignment = VerticalAlignment.Top;
+            }
+            OdoGrid.Children.Add(cell);
         }
     }
 
     // ---------------- layout ----------------
 
-    /// <summary>Larga: integridade ao lado da temperatura. Estreita: integridade desce para o lado do odômetro (2 × 2).</summary>
+    /// <summary>Larga: odômetro ao lado da temperatura. Estreita: odômetro desce para uma faixa 2 × 2.</summary>
     private void DiskBody_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (!e.WidthChanged) return;
@@ -402,13 +418,13 @@ public partial class DisksView : UserControl
         _wide = wide;
         RackColumn.Width = new GridLength(wide ? 300 : 260);
         LifeColumn.Width = new GridLength(wide ? 370 : 330);
-        CheckGap.Width = new GridLength(wide ? 16 : 0);
-        CheckColumn.Width = new GridLength(wide ? 330 : 0);
         SpaceColumn.Width = new GridLength(wide ? 520 : 420);
-        Grid.SetRow(CheckCard, wide ? 2 : 4);
-        Grid.SetColumn(CheckCard, wide ? 4 : 0);
-        Grid.SetColumn(OdoCard, wide ? 0 : 2);
-        Grid.SetColumnSpan(OdoCard, wide ? 5 : 1);
+        // Larga: odômetro ao lado da temperatura e integridade na faixa de baixo. Estreita: odômetro desce em faixa 2 × 2 e a integridade fica por último.
+        Grid.SetRow(OdoCard, wide ? 2 : 4);
+        Grid.SetColumn(OdoCard, wide ? 4 : 0);
+        Grid.SetColumnSpan(OdoCard, wide ? 1 : 5);
+        Grid.SetRow(CheckCard, wide ? 4 : 6);
+        CheckGapRow.Height = new GridLength(wide ? 0 : 16);
         LayoutOdometer();
         LifeDial.MinHeight = wide ? 210 : 190;
     }
