@@ -299,7 +299,7 @@
                                 <ItemsControl x:Name="DashEvents" ItemTemplate="{StaticResource DashEventTemplate}" VerticalAlignment="Top" ClipToBounds="True" Focusable="False" />
                                 <!-- Histórico: o próprio cartão passa a rolar, sem mudar de tamanho -->
                                 <ScrollViewer x:Name="DashEventsScroll" VerticalScrollBarVisibility="Auto" Visibility="Collapsed" Focusable="False">
-                                    <ItemsControl x:Name="DashEventsAll" ItemTemplate="{StaticResource DashEventTemplate}" Focusable="False" />
+                                    <ItemsControl x:Name="DashEventsAll" ItemTemplate="{StaticResource DashEventTemplate}" Margin="0,0,16,0" Focusable="False" />
                                 </ScrollViewer>
                             </local:FitHost>
                         </DockPanel>
