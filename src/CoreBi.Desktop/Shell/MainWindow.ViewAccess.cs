@@ -25,6 +25,8 @@ public partial class MainWindow
     internal ItemsControl DashRingLegend => PageDash.DashRingLegend;
     internal TextBlock DashEventsEmpty => PageDash.DashEventsEmpty;
     internal ItemsControl DashEvents => PageDash.DashEvents;
+    internal ItemsControl DashEventsAll => PageDash.DashEventsAll;
+    internal Button DashEventsMore => PageDash.DashEventsMore;
     internal ItemsControl DashHealth => PageDash.DashHealth;
     internal Border DashHealthBadge => PageDash.DashHealthBadge;
     internal TextBlock DashHealthBadgeText => PageDash.DashHealthBadgeText;
