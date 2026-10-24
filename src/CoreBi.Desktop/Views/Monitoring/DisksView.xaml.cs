@@ -88,8 +88,7 @@ public partial class DisksView : UserControl
         try
         {
             var sensors = _monitor.Snapshot();
-            var nvme = _monitor.NvmeLogs();
-            var cardsTask = Task.Run(() => DiskHealth.Read(sensors, nvme));
+            var cardsTask = Task.Run(() => DiskHealth.Read(sensors, _monitor.NvmeLogs()));
             var drivesTask = Task.Run(DriveMap.Read);
             var cards = await cardsTask;
             List<DriveCard> drives;

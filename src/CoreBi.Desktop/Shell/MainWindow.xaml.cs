@@ -190,37 +190,109 @@ public partial class MainWindow : Window
         BtnMax.ToolTip = max ? "Restaurar" : "Maximizar";
     }
 
+    /// <summary>Páginas pesadas: na primeira visita mostram o esqueleto enquanto montam e leem os dados.</summary>
+    private static readonly Dictionary<string, string> ColdPages = new()
+    {
+        ["PageSensors"] = "Lendo os sensores…",
+        ["PageDisks"] = "Lendo os discos…",
+        ["PageSystem"] = "Lendo as informações do sistema…",
+        ["PageEnergy"] = "Lendo bateria e energia…",
+        ["PageStartup"] = "Listando os programas de inicialização…",
+        ["PageApps"] = "Montando o catálogo de apps…",
+    };
+    private readonly HashSet<string> _warmPages = new();
+    private int _navVersion;
+
+    /// <summary>
+    /// A troca de página é imediata: o item do menu e o esqueleto aparecem no primeiro quadro; só depois a página pesada
+    /// é montada (por baixo do esqueleto) e os dados são lidos em segundo plano. Nas visitas seguintes não há esqueleto.
+    /// </summary>
     internal async void Nav_Checked(object sender, RoutedEventArgs e)
     {
         if (PageSystem == null) return; // disparado durante InitializeComponent
         string page = (string)((FrameworkElement)sender).Tag;
-        ShowPage(page);
+        int version = ++_navVersion;
+        bool cold = ColdPages.TryGetValue(page, out string? what) && !_warmPages.Contains(page);
+
+        if (cold)
+        {
+            LoadingText.Text = what;
+            ShowPage(page, deferred: true);
+            await Dispatcher.Yield(DispatcherPriority.Background); // deixa o esqueleto ser desenhado antes do trabalho pesado
+            if (version != _navVersion || _features.IsClosing) return;
+            RevealPage(page);
+        }
+        else ShowPage(page);
 
         // Algumas páginas carregam dados só quando abertas.
+        Task? work = null;
         switch (page)
         {
             case "PageDash": UpdateDashboard(); break;
             case "PageOverlay": UpdateOverlayPreview(); break;
-            case "PageDisks": await PageDisks.RefreshAsync(); break;
-            case "PageEnergy": await PageEnergy.RefreshAsync(); break;
+            case "PageDisks": work = PageDisks.RefreshAsync(); break;
+            case "PageEnergy": work = PageEnergy.RefreshAsync(); break;
             case "PageDriver": PageDriver.InitDriver(); break;
-            case "PageStartup": await PageStartup.ScanStartupAsync(); break;
-            case "PageApps": await PageApps.InitAppsAsync(); break;
+            case "PageStartup": work = PageStartup.ScanStartupAsync(); break;
+            case "PageApps": work = PageApps.InitAppsAsync(); break;
         }
+
+        if (!cold)
+        {
+            if (work != null) await work;
+            return;
+        }
+
+        // Com os dados já em mãos (Sensores, Sistema) basta esperar a página montar; senão, no máximo 2,5 s de espera.
+        if (work != null) await Task.WhenAny(work, Task.Delay(2500));
+        else await Dispatcher.Yield(DispatcherPriority.Background);
+        _warmPages.Add(page);
+        if (version == _navVersion) HideLoadingVeil(version);
+        if (work != null) await work;
     }
 
     private FrameworkElement[] Pages => new FrameworkElement[] { PageDash, PageSystem, PageSensors, PageGpu, PageGames, PageBottleneck, PageOverlay, PageBench, PageDriver, PageStartup, PageApps, PageDisks, PageEnergy, PageNet, PageStress };
 
-    internal void ShowPage(string name)
+    /// <summary>Com deferred, nenhuma página fica visível: só o esqueleto, até RevealPage.</summary>
+    internal void ShowPage(string name, bool deferred = false)
     {
         foreach (var p in Pages)
         {
-            bool show = p.Name == name;
+            bool show = !deferred && p.Name == name;
             if (show && p.Visibility != Visibility.Visible) AnimateIn(p);
             p.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         }
+        SetLoadingVeil(deferred);
         SideMonitor.Visibility = name == "PageDash" ? Visibility.Collapsed : Visibility.Visible;
         UpdateFrameMonitoring();
+    }
+
+    /// <summary>Monta a página por baixo do esqueleto (o custo da primeira exibição fica coberto por ele).</summary>
+    private void RevealPage(string name)
+    {
+        foreach (var p in Pages)
+            if (p.Name == name) p.Visibility = Visibility.Visible;
+    }
+
+    private void SetLoadingVeil(bool on)
+    {
+        LoadingVeil.BeginAnimation(OpacityProperty, null);
+        LoadingBars.BeginAnimation(OpacityProperty, null);
+        LoadingVeil.Opacity = 1;
+        LoadingVeil.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        // Pulso leve só enquanto o esqueleto está na tela (nada roda depois que a página abre).
+        if (on && SystemParameters.ClientAreaAnimation)
+            LoadingBars.BeginAnimation(OpacityProperty, new DoubleAnimation(0.5, 1, TimeSpan.FromMilliseconds(900))
+            { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } });
+    }
+
+    private void HideLoadingVeil(int version)
+    {
+        if (LoadingVeil.Visibility != Visibility.Visible) return;
+        if (!SystemParameters.ClientAreaAnimation) { SetLoadingVeil(false); return; }
+        var fade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(160));
+        fade.Completed += (_, _) => { if (version == _navVersion) SetLoadingVeil(false); };
+        LoadingVeil.BeginAnimation(OpacityProperty, fade);
     }
 
     /// <summary>Central da barra lateral: RAM em uso e ocupação do disco do sistema (CPU e GPU vêm do teste de carga e da GPU).</summary>
