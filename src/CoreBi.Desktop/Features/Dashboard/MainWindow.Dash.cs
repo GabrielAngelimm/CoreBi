@@ -106,16 +106,16 @@ public partial class MainWindow
             case "mem": // "84 ns · 36 GB/s · mapa 0,19 s"
                 return new DashEvent("\ueda2", "Benchmark de memória", Join(new[] { Part(1), Part(2) }), Part(0), r.Date);
             case "disk": // "C: · 2.929/3.320 MiB/s · 4K 14,6k IOPS"
-            {
-                string speeds = Part(1);
-                int slash = speeds.IndexOf('/');
-                int space = speeds.IndexOf(' ');
-                if (slash > 0 && space > slash)
-                    return new DashEvent("\ueda2", $"Benchmark de disco ({Part(0).TrimEnd(':')}:)",
-                                         Join(new[] { $"Escrita {speeds[(slash + 1)..space]} {speeds[(space + 1)..]}", Part(2) }),
-                                         $"{speeds[..slash]} {speeds[(space + 1)..]}", r.Date);
-                return new DashEvent("\ueda2", "Benchmark de disco", Join(parts.Skip(1)), Part(0), r.Date);
-            }
+                {
+                    string speeds = Part(1);
+                    int slash = speeds.IndexOf('/');
+                    int space = speeds.IndexOf(' ');
+                    if (slash > 0 && space > slash)
+                        return new DashEvent("\ueda2", $"Benchmark de disco ({Part(0).TrimEnd(':')}:)",
+                                             Join(new[] { $"Escrita {speeds[(slash + 1)..space]} {speeds[(space + 1)..]}", Part(2) }),
+                                             $"{speeds[..slash]} {speeds[(space + 1)..]}", r.Date);
+                    return new DashEvent("\ueda2", "Benchmark de disco", Join(parts.Skip(1)), Part(0), r.Date);
+                }
             default:
                 return new DashEvent("\ue8b9", r.Test, Join(parts.Skip(1)), Part(0), r.Date);
         }
