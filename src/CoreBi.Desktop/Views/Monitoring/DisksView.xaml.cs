@@ -5,6 +5,7 @@ using LibreHardwareMonitor.Hardware;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace CoreBi.Desktop.Views;
 
@@ -362,7 +363,7 @@ public partial class DisksView : UserControl
         void Cell(Border cell, TextBlock target, string? value, string unit)
         {
             if (value == null) return;
-            Readout(target, value, unit);
+            Readout(target, value, unit, balanced: true);
             cells.Add(cell);
         }
         Cell(OdoCell0, OdoHours, d.PowerOnHours is long h ? $"{h:N0}" : null, "h");
@@ -371,29 +372,59 @@ public partial class DisksView : UserControl
         Cell(OdoCell2, OdoWritten, d.WrittenGb != null ? written.Value : null, written.Unit);
         var read = d.ReadGb is double rg ? SplitData(rg) : default;
         Cell(OdoCell3, OdoRead, d.ReadGb != null ? read.Value : null, read.Unit);
+        // Linha de contexto sob cada leitura, derivada só do que o disco informa
+        double? days = d.PowerOnHours is > 0 ? d.PowerOnHours.Value / 24.0 : null;
+        OdoHoursNote.Text = days is double dd ? (dd >= 730 ? $"≈ {dd / 365:N1} anos ligado" : $"≈ {dd:N0} dias ligado") : "";
+        OdoCyclesNote.Text = d.StartStopCycles is > 0 && d.PowerOnHours is > 0 ? $"≈ {(double)d.PowerOnHours.Value / d.StartStopCycles.Value:N1} h por ciclo" : "";
+        string PerDay(double? gb) => gb is double g && days is double dy ? PerDayText(g / dy) : "";
+        OdoWrittenNote.Text = PerDay(d.WrittenGb);
+        OdoReadNote.Text = PerDay(d.ReadGb);
         _odoCells = cells;
         LayoutOdometer();
     }
 
+    private static string PerDayText(double gbPerDay) =>
+        gbPerDay >= 1000 ? $"≈ {gbPerDay / 1000:N1} TB por dia" : $"≈ {gbPerDay:N0} GB por dia";
+
     private List<Border> _odoCells = new();
 
+    /// <summary>Larga: quatro leituras empilhadas na coluna à direita. Estreita: faixa 2 × 2 abaixo da temperatura.</summary>
     private void LayoutOdometer()
     {
         OdoCard.Visibility = _odoCells.Count == 0 || DiskCards.SelectedItem is not DiskBay { Disk: not null } ? Visibility.Collapsed : Visibility.Visible;
         OdoGrid.Children.Clear();
-        int columns = Math.Max(1, Math.Min(_odoCells.Count, _wide ? 4 : 2));
+        int columns = _wide ? 1 : Math.Max(1, Math.Min(_odoCells.Count, 2));
         OdoGrid.Columns = columns;
+        OdoCard.Padding = _wide ? new Thickness(0) : new Thickness(0, 18, 0, 18);
         for (int i = 0; i < _odoCells.Count; i++)
         {
-            _odoCells[i].BorderThickness = new Thickness(i % columns == 0 ? 0 : 1, 0, 0, 0);
-            _odoCells[i].Margin = new Thickness(0, i >= columns ? 18 : 0, 0, 0);
-            OdoGrid.Children.Add(_odoCells[i]);
+            var cell = _odoCells[i];
+            cell.VerticalAlignment = VerticalAlignment.Stretch;
+            if (_wide)
+            {
+                cell.BorderThickness = new Thickness(0, i == 0 ? 0 : 1, 0, 0);
+                cell.Padding = new Thickness(12, 0, 12, 0);
+                cell.Margin = new Thickness(0);
+                ((StackPanel)cell.Child).VerticalAlignment = VerticalAlignment.Center;
+            }
+            else
+            {
+                cell.BorderThickness = new Thickness(i % columns == 0 ? 0 : 1, 0, 0, 0);
+                cell.Padding = new Thickness(24, 0, 24, 0);
+                cell.Margin = new Thickness(0, i >= columns ? 18 : 0, 0, 0);
+                ((StackPanel)cell.Child).VerticalAlignment = VerticalAlignment.Top;
+            }
+            // leituras centralizadas: a mesma folga à esquerda e à direita
+            var stack = (StackPanel)cell.Child;
+            stack.HorizontalAlignment = HorizontalAlignment.Center;
+            foreach (TextBlock t in stack.Children) { t.HorizontalAlignment = HorizontalAlignment.Center; t.TextAlignment = TextAlignment.Center; }
+            OdoGrid.Children.Add(cell);
         }
     }
 
     // ---------------- layout ----------------
 
-    /// <summary>Larga: integridade ao lado da temperatura. Estreita: integridade desce para o lado do odômetro (2 × 2).</summary>
+    /// <summary>Larga: odômetro ao lado da temperatura. Estreita: odômetro desce para uma faixa 2 × 2.</summary>
     private void DiskBody_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (!e.WidthChanged) return;
@@ -402,13 +433,16 @@ public partial class DisksView : UserControl
         _wide = wide;
         RackColumn.Width = new GridLength(wide ? 300 : 260);
         LifeColumn.Width = new GridLength(wide ? 370 : 330);
-        CheckGap.Width = new GridLength(wide ? 16 : 0);
-        CheckColumn.Width = new GridLength(wide ? 330 : 0);
         SpaceColumn.Width = new GridLength(wide ? 520 : 420);
-        Grid.SetRow(CheckCard, wide ? 2 : 4);
-        Grid.SetColumn(CheckCard, wide ? 4 : 0);
-        Grid.SetColumn(OdoCard, wide ? 0 : 2);
-        Grid.SetColumnSpan(OdoCard, wide ? 5 : 1);
+        // Larga: odômetro ao lado da temperatura e integridade na faixa de baixo. Estreita: odômetro desce em faixa 2 × 2 e a integridade fica por último.
+        OdoGap.Width = new GridLength(wide ? 16 : 0);
+        OdoColumn.Width = new GridLength(wide ? 170 : 0);
+        Grid.SetColumnSpan(TempCard, wide ? 1 : 3);
+        Grid.SetRow(OdoCard, wide ? 2 : 4);
+        Grid.SetColumn(OdoCard, wide ? 4 : 0);
+        Grid.SetColumnSpan(OdoCard, wide ? 1 : 5);
+        Grid.SetRow(CheckCard, wide ? 4 : 6);
+        CheckGapRow.Height = new GridLength(wide ? 0 : 16);
         LayoutOdometer();
         LifeDial.MinHeight = wide ? 210 : 190;
     }
@@ -416,9 +450,12 @@ public partial class DisksView : UserControl
     // ---------------- formatação ----------------
 
     /// <summary>Leitura com a unidade menor e em tom secundário ao lado (como nos mostradores da Visão geral).</summary>
-    private static void Readout(TextBlock target, string value, string unit)
+    private static void Readout(TextBlock target, string value, string unit, bool balanced = false)
     {
         target.Inlines.Clear();
+        // balanced: uma cópia invisível da unidade à esquerda, para o número (e não número + unidade) ficar no centro
+        if (balanced && unit.Length > 0)
+            target.Inlines.Add(new Run(unit + " ") { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.4)), Foreground = Brushes.Transparent, FontFamily = (FontFamily)Application.Current.FindResource("UiFont") });
         target.Inlines.Add(new Run(value));
         if (unit.Length == 0) return;
         var u = new Run(" " + unit) { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.4)) };
