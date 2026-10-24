@@ -119,7 +119,7 @@ internal static partial class Program
         Check("power history: days count only what the log covers", () =>
         {
             var day = DateTime.Today.AddDays(-2);
-            var h = new PowerHistory(DateTime.Today.AddDays(-6), day, new[] { new OnSpan(day.AddHours(22), day.AddHours(26), false) }, Array.Empty<DateTime>(), null, null, null);
+            var h = new PowerHistory(DateTime.Today.AddDays(-6), day, new[] { new OnSpan(day.AddHours(22), day.AddHours(26), false) }, Array.Empty<DateTime>(), null);
             Require(h.OnTime(day) == TimeSpan.FromHours(2) && h.OnTime(day.AddDays(1)) == TimeSpan.FromHours(2), "Span across midnight");
             Require(h.Covers(day) && !h.Covers(day.AddDays(-1)), "Coverage");
             return new { split = "22:00–02:00 counts 2 h on each day" };

@@ -1,5 +1,4 @@
 using System.Diagnostics.Eventing.Reader;
-using System.Xml.Linq;
 
 namespace CoreBi.Engine.Monitoring.Power;
 
@@ -11,8 +10,7 @@ public sealed record OnSpan(DateTime From, DateTime To, bool Current);
 /// suspensões e retornos. Desligamentos inesperados (Kernel-Power 41) aparecem à parte, na hora da partida seguinte.
 /// </summary>
 public sealed record PowerHistory(
-    DateTime Since, DateTime? LogStart, IReadOnlyList<OnSpan> Spans, IReadOnlyList<DateTime> Unexpected,
-    DateTime? LastWake, string? LastWakeSource, string? Error)
+    DateTime Since, DateTime? LogStart, IReadOnlyList<OnSpan> Spans, IReadOnlyList<DateTime> Unexpected, string? Error)
 {
     /// <summary>Tempo ligado dentro de um dia (00:00 a 24:00 locais).</summary>
     public TimeSpan OnTime(DateTime day)
@@ -47,7 +45,7 @@ public static class PowerHistoryReader
                 "(Provider[@Name='Microsoft-Windows-Kernel-Power'] and (EventID=41 or EventID=42 or EventID=107 or EventID=109 or EventID=506 or EventID=507)) or " +
                 "(Provider[@Name='Microsoft-Windows-Power-Troubleshooter'] and EventID=1)" +
                 $") and TimeCreated[@SystemTime>='{t}']]]";
-            var events = new List<(DateTime At, Kind Kind, string? Source)>();
+            var events = new List<(DateTime At, Kind Kind)>();
             using (var reader = new EventLogReader(new EventLogQuery("System", PathType.LogName, xpath)))
             {
                 for (EventRecord? rec = reader.ReadEvent(); rec != null; rec = reader.ReadEvent())
@@ -65,7 +63,7 @@ public static class PowerHistoryReader
                             ("Microsoft-Windows-Power-Troubleshooter", 1) => Kind.Wake,
                             _ => null,
                         };
-                        if (kind is Kind k) events.Add((at, k, k == Kind.Wake ? WakeSource(rec) : null));
+                        if (kind is Kind k) events.Add((at, k));
                     }
                 }
             }
@@ -73,9 +71,8 @@ public static class PowerHistoryReader
 
             var spans = new List<OnSpan>();
             var crashes = new List<DateTime>();
-            DateTime? on = null, lastWake = null;
-            string? wakeSource = null;
-            foreach (var (at, kind, source) in events)
+            DateTime? on = null;
+            foreach (var (at, kind) in events)
             {
                 switch (kind)
                 {
@@ -96,20 +93,18 @@ public static class PowerHistoryReader
                         on ??= at;
                         break;
                     case Kind.Wake:
-                        lastWake = at;
-                        wakeSource = source;
-                        on ??= at;
+                        on ??= at; // acordou da suspensão (às vezes vem antes do retorno do Kernel-Power)
                         break;
                 }
             }
             // A sessão atual: do último "ligou" até agora; sem evento de abertura (log muito curto), não inventa o início
             if (on is DateTime open) spans.Add(new OnSpan(open, now, true));
 
-            return new PowerHistory(since, LogStart(), spans, crashes.Where(c => c >= since).ToList(), lastWake, wakeSource, null);
+            return new PowerHistory(since, LogStart(), spans, crashes.Where(c => c >= since).ToList(), null);
         }
         catch (Exception ex)
         {
-            return new PowerHistory(since, null, Array.Empty<OnSpan>(), Array.Empty<DateTime>(), null, null, ex.Message);
+            return new PowerHistory(since, null, Array.Empty<OnSpan>(), Array.Empty<DateTime>(), ex.Message);
         }
     }
 
@@ -125,15 +120,4 @@ public static class PowerHistoryReader
         catch { return null; }
     }
 
-    /// <summary>"Fonte de ativação" do Power-Troubleshooter: o dispositivo ou motivo que acordou o PC.</summary>
-    private static string? WakeSource(EventRecord rec)
-    {
-        try
-        {
-            var data = XDocument.Parse(rec.ToXml()).Descendants().Where(e => e.Name.LocalName == "Data");
-            string? text = data.FirstOrDefault(e => (string?)e.Attribute("Name") == "WakeSourceText")?.Value.Trim();
-            return string.IsNullOrEmpty(text) ? null : text;
-        }
-        catch { return null; }
-    }
 }

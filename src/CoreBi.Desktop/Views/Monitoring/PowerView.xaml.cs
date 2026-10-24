@@ -1,5 +1,4 @@
 using CoreBi.Desktop.Services;
-using CoreBi.Engine.Games;
 using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Power;
 using CoreBi.Engine.Monitoring.Sensors;
@@ -15,14 +14,13 @@ using System.Windows.Media;
 namespace CoreBi.Desktop.Views;
 
 /// <summary>
-/// Energia: de onde vem a energia (tomada, bateria ou nobreak), o plano de energia com o que ele regula, o consumo ao vivo de
-/// processador e placa de vídeo, as tensões e quando o PC ficou ligado na semana. Fonte, plano, suspensão e histórico são lidos
+/// Energia: de onde vem a energia (tomada, bateria ou nobreak), o plano de energia com o essencial do que ele regula, o consumo
+/// ao vivo de processador e placa de vídeo, as tensões e quando o PC ficou ligado na semana. Fonte, plano e histórico são lidos
 /// do Windows ao abrir a página; consumo e tensões seguem os sensores a cada segundo, mesmo com a página fechada (para a sessão).
 /// </summary>
 public partial class PowerView : UserControl
 {
     public sealed record SettingItem(string Title, string Value, string? Tip);
-    public sealed record CapItem(string Title, bool On, string Tip);
 
     /// <summary>Base das linhas que mudam a cada segundo: avisa a interface só do que mudou.</summary>
     public abstract class LiveItem : INotifyPropertyChanged
@@ -87,7 +85,7 @@ public partial class PowerView : UserControl
     private readonly List<RailItem> _rails = new();
     private readonly List<VoltItem> _volts = new();
 
-    /// <summary>Última leitura completa (fonte, baterias, suspensão); nula até a primeira.</summary>
+    /// <summary>Última leitura completa (fonte e baterias); nula até a primeira.</summary>
     internal PowerSnapshot? Snapshot { get; private set; }
     internal PlanDetail? Plan { get; private set; }
     internal PowerHistory? History { get; private set; }
@@ -126,11 +124,9 @@ public partial class PowerView : UserControl
             _lastAc = Snapshot.OnAc;
             ShowSource(Snapshot);
             ShowPlan(Plan);
-            ShowSleep(Snapshot);
             ShowHistory(History);
-            ReadGpuLimit();
             ShowLive();
-            EnergyStatus.Text = string.Join(" · ", new[] { SourceWord(Snapshot), Plan.Active != null ? $"plano {Plan.Active.Name}" : null, $"lido às {DateTime.Now:HH:mm:ss}" }.Where(s => s != null));
+            EnergyStatus.Text = $"Lido às {DateTime.Now:HH:mm:ss}";
         }
         catch (Exception ex) { if (!_context.IsClosing) EnergyStatus.Text = "Falhou: " + ex.Message; }
         finally
@@ -156,7 +152,7 @@ public partial class PowerView : UserControl
         SourceCaption.Text = battery != null
             ? string.Join(" · ", new[] { s.Batteries.Count(b => !b.IsUps) > 1 ? $"{s.Batteries.Count(b => !b.IsUps)} baterias" : "Notebook", s.BatterySaver ? "economia de bateria ligada" : null }.Where(x => x != null))
             : ups != null ? "PC de mesa · nobreak conectado por USB"
-            : s.Sleep?.UpsPresent == true ? "PC de mesa · nobreak detectado"
+            : s.UpsPresent ? "PC de mesa · nobreak detectado"
             : "PC de mesa · nenhuma bateria";
 
         var shown = battery ?? ups;
@@ -201,9 +197,9 @@ public partial class PowerView : UserControl
         }
         Stat("Desgaste", shown.WearPct is double w ? $"{w:0.0}" : null, "%");
         Stat("Ciclos", shown.Cycles?.ToString("N0"), "");
-        Stat("Tensão", shown.Volts is double v ? $"{v:0.00}" : null, "V");
         BatteryStats.Columns = Math.Max(1, BatteryStats.Children.Count);
-        BatteryReason.Text = string.Join(" · ", new[] { shown.Reason, Join(shown.Manufacturer, shown.Model, shown.Chemistry) }.Where(x => !string.IsNullOrEmpty(x)));
+        BatteryReason.Text = shown.Reason;
+        BatteryReason.ToolTip = Join(shown.Manufacturer, shown.Model, shown.Chemistry) is { Length: > 0 } id ? id : null;
     }
 
     // ---------------- plano de energia ----------------
@@ -214,12 +210,9 @@ public partial class PowerView : UserControl
         PlanList.ItemsSource = p.Plans;
         PlanList.SelectedItem = p.Active;
         _syncingPlans = false;
-        PlanCount.Text = p.Plans.Count switch { 0 => "não identificado", 1 => "1 instalado", int n => $"{n} instalados" };
-        WindowsModeRow.Visibility = p.WindowsMode != null ? Visibility.Visible : Visibility.Collapsed;
-        WindowsMode.Text = p.WindowsMode ?? "";
 
         bool battery = Snapshot?.Batteries.Any(b => !b.IsUps) == true;
-        RegCaption.Text = battery ? "na tomada · na bateria" : "na tomada";
+        RegCaption.Visibility = battery ? Visibility.Visible : Visibility.Collapsed;
         RegSection.Visibility = p.Active == null ? Visibility.Collapsed : Visibility.Visible;
 
         ProcBox.Visibility = p.ProcessorMinAc != null && p.ProcessorMaxAc != null ? Visibility.Visible : Visibility.Collapsed;
@@ -229,11 +222,9 @@ public partial class PowerView : UserControl
             ProcMeter.To = max;
             string dc = battery && p.ProcessorMinDc is int dmin && p.ProcessorMaxDc is int dmax && (dmin != min || dmax != max) ? $" · {dmin} – {dmax} %" : "";
             ProcText.Text = $"{min} – {max} %" + dc;
-            // O que a faixa significa, em uma linha; limitar o máximo segura o clock e é o único caso que pede atenção
-            ProcNote.Text = max < 100 ? $"máximo {max} %: o clock fica limitado neste plano"
-                : min >= 100 ? "mínimo 100 %: o clock fica sempre no máximo"
-                : $"mínimo {min} %: o clock baixa em repouso";
-            ProcNote.SetResourceReference(TextBlock.ForegroundProperty, max < 100 ? "Warn" : "Faint");
+            // Só o caso que pede atenção ganha texto: máximo abaixo de 100 % segura o clock com carga
+            ProcNote.Text = $"Máximo em {max} %: o processador não chega ao clock total neste plano.";
+            ProcNote.Visibility = max < 100 ? Visibility.Visible : Visibility.Collapsed;
         }
         PlanSettings.ItemsSource = p.Settings.Select(s => new SettingItem(s.Title, battery && s.Dc != s.Ac ? $"{s.Ac} · {s.Dc}" : s.Ac, SettingTip(s.Key))).ToList();
     }
@@ -241,10 +232,8 @@ public partial class PowerView : UserControl
     private static string? SettingTip(string key) => key switch
     {
         "boost" => "Quanto o processador pode subir acima do clock base quando há carga.",
-        "cooling" => "Ativo: acelera a ventoinha antes de reduzir o clock. Passivo: reduz o clock antes.",
-        "aspm" => "Economia de energia do barramento PCI Express (placa de vídeo, SSD NVMe). Economia máxima pode causar pequenos atrasos.",
-        "usb" => "O Windows desliga portas USB ociosas. Alguns periféricos (headsets, controles) perdem a conexão com isso ativado.",
-        "wake" => "Se tarefas agendadas (atualizações, manutenção) podem acordar o PC da suspensão.",
+        "display" => "Tempo sem uso até o Windows apagar a tela.",
+        "sleep" => "Tempo sem uso até o PC suspender (desliga quase tudo e volta de onde parou).",
         _ => null,
     };
 
@@ -262,28 +251,6 @@ public partial class PowerView : UserControl
             EnergyStatus.Text = error == 0 ? $"Plano {plan.Name} ativado às {DateTime.Now:HH:mm:ss}" : $"O Windows recusou a troca de plano (erro {error}).";
         }
         finally { PlanList.IsEnabled = true; }
-    }
-
-    // ---------------- suspensão e partida ----------------
-
-    private void ShowSleep(PowerSnapshot s)
-    {
-        var caps = new List<CapItem>();
-        if (s.Sleep is SleepCapabilities c)
-        {
-            if (c.ModernStandby) caps.Add(new("Modern Standby (S0)", true, "O PC suspende como um celular: tela apagada, rede conectada e retorno instantâneo."));
-            else caps.Add(new("Suspensão (S3)", c.S3, c.S3 ? "Suspende na memória: volta em segundos de onde parou." : "O firmware não oferece suspensão em memória."));
-            caps.Add(new("Hibernação", c.Hibernate, c.Hibernate ? "Salva a sessão no disco e desliga por completo." : "Desativada ou sem arquivo de hibernação (powercfg /h on ativa)."));
-            if (c.FastStartup is bool fast)
-                caps.Add(new("Inicialização rápida", fast, fast ? "Desligar hiberna o núcleo do Windows para ligar mais rápido; o Reiniciar continua completo."
-                                                             : "Desligar encerra tudo; a próxima partida é completa."));
-        }
-        SleepCaps.ItemsSource = caps;
-        var facts = new List<KeyValuePair<string, string>>();
-        if (s.BiosSeconds is double bios) facts.Add(new("BIOS na última partida", $"{bios:0.0} s"));
-        if (History?.LastWake is DateTime wake)
-            facts.Add(new("Última vez que acordou", When(wake) + (History.LastWakeSource is string src ? " · " + src : "")));
-        BootFacts.ItemsSource = facts;
     }
 
     // ---------------- ligado nos últimos 7 dias ----------------
@@ -320,12 +287,13 @@ public partial class PowerView : UserControl
         if (past.Count > 0) Readout(DaysAverage, TimeSpan.FromTicks((long)past.Average(d => h.OnTime(d).Ticks)));
         else DaysAverage.Text = "—";
         int crashCount = h.Unexpected.Count;
-        DaysCrashes.Text = crashCount == 0 ? "nenhum" : crashCount.ToString();
-        DaysCrashes.SetResourceReference(TextBlock.ForegroundProperty, crashCount == 0 ? "Fg" : crashCount >= 3 ? "Danger" : "Warn");
-        DaysCrashes.FontSize = crashCount == 0 ? 21 : 26;
-        DaysCaption.Text = h.LogStart is DateTime start && start > h.Since
-            ? $"Pelo registro de eventos do Windows, que só guarda desde {start:dd/MM HH:mm}"
-            : "Pelo registro de eventos do Windows · passe o mouse sobre um dia para ver os horários";
+        DaysCrashes.Text = crashCount.ToString();
+        DaysCrashes.SetResourceReference(TextBlock.ForegroundProperty, crashCount >= 3 ? "Danger" : "Warn");
+        CrashBox.Visibility = crashCount > 0 ? Visibility.Visible : Visibility.Collapsed;
+        // Só avisa quando o registro não cobre a semana inteira (o Windows descarta eventos antigos quando o log enche)
+        bool shortLog = h.LogStart is DateTime start && start > h.Since;
+        DaysCaption.Text = shortLog ? $"O registro do Windows só guarda desde {h.LogStart:dd/MM HH:mm}" : "";
+        DaysCaption.Visibility = shortLog ? Visibility.Visible : Visibility.Collapsed;
     }
 
     // ---------------- ao vivo (a cada segundo, mesmo com a página fechada) ----------------
@@ -364,75 +332,34 @@ public partial class PowerView : UserControl
         LiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, any ? "Accent" : "Faint");
         LiveText.Text = any ? "Ao vivo" : _monitor.IsOpen ? "Sem leitura de consumo" : "Aguardando os sensores";
         Readout(TotalNow, any ? $"{(cpu ?? 0) + (gpu ?? 0):0}" : "—", any ? "W" : "");
-        TotalCaption.Text = cpu != null && gpu != null ? "agora, no processador e na placa de vídeo"
-            : gpu != null ? "agora, só a placa de vídeo (sem leitura do processador)"
-            : cpu != null ? "agora, só o processador (sem leitura da placa de vídeo)"
-            : "sem leitura de consumo nos sensores";
-        Split.First = cpu ?? 0;
-        Split.Second = gpu ?? 0;
+        TotalCaption.Text = cpu != null && gpu != null ? "processador + placa de vídeo"
+            : gpu != null ? "só a placa de vídeo"
+            : cpu != null ? "só o processador"
+            : "sem leitura de consumo";
         Readout(CpuNow, cpu is float c ? $"{c:0.0}" : "—", cpu != null ? "W" : "");
         Readout(GpuNow, gpu is float g ? $"{g:0.0}" : "—", gpu != null ? "W" : "");
-        ShowCpuCaption(cpu);
-        ShowGpu(gpu);
+        ShowCpuProblem(cpu);
+        GpuCaption.Visibility = gpu == null && _mainGpu() != null ? Visibility.Visible : Visibility.Collapsed;
+        GpuCaption.Text = "sem leitura do sensor de consumo";
         Trace.EmptyText = _monitor.IsOpen ? "Nenhum sensor de consumo do processador ou da placa de vídeo respondeu." : "Coletando as primeiras amostras…";
         if (any || _trace.Count > 0) Trace.Samples = _trace.ToList();
         ShowSession();
         ShowVoltages();
     }
 
-    private void ShowCpuCaption(float? cpu)
+    /// <summary>Sem leitura do processador: diz por quê (administrador, PawnIO) em vez de deixar só o traço.</summary>
+    private void ShowCpuProblem(float? cpu)
     {
-        var rows = _monitor.Rows.Where(r => r.HardwareType == HardwareType.Cpu).ToList();
-        string name = rows.FirstOrDefault()?.Hardware is string hw ? GameCatalog.ShortCpuName(hw) : "Processador";
-        if (cpu == null)
+        CpuCaption.Visibility = cpu == null && _monitor.IsOpen ? Visibility.Visible : Visibility.Collapsed;
+        if (cpu != null || !_monitor.IsOpen) return;
+        var problem = _monitor.DiagnoseCpuSensors();
+        CpuCaption.Text = problem switch
         {
-            var problem = _monitor.DiagnoseCpuSensors();
-            CpuCaption.Text = name + " · " + problem switch
-            {
-                SensorMonitor.CpuSensorProblem.NotElevated => "sem leitura: abra como administrador",
-                SensorMonitor.CpuSensorProblem.PawnIOMissing => "sem leitura: falta o driver PawnIO",
-                _ => "sem leitura do sensor de consumo",
-            };
-            CpuCaption.ToolTip = SensorMonitor.Explain(problem) is { Length: > 0 } why ? why : null;
-            return;
-        }
-        float? Power(params string[] names) => rows.FirstOrDefault(r => r.Type == SensorType.Power && r.RawValue > 0 && names.Contains(r.Name))?.RawValue;
-        float? cores = Power("CPU Cores", "Cores", "Core (SVI2 TFN)", "Core (SVI3 TFN)");
-        if (cores == null)
-        {
-            var each = rows.Where(r => r.Type == SensorType.Power && r.Name.StartsWith("Core #") && r.RawValue > 0).ToList();
-            if (each.Count > 0) cores = each.Sum(r => r.RawValue!.Value);
-        }
-        float? soc = Power("SoC (SVI2 TFN)", "SoC (SVI3 TFN)", "SoC");
-        float? igpu = Power("CPU Graphics");
-        CpuCaption.Text = string.Join(" · ", new[] { name, cores is float k ? $"núcleos {k:0.0} W" : null, soc is float s ? $"SoC {s:0.0} W" : null, igpu is float i ? $"gráficos {i:0.0} W" : null }.Where(x => x != null));
-        CpuCaption.ToolTip = null;
-    }
-
-    /// <summary>Limite de potência da placa (NVML): o aplicado agora, o padrão de fábrica e a faixa permitida. Lido ao abrir a página, não a cada segundo.</summary>
-    private (uint Limit, uint? Default, (uint Min, uint Max)? Range)? _gpuLimit;
-
-    private void ReadGpuLimit()
-    {
-        var g = _mainGpu();
-        _gpuLimit = g != null && g.NvmlHandle != IntPtr.Zero && Nvml.PowerLimitMw(g.NvmlHandle) is uint lim && lim > 0
-            ? (lim, Nvml.PowerDefaultMw(g.NvmlHandle), Nvml.PowerConstraintsMw(g.NvmlHandle)) : null;
-        GpuLimitCell.Visibility = _gpuLimit != null ? Visibility.Visible : Visibility.Collapsed;
-        if (_gpuLimit is not { } gl) return;
-        var (limit, def, range) = gl;
-        Readout(GpuLimit, $"{limit / 1000.0:0}", "W");
-        string first = def is uint d ? (Math.Abs((double)d - limit) < 1000 ? "padrão de fábrica" : $"padrão {d / 1000.0:0} W") : "";
-        string second = range is { } r && r.Max > r.Min ? $"ajustável de {r.Min / 1000.0:0} a {r.Max / 1000.0:0} W" : "";
-        GpuLimitNote.Text = string.Join(" · ", new[] { first, second }.Where(x => x.Length > 0));
-    }
-
-    private void ShowGpu(float? gpu)
-    {
-        var g = _mainGpu();
-        string name = g != null ? GameCatalog.ShortGpuName(g.Name) : "Placa de vídeo";
-        GpuCaption.Text = gpu is float w && _gpuLimit is { } gl
-            ? $"{name} · {100.0 * w / (gl.Limit / 1000.0):0} % do limite de {gl.Limit / 1000.0:0} W"
-            : gpu == null ? $"{name} · sem leitura do sensor de consumo" : name;
+            SensorMonitor.CpuSensorProblem.NotElevated => "sem leitura: abra como administrador",
+            SensorMonitor.CpuSensorProblem.PawnIOMissing => "sem leitura: falta o driver PawnIO",
+            _ => "sem leitura do sensor de consumo",
+        };
+        CpuCaption.ToolTip = SensorMonitor.Explain(problem) is { Length: > 0 } why ? why : null;
     }
 
     private void ShowSession()
@@ -440,17 +367,21 @@ public partial class PowerView : UserControl
         if (_sessionStart is not DateTime start || _countW == 0)
         {
             SessionEnergy.Text = SessionAverage.Text = SessionPeak.Text = "—";
-            SessionSince.Text = SessionLength.Text = SessionPeakAt.Text = "";
+            AverageCell.ToolTip = PeakCell.ToolTip = EnergyCell.ToolTip = null;
             return;
         }
+        // Sessão: desde que o CoreBi abriu; tudo é a soma processador + placa de vídeo, como a leitura grande
+        var length = DateTime.Now - start;
+        string span = length.TotalMinutes < 1 ? "menos de 1 min" : Hours(length, minutesWord: true);
+        Readout(SessionAverage, $"{_sumW / _countW:0}", "W");
+        AverageCell.ToolTip = $"Consumo médio de processador + placa de vídeo desde {start:HH:mm} ({span}).";
+        Readout(SessionPeak, $"{_peakW:0}", "W");
+        PeakCell.ToolTip = _peakAt is DateTime at
+            ? $"A maior soma de processador + placa de vídeo num mesmo segundo, {(at.Date == DateTime.Today ? "" : $"em {at:dd/MM} ")}às {at:HH:mm:ss}."
+            : null;
         if (_energyWh >= 1000) Readout(SessionEnergy, $"{_energyWh / 1000:0.00}", "kWh");
         else Readout(SessionEnergy, $"{_energyWh:0}", "Wh");
-        SessionSince.Text = $"desde {start:HH:mm}";
-        Readout(SessionAverage, $"{_sumW / _countW:0}", "W");
-        var length = DateTime.Now - start;
-        SessionLength.Text = "em " + (length.TotalMinutes < 1 ? "menos de 1 min" : Hours(length, minutesWord: true));
-        Readout(SessionPeak, $"{_peakW:0}", "W");
-        SessionPeakAt.Text = _peakAt is DateTime at ? (at.Date == DateTime.Today ? $"às {at:HH:mm}" : $"em {at:dd/MM} às {at:HH:mm}") : "";
+        EnergyCell.ToolTip = $"Quanto processador e placa de vídeo gastaram desde {start:HH:mm}. 1000 Wh = 1 kWh, a unidade da conta de luz.";
     }
 
     private void ShowVoltages()
@@ -498,8 +429,6 @@ public partial class PowerView : UserControl
         VoltComponentsTitle.Visibility = rails && comps ? Visibility.Visible : Visibility.Collapsed;
         VoltRows.Visibility = comps ? Visibility.Visible : Visibility.Collapsed;
         VoltRows.Margin = new Thickness(0, rails ? 0 : 12, 0, 0);
-        VoltLive.Visibility = rails || comps ? Visibility.Visible : Visibility.Collapsed;
-        VoltCaption.Text = rails ? "Trilhos da fonte, lidos pela placa-mãe" : comps ? "Processador, memória e placa de vídeo" : "Nenhuma tensão disponível";
         VoltEmpty.Visibility = rails || comps ? Visibility.Collapsed : Visibility.Visible;
         VoltEmpty.Text = !_monitor.IsOpen ? "Aguardando os sensores…"
             : _monitor.DiagnoseCpuSensors() is var p && p != SensorMonitor.CpuSensorProblem.None ? "Os sensores da placa-mãe e do processador não responderam. " + SensorMonitor.Explain(p)
@@ -586,9 +515,6 @@ public partial class PowerView : UserControl
     }
 
     private static string Duration(int minutes) => minutes >= 60 ? $"{minutes / 60} h {minutes % 60:00} min" : $"{minutes} min";
-
-    private static string When(DateTime t) =>
-        t.Date == DateTime.Today ? $"hoje {t:HH:mm}" : t.Date == DateTime.Today.AddDays(-1) ? $"ontem {t:HH:mm}" : $"{t:dd/MM HH:mm}";
 
     private static string Join(params string?[] parts) => string.Join(" · ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
 }

@@ -251,26 +251,6 @@ public sealed class PowerTrace : EnergyInstrument
     }
 }
 
-/// <summary>Divisão do consumo agora: um medidor segmentado só, com a parte do processador e a da placa de vídeo na proporção.</summary>
-public sealed class SplitBar : EnergyInstrument
-{
-    public static readonly DependencyProperty FirstProperty = Number(nameof(First), typeof(SplitBar));
-    public static readonly DependencyProperty SecondProperty = Number(nameof(Second), typeof(SplitBar));
-    public double First { get => (double)GetValue(FirstProperty); set => SetValue(FirstProperty, value); }
-    public double Second { get => (double)GetValue(SecondProperty); set => SetValue(SecondProperty, value); }
-
-    public SplitBar() => Height = 12;
-
-    protected override void OnRender(DrawingContext dc)
-    {
-        double w = ActualWidth, h = ActualHeight;
-        if (w < 20) return;
-        double a = double.IsNaN(First) ? 0 : Math.Max(0, First), b = double.IsNaN(Second) ? 0 : Math.Max(0, Second);
-        double total = a + b;
-        Segments(dc, new Rect(0, 0, w, h), f => total <= 0 ? TrackBrush : f <= a / total ? AccentBrush : CopperBrush);
-    }
-}
-
 /// <summary>
 /// Trilho da fonte: escala de −10 % a +10 % em volta do nominal, com a tolerância ATX (±5 %) acesa em verde suave, o traço
 /// do nominal, a faixa vista desde que o CoreBi abriu (embaixo) e o ponteiro da leitura (âmbar fora da tolerância).

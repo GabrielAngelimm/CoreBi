@@ -62,28 +62,14 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Regulagem do plano: rótulo e valor, duas por linha -->
-        <DataTemplate x:Key="SettingCell">
-            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,9,14,9">
-                <StackPanel>
-                    <TextBlock Text="{Binding Title}" Style="{StaticResource StatLabel}" />
-                    <TextBlock Text="{Binding Value}" FontWeight="SemiBold" Margin="0,2,0,0" Typography.NumeralAlignment="Tabular" TextTrimming="CharacterEllipsis" ToolTip="{Binding Tip}" />
-                </StackPanel>
+        <!-- Regulagem do plano: rótulo à esquerda, valor à direita, uma por linha -->
+        <DataTemplate x:Key="SettingRow">
+            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,9" ToolTip="{Binding Tip}">
+                <Grid>
+                    <TextBlock Text="{Binding Title}" Foreground="{DynamicResource Muted}" />
+                    <TextBlock Text="{Binding Value}" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
+                </Grid>
             </Border>
-        </DataTemplate>
-
-        <!-- Capacidade de suspensão: LED aceso quando o PC oferece -->
-        <DataTemplate x:Key="SleepCap">
-            <StackPanel Orientation="Horizontal" Margin="0,0,18,8" ToolTip="{Binding Tip}">
-                <Ellipse x:Name="led" Style="{StaticResource Led}" Margin="0,1,8,0" />
-                <TextBlock x:Name="text" Text="{Binding Title}" FontSize="12.5" Foreground="{DynamicResource Faint}" />
-            </StackPanel>
-            <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding On}" Value="True">
-                    <Setter TargetName="led" Property="Fill" Value="{DynamicResource Accent}" />
-                    <Setter TargetName="text" Property="Foreground" Value="{DynamicResource Fg}" />
-                </DataTrigger>
-            </DataTemplate.Triggers>
         </DataTemplate>
 
         <!-- Trilho da fonte: nome, régua de tolerância, leitura e desvio do nominal -->
@@ -133,9 +119,9 @@
     </UserControl.Resources>
 
     <!--
-        Uma tela: com a janela maximizada tudo cabe sem rolar. À esquerda, a alimentação (fonte ou bateria, plano de energia com a
-        regulagem e o que o PC oferece de suspensão); à direita, o consumo ao vivo com o histórico de 5 min e a sessão, e embaixo as
-        tensões e quando o PC ficou ligado nos últimos 7 dias. Em janelas menores os painéis descem e a página rola.
+        Uma tela: com a janela maximizada tudo cabe sem rolar. À esquerda, a alimentação (fonte ou bateria e o plano de energia com o
+        essencial da regulagem); à direita, o consumo ao vivo com o histórico de 5 min e a sessão, e embaixo as tensões e quando o PC
+        ficou ligado nos últimos 7 dias. Em janelas menores os painéis descem e a página rola.
     -->
     <ScrollViewer x:Name="EnergyScroll" VerticalScrollBarVisibility="Auto">
         <Grid MinHeight="{Binding ViewportHeight, ElementName=EnergyScroll}">
@@ -223,16 +209,9 @@
                             <!-- Plano de energia: os instalados, com troca em um clique -->
                             <Border Style="{StaticResource FeedSection}">
                                 <StackPanel>
-                                    <Grid>
-                                        <TextBlock Text="Plano de energia" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock x:Name="PlanCount" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" />
-                                    </Grid>
+                                    <TextBlock Text="Plano de energia" Style="{StaticResource SectionTitle}" />
                                     <ListBox x:Name="PlanList" Margin="-2,10,-2,0" ItemTemplate="{StaticResource PlanRow}" ItemContainerStyle="{StaticResource ListNavItem}"
                                              ScrollViewer.VerticalScrollBarVisibility="Disabled" SelectionChanged="PlanList_SelectionChanged" AutomationProperties.Name="Planos de energia" />
-                                    <Grid x:Name="WindowsModeRow" Margin="0,8,0,0" Visibility="Collapsed" ToolTip="Em Configurações &gt; Energia. Só vale com o plano Equilibrado.">
-                                        <TextBlock Text="Modo de energia do Windows" Style="{StaticResource StatLabel}" FontSize="12.5" />
-                                        <TextBlock x:Name="WindowsMode" FontWeight="SemiBold" HorizontalAlignment="Right" />
-                                    </Grid>
                                 </StackPanel>
                             </Border>
 
@@ -240,58 +219,18 @@
                             <Border x:Name="RegSection" Style="{StaticResource FeedSection}">
                                 <StackPanel>
                                     <Grid>
-                                        <TextBlock Text="Regulagem do plano" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock x:Name="RegCaption" Text="na tomada" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                                        <TextBlock Text="O que o plano define" Style="{StaticResource SectionTitle}" />
+                                        <TextBlock x:Name="RegCaption" Text="na tomada · na bateria" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed" />
                                     </Grid>
-                                    <StackPanel x:Name="ProcBox" Margin="0,12,0,0">
+                                    <StackPanel x:Name="ProcBox" Margin="0,12,0,10" ToolTip="Quanto do clock o Windows pode usar: o mínimo vale em repouso, o máximo com carga.">
                                         <Grid>
-                                            <TextBlock Text="Estado do processador" Style="{StaticResource StatLabel}" />
+                                            <TextBlock Text="Processador" Foreground="{DynamicResource Muted}" />
                                             <TextBlock x:Name="ProcText" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
                                         </Grid>
                                         <local:SpanMeter x:Name="ProcMeter" Margin="0,9,0,0" />
-                                        <Grid Margin="0,5,0,0">
-                                            <TextBlock Text="0" FontFamily="{StaticResource Readout}" FontSize="11" Foreground="{DynamicResource Faint}" />
-                                            <TextBlock x:Name="ProcNote" FontSize="11.5" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="16,0" />
-                                            <TextBlock Text="100" FontFamily="{StaticResource Readout}" FontSize="11" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right" />
-                                        </Grid>
+                                        <TextBlock x:Name="ProcNote" FontSize="12" Foreground="{DynamicResource Warn}" Margin="0,6,0,0" TextWrapping="Wrap" Visibility="Collapsed" />
                                     </StackPanel>
-                                    <ItemsControl x:Name="PlanSettings" ItemTemplate="{StaticResource SettingCell}" Margin="0,12,0,0" Focusable="False">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <UniformGrid Columns="2" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                    </ItemsControl>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Suspensão e partida -->
-                            <Border Style="{StaticResource FeedSection}">
-                                <StackPanel>
-                                    <TextBlock Text="Suspensão e partida" Style="{StaticResource SectionTitle}" />
-                                    <ItemsControl x:Name="SleepCaps" ItemTemplate="{StaticResource SleepCap}" Margin="0,12,0,2" Focusable="False">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <WrapPanel />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                    </ItemsControl>
-                                    <ItemsControl x:Name="BootFacts" Focusable="False">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,9">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="Auto" />
-                                                            <ColumnDefinition Width="*" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding Key}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="0,0,14,0" />
-                                                        <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="12.5" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" ToolTip="{Binding Value}" />
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                    <ItemsControl x:Name="PlanSettings" ItemTemplate="{StaticResource SettingRow}" Focusable="False" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -313,10 +252,8 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid Margin="22,20,22,0">
-                                    <StackPanel>
-                                        <TextBlock Text="Consumo" Style="{StaticResource SectionTitle}" />
-                                        <TextBlock x:Name="PowerCaption" Text="Processador e placa de vídeo, pelos sensores. A fonte do PC não é medida." Style="{StaticResource Caption}" Margin="0,3,0,0" />
-                                    </StackPanel>
+                                    <TextBlock Text="Consumo" Style="{StaticResource SectionTitle}" HorizontalAlignment="Left"
+                                               ToolTip="Processador e placa de vídeo, pelos sensores deles. O resto do PC (placa-mãe, memória, discos, ventoinhas) e a perda da fonte não são medidos." />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0">
                                         <Ellipse x:Name="LiveDot" Style="{StaticResource Led}" Margin="0,1,7,0" />
                                         <TextBlock x:Name="LiveText" Text="Aguardando os sensores" Style="{StaticResource Caption}" />
@@ -331,8 +268,7 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel VerticalAlignment="Center">
                                         <TextBlock x:Name="TotalNow" Style="{StaticResource ReadoutHero}" FontSize="88" Text="—" />
-                                        <TextBlock x:Name="TotalCaption" Text="agora, no processador e na placa de vídeo" Style="{StaticResource Caption}" Margin="0,6,0,18" />
-                                        <local:SplitBar x:Name="Split" Margin="0,0,0,14" />
+                                        <TextBlock x:Name="TotalCaption" Text="processador + placa de vídeo" Style="{StaticResource Caption}" Margin="0,4,0,20" />
                                         <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,10,0,0">
                                             <Grid>
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -342,8 +278,8 @@
                                                 <TextBlock x:Name="CpuNow" Style="{StaticResource ChannelValue}" Text="—" />
                                             </Grid>
                                         </Border>
-                                        <TextBlock x:Name="CpuCaption" FontSize="12" Foreground="{DynamicResource Faint}" Margin="0,2,0,12" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" />
-                                        <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                                        <TextBlock x:Name="CpuCaption" FontSize="12" Foreground="{DynamicResource Warn}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
+                                        <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,10,0,0" Margin="0,12,0,0">
                                             <Grid>
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                     <Border Style="{StaticResource Dash}" Background="{DynamicResource Copper}" />
@@ -352,39 +288,29 @@
                                                 <TextBlock x:Name="GpuNow" Style="{StaticResource ChannelValue}" Text="—" />
                                             </Grid>
                                         </Border>
-                                        <TextBlock x:Name="GpuCaption" FontSize="12" Foreground="{DynamicResource Faint}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" />
+                                        <TextBlock x:Name="GpuCaption" FontSize="12" Foreground="{DynamicResource Warn}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
                                     </StackPanel>
                                     <local:PowerTrace x:Name="Trace" Grid.Column="2" MinHeight="200" EmptyText="Coletando as primeiras amostras…" />
                                 </Grid>
 
                                 <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0">
                                     <UniformGrid x:Name="Ruler" Rows="1">
-                                        <Border Style="{StaticResource RulerCell}" BorderThickness="0">
+                                        <Border x:Name="AverageCell" Style="{StaticResource RulerCell}" BorderThickness="0">
                                             <StackPanel>
-                                                <TextBlock Text="Energia nesta sessão" Style="{StaticResource StatLabel}" />
-                                                <TextBlock x:Name="SessionEnergy" Style="{StaticResource RulerValue}" Text="—" />
-                                                <TextBlock x:Name="SessionSince" Style="{StaticResource StatSub}" />
-                                            </StackPanel>
-                                        </Border>
-                                        <Border Style="{StaticResource RulerCell}">
-                                            <StackPanel>
-                                                <TextBlock Text="Média" Style="{StaticResource StatLabel}" />
+                                                <TextBlock Text="Média da sessão" Style="{StaticResource StatLabel}" />
                                                 <TextBlock x:Name="SessionAverage" Style="{StaticResource RulerValue}" Text="—" />
-                                                <TextBlock x:Name="SessionLength" Style="{StaticResource StatSub}" />
                                             </StackPanel>
                                         </Border>
-                                        <Border Style="{StaticResource RulerCell}">
+                                        <Border x:Name="PeakCell" Style="{StaticResource RulerCell}">
                                             <StackPanel>
-                                                <TextBlock Text="Pico" Style="{StaticResource StatLabel}" />
+                                                <TextBlock Text="Pico da sessão" Style="{StaticResource StatLabel}" />
                                                 <TextBlock x:Name="SessionPeak" Style="{StaticResource RulerValue}" Text="—" />
-                                                <TextBlock x:Name="SessionPeakAt" Style="{StaticResource StatSub}" />
                                             </StackPanel>
                                         </Border>
-                                        <Border x:Name="GpuLimitCell" Style="{StaticResource RulerCell}">
+                                        <Border x:Name="EnergyCell" Style="{StaticResource RulerCell}">
                                             <StackPanel>
-                                                <TextBlock Text="Limite da placa de vídeo" Style="{StaticResource StatLabel}" />
-                                                <TextBlock x:Name="GpuLimit" Style="{StaticResource RulerValue}" Text="—" />
-                                                <TextBlock x:Name="GpuLimitNote" Style="{StaticResource StatSub}" />
+                                                <TextBlock Text="Energia da sessão" Style="{StaticResource StatLabel}" />
+                                                <TextBlock x:Name="SessionEnergy" Style="{StaticResource RulerValue}" Text="—" />
                                             </StackPanel>
                                         </Border>
                                     </UniformGrid>
@@ -407,19 +333,10 @@
                             <!-- Tensões -->
                             <Border x:Name="VoltCard" Style="{StaticResource CardBorder}">
                                 <StackPanel>
-                                    <Grid>
-                                        <StackPanel>
-                                            <TextBlock Text="Tensões" Style="{StaticResource SectionTitle}" />
-                                            <TextBlock x:Name="VoltCaption" Text="Trilhos da fonte, lidos pela placa-mãe" Style="{StaticResource Caption}" Margin="0,3,0,0" />
-                                        </StackPanel>
-                                        <StackPanel x:Name="VoltLive" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0" Visibility="Collapsed">
-                                            <Ellipse Style="{StaticResource Led}" Fill="{DynamicResource Accent}" Margin="0,1,7,0" />
-                                            <TextBlock Text="Ao vivo" Style="{StaticResource Caption}" />
-                                        </StackPanel>
-                                    </Grid>
-                                    <ItemsControl x:Name="RailRows" ItemTemplate="{StaticResource RailRow}" Margin="0,16,0,0" Focusable="False" />
+                                    <TextBlock Text="Tensões" Style="{StaticResource SectionTitle}" />
+                                    <ItemsControl x:Name="RailRows" ItemTemplate="{StaticResource RailRow}" Margin="0,14,0,0" Focusable="False" />
                                     <Border x:Name="VoltDivider" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Margin="0,4,0,8" />
-                                    <TextBlock x:Name="VoltComponentsTitle" Text="Componentes" Style="{StaticResource Label}" Foreground="{DynamicResource Faint}" Margin="0,0,0,2" />
+                                    <TextBlock x:Name="VoltComponentsTitle" Text="Componentes" Style="{StaticResource Label}" Foreground="{DynamicResource Faint}" Margin="0,0,0,2" ToolTip="Tensões dos chips: variam com a carga, então a faixa clara mostra o mínimo e o máximo desde que o CoreBi abriu." />
                                     <ItemsControl x:Name="VoltRows" ItemTemplate="{StaticResource VoltRow}" Focusable="False" />
                                     <TextBlock x:Name="VoltEmpty" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="0,14,0,4" Visibility="Collapsed" />
                                     <Button x:Name="VoltAll" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="-10,8,0,-6" Click="VoltAll_Click">
@@ -434,8 +351,8 @@
                             <!-- Ligado nos últimos 7 dias -->
                             <Border x:Name="DaysCard" Grid.Column="2" Style="{StaticResource CardBorder}">
                                 <StackPanel>
-                                    <TextBlock Text="Ligado nos últimos 7 dias" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock x:Name="DaysCaption" Text="Pelo registro de eventos do Windows" Style="{StaticResource Caption}" Margin="0,3,0,0" />
+                                    <TextBlock Text="Ligado nos últimos 7 dias" Style="{StaticResource SectionTitle}" HorizontalAlignment="Left" ToolTip="Pelo registro de eventos do Windows. Passe o mouse sobre um dia para ver os horários." />
+                                    <TextBlock x:Name="DaysCaption" Style="{StaticResource Caption}" Margin="0,3,0,0" Visibility="Collapsed" />
                                     <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
                                         <StackPanel Margin="0,0,34,0">
                                             <TextBlock Text="Hoje" Style="{StaticResource StatLabel}" />
@@ -445,7 +362,7 @@
                                             <TextBlock Text="Média por dia" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="DaysAverage" Style="{StaticResource RulerValue}" FontSize="26" Text="—" />
                                         </StackPanel>
-                                        <StackPanel ToolTip="O Windows reiniciou sem desligar antes: queda de energia, travamento ou botão de energia segurado (Kernel-Power 41).">
+                                        <StackPanel x:Name="CrashBox" ToolTip="O Windows reiniciou sem desligar antes: queda de energia, travamento ou botão de energia segurado (Kernel-Power 41).">
                                             <TextBlock Text="Desligamentos inesperados" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="DaysCrashes" Style="{StaticResource RulerValue}" FontSize="26" Text="—" />
                                         </StackPanel>

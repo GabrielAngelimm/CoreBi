@@ -1,5 +1,4 @@
 using CoreBi.Engine.Monitoring.Storage;
-using Microsoft.Win32;
 using System.Runtime.InteropServices;
 
 using static CoreBi.Engine.Monitoring.Power.BatteryInfo;
@@ -17,11 +16,8 @@ public sealed record BatteryState(
     double? Volts, double? RateW, int? RuntimeMin, int? ToFullMin,
     DiskVerdict Verdict, string VerdictText, string Reason, bool IsUps);
 
-/// <summary>Estados de suspensão que o firmware oferece e como o Windows liga o PC.</summary>
-public sealed record SleepCapabilities(bool S3, bool ModernStandby, bool Hibernate, bool? FastStartup, bool UpsPresent, bool LidPresent);
-
-/// <summary>Fonte de energia agora, baterias, suspensão e o tempo de BIOS da última partida.</summary>
-public sealed record PowerSnapshot(bool? OnAc, bool BatterySaver, IReadOnlyList<BatteryState> Batteries, SleepCapabilities? Sleep, double? BiosSeconds);
+/// <summary>Fonte de energia agora e baterias; UpsPresent quando o Windows vê um nobreak (mesmo sem os dados dele).</summary>
+public sealed record PowerSnapshot(bool? OnAc, bool BatterySaver, IReadOnlyList<BatteryState> Batteries, bool UpsPresent);
 
 public static class PowerStatus
 {
@@ -51,36 +47,19 @@ public static class PowerStatus
     public static PowerSnapshot Read()
     {
         var (ac, _, saver) = Line();
-        var sleep = Capabilities();
-        var batteries = Batteries(sleep?.UpsPresent == true);
-        return new PowerSnapshot(ac, saver, batteries, sleep, BiosSeconds());
+        bool ups = UpsPresent();
+        return new PowerSnapshot(ac, saver, Batteries(ups), ups);
     }
 
-    /// <summary>SYSTEM_POWER_CAPABILITIES lido por posição (o layout é fixo desde o Windows 8).</summary>
-    private static SleepCapabilities? Capabilities()
+    /// <summary>SystemBatteriesPresent/UpsPresent de SYSTEM_POWER_CAPABILITIES, lido por posição (o layout é fixo desde o Windows 8).</summary>
+    private static bool UpsPresent()
     {
         try
         {
             var c = new byte[128];
-            if (!GetPwrCapabilities(c)) return null;
-            bool s4 = c[6] != 0, hiberFile = c[8] != 0;
-            bool? fast = null;
-            using (var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Session Manager\Power"))
-                if (key?.GetValue("HiberbootEnabled") is int v) fast = v == 1 && hiberFile;
-            return new SleepCapabilities(S3: c[5] != 0, ModernStandby: c[20] != 0, Hibernate: s4 && hiberFile, fast, UpsPresent: c[12] != 0, LidPresent: c[2] != 0);
+            return GetPwrCapabilities(c) && c[12] != 0;
         }
-        catch { return null; }
-    }
-
-    /// <summary>"Último tempo de BIOS" do Gerenciador de Tarefas: o firmware grava em ms a cada partida completa.</summary>
-    private static double? BiosSeconds()
-    {
-        try
-        {
-            using var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Session Manager\Power");
-            return key?.GetValue("FwPOSTTime") is int ms && ms is > 300 and < 300_000 ? ms / 1000.0 : null;
-        }
-        catch { return null; }
+        catch { return false; }
     }
 
     private static List<BatteryState> Batteries(bool upsPresent)
