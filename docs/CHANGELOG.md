@@ -2,7 +2,7 @@
 
 ## Em desenvolvimento
 
-- Navegação instantânea: ao abrir Sensores, Discos, Sistema, Energia, Inicialização ou Instalar apps pela primeira vez, a página troca no mesmo instante e mostra um esqueleto de carregamento enquanto monta e lê os dados em segundo plano. A grade de Sensores agora virtualiza as linhas mesmo agrupada, e a leitura NVMe de Discos saiu da thread da janela.
+- Navegação instantânea: ao abrir Sensores, Discos, Sistema, Energia, Inicialização ou Instalar apps pela primeira vez, a página troca no mesmo instante e mostra um esqueleto de carregamento enquanto monta e lê os dados em segundo plano. A leitura NVMe de Discos saiu da thread da janela.
 
 ## 0.2.1 — 2026-10-24
 
