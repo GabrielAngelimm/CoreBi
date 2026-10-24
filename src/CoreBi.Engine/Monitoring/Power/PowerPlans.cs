@@ -133,7 +133,8 @@ public static class PowerPlans
     private static string? FriendlyName(Guid id)
     {
         uint size = 0;
-        if (PowerReadFriendlyName(IntPtr.Zero, ref id, IntPtr.Zero, IntPtr.Zero, null, ref size) != 0 || size == 0) return null;
+        uint first = PowerReadFriendlyName(IntPtr.Zero, ref id, IntPtr.Zero, IntPtr.Zero, null, ref size);
+        if ((first != 0 && first != 234) || size == 0) return null; // 234: ERROR_MORE_DATA, só informa o tamanho
         var buffer = new byte[size];
         if (PowerReadFriendlyName(IntPtr.Zero, ref id, IntPtr.Zero, IntPtr.Zero, buffer, ref size) != 0) return null;
         string name = System.Text.Encoding.Unicode.GetString(buffer).TrimEnd('\0').Trim();
