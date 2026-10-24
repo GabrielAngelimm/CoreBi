@@ -1,4 +1,4 @@
-using LibreHardwareMonitor.Hardware;
+﻿using LibreHardwareMonitor.Hardware;
 using CoreBi.Engine.Games;
 using CoreBi.Engine.Monitoring.Diagnostics;
 using CoreBi.Engine.Monitoring.Graphics;
@@ -79,8 +79,8 @@ public partial class MainWindow
         {
             string mode = r.Multi != null ? "Multi-core" : "Single-core";
             string cpu = string.IsNullOrWhiteSpace(r.Cpu) ? "" : $" · {r.Cpu}";
-            if (r.Multi is double m) yield return new DashEvent("", "Render de CPU", mode + cpu, $"{m:N0} pts", r.Date);
-            else if (r.Single is double s) yield return new DashEvent("", "Render de CPU", mode + cpu, $"{s:N0} pts", r.Date);
+            if (r.Multi is double m) yield return new DashEvent("\uE8B9", "Render de CPU", mode + cpu, $"{m:N0} pts", r.Date);
+            else if (r.Single is double s) yield return new DashEvent("\uE8B9", "Render de CPU", mode + cpu, $"{s:N0} pts", r.Date);
         }
         foreach (var r in _settings.BenchRecords)
             yield return BenchEvent(r);
@@ -95,29 +95,29 @@ public partial class MainWindow
         if (r.Test.StartsWith("rt:"))
         {
             // "1.499 pts · 150 FPS · Alta 1080p [· instável]" → Alta 1080p · 150 FPS [· instável]
-            return new DashEvent("", "Ray tracing", Join(new[] { Part(2), Part(1), Part(3) }), Part(0), r.Date);
+            return new DashEvent("\uE8B9", "Ray tracing", Join(new[] { Part(2), Part(1), Part(3) }), Part(0), r.Date);
         }
         switch (r.Test)
         {
             case "gpu": // "4.286 pts · 429 FPS · 1080p"
-                return new DashEvent("", "Cena de jogo (GPU)", Join(parts.Skip(1)), Part(0), r.Date);
+                return new DashEvent("\uE7F4", "Cena de jogo (GPU)", Join(parts.Skip(1)), Part(0), r.Date);
             case "sim": // "120 FPS · 1% low 95"
-                return new DashEvent("", "Simulação de jogo (CPU)", Part(1), Part(0), r.Date);
-            case "mem": // "84 ns · 36 GB/s · mapa 0,19 s"
-                return new DashEvent("", "Benchmark de memória", Join(new[] { Part(1), Part(2).Replace("mapa", "mapa carregado em") }), $"{Part(0)} de latência", r.Date);
+                return new DashEvent("\uE7FC", "Simulação de jogo (CPU)", Part(1), Part(0), r.Date);
+            case "mem": // "84 ns · 36 GB/s · mapa 0,19 s" → latência no detalhe, para o título caber
+                return new DashEvent("\uEDA2", "Benchmark de memória", Join(new[] { "Latência", Part(1), Part(2).Replace("mapa", "mapa em") }), Part(0), r.Date);
             case "disk": // "C: · 2.929/3.320 MiB/s · 4K 14,6k IOPS"
             {
                 string speeds = Part(1);
                 int slash = speeds.IndexOf('/');
                 int space = speeds.IndexOf(' ');
                 if (slash > 0 && space > slash)
-                    return new DashEvent("", $"Benchmark de disco ({Part(0).TrimEnd(':')}:)",
+                    return new DashEvent("\uEDA2", $"Benchmark de disco ({Part(0).TrimEnd(':')}:)",
                                          Join(new[] { $"Escrita {speeds[(slash + 1)..space]} {speeds[(space + 1)..]}", Part(2) }),
                                          $"{speeds[..slash]} {speeds[(space + 1)..]}", r.Date);
-                return new DashEvent("", "Benchmark de disco", Join(parts.Skip(1)), Part(0), r.Date);
+                return new DashEvent("\uEDA2", "Benchmark de disco", Join(parts.Skip(1)), Part(0), r.Date);
             }
             default:
-                return new DashEvent("", r.Test, Join(parts.Skip(1)), Part(0), r.Date);
+                return new DashEvent("\uE8B9", r.Test, Join(parts.Skip(1)), Part(0), r.Date);
         }
     }
 
