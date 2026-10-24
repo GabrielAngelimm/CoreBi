@@ -371,9 +371,19 @@ public partial class DisksView : UserControl
         Cell(OdoCell2, OdoWritten, d.WrittenGb != null ? written.Value : null, written.Unit);
         var read = d.ReadGb is double rg ? SplitData(rg) : default;
         Cell(OdoCell3, OdoRead, d.ReadGb != null ? read.Value : null, read.Unit);
+        // Linha de contexto sob cada leitura, derivada só do que o disco informa
+        double? days = d.PowerOnHours is > 0 ? d.PowerOnHours.Value / 24.0 : null;
+        OdoHoursNote.Text = days is double dd ? (dd >= 730 ? $"≈ {dd / 365:N1} anos ligado" : $"≈ {dd:N0} dias ligado") : "";
+        OdoCyclesNote.Text = d.StartStopCycles is > 0 && d.PowerOnHours is > 0 ? $"≈ {(double)d.PowerOnHours.Value / d.StartStopCycles.Value:N1} h por ciclo" : "";
+        string PerDay(double? gb) => gb is double g && days is double dy ? PerDayText(g / dy) : "";
+        OdoWrittenNote.Text = PerDay(d.WrittenGb);
+        OdoReadNote.Text = PerDay(d.ReadGb);
         _odoCells = cells;
         LayoutOdometer();
     }
+
+    private static string PerDayText(double gbPerDay) =>
+        gbPerDay >= 1000 ? $"≈ {gbPerDay / 1000:N1} TB por dia" : $"≈ {gbPerDay:N0} GB por dia";
 
     private List<Border> _odoCells = new();
 

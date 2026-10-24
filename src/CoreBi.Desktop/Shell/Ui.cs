@@ -136,3 +136,53 @@ public sealed class SpreadPanel : System.Windows.Controls.Panel
         return final;
     }
 }
+
+/// <summary>
+/// Linhas de itens que dividem a sobra de largura em vãos iguais entre eles (primeiro à esquerda, último à direita, sem sobra vazia);
+/// quando não cabem, quebram em mais linhas, cada uma distribuída do mesmo jeito.
+/// </summary>
+public sealed class JustifyPanel : System.Windows.Controls.Panel
+{
+    private List<List<UIElement>> Lines(double width)
+    {
+        var lines = new List<List<UIElement>> { new() };
+        double x = 0;
+        foreach (UIElement c in InternalChildren)
+        {
+            if (c.Visibility == Visibility.Collapsed) continue;
+            double w = c.DesiredSize.Width;
+            if (lines[^1].Count > 0 && x + w > width) { lines.Add(new()); x = 0; }
+            lines[^1].Add(c);
+            x += w;
+        }
+        return lines;
+    }
+
+    protected override Size MeasureOverride(Size available)
+    {
+        foreach (UIElement c in InternalChildren) c.Measure(new Size(double.PositiveInfinity, available.Height));
+        var lines = Lines(available.Width);
+        double h = lines.Sum(l => l.Count == 0 ? 0 : l.Max(c => c.DesiredSize.Height));
+        double w = lines.Max(l => l.Sum(c => c.DesiredSize.Width));
+        return new Size(double.IsInfinity(available.Width) ? w : Math.Min(w, available.Width), h);
+    }
+
+    protected override Size ArrangeOverride(Size final)
+    {
+        double y = 0;
+        foreach (var line in Lines(final.Width))
+        {
+            if (line.Count == 0) continue;
+            double lineH = line.Max(c => c.DesiredSize.Height);
+            double gap = line.Count > 1 ? Math.Max(0, (final.Width - line.Sum(c => c.DesiredSize.Width)) / (line.Count - 1)) : 0;
+            double x = 0;
+            foreach (var c in line)
+            {
+                c.Arrange(new Rect(x, y, c.DesiredSize.Width, lineH));
+                x += c.DesiredSize.Width + gap;
+            }
+            y += lineH;
+        }
+        return final;
+    }
+}

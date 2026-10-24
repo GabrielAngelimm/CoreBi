@@ -57,7 +57,7 @@
 
         <!-- Linha da integridade: LED, o que é verificado e o valor lido -->
         <DataTemplate x:Key="CheckRow">
-            <Grid Margin="0,3,30,3" VerticalAlignment="Center">
+            <Grid Margin="0,3" VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="15" />
                     <ColumnDefinition Width="Auto" />
@@ -165,7 +165,7 @@
                             <ColumnDefinition Width="16" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="300" />
+                            <ColumnDefinition Width="250" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -326,24 +326,28 @@
                                     <StackPanel>
                                         <TextBlock Text="Tempo ligado" Style="{StaticResource StatLabel}" />
                                         <TextBlock x:Name="OdoHours" Style="{StaticResource OdoValue}" />
+                                        <TextBlock x:Name="OdoHoursNote" Style="{StaticResource Caption}" Margin="0,6,0,0" Typography.NumeralAlignment="Tabular" />
                                     </StackPanel>
                                 </Border>
                                 <Border x:Name="OdoCell1" Style="{StaticResource OdoCell}">
                                     <StackPanel>
                                         <TextBlock Text="Ciclos liga/desliga" Style="{StaticResource StatLabel}" />
                                         <TextBlock x:Name="OdoCycles" Style="{StaticResource OdoValue}" />
+                                        <TextBlock x:Name="OdoCyclesNote" Style="{StaticResource Caption}" Margin="0,6,0,0" Typography.NumeralAlignment="Tabular" />
                                     </StackPanel>
                                 </Border>
                                 <Border x:Name="OdoCell2" Style="{StaticResource OdoCell}">
                                     <StackPanel>
                                         <TextBlock Text="Total gravado" Style="{StaticResource StatLabel}" />
                                         <TextBlock x:Name="OdoWritten" Style="{StaticResource OdoValue}" />
+                                        <TextBlock x:Name="OdoWrittenNote" Style="{StaticResource Caption}" Margin="0,6,0,0" Typography.NumeralAlignment="Tabular" />
                                     </StackPanel>
                                 </Border>
                                 <Border x:Name="OdoCell3" Style="{StaticResource OdoCell}">
                                     <StackPanel>
                                         <TextBlock Text="Total lido" Style="{StaticResource StatLabel}" />
                                         <TextBlock x:Name="OdoRead" Style="{StaticResource OdoValue}" />
+                                        <TextBlock x:Name="OdoReadNote" Style="{StaticResource Caption}" Margin="0,6,0,0" Typography.NumeralAlignment="Tabular" />
                                     </StackPanel>
                                 </Border>
                             </UniformGrid>
@@ -359,7 +363,7 @@
                                 <ItemsControl x:Name="DiskChecks" Grid.Column="1" ItemTemplate="{StaticResource CheckRow}" Focusable="False" VerticalAlignment="Center">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <WrapPanel />
+                                            <local:JustifyPanel />
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                 </ItemsControl>
