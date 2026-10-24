@@ -29,15 +29,15 @@ public partial class MainWindow
         return set;
     }
 
-    /// <summary>Componentes na ordem do overlay: o que cada linha mede, glifo (todos em cor neutra).</summary>
+    /// <summary>Componentes na ordem do overlay: o que cada linha mede, glifo (todos na mesma cor).</summary>
     private static readonly (string Group, string Caption, string Icon, string Brush)[] OvGroups =
     {
         ("FPS", "Quadros por segundo e estabilidade", "\uEC4A", "Accent"),
-        ("GPU", "Placa de vídeo principal", "\uE7F4", "Copper"),
-        ("VRAM", "Memória da placa de vídeo", "\uE964", "Copper"),
+        ("GPU", "Placa de vídeo principal", "", "Accent"),
+        ("VRAM", "Memória da placa de vídeo", "\uE964", "Accent"),
         ("CPU", "Processador", "\uE950", "Accent"),
-        ("RAM", "Memória do sistema", "\uEEA0", "Steel"),
-        ("Outros", "Nomes e rodapé do overlay", "\uE823", "Steel"),
+        ("RAM", "Memória do sistema", "\uEEA0", "Accent"),
+        ("Outros", "Nomes e rodapé do overlay", "", "Accent"),
     };
 
     /// <summary>Itens que dependem da placa ou de permissão: a dica explica por que podem aparecer com travessão.</summary>
