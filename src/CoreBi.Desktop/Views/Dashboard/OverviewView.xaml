@@ -298,9 +298,21 @@
                                 <TextBlock x:Name="DashEventsEmpty" Text="Benchmarks, testes de carga e dispositivos conectados aparecem aqui assim que acontecerem." Style="{StaticResource Caption}" Margin="0,6,0,0" />
                                 <ItemsControl x:Name="DashEvents" ItemTemplate="{StaticResource DashEventTemplate}" VerticalAlignment="Top" ClipToBounds="True" Focusable="False" />
                                 <!-- Histórico: o próprio cartão passa a rolar, sem mudar de tamanho -->
-                                <ScrollViewer x:Name="DashEventsScroll" VerticalScrollBarVisibility="Auto" Visibility="Collapsed" Focusable="False">
-                                    <ItemsControl x:Name="DashEventsAll" ItemTemplate="{StaticResource DashEventTemplate}" Margin="0,0,16,0" Focusable="False" />
-                                </ScrollViewer>
+                                <!-- Rola de linha em linha (painel virtualizado) e a altura é sempre múltipla da linha, então nada fica cortado -->
+                                <ItemsControl x:Name="DashEventsAll" ItemTemplate="{StaticResource DashEventTemplate}" VerticalAlignment="Top" Visibility="Collapsed" Focusable="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <VirtualizingStackPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.Template>
+                                        <ControlTemplate TargetType="ItemsControl">
+                                            <ScrollViewer x:Name="HistoryScroll" CanContentScroll="True" VerticalScrollBarVisibility="Auto" Focusable="False">
+                                                <ItemsPresenter Margin="0,0,16,0" />
+                                            </ScrollViewer>
+                                        </ControlTemplate>
+                                    </ItemsControl.Template>
+                                </ItemsControl>
                             </local:FitHost>
                         </DockPanel>
                     </Border>

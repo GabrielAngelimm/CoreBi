@@ -15,20 +15,24 @@ public partial class OverviewView : UserControl
     private void DashGo_Click(object sender, RoutedEventArgs e) => Owner?.DashGo_Click(sender, e);
     private void DashOption_Checked(object sender, RoutedEventArgs e) => Owner?.DashOption_Checked(sender, e);
     private void DashSensors_Click(object sender, RoutedEventArgs e) => Owner?.DashSensors_Click(sender, e);
-    private void DashEventsMore_Click(object sender, RoutedEventArgs e) => ShowHistory(DashEventsScroll.Visibility != Visibility.Visible);
+    private void DashEventsMore_Click(object sender, RoutedEventArgs e) => ShowHistory(DashEventsAll.Visibility != Visibility.Visible);
 
     /// <summary>Alterna o cartão entre as últimas linhas e o histórico completo (rolagem só dentro do cartão).</summary>
     internal void ShowHistory(bool on)
     {
-        DashEventsScroll.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        DashEventsAll.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
         DashEvents.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
         DashEventsMore.Content = on ? "Mostrar menos" : "Ver histórico";
-        if (on) DashEventsScroll.ScrollToTop();
+        if (on)
+        {
+            DashEventsAll.ApplyTemplate();
+            (DashEventsAll.Template.FindName("HistoryScroll", DashEventsAll) as ScrollViewer)?.ScrollToTop();
+        }
     }
     private void DashEvents_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        // O host não pede altura, então o histórico precisa de uma altura própria para saber que não cabe e rolar.
-        DashEventsScroll.Height = e.NewSize.Height;
+        // O host não pede altura, então o histórico precisa de uma altura própria (em linhas inteiras) para saber que não cabe e rolar.
+        DashEventsAll.Height = Math.Max(MainWindow.DashEventHeight, Math.Floor(e.NewSize.Height / MainWindow.DashEventHeight) * MainWindow.DashEventHeight);
         Owner?.DashEvents_SizeChanged(sender, e);
     }
 
