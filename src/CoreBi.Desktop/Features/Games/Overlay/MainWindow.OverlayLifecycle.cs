@@ -201,7 +201,7 @@ public partial class MainWindow
             : _frames.Error != null ? ($"Indisponível: {_frames.Error}", "Danger")
             : !_frames.Running ? ("Desligada · começa quando o overlay é ligado", "Faint")
             : f != null ? ($"{f.ProcessName}: {f.Fps:0} FPS ({f.FrameTimeMs:0.0} ms) · 1% low {f.Low1Fps:0}", "Ok")
-            : ("Aguardando o jogo", "Accent");
+            : ("Aguardando um jogo · o FPS aparece assim que ele abrir", "Accent");
         OvStatus.Text = text;
         // Só problemas do RTSS merecem dica; o estado normal já diz tudo.
         OvStatus.ToolTip = _rtssShowing ? null : _rtssStatus switch
