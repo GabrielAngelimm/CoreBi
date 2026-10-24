@@ -2,6 +2,8 @@
 
 ## Em desenvolvimento
 
+## 0.2.1 — 2026-10-24
+
 - Página do overlay: ícones dos grupos em cor neutra com glifos próprios (placa de vídeo, memória, processador), e a faixa "Detecção de FPS" enxuta, sem a lista de compatibilidade, só como funciona e o estado ("Aguardando o jogo").
 
 - O limitador de desempenho NVIDIA (`gpu_perfcap`) saiu do OverlayBi; seleções salvas com ele são migradas sem perder os demais itens.

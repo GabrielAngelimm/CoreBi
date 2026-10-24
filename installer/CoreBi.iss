@@ -1,8 +1,8 @@
-﻿; CoreBi - instalador para Windows x64 (Inno Setup 6).
+; CoreBi - instalador para Windows x64 (Inno Setup 6).
 ; Compilado por tools\Installer.ps1 a partir de artifacts\publish\win-x64.
 
 #ifndef AppVersion
-  #define AppVersion "0.2.0"
+  #define AppVersion "0.2.1"
 #endif
 #ifndef PublishDir
   #define PublishDir "..\artifacts\publish\win-x64"
