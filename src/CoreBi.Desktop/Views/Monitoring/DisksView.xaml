@@ -165,7 +165,7 @@
                             <ColumnDefinition Width="16" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition x:Name="OdoGap" Width="16" />
-                            <ColumnDefinition x:Name="OdoColumn" Width="210" />
+                            <ColumnDefinition x:Name="OdoColumn" Width="170" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />

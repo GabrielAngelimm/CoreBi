@@ -5,6 +5,7 @@ using LibreHardwareMonitor.Hardware;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace CoreBi.Desktop.Views;
 
@@ -362,7 +363,7 @@ public partial class DisksView : UserControl
         void Cell(Border cell, TextBlock target, string? value, string unit)
         {
             if (value == null) return;
-            Readout(target, value, unit);
+            Readout(target, value, unit, balanced: true);
             cells.Add(cell);
         }
         Cell(OdoCell0, OdoHours, d.PowerOnHours is long h ? $"{h:N0}" : null, "h");
@@ -435,7 +436,7 @@ public partial class DisksView : UserControl
         SpaceColumn.Width = new GridLength(wide ? 520 : 420);
         // Larga: odômetro ao lado da temperatura e integridade na faixa de baixo. Estreita: odômetro desce em faixa 2 × 2 e a integridade fica por último.
         OdoGap.Width = new GridLength(wide ? 16 : 0);
-        OdoColumn.Width = new GridLength(wide ? 210 : 0);
+        OdoColumn.Width = new GridLength(wide ? 170 : 0);
         Grid.SetColumnSpan(TempCard, wide ? 1 : 3);
         Grid.SetRow(OdoCard, wide ? 2 : 4);
         Grid.SetColumn(OdoCard, wide ? 4 : 0);
@@ -449,9 +450,12 @@ public partial class DisksView : UserControl
     // ---------------- formatação ----------------
 
     /// <summary>Leitura com a unidade menor e em tom secundário ao lado (como nos mostradores da Visão geral).</summary>
-    private static void Readout(TextBlock target, string value, string unit)
+    private static void Readout(TextBlock target, string value, string unit, bool balanced = false)
     {
         target.Inlines.Clear();
+        // balanced: uma cópia invisível da unidade à esquerda, para o número (e não número + unidade) ficar no centro
+        if (balanced && unit.Length > 0)
+            target.Inlines.Add(new Run(unit + " ") { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.4)), Foreground = Brushes.Transparent, FontFamily = (FontFamily)Application.Current.FindResource("UiFont") });
         target.Inlines.Add(new Run(value));
         if (unit.Length == 0) return;
         var u = new Run(" " + unit) { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.4)) };
