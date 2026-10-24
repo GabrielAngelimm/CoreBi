@@ -37,6 +37,8 @@ public partial class MainWindow
     internal const int DashMax = 900; // 15 min a 1 amostra/s
     /// <summary>Altura de uma linha da atividade recente: a lista mostra quantas couberem no cartão.</summary>
     public const double DashEventHeight = 56;
+    /// <summary>Máximo de linhas no cartão (o resto vai para "Ver histórico") e de linhas no histórico.</summary>
+    internal const int DashEventsMax = 5, DashEventsKept = 50;
     internal readonly List<DashSample> _dash = new();
     internal readonly List<DashEvent> _events = new();
     internal List<DashCheck> _health = new();
@@ -95,9 +97,15 @@ public partial class MainWindow
 
     internal void ShowEvents()
     {
-        int slots = DashEvents.ActualHeight > 0 ? Math.Max(1, (int)(DashEvents.ActualHeight / DashEventHeight)) : 4;
-        var list = _events.Concat(SavedEvents()).OrderByDescending(e => e.At).Take(slots).ToList();
+        // o espaço vem do host (que não pede altura), então a lista nunca estica a página; o resto fica em "Ver histórico"
+        double room = ((FrameworkElement)DashEvents.Parent).ActualHeight;
+        int slots = room > 0 ? Math.Clamp((int)(room / DashEventHeight), 1, DashEventsMax) : 3;
+        var all = _events.Concat(SavedEvents()).OrderByDescending(e => e.At).ToList();
+        var list = all.Take(slots).ToList();
+        if (DashEvents.ItemsSource is IList<DashEvent> shown && shown.SequenceEqual(list)) return;
         DashEvents.ItemsSource = list;
+        DashEventsAll.ItemsSource = all.Take(DashEventsKept).ToList();
+        DashEventsMore.Visibility = all.Count > list.Count ? Visibility.Visible : Visibility.Collapsed;
         DashEventsEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
