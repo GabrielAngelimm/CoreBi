@@ -18,7 +18,7 @@
         </Grid>
         <WrapPanel x:Name="CategoryChips" Grid.Row="1" Margin="0,0,0,12" />
         <Border Grid.Row="2" Style="{StaticResource CardBorder}" Padding="4,6,4,4">
-            <DataGrid x:Name="SensorGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="False">
+            <DataGrid x:Name="SensorGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="False" VirtualizingPanel.IsVirtualizingWhenGrouping="True" VirtualizingPanel.VirtualizationMode="Recycling" EnableRowVirtualization="True">
                 <DataGrid.GroupStyle>
                     <GroupStyle>
                         <GroupStyle.HeaderTemplate>

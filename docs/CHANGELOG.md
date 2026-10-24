@@ -2,6 +2,8 @@
 
 ## Em desenvolvimento
 
+- Navegação instantânea: ao abrir Sensores, Discos, Sistema, Energia, Inicialização ou Instalar apps pela primeira vez, a página troca no mesmo instante e mostra um esqueleto de carregamento enquanto monta e lê os dados em segundo plano. A grade de Sensores agora virtualiza as linhas mesmo agrupada, e a leitura NVMe de Discos saiu da thread da janela.
+
 ## 0.2.1 — 2026-10-24
 
 - Página do overlay: ícones dos grupos em cor neutra com glifos próprios (placa de vídeo, memória, processador), e a faixa "Detecção de FPS" enxuta, sem a lista de compatibilidade, só como funciona e o estado ("Aguardando o jogo").

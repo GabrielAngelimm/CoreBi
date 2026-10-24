@@ -175,6 +175,29 @@
                     <views:StartupView x:Name="PageStartup" Visibility="Collapsed" />
                     <views:AppsView x:Name="PageApps" Visibility="Collapsed" />
                     <views:StressView x:Name="PageStress" Visibility="Collapsed" />
+
+                    <!-- Esqueleto de carregamento: cobre a página na primeira visita enquanto ela monta e lê os dados -->
+                    <Grid x:Name="LoadingVeil" Visibility="Collapsed" Background="{DynamicResource Bg}" Style="{StaticResource PageGrid}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel x:Name="LoadingBars" Grid.RowSpan="2">
+                            <Border Width="170" Height="26" HorizontalAlignment="Left" CornerRadius="6" Background="{DynamicResource Line}" />
+                            <Border Width="260" Height="12" HorizontalAlignment="Left" CornerRadius="6" Background="{DynamicResource Line}" Margin="0,12,0,26" />
+                            <Border Style="{StaticResource CardBorder}" Padding="24,22">
+                                <StackPanel>
+                                    <Border Width="140" Height="12" HorizontalAlignment="Left" CornerRadius="6" Background="{DynamicResource LineStrong}" Margin="0,0,0,22" />
+                                    <Border Height="10" CornerRadius="5" Background="{DynamicResource Line}" Margin="0,0,120,18" />
+                                    <Border Height="10" CornerRadius="5" Background="{DynamicResource Line}" Margin="0,0,40,18" />
+                                    <Border Height="10" CornerRadius="5" Background="{DynamicResource Line}" Margin="0,0,220,18" />
+                                    <Border Height="10" CornerRadius="5" Background="{DynamicResource Line}" Margin="0,0,80,18" />
+                                    <Border Height="10" CornerRadius="5" Background="{DynamicResource Line}" Margin="0,0,160,0" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock x:Name="LoadingText" Grid.Row="1" Style="{StaticResource Caption}" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,8" />
+                    </Grid>
                 </Grid>
             </Grid>
 
