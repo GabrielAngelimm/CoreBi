@@ -2,6 +2,8 @@
 
 ## Em desenvolvimento
 
+- Página do overlay: ícones dos grupos em cor neutra com glifos próprios (placa de vídeo, memória, processador), e a faixa "Detecção de FPS" enxuta, sem a lista de compatibilidade, só como funciona e o estado ("Aguardando o jogo").
+
 - O limitador de desempenho NVIDIA (`gpu_perfcap`) saiu do OverlayBi; seleções salvas com ele são migradas sem perder os demais itens.
 - O instalador ganhou explicação por componente e o componente RTSS, instalado em silêncio pelo winget junto do PawnIO (ambos marcados; a instalação "Somente o aplicativo" os dispensa). Nada de terceiros é incluído no setup.
 

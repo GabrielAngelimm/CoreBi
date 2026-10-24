@@ -406,7 +406,7 @@
                             </Grid>
                             <local:SpreadPanel x:Name="OvItemsPanel" Grid.Row="1" Margin="0,10,0,6" />
                             <TextBlock Grid.Row="2" Style="{StaticResource Footnote}"
-                                       Text="Hotspot, clock da memória e ventoinha dependem da placa; o limitador é só NVIDIA. Clock, temperatura e consumo da CPU precisam do CoreBi aberto como administrador." />
+                                       Text="Hotspot, clock da memória e ventoinha dependem da placa. Clock, temperatura e consumo da CPU precisam do CoreBi aberto como administrador." />
                         </Grid>
                     </Border>
                 </Grid>
@@ -417,11 +417,10 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" MinWidth="300" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Top" Margin="0,0,0,8">
                             <Border Style="{StaticResource IconTile}" VerticalAlignment="Top">
-                                <TextBlock Text="&#xEC4A;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{DynamicResource Accent}" />
+                                <TextBlock Text="&#xEC4A;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{DynamicResource Muted}" />
                             </Border>
                             <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="Detecção de FPS" Style="{StaticResource SectionTitle}" />
@@ -433,37 +432,9 @@
                         </StackPanel>
                         <Border Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="22,0" Margin="24,0,16,8" VerticalAlignment="Center">
                             <TextBlock Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" FontSize="12.5" LineHeight="18"
-                                       Text="O FPS vem dos eventos de apresentação do Windows (ETW): nada é injetado no jogo. A compatibilidade com cada anti-cheat depende do jogo." />
+                                       Text="O FPS vem dos eventos de apresentação do Windows (ETW), sem injetar nada no jogo. Em tela cheia exclusiva, o RTSS exibe o overlay dentro do jogo." />
                         </Border>
-                        <!-- Onde funciona: verde = sim, âmbar = depende, vermelho = não -->
-                        <WrapPanel Grid.Column="2" Width="404" VerticalAlignment="Center">
-                            <Border Style="{StaticResource CompatRow}" Background="{DynamicResource OkSoft}" Width="190">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE73E;" Style="{StaticResource CompatGlyph}" Foreground="{DynamicResource Ok}" />
-                                    <TextBlock Text="DirectX 9 a 12" Style="{StaticResource CompatText}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource CompatRow}" Background="{DynamicResource OkSoft}" Width="190">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE73E;" Style="{StaticResource CompatGlyph}" Foreground="{DynamicResource Ok}" />
-                                    <TextBlock Text="Tela cheia sem bordas" Style="{StaticResource CompatText}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource CompatRow}" Background="{DynamicResource WarnSoft}" Width="190"
-                                    ToolTip="Jogos em Vulkan ou OpenGL só aparecem se o driver apresentar os quadros via DXGI (comum em drivers recentes, não garantido).">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE7BA;" Style="{StaticResource CompatGlyph}" Foreground="{DynamicResource Warn}" />
-                                    <TextBlock Text="Vulkan e OpenGL via DXGI" Style="{StaticResource CompatText}" />
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource CompatRow}" Background="{DynamicResource DangerSoft}" Width="190"
-                                    ToolTip="No modo de tela cheia exclusiva antigo o jogo fica por cima de qualquer janela, então o overlay não aparece. Prefira tela cheia sem bordas.">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE711;" Style="{StaticResource CompatGlyph}" Foreground="{DynamicResource Danger}" />
-                                    <TextBlock Text="Tela cheia exclusiva" Style="{StaticResource CompatText}" />
-                                </StackPanel>
-                            </Border>
-                        </WrapPanel>
+
                     </Grid>
                 </Border>
             </Grid>

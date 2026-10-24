@@ -29,7 +29,7 @@ public partial class MainWindow
         return set;
     }
 
-    /// <summary>Componentes na ordem do overlay: o que cada linha mede, glifo e cor do canal (CPU verde-água, GPU cobre).</summary>
+    /// <summary>Componentes na ordem do overlay: o que cada linha mede, glifo (todos em cor neutra).</summary>
     private static readonly (string Group, string Caption, string Icon, string Brush)[] OvGroups =
     {
         ("FPS", "Quadros por segundo e estabilidade", "\uEC4A", "Accent"),

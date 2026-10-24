@@ -197,23 +197,21 @@ public partial class MainWindow
     /// <summary>Estado da detecção de FPS, com ponto de veredito: medindo um jogo, aguardando, desligada ou com erro.</summary>
     internal void UpdateOverlayStatus(FrameStats? f)
     {
-        (string text, string brush) = _rtssShowing ? ("RTSS · overlay publicado no jogo em tela cheia", "Ok")
+        (string text, string brush) = _rtssShowing ? ("Overlay publicado no jogo pelo RTSS", "Ok")
             : _frames.Error != null ? ($"Indisponível: {_frames.Error}", "Danger")
             : !_frames.Running ? ("Desligada · começa quando o overlay é ligado", "Faint")
             : f != null ? ($"{f.ProcessName}: {f.Fps:0} FPS ({f.FrameTimeMs:0.0} ms) · 1% low {f.Low1Fps:0}", "Ok")
-            : ("Ativa · aguardando um jogo em primeiro plano", "Accent");
+            : ("Aguardando o jogo", "Accent");
         OvStatus.Text = text;
-        OvStatus.ToolTip = text + "\n" + (_rtssShowing ? "RTSS: jogo consumindo o OSD do CoreBi."
-            : _rtssStatus switch
-            {
-                RtssStatus.Unavailable => "Tela cheia exclusiva requer RTSS 7.3.7+ instalado e aberto antes do jogo. A janela atual atende a área de trabalho e jogos sem bordas.",
-                RtssStatus.Incompatible => "RTSS: protocolo incompatível ou seção ainda não inicializada. Atualize o servidor.",
-                RtssStatus.SlotsFull => "RTSS: todos os slots OSD estão ocupados por outros clientes.",
-                RtssStatus.ContentTooLarge => "RTSS: os itens excedem a capacidade do slot OSD.",
-                RtssStatus.Busy => "RTSS: aguardando uma atualização livre, sem bloquear o jogo.",
-                _ => "RTSS disponível; aguardando um jogo em tela cheia com OSD habilitado. Anticheat pode impedir o acesso."
-            });
-        OvStatusDot.SetResourceReference(Shape.FillProperty, brush);
+        // Só problemas do RTSS merecem dica; o estado normal já diz tudo.
+        OvStatus.ToolTip = _rtssShowing ? null : _rtssStatus switch
+        {
+            RtssStatus.Unavailable => "RTSS não encontrado: instale e abra o RTSS 7.3.7+ antes do jogo para ver o overlay em tela cheia exclusiva.",
+            RtssStatus.Incompatible => "RTSS: protocolo incompatível ou ainda não inicializado. Atualize o RTSS.",
+            RtssStatus.SlotsFull => "RTSS: todos os slots de OSD estão ocupados por outros programas.",
+            RtssStatus.ContentTooLarge => "RTSS: os itens escolhidos excedem a capacidade do OSD.",
+            _ => null
+        };        OvStatusDot.SetResourceReference(Shape.FillProperty, brush);
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
