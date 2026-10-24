@@ -211,7 +211,7 @@ public partial class MainWindow
             RtssStatus.SlotsFull => "RTSS: todos os slots de OSD estão ocupados por outros programas.",
             RtssStatus.ContentTooLarge => "RTSS: os itens escolhidos excedem a capacidade do OSD.",
             _ => null
-        };        OvStatusDot.SetResourceReference(Shape.FillProperty, brush);
+        }; OvStatusDot.SetResourceReference(Shape.FillProperty, brush);
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
