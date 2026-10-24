@@ -104,7 +104,7 @@ public partial class MainWindow
             case "sim": // "120 FPS · 1% low 95"
                 return new DashEvent("\ue7fc", "Simulação de jogo (CPU)", Part(1), Part(0), r.Date);
             case "mem": // "84 ns · 36 GB/s · mapa 0,19 s"
-                return new DashEvent("\ueda2", "Benchmark de memória", Join(new[] { Part(1), Part(2).Replace("mapa", "mapa carregado em") }), $"{Part(0)} de latência", r.Date);
+                return new DashEvent("\ueda2", "Benchmark de memória", Join(new[] { Part(1), Part(2) }), Part(0), r.Date);
             case "disk": // "C: · 2.929/3.320 MiB/s · 4K 14,6k IOPS"
             {
                 string speeds = Part(1);
