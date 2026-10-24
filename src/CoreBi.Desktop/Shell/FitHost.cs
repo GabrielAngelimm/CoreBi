@@ -11,4 +11,11 @@ public sealed class FitHost : Grid
         base.MeasureOverride(new Size(constraint.Width, double.PositiveInfinity));
         return new Size(double.IsInfinity(constraint.Width) ? 0 : constraint.Width, 0);
     }
+
+    /// <summary>Remede os filhos com a altura que o host realmente recebeu, para o histórico rolável saber que não cabe e mostrar a barra.</summary>
+    protected override Size ArrangeOverride(Size finalSize)
+    {
+        foreach (UIElement child in InternalChildren) child.Measure(finalSize);
+        return base.ArrangeOverride(finalSize);
+    }
 }
