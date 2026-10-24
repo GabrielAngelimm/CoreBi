@@ -105,7 +105,9 @@ public partial class MainWindow
         if (DashEvents.ItemsSource is IList<DashEvent> shown && shown.SequenceEqual(list)) return;
         DashEvents.ItemsSource = list;
         DashEventsAll.ItemsSource = all.Take(DashEventsKept).ToList();
-        DashEventsMore.Visibility = all.Count > list.Count ? Visibility.Visible : Visibility.Collapsed;
+        bool more = all.Count > list.Count;
+        DashEventsMore.Visibility = more ? Visibility.Visible : Visibility.Collapsed;
+        if (!more) PageDash.ShowHistory(false);
         DashEventsEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 

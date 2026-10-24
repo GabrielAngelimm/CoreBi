@@ -15,7 +15,16 @@ public partial class OverviewView : UserControl
     private void DashGo_Click(object sender, RoutedEventArgs e) => Owner?.DashGo_Click(sender, e);
     private void DashOption_Checked(object sender, RoutedEventArgs e) => Owner?.DashOption_Checked(sender, e);
     private void DashSensors_Click(object sender, RoutedEventArgs e) => Owner?.DashSensors_Click(sender, e);
-    private void DashEventsMore_Click(object sender, RoutedEventArgs e) => DashEventsPopup.IsOpen = true;
+    private void DashEventsMore_Click(object sender, RoutedEventArgs e) => ShowHistory(DashEventsScroll.Visibility != Visibility.Visible);
+
+    /// <summary>Alterna o cartão entre as últimas linhas e o histórico completo (rolagem só dentro do cartão).</summary>
+    internal void ShowHistory(bool on)
+    {
+        DashEventsScroll.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        DashEvents.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
+        DashEventsMore.Content = on ? "Mostrar menos" : "Ver histórico";
+        if (on) DashEventsScroll.ScrollToTop();
+    }
     private void DashEvents_SizeChanged(object sender, SizeChangedEventArgs e) => Owner?.DashEvents_SizeChanged(sender, e);
 
     /// <summary>Com largura (janela maximizada) tudo numa linha; senão, os anéis descem para baixo dos dois cartões.</summary>
