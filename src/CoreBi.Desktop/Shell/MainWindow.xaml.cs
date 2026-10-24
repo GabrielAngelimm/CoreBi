@@ -106,6 +106,7 @@ public partial class MainWindow : Window
             _stress.Stop(); _burn.Stop(); _benchCts?.Cancel();
             _gameBenchCts?.Cancel(); _gpuBench?.Cancel(); _rtBench?.Cancel(); _stressLease?.Dispose();
             _overlay?.Close();
+            _rtssOverlay.Dispose();
             _toast?.Close();
             _frames.Dispose();
             _windowsGpuUsage.Dispose();

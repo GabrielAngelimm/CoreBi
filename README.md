@@ -12,11 +12,13 @@ Desenvolvido em C#/.NET 10 e WPF. As regras, os coletores e as integrações sã
 | --- | --- |
 | Visão geral | Resumo do computador, histórico de sensores e alertas |
 | Monitoramento | Sistema, sensores, placa de vídeo, discos, energia e rede |
-| Jogos | FPS estimado, análise de gargalo e overlay por ETW |
+| Jogos | FPS estimado, análise de gargalo e overlay com ETW e integração opcional RTSS para tela cheia |
 | Desempenho | Benchmarks de CPU, GPU, DXR, simulação, RAM, carregamento e disco; stress de CPU, RAM e GPU |
 | Ferramentas | Inicialização, drivers e instalação de apps via winget |
 
 As ferramentas de monitoramento e benchmark usam leituras ou cargas reais. FPS estimado e classificação de gargalo são aproximações. Consulte [implementação, fontes e limites](docs/FEATURES.md).
+
+Para overlay em tela cheia exclusiva, abra o RTSS antes do jogo e ative o OverlayBi normalmente. O RTSS é instalado separadamente; compatibilidade depende do jogo e anticheat. Veja [configuração, arquitetura e custo do overlay](docs/OVERLAY.md).
 
 ## Tecnologias
 
@@ -31,7 +33,7 @@ As ferramentas de monitoramento e benchmark usam leituras ou cargas reais. FPS e
 
 ## Instalar e executar
 
-Baixe `CoreBi-*-win-x64-setup.exe` em [Releases](https://github.com/GabrielAngelimm/CoreBi/releases) e execute o instalador. Ele instala em `Program Files`, cria atalhos e registra o CoreBi para desinstalação. O componente do driver PawnIO vem marcado e é instalado pelo winget; pode ser desmarcado. O runtime .NET está incluído; o SDK é necessário apenas para desenvolvimento.
+Baixe `CoreBi-*-win-x64-setup.exe` em [Releases](https://github.com/GabrielAngelimm/CoreBi/releases) e execute o instalador. Ele instala em `Program Files`, cria atalhos e registra o CoreBi para desinstalação. O driver de sensores PawnIO vem marcado e o RTSS (overlay em tela cheia) também; ambos são instalados automaticamente pelo winget, com uma explicação na tela de componentes, e nenhum é incluído no setup. O runtime .NET está incluído; o SDK é necessário apenas para desenvolvimento.
 
 Sem instalador, extraia **todo o conteúdo** de `CoreBi-*-win-x64.zip` e abra `CoreBi.exe`.
 

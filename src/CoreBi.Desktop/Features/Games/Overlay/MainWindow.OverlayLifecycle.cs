@@ -19,6 +19,11 @@ public partial class MainWindow
     internal OverlayWindow? _overlay;
     internal DispatcherTimer? _overlayTimer;
     internal bool _overlayReady;
+    private readonly RtssOverlayClient _rtssOverlay = new();
+    private RtssStatus _rtssStatus = RtssStatus.Unavailable;
+    private bool _rtssShowing;
+    private int _rtssProcess;
+    private long _rtssLastUpdate, _rtssLastAck, _rtssRetryAfter;
     internal const int HotkeyId = 0x5245; // "RE"
 
     // ---------------- Overlay ----------------
@@ -49,6 +54,7 @@ public partial class MainWindow
         UpdateFrameMonitoring();
         if (ChkOverlay.IsChecked == true)
         {
+            _rtssRetryAfter = 0;
             _overlay ??= new OverlayWindow();
             ApplyOverlayOptions();
             _overlay.Show();
@@ -60,6 +66,10 @@ public partial class MainWindow
         else
         {
             _overlayTimer?.Stop();
+            _rtssOverlay.Clear();
+            _rtssShowing = false;
+            _rtssPublishedFrame = 0;
+            _rtssLastAck = 0;
             _overlay?.Hide();
             UpdateOverlayStatus(null);
         }
@@ -95,25 +105,113 @@ public partial class MainWindow
 
     internal void UpdateOverlay()
     {
+        if (ChkOverlay.IsChecked != true) return;
         var f = _frames.GetForegroundStats();
-        if (_overlay != null && _overlay.IsVisible)
+        var lines = BuildOverlayLines(f);
+        string? extra = OvShow.Contains("clock") ? DateTime.Now.ToString("HH:mm") : null;
+        _overlay?.Update(f, lines, OvShow, extra);
+        UpdateFullscreenOverlay(f);
+        if (_overlay != null)
         {
-            _overlay.Update(f, BuildOverlayLines(f), OvShow, OvShow.Contains("clock") ? DateTime.Now.ToString("HH:mm") : null);
-            _overlay.KeepOnTop(); // o jogo pode ter passado na frente (janela sem borda "sempre no topo")
+            if (_rtssShowing)
+            {
+                if (_overlay.IsVisible) _overlay.Hide();
+            }
+            else
+            {
+                if (!_overlay.IsVisible) _overlay.Show();
+                _overlay.KeepOnTop();
+            }
         }
         UpdateOverlayStatus(f);
     }
 
+    private void UpdateFullscreenOverlay(FrameStats? frames)
+    {
+        long now = Environment.TickCount64;
+        int pid = OverlayTarget.FullscreenForegroundProcess(out int viewportWidth, out int viewportHeight);
+        if (pid == 0 || pid != _rtssProcess)
+        {
+            _rtssOverlay.Clear();
+            _rtssShowing = false;
+            _rtssLastUpdate = 0;
+            _rtssLastAck = 0;
+            _rtssPendingSince = 0;
+            _rtssPublishedFrame = 0;
+            _rtssProcess = pid;
+        }
+        if (pid == 0 || now < _rtssRetryAfter) return;
+        var status = _rtssOverlay.Inspect(pid, out var target);
+        if (status == RtssStatus.Ready && target.Active)
+        {
+            if (frames?.ProcessId != pid) frames = null;
+            if (_overlay == null) return;
+            status = _rtssOverlay.Publish(RtssOverlayFormatter.Format(_overlay.Panel,
+                _settings.OverlayCorner, _settings.OverlayScale, _settings.OverlayOpacity, viewportWidth, viewportHeight, frames == null));
+            if (status == RtssStatus.Ready)
+            {
+                _rtssLastUpdate = now;
+                if (_rtssPendingSince == 0) _rtssPendingSince = now;
+                // Só oculta a janela WPF depois que o jogo consumiu uma atualização OSD anterior.
+                if (_rtssPublishedFrame != 0 && unchecked((int)(target.RenderedFrame - _rtssPublishedFrame)) >= 0)
+                {
+                    _rtssLastAck = now;
+                    _rtssPublishedFrame = _rtssOverlay.PublishedFrame;
+                }
+                else if (_rtssLastAck != 0 && now - _rtssLastAck > 2000)
+                {
+                    // O servidor pode ter reiniciado entre duas consultas sem passar por Unavailable.
+                    _rtssLastAck = 0;
+                    _rtssPublishedFrame = 0;
+                }
+                if (_rtssPublishedFrame == 0) _rtssPublishedFrame = _rtssOverlay.PublishedFrame;
+                // Esconde a janela WPF já na primeira publicação (carência de 2 s até o jogo consumir o OSD),
+                // para não exibir os dois painéis sobrepostos; sem confirmação, a janela WPF volta.
+                _rtssShowing = _rtssLastAck != 0 ? now - _rtssLastAck <= 2000 : now - _rtssPendingSince <= 2000;
+            }
+        }
+        else if (status == RtssStatus.Ready)
+        {
+            _rtssOverlay.Clear();
+            _rtssShowing = false;
+            _rtssPublishedFrame = 0;
+            _rtssLastAck = 0;
+            _rtssPendingSince = 0;
+        }
+        _rtssStatus = status;
+        // Uma disputa curta pelo lock não alterna os renderizadores nem bloqueia o dispatcher.
+        if (status != RtssStatus.Ready && (status != RtssStatus.Busy || now - _rtssLastUpdate > 2000))
+        {
+            _rtssOverlay.Clear();
+            _rtssShowing = false;
+            _rtssPublishedFrame = 0;
+            _rtssLastAck = 0;
+            _rtssPendingSince = 0;
+            if (status is RtssStatus.Unavailable or RtssStatus.Incompatible) _rtssRetryAfter = now + 5000;
+        }
+    }
+
+    private uint _rtssPublishedFrame;
+    private long _rtssPendingSince;
+
     /// <summary>Estado da detecção de FPS, com ponto de veredito: medindo um jogo, aguardando, desligada ou com erro.</summary>
     internal void UpdateOverlayStatus(FrameStats? f)
     {
-        (string text, string brush) = _frames.Error != null ? ($"Indisponível: {_frames.Error}", "Danger")
+        (string text, string brush) = _rtssShowing ? ("Overlay publicado no jogo pelo RTSS", "Ok")
+            : _frames.Error != null ? ($"Indisponível: {_frames.Error}", "Danger")
             : !_frames.Running ? ("Desligada · começa quando o overlay é ligado", "Faint")
             : f != null ? ($"{f.ProcessName}: {f.Fps:0} FPS ({f.FrameTimeMs:0.0} ms) · 1% low {f.Low1Fps:0}", "Ok")
-            : ("Ativa · aguardando um jogo em primeiro plano", "Accent");
+            : ("Aguardando o jogo", "Accent");
         OvStatus.Text = text;
-        OvStatus.ToolTip = text;
-        OvStatusDot.SetResourceReference(Shape.FillProperty, brush);
+        // Só problemas do RTSS merecem dica; o estado normal já diz tudo.
+        OvStatus.ToolTip = _rtssShowing ? null : _rtssStatus switch
+        {
+            RtssStatus.Unavailable => "RTSS não encontrado: instale e abra o RTSS 7.3.7+ antes do jogo para ver o overlay em tela cheia exclusiva.",
+            RtssStatus.Incompatible => "RTSS: protocolo incompatível ou ainda não inicializado. Atualize o RTSS.",
+            RtssStatus.SlotsFull => "RTSS: todos os slots de OSD estão ocupados por outros programas.",
+            RtssStatus.ContentTooLarge => "RTSS: os itens escolhidos excedem a capacidade do OSD.",
+            _ => null
+        }; OvStatusDot.SetResourceReference(Shape.FillProperty, brush);
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]

@@ -9,6 +9,7 @@
 | Form | Controles WPF, handlers próprios em ferramentas administrativas, Disco, Energia e Rede, eventos por feature nas demais e validação do Engine | src/CoreBi.Desktop/Views e Features | PasswordBox para chave; campos de filtros e opções originais | Teste de persistência DPAPI e regras; instalações não executadas |
 | Scrollbar | WPF ScrollViewer/ScrollBar com estilo do tema | src/CoreBi.Desktop/Shell/Theme.xaml | Rolagem da navegação e do conteúdo independentes | XAML compilado; múltiplos DPI pendentes |
 | Toast | ToastWindow | src/CoreBi.Desktop/Shell/ToastWindow.xaml | Cartão de grafite fixo (independe do tema) para eventos USB e falhas de persistência | Construção dos recursos; conexão física pendente |
+| Overlay | OverlayPanel e projeção RtssOverlayFormatter | src/CoreBi.Desktop/Features/Games/Overlay/OverlayPanel.xaml e respectivas medidas em execução | Janela WPF no desktop; camadas nativas RTSS em jogos compatíveis, preservando posição/tamanho dos campos, cores, seleção e raio do cartão, sem alterar perfis globais | OverlayTests e RtssTests; apresentação final confirmada pelo usuário no For Honor, com pequeno deslocamento dos separadores aceito |
 
 Operações administrativas usam comandos específicos e diálogos Windows. Seleção, rolagem e foco seguem os controles WPF nativos.
 
