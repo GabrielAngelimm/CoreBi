@@ -96,6 +96,34 @@ internal static partial class Program
             var card = (DiskHealthCard)typeof(DiskHealth).GetMethod("ToCard", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, new[] { raw })!;
             Require(card.Verdict == DiskVerdict.Unknown, "Temperature-only disk considered healthy"); return new { card.VerdictText };
         });
+        Check("voltages: rails need a plausible reading and keep ATX order", () =>
+        {
+            var map = VoltageMapper.Map(new[]
+            {
+                new VoltageInput(HardwareType.SuperIO, "+3.3V", 3.344f, 3.328f, 3.36f),
+                new VoltageInput(HardwareType.SuperIO, "+12V", 12.096f, 12.0f, 12.2f),
+                new VoltageInput(HardwareType.SuperIO, "+5V", 1.02f, 1.0f, 1.1f), // canal sem calibração: não é trilho
+                new VoltageInput(HardwareType.SuperIO, "+3V Standby", 3.39f, null, null),
+                new VoltageInput(HardwareType.SuperIO, "CMOS Battery", 2.71f, null, null),
+                new VoltageInput(HardwareType.Cpu, "Core #1 VID", 1.2f, 0.9f, 1.3f),
+                new VoltageInput(HardwareType.Cpu, "Core (SVI2 TFN)", 1.288f, 0.93f, 1.39f),
+                new VoltageInput(HardwareType.Cpu, "SoC (SVI2 TFN)", 1.094f, null, null),
+                new VoltageInput(HardwareType.GpuNvidia, "GPU Core", null, null, null),
+            });
+            Require(string.Join("|", map.Rails.Select(r => r.Title)) == "+12 V|+3,3 V|+3,3 V standby", "Rails: " + string.Join("|", map.Rails.Select(r => r.Title)));
+            Require(map.Components.Select(c => c.Title).SequenceEqual(new[] { "Processador · núcleo", "Processador · SoC", "Bateria do CMOS" }), "Components: " + string.Join("|", map.Components.Select(c => c.Title)));
+            Require(map.Components.Single(c => c.Title == "Bateria do CMOS").Low && map.Total == 8, "CMOS low or total");
+            Require(map.Components[0].Value is > 1.28 and < 1.29, "SVI2 telemetry must win over VID");
+            return new { rails = map.Rails.Count, components = map.Components.Count };
+        });
+        Check("power history: days count only what the log covers", () =>
+        {
+            var day = DateTime.Today.AddDays(-2);
+            var h = new PowerHistory(DateTime.Today.AddDays(-6), day, new[] { new OnSpan(day.AddHours(22), day.AddHours(26), false) }, Array.Empty<DateTime>(), null, null, null);
+            Require(h.OnTime(day) == TimeSpan.FromHours(2) && h.OnTime(day.AddDays(1)) == TimeSpan.FromHours(2), "Span across midnight");
+            Require(h.Covers(day) && !h.Covers(day.AddDays(-1)), "Coverage");
+            return new { split = "22:00–02:00 counts 2 h on each day" };
+        });
         Check("RT: zero-frame passes cannot be reliable", () =>
         {
             var result = new GpuRtResult(new[] { new RtPass(0, 0, 0), new RtPass(0, 0, 0), new RtPass(0, 0, 0) }, 320, 180, "normal", "test", 0);
@@ -162,8 +190,8 @@ internal static partial class Program
             {
                 PumpDispatcher(window.LoadHardwareAsync());
                 PumpDispatcher(Task.WhenAll(window.PageDisks.RefreshAsync(), window.PageEnergy.RefreshAsync()));
-                Require(window.PageDisks.DiskCards.Items.Count > 0 && window.PageEnergy.EnergyCards.Items.Count > 0,
-                    $"Monitoring pages: disks={window.PageDisks.DiskCards.Items.Count} ({window.PageDisks.DiskHealthStatus.Text}); power={window.PageEnergy.EnergyCards.Items.Count} ({window.PageEnergy.EnergyStatus.Text})");
+                Require(window.PageDisks.DiskCards.Items.Count > 0 && window.PageEnergy.Snapshot != null,
+                    $"Monitoring pages: disks={window.PageDisks.DiskCards.Items.Count} ({window.PageDisks.DiskHealthStatus.Text}); power={window.PageEnergy.Snapshot != null} ({window.PageEnergy.EnergyStatus.Text})");
                 var sampleFrame = new DispatcherFrame();
                 var sampleTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
                 sampleTimer.Tick += (_, _) => sampleFrame.Continue = false;
@@ -175,7 +203,8 @@ internal static partial class Program
                     sensorRows = window._monitor.Rows.Count,
                     gpus = window._gpus.Count,
                     diskCards = window.PageDisks.DiskCards.Items.Count,
-                    powerCards = window.PageEnergy.EnergyCards.Items.Count,
+                    powerPlans = window.PageEnergy.Plan?.Plans.Count ?? 0,
+                    powerDays = window.PageEnergy.History?.Spans.Count ?? 0,
                     window.StatusText.Text,
                     elevated = SensorMonitor.IsElevated,
                     pawnIO = SensorMonitor.IsPawnIOInstalled,

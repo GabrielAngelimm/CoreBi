@@ -79,6 +79,7 @@ public partial class MainWindow : Window
             UpdateCpuSensorWarning();
             CollectDashSample();
             PageDisks.Sample();
+            PageEnergy.Sample();
             UpdateFrameMonitoring();
             UpdateBottleneck();
             if (PageBench.IsVisible) UpdateBenchLive();

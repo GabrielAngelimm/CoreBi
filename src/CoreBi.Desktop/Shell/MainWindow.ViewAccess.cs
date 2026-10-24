@@ -185,7 +185,7 @@ public partial class MainWindow
         PageDash.Owner = this;
         PageSystem.Owner = this;
         PageDisks.Initialize(_features, _monitor);
-        PageEnergy.Initialize(_features, _monitor);
+        PageEnergy.Initialize(_features, _monitor, () => _gpus.FirstOrDefault(), MainGpuPower);
         PageNet.Context = _features;
         PageDriver.Context = _features;
         PageSensors.Owner = this;
