@@ -292,18 +292,27 @@
                             <Grid DockPanel.Dock="Top" Margin="0,0,0,4">
                                 <TextBlock Text="Atividade recente" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                                 <Button x:Name="DashEventsMore" Style="{StaticResource GhostButton}" Content="Ver histórico" HorizontalAlignment="Right" Margin="0,-6,-10,-6" Visibility="Collapsed" Click="DashEventsMore_Click" />
-                                <Popup x:Name="DashEventsPopup" PlacementTarget="{Binding ElementName=DashEventsMore}" Placement="Bottom" HorizontalOffset="10" StaysOpen="False" AllowsTransparency="True" PopupAnimation="None">
-                                    <Border Style="{StaticResource CardBorder}" Width="340" MaxHeight="440" Margin="12" Padding="18,12,18,6" Background="{DynamicResource Surface}">
-                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                            <ItemsControl x:Name="DashEventsAll" ItemTemplate="{StaticResource DashEventTemplate}" Focusable="False" />
-                                        </ScrollViewer>
-                                    </Border>
-                                </Popup>
                             </Grid>
                             <!-- O host não pede altura: a lista mostra só as linhas que cabem, sem esticar a página -->
                             <local:FitHost SizeChanged="DashEvents_SizeChanged">
                                 <TextBlock x:Name="DashEventsEmpty" Text="Benchmarks, testes de carga e dispositivos conectados aparecem aqui assim que acontecerem." Style="{StaticResource Caption}" Margin="0,6,0,0" />
                                 <ItemsControl x:Name="DashEvents" ItemTemplate="{StaticResource DashEventTemplate}" VerticalAlignment="Top" ClipToBounds="True" Focusable="False" />
+                                <!-- Histórico: o próprio cartão passa a rolar, sem mudar de tamanho -->
+                                <!-- Rola de linha em linha (painel virtualizado) e a altura é sempre múltipla da linha, então nada fica cortado -->
+                                <ItemsControl x:Name="DashEventsAll" ItemTemplate="{StaticResource DashEventTemplate}" VerticalAlignment="Top" Visibility="Collapsed" Focusable="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <VirtualizingStackPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.Template>
+                                        <ControlTemplate TargetType="ItemsControl">
+                                            <ScrollViewer x:Name="HistoryScroll" CanContentScroll="True" VerticalScrollBarVisibility="Auto" Focusable="False">
+                                                <ItemsPresenter Margin="0,0,16,0" />
+                                            </ScrollViewer>
+                                        </ControlTemplate>
+                                    </ItemsControl.Template>
+                                </ItemsControl>
                             </local:FitHost>
                         </DockPanel>
                     </Border>
