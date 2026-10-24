@@ -25,7 +25,12 @@ public partial class OverviewView : UserControl
         DashEventsMore.Content = on ? "Mostrar menos" : "Ver histórico";
         if (on) DashEventsScroll.ScrollToTop();
     }
-    private void DashEvents_SizeChanged(object sender, SizeChangedEventArgs e) => Owner?.DashEvents_SizeChanged(sender, e);
+    private void DashEvents_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        // O host não pede altura, então o histórico precisa de uma altura própria para saber que não cabe e rolar.
+        DashEventsScroll.Height = e.NewSize.Height;
+        Owner?.DashEvents_SizeChanged(sender, e);
+    }
 
     /// <summary>Com largura (janela maximizada) tudo numa linha; senão, os anéis descem para baixo dos dois cartões.</summary>
     private void DashComponentsRow_SizeChanged(object sender, SizeChangedEventArgs e)
