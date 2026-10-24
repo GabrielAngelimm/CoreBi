@@ -434,6 +434,9 @@ public partial class DisksView : UserControl
         LifeColumn.Width = new GridLength(wide ? 370 : 330);
         SpaceColumn.Width = new GridLength(wide ? 520 : 420);
         // Larga: odômetro ao lado da temperatura e integridade na faixa de baixo. Estreita: odômetro desce em faixa 2 × 2 e a integridade fica por último.
+        OdoGap.Width = new GridLength(wide ? 16 : 0);
+        OdoColumn.Width = new GridLength(wide ? 210 : 0);
+        Grid.SetColumnSpan(TempCard, wide ? 1 : 3);
         Grid.SetRow(OdoCard, wide ? 2 : 4);
         Grid.SetColumn(OdoCard, wide ? 4 : 0);
         Grid.SetColumnSpan(OdoCard, wide ? 1 : 5);

@@ -164,8 +164,8 @@
                             <ColumnDefinition x:Name="LifeColumn" Width="370" />
                             <ColumnDefinition Width="16" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="16" />
-                            <ColumnDefinition Width="210" />
+                            <ColumnDefinition x:Name="OdoGap" Width="16" />
+                            <ColumnDefinition x:Name="OdoColumn" Width="210" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
