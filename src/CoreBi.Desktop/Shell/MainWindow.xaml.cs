@@ -103,6 +103,7 @@ public partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _timer.Stop(); _overlayTimer?.Stop(); _usbDebounce?.Stop();
+            if (_opacitySave?.IsEnabled == true) SaveSettings();
             _stress.Stop(); _burn.Stop(); _benchCts?.Cancel();
             _gameBenchCts?.Cancel(); _gpuBench?.Cancel(); _rtBench?.Cancel(); _stressLease?.Dispose();
             _overlay?.Close();
