@@ -295,10 +295,24 @@ public partial class PowerView : UserControl
         var longest = h.Spans.Where(sp => sp.To > h.Since).Select(sp => sp.To - (sp.From < h.Since ? h.Since : sp.From)).DefaultIfEmpty(TimeSpan.Zero).Max();
         if (longest > TimeSpan.Zero) Readout(DaysLongest, longest);
         else DaysLongest.Text = "—";
+        // Hora de costume: mediana da primeira ligada e da última desligada dos dias que começam e terminam dentro do dia
+        var firsts = new List<TimeSpan>();
+        var lasts = new List<TimeSpan>();
+        foreach (var d in known)
+        {
+            DateTime next = d.AddDays(1);
+            var inDay = h.Spans.Where(sp => sp.To > d && sp.From < next).ToList();
+            if (inDay.Count == 0) continue;
+            if (inDay[0].From >= d) firsts.Add(inDay[0].From - d);
+            if (!inDay[^1].Current && inDay[^1].To < next) lasts.Add(inDay[^1].To - d);
+        }
+        DaysTypicalOn.Text = Median(firsts) is TimeSpan usualOn ? $"{usualOn:hh\\:mm}" : "—";
+        DaysTypicalOff.Text = Median(lasts) is TimeSpan usualOff ? $"{usualOff:hh\\:mm}" : "—";
         int crashCount = h.Unexpected.Count;
         DaysCrashes.Text = crashCount.ToString();
         DaysCrashes.SetResourceReference(TextBlock.ForegroundProperty, crashCount >= 3 ? "Danger" : "Warn");
         CrashBox.Visibility = crashCount > 0 ? Visibility.Visible : Visibility.Collapsed;
+        DaysCells.Columns = crashCount > 0 ? 7 : 6;
         // Só avisa quando o registro não cobre a semana inteira (o Windows descarta eventos antigos quando o log enche)
         bool shortLog = h.LogStart is DateTime start && start > h.Since;
         DaysCaption.Text = shortLog ? $"O registro do Windows só guarda desde {h.LogStart:dd/MM HH:mm}" : "";
@@ -524,6 +538,15 @@ public partial class PowerView : UserControl
     {
         int h = (int)t.TotalHours, m = t.Minutes;
         return h == 0 ? $"{m} min" : minutesWord ? $"{h} h {m:00} min" : $"{h} h {m:00}";
+    }
+
+    /// <summary>Mediana de pelo menos dois valores; com menos que isso não há "costume" a mostrar.</summary>
+    private static TimeSpan? Median(List<TimeSpan> values)
+    {
+        if (values.Count < 2) return null;
+        values.Sort();
+        int mid = values.Count / 2;
+        return values.Count % 2 == 1 ? values[mid] : TimeSpan.FromTicks((values[mid - 1].Ticks + values[mid].Ticks) / 2);
     }
 
     private static string Duration(int minutes) => minutes >= 60 ? $"{minutes / 60} h {minutes % 60:00} min" : $"{minutes} min";

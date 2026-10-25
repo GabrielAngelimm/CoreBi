@@ -29,6 +29,9 @@
             <Setter Property="BorderThickness" Value="1,0,0,0" />
             <Setter Property="Padding" Value="22,14,16,16" />
         </Style>
+        <Style x:Key="DayCell" TargetType="Border" BasedOn="{StaticResource RulerCell}">
+            <Setter Property="Padding" Value="22,2,12,2" />
+        </Style>
         <Style x:Key="Led" TargetType="Ellipse">
             <Setter Property="Width" Value="7" />
             <Setter Property="Height" Value="7" />
@@ -267,8 +270,8 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel VerticalAlignment="Center">
-                                    <TextBlock x:Name="TotalNow" Style="{StaticResource ReadoutHero}" FontSize="88" Text="—" />
-                                    <TextBlock x:Name="TotalCaption" Text="processador + placa de vídeo" Style="{StaticResource Caption}" Margin="0,4,0,20" />
+                                    <TextBlock x:Name="TotalNow" Style="{StaticResource ReadoutHero}" FontSize="88" Text="—" HorizontalAlignment="Center" />
+                                    <TextBlock x:Name="TotalCaption" Text="processador + placa de vídeo" Style="{StaticResource Caption}" Margin="0,4,0,22" HorizontalAlignment="Center" />
                                     <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,10,0,0">
                                         <Grid>
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -348,28 +351,52 @@
                                 <TextBlock Text="Ligado nos últimos 7 dias" Style="{StaticResource SectionTitle}" HorizontalAlignment="Left" ToolTip="Pelo registro de eventos do Windows. Passe o mouse sobre um dia para ver os horários." />
                                 <TextBlock x:Name="DaysCaption" Style="{StaticResource Caption}" Margin="0,3,0,0" Visibility="Collapsed" />
                             </StackPanel>
-                            <WrapPanel x:Name="DaysSummary" Grid.Row="1" Margin="0,14,0,0">
-                                <StackPanel Margin="0,0,40,6">
-                                    <TextBlock Text="Hoje" Style="{StaticResource StatLabel}" />
-                                    <TextBlock x:Name="DaysToday" Style="{StaticResource RulerValue}" FontSize="26" Text="—" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,40,6" ToolTip="Média dos dias anteriores a hoje que o registro cobre">
-                                    <TextBlock Text="Média por dia" Style="{StaticResource StatLabel}" />
-                                    <TextBlock x:Name="DaysAverage" Style="{StaticResource RulerValue}" FontSize="26" Text="—" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,40,6" ToolTip="Soma do tempo ligado nos dias que o registro cobre">
-                                    <TextBlock Text="Total na semana" Style="{StaticResource StatLabel}" />
-                                    <TextBlock x:Name="DaysWeek" Style="{StaticResource RulerValue}" FontSize="26" Text="—" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,40,6" ToolTip="O maior tempo seguido ligado, sem desligar nem suspender.">
-                                    <TextBlock Text="Maior período ligado" Style="{StaticResource StatLabel}" />
-                                    <TextBlock x:Name="DaysLongest" Style="{StaticResource RulerValue}" FontSize="26" Text="—" />
-                                </StackPanel>
-                                <StackPanel x:Name="CrashBox" Margin="0,0,0,6" ToolTip="O Windows reiniciou sem desligar antes: queda de energia, travamento ou botão de energia segurado (Kernel-Power 41).">
-                                    <TextBlock Text="Desligamentos inesperados" Style="{StaticResource StatLabel}" />
-                                    <TextBlock x:Name="DaysCrashes" Style="{StaticResource RulerValue}" FontSize="26" Text="—" />
-                                </StackPanel>
-                            </WrapPanel>
+                            <Border x:Name="DaysSummary" Grid.Row="1" Margin="0,16,0,0" Padding="0,12" BorderBrush="{DynamicResource Line}" BorderThickness="0,1">
+                                <UniformGrid x:Name="DaysCells" Rows="1">
+                                    <Border Style="{StaticResource DayCell}" BorderThickness="0" Padding="0,2,12,2">
+                                        <StackPanel>
+                                            <TextBlock Text="Hoje" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="DaysToday" Style="{StaticResource RulerValue}" Text="—" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Style="{StaticResource DayCell}" ToolTip="Média dos dias anteriores a hoje que o registro cobre">
+                                        <StackPanel>
+                                            <TextBlock Text="Média por dia" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="DaysAverage" Style="{StaticResource RulerValue}" Text="—" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Style="{StaticResource DayCell}" ToolTip="Soma do tempo ligado nos dias que o registro cobre">
+                                        <StackPanel>
+                                            <TextBlock Text="Total na semana" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="DaysWeek" Style="{StaticResource RulerValue}" Text="—" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Style="{StaticResource DayCell}" ToolTip="O maior tempo seguido ligado, sem desligar nem suspender.">
+                                        <StackPanel>
+                                            <TextBlock Text="Maior período ligado" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="DaysLongest" Style="{StaticResource RulerValue}" Text="—" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Style="{StaticResource DayCell}" ToolTip="A hora mais comum da primeira ligada do dia (mediana dos dias da semana).">
+                                        <StackPanel>
+                                            <TextBlock Text="Costuma ligar" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="DaysTypicalOn" Style="{StaticResource RulerValue}" Text="—" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Style="{StaticResource DayCell}" ToolTip="A hora mais comum da última desligada do dia (mediana dos dias da semana).">
+                                        <StackPanel>
+                                            <TextBlock Text="Costuma desligar" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="DaysTypicalOff" Style="{StaticResource RulerValue}" Text="—" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border x:Name="CrashBox" Style="{StaticResource DayCell}" ToolTip="O Windows reiniciou sem desligar antes: queda de energia, travamento ou botão de energia segurado (Kernel-Power 41).">
+                                        <StackPanel>
+                                            <TextBlock Text="Quedas inesperadas" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="DaysCrashes" Style="{StaticResource RulerValue}" Text="—" />
+                                        </StackPanel>
+                                    </Border>
+                                </UniformGrid>
+                            </Border>
                             <local:UptimeChart x:Name="Uptime" Grid.Row="2" Margin="0,14,0,0" />
                             <TextBlock x:Name="DaysEmpty" Grid.Row="2" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="0,14,0,0" Visibility="Collapsed" />
                         </Grid>
