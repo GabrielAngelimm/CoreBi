@@ -128,7 +128,7 @@ public partial class PowerView : UserControl
             ShowPlan(Plan);
             ShowHistory(History);
             ShowLive();
-            EnergyStatus.Text = $"Lido às {DateTime.Now:HH:mm:ss}";
+            EnergyStatus.Text = $"Atualizado às {DateTime.Now:HH:mm:ss}";
         }
         catch (Exception ex) { if (!_context.IsClosing) EnergyStatus.Text = "Falhou: " + ex.Message; }
         finally
@@ -221,7 +221,7 @@ public partial class PowerView : UserControl
         RegSection.Visibility = p.Active == null ? Visibility.Collapsed : Visibility.Visible;
         if (previewing) RegSection.SetResourceReference(Border.BackgroundProperty, "AccentSoft");
         else RegSection.ClearValue(Border.BackgroundProperty);
-        RegTitle.Text = previewing ? $"Ao trocar para {_pendingPlan!.Name}" : "O que o plano define";
+        RegTitle.Text = previewing ? $"Ao trocar para {_pendingPlan!.Name}" : "Ajustes do plano";
         RegCaption.Visibility = battery && !previewing ? Visibility.Visible : Visibility.Collapsed;
         PlanConfirm.Visibility = previewing ? Visibility.Visible : Visibility.Collapsed;
         PlanApply.IsEnabled = !_applyingPlan;
@@ -268,7 +268,7 @@ public partial class PowerView : UserControl
     private static string? SettingTip(string key) => key switch
     {
         "boost" => "Quanto o processador pode subir acima do clock base quando há carga.",
-        "epp" => "Se o processador, ao escolher o clock, favorece desempenho ou economia de energia. É o que mais diferencia os planos de fábrica.",
+        "epp" => "O que o processador prioriza ao escolher o clock: desempenho ou economia de energia. É o que mais diferencia os planos de fábrica.",
         "display" => "Tempo sem uso até o Windows apagar a tela.",
         "sleep" => "Tempo sem uso até o PC suspender (desliga quase tudo e volta de onde parou).",
         _ => null,
@@ -396,10 +396,10 @@ public partial class PowerView : UserControl
         LiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, any ? "Accent" : "Faint");
         LiveText.Text = any ? "Ao vivo" : _monitor.IsOpen ? "Sem leitura de consumo" : "Aguardando os sensores";
         Readout(TotalNow, any ? $"{(cpu ?? 0) + (gpu ?? 0):0}" : "—", any ? "W" : "");
-        TotalCaption.Text = cpu != null && gpu != null ? "processador + placa de vídeo"
-            : gpu != null ? "só a placa de vídeo"
-            : cpu != null ? "só o processador"
-            : "sem leitura de consumo";
+        TotalCaption.Text = cpu != null && gpu != null ? "Agora · processador + placa de vídeo"
+            : gpu != null ? "Agora · só a placa de vídeo"
+            : cpu != null ? "Agora · só o processador"
+            : "Sem leitura de consumo";
         Split.First = cpu ?? 0;
         Split.Second = gpu ?? 0;
         Readout(CpuNow, cpu is float c ? $"{c:0.0}" : "—", cpu != null ? "W" : "");
@@ -441,7 +441,7 @@ public partial class PowerView : UserControl
         var length = DateTime.Now - start;
         string span = length.TotalMinutes < 1 ? "menos de 1 min" : Hours(length, minutesWord: true);
         SessionAge.Text = "sessão de " + span;
-        SessionAge.ToolTip = $"Desde que o CoreBi abriu, às {start:HH:mm}. Média, pico e energia valem para este período; o gráfico mostra só os últimos 5 minutos.";
+        SessionAge.ToolTip = $"Desde que o CoreBi abriu, às {start:HH:mm}. Consumo médio, maior consumo e energia gasta valem para este período; o gráfico mostra só os últimos 5 minutos.";
         Readout(SessionAverage, $"{_sumW / _countW:0}", "W");
         AverageCell.ToolTip = $"Consumo médio de processador + placa de vídeo desde {start:HH:mm} ({span}).";
         Readout(SessionPeak, $"{_peakW:0}", "W");

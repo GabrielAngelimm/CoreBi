@@ -241,16 +241,16 @@
                             <Border x:Name="RegSection" Style="{StaticResource FeedSection}">
                                 <StackPanel>
                                     <Grid MinHeight="28">
-                                        <TextBlock x:Name="RegTitle" Text="O que o plano define" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,150,0" />
+                                        <TextBlock x:Name="RegTitle" Text="Ajustes do plano" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,150,0" />
                                         <TextBlock x:Name="RegCaption" Text="na tomada · na bateria" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed" />
                                         <StackPanel x:Name="PlanConfirm" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed">
                                             <Button x:Name="PlanCancel" Content="Cancelar" Style="{StaticResource GhostButton}" MinHeight="26" Padding="10,3" FontSize="12.5" Click="PlanCancel_Click" />
                                             <Button x:Name="PlanApply" Content="Aplicar" Style="{StaticResource PrimaryButton}" MinHeight="26" Padding="14,3" FontSize="12.5" Margin="6,0,0,0" Click="PlanApply_Click" />
                                         </StackPanel>
                                     </Grid>
-                                    <StackPanel x:Name="ProcBox" Margin="0,10,0,8" ToolTip="Quanto do clock o Windows pode usar: o mínimo vale em repouso, o máximo com carga.">
+                                    <StackPanel x:Name="ProcBox" Margin="0,10,0,8" ToolTip="Quanto da velocidade do processador o Windows pode usar: o mínimo vale em repouso e o máximo, com carga.">
                                         <Grid>
-                                            <TextBlock Text="Processador" Foreground="{DynamicResource Muted}" />
+                                            <TextBlock Text="Faixa de desempenho" Foreground="{DynamicResource Muted}" />
                                             <TextBlock x:Name="ProcText" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
                                         </Grid>
                                         <local:SpanMeter x:Name="ProcMeter" Margin="0,9,0,0" />
@@ -290,7 +290,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Border x:Name="HeroPlate" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="12" Padding="20,18,20,16" VerticalAlignment="Center">
                                     <StackPanel>
-                                        <TextBlock x:Name="TotalCaption" Text="processador + placa de vídeo" Style="{StaticResource StatLabel}" />
+                                        <TextBlock x:Name="TotalCaption" Text="Agora · processador + placa de vídeo" Style="{StaticResource StatLabel}" />
                                         <TextBlock x:Name="TotalNow" Style="{StaticResource ReadoutHero}" FontSize="88" Text="—" Margin="-3,0,0,0" />
                                         <local:SplitBar x:Name="Split" Margin="0,10,0,16" />
                                         <Grid>
@@ -326,19 +326,19 @@
                                 <UniformGrid x:Name="Ruler" Rows="1">
                                     <Border x:Name="AverageCell" Style="{StaticResource RulerCell}" BorderThickness="0">
                                         <StackPanel>
-                                            <TextBlock Text="Média da sessão" Style="{StaticResource StatLabel}" />
+                                            <TextBlock Text="Consumo médio da sessão" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="SessionAverage" Style="{StaticResource RulerValue}" Text="—" />
                                         </StackPanel>
                                     </Border>
                                     <Border x:Name="PeakCell" Style="{StaticResource RulerCell}">
                                         <StackPanel>
-                                            <TextBlock Text="Pico da sessão" Style="{StaticResource StatLabel}" />
+                                            <TextBlock Text="Maior consumo da sessão" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="SessionPeak" Style="{StaticResource RulerValue}" Text="—" />
                                         </StackPanel>
                                     </Border>
                                     <Border x:Name="EnergyCell" Style="{StaticResource RulerCell}">
                                         <StackPanel>
-                                            <TextBlock Text="Energia da sessão" Style="{StaticResource StatLabel}" />
+                                            <TextBlock Text="Energia gasta na sessão" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="SessionEnergy" Style="{StaticResource RulerValue}" Text="—" />
                                         </StackPanel>
                                     </Border>
@@ -365,7 +365,7 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Ligado nos últimos 7 dias -->
+                    <!-- Uso do computador nos últimos 7 dias -->
                     <Border x:Name="DaysCard" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="22,16">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -374,7 +374,7 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Ligado nos últimos 7 dias" Style="{StaticResource SectionTitle}" HorizontalAlignment="Left" ToolTip="Pelo registro de eventos do Windows. Passe o mouse sobre um dia para ver os horários." />
+                                <TextBlock Text="Uso do computador nos últimos 7 dias" Style="{StaticResource SectionTitle}" HorizontalAlignment="Left" ToolTip="Quanto tempo o PC ficou ligado, pelo registro de eventos do Windows. Passe o mouse sobre um dia para ver os horários." />
                                 <TextBlock x:Name="DaysCaption" Style="{StaticResource Caption}" Margin="0,3,0,0" Visibility="Collapsed" />
                             </StackPanel>
                             <!-- Mesma faixa do consumo: células de largura igual, texto à esquerda, fio entre elas, de ponta a ponta do cartão -->
@@ -392,15 +392,15 @@
                                             <TextBlock x:Name="DaysAverage" Style="{StaticResource RulerValue}" Text="—" />
                                         </StackPanel>
                                     </Border>
-                                    <Border Style="{StaticResource RulerCell}" ToolTip="Soma do tempo ligado nos dias que o registro cobre">
+                                    <Border Style="{StaticResource RulerCell}" ToolTip="Soma do tempo com o PC ligado nos dias que o registro cobre">
                                         <StackPanel>
-                                            <TextBlock Text="Total na semana" Style="{StaticResource StatLabel}" />
+                                            <TextBlock Text="Total em 7 dias" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="DaysWeek" Style="{StaticResource RulerValue}" Text="—" />
                                         </StackPanel>
                                     </Border>
-                                    <Border Style="{StaticResource RulerCell}" ToolTip="O maior tempo seguido ligado, sem desligar nem suspender.">
+                                    <Border Style="{StaticResource RulerCell}" ToolTip="O maior tempo seguido com o PC ligado, sem desligar nem suspender.">
                                         <StackPanel>
-                                            <TextBlock Text="Maior período ligado" Style="{StaticResource StatLabel}" />
+                                            <TextBlock Text="Maior uso seguido" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="DaysLongest" Style="{StaticResource RulerValue}" Text="—" />
                                         </StackPanel>
                                     </Border>
@@ -410,9 +410,9 @@
                                             <TextBlock x:Name="DaysTurnOns" Style="{StaticResource RulerValue}" Text="—" />
                                         </StackPanel>
                                     </Border>
-                                    <Border x:Name="CrashBox" Style="{StaticResource RulerCell}" ToolTip="O Windows reiniciou sem desligar antes: queda de energia, travamento ou botão de energia segurado (Kernel-Power 41).">
+                                    <Border x:Name="CrashBox" Style="{StaticResource RulerCell}" ToolTip="O Windows reiniciou sem desligar antes: queda de energia, travamento ou botão de energia segurado.">
                                         <StackPanel>
-                                            <TextBlock Text="Quedas inesperadas" Style="{StaticResource StatLabel}" />
+                                            <TextBlock Text="Desligamentos bruscos" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="DaysCrashes" Style="{StaticResource RulerValue}" Text="—" />
                                         </StackPanel>
                                     </Border>

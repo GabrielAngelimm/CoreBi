@@ -77,9 +77,9 @@ public static class PowerPlans
                 _ => $"Modo {v}",
             });
             // Preferência de energia do processador (0 favorece desempenho, 100 favorece economia): é o que separa o Equilibrado do Alto desempenho
-            Add("epp", "Preferência do processador", SubProcessor, Epp, v => v switch { <= 30 => "Desempenho", <= 55 => "Equilibrada", _ => "Economia" });
-            Add("display", "Desligar a tela", SubVideo, VideoOff, Minutes);
-            Add("sleep", "Suspender", SubSleep, SleepAfter, Minutes);
+            Add("epp", "Prioridade do processador", SubProcessor, Epp, v => v switch { <= 30 => "Desempenho", <= 55 => "Equilibrada", _ => "Economia" });
+            Add("display", "Apagar a tela após", SubVideo, VideoOff, Minutes);
+            Add("sleep", "Suspender após", SubSleep, SleepAfter, Minutes);
 
             int? P(uint? v) => v is uint x && x <= 100 ? (int)x : null;
             return new PlanValues(P(Ac(SubProcessor, ProcMin)), P(Ac(SubProcessor, ProcMax)), P(Dc(SubProcessor, ProcMin)), P(Dc(SubProcessor, ProcMax)), settings);
