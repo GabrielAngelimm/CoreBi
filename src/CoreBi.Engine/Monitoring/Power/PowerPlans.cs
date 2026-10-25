@@ -11,12 +11,16 @@ public sealed record PowerPlan(Guid Id, string Name, bool IsActive);
 /// </summary>
 public sealed record PlanSetting(string Key, string Title, string Ac, string Dc);
 
-/// <summary>Plano ativo e o essencial do que ele regula: estado do processador (mín./máx. em %), turbo e os tempos de tela e suspensão.</summary>
-public sealed record PlanDetail(
-    IReadOnlyList<PowerPlan> Plans,
-    PowerPlan? Active,
+/// <summary>O essencial do que um plano regula: estado do processador (mín./máx. em %), turbo e os tempos de tela e suspensão.</summary>
+public sealed record PlanValues(
     int? ProcessorMinAc, int? ProcessorMaxAc, int? ProcessorMinDc, int? ProcessorMaxDc,
-    IReadOnlyList<PlanSetting> Settings);
+    IReadOnlyList<PlanSetting> Settings)
+{
+    public static readonly PlanValues Empty = new(null, null, null, null, Array.Empty<PlanSetting>());
+}
+
+/// <summary>Planos instalados, o ativo e o que ele regula.</summary>
+public sealed record PlanDetail(IReadOnlyList<PowerPlan> Plans, PowerPlan? Active, PlanValues Values);
 
 /// <summary>Planos de energia pela API do Windows (powrprof.dll). Leitura em qualquer conta; trocar o plano ativo é a única escrita.</summary>
 public static class PowerPlans
@@ -25,6 +29,7 @@ public static class PowerPlans
     private static readonly Guid ProcMin = new("893dee8e-2bef-41e0-89c6-b55d0929964c");
     private static readonly Guid ProcMax = new("bc5038f7-23e0-4960-96da-33abaf5935ec");
     private static readonly Guid Boost = new("be337238-0d82-4146-a960-4f3749d470c7");
+    private static readonly Guid Epp = new("36687f9e-e3a5-4dbf-b1dc-15eb381c6863");
     private static readonly Guid SubVideo = new("7516b95f-f776-4464-8c53-06167f40cc99");
     private static readonly Guid VideoOff = new("3c0bc021-c8a8-4e07-a973-6b14cbcb2b7e");
     private static readonly Guid SubSleep = new("238c9fa8-0aad-41ed-83f4-97be242c8f20");
@@ -44,35 +49,43 @@ public static class PowerPlans
     {
         var plans = List();
         var active = plans.FirstOrDefault(p => p.IsActive);
-        if (active == null) return new PlanDetail(plans, null, null, null, null, null, Array.Empty<PlanSetting>());
-        Guid id = active.Id;
+        return new PlanDetail(plans, active, active == null ? PlanValues.Empty : ReadValues(active.Id));
+    }
 
-        uint? Ac(Guid sub, Guid setting) => PowerReadACValueIndex(IntPtr.Zero, ref id, ref sub, ref setting, out uint v) == 0 ? v : null;
-        uint? Dc(Guid sub, Guid setting) => PowerReadDCValueIndex(IntPtr.Zero, ref id, ref sub, ref setting, out uint v) == 0 ? v : null;
-
-        var settings = new List<PlanSetting>();
-        void Add(string key, string title, Guid sub, Guid setting, Func<uint, string> text)
+    /// <summary>O que um plano regula, ativo ou não: o Windows guarda os valores de cada plano e a leitura não muda nada.</summary>
+    public static PlanValues ReadValues(Guid id)
+    {
+        try
         {
-            if (Ac(sub, setting) is not uint ac) return;
-            settings.Add(new PlanSetting(key, title, text(ac), Dc(sub, setting) is uint dc ? text(dc) : text(ac)));
+            uint? Ac(Guid sub, Guid setting) => PowerReadACValueIndex(IntPtr.Zero, ref id, ref sub, ref setting, out uint v) == 0 ? v : null;
+            uint? Dc(Guid sub, Guid setting) => PowerReadDCValueIndex(IntPtr.Zero, ref id, ref sub, ref setting, out uint v) == 0 ? v : null;
+
+            var settings = new List<PlanSetting>();
+            void Add(string key, string title, Guid sub, Guid setting, Func<uint, string> text)
+            {
+                if (Ac(sub, setting) is not uint ac) return;
+                settings.Add(new PlanSetting(key, title, text(ac), Dc(sub, setting) is uint dc ? text(dc) : text(ac)));
+            }
+            Add("boost", "Turbo do processador", SubProcessor, Boost, v => v switch
+            {
+                0 => "Desativado",
+                1 => "Ativado",
+                2 => "Agressivo",
+                3 => "Eficiente",
+                4 => "Eficiente agressivo",
+                5 or 6 => "Agressivo garantido",
+                _ => $"Modo {v}",
+            });
+            // Preferência de energia do processador (0 favorece desempenho, 100 favorece economia): é o que separa o Equilibrado do Alto desempenho
+            Add("epp", "Preferência do processador", SubProcessor, Epp, v => v switch { <= 30 => "Desempenho", <= 55 => "Equilibrada", _ => "Economia" });
+            Add("display", "Desligar a tela", SubVideo, VideoOff, Minutes);
+            Add("sleep", "Suspender", SubSleep, SleepAfter, Minutes);
+
+            int? P(uint? v) => v is uint x && x <= 100 ? (int)x : null;
+            return new PlanValues(P(Ac(SubProcessor, ProcMin)), P(Ac(SubProcessor, ProcMax)), P(Dc(SubProcessor, ProcMin)), P(Dc(SubProcessor, ProcMax)), settings);
         }
-        Add("boost", "Turbo do processador", SubProcessor, Boost, v => v switch
-        {
-            0 => "Desativado",
-            1 => "Ativado",
-            2 => "Agressivo",
-            3 => "Eficiente",
-            4 => "Eficiente agressivo",
-            5 or 6 => "Agressivo garantido",
-            _ => $"Modo {v}",
-        });
-        Add("display", "Desligar a tela", SubVideo, VideoOff, Minutes);
-        Add("sleep", "Suspender", SubSleep, SleepAfter, Minutes);
-
-        int? P(uint? v) => v is uint x && x <= 100 ? (int)x : null;
-        return new PlanDetail(plans, active,
-            P(Ac(SubProcessor, ProcMin)), P(Ac(SubProcessor, ProcMax)), P(Dc(SubProcessor, ProcMin)), P(Dc(SubProcessor, ProcMax)),
-            settings);
+        catch (DllNotFoundException) { return PlanValues.Empty; }
+        catch (EntryPointNotFoundException) { return PlanValues.Empty; }
     }
 
     /// <summary>Planos instalados, na ordem do Windows, com o nome traduzido que o Painel de Controle mostra.</summary>

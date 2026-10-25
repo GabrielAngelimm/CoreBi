@@ -20,7 +20,8 @@ namespace CoreBi.Desktop.Views;
 /// </summary>
 public partial class PowerView : UserControl
 {
-    public sealed record SettingItem(string Title, string Value, string? Tip);
+    public sealed record SettingItem(string Title, string Value, string? Tip, string BeforeText = "", bool Changed = false);
+    public sealed record PlanItem(Guid Id, string Name, bool IsActive, bool IsPending);
 
     /// <summary>Base das linhas que mudam a cada segundo: avisa a interface só do que mudou.</summary>
     public abstract class LiveItem : INotifyPropertyChanged
@@ -73,7 +74,8 @@ public partial class PowerView : UserControl
     private SensorMonitor _monitor = null!;
     private Func<GpuInfo?> _mainGpu = () => null;
     private Func<float?> _gpuPower = () => null;
-    private bool _refreshing, _syncingPlans, _stacked, _dirty;
+    private bool _refreshing, _applyingPlan, _stacked, _dirty;
+    private PowerPlan? _pendingPlan;
 
     // Sessão: consumo desde que o CoreBi abriu (1 amostra/s)
     private readonly List<(float? Cpu, float? Gpu)> _trace = new();
@@ -204,53 +206,105 @@ public partial class PowerView : UserControl
 
     // ---------------- plano de energia ----------------
 
+    /// <summary>
+    /// Plano ativo e o que ele define. Com um plano escolhido que ainda não foi aplicado, a mesma área vira a prévia da troca:
+    /// mostra os valores do novo plano, com o atual esmaecido ao lado do que muda, e os botões Cancelar e Aplicar.
+    /// </summary>
     private void ShowPlan(PlanDetail p)
     {
-        _syncingPlans = true;
-        PlanList.ItemsSource = p.Plans;
-        PlanList.SelectedItem = p.Active;
-        _syncingPlans = false;
+        if (_pendingPlan is { } pending && (p.Plans.All(x => x.Id != pending.Id) || p.Active?.Id == pending.Id)) _pendingPlan = null;
+        var preview = _pendingPlan is { } pp ? PowerPlans.ReadValues(pp.Id) : null;
+        PlanList.ItemsSource = p.Plans.Select(x => new PlanItem(x.Id, x.Name, x.IsActive, x.Id == _pendingPlan?.Id)).ToList();
 
         bool battery = Snapshot?.Batteries.Any(b => !b.IsUps) == true;
-        RegCaption.Visibility = battery ? Visibility.Visible : Visibility.Collapsed;
+        bool previewing = preview != null;
         RegSection.Visibility = p.Active == null ? Visibility.Collapsed : Visibility.Visible;
+        if (previewing) RegSection.SetResourceReference(Border.BackgroundProperty, "AccentSoft");
+        else RegSection.ClearValue(Border.BackgroundProperty);
+        RegTitle.Text = previewing ? $"Ao trocar para {_pendingPlan!.Name}" : "O que o plano define";
+        RegCaption.Visibility = battery && !previewing ? Visibility.Visible : Visibility.Collapsed;
+        PlanConfirm.Visibility = previewing ? Visibility.Visible : Visibility.Collapsed;
+        PlanApply.IsEnabled = !_applyingPlan;
 
-        ProcBox.Visibility = p.ProcessorMinAc != null && p.ProcessorMaxAc != null ? Visibility.Visible : Visibility.Collapsed;
-        if (p.ProcessorMinAc is int min && p.ProcessorMaxAc is int max)
+        var now = p.Values;
+        var shown = preview ?? now;
+        string Range(PlanValues v, bool dc) => (dc ? v.ProcessorMinDc : v.ProcessorMinAc) is int lo && (dc ? v.ProcessorMaxDc : v.ProcessorMaxAc) is int hi ? lo == hi ? $"{hi} %" : $"{lo} – {hi} %" : "";
+        string Proc(PlanValues v) => battery && Range(v, true) is { Length: > 0 } onDc && onDc != Range(v, false) ? $"{Range(v, false)} · {onDc}" : Range(v, false);
+
+        ProcBox.Visibility = shown.ProcessorMinAc != null && shown.ProcessorMaxAc != null ? Visibility.Visible : Visibility.Collapsed;
+        if (shown.ProcessorMinAc is int min && shown.ProcessorMaxAc is int max)
         {
             ProcMeter.From = min;
             ProcMeter.To = max;
-            string dc = battery && p.ProcessorMinDc is int dmin && p.ProcessorMaxDc is int dmax && (dmin != min || dmax != max) ? $" · {dmin} – {dmax} %" : "";
-            ProcText.Text = $"{min} – {max} %" + dc;
+            string current = Proc(now), target = Proc(shown);
+            ProcText.Inlines.Clear();
+            if (previewing && current != target)
+            {
+                var old = new Run(current + "  →  ");
+                old.SetResourceReference(TextElement.ForegroundProperty, "Faint");
+                ProcText.Inlines.Add(old);
+                var fresh = new Run(target);
+                fresh.SetResourceReference(TextElement.ForegroundProperty, "Accent");
+                ProcText.Inlines.Add(fresh);
+            }
+            else ProcText.Inlines.Add(new Run(target));
             // Só o caso que pede atenção ganha texto: máximo abaixo de 100 % segura o clock com carga
             ProcNote.Text = $"Máximo em {max} %: o processador não chega ao clock total neste plano.";
             ProcNote.Visibility = max < 100 ? Visibility.Visible : Visibility.Collapsed;
         }
-        PlanSettings.ItemsSource = p.Settings.Select(s => new SettingItem(s.Title, battery && s.Dc != s.Ac ? $"{s.Ac} · {s.Dc}" : s.Ac, SettingTip(s.Key))).ToList();
+
+        string Text(PlanSetting s) => battery && s.Dc != s.Ac ? $"{s.Ac} · {s.Dc}" : s.Ac;
+        // O turbo é "Agressivo" em todos os planos de fábrica, então só ganha uma linha quando alguém o mudou (aqui ou no plano escolhido)
+        bool OffDefault(PlanValues v) => v.Settings.Any(x => x.Key == "boost" && (x.Ac != "Agressivo" || x.Dc != "Agressivo"));
+        bool showBoost = OffDefault(now) || (preview != null && OffDefault(preview));
+        PlanSettings.ItemsSource = shown.Settings.Where(s => s.Key != "boost" || showBoost).Select(s =>
+        {
+            string before = now.Settings.FirstOrDefault(x => x.Key == s.Key) is { } cur ? Text(cur) : "";
+            bool changed = previewing && before.Length > 0 && before != Text(s);
+            return new SettingItem(s.Title, Text(s), SettingTip(s.Key), changed ? before + "  →" : "", changed);
+        }).ToList();
     }
 
     private static string? SettingTip(string key) => key switch
     {
         "boost" => "Quanto o processador pode subir acima do clock base quando há carga.",
+        "epp" => "Se o processador, ao escolher o clock, favorece desempenho ou economia de energia. É o que mais diferencia os planos de fábrica.",
         "display" => "Tempo sem uso até o Windows apagar a tela.",
         "sleep" => "Tempo sem uso até o PC suspender (desliga quase tudo e volta de onde parou).",
         _ => null,
     };
 
-    private async void PlanList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    /// <summary>Clicar em outro plano só o escolhe: a troca acontece em Aplicar. Clicar de novo no plano em uso (ou no escolhido) desfaz a escolha.</summary>
+    private void PlanRow_Click(object sender, RoutedEventArgs e)
     {
-        if (_syncingPlans || PlanList.SelectedItem is not PowerPlan plan || Plan == null || plan.IsActive) return;
-        PlanList.IsEnabled = false;
-        uint error = await Task.Run(() => PowerPlans.SetActive(plan.Id));
-        if (_context.IsClosing) return;
+        if (_applyingPlan || Plan == null || ((FrameworkElement)sender).Tag is not PlanItem item) return;
+        _pendingPlan = item.IsActive || item.IsPending ? null : Plan.Plans.FirstOrDefault(x => x.Id == item.Id);
+        ShowPlan(Plan);
+    }
+
+    private void PlanCancel_Click(object sender, RoutedEventArgs e)
+    {
+        if (_applyingPlan || Plan == null) return;
+        _pendingPlan = null;
+        ShowPlan(Plan);
+    }
+
+    private async void PlanApply_Click(object sender, RoutedEventArgs e)
+    {
+        if (_applyingPlan || _pendingPlan is not { } plan || Plan == null) return;
+        _applyingPlan = true;
+        PlanApply.IsEnabled = false;
         try
         {
+            uint error = await Task.Run(() => PowerPlans.SetActive(plan.Id));
+            if (_context.IsClosing) return;
+            _pendingPlan = null;
             Plan = await Task.Run(PowerPlans.Read);
             if (_context.IsClosing) return;
             ShowPlan(Plan);
             EnergyStatus.Text = error == 0 ? $"Plano {plan.Name} ativado às {DateTime.Now:HH:mm:ss}" : $"O Windows recusou a troca de plano (erro {error}).";
         }
-        finally { PlanList.IsEnabled = true; }
+        finally { _applyingPlan = false; }
     }
 
     // ---------------- ligado nos últimos 7 dias ----------------
@@ -278,11 +332,9 @@ public partial class PowerView : UserControl
                 .Concat(h.Unexpected.Where(c => c >= day && c < next).Select(c => $"{c:HH:mm} desligamento inesperado"))
                 .ToList();
             string label = $"{culture.DateTimeFormat.GetAbbreviatedDayName(day.DayOfWeek).TrimEnd('.')} {day.Day}";
-            // Da primeira ligada à última desligada do dia ("agora" no dia de hoje), para ver a rotina de relance
-            var inDay = h.Spans.Where(sp => sp.To > day && sp.From < next).ToList();
-            string range = inDay.Count == 0 ? "" : $"{(inDay[0].From < day ? "00:00" : inDay[0].From.ToString("HH:mm"))} – {(inDay[^1].Current && inDay[^1].To <= next ? "agora" : inDay[^1].To >= next ? "24:00" : inDay[^1].To.ToString("HH:mm"))}";
-            days.Add(new UptimeChart.Day(label, i == 6, covered, spans, crashes, covered ? Hours(h.OnTime(day)) : "", detail, covered ? range : ""));
+            days.Add(new UptimeChart.Day(label, i == 6, covered, spans, crashes, covered ? Hours(h.OnTime(day)) : "", detail));
         }
+        days.Reverse(); // hoje no topo, depois do mais recente para o mais antigo
         Uptime.Days = days;
 
         Readout(DaysToday, h.OnTime(DateTime.Today));
@@ -295,24 +347,12 @@ public partial class PowerView : UserControl
         var longest = h.Spans.Where(sp => sp.To > h.Since).Select(sp => sp.To - (sp.From < h.Since ? h.Since : sp.From)).DefaultIfEmpty(TimeSpan.Zero).Max();
         if (longest > TimeSpan.Zero) Readout(DaysLongest, longest);
         else DaysLongest.Text = "—";
-        // Hora de costume: mediana da primeira ligada e da última desligada dos dias que começam e terminam dentro do dia
-        var firsts = new List<TimeSpan>();
-        var lasts = new List<TimeSpan>();
-        foreach (var d in known)
-        {
-            DateTime next = d.AddDays(1);
-            var inDay = h.Spans.Where(sp => sp.To > d && sp.From < next).ToList();
-            if (inDay.Count == 0) continue;
-            if (inDay[0].From >= d) firsts.Add(inDay[0].From - d);
-            if (!inDay[^1].Current && inDay[^1].To < next) lasts.Add(inDay[^1].To - d);
-        }
-        DaysTypicalOn.Text = Median(firsts) is TimeSpan usualOn ? $"{usualOn:hh\\:mm}" : "—";
-        DaysTypicalOff.Text = Median(lasts) is TimeSpan usualOff ? $"{usualOff:hh\\:mm}" : "—";
+        int turnOns = h.Spans.Count(sp => sp.To > h.Since);
+        DaysTurnOns.Text = turnOns.ToString();
         int crashCount = h.Unexpected.Count;
         DaysCrashes.Text = crashCount.ToString();
         DaysCrashes.SetResourceReference(TextBlock.ForegroundProperty, crashCount >= 3 ? "Danger" : "Warn");
-        CrashBox.Visibility = crashCount > 0 ? Visibility.Visible : Visibility.Collapsed;
-        DaysCells.Columns = crashCount > 0 ? 7 : 6;
+        CrashBox.Visibility = CrashCut.Visibility = crashCount > 0 ? Visibility.Visible : Visibility.Collapsed;
         // Só avisa quando o registro não cobre a semana inteira (o Windows descarta eventos antigos quando o log enche)
         bool shortLog = h.LogStart is DateTime start && start > h.Since;
         DaysCaption.Text = shortLog ? $"O registro do Windows só guarda desde {h.LogStart:dd/MM HH:mm}" : "";
@@ -359,6 +399,8 @@ public partial class PowerView : UserControl
             : gpu != null ? "só a placa de vídeo"
             : cpu != null ? "só o processador"
             : "sem leitura de consumo";
+        Split.First = cpu ?? 0;
+        Split.Second = gpu ?? 0;
         Readout(CpuNow, cpu is float c ? $"{c:0.0}" : "—", cpu != null ? "W" : "");
         Readout(GpuNow, gpu is float g ? $"{g:0.0}" : "—", gpu != null ? "W" : "");
         ShowCpuProblem(cpu);
@@ -499,7 +541,7 @@ public partial class PowerView : UserControl
         FeedGap.Width = new GridLength(stacked ? 0 : 16);
 
         double right = stacked ? width : width - FeedColumn.Width.Value - 16;
-        ReadoutColumn.Width = new GridLength(right < 760 ? 250 : 300);
+        ReadoutColumn.Width = new GridLength(right < 760 ? 270 : 320);
         TotalNow.FontSize = right < 760 ? 72 : 88;
     }
 
@@ -538,15 +580,6 @@ public partial class PowerView : UserControl
     {
         int h = (int)t.TotalHours, m = t.Minutes;
         return h == 0 ? $"{m} min" : minutesWord ? $"{h} h {m:00} min" : $"{h} h {m:00}";
-    }
-
-    /// <summary>Mediana de pelo menos dois valores; com menos que isso não há "costume" a mostrar.</summary>
-    private static TimeSpan? Median(List<TimeSpan> values)
-    {
-        if (values.Count < 2) return null;
-        values.Sort();
-        int mid = values.Count / 2;
-        return values.Count % 2 == 1 ? values[mid] : TimeSpan.FromTicks((values[mid - 1].Ticks + values[mid].Ticks) / 2);
     }
 
     private static string Duration(int minutes) => minutes >= 60 ? $"{minutes / 60} h {minutes % 60:00} min" : $"{minutes} min";

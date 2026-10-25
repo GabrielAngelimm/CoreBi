@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -251,6 +252,64 @@ public sealed class PowerTrace : EnergyInstrument
     }
 }
 
+/// <summary>Divisão do consumo agora: um medidor segmentado só, com a parte do processador e a da placa de vídeo na proporção.</summary>
+public sealed class SplitBar : EnergyInstrument
+{
+    public static readonly DependencyProperty FirstProperty = Number(nameof(First), typeof(SplitBar));
+    public static readonly DependencyProperty SecondProperty = Number(nameof(Second), typeof(SplitBar));
+    public double First { get => (double)GetValue(FirstProperty); set => SetValue(FirstProperty, value); }
+    public double Second { get => (double)GetValue(SecondProperty); set => SetValue(SecondProperty, value); }
+
+    public SplitBar() => Height = 10;
+
+    protected override void OnRender(DrawingContext dc)
+    {
+        double w = ActualWidth, h = ActualHeight;
+        if (w < 20) return;
+        double a = double.IsNaN(First) ? 0 : Math.Max(0, First), b = double.IsNaN(Second) ? 0 : Math.Max(0, Second);
+        double total = a + b;
+        Segments(dc, new Rect(0, 0, w, h), f => total <= 0 ? TrackBrush : f <= a / total ? AccentBrush : CopperBrush);
+    }
+}
+
+/// <summary>
+/// Espalha os filhos pela largura com o mesmo vão entre todos (o primeiro encostado na esquerda e o último na direita); serve para
+/// resumos em que cada número é uma coluna e fios de 1 px entre eles ficam no meio de cada vão. Filhos recolhidos não contam.
+/// </summary>
+public sealed class SpaceBetweenPanel : Panel
+{
+    private const double MinGap = 18;
+
+    protected override Size MeasureOverride(Size available)
+    {
+        double w = 0, h = 0;
+        int n = 0;
+        foreach (UIElement child in InternalChildren)
+        {
+            if (child.Visibility == Visibility.Collapsed) continue;
+            child.Measure(new Size(double.PositiveInfinity, available.Height));
+            w += child.DesiredSize.Width;
+            h = Math.Max(h, child.DesiredSize.Height);
+            n++;
+        }
+        return new Size(w + Math.Max(0, n - 1) * MinGap, h);
+    }
+
+    protected override Size ArrangeOverride(Size final)
+    {
+        var shown = InternalChildren.Cast<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
+        double used = shown.Sum(c => c.DesiredSize.Width);
+        double gap = shown.Count > 1 ? Math.Max(MinGap, (final.Width - used) / (shown.Count - 1)) : 0;
+        double x = 0;
+        foreach (var child in shown)
+        {
+            child.Arrange(new Rect(x, 0, child.DesiredSize.Width, final.Height));
+            x += child.DesiredSize.Width + gap;
+        }
+        return final;
+    }
+}
+
 /// <summary>
 /// Trilho da fonte: escala de −10 % a +10 % em volta do nominal, com a tolerância ATX (±5 %) acesa em verde suave, o traço
 /// do nominal, a faixa vista desde que o CoreBi abriu (embaixo) e o ponteiro da leitura (âmbar fora da tolerância).
@@ -419,7 +478,7 @@ public sealed class CapacityStack : EnergyInstrument
 /// </summary>
 public sealed class UptimeChart : EnergyInstrument
 {
-    public sealed record Day(string Label, bool Today, bool Covered, IReadOnlyList<(double From, double To, bool Current)> Spans, IReadOnlyList<double> Crashes, string Total, IReadOnlyList<string> Detail, string Range);
+    public sealed record Day(string Label, bool Today, bool Covered, IReadOnlyList<(double From, double To, bool Current)> Spans, IReadOnlyList<double> Crashes, string Total, IReadOnlyList<string> Detail);
 
     private IReadOnlyList<Day> _days = Array.Empty<Day>();
     private int _hover = -1;
@@ -458,9 +517,8 @@ public sealed class UptimeChart : EnergyInstrument
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, ActualHeight));
         double rowH = RowHeight;
         double barH = Math.Clamp(rowH * 0.3, 8, 14);
-        const double labelW = 58, totalW = 66, rangeW = 112;
-        bool showRange = w >= 520;
-        double x0 = labelW, bw = w - labelW - totalW - 12 - (showRange ? rangeW : 0);
+        const double labelW = 58, totalW = 66;
+        double x0 = labelW, bw = w - labelW - totalW - 12;
         double X(double hour) => x0 + Math.Clamp(hour, 0, 24) / 24 * bw;
         var tick = Alpha(LineStrongBrush, 0xA0);
         var dash = Stroke(LineStrongBrush, 1, new DashStyle(new double[] { 2, 3 }, 0));
@@ -503,11 +561,7 @@ public sealed class UptimeChart : EnergyInstrument
             }
             var total = Text(d.Total, 12.5, InkBrush);
             dc.DrawText(total, new Point(w - total.Width, cy - total.Height / 2));
-            if (showRange && d.Range.Length > 0)
-            {
-                var range = Text(d.Range, 12, MutedBrush);
-                dc.DrawText(range, new Point(w - totalW - 8 - range.Width, cy - range.Height / 2));
-            }
+
         }
 
         double ay = _days.Count * rowH + 3;
