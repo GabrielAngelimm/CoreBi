@@ -93,7 +93,7 @@ internal static partial class Program
             inv.Cpus.Add(new CpuInfo("AMD Ryzen 7 5700X 8-Core Processor", "AMD", "AM4", 8, 16, 3400, 25, 33, 2, "x64", true, false, 4096, 32768,
                 new CpuTopology(), new() { ("AVX2", true), ("AVX-512", false) }));
             inv.Gpus.Add(new VideoAdapter("NVIDIA GeForce RTX 4060 Ti", "NVIDIA", "566.36", "32.0.15.6636", null, 8UL << 30));
-            inv.Displays.Add(new DisplayInfo(1, "NVIDIA GeForce RTX 4060 Ti", "LG ULTRAGEAR", "GSM", 27, 1920, 1080, 60, 144, 32, 0, 0, true));
+            inv.Displays.Add(new DisplayInfo(1, "NVIDIA GeForce RTX 4060 Ti", "LG ULTRAGEAR", "GSM", 27, 1920, 1080, 60, 144, 32, 0, 0, true, "DisplayPort", 2023, 22));
             inv.Disks.Add(new PhysicalDiskInfo(0, "Samsung SSD 980 1TB", 1UL << 40, "NVMe", "SSD", "3B4QFXO7", "S64ANS0T", false, "Saudável", "GPT"));
             inv.Settings = new WindowsSettings(false, true, true, true, "(UTC-03:00) Brasília");
             inv.Os = new OsInfo("Windows 11 Pro", "Windows 11 Pro", "24H2", "26100.6899", "64 bits (x64)", null, null, "PC", "user", "WORKGROUP", false, "português (Brasil)", null, null);
@@ -111,6 +111,8 @@ internal static partial class Program
             var allRows = sheets.Values.SelectMany(sh => sh.Groups).SelectMany(g => g.Rows).ToList();
             Require(allRows.All(r => r.Cells != null || r.Value != "—"), "Unreadable fields are hidden, not shown as a dash");
             Require(allRows.All(r => !(r.Value + r.Tip + r.Help).Contains("CPU-Z")), "No references to other programs");
+            Require(sheets["gpu"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Fabricado em" && r.Value == "Maio de 2023"), "Monitor week becomes month and year");
+            Require(sheets["ram"].Groups.All(g => !g.Title.StartsWith("Uso")), "System page shows hardware, not live usage");
             Require(inv.ToNodes().Count == 6, "Report keeps six categories");
             return new { slots = "A1,A2*,B1,B2*", index = index.Select(i => i.Name).ToArray() };
         });

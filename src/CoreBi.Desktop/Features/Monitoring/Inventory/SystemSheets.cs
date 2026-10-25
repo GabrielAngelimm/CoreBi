@@ -130,7 +130,7 @@ public static class SystemSheets
         return key switch
         {
             Cpu => string.Join(" · ", new[] { $"{R(0)} núcleos", $"{R(1)} threads", R(2) }.Where(x => !x.StartsWith("—"))),
-            Gpu => s.Subtitle.Split(" · ").LastOrDefault(p => p.Contains("GB")) is { } mem ? $"{mem} · driver {R(1)}" : $"driver {R(1)}",
+            Gpu => R(0).StartsWith("—") ? $"driver {R(1)}" : $"{R(0)} · driver {R(1)}",
             Ram => string.Join(" · ", new[] { R(0), inv.Ram?.Channels == 2 ? "dual channel" : null }.Where(x => !string.IsNullOrEmpty(x) && x != "—")),
             Board => string.Join(" · ", new[] { s.Eyebrow, $"BIOS {R(0)}" }.Where(x => x.Length > 0 && x != "—")),
             Storage => s.Readouts.Count > 1 ? $"{R(1)} livres" : "",
@@ -158,8 +158,6 @@ public static class SystemSheets
 
         var id = new List<SpecRow>
         {
-            new("Fabricante", c.Vendor),
-            new("Nome completo", c.Name),
         };
         if (c.Family != null) id.Add(new("Família · modelo · stepping", $"{c.Family} · {c.Model} · {c.Stepping}", null,
             $"Em hexadecimal: família {c.Family:X}h, modelo {c.Model:X}h. É o que identifica a geração exata do chip."));
@@ -207,7 +205,7 @@ public static class SystemSheets
             Key = Cpu,
             Eyebrow = c.Vendor,
             Title = GameCatalog.ShortCpuName(c.Name) is { Length: > 0 } shortName ? shortName : c.Name,
-            Subtitle = string.Join(" · ", new[] { c.Name, c.Socket != "—" ? $"soquete {c.Socket}" : null }.Where(x => x != null)),
+            Subtitle = c.Name,
             Readouts = new()
             {
                 new("Núcleos", cores.ToString(Br), "", t.Hybrid ? $"{t.PerformanceCores} de desempenho + {t.EfficientCores} de eficiência" : null),
@@ -233,7 +231,7 @@ public static class SystemSheets
 
         // Chip, arquitetura, memória, clocks e TDP vêm da leitura da página Placa de vídeo (banco de especificações + driver).
         string? G(string key) => spec == null ? null : Find(spec.Sections, key);
-        var id = new List<SpecRow> { new("Nome", g.Name), new("Fabricante do chip", g.Vendor) };
+        var id = new List<SpecRow>();
         if (G("Fabricante da placa") is { } board) id.Add(new("Fabricante da placa", board));
         if (G("Chip") is { } chip) id.Add(new("Chip", chip));
         if (G("Arquitetura") is { } gpuArch) id.Add(new("Arquitetura", gpuArch));
@@ -241,7 +239,6 @@ public static class SystemSheets
         if (G("Lançamento") is { } release) id.Add(new("Lançamento", release));
 
         var memory = new List<SpecRow>();
-        if (vram > 0) memory.Add(new("Tamanho", Fmt.Vram(vram)));
         if (G("Compartilhada do sistema") is { } shared) memory.Add(new("Compartilhada da RAM", shared, null,
             "Quanto da RAM do PC o Windows deixa a placa usar quando a VRAM acaba. É bem mais lenta que a VRAM."));
         if (G("Tipo") is { } memType) memory.Add(new("Tipo", memType));
@@ -273,9 +270,10 @@ public static class SystemSheets
                 "Conexão entre a placa e a placa-mãe. Em repouso ela cai para economizar energia e volta ao máximo em jogo."));
         }
 
-        var driver = new List<SpecRow> { new("Versão", g.DriverVersion, null,
-            g.WindowsDriverVersion != g.DriverVersion ? $"No formato que a fabricante divulga. No Windows: {g.WindowsDriverVersion}." : null) };
-        driver.Add(new("Data", Fmt.Date(g.DriverDate), Fmt.Ago(g.DriverDate)));
+        // A versão do driver já está na placa; aqui ficam a data e o número no formato do Windows.
+        var driver = new List<SpecRow> { new("Data", Fmt.Date(g.DriverDate), Fmt.Ago(g.DriverDate)) };
+        if (g.WindowsDriverVersion != g.DriverVersion)
+            driver.Add(new("Versão no Windows", g.WindowsDriverVersion, null, $"O mesmo driver {g.DriverVersion}, no formato que o Windows usa."));
         if (G("BIOS (VBIOS)") is { } vbios) driver.Add(new("BIOS da placa", vbios, null, "Firmware da própria placa de vídeo (VBIOS)."));
         if (G("DirectX") is { } dx) driver.Add(new("DirectX", dx));
 
@@ -293,12 +291,15 @@ public static class SystemSheets
             var rows = new List<SpecRow>
             {
                 new("Monitor", d.Monitor),
-                new("Resolução", $"{d.Width} × {d.Height}"),
                 hz,
             };
             if (d.Inches is double inch) rows.Insert(1, new("Tamanho", $"{inch:0}\""));
             if (d.Connection != null) rows.Add(new("Conexão", d.Connection, null, "O cabo entre a placa de vídeo e a tela."));
-            if (d.Year is int year) rows.Add(new("Fabricado em", d.Week is int week ? $"semana {week} de {year}" : year.ToString(Br)));
+            if (inv.Displays.Count > 1) rows.Insert(1, new("Resolução", $"{d.Width} × {d.Height}"));
+            // O monitor informa a semana; o primeiro dia dela dá o mês (semana 22 de 2023 → maio de 2023).
+            if (d.Year is int year)
+                rows.Add(new("Fabricado em", d.Week is int week ? Cap(new DateTime(year, 1, 1).AddDays((week - 1) * 7).ToString("MMMM 'de' yyyy", Br)) : year.ToString(Br),
+                    null, d.Week is int w ? $"O monitor informa a semana {w} de {year}." : null));
             if (inv.Displays.Count > 1) rows.Add(new("Posição", d.Primary ? "Tela principal" : "Estendida", $"{d.X}, {d.Y}"));
             if (adapters.Count > 1) rows.Add(new("Ligada em", d.Adapter));
             groups.Add(new(inv.Displays.Count > 1 ? $"Tela {d.Number}" + (d.Primary ? " (principal)" : "") : "Tela", rows,
@@ -316,7 +317,7 @@ public static class SystemSheets
             Key = Gpu,
             Eyebrow = g.Vendor,
             Title = ShortGpu(g.Name),
-            Subtitle = spec?.Subtitle.Replace("  ·  ", " · ") is { Length: > 0 } sub ? sub : g.Name,
+            Subtitle = g.Name,
             Readouts = new()
             {
                 new("Memória", vValue, vUnit),
@@ -386,18 +387,15 @@ public static class SystemSheets
                 ch.Tone == Tone.Ok ? Cap(ch.Text.TrimEnd('.')) + ": o dobro de dados por vez com o processador." : Cap(ch.Text)));
         }
 
-        var capacity = new List<SpecRow> { new("Instalada", Fmt.Bytes(r.Total)) };
+        var capacity = new List<SpecRow>();
         if (memory is { } mem)
         {
             double reserved = (double)r.Total - mem.Total;
             capacity.Add(new("Utilizável", Fmt.Bytes(mem.Total), reserved > 64 << 20 ? $"{Fmt.Bytes(reserved)} reservados" : null,
                 "O que sobra para o Windows depois do que o firmware e o vídeo integrado separam."));
         }
-        capacity.Add(new("Módulos", r.Slots > 0 ? $"{r.Modules.Count} de {r.Slots} slots" : r.Modules.Count.ToString(Br),
-            r.Slots > r.Modules.Count ? $"{r.Slots - r.Modules.Count} {(r.Slots - r.Modules.Count == 1 ? "livre" : "livres")}" : null));
         if (r.MaxCapacity > 0) capacity.Add(new("Máximo da placa", Fmt.Bytes(r.MaxCapacity), null, "Capacidade máxima que a placa-mãe declara suportar."));
         string? buffer = r.Modules.Select(m => m.Buffer).Distinct().SingleOrDefault();
-        capacity.Add(new("Tipo", $"{r.Type} · {form}", form.Contains("SO-DIMM") ? "de notebook" : null));
         if (buffer != null) capacity.Add(new("Buffer", Cap(buffer), null, "Sem buffer é o módulo comum de PC; registrada é a de servidor."));
         capacity.Add(new("ECC", r.Ecc ? "Sim" : "Não", null, "Correção de erros por hardware, comum em servidores e estações de trabalho."));
 
@@ -447,22 +445,9 @@ public static class SystemSheets
         else
             for (int k = 0; k < mods.Count; k++)
                 groups.Add(new($"Módulo {mods[k].Name}", moduleRows.Select(row => row with { Value = row.Cells![k], Cells = null }).ToList()));
-        if (memory is { } m2)
-        {
-            long used = m2.Total - m2.Available, commit = m2.CommitLimit - m2.CommitAvailable;
-            groups.Add(new($"Uso às {now:HH:mm}", new()
-            {
-                new("Em uso", $"{Fmt.Bytes(used)} de {Fmt.Bytes(m2.Total)}", $"{100.0 * used / m2.Total:0} %", "Uma foto de quando a página abriu. O uso ao vivo fica na Visão geral."),
-                new("Disponível", Fmt.Bytes(m2.Available)),
-                new("Memória virtual", $"{Fmt.Bytes(commit)} de {Fmt.Bytes(m2.CommitLimit)}", null, null, Tone.None, "RAM + arquivo de paginação, usado quando a RAM enche."),
-            }));
-        }
-        foreach (var pf in memory != null ? r.PageFiles : new())
-        {
-            var use = groups[^1];
-            use.Rows.Add(new("Arquivo de paginação", $"{Fmt.Bytes(pf.AllocatedMb * 1048576.0)} em {pf.Path[..Math.Min(2, pf.Path.Length)]}",
-                r.PageFileAuto == true ? "tamanho automático" : null, $"{pf.Path} · pico de {pf.PeakMb} MB desde o boot"));
-        }
+        foreach (var pf in r.PageFiles)
+            capacity.Add(new("Arquivo de paginação", $"{Fmt.Bytes(pf.AllocatedMb * 1048576.0)} em {pf.Path[..Math.Min(2, pf.Path.Length)]}",
+                r.PageFileAuto == true ? "tamanho automático" : null, "Espaço no disco que o Windows usa como extensão da RAM quando ela enche."));
 
         var (rv, ru) = r.Configured > 0 ? (r.Configured.ToString(Br), "MT/s") : ("—", "");
         return new Sheet
@@ -488,7 +473,7 @@ public static class SystemSheets
     {
         if (inv.Board is not { } b) return Missing(Board, "Placa-mãe e BIOS", inv.Errors.GetValueOrDefault(SystemInventory.BoardTitle));
         var f = inv.Firmware;
-        var board = new List<SpecRow> { new("Fabricante", b.Maker), new("Modelo", b.Model), new("Revisão", b.Revision) };
+        var board = new List<SpecRow> { new("Revisão", b.Revision) };
         if (inv.Ram is { Slots: > 0 } ram)
             board.Add(new("Slots de memória", ram.Slots.ToString(Br), ram.MaxCapacity > 0 ? $"até {Fmt.Bytes(ram.MaxCapacity)}" : null, $"{ram.Modules.Count} em uso"));
         if (inv.Cpus.FirstOrDefault() is { Socket: not "—" } cpu) board.Add(new("Soquete", cpu.Socket, null, "Encaixe do processador."));
@@ -497,7 +482,7 @@ public static class SystemSheets
         var groups = new List<SpecGroup> { new("Placa-mãe", board) };
         if (f != null)
         {
-            var bios = new List<SpecRow> { new("Fabricante", f.Vendor), new("Versão", f.Version), new("Data", Fmt.Date(f.Date), Fmt.Ago(f.Date, now)) };
+            var bios = new List<SpecRow> { new("Fabricante", f.Vendor), new("Data", Fmt.Date(f.Date), Fmt.Ago(f.Date, now)) };
             if (f.Smbios != null) bios.Add(new("SMBIOS", f.Smbios, null, "Versão da tabela de hardware que a BIOS entrega ao Windows."));
             groups.Add(new("BIOS", bios, Help: "O firmware da placa: liga o hardware antes do Windows. Atualizações trazem correções e suporte a processadores novos."));
 
@@ -566,13 +551,12 @@ public static class SystemSheets
             var vols = drives.Where(v => v.Disk.Length > 0 && v.Disk == d.Model).ToList();
             double size = Math.Max(1, d.Size);
             var volumes = vols.Select(v => new VolumeView(v.Letter, (string.IsNullOrWhiteSpace(v.Label) ? v.Kind : v.Label) + (v.FileSystem.Length > 0 ? $" · {v.FileSystem}" : ""),
-                $"{DriveCard.Fmt(v.Free)} livres de {DriveCard.Fmt(v.Total)}", Math.Max(0.04, v.Total / size), v.UsedFraction,
-                $"{v.Letter} · {v.FileSystem} · {v.UsedPercent} usados")).ToList();
-            double free = vols.Sum(v => (double)v.Free);
+                $"{v.UsedPercent} usado de {DriveCard.Fmt(v.Total)}", Math.Max(0.04, v.Total / size), v.UsedFraction,
+                $"{DriveCard.Fmt(v.Free)} livres")).ToList();
             var (sv, su) = Split(Fmt.Bytes(d.Size));
-            string meta = string.Join(" · ", new[] { $"Disco {d.Index}", d.Bus, d.Media, d.Removable && d.Bus != "USB" ? "removível" : "" }.Where(x => x.Length > 0 && x != "—"));
+            string meta = string.Join(" · ", new[] { $"Disco {d.Index}", d.System ? "disco do Windows" : "", d.Removable && d.Bus != "USB" ? "removível" : "" }.Where(x => x.Length > 0));
             var tone = d.Health switch { "Saudável" => Tone.Ok, null => Tone.None, _ => Tone.Warn };
-            string freeText = vols.Count > 0 ? $"{DriveCard.Fmt((long)free)} livres" : "sem unidade montada";
+            string freeText = vols.Count > 0 ? "" : "sem unidade montada";
             disks.Add(new DiskView(d.Model, meta, sv, su, freeText, volumes, d.Health ?? "", tone) { First = disks.Count == 0 });
             var (about, layout) = DiskRows(d, vols, inv.BitLocker);
             groups.Add(new(d.Model, about));
@@ -585,9 +569,10 @@ public static class SystemSheets
         return new Sheet
         {
             Key = Storage,
-            Eyebrow = $"{inv.Disks.Count} {(inv.Disks.Count == 1 ? "disco" : "discos")} · {drives.Count} {(drives.Count == 1 ? "unidade" : "unidades")}",
+            Eyebrow = "Capacidade total",
             Title = total > 0 ? Fmt.Bytes(total) : "—",
-            Subtitle = drives.Count > 0 ? $"{Fmt.Bytes(freeAll)} livres no total" : "Nenhuma unidade montada",
+            // Do que é feito o armazenamento ("SSD NVMe · HD SATA"); contagens e espaço ficam nas leituras.
+            Subtitle = string.Join(" · ", inv.Disks.Select(d => string.Join(" ", new[] { d.Media, d.Bus }.Where(x => x.Length > 0 && x != "—"))).Where(x => x.Length > 0).Distinct()),
             Readouts = new()
             {
                 new("Em uso", uv, uu),
@@ -617,8 +602,6 @@ public static class SystemSheets
             new("Tipo", media),
         };
         if (d.Rpm is int rpm) rows.Add(new("Rotação", $"{rpm} rpm", null, "Quanto mais rápido o prato gira, menor o tempo de acesso."));
-        rows.Add(new("Capacidade", Fmt.Bytes(d.Size), vols.Count > 0 ? $"{vols.Count} {(vols.Count == 1 ? "unidade" : "unidades")}" : null));
-        if (d.System) rows.Add(new("Uso", "Disco do Windows", null, "É dele que o PC inicia."));
         rows.Add(new("Firmware", d.Firmware, null, "Versão do software interno do disco. Fabricantes às vezes lançam correções."));
         // NVMe: o Windows entrega o identificador com grupos de zeros na frente (0000_0000_..._707C_18B5); a parte útil é o fim.
         string serial = d.Serial.Trim().TrimEnd('.');
@@ -651,22 +634,19 @@ public static class SystemSheets
         var (upValue, upUnit) = SplitSpan(up);
         var windows = new List<SpecRow>
         {
-            new("Edição", o.Name),
             new("Versão", o.Version, null, "A atualização anual de recursos (23H2 = segundo semestre de 2023)."),
             new("Build", o.Build, null, null, Tone.None, "O número depois do ponto sobe a cada atualização mensal. Bom para conferir se o Windows está em dia."),
-            new("Arquitetura", o.Architecture),
-            new("Idioma", Cap(o.Language)),
         };
         var computer = new List<SpecRow> { new("Nome", o.Machine, null, "Como o PC aparece na rede."), new("Usuário", o.User), new(o.Domain ? "Domínio" : "Grupo de trabalho", o.Workgroup) };
-        var session = new List<SpecRow> { new("Instalado em", Fmt.Date(o.Installed), Fmt.Ago(o.Installed, now)), new("Último boot", Fmt.Stamp(o.LastBoot)), new("Ligado há", up) };
+        var session = new List<SpecRow> { new("Instalado em", Fmt.Date(o.Installed), Fmt.Ago(o.Installed, now)), new("Último boot", Fmt.Stamp(o.LastBoot)) };
         if (o.LastUpdate != null) session.Insert(1, new("Última atualização", Fmt.Date(o.LastUpdate), o.LastUpdateId, "A atualização mais recente instalada pelo Windows Update."));
-        var groups = new List<SpecGroup> { new("Windows", windows), new("Sessão", session), new("Computador", computer) };
+        var groups = new List<SpecGroup> { new("Windows", windows), new("Computador", computer), new("Sessão", session) };
         if (inv.Settings is { } st)
         {
             computer.Add(new("Fuso horário", st.TimeZone));
             if (st.Activated != null) windows.Add(Verdict("Ativação", st.Activated == true ? "Ativado" : "Não ativado", st.Activated == true ? Tone.Ok : Tone.Warn, null,
                 st.Activated == true ? null : "Ative em Configurações > Sistema > Ativação."));
-            groups.Insert(1, new("Ajustes para jogos", new()
+            groups.Add(new("Ajustes para jogos", new()
             {
                 Verdict("Modo de jogo", st.GameMode ? "Ativado" : "Desativado", st.GameMode ? Tone.Ok : Tone.Warn, null,
                     st.GameMode ? null : "Ative em Configurações > Jogos > Modo de jogo.",
@@ -691,7 +671,7 @@ public static class SystemSheets
             Key = Os,
             Eyebrow = "Microsoft",
             Title = o.Name,
-            Subtitle = $"Versão {o.Version} · build {o.Build} · {o.Architecture}",
+            Subtitle = o.Language.Length > 0 ? $"Em {o.Language}" : "",
             Readouts = new()
             {
                 new("Versão", o.Version),

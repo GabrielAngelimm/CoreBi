@@ -125,6 +125,7 @@ public partial class SystemView : UserControl
         SheetTitle.ToolTip = s.Title;
         SheetSub.Text = s.Subtitle;
         SheetSub.ToolTip = s.Subtitle;
+        SheetSub.Visibility = s.Subtitle.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         SheetReadouts.ItemsSource = s.Readouts.Select((r, i) => r with { First = i == 0 }).ToList();
 
         SpecGroups.ItemsSource = s.Groups;
