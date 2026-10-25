@@ -74,6 +74,31 @@ internal static partial class Program
             Require(WmiCalendarDate.Format("20260722000000.000000+000") == "22/07/2026", "Driver date shifted");
             Require(WmiCalendarDate.Format(null) == "—", "Missing date"); return new { bios = "26/09/2025", driver = "22/07/2026" };
         });
+        Check("inventory: RAM slots, channels, XMP and readable values", () =>
+        {
+            RamModule Module(string loc, string? ch, int? idx, int conf) => new("BANK 0", loc, ch != null ? $"{ch}{idx}" : loc, ch, idx, 16UL << 30, "DDR4", "DIMM",
+                2133, conf, "G.Skill", "F4-3600C16-16GVKC", "0", 64, 64, 2, 1.35, 1.2, 1.35);
+            var ram = new RamInfo { Modules = { Module("DIMM_A2", "A", 2, 3600), Module("DIMM_B2", "B", 2, 3600) }, Slots = 4, PartSpeed = 3600 };
+            Require(string.Join(",", ram.SlotMap().Select(s => s.Name + (s.Module != null ? "*" : ""))) == "A1,A2*,B1,B2*", "Slot map");
+            Require(ram.Channels == 2 && ram.Profile!.Tone == Tone.Ok && ram.ChannelFinding!.Tone == Tone.Ok, "Dual channel with XMP");
+            var off = new RamInfo { Modules = { Module("DIMM_A2", "A", 2, 2133), Module("DIMM_A1", "A", 1, 2133) }, Slots = 4, PartSpeed = 3600 };
+            Require(off.Profile!.Tone == Tone.Warn && off.ChannelFinding!.Tone == Tone.Warn, "XMP off and single channel must warn");
+            var odd = new RamInfo { Modules = { Module("XMM1", null, null, 3200) }, Slots = 2 };
+            Require(odd.SlotMap().Count == 2 && odd.SlotMap()[1].Module == null, "Unknown slot names keep empty slots");
+            Require(SystemInfoCollector.NvidiaVersion("32.0.15.6636") == "566.36" && SystemInfoCollector.NvidiaVersion("31.0.15.5222") == "552.22", "NVIDIA version");
+            Require(Fmt.IsPlaceholder("Default string") && Fmt.ShortMaker("ASUSTeK COMPUTER INC.") == "ASUS" && Fmt.Bytes(16UL << 30) == "16 GB", "Readable values");
+            Require(Fmt.Ago(new DateTime(2024, 3, 15), new DateTime(2025, 10, 20)) == "há 1 ano e 7 meses", "Age");
+
+            var inv = new SystemInventory { Ram = ram };
+            inv.Cpus.Add(new CpuInfo("AMD Ryzen 7 5700X 8-Core Processor", "AMD", "AM4", 8, 16, 3400, 25, 33, 2, "x64", true, false, 4096, 32768,
+                new CpuTopology(), new() { ("AVX2", true), ("AVX-512", false) }));
+            inv.Displays.Add(new DisplayInfo(1, "NVIDIA GeForce RTX 4060 Ti", "LG ULTRAGEAR", "GSM", 27, 1920, 1080, 60, 144, 32, 0, 0, true));
+            var (index, sheets) = CoreBi.Desktop.Features.Monitoring.Inventory.SystemSheets.Build(inv, Array.Empty<CoreBi.Engine.Monitoring.Graphics.GpuInfo>(), Array.Empty<CoreBi.Engine.Monitoring.Storage.DriveCard>(), DateTime.Now);
+            Require(index.Count == 6 && sheets.Count == 6, "Six sheets");
+            Require(index[0].Name == "Ryzen 7 5700X" && index[0].Spec.StartsWith("8 núcleos · 16 threads"), "CPU index: " + index[0].Spec);
+            Require(inv.ToNodes().Count == 6, "Report keeps six categories");
+            return new { slots = "A1,A2*,B1,B2*", index = index.Select(i => i.Name).ToArray() };
+        });
         Check("bottleneck: missing data cannot be a positive verdict", () =>
         {
             var missing = new LoadSample(null, null, null, null, null, null, null, null, false, null);
@@ -197,7 +222,7 @@ internal static partial class Program
                 sampleTimer.Tick += (_, _) => sampleFrame.Continue = false;
                 sampleTimer.Start(); Dispatcher.PushFrame(sampleFrame); sampleTimer.Stop();
                 Require(window._monitor.IsOpen && window._monitor.Rows.Count > 0, "Sensor collector not ready");
-                Require(window._gpus.Count > 0 && window.InfoCategories.Items.Count == 6, "Startup did not bind inventory");
+                Require(window._gpus.Count > 0 && window.PageSystem.CategoryCount == 6, "Startup did not bind inventory");
                 return new
                 {
                     sensorRows = window._monitor.Rows.Count,

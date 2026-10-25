@@ -28,10 +28,6 @@ public partial class MainWindow
     internal async void RefreshDrives()
     {
         _drives = await Task.Run(DriveMap.Read);
-        if (_features.IsClosing) return;
-        DriveCards.ItemsSource = _drives;
-        long total = _drives.Sum(d => d.Total), free = _drives.Sum(d => d.Free);
-        DrivesSummary.Text = $"{_drives.Count} unidades · {DriveCard.Fmt(free)} livres de {DriveCard.Fmt(total)}";
     }
 
     internal void Toast(string title, string text, string icon)
@@ -97,13 +93,8 @@ public partial class MainWindow
         }
         _drives = now;
 
-        // Discos físicos (lista abaixo dos cartões) também mudam com pendrive/HD externo.
-        if (InfoCategories.ItemsSource is IEnumerable<InfoNode> cats && cats.FirstOrDefault(c => c.Header == "Armazenamento") is { } storage)
-        {
-            await Task.Run(() => SystemInfoCollector.RefreshDisks(storage));
-            if (InfoCategories.SelectedItem == storage) { InfoDetails.ItemsSource = null; InfoDetails.ItemsSource = storage.Children; }
-        }
-        if (DrivesPanel.IsVisible) RefreshDrives();
+        // Discos físicos e unidades da página Sistema também mudam com pendrive/HD externo.
+        await PageSystem.RefreshStorageAsync();
     }
 
     internal async void DiffUsb()

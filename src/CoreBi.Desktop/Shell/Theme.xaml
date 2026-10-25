@@ -54,7 +54,6 @@
     <FontFamily x:Key="Icons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
     <BooleanToVisibilityConverter x:Key="BoolVis"/>
-    <local:CategoryIconConverter x:Key="CategoryIcon"/>
     <local:StringNotEmptyConverter x:Key="NotEmptyVis"/>
     <local:SentenceCaseConverter x:Key="Sentence"/>
 

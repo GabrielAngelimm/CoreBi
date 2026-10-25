@@ -32,12 +32,6 @@ public partial class MainWindow
     internal TextBlock DashHealthBadgeText => PageDash.DashHealthBadgeText;
     internal TextBlock SystemSub => PageSystem.SystemSub;
     internal Button BtnReport => PageSystem.BtnReport;
-    internal ListBox InfoCategories => PageSystem.InfoCategories;
-    internal TextBlock InfoTitle => PageSystem.InfoTitle;
-    internal StackPanel DrivesPanel => PageSystem.DrivesPanel;
-    internal TextBlock DrivesSummary => PageSystem.DrivesSummary;
-    internal ItemsControl DriveCards => PageSystem.DriveCards;
-    internal ItemsControl InfoDetails => PageSystem.InfoDetails;
     internal TextBlock StatusText => PageSensors.StatusText;
     internal TextBox SensorSearch => PageSensors.SensorSearch;
     internal WrapPanel CategoryChips => PageSensors.CategoryChips;
@@ -182,10 +176,18 @@ public partial class MainWindow
     internal TextBlock StRam => PageStress.StRam;
     internal Canvas TempChart => PageStress.TempChart;
     internal ListBox StressLog => PageStress.StressLog;
+    /// <summary>Abre uma página pelo nome (Tag do item da navegação), como se o item fosse clicado.</summary>
+    internal void GoToPage(string page)
+    {
+        foreach (var child in NavPanel.Children)
+            if (child is RadioButton { Tag: string tag } nav && tag == page) nav.IsChecked = true;
+    }
+
     private void ConnectViews()
     {
         PageDash.Owner = this;
         PageSystem.Owner = this;
+        PageSystem.Initialize(_features, () => _gpus, GoToPage);
         PageDisks.Initialize(_features, _monitor);
         PageEnergy.Initialize(_features, _monitor, () => _gpus.FirstOrDefault(), MainGpuPower);
         PageNet.Context = _features;

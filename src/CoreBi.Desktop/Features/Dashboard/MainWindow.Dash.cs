@@ -153,11 +153,7 @@ public partial class MainWindow
         var parts = target.Split(':', 2);
         var nav = new RadioButton[] { NavSensors, NavGpu, NavSystem, NavDisks }.FirstOrDefault(n => (string)n.Tag == parts[0]);
         if (nav != null) nav.IsChecked = true;
-        if (parts.Length == 2 && InfoCategories.ItemsSource is IEnumerable<InfoNode> cats && cats.FirstOrDefault(c => c.Header == parts[1]) is { } node)
-        {
-            InfoCategories.SelectedItem = node;
-            InfoCategories.ScrollIntoView(node);
-        }
+        if (parts.Length == 2) PageSystem.Select(parts[1]);
     }
 
     internal void UpdateDashboard(bool full = true)

@@ -1,112 +1,256 @@
+using System.Globalization;
 using System.Management;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
+using System.Text.RegularExpressions;
+using Microsoft.Win32;
 
 namespace CoreBi.Engine.Monitoring.Inventory;
 
-/// <summary>Coleta informações estáticas do sistema via WMI.</summary>
+/// <summary>Coleta informações estáticas do sistema (WMI, registro e APIs do Windows).</summary>
 public static class SystemInfoCollector
 {
-    public static List<InfoNode> Collect()
+    /// <summary>Árvore chave/valor das seis categorias (relatório).</summary>
+    public static List<InfoNode> Collect() => Read().ToNodes();
+
+    public static SystemInventory Read()
     {
-        var roots = new List<InfoNode>();
-        Safe(roots, "Sistema operacional", CollectOs);
-        Safe(roots, "Placa-mãe e BIOS", CollectBoard);
-        Safe(roots, "Processador", CollectCpu);
-        Safe(roots, "Memória RAM", CollectRam);
-        Safe(roots, "Placa de vídeo", CollectGpu);
-        Safe(roots, "Armazenamento", CollectDisks);
-        return roots;
+        var inv = new SystemInventory();
+        bool hypervisor = false;
+        Safe(inv, SystemInventory.OsTitle, () => inv.Os = ReadOs(out hypervisor));
+        Safe(inv, SystemInventory.BoardTitle, () => { inv.Board = ReadBoard(); inv.Firmware = ReadFirmware(); });
+        Safe(inv, SystemInventory.CpuTitle, () => inv.Cpus.AddRange(ReadCpus(hypervisor)));
+        Safe(inv, SystemInventory.RamTitle, () => inv.Ram = ReadRam());
+        Safe(inv, SystemInventory.GpuTitle, () => inv.Gpus.AddRange(ReadGpus()));
+        Safe(inv, SystemInventory.GpuTitle, () => inv.Displays.AddRange(DisplayReader.Read()));
+        Safe(inv, SystemInventory.StorageTitle, () => inv.Disks = ReadDisks());
+        return inv;
     }
 
-    private static void Safe(List<InfoNode> roots, string title, Action<InfoNode> fill)
+    private static void Safe(SystemInventory inv, string title, Action read)
     {
-        var node = new InfoNode { Header = title };
-        try { fill(node); }
-        catch (Exception ex) { node.Add("Erro ao ler", ex.Message); }
-        roots.Add(node);
+        try { read(); }
+        catch (Exception ex) { inv.Errors.TryAdd(title, ex.Message); }
     }
 
-    private static IEnumerable<ManagementObject> Query(string wql)
+    private static IEnumerable<ManagementObject> Query(string wql, string scope = @"root\cimv2")
     {
-        using var searcher = new ManagementObjectSearcher(wql);
+        using var searcher = new ManagementObjectSearcher(scope, wql);
         foreach (ManagementObject mo in searcher.Get())
             yield return mo;
     }
 
-    private static string S(ManagementObject mo, string prop)
-        => mo[prop]?.ToString()?.Trim() ?? "—";
+    private static string S(ManagementBaseObject mo, string prop)
+        => mo[prop]?.ToString()?.Trim() is { Length: > 0 } s ? s : "—";
 
-    private static string Bytes(object? v)
+    private static int I(object? v) => v == null ? 0 : Convert.ToInt32(v, CultureInfo.InvariantCulture);
+
+    private static DateTime? CimDate(object? v)
     {
-        if (v == null) return "—";
-        double b = Convert.ToDouble(v);
-        string[] u = { "B", "KB", "MB", "GB", "TB" };
-        int i = 0;
-        while (b >= 1024 && i < u.Length - 1) { b /= 1024; i++; }
-        return $"{b:0.##} {u[i]}";
+        try { return v is string s && s.Length >= 14 ? ManagementDateTimeConverter.ToDateTime(s) : null; }
+        catch { return null; }
     }
 
-    private static void CollectOs(InfoNode n)
+    // ---------------- Sistema operacional ----------------
+
+    private static OsInfo ReadOs(out bool hypervisor)
     {
-        foreach (var os in Query("SELECT * FROM Win32_OperatingSystem"))
+        hypervisor = false;
+        string caption = "Windows", build = "—";
+        DateTime? installed = null, boot = null;
+        foreach (var os in Query("SELECT Caption, BuildNumber, InstallDate, LastBootUpTime FROM Win32_OperatingSystem"))
         {
-            n.Add("Nome", S(os, "Caption"));
-            n.Add("Versão", S(os, "Version"));
-            n.Add("Build", S(os, "BuildNumber"));
-            n.Add("Arquitetura", S(os, "OSArchitecture"));
-            n.Add("Nome do computador", Environment.MachineName);
+            caption = S(os, "Caption").Replace("Microsoft ", "");
+            build = S(os, "BuildNumber");
+            installed = CimDate(os["InstallDate"]);
+            boot = CimDate(os["LastBootUpTime"]);
         }
+
+        string version = "—", edition = caption;
+        using (var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion"))
+        {
+            if (key?.GetValue("DisplayVersion") is string dv) version = dv;
+            else if (key?.GetValue("ReleaseId") is string rid) version = rid;
+            if (key?.GetValue("UBR") is int ubr && build != "—") build = $"{build}.{ubr}";
+        }
+
+        string user = Environment.UserName, group = "—";
+        bool domain = false;
+        try
+        {
+            foreach (var cs in Query("SELECT Domain, PartOfDomain, Workgroup, HypervisorPresent FROM Win32_ComputerSystem"))
+            {
+                domain = cs["PartOfDomain"] is bool d && d;
+                group = domain ? S(cs, "Domain") : (cs["Workgroup"]?.ToString() ?? S(cs, "Domain"));
+                hypervisor = cs["HypervisorPresent"] is bool h && h;
+            }
+        }
+        catch { }
+
+        string arch = RuntimeInformation.OSArchitecture switch
+        {
+            Architecture.X64 => "64 bits (x64)",
+            Architecture.Arm64 => "64 bits (ARM64)",
+            Architecture.X86 => "32 bits (x86)",
+            var a => a.ToString()
+        };
+
+        // Última atualização instalada (KB mais recente). As datas vêm em M/d/yyyy, independente do idioma.
+        string? kb = null; DateTime? updated = null;
+        try
+        {
+            foreach (var q in Query("SELECT HotFixID, InstalledOn FROM Win32_QuickFixEngineering"))
+                if (q["InstalledOn"]?.ToString() is string on &&
+                    DateTime.TryParse(on, CultureInfo.GetCultureInfo("en-US"), DateTimeStyles.None, out var when) &&
+                    (updated == null || when > updated))
+                {
+                    updated = when;
+                    kb = q["HotFixID"]?.ToString();
+                }
+        }
+        catch { }
+
+        return new OsInfo(caption, edition, version, build, arch, installed, boot, Environment.MachineName, user,
+            group, domain, CultureInfo.InstalledUICulture.NativeName, kb, updated);
     }
 
-    private static void CollectBoard(InfoNode n)
+    // ---------------- Placa-mãe e firmware ----------------
+
+    private static BoardInfo ReadBoard()
     {
-        var board = n.Add("Placa-mãe");
-        foreach (var b in Query("SELECT * FROM Win32_BaseBoard"))
+        string maker = "—", model = "—", rev = "—", serial = "—";
+        foreach (var b in Query("SELECT Manufacturer, Product, Version, SerialNumber FROM Win32_BaseBoard"))
         {
-            board.Add("Fabricante", S(b, "Manufacturer"));
-            board.Add("Modelo", S(b, "Product"));
-            board.Add("Versão", S(b, "Version"));
-            board.Add("Nº de série", S(b, "SerialNumber"));
+            maker = Fmt.Clean(S(b, "Manufacturer"));
+            model = Fmt.Clean(S(b, "Product"));
+            rev = Fmt.Clean(S(b, "Version"));
+            serial = Fmt.Clean(S(b, "SerialNumber"));
         }
-        var bios = n.Add("BIOS");
-        foreach (var b in Query("SELECT * FROM Win32_BIOS"))
+        string? sysMaker = null, sysModel = null;
+        try
         {
-            bios.Add("Fabricante", S(b, "Manufacturer"));
-            bios.Add("Versão", S(b, "SMBIOSBIOSVersion"));
-            bios.Add("Data", WmiCalendarDate.Format(b["ReleaseDate"] as string));
+            foreach (var cs in Query("SELECT Manufacturer, Model FROM Win32_ComputerSystem"))
+            {
+                sysMaker = Fmt.IsPlaceholder(cs["Manufacturer"]?.ToString()) ? null : S(cs, "Manufacturer");
+                sysModel = Fmt.IsPlaceholder(cs["Model"]?.ToString()) ? null : S(cs, "Model");
+            }
         }
+        catch { }
+        return new BoardInfo(maker, model, rev, serial, sysMaker, sysModel);
     }
 
-    private static void CollectCpu(InfoNode n)
+    [DllImport("kernel32.dll")]
+    private static extern bool GetFirmwareType(out int type);
+
+    private static FirmwareInfo ReadFirmware()
     {
+        string vendor = "—", version = "—";
+        string? smbios = null;
+        DateTime? date = null;
+        foreach (var b in Query("SELECT Manufacturer, SMBIOSBIOSVersion, ReleaseDate, SMBIOSMajorVersion, SMBIOSMinorVersion FROM Win32_BIOS"))
+        {
+            vendor = Fmt.Clean(S(b, "Manufacturer"));
+            version = Fmt.Clean(S(b, "SMBIOSBIOSVersion"));
+            string raw = WmiCalendarDate.Format(b["ReleaseDate"] as string);
+            if (DateTime.TryParseExact(raw, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)) date = d;
+            if (b["SMBIOSMajorVersion"] != null) smbios = $"{I(b["SMBIOSMajorVersion"])}.{I(b["SMBIOSMinorVersion"])}";
+        }
+
+        bool? uefi = null;
+        try { if (GetFirmwareType(out int t) && t is 1 or 2) uefi = t == 2; } catch { }
+
+        bool? secure = null;
+        try
+        {
+            using var key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\SecureBoot\State");
+            if (key?.GetValue("UEFISecureBootEnabled") is int v) secure = v == 1;
+            else if (uefi == false) secure = false;
+        }
+        catch { }
+
+        // TPM: precisa de administrador (o CoreBi roda elevado). SpecVersion = "2.0, 0, 1.59".
+        string? tpm = null; bool? ready = null;
+        try
+        {
+            foreach (var t in Query("SELECT SpecVersion, IsEnabled_InitialValue, IsActivated_InitialValue FROM Win32_Tpm", @"root\CIMV2\Security\MicrosoftTpm"))
+            {
+                tpm = t["SpecVersion"]?.ToString()?.Split(',')[0].Trim();
+                ready = t["IsEnabled_InitialValue"] is bool e && e && (t["IsActivated_InitialValue"] is not bool a || a);
+            }
+            tpm ??= "Ausente";
+        }
+        catch { }
+        return new FirmwareInfo(vendor, version, date, smbios, uefi, secure, tpm, ready);
+    }
+
+    // ---------------- Processador ----------------
+
+    private static readonly Regex FamilyModel = new(@"Family (\d+) Model (\d+) Stepping (\d+)", RegexOptions.Compiled);
+
+    private static List<CpuInfo> ReadCpus(bool hypervisor)
+    {
+        var topo = CpuTopology.Read();
+        var list = new List<CpuInfo>();
         foreach (var c in Query("SELECT * FROM Win32_Processor"))
         {
-            var cpu = n.Add(S(c, "Name"));
-            cpu.Add("Fabricante", S(c, "Manufacturer"));
-            cpu.Add("Soquete", S(c, "SocketDesignation"));
-            cpu.Add("Núcleos físicos", S(c, "NumberOfCores"));
-            cpu.Add("Threads (lógicos)", S(c, "NumberOfLogicalProcessors"));
-            cpu.Add("Clock base/máx. declarado", S(c, "MaxClockSpeed") + " MHz");
-            cpu.Add("Cache L2", S(c, "L2CacheSize") + " KB");
-            cpu.Add("Cache L3", S(c, "L3CacheSize") + " KB");
-            cpu.Add("Virtualização habilitada", S(c, "VirtualizationFirmwareEnabled"));
+            string vendor = S(c, "Manufacturer") switch
+            {
+                "AuthenticAMD" => "AMD",
+                "GenuineIntel" => "Intel",
+                var v => Fmt.ShortMaker(v)
+            };
+            var fm = FamilyModel.Match(S(c, "Caption"));
+            string arch = I(c["Architecture"]) switch { 9 => "x64", 12 => "ARM64", 0 => "x86", 5 => "ARM", _ => "—" };
+            bool? virt = c["VirtualizationFirmwareEnabled"] is bool v2 ? v2 : null;
+            int cores = I(c["NumberOfCores"]), threads = I(c["NumberOfLogicalProcessors"]);
+            list.Add(new CpuInfo(
+                Regex.Replace(S(c, "Name"), @"\s+", " "), vendor, Fmt.Clean(S(c, "SocketDesignation")), cores, threads, I(c["MaxClockSpeed"]),
+                fm.Success ? int.Parse(fm.Groups[1].Value, CultureInfo.InvariantCulture) : null,
+                fm.Success ? int.Parse(fm.Groups[2].Value, CultureInfo.InvariantCulture) : null,
+                fm.Success ? int.Parse(fm.Groups[3].Value, CultureInfo.InvariantCulture) : null,
+                arch, virt, hypervisor, I(c["L2CacheSize"]), I(c["L3CacheSize"]),
+                // A topologia do Windows cobre todos os soquetes; com um processador só (o caso comum) ela é dele.
+                topo.Cores.Count == cores ? topo : new CpuTopology(),
+                Instructions()));
         }
+        return list;
     }
 
-    private static string RamType(object? smbios, object? typeLegacy)
+    /// <summary>Conjuntos de instruções que o processador e o Windows habilitam (os que jogos e emuladores exigem).</summary>
+    private static List<(string, bool)> Instructions()
     {
-        return Convert.ToInt32(smbios ?? 0) switch
+        if (RuntimeInformation.ProcessArchitecture is not (Architecture.X64 or Architecture.X86)) return new();
+        return new()
         {
-            20 => "DDR",
-            21 => "DDR2",
-            24 => "DDR3",
-            26 => "DDR4",
-            34 => "DDR5",
-            35 => "LPDDR5",
-            _ => "Desconhecido"
+            ("SSE4.2", Sse42.IsSupported),
+            ("AVX", Avx.IsSupported),
+            ("AVX2", Avx2.IsSupported),
+            ("FMA3", Fma.IsSupported),
+            ("AVX-512", Avx512F.IsSupported),
+            ("AES-NI", System.Runtime.Intrinsics.X86.Aes.IsSupported),
+            ("BMI2", Bmi2.IsSupported),
+            ("POPCNT", Popcnt.IsSupported),
         };
     }
 
-    private static string RamForm(object? ff) => Convert.ToInt32(ff ?? 0) switch
+    // ---------------- Memória RAM ----------------
+
+    private static string RamType(int smbios, int legacy) => smbios switch
+    {
+        20 => "DDR",
+        21 => "DDR2",
+        24 => "DDR3",
+        26 => "DDR4",
+        27 => "LPDDR",
+        28 => "LPDDR2",
+        29 => "LPDDR3",
+        30 => "LPDDR4",
+        34 => "DDR5",
+        35 => "LPDDR5",
+        _ => legacy switch { 20 => "DDR", 21 => "DDR2", 24 => "DDR3", 26 => "DDR4", _ => "—" }
+    };
+
+    private static string RamForm(int ff) => ff switch
     {
         8 => "DIMM",
         12 => "SO-DIMM",
@@ -120,176 +264,168 @@ public static class SystemInfoCollector
     };
 
     // Velocidades que costumam aparecer no part number do módulo (ex.: CMK32GX5M2B6000C30, F5-6000J3038F16GX2).
-    private static readonly System.Text.RegularExpressions.Regex SpeedInPart = new(
+    private static readonly Regex SpeedInPart = new(
         @"(?<!\d)(2133|2400|2666|2933|3000|3200|3466|3600|3733|3800|4000|4133|4266|4400|4800|5200|5600|5800|6000|6200|6400|6600|6800|7000|7200|7400|7600|7800|8000|8200|8400|8800)(?!\d)",
-        System.Text.RegularExpressions.RegexOptions.Compiled);
+        RegexOptions.Compiled);
 
-    private static readonly System.Text.RegularExpressions.Regex ChannelInLocator = new(
-        @"(?i)(?:channel|chan|ch)[\s_-]*([A-H0-9])|dimm[\s_-]*([A-H])\d|(?:^|[^A-Za-z])([A-H])[12](?:$|[^0-9])",
-        System.Text.RegularExpressions.RegexOptions.Compiled);
+    // DIMM_A2, DIMM A1, ChannelA-DIMM0, Controller0-ChannelB-DIMM1, P0 CHANNEL A / DIMM 0
+    private static readonly Regex SlotName = new(
+        @"(?i)\b(?:channel|chan|ch)[\s_-]*([A-H])\W*(?:dimm|slot)?[\s_-]*(\d)?|dimm[\s_-]*([A-H])[\s_-]*(\d)|(?:^|[^A-Za-z])([A-H])(\d)(?:$|[^0-9])",
+        RegexOptions.Compiled);
 
-    private static string? ChannelOf(string locator)
+    private static (string? Channel, int? Index) ParseSlot(string locator, string bank)
     {
-        var m = ChannelInLocator.Match(locator);
-        if (!m.Success) return null;
-        for (int g = 1; g <= 3; g++) if (m.Groups[g].Success) return m.Groups[g].Value.ToUpperInvariant();
-        return null;
+        foreach (var text in new[] { locator, $"{bank} {locator}" })
+        {
+            var m = SlotName.Match(text);
+            if (!m.Success) continue;
+            for (int g = 1; g <= 5; g += 2)
+                if (m.Groups[g].Success)
+                {
+                    string ch = m.Groups[g].Value.ToUpperInvariant();
+                    int? idx = m.Groups[g + 1].Success ? int.Parse(m.Groups[g + 1].Value, CultureInfo.InvariantCulture) : null;
+                    if (idx == null && Regex.Match(locator, @"(?i)dimm[\s_-]*(\d)") is { Success: true } d)
+                        idx = int.Parse(d.Groups[1].Value, CultureInfo.InvariantCulture);
+                    return (ch, idx);
+                }
+        }
+        return (null, null);
     }
 
-    private static string Volt(object? mv)
-    {
-        if (mv == null) return "—";
-        double v = Convert.ToDouble(mv);
-        return v > 0 ? $"{v / 1000:0.00#} V" : "—";
-    }
+    private static double? Volts(object? mv) => mv == null || Convert.ToDouble(mv, CultureInfo.InvariantCulture) <= 0
+        ? null : Convert.ToDouble(mv, CultureInfo.InvariantCulture) / 1000;
 
-    private static void CollectRam(InfoNode n)
+    private static RamInfo ReadRam()
     {
-        var mods = new List<(string Bank, string Loc, ulong Cap, string Type, string Form, int Rated, int Conf, string Maker, string Part,
-                             string Serial, int DataW, int TotalW, string Rank, string VoltCfg, string VoltRange)>();
+        var mods = new List<RamModule>();
+        int partSpeed = 0;
         foreach (var m in Query("SELECT * FROM Win32_PhysicalMemory"))
         {
-            int attr = Convert.ToInt32(m["Attributes"] ?? 0);
-            string rank = attr switch { 1 => "1 (single)", 2 => "2 (dual)", 3 => "3", 4 => "4 (quad)", _ => "—" };
-            string range = m["MinVoltage"] != null && m["MaxVoltage"] != null
-                ? $"{Volt(m["MinVoltage"])} – {Volt(m["MaxVoltage"])}" : "—";
-            mods.Add((S(m, "BankLabel"), S(m, "DeviceLocator"), Convert.ToUInt64(m["Capacity"] ?? 0UL),
-                      RamType(m["SMBIOSMemoryType"], m["MemoryType"]), RamForm(m["FormFactor"]),
-                      Convert.ToInt32(m["Speed"] ?? 0), Convert.ToInt32(m["ConfiguredClockSpeed"] ?? 0),
-                      S(m, "Manufacturer"), S(m, "PartNumber"), S(m, "SerialNumber"),
-                      Convert.ToInt32(m["DataWidth"] ?? 0), Convert.ToInt32(m["TotalWidth"] ?? 0),
-                      rank, Volt(m["ConfiguredVoltage"]), range));
+            string bank = S(m, "BankLabel"), loc = S(m, "DeviceLocator");
+            var (ch, idx) = ParseSlot(loc, bank);
+            string part = S(m, "PartNumber");
+            if (SpeedInPart.Match(part) is { Success: true } sp) partSpeed = Math.Max(partSpeed, int.Parse(sp.Value, CultureInfo.InvariantCulture));
+            mods.Add(new RamModule(bank, loc, ch != null && idx != null ? $"{ch}{idx}" : loc, ch, idx,
+                Convert.ToUInt64(m["Capacity"] ?? 0UL, CultureInfo.InvariantCulture),
+                RamType(I(m["SMBIOSMemoryType"]), I(m["MemoryType"])), RamForm(I(m["FormFactor"])),
+                I(m["Speed"]), I(m["ConfiguredClockSpeed"]), Fmt.ShortMaker(Fmt.Clean(S(m, "Manufacturer"))), Fmt.Clean(part), Fmt.Clean(S(m, "SerialNumber")),
+                I(m["DataWidth"]), I(m["TotalWidth"]), I(m["Attributes"]) & 0xF,
+                Volts(m["ConfiguredVoltage"]), Volts(m["MinVoltage"]), Volts(m["MaxVoltage"])));
         }
-
-        ulong total = 0;
-        foreach (var m in mods) total += m.Cap;
 
         int slots = 0; ulong maxBytes = 0;
         try
         {
-            foreach (var a in Query("SELECT * FROM Win32_PhysicalMemoryArray"))
+            foreach (var a in Query("SELECT MemoryDevices, MaxCapacity, MaxCapacityEx FROM Win32_PhysicalMemoryArray"))
             {
-                slots += Convert.ToInt32(a["MemoryDevices"] ?? 0);
-                ulong kb = a["MaxCapacityEx"] != null ? Convert.ToUInt64(a["MaxCapacityEx"]) : Convert.ToUInt64(a["MaxCapacity"] ?? 0UL);
+                slots += I(a["MemoryDevices"]);
+                ulong kb = a["MaxCapacityEx"] != null ? Convert.ToUInt64(a["MaxCapacityEx"], CultureInfo.InvariantCulture) : Convert.ToUInt64(a["MaxCapacity"] ?? 0UL, CultureInfo.InvariantCulture);
                 maxBytes += kb * 1024;
             }
         }
         catch { }
 
-        n.Add("Total instalado", Bytes(total));
-
-        // ---- Resumo ----
-        var sum = n.Add("Resumo");
-        sum.Add("Módulos instalados", slots > 0 ? $"{mods.Count} de {slots} slots" : mods.Count.ToString());
-        if (maxBytes > 0) sum.Add("Capacidade máxima suportada pela placa", Bytes(maxBytes));
-        if (mods.Count > 0)
-        {
-            var types = mods.Select(m => m.Type).Distinct().ToList();
-            sum.Add("Tipo", string.Join(" / ", types));
-
-            int conf = mods.Where(m => m.Conf > 0).Select(m => m.Conf).DefaultIfEmpty(0).Min();
-            int rated = mods.Select(m => m.Rated).DefaultIfEmpty(0).Max();
-            sum.Add("Velocidade em uso", conf > 0 ? $"{conf} MT/s" : "—");
-            sum.Add("Velocidade nominal reportada pelo módulo", rated > 0 ? $"{rated} MT/s" : "—");
-
-            // Perfil EXPO/XMP: o Windows não diz se está ligado; estimamos pela velocidade escrita no part number.
-            int label = 0;
-            foreach (var m in mods)
-            {
-                var mt = SpeedInPart.Match(m.Part);
-                if (mt.Success) label = Math.Max(label, int.Parse(mt.Value));
-            }
-            string profile;
-            if (conf <= 0) profile = "Não foi possível ler a velocidade em uso.";
-            else if (label > 0 && conf < label * 0.95)
-                profile = $"Provavelmente DESLIGADO: a RAM roda a {conf} MT/s, mas o part number indica {label} MT/s. Ative EXPO/XMP na BIOS.";
-            else if (label > 0)
-                profile = $"Provavelmente ATIVO: roda a {conf} MT/s (part number indica {label} MT/s).";
-            else if (rated > 0 && conf < rated)
-                profile = $"Roda abaixo da velocidade nominal ({conf} de {rated} MT/s). Confira EXPO/XMP na BIOS.";
-            else
-                profile = "Sem como estimar (o part number não traz a velocidade). Confira na BIOS.";
-            sum.Add("Perfil EXPO/XMP (estimado)", profile);
-
-            // Canais: deduzidos pelos nomes dos slots (ex.: DIMM_A2 + DIMM_B2 = dois canais).
-            var chans = mods.Select(m => ChannelOf(m.Loc) ?? ChannelOf(m.Bank)).ToList();
-            string chText;
-            if (mods.Count == 1) chText = "Canal único (1 módulo). Com 2 módulos iguais a RAM roda em dual channel e fica bem mais rápida.";
-            else if (chans.All(c => c != null))
-            {
-                int distinct = chans.Distinct().Count();
-                chText = distinct >= 2 ? $"{distinct} canais (dual channel ou mais)" : "Canal único: os módulos estão no mesmo canal. Mude para os slots recomendados no manual da placa.";
-            }
-            else chText = $"Não deu para identificar pelos nomes dos slots ({string.Join(", ", mods.Select(m => m.Loc))}). Veja o manual da placa.";
-            sum.Add("Canais (estimado)", chText);
-
-            bool ecc = mods.Any(m => m.TotalW > m.DataW && m.DataW > 0);
-            sum.Add("ECC", ecc ? "Sim (correção de erros)" : "Não");
-
-            var volts = mods.Select(m => m.VoltCfg).Where(v => v != "—").Distinct().ToList();
-            if (volts.Count > 0) sum.Add("Tensão em uso", string.Join(" / ", volts));
-        }
-        sum.Add("Timings (CL, tRCD, tRP...)", "O Windows não expõe. Veja na BIOS ou com o CPU-Z (aba Memory/SPD).");
-
+        ulong virt = 0;
         try
         {
-            foreach (var os in Query("SELECT TotalVisibleMemorySize, FreePhysicalMemory, TotalVirtualMemorySize, FreeVirtualMemory FROM Win32_OperatingSystem"))
-            {
-                double totKb = Convert.ToDouble(os["TotalVisibleMemorySize"]), freeKb = Convert.ToDouble(os["FreePhysicalMemory"]);
-                double virtTot = Convert.ToDouble(os["TotalVirtualMemorySize"]), virtFree = Convert.ToDouble(os["FreeVirtualMemory"]);
-                sum.Add("Em uso (no momento da leitura)", $"{Bytes((totKb - freeKb) * 1024)} de {Bytes(totKb * 1024)} ({(totKb - freeKb) / totKb:P0})");
-                sum.Add("Memória virtual em uso (RAM + arquivo de paginação)", $"{Bytes((virtTot - virtFree) * 1024)} de {Bytes(virtTot * 1024)}");
-            }
+            foreach (var os in Query("SELECT TotalVirtualMemorySize FROM Win32_OperatingSystem"))
+                virt = Convert.ToUInt64(os["TotalVirtualMemorySize"] ?? 0UL, CultureInfo.InvariantCulture) * 1024;
         }
         catch { }
 
-        // ---- Módulos ----
-        foreach (var m in mods)
-        {
-            var slot = n.Add($"Módulo — {m.Bank} / {m.Loc}");
-            slot.Add("Capacidade", Bytes(m.Cap));
-            slot.Add("Tipo", m.Type);
-            slot.Add("Formato", m.Form);
-            slot.Add("Ranks", m.Rank);
-            slot.Add("Velocidade em uso", m.Conf > 0 ? $"{m.Conf} MT/s" : "—");
-            slot.Add("Velocidade nominal", m.Rated > 0 ? $"{m.Rated} MT/s" : "—");
-            slot.Add("Tensão em uso", m.VoltCfg);
-            slot.Add("Faixa de tensão do módulo", m.VoltRange);
-            slot.Add("Largura de dados / total", m.DataW > 0 ? $"{m.DataW} / {m.TotalW} bits" : "—");
-            slot.Add("Fabricante", m.Maker);
-            slot.Add("Part number", m.Part);
-            slot.Add("Nº de série", m.Serial);
-        }
+        return new RamInfo { Modules = mods, Slots = slots, MaxCapacity = maxBytes, VirtualTotal = virt, PartSpeed = partSpeed };
     }
 
-    private static void CollectGpu(InfoNode n)
+    // ---------------- Placa de vídeo ----------------
+
+    private static List<VideoAdapter> ReadGpus()
     {
-        foreach (var g in Query("SELECT * FROM Win32_VideoController"))
+        var vram = VramByName();
+        var list = new List<VideoAdapter>();
+        foreach (var g in Query("SELECT Name, AdapterCompatibility, DriverVersion, DriverDate, PNPDeviceID FROM Win32_VideoController"))
         {
-            var gpu = n.Add(S(g, "Name"));
-            gpu.Add("Versão do driver", S(g, "DriverVersion"));
-            gpu.Add("Memória (WMI, limitada a 4 GB)", Bytes(g["AdapterRAM"]));
-            gpu.Add("Resolução atual", $"{S(g, "CurrentHorizontalResolution")}x{S(g, "CurrentVerticalResolution")} @ {S(g, "CurrentRefreshRate")} Hz");
+            string name = S(g, "Name"), win = S(g, "DriverVersion"), vendorRaw = S(g, "AdapterCompatibility");
+            string vendor = vendorRaw.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase) ? "NVIDIA" : Fmt.ShortMaker(vendorRaw);
+            if (S(g, "PNPDeviceID").StartsWith("ROOT", StringComparison.OrdinalIgnoreCase) && name.Contains("Basic", StringComparison.OrdinalIgnoreCase)) continue;
+            DateTime? date = null;
+            if (g["DriverDate"] is string dd && DateTime.TryParseExact(WmiCalendarDate.Format(dd), "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)) date = d;
+            list.Add(new VideoAdapter(name, vendor, vendor == "NVIDIA" ? NvidiaVersion(win) : win, win, date,
+                vram.TryGetValue(name, out var v) ? v : null));
         }
+        return list.OrderByDescending(g => g.Vram ?? 0).ToList();
     }
+
+    /// <summary>32.0.15.6636 → 566.36 (a versão que a NVIDIA divulga).</summary>
+    internal static string NvidiaVersion(string windows)
+    {
+        var parts = windows.Split('.');
+        if (parts.Length < 4) return windows;
+        string digits = parts[2] + parts[3].PadLeft(4, '0');
+        if (digits.Length < 5) return windows;
+        digits = digits[^5..];
+        return $"{int.Parse(digits[..3], CultureInfo.InvariantCulture)}.{digits[3..]}";
+    }
+
+    /// <summary>VRAM em 64 bits pelo registro do driver (o WMI corta em 4 GB).</summary>
+    private static Dictionary<string, ulong> VramByName()
+    {
+        var map = new Dictionary<string, ulong>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            using var cls = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}");
+            if (cls == null) return map;
+            foreach (var sub in cls.GetSubKeyNames().Where(n => n.All(char.IsDigit)))
+            {
+                try
+                {
+                    using var k = cls.OpenSubKey(sub);
+                    if (k?.GetValue("DriverDesc") is not string desc) continue;
+                    ulong bytes = k.GetValue("HardwareInformation.qwMemorySize") switch
+                    {
+                        long l => (ulong)l,
+                        byte[] b when b.Length >= 8 => BitConverter.ToUInt64(b, 0),
+                        _ => k.GetValue("HardwareInformation.MemorySize") switch
+                        {
+                            int i => (uint)i,
+                            byte[] b when b.Length >= 4 => BitConverter.ToUInt32(b, 0),
+                            _ => 0
+                        }
+                    };
+                    if (bytes > 0 && (!map.TryGetValue(desc, out var old) || bytes > old)) map[desc] = bytes;
+                }
+                catch { }
+            }
+        }
+        catch { }
+        return map;
+    }
+
+    // ---------------- Armazenamento ----------------
 
     /// <summary>Relê os discos físicos (ex.: depois de conectar um pendrive ou HD externo).</summary>
-    public static void RefreshDisks(InfoNode n)
+    public static List<PhysicalDiskInfo> ReadDisks()
     {
-        n.Children.Clear();
-        try { CollectDisks(n); }
-        catch (Exception ex) { n.Add("Erro ao ler", ex.Message); }
-    }
-
-    private static void CollectDisks(InfoNode n)
-    {
-        foreach (var d in Query("SELECT * FROM Win32_DiskDrive"))
+        var media = new Dictionary<int, (string Bus, string Media)>();
+        try
         {
-            var disk = n.Add(S(d, "Model"));
-            disk.Add("Capacidade", Bytes(d["Size"]));
-            disk.Add("Interface", S(d, "InterfaceType"));
-            disk.Add("Nº de série", S(d, "SerialNumber"));
-            disk.Add("Firmware", S(d, "FirmwareRevision"));
+            foreach (var d in Query("SELECT DeviceId, BusType, MediaType FROM MSFT_PhysicalDisk", @"root\Microsoft\Windows\Storage"))
+                if (int.TryParse(d["DeviceId"]?.ToString(), out int idx))
+                    media[idx] = (I(d["BusType"]) switch { 17 => "NVMe", 11 => "SATA", 7 => "USB", 10 => "SAS", 8 => "RAID", 12 => "SD", 6 => "Fibre Channel", 3 => "ATA", _ => "" },
+                                  I(d["MediaType"]) switch { 3 => "HDD", 4 => "SSD", 5 => "SCM", _ => "" });
         }
+        catch { }
+
+        var list = new List<PhysicalDiskInfo>();
+        foreach (var d in Query("SELECT Index, Model, Size, InterfaceType, SerialNumber, FirmwareRevision, PNPDeviceID, MediaType FROM Win32_DiskDrive"))
+        {
+            int idx = I(d["Index"]);
+            bool usb = S(d, "PNPDeviceID").StartsWith("USBSTOR", StringComparison.OrdinalIgnoreCase);
+            media.TryGetValue(idx, out var m);
+            string bus = m.Bus is { Length: > 0 } b ? b : usb ? "USB" : S(d, "InterfaceType");
+            bool removable = usb || bus == "USB" || S(d, "MediaType").Contains("Removable", StringComparison.OrdinalIgnoreCase);
+            list.Add(new PhysicalDiskInfo(idx, S(d, "Model"), Convert.ToUInt64(d["Size"] ?? 0UL, CultureInfo.InvariantCulture), bus, m.Media ?? "",
+                Fmt.Clean(S(d, "FirmwareRevision")), Fmt.Clean(S(d, "SerialNumber")), removable));
+        }
+        return list.OrderBy(d => d.Index).ToList();
     }
 }

@@ -36,7 +36,7 @@ public partial class MainWindow
                 Machine = Environment.MachineName,
                 AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "",
                 LogoBase64 = LoadLogoBase64(),
-                System = (InfoCategories.ItemsSource as IEnumerable<InfoNode> ?? Enumerable.Empty<InfoNode>())
+                System = PageSystem.Nodes
                          .Select(ReportBuilder.ToNode).Where(n => n != null).Cast<ReportNode>().ToList(),
                 Gpus = _gpus.Select(g => new ReportGpu(g.Name, g.Subtitle,
                          g.Sections.Select(ReportBuilder.ToNode).Where(n => n != null).Cast<ReportNode>().ToList())).ToList(),
