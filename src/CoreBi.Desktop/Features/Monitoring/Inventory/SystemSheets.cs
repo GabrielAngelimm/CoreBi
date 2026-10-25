@@ -281,9 +281,7 @@ public static class SystemSheets
 
         var groups = new List<SpecGroup> { new("Identificação", id) };
         if (memory.Count > 0) groups.Add(new("Memória (VRAM)", memory, Help: "Memória própria da placa: guarda texturas e quadros. Jogos em resolução alta pedem mais."));
-        if (units.Count > 0) groups.Add(new("Unidades de processamento", units));
-        if (clocks.Count > 0) groups.Add(new("Clocks e energia", clocks));
-        groups.Add(new("Driver", driver));
+        // As telas entram logo depois da memória: cada grupo vai para a coluna mais curta, e assim as três fecham parelhas.
         foreach (var d in inv.Displays)
         {
             var hz = d.BelowMax
@@ -306,6 +304,9 @@ public static class SystemSheets
             groups.Add(new(inv.Displays.Count > 1 ? $"Tela {d.Number}" + (d.Primary ? " (principal)" : "") : "Tela", rows,
                 Help: d == inv.Displays[0] ? "Atualização é quantas imagens por segundo a tela mostra. Acima de 60 Hz o movimento fica mais fluido." : null));
         }
+        if (units.Count > 0) groups.Add(new("Unidades de processamento", units));
+        if (clocks.Count > 0) groups.Add(new("Clocks e energia", clocks));
+        groups.Add(new("Driver", driver));
         if (adapters.Count > 1)
             groups.Add(new("Outras placas de vídeo", adapters.Skip(1).Select(a =>
                 new SpecRow(a.Name, string.Join(" · ", new[] { a.Vram is ulong v && v > 0 ? Fmt.Vram(v) : null, $"driver {a.DriverVersion}" }.Where(x => x != null)))).ToList()));
@@ -619,7 +620,10 @@ public static class SystemSheets
         rows.Add(new("Capacidade", Fmt.Bytes(d.Size), vols.Count > 0 ? $"{vols.Count} {(vols.Count == 1 ? "unidade" : "unidades")}" : null));
         if (d.System) rows.Add(new("Uso", "Disco do Windows", null, "É dele que o PC inicia."));
         rows.Add(new("Firmware", d.Firmware, null, "Versão do software interno do disco. Fabricantes às vezes lançam correções."));
-        rows.Add(new("Nº de série", d.Serial.Trim().TrimEnd('.')));
+        // NVMe: o Windows entrega o identificador com grupos de zeros na frente (0000_0000_..._707C_18B5); a parte útil é o fim.
+        string serial = d.Serial.Trim().TrimEnd('.');
+        string shortSerial = System.Text.RegularExpressions.Regex.Replace(serial, "^(0000_)+", "");
+        rows.Add(new("Nº de série", shortSerial, null, shortSerial != serial ? $"Identificador completo: {serial}" : null));
         var layout = new List<SpecRow>();
         if (d.Partition != null)
             layout.Add(new("Tabela de partições", d.Partition, d.Partitions > 0 ? $"{d.Partitions} {(d.Partitions == 1 ? "partição" : "partições")}" : null,
