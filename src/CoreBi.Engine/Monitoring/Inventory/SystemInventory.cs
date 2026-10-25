@@ -12,9 +12,12 @@ public sealed record OsInfo(
     DateTime? Installed, DateTime? LastBoot, string Machine, string User, string Workgroup, bool Domain,
     string Language, string? LastUpdateId, DateTime? LastUpdate);
 
-public sealed record BoardInfo(string Maker, string Model, string Revision, string Serial, string? SystemMaker, string? SystemModel);
+/// <summary>Chassis: o tipo de gabinete que o firmware declara (Desktop, Notebook...).</summary>
+public sealed record BoardInfo(string Maker, string Model, string Revision, string Serial, string? SystemMaker, string? SystemModel, string? Chassis = null);
 
-public sealed record FirmwareInfo(string Vendor, string Version, DateTime? Date, string? Smbios, bool? Uefi, bool? SecureBoot, string? Tpm, bool? TpmReady)
+/// <summary>TpmMaker: código do fabricante do TPM ("AMD" = fTPM no processador, "INTC" = PTT da Intel).</summary>
+public sealed record FirmwareInfo(string Vendor, string Version, DateTime? Date, string? Smbios, bool? Uefi, bool? SecureBoot, string? Tpm, bool? TpmReady,
+    string? TpmMaker = null, string? TpmFirmware = null)
 {
     /// <summary>UEFI, Secure Boot e TPM 2.0: o que o Windows 11 exige do firmware.</summary>
     public bool? Windows11Ready => Uefi == null || SecureBoot == null || Tpm == null
@@ -24,7 +27,8 @@ public sealed record FirmwareInfo(string Vendor, string Version, DateTime? Date,
 public sealed record CpuInfo(
     string Name, string Vendor, string Socket, int Cores, int Threads, int BaseMhz,
     int? Family, int? Model, int? Stepping, string Architecture, bool? Virtualization, bool Hypervisor,
-    long L2Kb, long L3Kb, CpuTopology Topology, List<(string Name, bool Supported)> Instructions)
+    long L2Kb, long L3Kb, CpuTopology Topology, List<(string Name, bool Supported)> Instructions,
+    string? Microcode = null, int RefClockMhz = 0)
 {
     public Finding? VirtualizationFinding => Hypervisor
         ? new(Tone.Ok, "Virtualização em uso pelo Windows", "(Hyper-V ou segurança baseada em virtualização). Máquinas virtuais e WSL 2 funcionam.")
@@ -39,7 +43,14 @@ public sealed record CpuInfo(
 public sealed record RamModule(
     string Bank, string Locator, string Slot, string? Channel, int? SlotIndex, ulong Capacity, string Type, string Form,
     int Rated, int Configured, string Maker, string Part, string Serial, int DataWidth, int TotalWidth, int Ranks,
-    double? Volt, double? MinVolt, double? MaxVolt);
+    double? Volt, double? MinVolt, double? MaxVolt, int TypeDetail = 0)
+{
+    /// <summary>TypeDetail do SMBIOS: bit 13 = registrada (RDIMM), bit 14 = sem buffer (UDIMM, a dos PCs comuns).</summary>
+    public string? Buffer => (TypeDetail & 0x2000) != 0 ? "registrada (RDIMM)" : (TypeDetail & 0x4000) != 0 ? "sem buffer (UDIMM)" : null;
+}
+
+/// <summary>Arquivo de paginação: tamanho reservado e o pico de uso desde o boot, em MB.</summary>
+public sealed record PageFile(string Path, int AllocatedMb, int CurrentMb, int PeakMb);
 
 /// <summary>Um slot do desenho da placa: ocupado (com o módulo) ou vazio.</summary>
 public sealed record RamSlot(string Name, string? Channel, RamModule? Module);
@@ -50,6 +61,8 @@ public sealed class RamInfo
     public int Slots { get; init; }
     public ulong MaxCapacity { get; init; }
     public ulong VirtualTotal { get; init; }
+    public List<PageFile> PageFiles { get; init; } = new();
+    public bool? PageFileAuto { get; init; }
     public ulong Total => (ulong)Modules.Sum(m => (decimal)m.Capacity);
     public int Configured => Modules.Where(m => m.Configured > 0).Select(m => m.Configured).DefaultIfEmpty(0).Min();
     public int Rated => Modules.Select(m => m.Rated).DefaultIfEmpty(0).Max();
@@ -134,10 +147,18 @@ public sealed class RamInfo
     }
 }
 
+/// <summary>
+/// Ajustes do Windows que pesam em jogos (modo de jogo, agendamento de GPU, integridade da memória, inicialização rápida,
+/// captura em segundo plano, aceleração do mouse, plano de energia), o fuso e a ativação. null = não deu para ler.
+/// </summary>
+public sealed record WindowsSettings(bool GameMode, bool? GpuScheduling, bool MemoryIntegrity, bool? FastStartup, string TimeZone,
+    bool? BackgroundCapture = null, bool? MouseAcceleration = null, string? PowerPlan = null, bool? Activated = null);
+
 public sealed record VideoAdapter(string Name, string Vendor, string DriverVersion, string WindowsDriverVersion, DateTime? DriverDate, ulong? Vram);
 
 public sealed record PhysicalDiskInfo(int Index, string Model, ulong Size, string Bus, string Media, string Firmware, string Serial, bool Removable,
-    string? Health = null, string? Partition = null, int? Rpm = null);
+    string? Health = null, string? Partition = null, int? Rpm = null,
+    int LogicalSector = 0, int PhysicalSector = 0, int Partitions = 0, bool System = false);
 
 /// <summary>Tudo que a página Sistema mostra, lido uma vez (WMI, registro e APIs do Windows).</summary>
 public sealed class SystemInventory
@@ -150,6 +171,10 @@ public sealed class SystemInventory
     public List<VideoAdapter> Gpus { get; } = new();
     public List<DisplayInfo> Displays { get; } = new();
     public List<PhysicalDiskInfo> Disks { get; set; } = new();
+    public WindowsSettings? Settings { get; set; }
+
+    /// <summary>Letra da unidade → BitLocker ligado; vazio quando o Windows não deixou ler.</summary>
+    public Dictionary<string, bool> BitLocker { get; set; } = new();
 
     /// <summary>Categoria → mensagem, quando a leitura dela falhou.</summary>
     public Dictionary<string, string> Errors { get; } = new();
@@ -180,6 +205,15 @@ public sealed class SystemInventory
             os.Add("Último boot", Fmt.Stamp(o.LastBoot));
             if (o.LastUpdate != null) os.Add("Última atualização", $"{Fmt.Date(o.LastUpdate)} ({o.LastUpdateId})");
             os.Add("Nome do computador", o.Machine);
+        }
+        if (Settings is { } st)
+        {
+            os.Add("Modo de jogo", st.GameMode ? "Ativado" : "Desativado");
+            os.Add("Agendamento de GPU por hardware", Fmt.OnOff(st.GpuScheduling));
+            os.Add("Integridade da memória", st.MemoryIntegrity ? "Ativada" : "Desativada");
+            os.Add("Inicialização rápida", Fmt.OnOff(st.FastStartup));
+            if (st.PowerPlan != null) os.Add("Plano de energia", st.PowerPlan);
+            if (st.Activated != null) os.Add("Ativação", st.Activated == true ? "Ativado" : "Não ativado");
         }
 
         var board = Root(BoardTitle);

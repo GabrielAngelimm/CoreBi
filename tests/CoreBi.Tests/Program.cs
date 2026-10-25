@@ -94,6 +94,8 @@ internal static partial class Program
                 new CpuTopology(), new() { ("AVX2", true), ("AVX-512", false) }));
             inv.Gpus.Add(new VideoAdapter("NVIDIA GeForce RTX 4060 Ti", "NVIDIA", "566.36", "32.0.15.6636", null, 8UL << 30));
             inv.Displays.Add(new DisplayInfo(1, "NVIDIA GeForce RTX 4060 Ti", "LG ULTRAGEAR", "GSM", 27, 1920, 1080, 60, 144, 32, 0, 0, true));
+            inv.Disks.Add(new PhysicalDiskInfo(0, "Samsung SSD 980 1TB", 1UL << 40, "NVMe", "SSD", "3B4QFXO7", "S64ANS0T", false, "Saudável", "GPT"));
+            inv.Settings = new WindowsSettings(false, true, true, true, "(UTC-03:00) Brasília");
             var (index, sheets) = CoreBi.Desktop.Features.Monitoring.Inventory.SystemSheets.Build(inv, Array.Empty<CoreBi.Engine.Monitoring.Graphics.GpuInfo>(), Array.Empty<CoreBi.Engine.Monitoring.Storage.DriveCard>(), DateTime.Now);
             Require(index.Count == 6 && sheets.Count == 6, "Six sheets");
             Require(index[0].Name == "Ryzen 7 5700X" && index[0].Spec.StartsWith("8 núcleos · 16 threads"), "CPU index: " + index[0].Spec);
@@ -102,6 +104,12 @@ internal static partial class Program
             Require(sheets["ram"].Groups.Any(g => g.Columns?.Count == 2 && g.Rows.All(r => r.Cells?.Count == 2)), "Two RAM modules side by side");
             Require(sheets["cpu"].Readouts.Count == 4 && index.All(i => i.Glyph.Length == 1 && i.Glyph[0] >= '\uE000'), "Index glyphs are icon characters");
             Require(sheets["gpu"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Atualização" && r.Tone == Tone.Warn), "Display below max Hz warns in the row and the index");
+            Require(sheets["storage"].Groups.Any(g => g.Rows.Any(r => r.Key == "Nº de série" && r.Value == "S64ANS0T")) && sheets["storage"].Disks![0].Meta.Length < 30, "Disk serial in its own row, not a truncated meta line");
+            Require(sheets["os"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Modo de jogo" && r.Tone == Tone.Warn), "Game mode off warns");
+            Require(sheets["ram"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Fabricante" && r.Cells![0] == "G.Skill"), "RAM maker");
+            var allRows = sheets.Values.SelectMany(sh => sh.Groups).SelectMany(g => g.Rows).ToList();
+            Require(allRows.All(r => r.Cells != null || r.Value != "—"), "Unreadable fields are hidden, not shown as a dash");
+            Require(allRows.All(r => !(r.Value + r.Tip + r.Help).Contains("CPU-Z")), "No references to other programs");
             Require(inv.ToNodes().Count == 6, "Report keeps six categories");
             return new { slots = "A1,A2*,B1,B2*", index = index.Select(i => i.Name).ToArray() };
         });

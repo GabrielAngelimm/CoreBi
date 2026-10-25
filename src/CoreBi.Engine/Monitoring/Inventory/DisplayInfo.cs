@@ -6,7 +6,8 @@ namespace CoreBi.Engine.Monitoring.Inventory;
 /// <summary>Uma tela ligada à área de trabalho: modo atual, a maior taxa que ela aceita nessa resolução e o monitor.</summary>
 public sealed record DisplayInfo(
     int Number, string Adapter, string Monitor, string? Maker, double? Inches,
-    int Width, int Height, int Hz, int MaxHz, int Bits, int X, int Y, bool Primary)
+    int Width, int Height, int Hz, int MaxHz, int Bits, int X, int Y, bool Primary,
+    string? Connection = null, int? Year = null, int? Week = null)
 {
     /// <summary>Roda abaixo do que o monitor aceita na mesma resolução (o caso típico: 144 Hz ligado a 60 Hz).</summary>
     public bool BelowMax => MaxHz > Hz + 1 && Hz > 0;
@@ -81,17 +82,37 @@ public static class DisplayReader
             var known = names.FirstOrDefault(n => key.Length > 0 && n.Instance.StartsWith(key, StringComparison.OrdinalIgnoreCase));
             int number = int.TryParse(new string(device.Where(char.IsDigit).ToArray()), out int n) ? n : list.Count + 1;
             list.Add(new DisplayInfo(number, adapter, known.Name ?? monitor, known.Maker, known.Inches,
-                dm.dmPelsWidth, dm.dmPelsHeight, dm.dmDisplayFrequency, max, dm.dmBitsPerPel, dm.dmPositionX, dm.dmPositionY, primary));
+                dm.dmPelsWidth, dm.dmPelsHeight, dm.dmDisplayFrequency, max, dm.dmBitsPerPel, dm.dmPositionX, dm.dmPositionY, primary,
+                known.Connection, known.Year, known.Week));
         }
         return list.OrderByDescending(d => d.Primary).ThenBy(d => d.Number).ToList();
     }
 
-    /// <summary>Nome comercial (EDID) e tamanho da tela, por instância do monitor.</summary>
-    private static List<(string Instance, string? Name, string? Maker, double? Inches)> MonitorNames()
+    /// <summary>Nome comercial (EDID), tamanho da tela, cabo e data de fabricação, por instância do monitor.</summary>
+    private static List<(string Instance, string? Name, string? Maker, double? Inches, string? Connection, int? Year, int? Week)> MonitorNames()
     {
-        var list = new List<(string, string?, string?, double?)>();
+        var list = new List<(string, string?, string?, double?, string?, int?, int?)>();
         try
         {
+            var links = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                using var c = new ManagementObjectSearcher(@"root\wmi", "SELECT InstanceName, VideoOutputTechnology FROM WmiMonitorConnectionParams");
+                foreach (ManagementObject m in c.Get())
+                    if (Convert.ToInt64(m["VideoOutputTechnology"] ?? -2L) switch
+                    {
+                        0 => "VGA",
+                        4 => "DVI",
+                        5 => "HDMI",
+                        10 => "DisplayPort",
+                        11 => "DisplayPort interna",
+                        15 => "Miracast (sem fio)",
+                        0x80000000 => "Tela interna",
+                        _ => null
+                    } is string link)
+                        links[m["InstanceName"]?.ToString() ?? ""] = link;
+            }
+            catch { }
             var sizes = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
             using (var s = new ManagementObjectSearcher(@"root\wmi", "SELECT InstanceName, MaxHorizontalImageSize, MaxVerticalImageSize FROM WmiMonitorBasicDisplayParams"))
                 foreach (ManagementObject m in s.Get())
@@ -99,11 +120,13 @@ public static class DisplayReader
                     double w = Convert.ToDouble(m["MaxHorizontalImageSize"] ?? 0), h = Convert.ToDouble(m["MaxVerticalImageSize"] ?? 0);
                     if (w > 0 && h > 0) sizes[m["InstanceName"]?.ToString() ?? ""] = Math.Sqrt(w * w + h * h) / 2.54;
                 }
-            using (var s = new ManagementObjectSearcher(@"root\wmi", "SELECT InstanceName, UserFriendlyName, ManufacturerName FROM WmiMonitorID"))
+            using (var s = new ManagementObjectSearcher(@"root\wmi", "SELECT InstanceName, UserFriendlyName, ManufacturerName, YearOfManufacture, WeekOfManufacture FROM WmiMonitorID"))
                 foreach (ManagementObject m in s.Get())
                 {
                     string inst = m["InstanceName"]?.ToString() ?? "";
-                    list.Add((inst, Edid(m["UserFriendlyName"]), Edid(m["ManufacturerName"]), sizes.TryGetValue(inst, out var d) ? Math.Round(d) : null));
+                    int year = Convert.ToInt32(m["YearOfManufacture"] ?? 0), week = Convert.ToInt32(m["WeekOfManufacture"] ?? 0);
+                    list.Add((inst, Edid(m["UserFriendlyName"]), Edid(m["ManufacturerName"]), sizes.TryGetValue(inst, out var d) ? Math.Round(d) : null,
+                        links.GetValueOrDefault(inst), year >= 1990 ? year : null, week is >= 1 and <= 53 ? week : null));
                 }
         }
         catch { }

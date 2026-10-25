@@ -57,7 +57,7 @@ public sealed class Sheet
 // Armazenamento: um disco por linha (DataTemplate em SystemView.xaml)
 
 public sealed record VolumeView(string Letter, string Name, string Line, double Weight, double Used, string Tip);
-public sealed record DiskView(string Title, string Meta, List<string> Chips, string Size, string Unit, string Free, List<VolumeView> Volumes,
+public sealed record DiskView(string Title, string Meta, string Size, string Unit, string Free, List<VolumeView> Volumes,
     string Health = "", Tone Tone = Tone.None)
 {
     public bool First { get; init; }
@@ -95,6 +95,12 @@ public static class SystemSheets
             [Storage] = StorageSheet(inv, drives),
             [Os] = OsSheet(inv, now),
         };
+        // Campo que o Windows não preenche não vira linha com travessão: some, e o grupo que ficar vazio também.
+        foreach (var sheet in sheets.Values)
+        {
+            foreach (var g in sheet.Groups) g.Rows.RemoveAll(r => r.Cells == null && r.Value is "—" or "");
+            sheet.Groups.RemoveAll(g => g.Rows.Count == 0 && g.Tokens is not { Count: > 0 });
+        }
         var index = new List<IndexItem>();
         void Add(string key, string glyph, string category, string? error)
         {
@@ -159,6 +165,7 @@ public static class SystemSheets
             $"Em hexadecimal: família {c.Family:X}h, modelo {c.Model:X}h. É o que identifica a geração exata do chip."));
         id.Add(new("Arquitetura", c.Architecture, c.Architecture switch { "x64" => "64 bits", "ARM64" => "ARM, 64 bits", "x86" => "32 bits", _ => null }));
         id.Add(new("Soquete", c.Socket, Help: "O encaixe na placa-mãe. Define quais processadores ela aceita numa troca."));
+        if (c.Microcode != null) id.Add(new("Microcódigo", c.Microcode, null, "Revisão das correções internas do processador, carregada pela BIOS ou pelo Windows."));
         if (inv.Cpus.Count > 1) id.Add(new("Processadores", inv.Cpus.Count.ToString(Br)));
 
         var clocks = new List<SpecRow> { new("Núcleos", cores.ToString(Br), t.Hybrid ? $"{t.PerformanceCores} P + {t.EfficientCores} E" : null) };
@@ -167,6 +174,9 @@ public static class SystemSheets
         clocks.Add(new("Threads", threads.ToString(Br), smt ? $"{(double)threads / cores:0.#} por núcleo" : "1 por núcleo"));
         clocks.Add(new(c.Vendor == "AMD" ? "SMT" : "Hyper-Threading", smt ? "Ativado" : "Desligado", null, "Cada núcleo toca duas threads ao mesmo tempo."));
         clocks.Add(new("Clock base", Fmt.Ghz(c.BaseMhz), Help: "A frequência garantida. Em uso ele sobe acima disso (boost) conforme temperatura e consumo."));
+        if (c.RefClockMhz > 0)
+            clocks.Add(new("Clock de referência", $"{c.RefClockMhz} MHz", c.BaseMhz > 0 ? $"× {N((double)c.BaseMhz / c.RefClockMhz, "0.#")} no clock base" : null,
+                "O clock base é este valor vezes o multiplicador do processador."));
 
         var cache = Fmt.CacheLines(c).Select(kv => new SpecRow(kv.Key, kv.Value, kv.Key == "L3" && l3.Count == 1 ? "compartilhado" : null)).ToList();
 
@@ -221,22 +231,57 @@ public static class SystemSheets
         var (vValue, vUnit) = vram > 0 ? Split(Fmt.Vram(vram)) : ("—", "");
         var primary = inv.Displays.FirstOrDefault(d => d.Primary) ?? inv.Displays.FirstOrDefault();
 
+        // Chip, arquitetura, memória, clocks e TDP vêm da leitura da página Placa de vídeo (banco de especificações + driver).
+        string? G(string key) => spec == null ? null : Find(spec.Sections, key);
         var id = new List<SpecRow> { new("Nome", g.Name), new("Fabricante do chip", g.Vendor) };
-        // Chip, arquitetura e tipo de memória vêm do banco de especificações da página Placa de vídeo.
-        var parts = spec?.Subtitle.Split("  ·  ", StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-        if (parts.Length >= 2) id.Add(new("Chip", $"{parts[0]} · {parts[1]}"));
-        if (vram > 0) id.Add(new("Memória (VRAM)", parts.FirstOrDefault(p => p.Contains(" GB")) ?? Fmt.Vram(vram),
-            Help: "Memória própria da placa: guarda texturas e quadros. Jogos em resolução alta pedem mais."));
+        if (G("Fabricante da placa") is { } board) id.Add(new("Fabricante da placa", board));
+        if (G("Chip") is { } chip) id.Add(new("Chip", chip));
+        if (G("Arquitetura") is { } gpuArch) id.Add(new("Arquitetura", gpuArch));
+        if (G("Processo") is { } process) id.Add(new("Processo", process));
+        if (G("Lançamento") is { } release) id.Add(new("Lançamento", release));
+
+        var memory = new List<SpecRow>();
+        if (vram > 0) memory.Add(new("Tamanho", Fmt.Vram(vram)));
+        if (G("Compartilhada do sistema") is { } shared) memory.Add(new("Compartilhada da RAM", shared, null,
+            "Quanto da RAM do PC o Windows deixa a placa usar quando a VRAM acaba. É bem mais lenta que a VRAM."));
+        if (G("Tipo") is { } memType) memory.Add(new("Tipo", memType));
+        if (G("Barramento") is { } bus) memory.Add(new("Barramento", bus, null, "Quantos bits a placa lê da VRAM de uma vez."));
+        if (G("Clock da memória") is { } memClock) memory.Add(new("Clock da memória", memClock));
+        if (G("Largura de banda") is { } bandwidth) memory.Add(new("Largura de banda", bandwidth));
+        if (G("Resizable BAR") is { } bar) memory.Add(new("Resizable BAR", bar.StartsWith("Ativado") ? "Ativado" : bar, null,
+            "Deixa o processador acessar toda a VRAM de uma vez. Alguns jogos ganham desempenho."));
+
+        var units = new List<SpecRow>();
+        foreach (var (key, tip) in new[]
+        {
+            ("CUDA cores", "Os núcleos que desenham a imagem. Mais núcleos, mais desempenho dentro da mesma geração."),
+            ("Stream processors", "Os núcleos que desenham a imagem. Mais núcleos, mais desempenho dentro da mesma geração."),
+            ("SMs", "Blocos que agrupam os núcleos."), ("Compute units", "Blocos que agrupam os núcleos."),
+            ("RT cores", "Fazem o ray tracing (luz e reflexos realistas)."), ("Ray accelerators", "Fazem o ray tracing (luz e reflexos realistas)."),
+            ("Tensor cores", "Fazem as contas de IA, como o DLSS."),
+        })
+            if (G(key) is { } v) units.Add(new(key, v, null, tip));
+
+        var clocks = new List<SpecRow>();
+        if (G("Base (referência)") is { } baseClock) clocks.Add(new("Clock base", baseClock, "referência"));
+        if (G("Boost (referência)") is { } boost) clocks.Add(new("Clock boost", boost, "referência"));
+        if (G("TDP (referência)") is { } tdp) clocks.Add(new("TDP", tdp, null, "Consumo de referência da fabricante do chip."));
+        if (G("Limite atual") is { } limit) clocks.Add(new("Limite de energia", limit, null, "O máximo que a placa pode puxar agora, definido pela fabricante da placa."));
+        if (G("Interface") is { } pcie) clocks.Add(new("Interface", pcie, null, "O máximo da conexão entre a placa e a placa-mãe."));
+        if (G("Em uso agora") is { } link) clocks.Add(new("Interface em uso", link.Split(" (")[0], link.Contains('(') ? "em repouso" : null,
+            "Em repouso a placa reduz a conexão para economizar energia; em jogo ela volta ao máximo."));
 
         var driver = new List<SpecRow> { new("Versão", g.DriverVersion, null, g.WindowsDriverVersion != g.DriverVersion ? "No formato que a fabricante divulga." : null) };
         if (g.WindowsDriverVersion != g.DriverVersion) driver.Add(new("Versão no Windows", g.WindowsDriverVersion));
         driver.Add(new("Data", Fmt.Date(g.DriverDate), Fmt.Ago(g.DriverDate)));
+        if (G("BIOS (VBIOS)") is { } vbios) driver.Add(new("BIOS da placa", vbios, null, "Firmware da própria placa de vídeo (VBIOS)."));
+        if (G("DirectX") is { } dx) driver.Add(new("DirectX", dx));
 
-        var groups = new List<SpecGroup>
-        {
-            new("Identificação", id),
-            new("Driver", driver, Help: "O programa que liga a placa ao Windows e aos jogos. Versões novas costumam trazer ganhos e correções."),
-        };
+        var groups = new List<SpecGroup> { new("Identificação", id) };
+        if (memory.Count > 0) groups.Add(new("Memória (VRAM)", memory, Help: "Memória própria da placa: guarda texturas e quadros. Jogos em resolução alta pedem mais."));
+        if (units.Count > 0) groups.Add(new("Unidades de processamento", units));
+        if (clocks.Count > 0) groups.Add(new("Clocks e energia", clocks, Help: "Valores de referência do chip; cada fabricante de placa pode subir um pouco. Os clocks ao vivo ficam na página Placa de vídeo."));
+        groups.Add(new("Driver", driver, Help: "O programa que liga a placa ao Windows e aos jogos. Versões novas costumam trazer ganhos e correções."));
         foreach (var d in inv.Displays)
         {
             var hz = d.BelowMax
@@ -253,6 +298,8 @@ public static class SystemSheets
                 new("Cores", $"{d.Bits} bits", d.Bits >= 32 ? "8 bits por canal" : null),
             };
             if (d.Inches is double inch) rows.Insert(1, new("Tamanho", $"{inch:0}\""));
+            if (d.Connection != null) rows.Add(new("Conexão", d.Connection, null, "O cabo entre a placa de vídeo e a tela."));
+            if (d.Year is int year) rows.Add(new("Fabricado em", d.Week is int week ? $"semana {week} de {year}" : year.ToString(Br)));
             if (inv.Displays.Count > 1) rows.Add(new("Posição", d.Primary ? "Tela principal" : "Estendida", $"{d.X}, {d.Y}"));
             if (adapters.Count > 1) rows.Add(new("Ligada em", d.Adapter));
             groups.Add(new(inv.Displays.Count > 1 ? $"Tela {d.Number}" + (d.Primary ? " (principal)" : "") : "Tela", rows,
@@ -278,6 +325,17 @@ public static class SystemSheets
             Groups = groups,
             Link = new("Especificações completas, clocks e leituras ao vivo em Placa de vídeo", "PageGpu"),
         };
+    }
+
+    /// <summary>Primeiro valor útil com essa chave nas seções da página Placa de vídeo.</summary>
+    private static string? Find(IEnumerable<InfoNode> nodes, string key)
+    {
+        foreach (var n in nodes)
+        {
+            if (n.Header == key && n.Value.Length > 0 && n.Value != "—") return n.Value;
+            if (Find(n.Children, key) is { } v) return v;
+        }
+        return null;
     }
 
     private static string ShortGpu(string name)
@@ -325,7 +383,6 @@ public static class SystemSheets
             speed.Add(Verdict("Canais", value, ch.Tone, null,
                 ch.Tone == Tone.Ok ? Cap(ch.Text.TrimEnd('.')) + ": o dobro de dados por vez com o processador." : Cap(ch.Text)));
         }
-        speed.Add(new("Timings", "Na BIOS ou no CPU-Z", null, "CL, tRCD e tRP: o Windows não informa."));
 
         var capacity = new List<SpecRow> { new("Instalada", Fmt.Bytes(r.Total)) };
         if (memory is { } mem)
@@ -337,7 +394,9 @@ public static class SystemSheets
         capacity.Add(new("Módulos", r.Slots > 0 ? $"{r.Modules.Count} de {r.Slots} slots" : r.Modules.Count.ToString(Br),
             r.Slots > r.Modules.Count ? $"{r.Slots - r.Modules.Count} {(r.Slots - r.Modules.Count == 1 ? "livre" : "livres")}" : null));
         if (r.MaxCapacity > 0) capacity.Add(new("Máximo da placa", Fmt.Bytes(r.MaxCapacity), null, "Capacidade máxima que a placa-mãe declara suportar."));
-        capacity.Add(new("Tipo", $"{r.Type} · {form}", form.Contains("SODIMM") ? "de notebook" : null));
+        string? buffer = r.Modules.Select(m => m.Buffer).Distinct().SingleOrDefault();
+        capacity.Add(new("Tipo", $"{r.Type} · {form}", form.Contains("SO-DIMM") ? "de notebook" : null));
+        if (buffer != null) capacity.Add(new("Buffer", Cap(buffer), null, "Sem buffer é o módulo comum de PC; registrada é a de servidor."));
         capacity.Add(new("ECC", r.Ecc ? "Sim" : "Não", null, "Correção de erros por hardware, comum em servidores e estações de trabalho."));
 
         // Slots da placa, ocupados e vazios, com o canal de cada um.
@@ -364,7 +423,10 @@ public static class SystemSheets
                 "Quantos conjuntos de chips o módulo tem. Dual rank costuma render um pouco mais em jogos."),
             Cells("Tensão", m => m.MinVolt is double lo && m.MaxVolt is double hi && lo != hi ? $"{Fmt.Volt(m.Volt)} ({N(lo, "0.0#")}–{N(hi, "0.0#")})" : Fmt.Volt(m.Volt),
                 "Tensão em uso e, entre parênteses, a faixa que o módulo aceita."),
-            Cells("Posição", m => m.Locator, "Nome que a placa-mãe dá ao slot."),
+            // Placas que dão o mesmo nome a todos os slots (DIMM 1) se diferenciam pelo banco (P0 CHANNEL A).
+            mods.Select(x => x.Module.Locator).Distinct().Count() == mods.Count
+                ? Cells("Posição", m => m.Locator, "Nome que a placa-mãe dá ao slot.")
+                : Cells("Posição", m => m.Bank, "Nome que a placa-mãe dá ao banco do slot."),
             Cells("Nº de série", m => m.Serial),
         };
         if (mods.Any(x => x.Module.TotalWidth > x.Module.DataWidth && x.Module.DataWidth > 0))
@@ -392,6 +454,12 @@ public static class SystemSheets
                 new("Disponível", Fmt.Bytes(m2.Available)),
                 new("Memória virtual", $"{Fmt.Bytes(commit)} de {Fmt.Bytes(m2.CommitLimit)}", null, null, Tone.None, "RAM + arquivo de paginação, usado quando a RAM enche."),
             }));
+        }
+        foreach (var pf in memory != null ? r.PageFiles : new())
+        {
+            var use = groups[^1];
+            use.Rows.Add(new("Arquivo de paginação", $"{Fmt.Bytes(pf.AllocatedMb * 1048576.0)} em {pf.Path[..Math.Min(2, pf.Path.Length)]}",
+                r.PageFileAuto == true ? "tamanho automático" : null, $"{pf.Path} · pico de {pf.PeakMb} MB desde o boot"));
         }
 
         var (rv, ru) = r.Configured > 0 ? (r.Configured.ToString(Br), "MT/s") : ("—", "");
@@ -423,6 +491,7 @@ public static class SystemSheets
             board.Add(new("Slots de memória", ram.Slots.ToString(Br), ram.MaxCapacity > 0 ? $"até {Fmt.Bytes(ram.MaxCapacity)}" : null, $"{ram.Modules.Count} em uso"));
         if (inv.Cpus.FirstOrDefault() is { Socket: not "—" } cpu) board.Add(new("Soquete", cpu.Socket, null, "Encaixe do processador."));
         board.Add(new("Nº de série", b.Serial));
+        if (b.Chassis != null) board.Add(new("Tipo de computador", b.Chassis, null, "O formato que o firmware declara."));
         var groups = new List<SpecGroup> { new("Placa-mãe", board) };
         if (f != null)
         {
@@ -443,6 +512,15 @@ public static class SystemSheets
                 Verdict("TPM", tpmValue, T(tpmOk), null,
                     f.Tpm == null ? "O TPM só é lido com o CoreBi aberto como administrador." : tpmOk == false ? "Ative fTPM (AMD) ou PTT (Intel) na BIOS." : null,
                     "Chip de segurança usado pelo BitLocker e pelo Windows Hello."),
+                new("Tipo de TPM", f.TpmMaker switch
+                {
+                    "AMD" => "fTPM, no processador AMD",
+                    "INTC" => "PTT, no chipset Intel",
+                    "MSFT" => "Virtual (Microsoft)",
+                    null => "—",
+                    var other => $"Chip dedicado ({other})"
+                }, null, "Onde o TPM mora: no próprio processador (firmware) ou num chip separado na placa."),
+                new("Firmware do TPM", f.TpmFirmware ?? "—"),
                 f.Windows11Ready switch
                 {
                     true => Verdict("Requisitos do Windows 11", "Atendidos", Tone.Ok),
@@ -453,7 +531,8 @@ public static class SystemSheets
             groups.Add(new("Segurança", security, Help: "O que o Windows 11 exige do firmware para iniciar com segurança."));
 
         }
-        if (b.SystemMaker != null || b.SystemModel != null)
+        // PCs montados repetem a placa aqui; o grupo só aparece quando diz algo novo (notebooks e PCs de marca).
+        if ((b.SystemMaker != null || b.SystemModel != null) && b.SystemModel != b.Model)
             groups.Add(new("Computador", new() { new("Fabricante", b.SystemMaker ?? "—"), new("Modelo", b.SystemModel ?? "—") }));
 
         string biosMonth = f?.Date is DateTime d ? d.ToString("MM/yyyy", CultureInfo.InvariantCulture) : "—";
@@ -479,6 +558,7 @@ public static class SystemSheets
     private static Sheet StorageSheet(SystemInventory inv, IReadOnlyList<DriveCard> drives)
     {
         var disks = new List<DiskView>();
+        var groups = new List<SpecGroup>();
         foreach (var d in inv.Disks)
         {
             var vols = drives.Where(v => v.Disk.Length > 0 && v.Disk == d.Model).ToList();
@@ -488,12 +568,11 @@ public static class SystemSheets
                 $"{v.Letter} · {v.FileSystem} · {v.UsedPercent} usados")).ToList();
             double free = vols.Sum(v => (double)v.Free);
             var (sv, su) = Split(Fmt.Bytes(d.Size));
-            var chips = new List<string> { d.Bus, d.Media, d.Rpm is int rpm ? $"{rpm} rpm" : "", d.Partition ?? "", d.Removable && d.Bus != "USB" ? "removível" : "" }
-                .Where(x => x.Length > 0 && x != "—").ToList();
-            string meta = string.Join(" · ", new[] { $"Disco {d.Index}", d.Firmware != "—" ? $"firmware {d.Firmware}" : null, d.Serial != "—" ? $"série {d.Serial}" : null }.Where(x => x != null));
+            string meta = string.Join(" · ", new[] { $"Disco {d.Index}", d.Bus, d.Media, d.Removable && d.Bus != "USB" ? "removível" : "" }.Where(x => x.Length > 0 && x != "—"));
             var tone = d.Health switch { "Saudável" => Tone.Ok, null => Tone.None, _ => Tone.Warn };
             string freeText = vols.Count > 0 ? $"{DriveCard.Fmt((long)free)} livres" : "sem unidade montada";
-            disks.Add(new DiskView(d.Model, meta, chips, sv, su, freeText, volumes, d.Health ?? "", tone) { First = disks.Count == 0 });
+            disks.Add(new DiskView(d.Model, meta, sv, su, freeText, volumes, d.Health ?? "", tone) { First = disks.Count == 0 });
+            groups.Add(new(d.Model, DiskRows(d, tone, vols, inv.BitLocker)));
         }
         double total = inv.Disks.Sum(d => (double)d.Size);
         double freeAll = drives.Sum(v => (double)v.Free), usedAll = drives.Sum(v => (double)(v.Total - v.Free));
@@ -513,8 +592,50 @@ public static class SystemSheets
                 new("Unidades", drives.Count.ToString(Br)),
             },
             Disks = disks,
+            Groups = groups,
             Link = new("Saúde, temperatura e vida útil em Discos", "PageDisks"),
         };
+    }
+
+    /// <summary>Ficha de um disco: o que ele é, como está ligado e o estado que o Windows informa.</summary>
+    private static List<SpecRow> DiskRows(PhysicalDiskInfo d, Tone health, List<DriveCard> vols, Dictionary<string, bool> bitLocker)
+    {
+        string media = d.Media switch { "SSD" => "SSD", "HDD" => "HD (disco giratório)", var m => m };
+        var rows = new List<SpecRow>
+        {
+            new("Interface", d.Bus, null, d.Bus switch
+            {
+                "NVMe" => "Ligado direto nas linhas PCIe do processador ou do chipset: o tipo mais rápido.",
+                "SATA" => "Conexão SATA: até uns 550 MB/s, o limite dos SSDs SATA.",
+                "USB" => "Disco externo pela USB.",
+                _ => null
+            }),
+            new("Tipo", media),
+        };
+        if (d.Rpm is int rpm) rows.Add(new("Rotação", $"{rpm} rpm", null, "Quanto mais rápido o prato gira, menor o tempo de acesso."));
+        rows.Add(new("Capacidade", Fmt.Bytes(d.Size), vols.Count > 0 ? $"{vols.Count} {(vols.Count == 1 ? "unidade" : "unidades")}" : null));
+        if (d.System) rows.Add(new("Uso", "Disco do Windows", null, "É dele que o PC inicia."));
+        if (d.Partition != null)
+            rows.Add(new("Tabela de partições", d.Partition, d.Partitions > 0 ? $"{d.Partitions} {(d.Partitions == 1 ? "partição" : "partições")}" : null,
+                "GPT é o padrão atual e é o que o Windows 11 usa para iniciar em UEFI; MBR é o formato antigo, limitado a 2 TB. " +
+                "Além das unidades com letra, o Windows guarda partições ocultas de inicialização e recuperação."));
+        if (d.LogicalSector > 0)
+            rows.Add(new("Setor", d.PhysicalSector > d.LogicalSector ? $"{d.LogicalSector} B lógico · {d.PhysicalSector / 1024} KB físico" : $"{d.LogicalSector} B",
+                null, "O menor bloco que o disco lê ou grava."));
+        var locked = vols.Where(v => bitLocker.TryGetValue(v.Letter.TrimEnd('\\'), out _)).ToList();
+        if (locked.Count > 0)
+        {
+            var on = locked.Where(v => bitLocker[v.Letter.TrimEnd('\\')]).Select(v => v.Letter.TrimEnd('\\')).ToList();
+            rows.Add(new("BitLocker", on.Count > 0 ? $"Ativado em {string.Join(", ", on)}" : "Desativado", null,
+                "Criptografia do Windows: sem a senha ou a chave de recuperação, ninguém lê os dados do disco."));
+        }
+        rows.Add(new("Firmware", d.Firmware, null, "Versão do software interno do disco. Fabricantes às vezes lançam correções."));
+        rows.Add(new("Nº de série", d.Serial));
+        if (d.Health != null)
+            rows.Add(Verdict("Saúde", d.Health, health, null, health == Tone.Warn ? "O Windows indica um problema. Faça backup e veja os detalhes em Discos." : null,
+                "Estado que o Windows informa. Vida útil e temperatura ficam na página Discos."));
+        rows.RemoveAll(r => r.Value is "—" or "");
+        return rows;
     }
 
     // ---------------- Sistema operacional ----------------
@@ -535,6 +656,30 @@ public static class SystemSheets
         var computer = new List<SpecRow> { new("Nome", o.Machine, null, "Como o PC aparece na rede."), new("Usuário", o.User), new(o.Domain ? "Domínio" : "Grupo de trabalho", o.Workgroup) };
         var session = new List<SpecRow> { new("Instalado em", Fmt.Date(o.Installed), Fmt.Ago(o.Installed, now)), new("Último boot", Fmt.Stamp(o.LastBoot)), new("Ligado há", up) };
         if (o.LastUpdate != null) session.Insert(1, new("Última atualização", Fmt.Date(o.LastUpdate), o.LastUpdateId, "A atualização mais recente instalada pelo Windows Update."));
+        var groups = new List<SpecGroup> { new("Windows", windows), new("Sessão", session), new("Computador", computer) };
+        if (inv.Settings is { } st)
+        {
+            computer.Add(new("Fuso horário", st.TimeZone));
+            if (st.Activated != null) windows.Add(Verdict("Ativação", st.Activated == true ? "Ativado" : "Não ativado", st.Activated == true ? Tone.Ok : Tone.Warn, null,
+                st.Activated == true ? null : "Ative em Configurações > Sistema > Ativação."));
+            groups.Insert(1, new("Ajustes para jogos", new()
+            {
+                Verdict("Modo de jogo", st.GameMode ? "Ativado" : "Desativado", st.GameMode ? Tone.Ok : Tone.Warn, null,
+                    st.GameMode ? null : "Ative em Configurações > Jogos > Modo de jogo.",
+                    "Dá prioridade ao jogo e segura atualizações e notificações enquanto ele roda."),
+                new("Agendamento de GPU por hardware", Fmt.OnOff(st.GpuScheduling), null,
+                    "A placa de vídeo organiza a própria fila de trabalho. É exigido pela geração de quadros do DLSS. Fica em Configurações > Sistema > Tela > Elementos gráficos."),
+                new("Integridade da memória", st.MemoryIntegrity ? "Ativada" : "Desativada", null,
+                    "Proteção do Windows contra drivers maliciosos (isolamento de núcleo). Pode custar um pouco de desempenho em jogos."),
+                new("Inicialização rápida", Fmt.OnOff(st.FastStartup), null,
+                    "Ao desligar, o Windows salva parte do sistema para ligar mais rápido. Por isso o \"Ligado há\" pode ser longo mesmo desligando todo dia."),
+                new("Plano de energia", st.PowerPlan ?? "—", null, "Quanto o Windows deixa o processador acelerar e quão rápido ele volta a economizar."),
+                new("Captura em segundo plano", st.BackgroundCapture switch { true => "Ativada", false => "Desativada", _ => "—" }, null,
+                    "Grava os últimos segundos de jogo o tempo todo, para salvar um clipe depois. Custa um pouco de desempenho."),
+                new("Aceleração do mouse", st.MouseAcceleration switch { true => "Ativada", false => "Desativada", _ => "—" }, null,
+                    "\"Aumentar a precisão do ponteiro\": o cursor anda mais quando o mouse se move rápido. Em jogos de tiro, muitos preferem desligada."),
+            }, Help: "Opções do Windows que mudam como os jogos rodam. Passe o mouse em cada uma para saber o que faz."));
+        }
 
         string arch = o.Architecture.StartsWith("64") ? "64" : o.Architecture.StartsWith("32") ? "32" : "—";
         return new Sheet
@@ -550,7 +695,7 @@ public static class SystemSheets
                 new("Arquitetura", arch, arch != "—" ? "bits" : ""),
                 new("Ligado há", upValue, upUnit),
             },
-            Groups = new() { new("Windows", windows), new("Sessão", session), new("Computador", computer) },
+            Groups = groups,
         };
     }
 

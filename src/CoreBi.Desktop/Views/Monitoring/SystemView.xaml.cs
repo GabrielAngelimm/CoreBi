@@ -75,7 +75,9 @@ public partial class SystemView : UserControl
         {
             var disks = Task.Run(SystemInfoCollector.ReadDisks);
             var drives = Task.Run(DriveMap.Read);
+            var bitLocker = Task.Run(SystemInfoCollector.ReadBitLocker);
             _inventory.Disks = await disks;
+            _inventory.BitLocker = await bitLocker;
             _drives = await drives;
             if (_context?.IsClosing == true) return;
             Rebuild();
@@ -130,7 +132,7 @@ public partial class SystemView : UserControl
         DiskList.ItemsSource = s.Disks;
         DiskList.Visibility = s.Disks != null ? Visibility.Visible : Visibility.Collapsed;
         SheetLink.Content = s.Link?.Text;
-        SheetLink.Visibility = s.Link != null ? Visibility.Visible : Visibility.Collapsed;
+        SheetFooter.Visibility = s.Link != null ? Visibility.Visible : Visibility.Collapsed;
         SpecScroll.ScrollToTop();
         Layout(SheetCard.ActualWidth);
     }

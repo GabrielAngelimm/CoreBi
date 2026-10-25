@@ -24,6 +24,8 @@ public static class SystemInfoCollector
         Safe(inv, SystemInventory.GpuTitle, () => inv.Gpus.AddRange(ReadGpus()));
         Safe(inv, SystemInventory.GpuTitle, () => inv.Displays.AddRange(DisplayReader.Read()));
         Safe(inv, SystemInventory.StorageTitle, () => inv.Disks = ReadDisks());
+        Safe(inv, SystemInventory.StorageTitle, () => inv.BitLocker = ReadBitLocker());
+        Safe(inv, SystemInventory.OsTitle, () => inv.Settings = ReadSettings());
         return inv;
     }
 
@@ -126,7 +128,7 @@ public static class SystemInfoCollector
             rev = Fmt.Clean(S(b, "Version"));
             serial = Fmt.Clean(S(b, "SerialNumber"));
         }
-        string? sysMaker = null, sysModel = null;
+        string? sysMaker = null, sysModel = null, chassis = null;
         try
         {
             foreach (var cs in Query("SELECT Manufacturer, Model FROM Win32_ComputerSystem"))
@@ -134,9 +136,21 @@ public static class SystemInfoCollector
                 sysMaker = Fmt.IsPlaceholder(cs["Manufacturer"]?.ToString()) ? null : S(cs, "Manufacturer");
                 sysModel = Fmt.IsPlaceholder(cs["Model"]?.ToString()) ? null : S(cs, "Model");
             }
+            foreach (var e in Query("SELECT ChassisTypes FROM Win32_SystemEnclosure"))
+                if (e["ChassisTypes"] is ushort[] { Length: > 0 } types)
+                    chassis = types[0] switch
+                    {
+                        3 or 4 or 5 or 6 or 7 or 15 or 16 => "Desktop",
+                        8 or 9 or 10 or 14 => "Notebook",
+                        13 => "Tudo em um",
+                        30 => "Tablet",
+                        31 or 32 => "Conversível",
+                        35 or 36 => "Mini PC",
+                        _ => null
+                    };
         }
         catch { }
-        return new BoardInfo(maker, model, rev, serial, sysMaker, sysModel);
+        return new BoardInfo(maker, model, rev, serial, sysMaker, sysModel, chassis);
     }
 
     [DllImport("kernel32.dll")]
@@ -169,18 +183,20 @@ public static class SystemInfoCollector
         catch { }
 
         // TPM: precisa de administrador (o CoreBi roda elevado). SpecVersion = "2.0, 0, 1.59".
-        string? tpm = null; bool? ready = null;
+        string? tpm = null, tpmMaker = null, tpmFirmware = null; bool? ready = null;
         try
         {
-            foreach (var t in Query("SELECT SpecVersion, IsEnabled_InitialValue, IsActivated_InitialValue FROM Win32_Tpm", @"root\CIMV2\Security\MicrosoftTpm"))
+            foreach (var t in Query("SELECT * FROM Win32_Tpm", @"root\CIMV2\Security\MicrosoftTpm"))
             {
                 tpm = t["SpecVersion"]?.ToString()?.Split(',')[0].Trim();
                 ready = t["IsEnabled_InitialValue"] is bool e && e && (t["IsActivated_InitialValue"] is not bool a || a);
+                tpmMaker = t["ManufacturerIdTxt"]?.ToString()?.Trim() is { Length: > 0 } mk ? mk : null;
+                tpmFirmware = t["ManufacturerVersion"]?.ToString()?.Trim() is { Length: > 0 } fw ? fw : null;
             }
             tpm ??= "Ausente";
         }
         catch { }
-        return new FirmwareInfo(vendor, version, date, smbios, uefi, secure, tpm, ready);
+        return new FirmwareInfo(vendor, version, date, smbios, uefi, secure, tpm, ready, tpmMaker, tpmFirmware);
     }
 
     // ---------------- Processador ----------------
@@ -211,9 +227,22 @@ public static class SystemInfoCollector
                 arch, virt, hypervisor, I(c["L2CacheSize"]), I(c["L3CacheSize"]),
                 // A topologia do Windows cobre todos os soquetes; com um processador só (o caso comum) ela é dele.
                 topo.Cores.Count == cores ? topo : new CpuTopology(),
-                Instructions()));
+                Instructions(), Microcode(), I(c["ExtClock"])));
         }
         return list;
+    }
+
+    /// <summary>Revisão do microcódigo carregado: o Windows guarda em "Update Revision" (8 bytes, a revisão nos 4 últimos).</summary>
+    private static string? Microcode()
+    {
+        try
+        {
+            using var key = Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0");
+            if (key?.GetValue("Update Revision") is byte[] { Length: >= 8 } b && BitConverter.ToUInt32(b, 4) is uint rev and > 0)
+                return $"0x{rev:X8}";
+        }
+        catch { }
+        return null;
     }
 
     /// <summary>Conjuntos de instruções que o processador e o Windows habilitam (os que jogos e emuladores exigem).</summary>
@@ -310,7 +339,7 @@ public static class SystemInfoCollector
                 RamType(I(m["SMBIOSMemoryType"]), I(m["MemoryType"])), RamForm(I(m["FormFactor"])),
                 I(m["Speed"]), I(m["ConfiguredClockSpeed"]), Fmt.ShortMaker(Fmt.Clean(S(m, "Manufacturer"))), Fmt.Clean(part), Fmt.Clean(S(m, "SerialNumber")),
                 I(m["DataWidth"]), I(m["TotalWidth"]), I(m["Attributes"]) & 0xF,
-                Volts(m["ConfiguredVoltage"]), Volts(m["MinVoltage"]), Volts(m["MaxVoltage"])));
+                Volts(m["ConfiguredVoltage"]), Volts(m["MinVoltage"]), Volts(m["MaxVoltage"]), I(m["TypeDetail"])));
         }
 
         int slots = 0; ulong maxBytes = 0;
@@ -333,7 +362,19 @@ public static class SystemInfoCollector
         }
         catch { }
 
-        return new RamInfo { Modules = mods, Slots = slots, MaxCapacity = maxBytes, VirtualTotal = virt, PartSpeed = partSpeed };
+        // Arquivo de paginação: tamanho reservado e uso (MB), e se o Windows gerencia o tamanho sozinho.
+        var pages = new List<PageFile>();
+        bool? auto = null;
+        try
+        {
+            foreach (var pf in Query("SELECT Name, AllocatedBaseSize, CurrentUsage, PeakUsage FROM Win32_PageFileUsage"))
+                pages.Add(new PageFile(S(pf, "Name"), I(pf["AllocatedBaseSize"]), I(pf["CurrentUsage"]), I(pf["PeakUsage"])));
+            foreach (var cs in Query("SELECT AutomaticManagedPagefile FROM Win32_ComputerSystem"))
+                auto = cs["AutomaticManagedPagefile"] as bool?;
+        }
+        catch { }
+
+        return new RamInfo { Modules = mods, Slots = slots, MaxCapacity = maxBytes, VirtualTotal = virt, PartSpeed = partSpeed, PageFiles = pages, PageFileAuto = auto };
     }
 
     // ---------------- Placa de vídeo ----------------
@@ -402,6 +443,94 @@ public static class SystemInfoCollector
 
     // ---------------- Armazenamento ----------------
 
+    /// <summary>Ajustes do Windows que pesam em jogos, lidos do registro (null quando a chave não existe).</summary>
+    private static WindowsSettings ReadSettings()
+    {
+        static int? Dword(RegistryKey root, string path, string name)
+        {
+            try { using var k = root.OpenSubKey(path); return k?.GetValue(name) is int v ? v : null; }
+            catch { return null; }
+        }
+        int? gameMode = Dword(Registry.CurrentUser, @"Software\Microsoft\GameBar", "AutoGameModeEnabled");
+        int? hags = Dword(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Control\GraphicsDrivers", "HwSchMode");
+        int? hvci = Dword(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity", "Enabled");
+        int? fast = Dword(Registry.LocalMachine, @"SYSTEM\CurrentControlSet\Control\Session Manager\Power", "HiberbootEnabled");
+        int? capture = Dword(Registry.CurrentUser, @"Software\Microsoft\Windows\CurrentVersion\GameDVR", "AppCaptureEnabled");
+        bool? mouse = null;
+        try
+        {
+            using var k = Registry.CurrentUser.OpenSubKey(@"Control Panel\Mouse");
+            if (k?.GetValue("MouseSpeed") is string ms) mouse = ms != "0";
+        }
+        catch { }
+        return new WindowsSettings(
+            gameMode != 0,                              // sem a chave, o Modo de jogo vem ligado
+            hags switch { 2 => true, 1 => false, _ => null },
+            hvci is int h ? h == 1 : false,
+            fast is int f ? f == 1 : null,
+            TimeZoneInfo.Local.DisplayName,
+            capture is int c ? c == 1 : null,
+            mouse,
+            PowerPlan(),
+            Activated());
+    }
+
+    [DllImport("powrprof.dll")]
+    private static extern uint PowerGetActiveScheme(IntPtr root, out IntPtr scheme);
+
+    [DllImport("powrprof.dll")]
+    private static extern uint PowerReadFriendlyName(IntPtr root, IntPtr scheme, IntPtr subGroup, IntPtr setting, byte[]? buffer, ref uint size);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr LocalFree(IntPtr mem);
+
+    /// <summary>Nome do plano de energia ativo ("Equilibrado", "Alto desempenho"...).</summary>
+    private static string? PowerPlan()
+    {
+        try
+        {
+            if (PowerGetActiveScheme(IntPtr.Zero, out var scheme) != 0) return null;
+            try
+            {
+                uint size = 0;
+                PowerReadFriendlyName(IntPtr.Zero, scheme, IntPtr.Zero, IntPtr.Zero, null, ref size);
+                if (size == 0) return null;
+                var buffer = new byte[size];
+                if (PowerReadFriendlyName(IntPtr.Zero, scheme, IntPtr.Zero, IntPtr.Zero, buffer, ref size) != 0) return null;
+                string name = System.Text.Encoding.Unicode.GetString(buffer).TrimEnd('\0').Trim();
+                return name.Length > 0 ? name : null;
+            }
+            finally { LocalFree(scheme); }
+        }
+        catch { return null; }
+    }
+
+    /// <summary>Licença do Windows ativada (consulta lenta, por isso fica fora da thread da janela, como o resto).</summary>
+    private static bool? Activated()
+    {
+        try
+        {
+            foreach (var l in Query("SELECT LicenseStatus FROM SoftwareLicensingProduct WHERE ApplicationID = '55c92734-d682-4d71-983e-d6ec3f16059f' AND PartialProductKey IS NOT NULL"))
+                if (I(l["LicenseStatus"]) == 1) return true;
+            return false;
+        }
+        catch { return null; }
+    }
+
+    /// <summary>BitLocker por letra de unidade (precisa de administrador; o CoreBi roda elevado).</summary>
+    public static Dictionary<string, bool> ReadBitLocker()
+    {
+        var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            foreach (var v in Query("SELECT DriveLetter, ProtectionStatus FROM Win32_EncryptableVolume", @"root\CIMV2\Security\MicrosoftVolumeEncryption"))
+                if (v["DriveLetter"]?.ToString() is { Length: > 0 } letter && I(v["ProtectionStatus"]) is 0 or 1)
+                    map[letter] = I(v["ProtectionStatus"]) == 1;
+        }
+        catch { }
+        return map;
+    }
+
     /// <summary>Relê os discos físicos (ex.: depois de conectar um pendrive ou HD externo).</summary>
     public static List<PhysicalDiskInfo> ReadDisks()
     {
@@ -421,12 +550,19 @@ public static class SystemInfoCollector
         catch { }
 
         // Estilo de partição (GPT/MBR), pelo número do disco.
+        // Também setores, quantas partições e se é o disco de onde o Windows inicia.
         var partition = new Dictionary<int, string>();
+        var layout = new Dictionary<int, (int Logical, int Physical, int Parts, bool System)>();
         try
         {
-            foreach (var d in Query("SELECT Number, PartitionStyle FROM MSFT_Disk", @"root\Microsoft\Windows\Storage"))
-                if (d["Number"] != null && I(d["PartitionStyle"]) is 1 or 2)
-                    partition[I(d["Number"])] = I(d["PartitionStyle"]) == 2 ? "GPT" : "MBR";
+            foreach (var d in Query("SELECT Number, PartitionStyle, LogicalSectorSize, PhysicalSectorSize, NumberOfPartitions, IsSystem, IsBoot FROM MSFT_Disk", @"root\Microsoft\Windows\Storage"))
+            {
+                if (d["Number"] == null) continue;
+                int n = I(d["Number"]);
+                if (I(d["PartitionStyle"]) is 1 or 2) partition[n] = I(d["PartitionStyle"]) == 2 ? "GPT" : "MBR";
+                layout[n] = (I(d["LogicalSectorSize"]), I(d["PhysicalSectorSize"]), I(d["NumberOfPartitions"]),
+                    d["IsSystem"] is true || d["IsBoot"] is true);
+            }
         }
         catch { }
 
@@ -436,11 +572,12 @@ public static class SystemInfoCollector
             int idx = I(d["Index"]);
             bool usb = S(d, "PNPDeviceID").StartsWith("USBSTOR", StringComparison.OrdinalIgnoreCase);
             media.TryGetValue(idx, out var m);
+            layout.TryGetValue(idx, out var lay);
             string bus = m.Bus is { Length: > 0 } b ? b : usb ? "USB" : S(d, "InterfaceType");
             bool removable = usb || bus == "USB" || S(d, "MediaType").Contains("Removable", StringComparison.OrdinalIgnoreCase);
             list.Add(new PhysicalDiskInfo(idx, S(d, "Model"), Convert.ToUInt64(d["Size"] ?? 0UL, CultureInfo.InvariantCulture), bus, m.Media ?? "",
                 Fmt.Clean(S(d, "FirmwareRevision")), Fmt.Clean(S(d, "SerialNumber")), removable,
-                m.Health, partition.GetValueOrDefault(idx), m.Rpm));
+                m.Health, partition.GetValueOrDefault(idx), m.Rpm, lay.Logical, lay.Physical, lay.Parts, lay.System));
         }
         return list.OrderBy(d => d.Index).ToList();
     }
