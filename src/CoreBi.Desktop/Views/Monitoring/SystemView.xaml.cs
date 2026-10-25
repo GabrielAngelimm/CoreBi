@@ -2,6 +2,7 @@ using CoreBi.Desktop.Features.Monitoring.Inventory;
 using CoreBi.Desktop.Services;
 using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Inventory;
+using CoreBi.Engine.Monitoring.Memory;
 using CoreBi.Engine.Monitoring.Storage;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,10 +14,11 @@ using System.Windows.Threading;
 namespace CoreBi.Desktop.Views;
 
 /// <summary>
-/// Sistema: a ficha técnica do computador. Um índice com as seis categorias (cada célula já diz qual é o componente)
+/// Sistema: a ficha técnica do computador. Um índice com as seis categorias (cada botão já diz qual é o componente)
 /// e, embaixo, a ficha do escolhido: placa com nome e quatro leituras, uma figura que explica o componente
-/// (núcleos, slots, telas, inicialização segura, linha do tempo) e os dados em grupos. Tudo é lido uma vez ao abrir
-/// o CoreBi; discos e unidades são relidos quando algo é conectado.
+/// (núcleos, slots, telas, inicialização segura, linha do tempo) e os dados em grupos, com os vereditos ao lado do
+/// valor. Tudo é lido uma vez ao abrir o CoreBi; discos e unidades são relidos quando algo é conectado, e o uso da
+/// RAM a cada vez que a página aparece.
 /// </summary>
 public partial class SystemView : UserControl
 {
@@ -99,7 +101,7 @@ public partial class SystemView : UserControl
     {
         if (_inventory == null) return;
         var now = DateTime.Now;
-        var (index, sheets) = SystemSheets.Build(_inventory, _gpus(), _drives, now);
+        var (index, sheets) = SystemSheets.Build(_inventory, _gpus(), _drives, now, MemoryInfo.ReadSnapshot());
         _sheets = sheets;
         SysIndex.ItemsSource = index;
         SysIndex.SelectedItem = index.FirstOrDefault(i => i.Key == _selected) ?? index.FirstOrDefault();
@@ -129,61 +131,15 @@ public partial class SystemView : UserControl
         FigStage.Visibility = figure ? Visibility.Visible : Visibility.Collapsed;
         FigTitle.Text = s.FigureTitle ?? "";
         SheetFigure.Content = s.Figure;
-        SheetNotes.ItemsSource = s.Notes;
 
         SpecGroups.ItemsSource = s.Groups;
         SpecGroups.Visibility = s.Groups.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         DiskList.ItemsSource = s.Disks;
         DiskList.Visibility = s.Disks != null ? Visibility.Visible : Visibility.Collapsed;
-        BuildTable(s.Table);
-        SheetFootnote.Text = s.Footnote ?? "";
-        SheetFootnote.Visibility = s.Footnote != null ? Visibility.Visible : Visibility.Collapsed;
         SheetLink.Content = s.Link?.Text;
         SheetLink.Visibility = s.Link != null ? Visibility.Visible : Visibility.Collapsed;
         SpecScroll.ScrollToTop();
         Layout(SheetCard.ActualWidth);
-    }
-
-    /// <summary>Tabela compacta (módulos de memória): colunas no tamanho do conteúdo, fio entre as linhas.</summary>
-    private void BuildTable(SpecTable? table)
-    {
-        SpecTableGrid.Children.Clear();
-        SpecTableGrid.ColumnDefinitions.Clear();
-        SpecTableGrid.RowDefinitions.Clear();
-        TablePanel.Visibility = table != null ? Visibility.Visible : Visibility.Collapsed;
-        if (table == null) return;
-        TableTitle.Text = table.Title;
-        for (int c = 0; c < table.Header.Count; c++)
-            SpecTableGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = c == table.Header.Count - 1 ? new GridLength(1, GridUnitType.Star) : GridLength.Auto });
-
-        void Cell(string text, int row, int col, bool header)
-        {
-            var t = new TextBlock { Text = text, Margin = new Thickness(0, header ? 8 : 9, 22, header ? 8 : 9), FontSize = header ? 12 : 13 };
-            System.Windows.Documents.Typography.SetNumeralAlignment(t, FontNumeralAlignment.Tabular);
-            if (header) { t.FontWeight = FontWeights.SemiBold; t.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); }
-            else if (col == 0) t.FontWeight = FontWeights.SemiBold;
-            else if (col == table.Header.Count - 1) t.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-            Grid.SetRow(t, row); Grid.SetColumn(t, col);
-            SpecTableGrid.Children.Add(t);
-        }
-
-        void Rule(int row)
-        {
-            var line = new Border { Height = 1, VerticalAlignment = VerticalAlignment.Bottom, SnapsToDevicePixels = true };
-            line.SetResourceReference(Border.BackgroundProperty, "Line");
-            Grid.SetRow(line, row); Grid.SetColumnSpan(line, table.Header.Count);
-            SpecTableGrid.Children.Add(line);
-        }
-
-        SpecTableGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        for (int c = 0; c < table.Header.Count; c++) Cell(table.Header[c], 0, c, true);
-        Rule(0);
-        for (int r = 0; r < table.Rows.Count; r++)
-        {
-            SpecTableGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            for (int c = 0; c < table.Rows[r].Count && c < table.Header.Count; c++) Cell(table.Rows[r][c], r + 1, c, false);
-            Rule(r + 1);
-        }
     }
 
     // ---------------- Layout que acompanha a largura ----------------
