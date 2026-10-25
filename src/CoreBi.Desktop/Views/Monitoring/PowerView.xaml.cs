@@ -352,7 +352,8 @@ public partial class PowerView : UserControl
         int crashCount = h.Unexpected.Count;
         DaysCrashes.Text = crashCount.ToString();
         DaysCrashes.SetResourceReference(TextBlock.ForegroundProperty, crashCount >= 3 ? "Danger" : "Warn");
-        CrashBox.Visibility = CrashCut.Visibility = crashCount > 0 ? Visibility.Visible : Visibility.Collapsed;
+        CrashBox.Visibility = crashCount > 0 ? Visibility.Visible : Visibility.Collapsed;
+        DaysCells.Columns = crashCount > 0 ? 6 : 5;
         // Só avisa quando o registro não cobre a semana inteira (o Windows descarta eventos antigos quando o log enche)
         bool shortLog = h.LogStart is DateTime start && start > h.Since;
         DaysCaption.Text = shortLog ? $"O registro do Windows só guarda desde {h.LogStart:dd/MM HH:mm}" : "";

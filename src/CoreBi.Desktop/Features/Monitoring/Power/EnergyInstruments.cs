@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -269,44 +268,6 @@ public sealed class SplitBar : EnergyInstrument
         double a = double.IsNaN(First) ? 0 : Math.Max(0, First), b = double.IsNaN(Second) ? 0 : Math.Max(0, Second);
         double total = a + b;
         Segments(dc, new Rect(0, 0, w, h), f => total <= 0 ? TrackBrush : f <= a / total ? AccentBrush : CopperBrush);
-    }
-}
-
-/// <summary>
-/// Espalha os filhos pela largura com o mesmo vão entre todos (o primeiro encostado na esquerda e o último na direita); serve para
-/// resumos em que cada número é uma coluna e fios de 1 px entre eles ficam no meio de cada vão. Filhos recolhidos não contam.
-/// </summary>
-public sealed class SpaceBetweenPanel : Panel
-{
-    private const double MinGap = 18;
-
-    protected override Size MeasureOverride(Size available)
-    {
-        double w = 0, h = 0;
-        int n = 0;
-        foreach (UIElement child in InternalChildren)
-        {
-            if (child.Visibility == Visibility.Collapsed) continue;
-            child.Measure(new Size(double.PositiveInfinity, available.Height));
-            w += child.DesiredSize.Width;
-            h = Math.Max(h, child.DesiredSize.Height);
-            n++;
-        }
-        return new Size(w + Math.Max(0, n - 1) * MinGap, h);
-    }
-
-    protected override Size ArrangeOverride(Size final)
-    {
-        var shown = InternalChildren.Cast<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
-        double used = shown.Sum(c => c.DesiredSize.Width);
-        double gap = shown.Count > 1 ? Math.Max(MinGap, (final.Width - used) / (shown.Count - 1)) : 0;
-        double x = 0;
-        foreach (var child in shown)
-        {
-            child.Arrange(new Rect(x, 0, child.DesiredSize.Width, final.Height));
-            x += child.DesiredSize.Width + gap;
-        }
-        return final;
     }
 }
 
