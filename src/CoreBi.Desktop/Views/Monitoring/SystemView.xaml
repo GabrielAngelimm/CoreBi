@@ -359,7 +359,7 @@
 
                     <!-- Os dados na largura toda, em grupos que se distribuem em colunas -->
                     <ScrollViewer x:Name="SpecScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" Focusable="False">
-                        <StackPanel Margin="32,20,32,28">
+                        <StackPanel Margin="32,18,32,14">
                             <!-- Armazenamento: os discos em cima, com as unidades; a ficha de cada um vem nos grupos abaixo -->
                             <ItemsControl x:Name="DiskList" ItemTemplate="{StaticResource DiskTemplate}" Margin="0,-8,0,20" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Focusable="False" />
                             <ItemsControl x:Name="SpecGroups" ItemTemplate="{StaticResource SpecGroupTemplate}" Focusable="False">
