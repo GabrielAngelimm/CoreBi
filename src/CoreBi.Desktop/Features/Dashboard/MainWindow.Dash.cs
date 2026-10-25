@@ -6,6 +6,7 @@ using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Memory;
 using CoreBi.Engine.Monitoring.Sensors;
 using CoreBi.Engine.Monitoring.Storage;
+using CoreBi.Engine.Persistence;
 
 using System.Windows;
 using System.Windows.Controls;
@@ -37,6 +38,8 @@ public partial class MainWindow
     internal const int DashMax = 900; // 15 min a 1 amostra/s
     /// <summary>Altura de uma linha da atividade recente: a lista mostra quantas couberem no cartão.</summary>
     public const double DashEventHeight = 56;
+    /// <summary>Máximo de linhas no cartão (o resto vai para "Ver histórico") e de linhas no histórico.</summary>
+    internal const int DashEventsMax = 5, DashEventsKept = 50;
     internal readonly List<DashSample> _dash = new();
     internal readonly List<DashEvent> _events = new();
     internal List<DashCheck> _health = new();
@@ -74,30 +77,63 @@ public partial class MainWindow
     {
         foreach (var r in _settings.BenchRuns)
         {
-            if (r.Multi is double m) yield return new DashEvent("", "Benchmark", "Render multi-core", $"{m:N0} pts", r.Date);
-            else if (r.Single is double s) yield return new DashEvent("", "Benchmark", "Render single-core", $"{s:N0} pts", r.Date);
+            string mode = r.Multi != null ? "Multi-core" : "Single-core";
+            string cpu = string.IsNullOrWhiteSpace(r.Cpu) ? "" : $" · {r.Cpu}";
+            if (r.Multi is double m) yield return new DashEvent("\ue8b9", "Render de CPU", mode + cpu, $"{m:N0} pts", r.Date);
+            else if (r.Single is double s) yield return new DashEvent("\ue8b9", "Render de CPU", mode + cpu, $"{s:N0} pts", r.Date);
         }
         foreach (var r in _settings.BenchRecords)
+            yield return BenchEvent(r);
+    }
+
+    /// <summary>Título, detalhe e valor legíveis a partir do resumo salvo ("valor · detalhe · detalhe").</summary>
+    private static DashEvent BenchEvent(BenchRecord r)
+    {
+        var parts = r.Summary.Split('·', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        string Part(int i) => i < parts.Length ? parts[i] : "";
+        string Join(IEnumerable<string> p) => string.Join(" · ", p.Where(s => s.Length > 0));
+        if (r.Test.StartsWith("rt:"))
         {
-            var (icon, title) = r.Test switch
-            {
-                "gpu" => ("", "Cena de jogo (GPU)"),
-                "sim" => ("", "Simulação de jogo"),
-                "mem" => ("", "Memória e carregamento"),
-                "disk" => ("", "Benchmark de disco"),
-                _ => ("", r.Test)
-            };
-            string first = r.Summary.Split('·')[0].Trim();
-            string rest = r.Summary.Contains('·') ? r.Summary[(r.Summary.IndexOf('·') + 1)..].Trim() : "";
-            yield return new DashEvent(icon, title, rest, first, r.Date);
+            // "1.499 pts · 150 FPS · Alta 1080p [· instável]" → Alta 1080p · 150 FPS [· instável]
+            return new DashEvent("\ue8b9", "Ray tracing", Join(new[] { Part(2), Part(1), Part(3) }), Part(0), r.Date);
+        }
+        switch (r.Test)
+        {
+            case "gpu": // "4.286 pts · 429 FPS · 1080p"
+                return new DashEvent("\ue7f4", "Cena de jogo (GPU)", Join(parts.Skip(1)), Part(0), r.Date);
+            case "sim": // "120 FPS · 1% low 95"
+                return new DashEvent("\ue7fc", "Simulação de jogo (CPU)", Part(1), Part(0), r.Date);
+            case "mem": // "84 ns · 36 GB/s · mapa 0,19 s"
+                return new DashEvent("\ueda2", "Benchmark de memória", Join(new[] { Part(1), Part(2) }), Part(0), r.Date);
+            case "disk": // "C: · 2.929/3.320 MiB/s · 4K 14,6k IOPS"
+                {
+                    string speeds = Part(1);
+                    int slash = speeds.IndexOf('/');
+                    int space = speeds.IndexOf(' ');
+                    if (slash > 0 && space > slash)
+                        return new DashEvent("\ueda2", $"Benchmark de disco ({Part(0).TrimEnd(':')}:)",
+                                             Join(new[] { $"Escrita {speeds[(slash + 1)..space]} {speeds[(space + 1)..]}", Part(2) }),
+                                             $"{speeds[..slash]} {speeds[(space + 1)..]}", r.Date);
+                    return new DashEvent("\ueda2", "Benchmark de disco", Join(parts.Skip(1)), Part(0), r.Date);
+                }
+            default:
+                return new DashEvent("\ue8b9", r.Test, Join(parts.Skip(1)), Part(0), r.Date);
         }
     }
 
     internal void ShowEvents()
     {
-        int slots = DashEvents.ActualHeight > 0 ? Math.Max(1, (int)(DashEvents.ActualHeight / DashEventHeight)) : 4;
-        var list = _events.Concat(SavedEvents()).OrderByDescending(e => e.At).Take(slots).ToList();
+        // o espaço vem do host (que não pede altura), então a lista nunca estica a página; o resto fica em "Ver histórico"
+        double room = ((FrameworkElement)DashEvents.Parent).ActualHeight;
+        int slots = room > 0 ? Math.Clamp((int)(room / DashEventHeight), 1, DashEventsMax) : 3;
+        var all = _events.Concat(SavedEvents()).OrderByDescending(e => e.At).ToList();
+        var list = all.Take(slots).ToList();
+        if (DashEvents.ItemsSource is IList<DashEvent> shown && shown.SequenceEqual(list)) return;
         DashEvents.ItemsSource = list;
+        DashEventsAll.ItemsSource = all.Take(DashEventsKept).ToList();
+        bool more = all.Count > list.Count;
+        DashEventsMore.Visibility = more ? Visibility.Visible : Visibility.Collapsed;
+        if (!more) PageDash.ShowHistory(false);
         DashEventsEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
