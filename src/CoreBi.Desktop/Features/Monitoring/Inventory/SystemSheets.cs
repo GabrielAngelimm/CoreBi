@@ -9,8 +9,11 @@ namespace CoreBi.Desktop.Features.Monitoring.Inventory;
 
 // ---------------- Modelos da ficha ----------------
 
-/// <summary>Célula do índice: categoria, o nome do componente e uma linha de especificação.</summary>
-public sealed record IndexItem(string Key, string Glyph, string Category, string Name, string Spec, bool Warn, string? WarnTip);
+/// <summary>Botão do índice: ícone e categoria. Nome e especificação do componente aparecem na dica e na ficha.</summary>
+public sealed record IndexItem(string Key, string Glyph, string Category, string Name, string Spec)
+{
+    public string Tip => Spec.Length > 0 ? $"{Name} · {Spec}" : Name;
+}
 
 public sealed record Readout(string Label, string Value, string Unit = "", string? Tip = null);
 
@@ -34,30 +37,12 @@ public sealed class Sheet
     public string Title { get; init; } = "";
     public string Subtitle { get; init; } = "";
     public List<Readout> Readouts { get; init; } = new();
-    public string? FigureTitle { get; init; }
-    public object? Figure { get; init; }
     public List<SpecGroup> Groups { get; init; } = new();
     public LinkItem? Link { get; init; }
     public List<DiskView>? Disks { get; init; }
 }
 
-// Figuras (cada uma tem um DataTemplate em SystemView.xaml)
-
-public sealed record CoreTile(string Label, List<bool> Threads, bool Efficient, string Tip);
-public sealed record CpuFigure(List<CoreTile> Cores, int Columns, double TileHeight, string L3, string ThreadLabel, string Legend, bool Hybrid);
-
-public sealed record SlotView(string Name, bool Filled, string Capacity, string Maker, string Speed, string Tip);
-public sealed record ChannelView(string Label, List<SlotView> Slots);
-public sealed record RamFigure(List<ChannelView> Channels);
-
-public sealed record ScreenView(string Number, string Monitor, string Resolution, string Detail, double Width, double Height, bool Primary, bool Warn);
-public sealed record ScreenFigure(List<ScreenView> Screens, string Empty);
-
-public sealed record ChainStep(bool? Ok, string Title, string Text, string Value, bool Last = false);
-public sealed record ChainFigure(List<ChainStep> Steps);
-
-public sealed record TimelineEvent(string Label, string Value, string Note, bool Now);
-public sealed record TimelineFigure(List<TimelineEvent> Events);
+// Armazenamento: um disco por linha (DataTemplate em SystemView.xaml)
 
 public sealed record VolumeView(string Letter, string Name, string Line, double Weight, double Used, string Tip);
 public sealed record DiskView(string Title, string Meta, List<string> Chips, string Size, string Unit, string Free, List<VolumeView> Volumes);
@@ -98,11 +83,8 @@ public static class SystemSheets
         void Add(string key, string glyph, string category, string? error)
         {
             var s = sheets[key];
-            // O ponto âmbar do índice aponta a primeira linha da ficha que vale ajustar.
-            var warn = s.Groups.SelectMany(g => g.Rows).FirstOrDefault(r => r.Tone == Tone.Warn);
             string spec = error != null ? "Não foi possível ler" : IndexSpec(key, s, inv);
-            index.Add(new IndexItem(key, glyph, category, error != null ? "—" : IndexName(key, s), spec, warn != null,
-                warn != null ? $"{warn.Key}: {warn.Value}{(warn.Note != null ? $" ({warn.Note})" : "")}" : null));
+            index.Add(new IndexItem(key, glyph, category, error != null ? category : IndexName(key, s), spec));
         }
         Add(Cpu, "", "Processador", inv.Errors.GetValueOrDefault(SystemInventory.CpuTitle));
         Add(Gpu, "", "Placa de vídeo", inv.Errors.GetValueOrDefault(SystemInventory.GpuTitle));
@@ -148,7 +130,6 @@ public static class SystemSheets
         int cores = t.Cores.Count > 0 ? t.Cores.Count : c.Cores, threads = t.Threads > 0 ? t.Threads : c.Threads;
         if (inv.Cpus.Count > 1) { cores = inv.Cpus.Sum(x => x.Cores); threads = inv.Cpus.Sum(x => x.Threads); }
         var l3 = t.Caches.Where(x => x.Level == 3).ToList();
-        string l3Text = l3.Count > 0 ? Fmt.CacheGroup(l3) : c.L3Kb > 0 ? Fmt.Cache(c.L3Kb * 1024) : "—";
         var (l3Value, l3Unit) = l3.Count > 0 ? Split(Fmt.Cache(l3.Sum(x => x.Size * x.Instances))) : c.L3Kb > 0 ? Split(Fmt.Cache(c.L3Kb * 1024)) : ("—", "");
         bool smt = threads > cores;
         string amd = c.Vendor == "AMD" ? "SVM" : "VT-x";
@@ -192,27 +173,6 @@ public static class SystemSheets
             groups.Add(new("Instruções", new(), c.Instructions.Select(i => new SpecToken(i.Name, i.Supported)).ToList(),
                 "Conjuntos de instruções que programas e jogos podem exigir. Os apagados este processador não tem."));
 
-        // Figura: um ladrilho por núcleo com as threads dele; L3 compartilhado embaixo.
-        CpuFigure? fig = null;
-        if (t.Cores.Count is > 0 and <= 64)
-        {
-            int pClass = t.Cores.Max(x => x.EfficiencyClass);
-            var tiles = t.Cores.Select((k, i) =>
-            {
-                bool eff = t.Hybrid && k.EfficiencyClass != pClass;
-                string kind = t.Hybrid ? (eff ? "E" : "P") : "";
-                return new CoreTile($"{kind}{i}", Enumerable.Range(0, Math.Min(k.Threads, 4)).Select(_ => true).ToList(), eff,
-                    $"Núcleo {i}{(t.Hybrid ? eff ? " · eficiência" : " · desempenho" : "")} · {k.Threads} {(k.Threads == 1 ? "thread" : "threads")}");
-            }).ToList();
-            var l1d = t.Cache(1, "dados"); var l1i = t.Cache(1, "instruções"); var l2 = t.Caches.FirstOrDefault(x => x.Level == 2);
-            string legend = l1d != null && l2 != null
-                ? $"cada núcleo: L1 {Fmt.Cache(l1d.Size)} + {Fmt.Cache(l1i?.Size ?? 0)} · L2 {Fmt.Cache(l2.Size)}" + (l2.Instances < t.Cores.Count ? " (por grupo)" : "")
-                : "";
-            int cols = tiles.Count switch { <= 4 => tiles.Count, <= 8 => 4, <= 12 => 6, _ => 8 };
-            int rows = (tiles.Count + cols - 1) / cols;
-            fig = new CpuFigure(tiles, cols, rows <= 2 ? 92 : rows == 3 ? 70 : 54, l3Text, t.Hybrid ? "thread de núcleo de desempenho" : "thread", legend, t.Hybrid);
-        }
-
         return new Sheet
         {
             Key = Cpu,
@@ -226,8 +186,6 @@ public static class SystemSheets
                 new("Clock base", c.BaseMhz > 0 ? N(c.BaseMhz / 1000.0, "0.0#") : "—", c.BaseMhz > 0 ? "GHz" : ""),
                 new("Cache L3", l3Value, l3Unit),
             },
-            FigureTitle = fig != null ? "Núcleos e cache" : null,
-            Figure = fig,
             Groups = groups,
             Link = new("Clocks, temperatura e consumo ao vivo em Sensores", "PageSensors"),
         };
@@ -276,26 +234,14 @@ public static class SystemSheets
                 new("Cores", $"{d.Bits} bits", d.Bits >= 32 ? "8 bits por canal" : null),
             };
             if (d.Inches is double inch) rows.Insert(1, new("Tamanho", $"{inch:0}\""));
-            if (adapters.Count > 1) rows.Add(new("Placa de vídeo", d.Adapter));
+            if (inv.Displays.Count > 1) rows.Add(new("Posição", d.Primary ? "Tela principal" : "Estendida", $"{d.X}, {d.Y}"));
+            if (adapters.Count > 1) rows.Add(new("Ligada em", d.Adapter));
             groups.Add(new(inv.Displays.Count > 1 ? $"Tela {d.Number}" + (d.Primary ? " (principal)" : "") : "Tela", rows,
                 Help: d == inv.Displays[0] ? "Atualização é quantas imagens por segundo a tela mostra. Acima de 60 Hz o movimento fica mais fluido." : null));
         }
         if (adapters.Count > 1)
             groups.Add(new("Outras placas de vídeo", adapters.Skip(1).Select(a =>
                 new SpecRow(a.Name, string.Join(" · ", new[] { a.Vram is ulong v && v > 0 ? Fmt.Vram(v) : null, $"driver {a.DriverVersion}" }.Where(x => x != null)))).ToList()));
-
-        // Figura: as telas na posição em que o Windows as organiza, em escala.
-        var screens = new List<ScreenView>();
-        if (inv.Displays.Count > 0)
-        {
-            int minX = inv.Displays.Min(d => d.X), maxX = inv.Displays.Max(d => d.X + d.Width);
-            int minY = inv.Displays.Min(d => d.Y), maxY = inv.Displays.Max(d => d.Y + d.Height);
-            double scale = Math.Min(340.0 / Math.Max(1, maxX - minX), 240.0 / Math.Max(1, maxY - minY));
-            scale = Math.Min(scale, 340.0 / 1920);
-            foreach (var d in inv.Displays.OrderBy(d => d.X))
-                screens.Add(new ScreenView(d.Number.ToString(Br), d.Inches is double inch ? $"{d.Monitor} · {inch:0}\"" : d.Monitor,
-                    $"{d.Width} × {d.Height}", $"{d.Hz} Hz · {d.Bits} bits", Math.Max(90, d.Width * scale), Math.Max(56, d.Height * scale), d.Primary, d.BelowMax));
-        }
 
         return new Sheet
         {
@@ -310,8 +256,6 @@ public static class SystemSheets
                 new("Resolução", primary != null ? $"{primary.Width} × {primary.Height}" : "—", "", inv.Displays.Count > 1 ? "Da tela principal" : null),
                 new("Atualização", primary != null ? primary.Hz.ToString(Br) : "—", primary != null ? "Hz" : ""),
             },
-            FigureTitle = inv.Displays.Count > 1 ? "Telas conectadas" : "Tela",
-            Figure = new ScreenFigure(screens, "Nenhuma tela ligada à área de trabalho"),
             Groups = groups,
             Link = new("Especificações completas, clocks e leituras ao vivo em Placa de vídeo", "PageGpu"),
         };
@@ -374,10 +318,18 @@ public static class SystemSheets
         }
         speed.Add(new("Timings", "Não informados pelo Windows", null, null, Tone.None, "CL, tRCD e tRP aparecem na BIOS ou no CPU-Z (aba SPD)."));
 
+        // Slots da placa, ocupados e vazios, com o canal de cada um.
+        var slotRows = r.SlotMap().Select((sl, i) => sl.Module is { } m
+            ? new SpecRow(sl.Name.Length > 0 ? sl.Name : $"Slot {i + 1}", $"{Fmt.Bytes(m.Capacity)} · {(m.Maker != "—" ? m.Maker : m.Type)}" + (m.Configured > 0 ? $" · {m.Configured} MT/s" : ""),
+                sl.Channel != null ? $"canal {sl.Channel}" : null)
+            : new SpecRow(sl.Name.Length > 0 ? sl.Name : $"Slot {i + 1}", "Vazio", sl.Channel != null ? $"canal {sl.Channel}" : null)).ToList();
+
         var groups = new List<SpecGroup>
         {
             new("Velocidade e canais", speed),
             new("Capacidade", capacity),
+            new("Slots", slotRows, Help: r.Channels == 2 && r.Slots == 4 && r.Modules.Count == 2
+                ? "Com dois módulos, o recomendado costuma ser A2 e B2. O manual da placa confirma." : null),
         };
         if (memory is { } m2)
         {
@@ -413,15 +365,6 @@ public static class SystemSheets
             groups.Add(new($"Módulo {name}", rows));
         }
 
-        // Figura: os slots por canal, com os vazios desenhados tracejados.
-        var map = r.SlotMap();
-        var channels = map.GroupBy(s => s.Channel).Select(g => new ChannelView(
-            g.Key != null ? $"Canal {g.Key}" : map.Any(s => s.Channel != null) ? "Outros" : "Slots",
-            g.Select(s => s.Module is { } m
-                ? new SlotView(s.Name, true, Fmt.Bytes(m.Capacity), m.Maker != "—" ? m.Maker : m.Type,
-                    m.Configured > 0 ? $"{m.Configured} MT/s" : "", $"{m.Bank} / {m.Locator} · {m.Part}")
-                : new SlotView(s.Name, false, "", "", "", "Slot vazio")).ToList())).ToList();
-
         var (rv, ru) = r.Configured > 0 ? (r.Configured.ToString(Br), "MT/s") : ("—", "");
         return new Sheet
         {
@@ -436,8 +379,6 @@ public static class SystemSheets
                 new("Canais", r.Channels?.ToString(Br) ?? "—", "", r.Channels == null ? "Os nomes dos slots não dizem em que canal cada módulo está." : "Estimado pelos nomes dos slots."),
                 new("Tensão", volts.Count == 1 ? N(volts[0]!.Value, "0.00#") : "—", volts.Count == 1 ? "V" : ""),
             },
-            FigureTitle = "Slots",
-            Figure = new RamFigure(channels),
             Groups = groups,
         };
     }
@@ -450,7 +391,6 @@ public static class SystemSheets
         var f = inv.Firmware;
         var board = new List<SpecRow> { new("Fabricante", b.Maker), new("Modelo", b.Model), new("Revisão", b.Revision), new("Nº de série", b.Serial) };
         var groups = new List<SpecGroup> { new("Placa-mãe", board) };
-        ChainFigure? chain = null;
         if (f != null)
         {
             var bios = new List<SpecRow> { new("Fabricante", f.Vendor), new("Versão", f.Version), new("Data", Fmt.Date(f.Date), Fmt.Ago(f.Date, now)) };
@@ -479,13 +419,6 @@ public static class SystemSheets
             };
             groups.Add(new("Segurança", security, Help: "O que o Windows 11 exige do firmware para iniciar com segurança."));
 
-            chain = new ChainFigure(new()
-            {
-                new(f.Uefi, "Firmware UEFI", f.Uefi == false ? "A placa inicia no modo legado (CSM)." : "A placa inicia em modo UEFI, não no modo legado (CSM).",
-                    f.Uefi switch { true => "UEFI", false => "Legado", _ => "—" }),
-                new(f.SecureBoot, "Secure Boot", "Só carrega sistemas e drivers assinados na inicialização.", Fmt.OnOff(f.SecureBoot)),
-                new(tpmOk, "TPM", "Chip de segurança usado pelo BitLocker e pelo Windows Hello.", f.Tpm == null ? "—" : tpmValue, Last: true),
-            });
         }
         if (b.SystemMaker != null || b.SystemModel != null)
             groups.Add(new("Computador", new() { new("Fabricante", b.SystemMaker ?? "—"), new("Modelo", b.SystemModel ?? "—") }));
@@ -504,8 +437,6 @@ public static class SystemSheets
                 new("Firmware", f?.Uefi switch { true => "UEFI", false => "Legado", _ => "—" }),
                 new("TPM", f?.Tpm is { } tpm && tpm != "Ausente" ? tpm : "—"),
             },
-            FigureTitle = chain != null ? "Inicialização segura" : null,
-            Figure = chain,
             Groups = groups,
         };
     }
@@ -569,12 +500,6 @@ public static class SystemSheets
         var session = new List<SpecRow> { new("Instalado em", Fmt.Date(o.Installed), Fmt.Ago(o.Installed, now)), new("Último boot", Fmt.Stamp(o.LastBoot)), new("Ligado há", up) };
         if (o.LastUpdate != null) session.Insert(1, new("Última atualização", Fmt.Date(o.LastUpdate), o.LastUpdateId, "A atualização mais recente instalada pelo Windows Update."));
 
-        var events = new List<TimelineEvent>();
-        if (o.Installed != null) events.Add(new("Instalado", Fmt.Date(o.Installed), Fmt.Ago(o.Installed, now), false));
-        if (o.LastUpdate != null) events.Add(new("Última atualização", Fmt.Date(o.LastUpdate), o.LastUpdateId ?? "", false));
-        if (o.LastBoot != null) events.Add(new("Ligado", Fmt.Stamp(o.LastBoot), "", false));
-        events.Add(new("Agora", now.ToString("HH:mm", CultureInfo.InvariantCulture), o.LastBoot != null ? $"ligado há {up}" : "", true));
-
         string arch = o.Architecture.StartsWith("64") ? "64" : o.Architecture.StartsWith("32") ? "32" : "—";
         return new Sheet
         {
@@ -589,8 +514,6 @@ public static class SystemSheets
                 new("Arquitetura", arch, arch != "—" ? "bits" : ""),
                 new("Ligado há", upValue, upUnit),
             },
-            FigureTitle = "Linha do tempo",
-            Figure = new TimelineFigure(events),
             Groups = new() { new("Windows", windows), new("Sessão", session), new("Computador", computer) },
         };
     }

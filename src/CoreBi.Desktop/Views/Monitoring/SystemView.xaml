@@ -18,38 +18,29 @@
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
         </Style>
 
-        <!-- Índice: seis botões numa faixa um tom abaixo do painel. Cada um tem ícone em ladrilho, categoria, componente e
-             uma linha de especificação; o mouse acende o contorno e o escolhido fica claro, com contorno verde-água. -->
+        <!-- Índice: seis botões numa faixa um tom abaixo do painel, só com ícone e categoria (o nome da peça está na ficha
+             logo abaixo). O mouse acende o contorno; o escolhido fica claro, com contorno e ícone verde-água. -->
         <Style x:Key="IndexCell" TargetType="ListBoxItem">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="ToolTip" Value="{Binding Tip}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="face" Margin="4" CornerRadius="9" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="Transparent" SnapsToDevicePixels="True" Padding="14,12,14,12">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Border x:Name="tile" Width="38" Height="38" CornerRadius="8" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" VerticalAlignment="Center">
-                                    <TextBlock x:Name="glyph" Text="{Binding Glyph}" Style="{StaticResource IconGlyph}" FontSize="17" Foreground="{DynamicResource Muted}" />
+                        <Border x:Name="face" Margin="4" CornerRadius="9" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="Transparent" SnapsToDevicePixels="True" Padding="12,10,14,10">
+                            <StackPanel Orientation="Horizontal">
+                                <Border x:Name="tile" Width="34" Height="34" CornerRadius="8" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
+                                    <TextBlock x:Name="glyph" Text="{Binding Glyph}" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Muted}" />
                                 </Border>
-                                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock x:Name="cat" Text="{Binding Category}" FontSize="12" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" ToolTip="{Binding Name}" />
-                                    <TextBlock Text="{Binding Spec}" FontSize="12" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,2,0,0" />
-                                </StackPanel>
-                                <Ellipse Grid.Column="2" Width="7" Height="7" Fill="{DynamicResource Warn}" VerticalAlignment="Top" Margin="8,4,0,0" ToolTip="{Binding WarnTip}"
-                                         Visibility="{Binding Warn, Converter={StaticResource BoolVis}}" />
-                            </Grid>
+                                <TextBlock x:Name="cat" Text="{Binding Category}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,0,0,1" />
+                            </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="face" Property="Background" Value="{DynamicResource Hover}" />
                                 <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
                                 <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Fg}" />
+                                <Setter TargetName="cat" Property="Foreground" Value="{DynamicResource Fg}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
@@ -127,7 +118,7 @@
 
         <DataTemplate x:Key="SpecGroupTemplate">
             <StackPanel>
-                <TextBlock Text="{Binding Title}" Style="{StaticResource SheetLabel}" Margin="0,8,0,8" />
+                <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" Margin="0,8,0,8" />
                 <!-- Uma frase que explica o assunto do grupo, para quem não é do ramo -->
                 <TextBlock Text="{Binding Help}" FontSize="12" LineHeight="17" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,-3,0,10"
                            Visibility="{Binding Help, Converter={StaticResource NotEmptyVis}}" />
@@ -158,245 +149,6 @@
                     <Setter TargetName="tokens" Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
             </DataTemplate.Triggers>
-        </DataTemplate>
-
-        <!-- ===== Figuras (uma por categoria) ===== -->
-
-        <!-- Processador: um ladrilho por núcleo com as threads dele em gomos; L3 compartilhado embaixo -->
-        <DataTemplate DataType="{x:Type inv:CpuFigure}">
-            <StackPanel Width="416">
-                <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="10" Padding="10">
-                    <StackPanel>
-                        <ItemsControl ItemsSource="{Binding Cores}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate><UniformGrid Columns="{Binding Columns}" /></ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Margin="4" Height="{Binding DataContext.TileHeight, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="6" Padding="10,9,10,10" ToolTip="{Binding Tip}">
-                                        <DockPanel>
-                                            <TextBlock DockPanel.Dock="Top" Text="{Binding Label}" Style="{StaticResource ReadoutText}" FontSize="14" Foreground="{DynamicResource Faint}" />
-                                            <ItemsControl x:Name="pips" ItemsSource="{Binding Threads}" VerticalAlignment="Bottom" Height="8" OpacityMask="{StaticResource SegmentMask}">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Border x:Name="pip" Background="{DynamicResource Accent}" Margin="0,0,3,0" />
-                                                        <DataTemplate.Triggers>
-                                                            <DataTrigger Binding="{Binding DataContext.Efficient, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True">
-                                                                <Setter TargetName="pip" Property="Background" Value="{DynamicResource Steel}" />
-                                                            </DataTrigger>
-                                                        </DataTemplate.Triggers>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </DockPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <Border Margin="4" Height="52" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="6" Padding="12,0">
-                            <Grid VerticalAlignment="Center">
-                                <TextBlock Text="L3 compartilhado" FontSize="12" Foreground="{DynamicResource Muted}" />
-                                <TextBlock Text="{Binding L3}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-                </Border>
-                <WrapPanel Margin="0,12,0,0">
-                    <Border Width="12" Height="6" CornerRadius="2" Background="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,6,0" />
-                    <TextBlock Text="{Binding ThreadLabel}" FontSize="11.5" Foreground="{DynamicResource Muted}" Margin="0,0,16,0" />
-                    <Border Width="12" Height="6" CornerRadius="2" Background="{DynamicResource Steel}" VerticalAlignment="Center" Margin="0,0,6,0" Visibility="{Binding Hybrid, Converter={StaticResource BoolVis}}" />
-                    <TextBlock Text="núcleo de eficiência" FontSize="11.5" Foreground="{DynamicResource Muted}" Margin="0,0,16,0" Visibility="{Binding Hybrid, Converter={StaticResource BoolVis}}" />
-                    <TextBlock Text="{Binding Legend}" FontSize="11.5" Foreground="{DynamicResource Muted}" Typography.NumeralAlignment="Tabular" />
-                </WrapPanel>
-            </StackPanel>
-        </DataTemplate>
-
-        <!-- Memória: os slots por canal; ocupado com os contatos em gomos, vazio tracejado -->
-        <DataTemplate DataType="{x:Type inv:RamFigure}">
-            <ItemsControl ItemsSource="{Binding Channels}" Width="416">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Margin="0,0,0,14">
-                            <TextBlock Text="{Binding Label}" FontSize="11.5" Foreground="{DynamicResource Faint}" Margin="0,0,0,0" />
-                            <ItemsControl ItemsSource="{Binding Slots}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="0,6,0,0" ToolTip="{Binding Tip}">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="30" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock x:Name="name" Text="{Binding Name}" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
-                                            <Grid x:Name="stick" Grid.Column="1" Height="44">
-                                                <Border Background="{DynamicResource Raised}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="5" />
-                                                <Grid Margin="12,8,12,0" VerticalAlignment="Top">
-                                                    <TextBlock FontSize="12">
-                                                        <Run Text="{Binding Capacity, Mode=OneWay}" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding Maker, Mode=OneWay}" Foreground="{DynamicResource Muted}" />
-                                                    </TextBlock>
-                                                    <TextBlock Text="{Binding Speed}" FontSize="12" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
-                                                </Grid>
-                                                <!-- Contatos dourados do módulo, com o chanfro fora do centro -->
-                                                <Grid Height="5" Margin="10,0,10,4" VerticalAlignment="Bottom" OpacityMask="{StaticResource SegmentMask}" Opacity="0.85">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="44*" />
-                                                        <ColumnDefinition Width="9" />
-                                                        <ColumnDefinition Width="56*" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <Border Background="{DynamicResource Accent}" />
-                                                    <Border Grid.Column="2" Background="{DynamicResource Accent}" />
-                                                </Grid>
-                                            </Grid>
-                                            <Grid x:Name="empty" Grid.Column="1" Height="44" Visibility="Collapsed">
-                                                <Rectangle Stroke="{DynamicResource LineStrong}" StrokeThickness="1" StrokeDashArray="4 3" RadiusX="5" RadiusY="5" SnapsToDevicePixels="True" />
-                                                <TextBlock Text="vazio" FontSize="12" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Grid>
-                                        </Grid>
-                                        <DataTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding Filled}" Value="False">
-                                                <Setter TargetName="stick" Property="Visibility" Value="Collapsed" />
-                                                <Setter TargetName="empty" Property="Visibility" Value="Visible" />
-                                                <Setter TargetName="name" Property="Foreground" Value="{DynamicResource Faint}" />
-                                            </DataTrigger>
-                                        </DataTemplate.Triggers>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </DataTemplate>
-
-        <!-- Telas: na posição e proporção em que o Windows as organiza; contorno cobre (canal da placa de vídeo) na principal -->
-        <DataTemplate DataType="{x:Type inv:ScreenFigure}">
-            <Grid Width="416">
-                <TextBlock x:Name="none" Text="{Binding Empty}" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" Visibility="Collapsed" />
-                <ItemsControl ItemsSource="{Binding Screens}" HorizontalAlignment="Center">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Margin="7,0" VerticalAlignment="Bottom">
-                                <Grid Width="{Binding Width}" Height="{Binding Height}">
-                                    <Border x:Name="frame" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1.5" CornerRadius="6" />
-                                    <TextBlock Text="{Binding Number}" Style="{StaticResource ReadoutText}" FontSize="13" Foreground="{DynamicResource Faint}" Margin="10,7,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                                    <StackPanel VerticalAlignment="Center" Margin="10,0">
-                                        <TextBlock Text="{Binding Monitor}" FontSize="12" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding Resolution}" Style="{StaticResource ReadoutText}" FontSize="24" FontWeight="Light" HorizontalAlignment="Center" Margin="0,3,0,0" />
-                                        <TextBlock x:Name="detail" Text="{Binding Detail}" FontSize="12.5" Foreground="{DynamicResource Fg}" HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular" Margin="0,3,0,0" />
-                                    </StackPanel>
-                                </Grid>
-                                <Border Width="46" Height="14" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1.5,0,1.5,1.5" CornerRadius="0,0,4,4" HorizontalAlignment="Center" />
-                            </StackPanel>
-                            <DataTemplate.Triggers>
-                                <DataTrigger Binding="{Binding Primary}" Value="True">
-                                    <Setter TargetName="frame" Property="BorderBrush" Value="{DynamicResource Copper}" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Warn}" Value="True">
-                                    <Setter TargetName="detail" Property="Foreground" Value="{DynamicResource Warn}" />
-                                </DataTrigger>
-                            </DataTemplate.Triggers>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </Grid>
-            <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding Screens.Count}" Value="0">
-                    <Setter TargetName="none" Property="Visibility" Value="Visible" />
-                </DataTrigger>
-            </DataTemplate.Triggers>
-        </DataTemplate>
-
-        <!-- Placa-mãe: a corrente da inicialização segura, um elo por requisito -->
-        <DataTemplate DataType="{x:Type inv:ChainFigure}">
-            <ItemsControl ItemsSource="{Binding Steps}" Width="416">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="22" />
-                                <ColumnDefinition Width="14" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Border x:Name="gap" Grid.Row="1" Height="24" />
-                            <Rectangle x:Name="wire" Grid.RowSpan="2" Width="1" Fill="{DynamicResource LineStrong}" Margin="0,24,0,2" HorizontalAlignment="Center" />
-                            <Grid Width="22" Height="22" VerticalAlignment="Top">
-                                <Ellipse x:Name="ring" Stroke="{DynamicResource Faint}" StrokeThickness="1.5" />
-                                <TextBlock x:Name="mark" Text="&#xE738;" Style="{StaticResource IconGlyph}" FontSize="11" Foreground="{DynamicResource Faint}" />
-                            </Grid>
-                            <StackPanel Grid.Column="2" Margin="0,2,12,0">
-                                <TextBlock Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" />
-                                <TextBlock Text="{Binding Text}" FontSize="12" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" LineHeight="17" Margin="0,3,0,0" />
-                            </StackPanel>
-                            <TextBlock Grid.Column="3" Text="{Binding Value}" FontSize="12.5" Foreground="{DynamicResource Fg}" Margin="0,4,0,0" />
-                        </Grid>
-                        <DataTemplate.Triggers>
-                            <DataTrigger Binding="{Binding Ok}" Value="True">
-                                <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Ok}" />
-                                <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Ok}" />
-                                <Setter TargetName="mark" Property="Text" Value="&#xE73E;" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Ok}" Value="False">
-                                <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Warn}" />
-                                <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Warn}" />
-                                <Setter TargetName="mark" Property="Text" Value="&#xE8C9;" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Last}" Value="True">
-                                <Setter TargetName="wire" Property="Visibility" Value="Collapsed" />
-                                <Setter TargetName="gap" Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                        </DataTemplate.Triggers>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </DataTemplate>
-
-        <!-- Sistema operacional: instalação, última atualização, boot e agora -->
-        <DataTemplate DataType="{x:Type inv:TimelineFigure}">
-            <ItemsControl ItemsSource="{Binding Events}" Width="416">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="22" />
-                                <ColumnDefinition Width="14" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Border x:Name="gap" Grid.Row="1" Height="26" />
-                            <Rectangle x:Name="wire" Grid.RowSpan="2" Width="1" Fill="{DynamicResource LineStrong}" Margin="0,16,0,0" HorizontalAlignment="Center" />
-                            <Ellipse x:Name="dot" Width="9" Height="9" Fill="{DynamicResource Surface}" Stroke="{DynamicResource Steel}" StrokeThickness="1.5" VerticalAlignment="Top" Margin="0,4,0,0" />
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource Muted}" />
-                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                                    <TextBlock Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="20" FontWeight="Light" />
-                                    <TextBlock Text="{Binding Note}" FontSize="12.5" Foreground="{DynamicResource Muted}" VerticalAlignment="Bottom" Margin="8,0,0,2" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Grid>
-                        <DataTemplate.Triggers>
-                            <DataTrigger Binding="{Binding Now}" Value="True">
-                                <Setter TargetName="dot" Property="Fill" Value="{DynamicResource Accent}" />
-                                <Setter TargetName="dot" Property="Stroke" Value="{DynamicResource Accent}" />
-                                <Setter TargetName="wire" Property="Visibility" Value="Collapsed" />
-                                <Setter TargetName="gap" Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                        </DataTemplate.Triggers>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
         </DataTemplate>
 
         <!-- Armazenamento: um disco por linha, com as unidades dele em proporção ao tamanho -->
@@ -570,35 +322,18 @@
                         </Grid>
                     </Border>
 
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition x:Name="FigColumn" Width="480" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <!-- Palco da figura: um tom abaixo do painel, com a figura no centro -->
-                        <Grid x:Name="FigStage">
-                            <Rectangle Fill="{DynamicResource Bg}" Opacity="0.45" />
-                            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0" />
-                            <DockPanel Margin="32,26,32,22">
-                                <TextBlock x:Name="FigTitle" DockPanel.Dock="Top" Style="{StaticResource SheetLabel}" />
-                                <Viewbox StretchDirection="DownOnly" Margin="0,18,0,0" VerticalAlignment="Center">
-                                    <ContentControl x:Name="SheetFigure" Focusable="False" />
-                                </Viewbox>
-                            </DockPanel>
-                        </Grid>
-
-                        <ScrollViewer x:Name="SpecScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" Focusable="False">
-                            <StackPanel Margin="32,18,32,26">
-                                <ItemsControl x:Name="SpecGroups" ItemTemplate="{StaticResource SpecGroupTemplate}" Focusable="False">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate><inv:ColumnsPanel Loaded="SpecColumns_Loaded" /></ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                </ItemsControl>
-                                <ItemsControl x:Name="DiskList" ItemTemplate="{StaticResource DiskTemplate}" AlternationCount="100" Margin="0,-8,0,0" Focusable="False" />
-                                <Button x:Name="SheetLink" Style="{StaticResource SheetLink}" HorizontalAlignment="Left" Margin="0,22,0,0" Click="SheetLink_Click" />
-                            </StackPanel>
-                        </ScrollViewer>
-                    </Grid>
+                    <!-- Os dados na largura toda, em grupos que se distribuem em colunas -->
+                    <ScrollViewer x:Name="SpecScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" Focusable="False">
+                        <StackPanel Margin="32,20,32,28">
+                            <ItemsControl x:Name="SpecGroups" ItemTemplate="{StaticResource SpecGroupTemplate}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><inv:ColumnsPanel Loaded="SpecColumns_Loaded" /></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                            <ItemsControl x:Name="DiskList" ItemTemplate="{StaticResource DiskTemplate}" AlternationCount="100" Margin="0,-8,0,0" Focusable="False" />
+                            <Button x:Name="SheetLink" Style="{StaticResource SheetLink}" HorizontalAlignment="Left" Margin="0,22,0,0" Click="SheetLink_Click" />
+                        </StackPanel>
+                    </ScrollViewer>
                 </Grid>
             </Grid>
         </Border>

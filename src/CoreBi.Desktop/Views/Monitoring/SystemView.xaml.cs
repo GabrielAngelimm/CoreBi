@@ -14,10 +14,8 @@ using System.Windows.Threading;
 namespace CoreBi.Desktop.Views;
 
 /// <summary>
-/// Sistema: a ficha técnica do computador. Um índice com as seis categorias (cada botão já diz qual é o componente)
-/// e, embaixo, a ficha do escolhido: placa com nome e quatro leituras, uma figura que explica o componente
-/// (núcleos, slots, telas, inicialização segura, linha do tempo) e os dados em grupos, com os vereditos ao lado do
-/// valor. Tudo é lido uma vez ao abrir o CoreBi; discos e unidades são relidos quando algo é conectado, e o uso da
+/// Sistema: a ficha técnica do computador. Seis botões de categoria em cima e, embaixo, a ficha da escolhida: placa
+/// com o nome da peça e quatro leituras, e os dados em grupos na largura toda, com os vereditos ao lado do valor. Tudo é lido uma vez ao abrir o CoreBi; discos e unidades são relidos quando algo é conectado, e o uso da
 /// RAM a cada vez que a página aparece.
 /// </summary>
 public partial class SystemView : UserControl
@@ -127,11 +125,6 @@ public partial class SystemView : UserControl
         SheetSub.ToolTip = s.Subtitle;
         SheetReadouts.ItemsSource = s.Readouts;
 
-        bool figure = s.Figure != null;
-        FigStage.Visibility = figure ? Visibility.Visible : Visibility.Collapsed;
-        FigTitle.Text = s.FigureTitle ?? "";
-        SheetFigure.Content = s.Figure;
-
         SpecGroups.ItemsSource = s.Groups;
         SpecGroups.Visibility = s.Groups.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         DiskList.ItemsSource = s.Disks;
@@ -149,31 +142,25 @@ public partial class SystemView : UserControl
 
     private void SheetCard_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        // Cantos arredondados também para o fundo da célula escolhida e o palco da figura.
+        // Cantos arredondados também para a faixa do índice.
         SheetCard.Clip = new RectangleGeometry(new Rect(e.NewSize), 12, 12);
         Layout(e.NewSize.Width);
     }
 
-    /// <summary>
-    /// Índice em uma fila de seis (ou 3 × 2 em janelas estreitas); palco da figura mais estreito abaixo de 1300 px;
-    /// grupos em 3, 2 ou 1 coluna conforme a largura que sobra.
-    /// </summary>
+    /// <summary>Índice em uma fila de seis (ou 3 × 2 em janelas estreitas); grupos em 3, 2 ou 1 coluna conforme a largura.</summary>
     private void Layout(double width)
     {
         if (width <= 0) return;
         if (_indexGrid != null)
         {
-            bool two = width < 1080;
+            bool two = width < 960;
             _indexGrid.Rows = two ? 2 : 1;
             _indexGrid.Columns = two ? 3 : 6;
         }
-        bool figure = _sheet?.Figure != null;
-        double fig = width >= 1300 ? 480 : 380;
-        FigColumn.Width = new GridLength(figure ? fig : 0);
         if (_columns != null)
         {
-            double specs = width - (figure ? fig : 0) - 64;
-            _columns.Columns = specs >= 1000 && !figure ? 3 : specs >= 620 ? 2 : 1;
+            double specs = width - 64;
+            _columns.Columns = specs >= 1100 ? 3 : specs >= 620 ? 2 : 1;
         }
     }
 

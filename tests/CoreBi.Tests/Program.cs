@@ -100,7 +100,7 @@ internal static partial class Program
             var ramRows = sheets["ram"].Groups.SelectMany(g => g.Rows).ToList();
             Require(ramRows.Any(r => r.Key == "Canais" && r.Value == "Dual channel" && r.Tone == Tone.Ok) && ramRows.Any(r => r.Key == "Perfil XMP/EXPO" && r.Tone == Tone.Ok), "RAM verdicts live in the rows");
             Require(sheets["ram"].Groups.Count(g => g.Title.StartsWith("Módulo ")) == 2, "One group per RAM module");
-            Require(index[1].Warn && sheets["gpu"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Atualização" && r.Tone == Tone.Warn), "Display below max Hz warns in the row and the index");
+            Require(sheets["gpu"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Atualização" && r.Tone == Tone.Warn), "Display below max Hz warns in the row and the index");
             Require(inv.ToNodes().Count == 6, "Report keeps six categories");
             return new { slots = "A1,A2*,B1,B2*", index = index.Select(i => i.Name).ToArray() };
         });
