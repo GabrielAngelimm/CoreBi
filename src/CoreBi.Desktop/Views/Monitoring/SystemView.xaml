@@ -275,6 +275,45 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
+        <!-- Exportar relatório: a ação principal da página. Fundo verde-água cheio, ícone num ladrilho mais escuro e texto
+             seminegrito; o mouse clareia, o clique afunda 1 px e, enquanto gera, o botão apaga e diz o que está fazendo. -->
+        <Style x:Key="ReportButton" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="{DynamicResource Accent}" />
+            <Setter Property="Foreground" Value="{DynamicResource AccentFg}" />
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="face" Background="{TemplateBinding Background}" CornerRadius="10" Padding="6,6,18,6" SnapsToDevicePixels="True">
+                            <StackPanel Orientation="Horizontal">
+                                <Grid Width="30" Height="30">
+                                    <Border CornerRadius="7" Background="{DynamicResource AccentFg}" Opacity="0.14" />
+                                    <TextBlock Text="&#xE896;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{TemplateBinding Foreground}" />
+                                </Grid>
+                                <ContentPresenter VerticalAlignment="Center" Margin="11,0,0,1" TextElement.Foreground="{TemplateBinding Foreground}" />
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="face" Property="Background" Value="{DynamicResource AccentHover}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="face" Property="Margin" Value="0,1,0,-1" />
+                                <Setter TargetName="face" Property="Background" Value="{DynamicResource Accent}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="face" Property="Opacity" Value="0.55" />
+                                <Setter Property="Cursor" Value="Wait" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Leva às leituras ao vivo: botão discreto no rodapé do card, com ícone de pulso e seta -->
         <Style x:Key="SheetLink" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
@@ -317,7 +356,8 @@
                 <TextBlock Text="Sistema" Style="{StaticResource PageTitle}" />
                 <TextBlock x:Name="SystemSub" Text="Lendo informações do sistema…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
             </StackPanel>
-            <Button x:Name="BtnReport" Grid.Column="1" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72D;" Content="Exportar relatório" VerticalAlignment="Top" Click="BtnReport_Click" ToolTip="Salva um relatório (HTML ou JSON) com sistema, memória, discos, GPU, sensores e benchmarks. Números de série ficam de fora." />
+            <Button x:Name="BtnReport" Grid.Column="1" Style="{StaticResource ReportButton}" Content="Exportar relatório" VerticalAlignment="Center" Click="BtnReport_Click"
+                    ToolTip="Salva a ficha completa do computador num relatório para imprimir ou guardar em PDF (HTML) ou em dados (JSON). Números de série e o nome do usuário ficam de fora." />
         </Grid>
 
         <!-- Um painel só: o índice da máquina em cima e a ficha do componente escolhido embaixo -->

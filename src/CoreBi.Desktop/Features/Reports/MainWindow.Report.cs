@@ -1,4 +1,4 @@
-using CoreBi.Engine.Monitoring.Inventory;
+using CoreBi.Desktop.Features.Reports;
 using CoreBi.Engine.Monitoring.Power;
 using CoreBi.Engine.Monitoring.Storage;
 using CoreBi.Engine.Reports;
@@ -16,16 +16,20 @@ public partial class MainWindow
         var dlg = new Microsoft.Win32.SaveFileDialog
         {
             Title = "Exportar relatório",
-            Filter = "Relatório HTML (*.html)|*.html|Dados JSON (*.json)|*.json",
+            Filter = "Relatório (HTML, abre no navegador e imprime em PDF)|*.html|Dados (JSON)|*.json",
             DefaultExt = ".html",
-            FileName = $"CoreBi-relatorio-{DateTime.Now:yyyyMMdd-HHmm}",
+            AddExtension = true,
+            FileName = $"CoreBi-{Environment.MachineName}-{DateTime.Now:yyyy-MM-dd-HHmm}",
         };
         if (dlg.ShowDialog(this) != true) return;
         string path = dlg.FileName;
-        bool json = string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase);
+        // O tipo escolhido na lista manda quando o nome não tem extensão conhecida.
+        bool json = string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase) ||
+                    (dlg.FilterIndex == 2 && !string.Equals(Path.GetExtension(path), ".html", StringComparison.OrdinalIgnoreCase));
+        if (json && !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) path = Path.ChangeExtension(path, ".json");
 
         BtnReport.IsEnabled = false;
-        BtnReport.Content = "Gerando…";
+        BtnReport.Content = "Gerando relatório…";
         try
         {
             // Dados que vivem na interface são copiados aqui (thread da tela); a leitura dos discos roda em segundo plano.
@@ -36,6 +40,7 @@ public partial class MainWindow
                 Machine = Environment.MachineName,
                 AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "",
                 LogoBase64 = LoadLogoBase64(),
+                Sheets = PageSystem.Built is { } built ? SystemReport.From(built.Index, built.Sheets) : new(),
                 System = PageSystem.Nodes
                          .Select(ReportBuilder.ToNode).Where(n => n != null).Cast<ReportNode>().ToList(),
                 Gpus = _gpus.Select(g => new ReportGpu(g.Name, g.Subtitle,

@@ -52,6 +52,9 @@ public partial class SystemView : UserControl
 
     internal int CategoryCount => SysIndex.Items.Count;
 
+    /// <summary>As fichas como estão na tela, para o relatório; null antes da primeira leitura.</summary>
+    internal (List<IndexItem> Index, Dictionary<string, Sheet> Sheets)? Built { get; private set; }
+
     /// <summary>Lê tudo (WMI, registro e APIs do Windows) fora da thread da janela e monta as fichas.</summary>
     internal async Task RefreshAsync()
     {
@@ -103,6 +106,7 @@ public partial class SystemView : UserControl
         var now = DateTime.Now;
         var (index, sheets) = SystemSheets.Build(_inventory, _gpus(), _drives, now, MemoryInfo.ReadSnapshot());
         _sheets = sheets;
+        Built = (index, sheets);
         SysIndex.ItemsSource = index;
         SysIndex.SelectedItem = index.FirstOrDefault(i => i.Key == _selected) ?? index.FirstOrDefault();
         SystemSub.Text = $"{Environment.MachineName} · lido às {now:HH:mm}";

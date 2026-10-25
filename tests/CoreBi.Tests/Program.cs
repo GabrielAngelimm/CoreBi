@@ -49,6 +49,7 @@ internal static partial class Program
     public static int Main(string[] args)
     {
         if (args.FirstOrDefault() == "--process-fixture") return ProcessFixture(args);
+        if (args.FirstOrDefault() == "--report") return RealReport(args.Length > 1 ? args[1] : "report");
         Output = Path.GetFullPath(args.Length > 0 ? args[0] : "TestResults");
         Directory.CreateDirectory(Output);
         Environment.SetEnvironmentVariable("COREBI_DATA_DIR", Path.Combine(Output, "settings"));
@@ -116,6 +117,11 @@ internal static partial class Program
             Require(sheets["ram"].Groups.All(g => !g.Title.StartsWith("Uso")), "System page shows hardware, not live usage");
             Require(sheets["os"].Groups.Any(g => g.Title == "Segurança do Windows" && g.Column == 0) && sheets["os"].Groups.Single(g => g.Title == "Sessão").Column == 1, "Windows groups keep their columns");
             Require(sheets["storage"].Groups.All(g => g.Title != "Samsung SSD 980 1TB"), "Disk name appears once, in the disk line");
+            var report = new CoreBi.Engine.Reports.ReportData { Machine = "PC-TESTE", AppVersion = "0.0.0", Sheets = CoreBi.Desktop.Features.Reports.SystemReport.From(index, sheets) };
+            string html = CoreBi.Engine.Reports.ReportBuilder.Html(report), json = CoreBi.Engine.Reports.ReportBuilder.Json(report);
+            Require(report.Sheets.Count == 6 && report.Sheets[0].Category == "Sistema operacional" && html.Contains("id=\"s6\""), "Report follows the six sheets, OS first");
+            Require(!html.Contains("S64ANS0T") && !json.Contains("S64ANS0T") && !html.Contains(">user<"), "Report leaves serials and the user name out");
+            Require(html.Contains("Maio de 2023") && JsonDocument.Parse(json).RootElement.GetProperty("fichas").GetArrayLength() == 6, "Report carries the same values as the page");
             Require(inv.ToNodes().Count == 6, "Report keeps six categories");
             return new { slots = "A1,A2*,B1,B2*", index = index.Select(i => i.Name).ToArray() };
         });
@@ -373,5 +379,27 @@ internal static partial class Program
             finally { stress.Stop(); }
             Require(!stress.Running, "CPU stress did not stop"); return new { stopped = true, scope = "one second; no thermal stability certification" };
         });
+    }
+
+    /// <summary>Relatório com os dados reais desta máquina (HTML e JSON), sem abrir a janela: para conferir a exportação.</summary>
+    private static int RealReport(string folder)
+    {
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("pt-BR");
+        Directory.CreateDirectory(folder);
+        var inv = SystemInfoCollector.Read();
+        var gpus = GpuInfoCollector.Collect();
+        var drives = DriveMap.Read();
+        var (index, sheets) = CoreBi.Desktop.Features.Monitoring.Inventory.SystemSheets.Build(inv, gpus, drives, DateTime.Now, CoreBi.Engine.Monitoring.Memory.MemoryInfo.ReadSnapshot());
+        var data = new CoreBi.Engine.Reports.ReportData
+        {
+            AppVersion = typeof(CoreBi.Desktop.MainWindow).Assembly.GetName().Version?.ToString(3) ?? "",
+            Sheets = CoreBi.Desktop.Features.Reports.SystemReport.From(index, sheets),
+            System = inv.ToNodes().Select(CoreBi.Engine.Reports.ReportBuilder.ToNode).Where(n => n != null).Cast<CoreBi.Engine.Reports.ReportNode>().ToList(),
+        };
+        string name = $"CoreBi-{Environment.MachineName}";
+        File.WriteAllText(Path.Combine(folder, name + ".html"), CoreBi.Engine.Reports.ReportBuilder.Html(data), new System.Text.UTF8Encoding(true));
+        File.WriteAllText(Path.Combine(folder, name + ".json"), CoreBi.Engine.Reports.ReportBuilder.Json(data), new System.Text.UTF8Encoding(true));
+        Console.WriteLine(Path.GetFullPath(Path.Combine(folder, name + ".html")));
+        return 0;
     }
 }
