@@ -17,6 +17,12 @@ public sealed class ColumnsPanel : Panel
         new FrameworkPropertyMetadata(26.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
 
     public int Columns { get => (int)GetValue(ColumnsProperty); set => SetValue(ColumnsProperty, value); }
+
+    /// <summary>Coluna fixa de um item (0, 1, 2...); -1 ou fora do número de colunas = vai para a mais curta.</summary>
+    public static readonly DependencyProperty ColumnProperty = DependencyProperty.RegisterAttached("Column", typeof(int), typeof(ColumnsPanel),
+        new FrameworkPropertyMetadata(-1, FrameworkPropertyMetadataOptions.AffectsParentMeasure));
+    public static int GetColumn(DependencyObject o) => (int)o.GetValue(ColumnProperty);
+    public static void SetColumn(DependencyObject o, int value) => o.SetValue(ColumnProperty, value);
     public double ColumnGap { get => (double)GetValue(ColumnGapProperty); set => SetValue(ColumnGapProperty, value); }
     public double RowGap { get => (double)GetValue(RowGapProperty); set => SetValue(RowGapProperty, value); }
 
@@ -35,7 +41,8 @@ public sealed class ColumnsPanel : Panel
         {
             child.Measure(new Size(w, double.PositiveInfinity));
             if (child.DesiredSize.Height <= 0) { _slots.Add((child, 0, 0)); continue; }
-            int c = Array.IndexOf(heights, heights.Min());
+            int fixedColumn = GetColumn(child);
+            int c = fixedColumn >= 0 && fixedColumn < cols ? fixedColumn : Array.IndexOf(heights, heights.Min());
             double y = heights[c] > 0 ? heights[c] + RowGap : 0;
             _slots.Add((child, c, y));
             heights[c] = y + child.DesiredSize.Height;

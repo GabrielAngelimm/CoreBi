@@ -378,6 +378,11 @@
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><inv:ColumnsPanel Loaded="SpecColumns_Loaded" /></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="inv:ColumnsPanel.Column" Value="{Binding Column}" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
                             </ItemsControl>
                         </StackPanel>
                     </ScrollViewer>

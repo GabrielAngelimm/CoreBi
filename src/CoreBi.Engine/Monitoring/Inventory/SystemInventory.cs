@@ -154,6 +154,12 @@ public sealed class RamInfo
 public sealed record WindowsSettings(bool GameMode, bool? GpuScheduling, bool MemoryIntegrity, bool? FastStartup, string TimeZone,
     bool? BackgroundCapture = null, bool? MouseAcceleration = null, string? PowerPlan = null, bool? Activated = null);
 
+/// <summary>
+/// Segurança do Windows: antivírus ligado (vazio = há antivírus, nenhum ligado), proteções do Microsoft Defender quando ele é o
+/// antivírus e o nível do Controle de Conta de Usuário. null = não deu para ler.
+/// </summary>
+public sealed record WindowsSecurity(string? Antivirus, bool? RealTime, bool? Tamper, DateTime? Signatures, string? Uac);
+
 public sealed record VideoAdapter(string Name, string Vendor, string DriverVersion, string WindowsDriverVersion, DateTime? DriverDate, ulong? Vram);
 
 public sealed record PhysicalDiskInfo(int Index, string Model, ulong Size, string Bus, string Media, string Firmware, string Serial, bool Removable,
@@ -172,6 +178,7 @@ public sealed class SystemInventory
     public List<DisplayInfo> Displays { get; } = new();
     public List<PhysicalDiskInfo> Disks { get; set; } = new();
     public WindowsSettings? Settings { get; set; }
+    public WindowsSecurity? Security { get; set; }
 
     /// <summary>Letra da unidade → BitLocker ligado; vazio quando o Windows não deixou ler.</summary>
     public Dictionary<string, bool> BitLocker { get; set; } = new();

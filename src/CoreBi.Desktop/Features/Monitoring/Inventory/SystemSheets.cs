@@ -36,6 +36,9 @@ public sealed record SpecGroup(string Title, List<SpecRow> Rows, List<SpecToken>
 {
     /// <summary>Cabeçalho das colunas quando as linhas têm Cells.</summary>
     public List<string>? Columns { get; init; }
+
+    /// <summary>Coluna fixa no layout de três colunas; -1 deixa o grupo ir para a mais curta.</summary>
+    public int Column { get; init; } = -1;
 }
 
 public sealed record SpecToken(string Text, bool On);
@@ -559,8 +562,10 @@ public static class SystemSheets
             string freeText = vols.Count > 0 ? "" : "sem unidade montada";
             disks.Add(new DiskView(d.Model, meta, sv, su, freeText, volumes, d.Health ?? "", tone) { First = disks.Count == 0 });
             var (about, layout) = DiskRows(d, vols, inv.BitLocker);
-            groups.Add(new(d.Model, about));
-            if (layout.Count > 0) groups.Add(new(inv.Disks.Count > 1 ? $"Partições do disco {d.Index}" : "Partições e proteção", layout));
+            // O nome do disco já está na linha de cima; os grupos levam só o número dele quando há mais de um.
+            bool many = inv.Disks.Count > 1;
+            groups.Add(new(many ? $"Especificações do disco {d.Index}" : "Especificações", about));
+            if (layout.Count > 0) groups.Add(new(many ? $"Partições e proteção do disco {d.Index}" : "Partições e proteção", layout));
         }
         double total = inv.Disks.Sum(d => (double)d.Size);
         double freeAll = drives.Sum(v => (double)v.Free), usedAll = drives.Sum(v => (double)(v.Total - v.Free));
@@ -662,8 +667,25 @@ public static class SystemSheets
                     "Grava os últimos segundos de jogo o tempo todo, para salvar um clipe depois. Custa um pouco de desempenho."),
                 new("Aceleração do mouse", st.MouseAcceleration switch { true => "Ativada", false => "Desativada", _ => "—" }, null,
                     "\"Aumentar a precisão do ponteiro\": o cursor anda mais quando o mouse se move rápido. Em jogos de tiro, muitos preferem desligada."),
-            }, Help: "Opções do Windows que mudam como os jogos rodam. Passe o mouse em cada uma para saber o que faz."));
+            }, Help: "Opções do Windows que mudam como os jogos rodam. Passe o mouse em cada uma para saber o que faz.")
+            { Column = 2 });
         }
+        if (inv.Security is { } sec)
+        {
+            static string On(bool? v) => v switch { true => "Ativada", false => "Desativada", _ => "—" };
+            var security = new List<SpecRow>();
+            if (sec.Antivirus != null)
+                security.Add(Verdict("Antivírus", sec.Antivirus.Length > 0 ? sec.Antivirus : "Nenhum ligado", sec.Antivirus.Length > 0 ? Tone.Ok : Tone.Warn, null,
+                    sec.Antivirus.Length > 0 ? null : "Ligue a proteção em tempo real em Segurança do Windows."));
+            security.Add(new("Proteção em tempo real", On(sec.RealTime), null, "Verifica arquivos e programas no momento em que são abertos."));
+            security.Add(new("Proteção contra violação", On(sec.Tamper), null, "Impede que programas desliguem o antivírus por conta própria."));
+            if (sec.Signatures is DateTime sig) security.Add(new("Definições de vírus", Fmt.Date(sig), Fmt.Ago(sig, now), "Quando o antivírus baixou a lista de ameaças mais recente."));
+            security.Add(new("Controle de conta (UAC)", sec.Uac ?? "—", null, "O aviso que aparece quando um programa pede permissão de administrador."));
+            groups.Add(new("Segurança do Windows", security) { Column = 0 });
+        }
+        // Três colunas: Windows e Segurança | Computador e Sessão | Ajustes para jogos.
+        foreach (var (title, column) in new[] { ("Windows", 0), ("Computador", 1), ("Sessão", 1) })
+            if (groups.FindIndex(g => g.Title == title) is int at and >= 0) groups[at] = groups[at] with { Column = column };
 
         string arch = o.Architecture.StartsWith("64") ? "64" : o.Architecture.StartsWith("32") ? "32" : "—";
         return new Sheet

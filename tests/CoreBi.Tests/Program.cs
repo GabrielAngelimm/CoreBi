@@ -96,6 +96,7 @@ internal static partial class Program
             inv.Displays.Add(new DisplayInfo(1, "NVIDIA GeForce RTX 4060 Ti", "LG ULTRAGEAR", "GSM", 27, 1920, 1080, 60, 144, 32, 0, 0, true, "DisplayPort", 2023, 22));
             inv.Disks.Add(new PhysicalDiskInfo(0, "Samsung SSD 980 1TB", 1UL << 40, "NVMe", "SSD", "3B4QFXO7", "S64ANS0T", false, "Saudável", "GPT"));
             inv.Settings = new WindowsSettings(false, true, true, true, "(UTC-03:00) Brasília");
+            inv.Security = new WindowsSecurity("Windows Defender", true, true, DateTime.Now.AddDays(-1), "Nunca notificar");
             inv.Os = new OsInfo("Windows 11 Pro", "Windows 11 Pro", "24H2", "26100.6899", "64 bits (x64)", null, null, "PC", "user", "WORKGROUP", false, "português (Brasil)", null, null);
             var (index, sheets) = CoreBi.Desktop.Features.Monitoring.Inventory.SystemSheets.Build(inv, Array.Empty<CoreBi.Engine.Monitoring.Graphics.GpuInfo>(), Array.Empty<CoreBi.Engine.Monitoring.Storage.DriveCard>(), DateTime.Now);
             Require(index.Count == 6 && sheets.Count == 6, "Six sheets");
@@ -113,6 +114,8 @@ internal static partial class Program
             Require(allRows.All(r => !(r.Value + r.Tip + r.Help).Contains("CPU-Z")), "No references to other programs");
             Require(sheets["gpu"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Fabricado em" && r.Value == "Maio de 2023"), "Monitor week becomes month and year");
             Require(sheets["ram"].Groups.All(g => !g.Title.StartsWith("Uso")), "System page shows hardware, not live usage");
+            Require(sheets["os"].Groups.Any(g => g.Title == "Segurança do Windows" && g.Column == 0) && sheets["os"].Groups.Single(g => g.Title == "Sessão").Column == 1, "Windows groups keep their columns");
+            Require(sheets["storage"].Groups.All(g => g.Title != "Samsung SSD 980 1TB"), "Disk name appears once, in the disk line");
             Require(inv.ToNodes().Count == 6, "Report keeps six categories");
             return new { slots = "A1,A2*,B1,B2*", index = index.Select(i => i.Name).ToArray() };
         });

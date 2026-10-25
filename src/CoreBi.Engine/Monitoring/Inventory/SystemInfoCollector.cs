@@ -26,6 +26,7 @@ public static class SystemInfoCollector
         Safe(inv, SystemInventory.StorageTitle, () => inv.Disks = ReadDisks());
         Safe(inv, SystemInventory.StorageTitle, () => inv.BitLocker = ReadBitLocker());
         Safe(inv, SystemInventory.OsTitle, () => inv.Settings = ReadSettings());
+        Safe(inv, SystemInventory.OsTitle, () => inv.Security = ReadSecurity());
         return inv;
     }
 
@@ -478,6 +479,65 @@ public static class SystemInfoCollector
             mouse,
             PowerPlan(),
             Activated());
+    }
+
+    private static WindowsSecurity ReadSecurity()
+    {
+        // Defender: só conta quando é ele o antivírus ligado (com outro antivírus ele fica em modo passivo).
+        bool? realTime = null, tamper = null; DateTime? signatures = null;
+        string? av = Antivirus();
+        if (av?.Contains("Defender", StringComparison.OrdinalIgnoreCase) == true)
+            try
+            {
+                foreach (var d in Query("SELECT RealTimeProtectionEnabled, IsTamperProtected, AntivirusSignatureLastUpdated FROM MSFT_MpComputerStatus", @"root\Microsoft\Windows\Defender"))
+                {
+                    realTime = d["RealTimeProtectionEnabled"] as bool?;
+                    tamper = d["IsTamperProtected"] as bool?;
+                    signatures = CimDate(d["AntivirusSignatureLastUpdated"]);
+                }
+            }
+            catch { }
+
+        // UAC: o nível do controle deslizante sai de EnableLUA, ConsentPromptBehaviorAdmin e PromptOnSecureDesktop.
+        string? uac = null;
+        try
+        {
+            using var k = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System");
+            if (k?.GetValue("EnableLUA") is int lua)
+            {
+                int consent = k.GetValue("ConsentPromptBehaviorAdmin") is int c ? c : 5;
+                bool secure = k.GetValue("PromptOnSecureDesktop") is not int sd || sd == 1;
+                uac = lua == 0 ? "Desativado" : consent switch
+                {
+                    0 => "Nunca notificar",
+                    2 => "Sempre notificar",
+                    5 => secure ? "Padrão (avisa quando apps pedem alterações)" : "Avisa sem escurecer a tela",
+                    _ => "Personalizado"
+                };
+            }
+        }
+        catch { }
+        return new WindowsSecurity(av, realTime, tamper, signatures, uac);
+    }
+
+    /// <summary>
+    /// Antivírus que a Central de Segurança do Windows registra como ligados. No productState, o nibble dos bits 12–15
+    /// vale 1 quando a proteção em tempo real está ativa. "" quando há antivírus, mas nenhum ligado.
+    /// </summary>
+    private static string? Antivirus()
+    {
+        try
+        {
+            var on = new List<string>();
+            bool any = false;
+            foreach (var av in Query("SELECT displayName, productState FROM AntiVirusProduct", @"root\SecurityCenter2"))
+            {
+                any = true;
+                if (((I(av["productState"]) >> 12) & 0xF) == 1 && av["displayName"]?.ToString() is { Length: > 0 } name) on.Add(name);
+            }
+            return !any ? null : string.Join(", ", on.Distinct());
+        }
+        catch { return null; }
     }
 
     [DllImport("powrprof.dll")]
