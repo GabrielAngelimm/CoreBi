@@ -79,7 +79,7 @@
             <Grid x:Name="host" Margin="-10,0" Background="Transparent" Cursor="Hand" ToolTip="{Binding Tip}" MouseLeftButtonUp="SpecRow_Click">
                 <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="6" Opacity="0" />
                 <Border Height="1" VerticalAlignment="Top" Margin="10,0" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
-                <Grid Margin="10,10,8,10">
+                <Grid Margin="10,9,8,9">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="44*" />
                         <ColumnDefinition Width="16" />

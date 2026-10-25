@@ -246,7 +246,6 @@ public static class SystemSheets
             "Quanto da RAM do PC o Windows deixa a placa usar quando a VRAM acaba. É bem mais lenta que a VRAM."));
         if (G("Tipo") is { } memType) memory.Add(new("Tipo", memType));
         if (G("Barramento") is { } bus) memory.Add(new("Barramento", bus, null, "Quantos bits a placa lê da VRAM de uma vez."));
-        if (G("Clock da memória") is { } memClock) memory.Add(new("Clock da memória", memClock));
         if (G("Largura de banda") is { } bandwidth) memory.Add(new("Largura de banda", bandwidth));
         if (G("Resizable BAR") is { } bar) memory.Add(new("Resizable BAR", bar.StartsWith("Ativado") ? "Ativado" : bar, null,
             "Deixa o processador acessar toda a VRAM de uma vez. Alguns jogos ganham desempenho."));
@@ -267,12 +266,15 @@ public static class SystemSheets
         if (G("Boost (referência)") is { } boost) clocks.Add(new("Clock boost", boost, "referência"));
         if (G("TDP (referência)") is { } tdp) clocks.Add(new("TDP", tdp, null, "Consumo de referência da fabricante do chip."));
         if (G("Limite atual") is { } limit) clocks.Add(new("Limite de energia", limit, null, "O máximo que a placa pode puxar agora, definido pela fabricante da placa."));
-        if (G("Interface") is { } pcie) clocks.Add(new("Interface", pcie, null, "O máximo da conexão entre a placa e a placa-mãe."));
-        if (G("Em uso agora") is { } link) clocks.Add(new("Interface em uso", link.Split(" (")[0], link.Contains('(') ? "em repouso" : null,
-            "Em repouso a placa reduz a conexão para economizar energia; em jogo ela volta ao máximo."));
+        if (G("Interface") is { } pcie)
+        {
+            string? now = G("Em uso agora")?.Split(" (")[0];
+            clocks.Add(new("Interface", pcie, now != null && now != pcie ? $"agora {now}" : null,
+                "Conexão entre a placa e a placa-mãe. Em repouso ela cai para economizar energia e volta ao máximo em jogo."));
+        }
 
-        var driver = new List<SpecRow> { new("Versão", g.DriverVersion, null, g.WindowsDriverVersion != g.DriverVersion ? "No formato que a fabricante divulga." : null) };
-        if (g.WindowsDriverVersion != g.DriverVersion) driver.Add(new("Versão no Windows", g.WindowsDriverVersion));
+        var driver = new List<SpecRow> { new("Versão", g.DriverVersion, null,
+            g.WindowsDriverVersion != g.DriverVersion ? $"No formato que a fabricante divulga. No Windows: {g.WindowsDriverVersion}." : null) };
         driver.Add(new("Data", Fmt.Date(g.DriverDate), Fmt.Ago(g.DriverDate)));
         if (G("BIOS (VBIOS)") is { } vbios) driver.Add(new("BIOS da placa", vbios, null, "Firmware da própria placa de vídeo (VBIOS)."));
         if (G("DirectX") is { } dx) driver.Add(new("DirectX", dx));
@@ -280,8 +282,8 @@ public static class SystemSheets
         var groups = new List<SpecGroup> { new("Identificação", id) };
         if (memory.Count > 0) groups.Add(new("Memória (VRAM)", memory, Help: "Memória própria da placa: guarda texturas e quadros. Jogos em resolução alta pedem mais."));
         if (units.Count > 0) groups.Add(new("Unidades de processamento", units));
-        if (clocks.Count > 0) groups.Add(new("Clocks e energia", clocks, Help: "Valores de referência do chip; cada fabricante de placa pode subir um pouco. Os clocks ao vivo ficam na página Placa de vídeo."));
-        groups.Add(new("Driver", driver, Help: "O programa que liga a placa ao Windows e aos jogos. Versões novas costumam trazer ganhos e correções."));
+        if (clocks.Count > 0) groups.Add(new("Clocks e energia", clocks));
+        groups.Add(new("Driver", driver));
         foreach (var d in inv.Displays)
         {
             var hz = d.BelowMax
@@ -295,7 +297,6 @@ public static class SystemSheets
                 new("Monitor", d.Monitor),
                 new("Resolução", $"{d.Width} × {d.Height}"),
                 hz,
-                new("Cores", $"{d.Bits} bits", d.Bits >= 32 ? "8 bits por canal" : null),
             };
             if (d.Inches is double inch) rows.Insert(1, new("Tamanho", $"{inch:0}\""));
             if (d.Connection != null) rows.Add(new("Conexão", d.Connection, null, "O cabo entre a placa de vídeo e a tela."));
@@ -572,7 +573,9 @@ public static class SystemSheets
             var tone = d.Health switch { "Saudável" => Tone.Ok, null => Tone.None, _ => Tone.Warn };
             string freeText = vols.Count > 0 ? $"{DriveCard.Fmt((long)free)} livres" : "sem unidade montada";
             disks.Add(new DiskView(d.Model, meta, sv, su, freeText, volumes, d.Health ?? "", tone) { First = disks.Count == 0 });
-            groups.Add(new(d.Model, DiskRows(d, tone, vols, inv.BitLocker)));
+            var (about, layout) = DiskRows(d, vols, inv.BitLocker);
+            groups.Add(new(d.Model, about));
+            if (layout.Count > 0) groups.Add(new(inv.Disks.Count > 1 ? $"Partições do disco {d.Index}" : "Partições e proteção", layout));
         }
         double total = inv.Disks.Sum(d => (double)d.Size);
         double freeAll = drives.Sum(v => (double)v.Free), usedAll = drives.Sum(v => (double)(v.Total - v.Free));
@@ -598,7 +601,7 @@ public static class SystemSheets
     }
 
     /// <summary>Ficha de um disco: o que ele é, como está ligado e o estado que o Windows informa.</summary>
-    private static List<SpecRow> DiskRows(PhysicalDiskInfo d, Tone health, List<DriveCard> vols, Dictionary<string, bool> bitLocker)
+    private static (List<SpecRow> About, List<SpecRow> Layout) DiskRows(PhysicalDiskInfo d, List<DriveCard> vols, Dictionary<string, bool> bitLocker)
     {
         string media = d.Media switch { "SSD" => "SSD", "HDD" => "HD (disco giratório)", var m => m };
         var rows = new List<SpecRow>
@@ -615,27 +618,24 @@ public static class SystemSheets
         if (d.Rpm is int rpm) rows.Add(new("Rotação", $"{rpm} rpm", null, "Quanto mais rápido o prato gira, menor o tempo de acesso."));
         rows.Add(new("Capacidade", Fmt.Bytes(d.Size), vols.Count > 0 ? $"{vols.Count} {(vols.Count == 1 ? "unidade" : "unidades")}" : null));
         if (d.System) rows.Add(new("Uso", "Disco do Windows", null, "É dele que o PC inicia."));
+        rows.Add(new("Firmware", d.Firmware, null, "Versão do software interno do disco. Fabricantes às vezes lançam correções."));
+        rows.Add(new("Nº de série", d.Serial.Trim().TrimEnd('.')));
+        var layout = new List<SpecRow>();
         if (d.Partition != null)
-            rows.Add(new("Tabela de partições", d.Partition, d.Partitions > 0 ? $"{d.Partitions} {(d.Partitions == 1 ? "partição" : "partições")}" : null,
+            layout.Add(new("Tabela de partições", d.Partition, d.Partitions > 0 ? $"{d.Partitions} {(d.Partitions == 1 ? "partição" : "partições")}" : null,
                 "GPT é o padrão atual e é o que o Windows 11 usa para iniciar em UEFI; MBR é o formato antigo, limitado a 2 TB. " +
                 "Além das unidades com letra, o Windows guarda partições ocultas de inicialização e recuperação."));
         if (d.LogicalSector > 0)
-            rows.Add(new("Setor", d.PhysicalSector > d.LogicalSector ? $"{d.LogicalSector} B lógico · {d.PhysicalSector / 1024} KB físico" : $"{d.LogicalSector} B",
+            layout.Add(new("Setor", d.PhysicalSector > d.LogicalSector ? $"{d.LogicalSector} B lógico · {d.PhysicalSector / 1024} KB físico" : $"{d.LogicalSector} B",
                 null, "O menor bloco que o disco lê ou grava."));
         var locked = vols.Where(v => bitLocker.TryGetValue(v.Letter.TrimEnd('\\'), out _)).ToList();
         if (locked.Count > 0)
         {
             var on = locked.Where(v => bitLocker[v.Letter.TrimEnd('\\')]).Select(v => v.Letter.TrimEnd('\\')).ToList();
-            rows.Add(new("BitLocker", on.Count > 0 ? $"Ativado em {string.Join(", ", on)}" : "Desativado", null,
+            layout.Add(new("BitLocker", on.Count > 0 ? $"Ativado em {string.Join(", ", on)}" : "Desativado", null,
                 "Criptografia do Windows: sem a senha ou a chave de recuperação, ninguém lê os dados do disco."));
         }
-        rows.Add(new("Firmware", d.Firmware, null, "Versão do software interno do disco. Fabricantes às vezes lançam correções."));
-        rows.Add(new("Nº de série", d.Serial));
-        if (d.Health != null)
-            rows.Add(Verdict("Saúde", d.Health, health, null, health == Tone.Warn ? "O Windows indica um problema. Faça backup e veja os detalhes em Discos." : null,
-                "Estado que o Windows informa. Vida útil e temperatura ficam na página Discos."));
-        rows.RemoveAll(r => r.Value is "—" or "");
-        return rows;
+        return (rows, layout);
     }
 
     // ---------------- Sistema operacional ----------------

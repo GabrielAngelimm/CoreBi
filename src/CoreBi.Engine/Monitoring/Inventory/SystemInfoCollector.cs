@@ -232,14 +232,19 @@ public static class SystemInfoCollector
         return list;
     }
 
-    /// <summary>Revisão do microcódigo carregado: o Windows guarda em "Update Revision" (8 bytes, a revisão nos 4 últimos).</summary>
+    /// <summary>
+    /// Revisão do microcódigo carregado, em "Update Revision". Na Intel ela vem nos 4 últimos dos 8 bytes; na AMD, nos 4 primeiros.
+    /// </summary>
     private static string? Microcode()
     {
         try
         {
             using var key = Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0");
-            if (key?.GetValue("Update Revision") is byte[] { Length: >= 8 } b && BitConverter.ToUInt32(b, 4) is uint rev and > 0)
-                return $"0x{rev:X8}";
+            if (key?.GetValue("Update Revision") is byte[] { Length: >= 4 } b)
+            {
+                uint high = b.Length >= 8 ? BitConverter.ToUInt32(b, 4) : 0, low = BitConverter.ToUInt32(b, 0);
+                if ((high != 0 ? high : low) is uint rev and > 0) return $"0x{rev:X8}";
+            }
         }
         catch { }
         return null;

@@ -26,7 +26,8 @@ public sealed class ColumnsPanel : Panel
 
     protected override Size MeasureOverride(Size available)
     {
-        int cols = Math.Max(1, Math.Min(Columns, InternalChildren.Count == 0 ? 1 : InternalChildren.Count));
+        int cols = Math.Max(1, Columns);
+        // A largura da coluna não depende de quantos grupos há: um grupo só fica do tamanho dos outros, não estica na tela toda.
         double w = ColumnWidth(available.Width, cols);
         var heights = new double[cols];
         _slots.Clear();
@@ -44,7 +45,7 @@ public sealed class ColumnsPanel : Panel
 
     protected override Size ArrangeOverride(Size final)
     {
-        int cols = Math.Max(1, Math.Min(Columns, InternalChildren.Count == 0 ? 1 : InternalChildren.Count));
+        int cols = Math.Max(1, Columns);
         double w = ColumnWidth(final.Width, cols);
         foreach (var (child, c, y) in _slots)
             child.Arrange(new Rect(c * (w + ColumnGap), y, w, child.DesiredSize.Height));
