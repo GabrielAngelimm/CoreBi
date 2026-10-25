@@ -13,7 +13,7 @@ namespace CoreBi.Engine.Monitoring.Power;
 /// </summary>
 public static class BatteryInfo
 {
-    private static List<Dictionary<string, object?>> Q(string scope, string cls)
+    internal static List<Dictionary<string, object?>> Q(string scope, string cls)
     {
         var list = new List<Dictionary<string, object?>>();
         try
@@ -31,25 +31,25 @@ public static class BatteryInfo
         return list;
     }
 
-    private static Dictionary<string, object?>? At(List<Dictionary<string, object?>> l, int i) => i < l.Count ? l[i] : null;
+    internal static Dictionary<string, object?>? At(List<Dictionary<string, object?>> l, int i) => i < l.Count ? l[i] : null;
 
-    private static long? L(Dictionary<string, object?>? d, string k)
+    internal static long? L(Dictionary<string, object?>? d, string k)
     {
         if (d != null && d.TryGetValue(k, out var v) && v != null)
             try { return Convert.ToInt64(v); } catch { }
         return null;
     }
 
-    private static bool? B(Dictionary<string, object?>? d, string k)
+    internal static bool? B(Dictionary<string, object?>? d, string k)
     {
         if (d != null && d.TryGetValue(k, out var v) && v is bool b) return b;
         return null;
     }
 
-    private static string? S(Dictionary<string, object?>? d, string k)
+    internal static string? S(Dictionary<string, object?>? d, string k)
         => d != null && d.TryGetValue(k, out var v) && v is string s && s.Trim().Length > 0 ? s.Trim() : null;
 
-    private static string Chemistry(long? c) => c switch
+    internal static string Chemistry(long? c) => c switch
     {
         3 => "Chumbo-ácido",
         4 => "NiCd",
@@ -60,7 +60,7 @@ public static class BatteryInfo
         _ => "—"
     };
 
-    private static string Status(long? s) => s switch
+    internal static string Status(long? s) => s switch
     {
         1 => "Descarregando",
         2 => "Na tomada",

@@ -17,6 +17,9 @@ public class SensorRow : INotifyPropertyChanged
 
     private float? _value, _min, _max;
     public float? RawValue => _value;
+    /// <summary>Menor e maior valor vistos desde que os sensores abriram.</summary>
+    public float? RawMin => _min;
+    public float? RawMax => _max;
 
     /// <summary>Ordem de exibição por tipo (clocks e temperaturas primeiro, como no GPU-Z).</summary>
     public int Order => Type switch
