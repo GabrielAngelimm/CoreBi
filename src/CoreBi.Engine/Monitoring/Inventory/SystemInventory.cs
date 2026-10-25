@@ -83,6 +83,8 @@ public sealed class RamInfo
                 return new(Tone.Ok, "XMP/EXPO provavelmente ativo:", $"roda a {conf} MT/s, como indica o part number.");
             if (Rated > 0 && conf < Rated)
                 return new(Tone.Warn, "Abaixo da velocidade nominal:", $"roda a {conf} de {Rated} MT/s. Confira XMP/EXPO na BIOS.");
+            if (Rated > 0)
+                return new(Tone.Ok, "Na velocidade nominal:", $"roda a {conf} MT/s, o máximo que o módulo informa.");
             return new(Tone.None, "Perfil XMP/EXPO:", "sem como estimar (o part number não traz a velocidade). Confira na BIOS.");
         }
     }
@@ -134,7 +136,8 @@ public sealed class RamInfo
 
 public sealed record VideoAdapter(string Name, string Vendor, string DriverVersion, string WindowsDriverVersion, DateTime? DriverDate, ulong? Vram);
 
-public sealed record PhysicalDiskInfo(int Index, string Model, ulong Size, string Bus, string Media, string Firmware, string Serial, bool Removable);
+public sealed record PhysicalDiskInfo(int Index, string Model, ulong Size, string Bus, string Media, string Firmware, string Serial, bool Removable,
+    string? Health = null, string? Partition = null, int? Rpm = null);
 
 /// <summary>Tudo que a página Sistema mostra, lido uma vez (WMI, registro e APIs do Windows).</summary>
 public sealed class SystemInventory
@@ -273,6 +276,9 @@ public sealed class SystemInventory
             disk.Add("Capacidade", Fmt.Bytes(d.Size));
             disk.Add("Interface", d.Media.Length > 0 ? $"{d.Bus} · {d.Media}" : d.Bus);
             disk.Add("Firmware", d.Firmware);
+            if (d.Rpm != null) disk.Add("Rotação", $"{d.Rpm} rpm");
+            if (d.Partition != null) disk.Add("Partição", d.Partition);
+            if (d.Health != null) disk.Add("Saúde (Windows)", d.Health);
             disk.Add("Nº de série", d.Serial);
         }
         return roots;

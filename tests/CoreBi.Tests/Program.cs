@@ -99,7 +99,8 @@ internal static partial class Program
             Require(index[0].Name == "Ryzen 7 5700X" && index[0].Spec.StartsWith("8 núcleos · 16 threads"), "CPU index: " + index[0].Spec);
             var ramRows = sheets["ram"].Groups.SelectMany(g => g.Rows).ToList();
             Require(ramRows.Any(r => r.Key == "Canais" && r.Value == "Dual channel" && r.Tone == Tone.Ok) && ramRows.Any(r => r.Key == "Perfil XMP/EXPO" && r.Tone == Tone.Ok), "RAM verdicts live in the rows");
-            Require(sheets["ram"].Groups.Count(g => g.Title.StartsWith("Módulo ")) == 2, "One group per RAM module");
+            Require(sheets["ram"].Groups.Any(g => g.Columns?.Count == 2 && g.Rows.All(r => r.Cells?.Count == 2)), "Two RAM modules side by side");
+            Require(sheets["cpu"].Readouts.Count == 4 && index.All(i => i.Glyph.Length == 1 && i.Glyph[0] >= '\uE000'), "Index glyphs are icon characters");
             Require(sheets["gpu"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Atualização" && r.Tone == Tone.Warn), "Display below max Hz warns in the row and the index");
             Require(inv.ToNodes().Count == 6, "Report keeps six categories");
             return new { slots = "A1,A2*,B1,B2*", index = index.Select(i => i.Name).ToArray() };

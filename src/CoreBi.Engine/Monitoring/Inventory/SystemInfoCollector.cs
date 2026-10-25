@@ -405,13 +405,28 @@ public static class SystemInfoCollector
     /// <summary>Relê os discos físicos (ex.: depois de conectar um pendrive ou HD externo).</summary>
     public static List<PhysicalDiskInfo> ReadDisks()
     {
-        var media = new Dictionary<int, (string Bus, string Media)>();
+        var media = new Dictionary<int, (string Bus, string Media, string? Health, int? Rpm)>();
         try
         {
-            foreach (var d in Query("SELECT DeviceId, BusType, MediaType FROM MSFT_PhysicalDisk", @"root\Microsoft\Windows\Storage"))
+            foreach (var d in Query("SELECT DeviceId, BusType, MediaType, HealthStatus, SpindleSpeed FROM MSFT_PhysicalDisk", @"root\Microsoft\Windows\Storage"))
                 if (int.TryParse(d["DeviceId"]?.ToString(), out int idx))
+                {
+                    long rpm = d["SpindleSpeed"] is { } sp ? Convert.ToInt64(sp, CultureInfo.InvariantCulture) : 0;
                     media[idx] = (I(d["BusType"]) switch { 17 => "NVMe", 11 => "SATA", 7 => "USB", 10 => "SAS", 8 => "RAID", 12 => "SD", 6 => "Fibre Channel", 3 => "ATA", _ => "" },
-                                  I(d["MediaType"]) switch { 3 => "HDD", 4 => "SSD", 5 => "SCM", _ => "" });
+                                  I(d["MediaType"]) switch { 3 => "HDD", 4 => "SSD", 5 => "SCM", _ => "" },
+                                  I(d["HealthStatus"]) switch { 0 => "Saudável", 1 => "Atenção", 2 => "Com defeito", _ => null },
+                                  rpm is > 0 and < 100000 ? (int)rpm : null);
+                }
+        }
+        catch { }
+
+        // Estilo de partição (GPT/MBR), pelo número do disco.
+        var partition = new Dictionary<int, string>();
+        try
+        {
+            foreach (var d in Query("SELECT Number, PartitionStyle FROM MSFT_Disk", @"root\Microsoft\Windows\Storage"))
+                if (d["Number"] != null && I(d["PartitionStyle"]) is 1 or 2)
+                    partition[I(d["Number"])] = I(d["PartitionStyle"]) == 2 ? "GPT" : "MBR";
         }
         catch { }
 
@@ -424,7 +439,8 @@ public static class SystemInfoCollector
             string bus = m.Bus is { Length: > 0 } b ? b : usb ? "USB" : S(d, "InterfaceType");
             bool removable = usb || bus == "USB" || S(d, "MediaType").Contains("Removable", StringComparison.OrdinalIgnoreCase);
             list.Add(new PhysicalDiskInfo(idx, S(d, "Model"), Convert.ToUInt64(d["Size"] ?? 0UL, CultureInfo.InvariantCulture), bus, m.Media ?? "",
-                Fmt.Clean(S(d, "FirmwareRevision")), Fmt.Clean(S(d, "SerialNumber")), removable));
+                Fmt.Clean(S(d, "FirmwareRevision")), Fmt.Clean(S(d, "SerialNumber")), removable,
+                m.Health, partition.GetValueOrDefault(idx), m.Rpm));
         }
         return list.OrderBy(d => d.Index).ToList();
     }

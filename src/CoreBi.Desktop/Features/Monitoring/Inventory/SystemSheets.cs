@@ -15,16 +15,28 @@ public sealed record IndexItem(string Key, string Glyph, string Category, string
     public string Tip => Spec.Length > 0 ? $"{Name} · {Spec}" : Name;
 }
 
-public sealed record Readout(string Label, string Value, string Unit = "", string? Tip = null);
+/// <summary>Leitura grande da placa. First tira o fio e o recuo da primeira.</summary>
+public sealed record Readout(string Label, string Value, string Unit = "", string? Tip = null)
+{
+    public bool First { get; init; }
+}
 
 /// <summary>
 /// Linha chave/valor. Note aparece em cinza depois do valor ("há 1 ano"); Tone acende um LED antes dele (verde: está
 /// certo, âmbar: vale ajustar); Help é uma linha de explicação embaixo, para o que pede contexto. Clicar copia o valor.
 /// </summary>
-public sealed record SpecRow(string Key, string Value, string? Note = null, string? Tip = null, Tone Tone = Tone.None, string? Help = null);
+public sealed record SpecRow(string Key, string Value, string? Note = null, string? Tip = null, Tone Tone = Tone.None, string? Help = null)
+{
+    /// <summary>Uma célula por coluna do grupo (módulos de memória lado a lado); Value guarda o texto para copiar.</summary>
+    public List<string>? Cells { get; init; }
+}
 
 /// <summary>Grupo de linhas com uma frase que explica o assunto. Tokens: lista em linha (instruções do processador).</summary>
-public sealed record SpecGroup(string Title, List<SpecRow> Rows, List<SpecToken>? Tokens = null, string? Help = null);
+public sealed record SpecGroup(string Title, List<SpecRow> Rows, List<SpecToken>? Tokens = null, string? Help = null)
+{
+    /// <summary>Cabeçalho das colunas quando as linhas têm Cells.</summary>
+    public List<string>? Columns { get; init; }
+}
 
 public sealed record SpecToken(string Text, bool On);
 
@@ -45,7 +57,11 @@ public sealed class Sheet
 // Armazenamento: um disco por linha (DataTemplate em SystemView.xaml)
 
 public sealed record VolumeView(string Letter, string Name, string Line, double Weight, double Used, string Tip);
-public sealed record DiskView(string Title, string Meta, List<string> Chips, string Size, string Unit, string Free, List<VolumeView> Volumes);
+public sealed record DiskView(string Title, string Meta, List<string> Chips, string Size, string Unit, string Free, List<VolumeView> Volumes,
+    string Health = "", Tone Tone = Tone.None)
+{
+    public bool First { get; init; }
+}
 
 /// <summary>Monta as seis fichas da página Sistema a partir do inventário (e das placas de vídeo e unidades já lidas).</summary>
 public static class SystemSheets
@@ -86,12 +102,12 @@ public static class SystemSheets
             string spec = error != null ? "Não foi possível ler" : IndexSpec(key, s, inv);
             index.Add(new IndexItem(key, glyph, category, error != null ? category : IndexName(key, s), spec));
         }
-        Add(Cpu, "", "Processador", inv.Errors.GetValueOrDefault(SystemInventory.CpuTitle));
-        Add(Gpu, "", "Placa de vídeo", inv.Errors.GetValueOrDefault(SystemInventory.GpuTitle));
-        Add(Ram, "", "Memória RAM", inv.Errors.GetValueOrDefault(SystemInventory.RamTitle));
-        Add(Board, "", "Placa-mãe e BIOS", inv.Errors.GetValueOrDefault(SystemInventory.BoardTitle));
-        Add(Storage, "", "Armazenamento", inv.Errors.GetValueOrDefault(SystemInventory.StorageTitle));
-        Add(Os, "", "Sistema operacional", inv.Errors.GetValueOrDefault(SystemInventory.OsTitle));
+        Add(Cpu, "\uE950", "Processador", inv.Errors.GetValueOrDefault(SystemInventory.CpuTitle));
+        Add(Gpu, "\uE7F4", "Placa de vídeo", inv.Errors.GetValueOrDefault(SystemInventory.GpuTitle));
+        Add(Ram, "\uEEA0", "Memória RAM", inv.Errors.GetValueOrDefault(SystemInventory.RamTitle));
+        Add(Board, "\uE964", "Placa-mãe e BIOS", inv.Errors.GetValueOrDefault(SystemInventory.BoardTitle));
+        Add(Storage, "\uEDA2", "Armazenamento", inv.Errors.GetValueOrDefault(SystemInventory.StorageTitle));
+        Add(Os, "\uE7F8", "Sistema operacional", inv.Errors.GetValueOrDefault(SystemInventory.OsTitle));
         return (index, sheets);
     }
 
@@ -148,19 +164,22 @@ public static class SystemSheets
         var clocks = new List<SpecRow> { new("Núcleos", cores.ToString(Br), t.Hybrid ? $"{t.PerformanceCores} P + {t.EfficientCores} E" : null) };
         if (t.Hybrid) clocks.Add(new("Desempenho + eficiência", $"{t.PerformanceCores} + {t.EfficientCores}", null, null, Tone.None,
             "Os de desempenho (P) tocam jogos e tarefas pesadas; os de eficiência (E) cuidam do que roda em segundo plano."));
-        clocks.Add(new("Threads", threads.ToString(Br), smt ? $"{(double)threads / cores:0.#} por núcleo ({(c.Vendor == "AMD" ? "SMT" : "Hyper-Threading")})" : "1 por núcleo"));
+        clocks.Add(new("Threads", threads.ToString(Br), smt ? $"{(double)threads / cores:0.#} por núcleo" : "1 por núcleo"));
+        clocks.Add(new(c.Vendor == "AMD" ? "SMT" : "Hyper-Threading", smt ? "Ativado" : "Desligado", null, "Cada núcleo toca duas threads ao mesmo tempo."));
         clocks.Add(new("Clock base", Fmt.Ghz(c.BaseMhz), Help: "A frequência garantida. Em uso ele sobe acima disso (boost) conforme temperatura e consumo."));
 
         var cache = Fmt.CacheLines(c).Select(kv => new SpecRow(kv.Key, kv.Value, kv.Key == "L3" && l3.Count == 1 ? "compartilhado" : null)).ToList();
 
         var features = new List<SpecRow>();
         if (c.Hypervisor)
-            features.Add(Verdict("Virtualização", "Em uso pelo Windows", Tone.Ok, "Hyper-V ou segurança baseada em virtualização",
-                "Máquinas virtuais, WSL 2 e o Subsistema para Android funcionam."));
+        {
+            features.Add(Verdict($"Virtualização ({amd})", "Ativada", Tone.Ok, null, "Máquinas virtuais, WSL 2 e o Subsistema para Android funcionam."));
+            features.Add(new("Hyper-V / VBS", "Em uso", null, null, Tone.None, "O próprio Windows usa a virtualização para isolar partes sensíveis do sistema."));
+        }
         else if (c.Virtualization is bool on)
             features.Add(on
-                ? Verdict("Virtualização", "Ativada", Tone.Ok, $"{amd} no firmware", "Máquinas virtuais, WSL 2 e o Subsistema para Android funcionam.")
-                : Verdict("Virtualização", "Desligada", Tone.Warn, $"{amd} no firmware", $"Para usar máquinas virtuais ou WSL 2, ative {amd} na BIOS."));
+                ? Verdict($"Virtualização ({amd})", "Ativada", Tone.Ok, null, "Máquinas virtuais, WSL 2 e o Subsistema para Android funcionam.")
+                : Verdict($"Virtualização ({amd})", "Desligada", Tone.Warn, null, $"Para usar máquinas virtuais ou WSL 2, ative {amd} na BIOS."));
 
         var groups = new List<SpecGroup>
         {
@@ -221,10 +240,10 @@ public static class SystemSheets
         foreach (var d in inv.Displays)
         {
             var hz = d.BelowMax
-                ? Verdict("Atualização", $"{d.Hz} Hz", Tone.Warn, $"aceita até {d.MaxHz} Hz",
-                    "Abaixo do máximo do monitor. Ajuste em Configurações › Sistema › Tela › Tela avançada.")
+                ? Verdict("Atualização", $"{d.Hz} Hz", Tone.Warn, $"aceita {d.MaxHz} Hz",
+                    "Abaixo do máximo da tela. Ajuste em Configurações › Sistema › Tela › Tela avançada.")
                 : d.MaxHz > 0 && d.Hz >= d.MaxHz - 1
-                    ? Verdict("Atualização", $"{d.Hz} Hz", Tone.Ok, "o máximo do monitor")
+                    ? Verdict("Atualização", $"{d.Hz} Hz", Tone.Ok, "máximo da tela")
                     : new SpecRow("Atualização", $"{d.Hz} Hz");
             var rows = new List<SpecRow>
             {
@@ -279,90 +298,100 @@ public static class SystemSheets
         string form = string.Join(" / ", r.Modules.Select(m => m.Form).Distinct());
         var volts = r.Modules.Select(m => m.Volt).Where(v => v != null).Distinct().ToList();
 
+        // Velocidade, perfil e canais: o que mais muda o desempenho da RAM, com o veredito ao lado do valor.
+        var speed = new List<SpecRow>
+        {
+            new("Em uso", r.Configured > 0 ? $"{r.Configured} MT/s" : "—", r.Configured > 0 ? $"{r.Configured / 2} MHz reais" : null,
+                "MT/s são transferências por segundo. A DDR faz duas por ciclo, por isso o clock real é a metade."),
+            new("Nominal (JEDEC)", r.Rated > 0 ? $"{r.Rated} MT/s" : "—", null, "Velocidade que o módulo informa ao Windows."),
+        };
+        if (r.PartSpeed > 0) speed.Add(new("Do part number", $"{r.PartSpeed} MT/s", null, "Velocidade escrita no código do modelo, a do perfil XMP/EXPO."));
+        if (r.Profile is { } p)
+        {
+            var (value, help) = p.Tone switch
+            {
+                Tone.Ok when r.PartSpeed > 0 => ("Ativo", "A RAM roda na velocidade do part number, o que só acontece com o perfil ligado."),
+                Tone.Ok => ("Não precisa", "A RAM já roda na velocidade máxima que informa."),
+                Tone.Warn when p.Title.StartsWith("Abaixo") => ("Abaixo da nominal", $"Roda a {r.Configured} de {r.Rated} MT/s. Confira XMP/EXPO na BIOS."),
+                Tone.Warn => ("Desligado", $"Roda a {r.Configured} MT/s, mas o part number indica {r.PartSpeed}. Ative o perfil na BIOS."),
+                _ => ("Não identificado", "Confira na BIOS se o XMP/EXPO está ligado."),
+            };
+            speed.Add(Verdict("Perfil XMP/EXPO", value, p.Tone, p.Tone == Tone.Ok && r.PartSpeed > 0 ? "estimado" : null, help,
+                "O Windows não informa se o perfil está ligado; a estimativa compara a velocidade em uso com a do módulo."));
+        }
+        if (r.ChannelFinding is { } ch)
+        {
+            string value = ch.Tone == Tone.Ok ? ch.Title.TrimEnd(':') : r.Channels == null && r.Modules.Count > 1 ? "Não identificado" : "Canal único";
+            speed.Add(Verdict("Canais", value, ch.Tone, null,
+                ch.Tone == Tone.Ok ? Cap(ch.Text.TrimEnd('.')) + ": o dobro de dados por vez com o processador." : Cap(ch.Text)));
+        }
+        speed.Add(new("Timings", "Na BIOS ou no CPU-Z", null, "CL, tRCD e tRP: o Windows não informa."));
+
         var capacity = new List<SpecRow> { new("Instalada", Fmt.Bytes(r.Total)) };
         if (memory is { } mem)
         {
             double reserved = (double)r.Total - mem.Total;
-            capacity.Add(new("Utilizável", Fmt.Bytes(mem.Total), reserved > 64 << 20 ? $"{Fmt.Bytes(reserved)} reservados pelo hardware" : null,
+            capacity.Add(new("Utilizável", Fmt.Bytes(mem.Total), reserved > 64 << 20 ? $"{Fmt.Bytes(reserved)} reservados" : null,
                 "O que sobra para o Windows depois do que o firmware e o vídeo integrado separam."));
         }
         capacity.Add(new("Módulos", r.Slots > 0 ? $"{r.Modules.Count} de {r.Slots} slots" : r.Modules.Count.ToString(Br),
             r.Slots > r.Modules.Count ? $"{r.Slots - r.Modules.Count} {(r.Slots - r.Modules.Count == 1 ? "livre" : "livres")}" : null));
         if (r.MaxCapacity > 0) capacity.Add(new("Máximo da placa", Fmt.Bytes(r.MaxCapacity), null, "Capacidade máxima que a placa-mãe declara suportar."));
-        capacity.Add(new("Tipo", $"{r.Type} · {form}", form.Contains("SODIMM") ? "módulo de notebook" : null));
-        capacity.Add(new("ECC", r.Ecc ? "Sim" : "Não", r.Ecc ? "corrige erros de memória" : null, "Correção de erros por hardware, comum em servidores e estações de trabalho."));
-
-        // Velocidade, perfil e canais: o que mais muda o desempenho da RAM, com o veredito ao lado do valor.
-        var speed = new List<SpecRow>
-        {
-            new("Em uso", r.Configured > 0 ? $"{r.Configured} MT/s" : "—", r.Configured > 0 ? $"{r.Configured / 2} MHz reais" : null, null, Tone.None,
-                "MT/s são transferências por segundo. A DDR faz duas por ciclo, por isso o clock real é a metade."),
-            new("Nominal (JEDEC)", r.Rated > 0 ? $"{r.Rated} MT/s" : "—", null, "Velocidade padrão gravada no módulo, a que a placa usa sem perfil XMP/EXPO."),
-        };
-        if (r.PartSpeed > 0) speed.Add(new("Indicada no part number", $"{r.PartSpeed} MT/s"));
-        if (r.Profile is { } p)
-        {
-            var (value, help) = p.Tone switch
-            {
-                Tone.Ok => ("Provavelmente ativo", "A RAM roda na velocidade do part number, o que só acontece com o perfil ligado na BIOS."),
-                Tone.Warn => (p.Title.StartsWith("Abaixo") ? "Abaixo da nominal" : "Provavelmente desligado", p.Text.TrimEnd('.') + "."),
-                _ => ("Sem como estimar", p.Text.TrimEnd('.') + "."),
-            };
-            speed.Add(Verdict("Perfil XMP/EXPO", value, p.Tone, null, Cap(help), "O Windows não informa se o perfil está ligado; a estimativa compara a velocidade em uso com a do part number."));
-        }
-        if (r.ChannelFinding is { } ch)
-        {
-            string value = ch.Tone == Tone.Ok ? ch.Title.TrimEnd(':') : r.Channels == null && r.Modules.Count > 1 ? "Não identificado" : "Canal único";
-            speed.Add(Verdict("Canais", value, ch.Tone, ch.Tone == Tone.Ok ? ch.Text.TrimEnd('.') : null,
-                ch.Tone == Tone.Ok ? "Com os dois canais a RAM troca o dobro de dados por vez com o processador." : Cap(ch.Text)));
-        }
-        speed.Add(new("Timings", "Não informados pelo Windows", null, null, Tone.None, "CL, tRCD e tRP aparecem na BIOS ou no CPU-Z (aba SPD)."));
+        capacity.Add(new("Tipo", $"{r.Type} · {form}", form.Contains("SODIMM") ? "de notebook" : null));
+        capacity.Add(new("ECC", r.Ecc ? "Sim" : "Não", null, "Correção de erros por hardware, comum em servidores e estações de trabalho."));
 
         // Slots da placa, ocupados e vazios, com o canal de cada um.
-        var slotRows = r.SlotMap().Select((sl, i) => sl.Module is { } m
-            ? new SpecRow(sl.Name.Length > 0 ? sl.Name : $"Slot {i + 1}", $"{Fmt.Bytes(m.Capacity)} · {(m.Maker != "—" ? m.Maker : m.Type)}" + (m.Configured > 0 ? $" · {m.Configured} MT/s" : ""),
-                sl.Channel != null ? $"canal {sl.Channel}" : null)
-            : new SpecRow(sl.Name.Length > 0 ? sl.Name : $"Slot {i + 1}", "Vazio", sl.Channel != null ? $"canal {sl.Channel}" : null)).ToList();
+        var map = r.SlotMap();
+        string SlotName(RamSlot sl, int i) => sl.Name.Length > 0 ? sl.Name : $"Slot {i + 1}";
+        var slotRows = map.Select((sl, i) => sl.Module is { } m
+            ? new SpecRow(SlotName(sl, i), $"{Fmt.Bytes(m.Capacity)} {m.Type}" + (m.Configured > 0 ? $" · {m.Configured} MT/s" : ""), sl.Channel != null ? $"canal {sl.Channel}" : null,
+                $"{m.Bank} · {m.Locator}")
+            : new SpecRow(SlotName(sl, i), "Vazio", sl.Channel != null ? $"canal {sl.Channel}" : null)).ToList();
+
+        // Módulos lado a lado: uma coluna por módulo, as linhas que os módulos informam ao Windows.
+        var mods = map.Select((sl, i) => (Name: SlotName(sl, i), Module: sl.Module)).Where(x => x.Module != null).Select(x => (x.Name, Module: x.Module!)).ToList();
+        SpecRow Cells(string key, Func<RamModule, string> cell, string? tip = null)
+        {
+            var cells = mods.Select(x => cell(x.Module)).ToList();
+            return new SpecRow(key, string.Join(" / ", cells.Distinct()), null, tip) { Cells = cells };
+        }
+        var moduleRows = new List<SpecRow>
+        {
+            Cells("Fabricante", m => m.Maker),
+            Cells("Part number", m => m.Part, "Código do modelo. Com ele dá para achar a ficha técnica e os timings no site da fabricante."),
+            Cells("Velocidade", m => m.Configured > 0 ? $"{m.Configured} MT/s" : "—"),
+            Cells("Ranks", m => m.Ranks switch { 1 => "1 · single", 2 => "2 · dual", 4 => "4 · quad", > 0 => m.Ranks.ToString(Br), _ => "—" },
+                "Quantos conjuntos de chips o módulo tem. Dual rank costuma render um pouco mais em jogos."),
+            Cells("Tensão", m => m.MinVolt is double lo && m.MaxVolt is double hi && lo != hi ? $"{Fmt.Volt(m.Volt)} ({N(lo, "0.0#")}–{N(hi, "0.0#")})" : Fmt.Volt(m.Volt),
+                "Tensão em uso e, entre parênteses, a faixa que o módulo aceita."),
+            Cells("Posição", m => m.Locator, "Nome que a placa-mãe dá ao slot."),
+            Cells("Nº de série", m => m.Serial),
+        };
+        if (mods.Any(x => x.Module.TotalWidth > x.Module.DataWidth && x.Module.DataWidth > 0))
+            moduleRows.Insert(5, Cells("Largura", m => m.DataWidth > 0 ? $"{m.DataWidth} / {m.TotalWidth} bits" : "—", "Dados / total; os bits a mais são do ECC."));
+        moduleRows.RemoveAll(row => row.Cells!.All(c => c == "—"));
 
         var groups = new List<SpecGroup>
         {
             new("Velocidade e canais", speed),
             new("Capacidade", capacity),
-            new("Slots", slotRows, Help: r.Channels == 2 && r.Slots == 4 && r.Modules.Count == 2
-                ? "Com dois módulos, o recomendado costuma ser A2 e B2. O manual da placa confirma." : null),
+            new("Slots", slotRows),
         };
+        // Até dois módulos cabem lado a lado; com mais, cada um ganha o próprio grupo.
+        if (mods.Count <= 2)
+            groups.Add(new(mods.Count == 1 ? "Módulo" : "Módulos", moduleRows) { Columns = mods.Select(x => x.Name).ToList() });
+        else
+            for (int k = 0; k < mods.Count; k++)
+                groups.Add(new($"Módulo {mods[k].Name}", moduleRows.Select(row => row with { Value = row.Cells![k], Cells = null }).ToList()));
         if (memory is { } m2)
         {
             long used = m2.Total - m2.Available, commit = m2.CommitLimit - m2.CommitAvailable;
             groups.Add(new($"Uso às {now:HH:mm}", new()
             {
-                new("Em uso", $"{Fmt.Bytes(used)} de {Fmt.Bytes(m2.Total)}", $"{100.0 * used / m2.Total:0} %"),
+                new("Em uso", $"{Fmt.Bytes(used)} de {Fmt.Bytes(m2.Total)}", $"{100.0 * used / m2.Total:0} %", "Uma foto de quando a página abriu. O uso ao vivo fica na Visão geral."),
                 new("Disponível", Fmt.Bytes(m2.Available)),
-                new("Memória virtual", $"{Fmt.Bytes(commit)} de {Fmt.Bytes(m2.CommitLimit)}", null, null, Tone.None,
-                    "RAM + arquivo de paginação no disco. Quando a RAM enche, o Windows usa o disco, bem mais lento."),
-            }, Help: "Uma foto de quando a página abriu. O uso ao vivo fica na Visão geral."));
-        }
-
-        // Um grupo por módulo, com tudo o que o módulo informa ao Windows.
-        foreach (var slot in r.SlotMap().Where(s => s.Module != null))
-        {
-            var mo = slot.Module!;
-            string name = slot.Name.Length > 0 ? slot.Name : mo.Slot;
-            var rows = new List<SpecRow>
-            {
-                new("Capacidade", Fmt.Bytes(mo.Capacity)),
-                new("Fabricante", mo.Maker),
-                new("Part number", mo.Part, null, "Código do modelo. Com ele dá para achar a ficha técnica e os timings no site da fabricante."),
-                new("Velocidade", mo.Configured > 0 ? $"{mo.Configured} MT/s" : "—", mo.Rated > 0 && mo.Rated != mo.Configured ? $"nominal {mo.Rated} MT/s" : null),
-                new("Ranks", mo.Ranks > 0 ? mo.Ranks.ToString(Br) : "—", mo.Ranks switch { 1 => "single rank", 2 => "dual rank", 4 => "quad rank", _ => null },
-                    "Quantos conjuntos de chips o módulo tem. Dual rank costuma render um pouco mais em jogos."),
-                new("Tensão", Fmt.Volt(mo.Volt),
-                    mo.MinVolt is double lo && mo.MaxVolt is double hi && lo != hi ? $"aceita {N(lo, "0.0#")} a {N(hi, "0.0#")} V" : null),
-                new("Largura", mo.DataWidth > 0 ? $"{mo.DataWidth} bits" : "—", mo.TotalWidth > mo.DataWidth && mo.DataWidth > 0 ? $"{mo.TotalWidth} com ECC" : null),
-                new("Posição", string.Join(" · ", new[] { mo.Bank, mo.Locator }.Where(x => x.Length > 0 && x != "—")), null, "Nome que a placa-mãe dá ao slot."),
-                new("Nº de série", mo.Serial),
-            };
-            groups.Add(new($"Módulo {name}", rows));
+                new("Memória virtual", $"{Fmt.Bytes(commit)} de {Fmt.Bytes(m2.CommitLimit)}", null, null, Tone.None, "RAM + arquivo de paginação, usado quando a RAM enche."),
+            }));
         }
 
         var (rv, ru) = r.Configured > 0 ? (r.Configured.ToString(Br), "MT/s") : ("—", "");
@@ -389,7 +418,11 @@ public static class SystemSheets
     {
         if (inv.Board is not { } b) return Missing(Board, "Placa-mãe e BIOS", inv.Errors.GetValueOrDefault(SystemInventory.BoardTitle));
         var f = inv.Firmware;
-        var board = new List<SpecRow> { new("Fabricante", b.Maker), new("Modelo", b.Model), new("Revisão", b.Revision), new("Nº de série", b.Serial) };
+        var board = new List<SpecRow> { new("Fabricante", b.Maker), new("Modelo", b.Model), new("Revisão", b.Revision) };
+        if (inv.Ram is { Slots: > 0 } ram)
+            board.Add(new("Slots de memória", ram.Slots.ToString(Br), ram.MaxCapacity > 0 ? $"até {Fmt.Bytes(ram.MaxCapacity)}" : null, $"{ram.Modules.Count} em uso"));
+        if (inv.Cpus.FirstOrDefault() is { Socket: not "—" } cpu) board.Add(new("Soquete", cpu.Socket, null, "Encaixe do processador."));
+        board.Add(new("Nº de série", b.Serial));
         var groups = new List<SpecGroup> { new("Placa-mãe", board) };
         if (f != null)
         {
@@ -450,14 +483,17 @@ public static class SystemSheets
         {
             var vols = drives.Where(v => v.Disk.Length > 0 && v.Disk == d.Model).ToList();
             double size = Math.Max(1, d.Size);
-            var volumes = vols.Select(v => new VolumeView(v.Letter, string.IsNullOrWhiteSpace(v.Label) ? v.Kind : v.Label,
+            var volumes = vols.Select(v => new VolumeView(v.Letter, (string.IsNullOrWhiteSpace(v.Label) ? v.Kind : v.Label) + (v.FileSystem.Length > 0 ? $" · {v.FileSystem}" : ""),
                 $"{DriveCard.Fmt(v.Free)} livres de {DriveCard.Fmt(v.Total)}", Math.Max(0.04, v.Total / size), v.UsedFraction,
                 $"{v.Letter} · {v.FileSystem} · {v.UsedPercent} usados")).ToList();
             double free = vols.Sum(v => (double)v.Free);
             var (sv, su) = Split(Fmt.Bytes(d.Size));
-            var chips = new List<string> { d.Bus, d.Media, d.Removable && d.Bus != "USB" ? "removível" : "" }.Where(x => x.Length > 0 && x != "—").ToList();
+            var chips = new List<string> { d.Bus, d.Media, d.Rpm is int rpm ? $"{rpm} rpm" : "", d.Partition ?? "", d.Removable && d.Bus != "USB" ? "removível" : "" }
+                .Where(x => x.Length > 0 && x != "—").ToList();
             string meta = string.Join(" · ", new[] { $"Disco {d.Index}", d.Firmware != "—" ? $"firmware {d.Firmware}" : null, d.Serial != "—" ? $"série {d.Serial}" : null }.Where(x => x != null));
-            disks.Add(new DiskView(d.Model, meta, chips, sv, su, vols.Count > 0 ? $"{DriveCard.Fmt((long)free)} livres" : "sem unidade montada", volumes));
+            var tone = d.Health switch { "Saudável" => Tone.Ok, null => Tone.None, _ => Tone.Warn };
+            string freeText = vols.Count > 0 ? $"{DriveCard.Fmt((long)free)} livres" : "sem unidade montada";
+            disks.Add(new DiskView(d.Model, meta, chips, sv, su, freeText, volumes, d.Health ?? "", tone) { First = disks.Count == 0 });
         }
         double total = inv.Disks.Sum(d => (double)d.Size);
         double freeAll = drives.Sum(v => (double)v.Free), usedAll = drives.Sum(v => (double)(v.Total - v.Free));

@@ -71,7 +71,7 @@
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex)}" Value="0">
+                <DataTrigger Binding="{Binding First}" Value="True">
                     <Setter TargetName="cell" Property="BorderThickness" Value="0" />
                     <Setter TargetName="cell" Property="Padding" Value="0" />
                     <Setter TargetName="cell" Property="Margin" Value="0" />
@@ -97,14 +97,25 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <TextBlock Text="{Binding Key}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" />
-                    <DockPanel Grid.Column="2">
+                    <DockPanel x:Name="value" Grid.Column="2" Visibility="Collapsed">
                         <Ellipse DockPanel.Dock="Left" Style="{StaticResource RowLed}" VerticalAlignment="Top" Margin="0,6,8,0" />
                         <TextBlock TextWrapping="Wrap" Typography.NumeralAlignment="Tabular">
-                            <Run Text="{Binding Value, Mode=OneWay}" Foreground="{DynamicResource Fg}" /><Run Text="  " /><Run Text="{Binding Note, Mode=OneWay}" Foreground="{DynamicResource Faint}" />
+                            <Run Text="{Binding Value, Mode=OneWay}" Foreground="{DynamicResource Fg}" /><Run Text="  " /><Run Text="{Binding Note, Mode=OneWay}" Foreground="{DynamicResource Muted}" />
                         </TextBlock>
                     </DockPanel>
+                    <!-- Módulos lado a lado: uma célula por coluna do grupo -->
+                    <ItemsControl x:Name="cells" Grid.Column="2" ItemsSource="{Binding Cells}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Foreground="{DynamicResource Fg}" TextWrapping="Wrap" Typography.NumeralAlignment="Tabular" Margin="0,0,12,0" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                     <TextBlock x:Name="copy" Grid.Column="3" Tag="copy" Text="&#xE8C8;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0" Opacity="0" />
-                    <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Help}" FontSize="12" LineHeight="17" Foreground="{DynamicResource Faint}" TextWrapping="Wrap" Margin="0,5,0,0"
+                    <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Help}" FontSize="12.5" LineHeight="18" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"
                                Visibility="{Binding Help, Converter={StaticResource NotEmptyVis}}" />
                 </Grid>
             </Grid>
@@ -113,6 +124,10 @@
                     <Setter TargetName="bg" Property="Opacity" Value="1" />
                     <Setter TargetName="copy" Property="Opacity" Value="1" />
                 </Trigger>
+                <DataTrigger Binding="{Binding Cells}" Value="{x:Null}">
+                    <Setter TargetName="value" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="cells" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
 
@@ -120,8 +135,27 @@
             <StackPanel>
                 <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" Margin="0,8,0,8" />
                 <!-- Uma frase que explica o assunto do grupo, para quem não é do ramo -->
-                <TextBlock Text="{Binding Help}" FontSize="12" LineHeight="17" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,-3,0,10"
+                <TextBlock Text="{Binding Help}" FontSize="12.5" LineHeight="18" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,-3,0,10"
                            Visibility="{Binding Help, Converter={StaticResource NotEmptyVis}}" />
+                <!-- Cabeçalho das colunas (módulos lado a lado), alinhado com as células das linhas -->
+                <Grid x:Name="columns" Margin="0,0,8,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="44*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="56*" />
+                        <ColumnDefinition Width="22" />
+                    </Grid.ColumnDefinitions>
+                    <ItemsControl Grid.Column="2" ItemsSource="{Binding Columns}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource SpecRowTemplate}" />
                 <!-- Instruções: lista em linha; as que o processador não tem ficam apagadas -->
                 <Border x:Name="tokens" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,10,0,2">
@@ -147,6 +181,9 @@
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding Tokens}" Value="{x:Null}">
                     <Setter TargetName="tokens" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Columns}" Value="{x:Null}">
+                    <Setter TargetName="columns" Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -223,12 +260,18 @@
                             <TextBlock Text="{Binding Size}" Style="{StaticResource ReadoutText}" FontSize="26" FontWeight="Light" />
                             <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" FontSize="12.5" Margin="4,0,0,3" />
                         </StackPanel>
-                        <TextBlock Text="{Binding Free}" FontSize="12" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" Margin="0,6,0,0" />
+                        <TextBlock Text="{Binding Free}" FontSize="12.5" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" Margin="0,6,0,0" />
+                        <!-- Saúde que o Windows informa para o disco -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0" Visibility="{Binding Health, Converter={StaticResource NotEmptyVis}}"
+                                    ToolTip="Estado que o Windows informa. Detalhes de vida útil e temperatura em Discos.">
+                            <Ellipse Style="{StaticResource RowLed}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Health}" FontSize="12.5" Foreground="{DynamicResource Fg}" />
+                        </StackPanel>
                     </StackPanel>
                 </Grid>
             </Border>
             <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex)}" Value="0">
+                <DataTrigger Binding="{Binding First}" Value="True">
                     <Setter TargetName="row" Property="BorderThickness" Value="0" />
                 </DataTrigger>
             </DataTemplate.Triggers>
@@ -314,7 +357,7 @@
                                 <TextBlock x:Name="SheetTitle" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
                                 <TextBlock x:Name="SheetSub" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,7,0,0" />
                             </StackPanel>
-                            <ItemsControl x:Name="SheetReadouts" Grid.Column="1" VerticalAlignment="Bottom" AlternationCount="100" ItemTemplate="{StaticResource ReadoutCell}">
+                            <ItemsControl x:Name="SheetReadouts" Grid.Column="1" VerticalAlignment="Bottom" ItemTemplate="{StaticResource ReadoutCell}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
@@ -330,7 +373,7 @@
                                     <ItemsPanelTemplate><inv:ColumnsPanel Loaded="SpecColumns_Loaded" /></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                             </ItemsControl>
-                            <ItemsControl x:Name="DiskList" ItemTemplate="{StaticResource DiskTemplate}" AlternationCount="100" Margin="0,-8,0,0" Focusable="False" />
+                            <ItemsControl x:Name="DiskList" ItemTemplate="{StaticResource DiskTemplate}" Margin="0,-8,0,0" Focusable="False" />
                             <Button x:Name="SheetLink" Style="{StaticResource SheetLink}" HorizontalAlignment="Left" Margin="0,22,0,0" Click="SheetLink_Click" />
                         </StackPanel>
                     </ScrollViewer>
