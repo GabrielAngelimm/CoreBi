@@ -159,8 +159,11 @@ public static class SystemSheets
         bool smt = threads > cores;
         string amd = c.Vendor == "AMD" ? "SVM" : "VT-x";
 
+        // A placa resume; a identificação repete o nome completo, como na etiqueta do processador.
         var id = new List<SpecRow>
         {
+            new("Fabricante", c.Vendor),
+            new("Nome completo", c.Name),
         };
         if (c.Family != null) id.Add(new("Família · modelo · stepping", $"{c.Family} · {c.Model} · {c.Stepping}", null,
             $"Em hexadecimal: família {c.Family:X}h, modelo {c.Model:X}h. É o que identifica a geração exata do chip."));
@@ -234,7 +237,7 @@ public static class SystemSheets
 
         // Chip, arquitetura, memória, clocks e TDP vêm da leitura da página Placa de vídeo (banco de especificações + driver).
         string? G(string key) => spec == null ? null : Find(spec.Sections, key);
-        var id = new List<SpecRow>();
+        var id = new List<SpecRow> { new("Modelo", g.Name), new("Fabricante do chip", g.Vendor) };
         if (G("Fabricante da placa") is { } board) id.Add(new("Fabricante da placa", board));
         if (G("Chip") is { } chip) id.Add(new("Chip", chip));
         if (G("Arquitetura") is { } gpuArch) id.Add(new("Arquitetura", gpuArch));
@@ -242,6 +245,7 @@ public static class SystemSheets
         if (G("Lançamento") is { } release) id.Add(new("Lançamento", release));
 
         var memory = new List<SpecRow>();
+        if (vram > 0) memory.Add(new("Tamanho", Fmt.Vram(vram)));
         if (G("Compartilhada do sistema") is { } shared) memory.Add(new("Compartilhada da RAM", shared, null,
             "Quanto da RAM do PC o Windows deixa a placa usar quando a VRAM acaba. É bem mais lenta que a VRAM."));
         if (G("Tipo") is { } memType) memory.Add(new("Tipo", memType));
@@ -273,8 +277,7 @@ public static class SystemSheets
                 "Conexão entre a placa e a placa-mãe. Em repouso ela cai para economizar energia e volta ao máximo em jogo."));
         }
 
-        // A versão do driver já está na placa; aqui ficam a data e o número no formato do Windows.
-        var driver = new List<SpecRow> { new("Data", Fmt.Date(g.DriverDate), Fmt.Ago(g.DriverDate)) };
+        var driver = new List<SpecRow> { new("Versão", g.DriverVersion), new("Data", Fmt.Date(g.DriverDate), Fmt.Ago(g.DriverDate)) };
         if (g.WindowsDriverVersion != g.DriverVersion)
             driver.Add(new("Versão no Windows", g.WindowsDriverVersion, null, $"O mesmo driver {g.DriverVersion}, no formato que o Windows usa."));
         if (G("BIOS (VBIOS)") is { } vbios) driver.Add(new("BIOS da placa", vbios, null, "Firmware da própria placa de vídeo (VBIOS)."));
@@ -298,7 +301,7 @@ public static class SystemSheets
             };
             if (d.Inches is double inch) rows.Insert(1, new("Tamanho", $"{inch:0}\""));
             if (d.Connection != null) rows.Add(new("Conexão", d.Connection, null, "O cabo entre a placa de vídeo e a tela."));
-            if (inv.Displays.Count > 1) rows.Insert(1, new("Resolução", $"{d.Width} × {d.Height}"));
+            rows.Insert(1, new("Resolução", $"{d.Width} × {d.Height}"));
             // O monitor informa a semana; o primeiro dia dela dá o mês (semana 22 de 2023 → maio de 2023).
             if (d.Year is int year)
                 rows.Add(new("Fabricado em", d.Week is int week ? Cap(new DateTime(year, 1, 1).AddDays((week - 1) * 7).ToString("MMMM 'de' yyyy", Br)) : year.ToString(Br),
@@ -390,7 +393,11 @@ public static class SystemSheets
                 ch.Tone == Tone.Ok ? Cap(ch.Text.TrimEnd('.')) + ": o dobro de dados por vez com o processador." : Cap(ch.Text)));
         }
 
-        var capacity = new List<SpecRow>();
+        var capacity = new List<SpecRow>
+        {
+            new("Instalada", Fmt.Bytes(r.Total)),
+            new("Tipo", form.Length > 0 && form != "—" ? $"{r.Type} · {form}" : r.Type, form.Contains("SODIMM") || form.Contains("SO-DIMM") ? "de notebook" : null),
+        };
         if (memory is { } mem)
         {
             double reserved = (double)r.Total - mem.Total;
@@ -476,7 +483,7 @@ public static class SystemSheets
     {
         if (inv.Board is not { } b) return Missing(Board, "Placa-mãe e BIOS", inv.Errors.GetValueOrDefault(SystemInventory.BoardTitle));
         var f = inv.Firmware;
-        var board = new List<SpecRow> { new("Revisão", b.Revision) };
+        var board = new List<SpecRow> { new("Fabricante", b.Maker), new("Modelo", b.Model), new("Revisão", b.Revision) };
         if (inv.Ram is { Slots: > 0 } ram)
             board.Add(new("Slots de memória", ram.Slots.ToString(Br), ram.MaxCapacity > 0 ? $"até {Fmt.Bytes(ram.MaxCapacity)}" : null, $"{ram.Modules.Count} em uso"));
         if (inv.Cpus.FirstOrDefault() is { Socket: not "—" } cpu) board.Add(new("Soquete", cpu.Socket, null, "Encaixe do processador."));
@@ -485,7 +492,7 @@ public static class SystemSheets
         var groups = new List<SpecGroup> { new("Placa-mãe", board) };
         if (f != null)
         {
-            var bios = new List<SpecRow> { new("Fabricante", f.Vendor), new("Data", Fmt.Date(f.Date), Fmt.Ago(f.Date, now)) };
+            var bios = new List<SpecRow> { new("Fabricante", f.Vendor), new("Versão", f.Version), new("Data", Fmt.Date(f.Date), Fmt.Ago(f.Date, now)) };
             if (f.Smbios != null) bios.Add(new("SMBIOS", f.Smbios, null, "Versão da tabela de hardware que a BIOS entrega ao Windows."));
             groups.Add(new("BIOS", bios, Help: "O firmware da placa: liga o hardware antes do Windows. Atualizações trazem correções e suporte a processadores novos."));
 
@@ -639,11 +646,14 @@ public static class SystemSheets
         var (upValue, upUnit) = SplitSpan(up);
         var windows = new List<SpecRow>
         {
+            new("Edição", o.Name),
             new("Versão", o.Version, null, "A atualização anual de recursos (23H2 = segundo semestre de 2023)."),
             new("Build", o.Build, null, null, Tone.None, "O número depois do ponto sobe a cada atualização mensal. Bom para conferir se o Windows está em dia."),
+            new("Arquitetura", o.Architecture),
+            new("Idioma", Cap(o.Language)),
         };
         var computer = new List<SpecRow> { new("Nome", o.Machine, null, "Como o PC aparece na rede."), new("Usuário", o.User), new(o.Domain ? "Domínio" : "Grupo de trabalho", o.Workgroup) };
-        var session = new List<SpecRow> { new("Instalado em", Fmt.Date(o.Installed), Fmt.Ago(o.Installed, now)), new("Último boot", Fmt.Stamp(o.LastBoot)) };
+        var session = new List<SpecRow> { new("Instalado em", Fmt.Date(o.Installed), Fmt.Ago(o.Installed, now)), new("Último boot", Fmt.Stamp(o.LastBoot)), new("Ligado há", up) };
         if (o.LastUpdate != null) session.Insert(1, new("Última atualização", Fmt.Date(o.LastUpdate), o.LastUpdateId, "A atualização mais recente instalada pelo Windows Update."));
         var groups = new List<SpecGroup> { new("Windows", windows), new("Computador", computer), new("Sessão", session) };
         if (inv.Settings is { } st)

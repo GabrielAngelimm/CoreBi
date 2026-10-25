@@ -96,6 +96,8 @@ internal static partial class Program
             inv.Gpus.Add(new VideoAdapter("NVIDIA GeForce RTX 4060 Ti", "NVIDIA", "566.36", "32.0.15.6636", null, 8UL << 30));
             inv.Displays.Add(new DisplayInfo(1, "NVIDIA GeForce RTX 4060 Ti", "LG ULTRAGEAR", "GSM", 27, 1920, 1080, 60, 144, 32, 0, 0, true, "DisplayPort", 2023, 22));
             inv.Disks.Add(new PhysicalDiskInfo(0, "Samsung SSD 980 1TB", 1UL << 40, "NVMe", "SSD", "3B4QFXO7", "S64ANS0T", false, "Saudável", "GPT"));
+            inv.Board = new CoreBi.Engine.Monitoring.Inventory.BoardInfo("Gigabyte Technology Co., Ltd.", "B550M AORUS ELITE", "x.x", "MB-SERIAL-9", null, null, "Desktop");
+            inv.Firmware = new FirmwareInfo("American Megatrends International, LLC.", "FF", new DateTime(2025, 9, 26), "3.3", true, true, "2.0", true, "AMD", "3.94.2.5");
             inv.Settings = new WindowsSettings(false, true, true, true, "(UTC-03:00) Brasília");
             inv.Security = new WindowsSecurity("Windows Defender", true, true, DateTime.Now.AddDays(-1), "Nunca notificar");
             inv.Os = new OsInfo("Windows 11 Pro", "Windows 11 Pro", "24H2", "26100.6899", "64 bits (x64)", new DateTime(2025, 10, 24), DateTime.Now.AddHours(-6), "PC", "user", "WORKGROUP", false, "português (Brasil)", null, null);
@@ -117,12 +119,17 @@ internal static partial class Program
             Require(sheets["ram"].Groups.All(g => !g.Title.StartsWith("Uso")), "System page shows hardware, not live usage");
             Require(sheets["os"].Groups.Any(g => g.Title == "Segurança do Windows" && g.Column == 0) && sheets["os"].Groups.Single(g => g.Title == "Sessão").Column == 1, "Windows groups keep their columns");
             Require(sheets["storage"].Groups.All(g => g.Title != "Samsung SSD 980 1TB"), "Disk name appears once, in the disk line");
+            Require(new[] { ("cpu", "Nome completo"), ("gpu", "Modelo"), ("board", "Modelo"), ("board", "Versão"), ("ram", "Instalada"), ("os", "Edição") }
+                .All(k => sheets[k.Item1].Groups.SelectMany(g => g.Rows).Any(r => r.Key == k.Item2)), "Identification rows repeat what the plate summarizes");
             var report = new CoreBi.Engine.Reports.ReportData { Machine = "PC-TESTE", AppVersion = "0.0.0", Sheets = CoreBi.Desktop.Features.Reports.SystemReport.From(index, sheets) };
             string html = CoreBi.Engine.Reports.ReportBuilder.Html(report), json = CoreBi.Engine.Reports.ReportBuilder.Json(report);
             Require(report.Sheets.Count == 6 && report.Sheets[0].Category == "Sistema operacional" && html.Contains("id=\"s6\""), "Report follows the six sheets, OS first");
-            Require(!html.Contains("S64ANS0T") && !json.Contains("S64ANS0T") && !html.Contains(">user<"), "Report leaves serials and the user name out");
+            Require(!html.Contains("S64ANS0T") && !json.Contains("S64ANS0T") && !html.Contains("MB-SERIAL-9") && !json.Contains("MB-SERIAL-9") && !html.Contains(">user<"), "Report leaves serials and the user name out");
             Require(html.Contains("Maio de 2023") && JsonDocument.Parse(json).RootElement.GetProperty("fichas").GetArrayLength() == 6, "Report carries the same values as the page");
             Require(inv.ToNodes().Count == 6, "Report keeps six categories");
+            string dark = CoreBi.Engine.Reports.ReportBuilder.Html(new CoreBi.Engine.Reports.ReportData { Machine = "PC-TESTE", Dark = true, Sheets = report.Sheets });
+            Require(html.Contains("data-theme=\"light\"") && dark.Contains("data-theme=\"dark\"") && html.Contains("id=\"theme\"") && html.Contains("id=\"print\"") && html.Contains("@media print"),
+                "Report opens in the app theme, can switch themes and print");
             return new { slots = "A1,A2*,B1,B2*", index = index.Select(i => i.Name).ToArray() };
         });
         Check("bottleneck: missing data cannot be a positive verdict", () =>
@@ -395,11 +402,19 @@ internal static partial class Program
             AppVersion = typeof(CoreBi.Desktop.MainWindow).Assembly.GetName().Version?.ToString(3) ?? "",
             Sheets = CoreBi.Desktop.Features.Reports.SystemReport.From(index, sheets),
             System = inv.ToNodes().Select(CoreBi.Engine.Reports.ReportBuilder.ToNode).Where(n => n != null).Cast<CoreBi.Engine.Reports.ReportNode>().ToList(),
+            LogoBase64 = Logo("logo-dark.png"),
+            LogoOnDarkBase64 = Logo("logo.png"),
         };
-        string name = $"CoreBi-{Environment.MachineName}";
-        File.WriteAllText(Path.Combine(folder, name + ".html"), CoreBi.Engine.Reports.ReportBuilder.Html(data), new System.Text.UTF8Encoding(true));
+        string name = $"CoreBi-{Environment.MachineName}", html = CoreBi.Engine.Reports.ReportBuilder.Html(data);
+        File.WriteAllText(Path.Combine(folder, name + ".html"), html, new System.Text.UTF8Encoding(true));
         File.WriteAllText(Path.Combine(folder, name + ".json"), CoreBi.Engine.Reports.ReportBuilder.Json(data), new System.Text.UTF8Encoding(true));
+        // O mesmo caminho do botão Exportar > PDF.
+        try { CoreBi.Desktop.Features.Reports.PdfPrinter.PrintAsync(html, Path.Combine(folder, name + ".pdf")).GetAwaiter().GetResult(); }
+        catch (Exception ex) { Console.Error.WriteLine("PDF: " + ex.Message); }
         Console.WriteLine(Path.GetFullPath(Path.Combine(folder, name + ".html")));
         return 0;
+
+        static string? Logo(string file) =>
+            File.Exists(Path.Combine("src", "CoreBi.Desktop", "Assets", file)) ? Convert.ToBase64String(File.ReadAllBytes(Path.Combine("src", "CoreBi.Desktop", "Assets", file))) : null;
     }
 }

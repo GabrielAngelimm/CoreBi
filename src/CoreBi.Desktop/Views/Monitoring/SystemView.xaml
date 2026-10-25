@@ -357,7 +357,7 @@
                 <TextBlock x:Name="SystemSub" Text="Lendo informações do sistema…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
             </StackPanel>
             <Button x:Name="BtnReport" Grid.Column="1" Style="{StaticResource ReportButton}" Content="Exportar relatório" VerticalAlignment="Center" Click="BtnReport_Click"
-                    ToolTip="Salva a ficha completa do computador num relatório para imprimir ou guardar em PDF (HTML) ou em dados (JSON). Números de série e o nome do usuário ficam de fora." />
+                    ToolTip="Salva a ficha completa do computador em HTML (abre no navegador, com tema claro e escuro e botão de imprimir), em PDF (A4, pronto para enviar) ou em JSON (dados). Números de série e o nome do usuário ficam de fora." />
         </Grid>
 
         <!-- Um painel só: o índice da máquina em cima e a ficha do componente escolhido embaixo -->

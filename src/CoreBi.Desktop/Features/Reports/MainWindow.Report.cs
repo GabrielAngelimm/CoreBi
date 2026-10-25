@@ -16,20 +16,23 @@ public partial class MainWindow
         var dlg = new Microsoft.Win32.SaveFileDialog
         {
             Title = "Exportar relatório",
-            Filter = "Relatório (HTML, abre no navegador e imprime em PDF)|*.html|Dados (JSON)|*.json",
+            Filter = "Relatório para ler e imprimir (HTML)|*.html|Relatório em PDF (A4)|*.pdf|Dados (JSON)|*.json",
             DefaultExt = ".html",
             AddExtension = true,
             FileName = $"CoreBi-{Environment.MachineName}-{DateTime.Now:yyyy-MM-dd-HHmm}",
         };
         if (dlg.ShowDialog(this) != true) return;
         string path = dlg.FileName;
-        // O tipo escolhido na lista manda quando o nome não tem extensão conhecida.
-        bool json = string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase) ||
-                    (dlg.FilterIndex == 2 && !string.Equals(Path.GetExtension(path), ".html", StringComparison.OrdinalIgnoreCase));
-        if (json && !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) path = Path.ChangeExtension(path, ".json");
+        // A extensão digitada manda; sem uma conhecida, vale o tipo escolhido na lista.
+        string ext = Path.GetExtension(path).ToLowerInvariant();
+        if (ext is not (".html" or ".htm" or ".pdf" or ".json"))
+        {
+            ext = dlg.FilterIndex switch { 2 => ".pdf", 3 => ".json", _ => ".html" };
+            path += ext;
+        }
 
         BtnReport.IsEnabled = false;
-        BtnReport.Content = "Gerando relatório…";
+        BtnReport.Content = ext == ".pdf" ? "Gerando PDF…" : "Gerando relatório…";
         try
         {
             // Dados que vivem na interface são copiados aqui (thread da tela); a leitura dos discos roda em segundo plano.
@@ -39,7 +42,9 @@ public partial class MainWindow
                 Date = DateTime.Now,
                 Machine = Environment.MachineName,
                 AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "",
-                LogoBase64 = LoadLogoBase64(),
+                LogoBase64 = LoadLogoBase64("logo-dark.png"),
+                LogoOnDarkBase64 = LoadLogoBase64("logo.png"),
+                Dark = !ThemeManager.IsLight,
                 Sheets = PageSystem.Built is { } built ? SystemReport.From(built.Index, built.Sheets) : new(),
                 System = PageSystem.Nodes
                          .Select(ReportBuilder.ToNode).Where(n => n != null).Cast<ReportNode>().ToList(),
@@ -55,8 +60,8 @@ public partial class MainWindow
             if (PageNet.LastResult is { } network)
                 data.Network.AddRange(network.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics)));
 
-            string text = json ? ReportBuilder.Json(data) : ReportBuilder.Html(data);
-            await File.WriteAllTextAsync(path, text, new UTF8Encoding(true));
+            if (ext == ".pdf") await PdfPrinter.PrintAsync(ReportBuilder.Html(data), path);
+            else await File.WriteAllTextAsync(path, ext == ".json" ? ReportBuilder.Json(data) : ReportBuilder.Html(data), new UTF8Encoding(true));
 
             SystemSub.Text = $"Relatório salvo em {path}";
             try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); } catch { }
@@ -94,11 +99,12 @@ public partial class MainWindow
         return list.OrderByDescending(b => b.Date).ToList();
     }
 
-    internal static string? LoadLogoBase64()
+    /// <summary>logo-dark.png é o logo para fundo claro (traço escuro); logo.png, para fundo escuro.</summary>
+    internal static string? LoadLogoBase64(string file)
     {
         try
         {
-            var info = Application.GetResourceStream(new Uri("pack://application:,,,/CoreBi.Desktop;component/Assets/logo-badge.png"));
+            var info = Application.GetResourceStream(new Uri($"pack://application:,,,/CoreBi.Desktop;component/Assets/{file}"));
             using var ms = new MemoryStream();
             info.Stream.CopyTo(ms);
             return Convert.ToBase64String(ms.ToArray());
