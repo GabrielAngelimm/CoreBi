@@ -419,11 +419,14 @@ public sealed class CapacityStack : EnergyInstrument
 /// </summary>
 public sealed class UptimeChart : EnergyInstrument
 {
-    public sealed record Day(string Label, bool Today, bool Covered, IReadOnlyList<(double From, double To, bool Current)> Spans, IReadOnlyList<double> Crashes, string Total, IReadOnlyList<string> Detail);
+    public sealed record Day(string Label, bool Today, bool Covered, IReadOnlyList<(double From, double To, bool Current)> Spans, IReadOnlyList<double> Crashes, string Total, IReadOnlyList<string> Detail, string Range);
 
     private IReadOnlyList<Day> _days = Array.Empty<Day>();
     private int _hover = -1;
-    public const double RowHeight = 25, AxisHeight = 18;
+    public const double MinRowHeight = 25, MaxRowHeight = 52, AxisHeight = 18;
+
+    /// <summary>As linhas dividem a altura que o painel der (entre o mínimo e o máximo); a altura que sobra fica embaixo.</summary>
+    private double RowHeight => _days.Count == 0 ? MinRowHeight : Math.Clamp((ActualHeight - AxisHeight) / _days.Count, MinRowHeight, MaxRowHeight);
 
     public IReadOnlyList<Day> Days
     {
@@ -431,7 +434,7 @@ public sealed class UptimeChart : EnergyInstrument
         set { _days = value; InvalidateMeasure(); InvalidateVisual(); }
     }
 
-    protected override Size MeasureOverride(Size available) => new(0, _days.Count * RowHeight + AxisHeight);
+    protected override Size MeasureOverride(Size available) => new(0, _days.Count * MinRowHeight + AxisHeight);
 
     protected override void OnMouseMove(MouseEventArgs e)
     {
@@ -453,8 +456,11 @@ public sealed class UptimeChart : EnergyInstrument
         double w = ActualWidth;
         if (w < 160 || _days.Count == 0) return;
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, ActualHeight));
-        const double labelW = 58, totalW = 66, barH = 8;
-        double x0 = labelW, bw = w - labelW - totalW - 12;
+        double rowH = RowHeight;
+        double barH = Math.Clamp(rowH * 0.3, 8, 14);
+        const double labelW = 58, totalW = 66, rangeW = 112;
+        bool showRange = w >= 520;
+        double x0 = labelW, bw = w - labelW - totalW - 12 - (showRange ? rangeW : 0);
         double X(double hour) => x0 + Math.Clamp(hour, 0, 24) / 24 * bw;
         var tick = Alpha(LineStrongBrush, 0xA0);
         var dash = Stroke(LineStrongBrush, 1, new DashStyle(new double[] { 2, 3 }, 0));
@@ -462,8 +468,8 @@ public sealed class UptimeChart : EnergyInstrument
         for (int r = 0; r < _days.Count; r++)
         {
             var d = _days[r];
-            double cy = r * RowHeight + RowHeight / 2, by = cy - barH / 2;
-            if (r == _hover) dc.DrawRoundedRectangle(Alpha(InkBrush, 0x0C), null, new Rect(-6, r * RowHeight + 1, w + 6, RowHeight - 2), 6, 6);
+            double cy = r * rowH + rowH / 2, by = cy - barH / 2;
+            if (r == _hover) dc.DrawRoundedRectangle(Alpha(InkBrush, 0x0C), null, new Rect(-6, r * rowH + 1, w + 6, rowH - 2), 6, 6);
             var label = Text(d.Label, 12, d.Today ? InkBrush : MutedBrush, readout: false, d.Today ? FontWeights.SemiBold : null);
             dc.DrawText(label, new Point(0, cy - label.Height / 2));
 
@@ -497,9 +503,14 @@ public sealed class UptimeChart : EnergyInstrument
             }
             var total = Text(d.Total, 12.5, InkBrush);
             dc.DrawText(total, new Point(w - total.Width, cy - total.Height / 2));
+            if (showRange && d.Range.Length > 0)
+            {
+                var range = Text(d.Range, 12, MutedBrush);
+                dc.DrawText(range, new Point(w - totalW - 8 - range.Width, cy - range.Height / 2));
+            }
         }
 
-        double ay = _days.Count * RowHeight + 3;
+        double ay = _days.Count * rowH + 3;
         for (int k = 0; k <= 4; k++)
         {
             var t = Text($"{k * 6} h", 11, FaintBrush);
@@ -507,18 +518,18 @@ public sealed class UptimeChart : EnergyInstrument
             dc.DrawText(t, new Point(x, ay));
         }
 
-        if (_hover >= 0 && _days[_hover] is { Covered: true, Detail.Count: > 0 } day) DrawDetail(dc, day, _hover, w, x0, bw);
+        if (_hover >= 0 && _days[_hover] is { Covered: true, Detail.Count: > 0 } day) DrawDetail(dc, day, _hover, w, x0, bw, rowH);
     }
 
     /// <summary>Quadro com os horários de cada trecho do dia sob o mouse, acima ou abaixo da linha.</summary>
-    private void DrawDetail(DrawingContext dc, Day day, int row, double w, double x0, double bw)
+    private void DrawDetail(DrawingContext dc, Day day, int row, double w, double x0, double bw, double rowH)
     {
         var lines = day.Detail.Select(s => Text(s, 12, InkBrush)).ToList();
         double lh = 18, bwid = lines.Max(l => l.Width) + 24, bh = lines.Count * lh + 14;
         double bx = Math.Min(x0 + bw - bwid, x0 + bw / 2 - bwid / 2);
         bx = Math.Max(x0, bx);
-        double rowTop = row * RowHeight;
-        double by = rowTop - bh - 4 >= 0 ? rowTop - bh - 4 : rowTop + RowHeight + 4;
+        double rowTop = row * rowH;
+        double by = rowTop - bh - 4 >= 0 ? rowTop - bh - 4 : rowTop + rowH + 4;
         dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bwid, bh), 8, 8);
         for (int i = 0; i < lines.Count; i++) dc.DrawText(lines[i], new Point(bx + 12, by + 7 + i * lh + (lh - lines[i].Height) / 2));
     }

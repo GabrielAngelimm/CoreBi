@@ -73,7 +73,7 @@ public partial class PowerView : UserControl
     private SensorMonitor _monitor = null!;
     private Func<GpuInfo?> _mainGpu = () => null;
     private Func<float?> _gpuPower = () => null;
-    private bool _refreshing, _syncingPlans, _wide = true, _dirty;
+    private bool _refreshing, _syncingPlans, _stacked, _dirty;
 
     // Sessão: consumo desde que o CoreBi abriu (1 amostra/s)
     private readonly List<(float? Cpu, float? Gpu)> _trace = new();
@@ -278,7 +278,10 @@ public partial class PowerView : UserControl
                 .Concat(h.Unexpected.Where(c => c >= day && c < next).Select(c => $"{c:HH:mm} desligamento inesperado"))
                 .ToList();
             string label = $"{culture.DateTimeFormat.GetAbbreviatedDayName(day.DayOfWeek).TrimEnd('.')} {day.Day}";
-            days.Add(new UptimeChart.Day(label, i == 6, covered, spans, crashes, covered ? Hours(h.OnTime(day)) : "", detail));
+            // Da primeira ligada à última desligada do dia ("agora" no dia de hoje), para ver a rotina de relance
+            var inDay = h.Spans.Where(sp => sp.To > day && sp.From < next).ToList();
+            string range = inDay.Count == 0 ? "" : $"{(inDay[0].From < day ? "00:00" : inDay[0].From.ToString("HH:mm"))} – {(inDay[^1].Current && inDay[^1].To <= next ? "agora" : inDay[^1].To >= next ? "24:00" : inDay[^1].To.ToString("HH:mm"))}";
+            days.Add(new UptimeChart.Day(label, i == 6, covered, spans, crashes, covered ? Hours(h.OnTime(day)) : "", detail, covered ? range : ""));
         }
         Uptime.Days = days;
 
@@ -286,6 +289,12 @@ public partial class PowerView : UserControl
         var past = Enumerable.Range(0, 6).Select(i => h.Since.AddDays(i)).Where(h.Covers).ToList();
         if (past.Count > 0) Readout(DaysAverage, TimeSpan.FromTicks((long)past.Average(d => h.OnTime(d).Ticks)));
         else DaysAverage.Text = "—";
+        var known = Enumerable.Range(0, 7).Select(i => h.Since.AddDays(i)).Where(d => d.Date == DateTime.Today || h.Covers(d)).ToList();
+        if (known.Count > 0) Readout(DaysWeek, TimeSpan.FromTicks(known.Sum(d => h.OnTime(d).Ticks)));
+        else DaysWeek.Text = "—";
+        var longest = h.Spans.Where(sp => sp.To > h.Since).Select(sp => sp.To - (sp.From < h.Since ? h.Since : sp.From)).DefaultIfEmpty(TimeSpan.Zero).Max();
+        if (longest > TimeSpan.Zero) Readout(DaysLongest, longest);
+        else DaysLongest.Text = "—";
         int crashCount = h.Unexpected.Count;
         DaysCrashes.Text = crashCount.ToString();
         DaysCrashes.SetResourceReference(TextBlock.ForegroundProperty, crashCount >= 3 ? "Danger" : "Warn");
@@ -368,11 +377,14 @@ public partial class PowerView : UserControl
         {
             SessionEnergy.Text = SessionAverage.Text = SessionPeak.Text = "—";
             AverageCell.ToolTip = PeakCell.ToolTip = EnergyCell.ToolTip = null;
+            SessionAge.Text = "";
             return;
         }
         // Sessão: desde que o CoreBi abriu; tudo é a soma processador + placa de vídeo, como a leitura grande
         var length = DateTime.Now - start;
         string span = length.TotalMinutes < 1 ? "menos de 1 min" : Hours(length, minutesWord: true);
+        SessionAge.Text = "sessão de " + span;
+        SessionAge.ToolTip = $"Desde que o CoreBi abriu, às {start:HH:mm}. Média, pico e energia valem para este período; o gráfico mostra só os últimos 5 minutos.";
         Readout(SessionAverage, $"{_sumW / _countW:0}", "W");
         AverageCell.ToolTip = $"Consumo médio de processador + placa de vídeo desde {start:HH:mm} ({span}).";
         Readout(SessionPeak, $"{_peakW:0}", "W");
@@ -445,34 +457,34 @@ public partial class PowerView : UserControl
     // ---------------- layout ----------------
 
     /// <summary>
-    /// Larga: alimentação à esquerda, tensões e histórico lado a lado embaixo do consumo. Média: tensões e histórico empilhados.
-    /// Estreita: a alimentação desce para depois do resto.
+    /// Larga: alimentação e consumo em cima, na mesma altura; tensões e histórico embaixo, o histórico esticado até o fim da página.
+    /// Estreita: um painel por linha (consumo, alimentação, tensões, histórico).
     /// </summary>
     private void EnergyBody_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (!e.WidthChanged) return;
         double width = e.NewSize.Width;
         bool stacked = width < 1000;
-        Grid.SetColumn(FeedCard, 0);
-        Grid.SetRow(FeedCard, stacked ? 2 : 0);
-        Grid.SetColumnSpan(FeedCard, stacked ? 3 : 1);
-        Grid.SetColumn(RightArea, stacked ? 0 : 2);
-        Grid.SetColumnSpan(RightArea, stacked ? 3 : 1);
-        FeedGapRow.Height = new GridLength(stacked ? 16 : 0);
-        FeedColumn.Width = stacked ? new GridLength(0) : new GridLength(width < 1360 ? 340 : 372);
+        if (stacked != _stacked || e.PreviousSize.Width == 0)
+        {
+            _stacked = stacked;
+            var rows = EnergyBody.RowDefinitions;
+            var cards = stacked ? new FrameworkElement[] { PowerCard, FeedCard, VoltCard, DaysCard } : new FrameworkElement[] { FeedCard, PowerCard, VoltCard, DaysCard };
+            // Larga: (0,0) (0,2) (2,0) (2,2). Estreita: uma coluna, linhas 0, 2, 4, 6.
+            for (int k = 0; k < cards.Length; k++)
+            {
+                Grid.SetRow(cards[k], stacked ? k * 2 : k / 2 * 2);
+                Grid.SetColumn(cards[k], stacked ? 0 : k % 2 * 2);
+                Grid.SetColumnSpan(cards[k], stacked ? 3 : 1);
+            }
+            for (int r = 0; r < rows.Count; r++)
+                rows[r].Height = stacked ? (r % 2 == 1 ? new GridLength(16) : GridLength.Auto)
+                    : r == 0 ? GridLength.Auto : r == 1 ? new GridLength(16) : r == 2 ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        }
+        FeedColumn.Width = stacked ? new GridLength(0) : new GridLength(width < 1360 ? 372 : 420);
         FeedGap.Width = new GridLength(stacked ? 0 : 16);
 
         double right = stacked ? width : width - FeedColumn.Width.Value - 16;
-        bool wide = right >= 1060;
-        if (wide != _wide || e.PreviousSize.Width == 0)
-        {
-            _wide = wide;
-            Grid.SetColumn(DaysCard, wide ? 2 : 0);
-            Grid.SetRow(DaysCard, wide ? 0 : 2);
-            LowerGap.Width = new GridLength(wide ? 16 : 0);
-            LowerRight.Width = wide ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-            LowerGapRow.Height = new GridLength(wide ? 0 : 16);
-        }
         ReadoutColumn.Width = new GridLength(right < 760 ? 250 : 300);
         TotalNow.FontSize = right < 760 ? 72 : 88;
     }
