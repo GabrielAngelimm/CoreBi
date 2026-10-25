@@ -97,7 +97,7 @@ internal static partial class Program
             inv.Disks.Add(new PhysicalDiskInfo(0, "Samsung SSD 980 1TB", 1UL << 40, "NVMe", "SSD", "3B4QFXO7", "S64ANS0T", false, "Saudável", "GPT"));
             inv.Settings = new WindowsSettings(false, true, true, true, "(UTC-03:00) Brasília");
             inv.Security = new WindowsSecurity("Windows Defender", true, true, DateTime.Now.AddDays(-1), "Nunca notificar");
-            inv.Os = new OsInfo("Windows 11 Pro", "Windows 11 Pro", "24H2", "26100.6899", "64 bits (x64)", null, null, "PC", "user", "WORKGROUP", false, "português (Brasil)", null, null);
+            inv.Os = new OsInfo("Windows 11 Pro", "Windows 11 Pro", "24H2", "26100.6899", "64 bits (x64)", new DateTime(2025, 10, 24), DateTime.Now.AddHours(-6), "PC", "user", "WORKGROUP", false, "português (Brasil)", null, null);
             var (index, sheets) = CoreBi.Desktop.Features.Monitoring.Inventory.SystemSheets.Build(inv, Array.Empty<CoreBi.Engine.Monitoring.Graphics.GpuInfo>(), Array.Empty<CoreBi.Engine.Monitoring.Storage.DriveCard>(), DateTime.Now);
             Require(index.Count == 6 && sheets.Count == 6, "Six sheets");
             Require(index[0].Name == "Ryzen 7 5700X" && index[0].Spec.StartsWith("8 núcleos · 16 threads"), "CPU index: " + index[0].Spec);
