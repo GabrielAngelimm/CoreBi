@@ -412,7 +412,9 @@ public sealed class SpanMeter : EnergyInstrument
         double w = ActualWidth;
         if (w < 20) return;
         bool known = !double.IsNaN(From) && !double.IsNaN(To);
-        Segments(dc, new Rect(0, 0, w, ActualHeight), f => known && f * 100 >= From - 0.5 && f * 100 <= To + 0.5 ? AccentBrush : TrackBrush);
+        // Um gomo de folga de cada lado: com mínimo = máximo (plano que fixa o clock) a faixa vira um ponto e ainda acende o gomo
+        double pad = 500 / w;
+        Segments(dc, new Rect(0, 0, w, ActualHeight), f => known && f * 100 >= From - pad && f * 100 <= To + pad ? AccentBrush : TrackBrush);
     }
 }
 
