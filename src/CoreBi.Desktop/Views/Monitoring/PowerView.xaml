@@ -2,7 +2,7 @@
     <UserControl.Resources>
         <!-- Seção do painel de alimentação: separadas por um fio, sem cartões dentro do cartão -->
         <Style x:Key="FeedSection" TargetType="Border">
-            <Setter Property="Padding" Value="22,18" />
+            <Setter Property="Padding" Value="22,15" />
             <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
             <Setter Property="BorderThickness" Value="0,1,0,0" />
         </Style>
@@ -98,7 +98,7 @@
 
         <!-- Trilho da fonte: nome, régua de tolerância, leitura e desvio do nominal -->
         <DataTemplate x:Key="RailRow">
-            <Grid Margin="0,0,0,7">
+            <Grid Margin="0,0,0,5">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="104" />
                     <ColumnDefinition Width="*" />
@@ -122,7 +122,7 @@
 
         <!-- Tensão de componente: nome, posição na faixa usual e leitura -->
         <DataTemplate x:Key="VoltRow">
-            <Grid Height="26">
+            <Grid Height="24">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="150" />
                     <ColumnDefinition Width="*" />
@@ -155,7 +155,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,22">
+                <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -238,22 +238,22 @@
                             <Border Style="{StaticResource FeedSection}">
                                 <StackPanel>
                                     <TextBlock Text="Plano de energia" Style="{StaticResource SectionTitle}" />
-                                    <ItemsControl x:Name="PlanList" Margin="-8,10,-8,0" ItemTemplate="{StaticResource PlanRow}" Focusable="False" AutomationProperties.Name="Planos de energia" />
+                                    <ItemsControl x:Name="PlanList" Margin="-8,6,-8,0" ItemTemplate="{StaticResource PlanRow}" Focusable="False" AutomationProperties.Name="Planos de energia" />
                                 </StackPanel>
                             </Border>
 
                             <!-- Regulagem do plano ativo; ao escolher outro plano vira a prévia da troca, com Cancelar e Aplicar -->
                             <Border x:Name="RegSection" Style="{StaticResource FeedSection}">
                                 <StackPanel>
-                                    <Grid MinHeight="30">
+                                    <Grid MinHeight="28">
                                         <TextBlock x:Name="RegTitle" Text="O que o plano define" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,150,0" />
                                         <TextBlock x:Name="RegCaption" Text="na tomada · na bateria" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed" />
                                         <StackPanel x:Name="PlanConfirm" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed">
-                                            <Button x:Name="PlanCancel" Content="Cancelar" Style="{StaticResource GhostButton}" MinHeight="28" Padding="10,4" FontSize="12.5" Click="PlanCancel_Click" />
-                                            <Button x:Name="PlanApply" Content="Aplicar" Style="{StaticResource PrimaryButton}" MinHeight="28" Padding="14,4" FontSize="12.5" Margin="6,0,0,0" Click="PlanApply_Click" />
+                                            <Button x:Name="PlanCancel" Content="Cancelar" Style="{StaticResource GhostButton}" MinHeight="26" Padding="10,3" FontSize="12.5" Click="PlanCancel_Click" />
+                                            <Button x:Name="PlanApply" Content="Aplicar" Style="{StaticResource PrimaryButton}" MinHeight="26" Padding="14,3" FontSize="12.5" Margin="6,0,0,0" Click="PlanApply_Click" />
                                         </StackPanel>
                                     </Grid>
-                                    <StackPanel x:Name="ProcBox" Margin="0,12,0,10" ToolTip="Quanto do clock o Windows pode usar: o mínimo vale em repouso, o máximo com carga.">
+                                    <StackPanel x:Name="ProcBox" Margin="0,10,0,8" ToolTip="Quanto do clock o Windows pode usar: o mínimo vale em repouso, o máximo com carga.">
                                         <Grid>
                                             <TextBlock Text="Processador" Foreground="{DynamicResource Muted}" />
                                             <TextBlock x:Name="ProcText" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
@@ -353,7 +353,7 @@
                     </Border>
 
                     <!-- Tensões -->
-                    <Border x:Name="VoltCard" Grid.Row="2" Style="{StaticResource CardBorder}">
+                    <Border x:Name="VoltCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="22,16">
                         <StackPanel>
                             <TextBlock Text="Tensões" Style="{StaticResource SectionTitle}" />
                             <ItemsControl x:Name="RailRows" ItemTemplate="{StaticResource RailRow}" Margin="0,14,0,0" Focusable="False" />
@@ -361,7 +361,7 @@
                             <TextBlock x:Name="VoltComponentsTitle" Text="Componentes" Style="{StaticResource Label}" Foreground="{DynamicResource Faint}" Margin="0,0,0,2" ToolTip="Tensões dos chips: variam com a carga, então a faixa clara mostra o mínimo e o máximo desde que o CoreBi abriu." />
                             <ItemsControl x:Name="VoltRows" ItemTemplate="{StaticResource VoltRow}" Focusable="False" />
                             <TextBlock x:Name="VoltEmpty" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="0,14,0,4" Visibility="Collapsed" />
-                            <Button x:Name="VoltAll" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="-10,8,0,-6" Click="VoltAll_Click">
+                            <Button x:Name="VoltAll" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="-10,4,0,-8" Click="VoltAll_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock x:Name="VoltAllText" Text="Todas as tensões em Sensores" />
                                     <TextBlock Text="&#xE76C;" FontFamily="{StaticResource Icons}" FontSize="10" VerticalAlignment="Center" Margin="8,1,0,0" />
@@ -371,7 +371,7 @@
                     </Border>
 
                     <!-- Ligado nos últimos 7 dias -->
-                    <Border x:Name="DaysCard" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
+                    <Border x:Name="DaysCard" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="22,16">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
