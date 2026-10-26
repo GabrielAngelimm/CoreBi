@@ -439,7 +439,8 @@ html{background:#fff}body{font-size:9.5pt}
 .tools{display:none}
 .paper{max-width:none;margin:0;padding:0;box-shadow:none;border-radius:0}
 .hero{padding-top:26px}
-tbody th{width:46%}.wide tbody th{width:24%}
+.groups{column-gap:26px}tbody th{width:48%;padding-right:8px}.wide tbody th{width:24%}
+td+td{padding-left:10px}
 .readouts dd{font-size:20px}
 .sheet{margin-top:28px}
 .keep,.head,.plate,h3{break-inside:avoid;break-after:avoid}

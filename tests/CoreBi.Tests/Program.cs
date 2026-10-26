@@ -415,6 +415,6 @@ internal static partial class Program
         return 0;
 
         static string? Logo(string file) =>
-            File.Exists(Path.Combine("src", "CoreBi.Desktop", "Assets", file)) ? Convert.ToBase64String(File.ReadAllBytes(Path.Combine("src", "CoreBi.Desktop", "Assets", file))) : null;
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "CoreBi.Desktop", "Assets", file) is var path && File.Exists(path) ? Convert.ToBase64String(File.ReadAllBytes(path)) : null;
     }
 }
