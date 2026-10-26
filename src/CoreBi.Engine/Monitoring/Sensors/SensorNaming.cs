@@ -213,7 +213,8 @@ public static class SensorNaming
         SensorType.Energy => ("energy", "Energia", 12),
         SensorType.Flow => ("flow", "Fluxo", 13),
         SensorType.Humidity => ("humidity", "Umidade", 14),
-        _ => ("other", "Outros", 15)
+        SensorType.Factor => ("factor", "Multiplicadores", 15),
+        _ => ("other", "Outros", 16)
     };
 
     /// <summary>

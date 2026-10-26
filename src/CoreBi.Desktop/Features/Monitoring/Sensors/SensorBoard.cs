@@ -68,8 +68,12 @@ public static class SensorBoard
 
     private static HardwareType TypeOf(SensorRow r) => r.RootId.Length > 0 ? r.RootType : r.HardwareType;
 
-    /// <summary>O Windows mede a memória física e a virtual no mesmo bloco da biblioteca; aqui viram dois componentes.</summary>
-    private static bool IsVirtualMemory(SensorRow r) => TypeOf(r) == HardwareType.Memory && r.Name.StartsWith("Virtual Memory", StringComparison.Ordinal);
+    /// <summary>
+    /// A biblioteca mede a memória física e a virtual ou no mesmo bloco (sensores "Virtual Memory...") ou em dois
+    /// ("Total Memory" e "Virtual Memory"); nos dois casos viram dois componentes.
+    /// </summary>
+    private static bool IsVirtualMemory(SensorRow r) => TypeOf(r) == HardwareType.Memory
+        && (r.Name.StartsWith("Virtual Memory", StringComparison.Ordinal) || r.Component.StartsWith("Virtual Memory", StringComparison.Ordinal));
 
     public static string KeyOf(SensorRow r) => IsVirtualMemory(r) ? r.ComponentId + "#virtual" : r.ComponentId;
 

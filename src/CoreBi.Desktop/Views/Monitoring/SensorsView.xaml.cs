@@ -16,10 +16,7 @@ public partial class SensorsView : UserControl
         DependencyProperty.Register(nameof(SectionColumns), typeof(int), typeof(SensorsView), new PropertyMetadata(2));
     public int SectionColumns { get => (int)GetValue(SectionColumnsProperty); set => SetValue(SectionColumnsProperty, value); }
 
-    /// <summary>Altura mínima do cartão quando há um componente só: preenche a área, e a base fica alinhada com a do índice.</summary>
-    public static readonly DependencyProperty CardMinHeightProperty =
-        DependencyProperty.Register(nameof(CardMinHeight), typeof(double), typeof(SensorsView), new PropertyMetadata(0.0));
-    public double CardMinHeight { get => (double)GetValue(CardMinHeightProperty); set => SetValue(CardMinHeightProperty, value); }
+    private const double HeaderHeight = 92;   // altura do cabeçalho de componente (ComponentHeader no XAML)
 
     private SensorMonitor? _monitor;
     private string? _component;       // componente escolhido no índice (null = visão geral)
@@ -31,6 +28,7 @@ public partial class SensorsView : UserControl
     private string _indexKeys = "";
     private DateTime _since = DateTime.Now;
     private IReadOnlyList<IndexEntry> _index = Array.Empty<IndexEntry>();
+    private IReadOnlyList<SensorComponent> _cards = Array.Empty<SensorComponent>();
     private bool _syncing;
 
     public SensorsView()
@@ -75,9 +73,10 @@ public partial class SensorsView : UserControl
         BuildChips(layout);
         _syncing = false;
         double offset = SensorScroll.VerticalOffset;
-        UpdateCardHeight();
+        _cards = layout.Cards;
         SensorCards.ItemsSource = layout.Cards;
         SensorScroll.ScrollToVerticalOffset(offset);
+        Dispatcher.BeginInvoke(UpdateSticky, System.Windows.Threading.DispatcherPriority.Loaded);
 
         if (layout.Cards.Count == 0)
             ShowEmpty("Nenhum sensor encontrado", _search.Length > 0 ? $"Nada corresponde a “{_search}” neste filtro." : "Este tipo de sensor não existe neste componente.");
@@ -89,6 +88,9 @@ public partial class SensorsView : UserControl
     {
         SensorCards.ItemsSource = null;
         SensorIndex.ItemsSource = null;
+        _cards = Array.Empty<SensorComponent>();
+        StickyHeader.Content = null;
+        StickyHeader.Visibility = Visibility.Collapsed;
         _builtRows = -1;
         _indexKeys = "";
     }
@@ -103,9 +105,43 @@ public partial class SensorsView : UserControl
     private void UpdateFootnote() => SensorFootnote.Text =
         $"Mínimo, média e máximo contam desde as {_since:HH:mm}. Leitura a cada segundo, pausada durante o teste de placa de vídeo. Passe o mouse num sensor para ver o nome técnico.";
 
-    private void UpdateCardHeight() => CardMinHeight = _component == null ? 0 : Math.Max(0, SensorScroll.ActualHeight - 17); // 16 de margem do cartão + 1 de folga, para não aparecer barra à toa
+    // ---------------- Cabeçalho fixo ----------------
 
-    private void SensorScroll_SizeChanged(object sender, SizeChangedEventArgs e) => UpdateCardHeight();
+    /// <summary>
+    /// O cabeçalho do componente à vista fica fixo no topo do cartão. Ele mostra o último componente cujo cabeçalho já chegou ao topo;
+    /// quando o cabeçalho do próximo se aproxima, o fixo sobe junto com ele (sem sobrepor) e a troca acontece no instante em que os
+    /// dois são idênticos e estão na mesma posição, então não há salto.
+    /// </summary>
+    private void UpdateSticky()
+    {
+        if (_cards.Count == 0 || !IsVisible)
+        {
+            StickyHeader.Visibility = Visibility.Collapsed;
+            return;
+        }
+        int current = 0;
+        double shift = 0;
+        for (int i = 0; i < _cards.Count; i++)
+        {
+            if (SensorCards.ItemContainerGenerator.ContainerFromIndex(i) is not FrameworkElement block) continue;
+            double top = block.TranslatePoint(new Point(0, 0), SensorScroll).Y;
+            if (top <= 0.5) { current = i; continue; }
+            if (top < HeaderHeight) shift = top - HeaderHeight;
+            break;
+        }
+        if (!ReferenceEquals(StickyHeader.Content, _cards[current])) StickyHeader.Content = _cards[current];
+        StickyShift.Y = shift;
+        // O cabeçalho ocupa só a largura útil da rolagem, sem cobrir a barra.
+        double bar = Math.Max(0, SensorScroll.ActualWidth - SensorScroll.ViewportWidth);
+        if (StickyHeader.Margin.Right != bar) StickyHeader.Margin = new Thickness(0, 0, bar, 0);
+        StickyHeader.Visibility = Visibility.Visible;
+    }
+
+    private void SensorScroll_ScrollChanged(object sender, ScrollChangedEventArgs e) => UpdateSticky();
+
+    /// <summary>Cantos redondos de verdade: os cabeçalhos têm fundo e vazariam pelos cantos do cartão.</summary>
+    private void SensorCard_SizeChanged(object sender, SizeChangedEventArgs e) =>
+        SensorCard.Clip = new System.Windows.Media.RectangleGeometry(new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), 11, 11);
 
     // ---------------- Índice e filtros ----------------
 

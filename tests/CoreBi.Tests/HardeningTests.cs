@@ -112,6 +112,12 @@ internal static partial class Program
             Require(fans.Cards.Count == 1 && fans.Cards[0].Name == "Ryzen 7", "Type filter");
             var stale = SensorBoard.Build(rows, "/gone", "fan", "", new HashSet<string>());
             Require(stale.SelectedId == null && stale.Cards.Count == 1, "Missing component not reset");
+            var split = new List<SensorRow>
+            {
+                R("/ram", HardwareType.Memory, "Total Memory", SensorType.Load, "Memory", 48), R("/ram", HardwareType.Memory, "Total Memory", SensorType.Data, "Memory Used", 15),
+                R("/vram", HardwareType.Memory, "Virtual Memory", SensorType.Load, "Memory", 41), R("/vram", HardwareType.Memory, "Virtual Memory", SensorType.Data, "Memory Used", 19),
+            };
+            Require(string.Join("|", SensorBoard.Build(split, null, null, "", new HashSet<string>()).Cards.Select(c => c.Name)) == "Memória física|Memória virtual", "Memory in two hardware blocks");
             return new { order, filters = all.Filters.Count };
         });
         Check("driver downloads: official HTTPS and exact publisher only", () =>

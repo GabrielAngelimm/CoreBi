@@ -145,6 +145,7 @@ public class SensorRow : INotifyPropertyChanged
             SensorType.SmallData => $"{v:0}",
             SensorType.Throughput => $"{v / 1048576f:0.0}",
             SensorType.Energy => $"{v:0}",
+            SensorType.Factor => $"{v:0.0}",
             _ => $"{v:0.##}"
         };
     }
@@ -164,6 +165,7 @@ public class SensorRow : INotifyPropertyChanged
         SensorType.SmallData => "MB",
         SensorType.Throughput => "MB/s",
         SensorType.Energy => "mWh",
+        SensorType.Factor => "×",
         _ => ""
     };
 
