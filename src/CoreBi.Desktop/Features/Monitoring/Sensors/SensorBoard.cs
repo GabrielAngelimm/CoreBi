@@ -108,6 +108,23 @@ public static class SensorBoard
     }
 
     /// <summary>
+    /// Componente que um atalho de outra página quer abrir: "cpu" (processador), "ram" (primeiro módulo de RAM, ou a memória
+    /// física se os módulos não têm sensor) ou "board" (placa-mãe). Null se o PC não tem esse componente.
+    /// </summary>
+    public static string? Find(IEnumerable<SensorRow> rows, string target)
+    {
+        var parts = Parts(rows);
+        Part? hit = target switch
+        {
+            "cpu" => parts.FirstOrDefault(p => p.Order == 0),
+            "ram" => parts.FirstOrDefault(p => p.Order >= DimmOrder && p.Order < 50) ?? parts.FirstOrDefault(p => p.Order == PhysicalOrder),
+            "board" => parts.FirstOrDefault(p => p.Order == 30),
+            _ => null
+        };
+        return hit?.Key;
+    }
+
+    /// <summary>
     /// component: Id do componente escolhido no índice (null = visão geral); group: filtro de tipo; search: texto livre.
     /// Os tipos e as contagens dos filtros valem para o componente escolhido, para nenhum filtro levar a uma tela vazia.
     /// </summary>

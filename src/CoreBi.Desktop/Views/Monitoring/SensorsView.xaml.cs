@@ -30,6 +30,7 @@ public partial class SensorsView : UserControl
     private IReadOnlyList<IndexEntry> _index = Array.Empty<IndexEntry>();
     private IReadOnlyList<SensorComponent> _cards = Array.Empty<SensorComponent>();
     private bool _syncing;
+    private string? _pending;         // componente pedido por um atalho de outra página, aplicado quando houver leitura
 
     public SensorsView()
     {
@@ -38,6 +39,15 @@ public partial class SensorsView : UserControl
     }
 
     internal void Initialize(SensorMonitor monitor) => _monitor = monitor;
+
+    /// <summary>Atalho de outra página (Sistema): abre já filtrado no componente ("cpu", "ram" ou "board"), sem filtro de tipo nem busca.</summary>
+    internal void ShowComponent(string target)
+    {
+        _pending = target;
+        _group = null;
+        if (SensorSearch.Text.Length > 0) SensorSearch.Text = "";
+        Rebuild();
+    }
 
     /// <summary>Detecção do hardware concluída: monta filtros e cartões e começa a contar as estatísticas.</summary>
     internal void Populate()
@@ -65,7 +75,14 @@ public partial class SensorsView : UserControl
             return;
         }
         if (!IsVisible) return;
-        var layout = SensorBoard.Build(_monitor.Rows.ToList(), _component, _group, _search, _collapsed);
+        var rows = _monitor.Rows.ToList();
+        if (_pending != null && rows.Any(r => r.HasReading))
+        {
+            _component = SensorBoard.Find(rows, _pending) ?? _component;
+            _pending = null;
+            SensorScroll.ScrollToTop();
+        }
+        var layout = SensorBoard.Build(rows, _component, _group, _search, _collapsed);
         _component = layout.SelectedId;
         _builtRows = _monitor.Rows.Count(r => r.HasReading);
         _syncing = true;

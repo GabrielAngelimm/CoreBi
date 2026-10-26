@@ -19,7 +19,7 @@
 
         <!-- Índice: seis botões numa faixa um tom abaixo do painel, só com ícone e categoria (o nome da peça está na ficha
              logo abaixo). Cada um tem fundo e contorno próprios e uma seta discreta, para ler como botão; o mouse clareia
-             o fundo; o escolhido ganha contorno e ícone verde-água e perde a seta. -->
+             o fundo; o escolhido ganha o fundo da placa logo abaixo, contorno e ícone verde-água, e perde a seta. -->
         <Style x:Key="IndexCell" TargetType="ListBoxItem">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -48,7 +48,7 @@
                                 <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Accent}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="face" Property="Background" Value="{DynamicResource Surface}" />
+                                <Setter TargetName="face" Property="Background" Value="{DynamicResource Selected}" />
                                 <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Accent}" />
                                 <Setter TargetName="tile" Property="Background" Value="{DynamicResource AccentSoft}" />
                                 <Setter TargetName="tile" Property="BorderBrush" Value="Transparent" />
@@ -66,7 +66,7 @@
         <!-- Leitura da placa: rótulo e número grande; a primeira não tem fio à esquerda. Sem largura mínima, para o
              espaço entre uma leitura e o fio seguinte ser o mesmo em todas. -->
         <DataTemplate x:Key="ReadoutCell">
-            <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="28,0,0,0" Margin="28,0,0,0" ToolTip="{Binding Tip}" Background="Transparent">
+            <Border x:Name="cell" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1,0,0,0" Padding="28,0,0,0" Margin="28,0,0,0" ToolTip="{Binding Tip}" Background="Transparent">
                 <StackPanel>
                     <TextBlock Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource Muted}" />
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
@@ -367,8 +367,8 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <!-- Faixa do índice: um tom abaixo do painel, como o palco da figura, para os botões se destacarem -->
-                <Rectangle Fill="{DynamicResource Bg}" Opacity="0.45" />
+                <!-- Faixa do índice: tom intermediário (o mesmo da faixa de colunas de Sensores), para os botões se destacarem -->
+                <Rectangle Fill="{DynamicResource Raised}" />
                 <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" />
                 <ListBox x:Name="SysIndex" ItemContainerStyle="{StaticResource IndexCell}" Margin="8" SelectionChanged="SysIndex_Changed"
                          KeyboardNavigation.DirectionalNavigation="Cycle">
@@ -390,7 +390,8 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <!-- Placa: quem é o componente e as quatro leituras que o resumem -->
-                    <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="32,28,32,26">
+                    <!-- No tom mais forte, como o cabeçalho de componente em Sensores; o botão escolhido usa o mesmo fundo -->
+                    <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" Padding="32,28,32,26">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />

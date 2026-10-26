@@ -260,14 +260,17 @@
                 </DockPanel>
             </Border>
 
-            <!-- Filtros por tipo: uma faixa só, em cima do índice e dos sensores, que assim começam e terminam na mesma linha -->
-            <DockPanel Grid.ColumnSpan="3" Margin="0,0,0,12">
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="2,6,14,0">
-                    <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Faint}" Margin="0,1,7,0" />
-                    <TextBlock Text="Filtrar por tipo" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
-                </StackPanel>
-                <WrapPanel x:Name="CategoryChips" />
-            </DockPanel>
+            <!-- Filtros por tipo: sobre o cartão de sensores, alinhados com ele. O rótulo e as pílulas ficam num mesmo grupo de
+                 fundo próprio, para ler como um controle só; o índice e o cartão continuam começando na mesma linha. -->
+            <Border Grid.Column="2" HorizontalAlignment="Left" Margin="0,0,0,12" Padding="14,5,5,5" CornerRadius="18" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" SnapsToDevicePixels="True">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,5,12,0">
+                        <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,1,7,0" />
+                        <TextBlock Text="Filtrar por tipo de sensor" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
+                    </StackPanel>
+                    <WrapPanel x:Name="CategoryChips" Margin="0,0,0,-6" />
+                </DockPanel>
+            </Border>
 
             <!-- Um cartão só para todos os componentes. O cabeçalho do componente à vista fica fixo no topo e é trocado, ou empurrado
                  pelo seguinte, conforme a rolagem (ver SensorsView.UpdateSticky). -->
