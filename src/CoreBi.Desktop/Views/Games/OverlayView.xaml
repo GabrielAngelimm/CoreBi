@@ -181,7 +181,7 @@
                             <Grid>
                                 <StackPanel>
                                     <TextBlock Text="Posição e tamanho" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock Text="Clique em um canto do monitor para escolher onde o overlay aparece no jogo. Abaixo, ajuste a transparência e o tamanho. A prévia mostra os itens marcados em O que mostrar."
+                                    <TextBlock Text="Clique em um canto do monitor para escolher onde o overlay aparece no jogo.&#10;Abaixo, ajuste a transparência e o tamanho. A prévia mostra os itens marcados em O que mostrar."
                                                Style="{StaticResource Caption}" Margin="0,3,0,0" />
                                 </StackPanel>
                             </Grid>
@@ -353,7 +353,7 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Margin="0,0,16,0">
                                     <TextBlock Text="O que mostrar" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock Text="Marque o que quer ver no jogo: cada grupo vira uma linha do overlay. Os botões ao lado são combinações prontas. Vale na hora e fica salvo." Style="{StaticResource Caption}" Margin="0,3,0,0" />
+                                    <TextBlock Text="Marque o que quer ver no jogo: cada grupo vira uma linha do overlay. Os botões ao lado são combinações prontas." Style="{StaticResource Caption}" Margin="0,3,0,0" />
                                 </StackPanel>
                                 <Border Grid.Column="1" Style="{StaticResource SegmentGroup}" VerticalAlignment="Top">
                                     <StackPanel x:Name="OvPresetPanel" Orientation="Horizontal">

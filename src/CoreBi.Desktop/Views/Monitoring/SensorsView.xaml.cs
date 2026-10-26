@@ -36,6 +36,27 @@ public partial class SensorsView : UserControl
     {
         InitializeComponent();
         IsVisibleChanged += (_, _) => { if (IsVisible) Rebuild(); else Release(); };
+        // A busca solta o foco (cursor e seleção) com um clique em qualquer lugar fora dela, como um campo de busca comum
+        Focusable = true;
+        FocusVisualStyle = null;
+        Loaded += (_, _) => { if (Window.GetWindow(this) is { } w) w.PreviewMouseDown += Window_PreviewMouseDown; };
+        Unloaded += (_, _) => { if (Window.GetWindow(this) is { } w) w.PreviewMouseDown -= Window_PreviewMouseDown; };
+    }
+
+    private void Window_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (!SensorSearch.IsKeyboardFocused || IsInsideSearch(e.OriginalSource as DependencyObject)) return;
+        Focus();
+    }
+
+    private bool IsInsideSearch(DependencyObject? d)
+    {
+        while (d != null)
+        {
+            if (d == SensorSearch) return true;
+            d = d is System.Windows.Media.Visual or System.Windows.Media.Media3D.Visual3D ? System.Windows.Media.VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d);
+        }
+        return false;
     }
 
     internal void Initialize(SensorMonitor monitor) => _monitor = monitor;
