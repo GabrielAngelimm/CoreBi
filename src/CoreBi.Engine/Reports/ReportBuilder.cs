@@ -383,7 +383,7 @@ h1{margin:4px 0 8px;font-size:44px;font-weight:600;letter-spacing:-.4px;line-hei
 
 .groups{column-count:2;column-gap:40px}
 .group{break-inside:avoid;margin:0 0 22px}
-.group.wide{margin-top:2px}
+.group.wide{margin-top:24px}
 .group h3{margin:0 0 5px;font-size:13px;font-weight:600}
 table{width:100%;border-collapse:collapse}
 th,td{text-align:left;vertical-align:top;padding:6px 0;border-top:1px solid var(--line);font-weight:400}
@@ -439,6 +439,7 @@ html{background:#fff}body{font-size:9.5pt}
 .tools{display:none}
 .paper{max-width:none;margin:0;padding:0;box-shadow:none;border-radius:0}
 .hero{padding-top:26px}
+tbody th{width:46%}.wide tbody th{width:24%}
 .readouts dd{font-size:20px}
 .sheet{margin-top:28px}
 .keep,.head,.plate,h3{break-inside:avoid;break-after:avoid}

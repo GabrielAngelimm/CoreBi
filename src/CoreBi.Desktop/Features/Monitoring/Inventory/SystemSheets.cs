@@ -273,7 +273,7 @@ public static class SystemSheets
         if (G("Interface") is { } pcie)
         {
             string? now = G("Em uso agora")?.Split(" (")[0];
-            clocks.Add(new("Interface", pcie, now != null && now != pcie ? $"agora {now}" : null,
+            clocks.Add(new("Interface", pcie, now != null && now != pcie ? $"agora em {now}" : null,
                 "Conexão entre a placa e a placa-mãe. Em repouso ela cai para economizar energia e volta ao máximo em jogo."));
         }
 

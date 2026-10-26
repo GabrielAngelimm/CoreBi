@@ -65,6 +65,16 @@ internal static class PdfPrinter
                 try { process.Kill(entireProcessTree: true); } catch { }
                 if (cancel.IsCancellationRequested) throw;
             }
+            // Com o app elevado o Edge se relança sem elevação e o processo que iniciamos sai na hora: o PDF aparece um instante depois.
+            // Espera o arquivo existir e parar de crescer (e o Edge soltar o perfil) antes de copiar e apagar a pasta de trabalho.
+            long lastSize = -1;
+            for (int waited = 0; waited < 240; waited++)
+            {
+                long size = File.Exists(output) ? new FileInfo(output).Length : 0;
+                if (size > 0 && size == lastSize) break;
+                lastSize = size;
+                await Task.Delay(250, cancel);
+            }
             if (!File.Exists(output) || new FileInfo(output).Length == 0)
                 throw new InvalidOperationException("O Microsoft Edge não gerou o PDF. Exporte em HTML e use Imprimir > Salvar como PDF.");
             File.Copy(output, pdfPath, overwrite: true);
