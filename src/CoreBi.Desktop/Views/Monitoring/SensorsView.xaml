@@ -98,7 +98,7 @@
                             <TextBlock FontSize="12" Foreground="{DynamicResource Muted}" Typography.NumeralAlignment="Tabular">
                                 <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text=" · " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Faint}" />
                             </TextBlock>
-                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Name}" FontFamily="{StaticResource DisplayFont}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                         <Button x:Name="toggle" Grid.Column="3" Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="0" Margin="18,0,0,0" VerticalAlignment="Center" Click="Toggle_Click" ToolTip="Recolher" AutomationProperties.Name="Recolher ou expandir">
                             <TextBlock x:Name="chev" Text="&#xE70E;" Style="{StaticResource IconGlyph}" FontSize="12" />
@@ -124,6 +124,9 @@
                     <Setter TargetName="tile" Property="Background" Value="{DynamicResource Raised}" />
                     <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Steel}" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding CanCollapse}" Value="False">
+                    <Setter TargetName="toggle" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
                 <DataTrigger Binding="{Binding Expanded}" Value="False">
                     <Setter TargetName="body" Property="Visibility" Value="Collapsed" />
                     <Setter TargetName="chev" Property="Text" Value="&#xE70D;" />
@@ -134,9 +137,10 @@
     </UserControl.Resources>
 
     <!--
-        Monitor de hardware: à esquerda o índice dos componentes (fixo, só nomes); à direita o filtro por tipo e os cartões,
-        que rolam. Cada cartão identifica o componente no cabeçalho e lista os sensores agrupados por tipo, em duas colunas
-        quando há largura. As leituras aparecem só nas linhas, uma vez.
+        Monitor de hardware: à esquerda o índice (fixo): "Visão geral" mostra todos os componentes na ordem de uso, e escolher um
+        componente mostra só ele. À direita, o filtro por tipo e os cartões, que rolam. Cada cartão identifica o componente no
+        cabeçalho e lista os sensores agrupados por tipo, em duas colunas quando há largura. As leituras aparecem só nas
+        linhas, uma vez.
     -->
     <Grid Style="{StaticResource PageGrid}">
         <Grid.RowDefinitions>
@@ -172,7 +176,7 @@
                     <ListBox x:Name="SensorIndex" ItemContainerStyle="{StaticResource ListNavItem}" SelectionChanged="SensorIndex_Changed" HorizontalContentAlignment="Stretch">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Grid ToolTip="{Binding Name}">
+                                <Grid ToolTip="{Binding Note}">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
@@ -196,7 +200,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <WrapPanel x:Name="CategoryChips" Margin="0,0,0,12" />
-                <ScrollViewer x:Name="SensorScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" ScrollChanged="SensorScroll_Changed">
+                <ScrollViewer x:Name="SensorScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" >
                     <StackPanel x:Name="SensorStack">
                         <Border x:Name="SensorEmpty" Style="{StaticResource CardBorder}" Padding="24,22" Visibility="Collapsed">
                             <StackPanel>
