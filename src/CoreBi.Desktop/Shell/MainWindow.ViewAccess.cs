@@ -34,8 +34,6 @@ public partial class MainWindow
     internal Button BtnReport => PageSystem.BtnReport;
     internal TextBlock StatusText => PageSensors.StatusText;
     internal TextBox SensorSearch => PageSensors.SensorSearch;
-    internal WrapPanel CategoryChips => PageSensors.CategoryChips;
-    internal DataGrid SensorGrid => PageSensors.SensorGrid;
     internal WrapPanel GpuChips => PageGpu.GpuChips;
     internal TextBlock GpuName => PageGpu.GpuName;
     internal TextBlock GpuSubtitle => PageGpu.GpuSubtitle;
@@ -177,8 +175,15 @@ public partial class MainWindow
     internal Canvas TempChart => PageStress.TempChart;
     internal ListBox StressLog => PageStress.StressLog;
     /// <summary>Abre uma página pelo nome (Tag do item da navegação), como se o item fosse clicado.</summary>
+    /// <summary>Abre uma página do menu; "PageSensors:cpu" (ou :ram, :board) abre Sensores já filtrado no componente.</summary>
     internal void GoToPage(string page)
     {
+        int cut = page.IndexOf(':');
+        if (cut > 0)
+        {
+            if (page[..cut] == "PageSensors") PageSensors.ShowComponent(page[(cut + 1)..]);
+            page = page[..cut];
+        }
         foreach (var child in NavPanel.Children)
             if (child is RadioButton { Tag: string tag } nav && tag == page) nav.IsChecked = true;
     }
@@ -192,7 +197,7 @@ public partial class MainWindow
         PageEnergy.Initialize(_features, _monitor, () => _gpus.FirstOrDefault(), MainGpuPower);
         PageNet.Context = _features;
         PageDriver.Context = _features;
-        PageSensors.Owner = this;
+        PageSensors.Initialize(_monitor);
         PageGpu.Owner = this;
         PageGames.Owner = this;
         PageBottleneck.Owner = this;

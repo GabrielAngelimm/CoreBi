@@ -76,8 +76,12 @@
         <DataTemplate x:Key="SettingRow">
             <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,9" ToolTip="{Binding Tip}">
                 <Grid>
-                    <TextBlock Text="{Binding Title}" Foreground="{DynamicResource Muted}" />
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Title}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                         <TextBlock x:Name="before" Text="{Binding BeforeText}" Foreground="{DynamicResource Faint}" Margin="0,0,8,0" Typography.NumeralAlignment="Tabular" Visibility="Collapsed" />
                         <TextBlock x:Name="value" Text="{Binding Value}" FontWeight="SemiBold" Typography.NumeralAlignment="Tabular" />
                     </StackPanel>
@@ -241,7 +245,7 @@
                             <Border x:Name="RegSection" Style="{StaticResource FeedSection}">
                                 <StackPanel>
                                     <Grid MinHeight="28">
-                                        <TextBlock x:Name="RegTitle" Text="Ajustes do plano" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,150,0" />
+                                        <TextBlock x:Name="RegTitle" Text="Ajustes do plano" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,0,160,0" />
                                         <TextBlock x:Name="RegCaption" Text="na tomada · na bateria" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed" />
                                         <StackPanel x:Name="PlanConfirm" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed">
                                             <Button x:Name="PlanCancel" Content="Cancelar" Style="{StaticResource GhostButton}" MinHeight="26" Padding="10,3" FontSize="12.5" Click="PlanCancel_Click" />
@@ -254,7 +258,6 @@
                                             <TextBlock x:Name="ProcText" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
                                         </Grid>
                                         <local:SpanMeter x:Name="ProcMeter" Margin="0,9,0,0" />
-                                        <TextBlock x:Name="ProcNote" FontSize="12" Foreground="{DynamicResource Warn}" Margin="0,6,0,0" TextWrapping="Wrap" Visibility="Collapsed" />
                                     </StackPanel>
                                     <ItemsControl x:Name="PlanSettings" ItemTemplate="{StaticResource SettingRow}" Focusable="False" />
                                 </StackPanel>

@@ -61,7 +61,7 @@ public partial class MainWindow
     {
         ["min"] = new() { "fps", "frametime", "low1" },
         ["gargalo"] = new() { "hwnames", "fps", "low1", "graph", "gpu_load", "gpu_clock", "vram_used", "vram_pct", "cpu_load", "cpu_maxcore", "cpu_clock", "ram_pct" },
-        ["termico"] = new() { "hwnames", "fps", "gpu_temp", "gpu_hotspot", "gpu_power", "gpu_fan", "vram_temp", "cpu_temp", "cpu_power", "cpu_clock", "clock" },
+        ["termico"] = new() { "hwnames", "fps", "gpu_temp", "gpu_hotspot", "gpu_power", "gpu_fan", "cpu_temp", "cpu_power", "cpu_clock", "clock" },
     };
 
     /// <summary>Monta "O que mostrar": uma linha por componente (glifo, nome, o que mede) com os itens em pílulas e a contagem.</summary>
@@ -252,7 +252,6 @@ public partial class MainWindow
         var vr = MainGpuVram();
         if (show.Contains("vram_used")) vram.Add(vr is { } a ? $"{a.Used:0.0} GB" : "—");
         if (show.Contains("vram_pct")) vram.Add(P(s.VramPct));
-        if (show.Contains("vram_temp")) vram.Add(T(GpuRow(SensorType.Temperature, "GPU Memory")?.RawValue));
         Line("VRAM", vram);
 
         var cpu = new List<string>();

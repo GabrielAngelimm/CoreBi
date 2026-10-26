@@ -30,7 +30,6 @@ public static class OverlayMetrics
 
         new("vram_used", "VRAM", "Usada (GB)", true),
         new("vram_pct", "VRAM", "Uso (%)", true),
-        new("vram_temp", "VRAM", "Temperatura", false),
 
         new("cpu_load", "CPU", "Uso total", true),
         new("cpu_maxcore", "CPU", "Núcleo mais ocupado", false),

@@ -13,6 +13,7 @@ using CoreBi.Engine.Tools.Apps;
 using CoreBi.Engine.Tools.Drivers;
 using CoreBi.Engine.Tools.Startup;
 using CoreBi.Engine.Persistence;
+using CoreBi.Desktop.Features.Monitoring.Sensors;
 using LibreHardwareMonitor.Hardware;
 
 internal static partial class Program
@@ -57,6 +58,68 @@ internal static partial class Program
             row.Update(42, 40, 45); monitor.Rows.Add(row); var snapshot = monitor.Snapshot(); row.Update(99, 40, 99);
             Require(snapshot[0].RawValue == 42, "Snapshot shared mutable sensor state"); row.Update(float.NaN, float.PositiveInfinity, null);
             Require(row.RawValue == null && row.Value == "—", "Invalid float displayed as measurement"); return new { snapshotStable = true, invalidUnknown = true };
+        });
+        Check("sensors: session statistics, reset and clear names", () =>
+        {
+            var row = new SensorRow { Id = "t", Name = "Core #3", Hardware = "cpu", HardwareType = HardwareType.Cpu, Type = SensorType.Clock };
+            row.Update(4000, 3000, 4500); row.Update(2000, null, null); row.Update(null, null, null); row.Update(3000, null, null);
+            Require(row.RawMin == 2000 && row.RawMax == 4500 && row.AvgValue == 3000, "Min/avg/max not tracked across readings");
+            Require(row.Label == "Núcleo 3" && row.Tip == "Core #3" && row.Unit == "MHz" && row.Value == "3000 MHz", "Clock row label or format");
+            row.ResetStats();
+            Require(row.RawMin == 3000 && row.RawMax == 3000 && row.AvgValue == 3000, "Reset did not restart statistics");
+            Require(SensorNaming.Label(HardwareType.GpuNvidia, SensorType.Temperature, "GPU Hot Spot") == "Ponto mais quente", "GPU name");
+            Require(SensorNaming.Label(HardwareType.Cpu, SensorType.Load, "CPU Core #2 Thread #1") == "Núcleo 2 · thread 1", "Thread name");
+            Require(SensorNaming.Label(HardwareType.Cpu, SensorType.Power, "Package") == "Total do processador", "Typed name");
+            Require(SensorNaming.Label(HardwareType.Storage, SensorType.Load, "Something New") == "Something New", "Unknown name changed");
+            var hot = new SensorRow { Name = "Temperature", HardwareType = HardwareType.Storage, Type = SensorType.Temperature };
+            hot.Update(64, null, null);
+            var written = new SensorRow { Name = "Data Written", HardwareType = HardwareType.Storage, Type = SensorType.Data };
+            written.Update(1200, null, null);
+            Require(hot.Level == 1 && hot.Number == 64f.ToString("0.0"), "Disk temperature verdict or fixed decimals");
+            Require(written.IsCounter && written.MaxNumber == "", "Counter shows statistics");
+            Require(!PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Intel(R) Ethernet Controller I225-V-WFP Native MAC Layer LightWeight Filter-0000", "Ethernet-WFP")
+                && !PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211, "Microsoft Wi-Fi Direct Virtual Adapter", "Conexão Local* 8")
+                && !PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Hyper-V Virtual Ethernet Adapter", "vEthernet (Default Switch)")
+                && !PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Microsoft Kernel Debug Network Adapter", "Ethernet (Depurador de Kernel)")
+                && PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Realtek Gaming 2.5GbE Family Controller", "Ethernet")
+                && PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211, "Intel(R) Wi-Fi 6 AX200 160MHz", "Wi-Fi"), "Physical network filter");
+            return new { label = row.Label, avg = row.AvgNumber, diskLevel = hot.Level };
+        });
+        Check("sensors: component order, memory split and component filter", () =>
+        {
+            SensorRow R(string id, HardwareType hw, string hwName, SensorType type, string name, float value)
+            {
+                var row = new SensorRow { Id = id + name, Hardware = hwName, HardwareType = hw, RootId = id, RootName = hwName, RootType = hw, Name = name, Type = type };
+                row.Update(value, null, null); return row;
+            }
+            var rows = new List<SensorRow>
+            {
+                R("/ram/total", HardwareType.Memory, "Total Memory", SensorType.Load, "Memory", 48), R("/ram/total", HardwareType.Memory, "Total Memory", SensorType.Data, "Memory Used", 15),
+                R("/ram/total", HardwareType.Memory, "Total Memory", SensorType.Load, "Virtual Memory", 41), R("/ram/total", HardwareType.Memory, "Total Memory", SensorType.Data, "Virtual Memory Used", 19),
+                R("/nic/1", HardwareType.Network, "Ethernet", SensorType.Load, "Network Utilization", 2),
+                R("/ram/dimm/1", HardwareType.Memory, "Asgard B", SensorType.Temperature, "DIMM Temp", 41), R("/ram/dimm/0", HardwareType.Memory, "Asgard A", SensorType.Temperature, "DIMM Temp", 40),
+                R("/mb", HardwareType.Motherboard, "TUF B550", SensorType.Temperature, "System", 36), R("/ssd", HardwareType.Storage, "Netac NV7000", SensorType.Temperature, "Temperature", 50),
+                R("/gpu", HardwareType.GpuNvidia, "RTX 4060 Ti", SensorType.Load, "GPU Core", 47), R("/cpu", HardwareType.Cpu, "Ryzen 7", SensorType.Load, "CPU Total", 30), R("/cpu", HardwareType.Cpu, "Ryzen 7", SensorType.Fan, "Fan #1", 900),
+            };
+            var all = SensorBoard.Build(rows, null, null, "", new HashSet<string>());
+            string[] order = all.Cards.Select(c => c.Name).ToArray();
+            Require(string.Join("|", order) == "Ryzen 7|RTX 4060 Ti|Netac NV7000|TUF B550|Asgard A|Asgard B|Ethernet|Memória física|Memória virtual", "Component order: " + string.Join("|", order));
+            Require(all.Cards[4].Kind == "Memória RAM · módulo 1 de 2" && all.Index[0].Id == null && all.Index.Count == 10, "Index or module label");
+            Require(all.Cards[8].Sections.SelectMany(s => s.Rows).All(r => r.Name.StartsWith("Virtual")) && all.Cards[7].Sections.SelectMany(s => s.Rows).All(r => !r.Name.StartsWith("Virtual")), "Memory not split");
+            Require(SensorBoard.Find(rows, "cpu") == "/cpu" && SensorBoard.Find(rows, "ram") == "/ram/dimm/0" && SensorBoard.Find(rows, "board") == "/mb" && SensorBoard.Find(rows, "x") == null, "Shortcut targets");
+            var one = SensorBoard.Build(rows, "/ssd", null, "", new HashSet<string>());
+            Require(one.Cards.Count == 1 && one.Cards[0].Name == "Netac NV7000" && !one.Cards[0].CanCollapse && one.Filters.Count == 1 && one.Index.Count == 10, "Component filter");
+            var fans = SensorBoard.Build(rows, null, "fan", "", new HashSet<string>());
+            Require(fans.Cards.Count == 1 && fans.Cards[0].Name == "Ryzen 7", "Type filter");
+            var stale = SensorBoard.Build(rows, "/gone", "fan", "", new HashSet<string>());
+            Require(stale.SelectedId == null && stale.Cards.Count == 1, "Missing component not reset");
+            var split = new List<SensorRow>
+            {
+                R("/ram", HardwareType.Memory, "Total Memory", SensorType.Load, "Memory", 48), R("/ram", HardwareType.Memory, "Total Memory", SensorType.Data, "Memory Used", 15),
+                R("/vram", HardwareType.Memory, "Virtual Memory", SensorType.Load, "Memory", 41), R("/vram", HardwareType.Memory, "Virtual Memory", SensorType.Data, "Memory Used", 19),
+            };
+            Require(string.Join("|", SensorBoard.Build(split, null, null, "", new HashSet<string>()).Cards.Select(c => c.Name)) == "Memória física|Memória virtual", "Memory in two hardware blocks");
+            return new { order, filters = all.Filters.Count };
         });
         Check("driver downloads: official HTTPS and exact publisher only", () =>
         {

@@ -220,7 +220,7 @@ public static class SystemSheets
                 new("Cache L3", l3Value, l3Unit),
             },
             Groups = groups,
-            Link = new("Clocks, temperatura e consumo ao vivo em Sensores", "PageSensors"),
+            Link = new("Clocks, temperatura e consumo ao vivo em Sensores", "PageSensors:cpu"),
         };
     }
 
@@ -474,6 +474,7 @@ public static class SystemSheets
                 new("Tensão", volts.Count == 1 ? N(volts[0]!.Value, "0.00#") : "—", volts.Count == 1 ? "V" : ""),
             },
             Groups = groups,
+            Link = new("Temperatura dos módulos e memória em uso ao vivo em Sensores", "PageSensors:ram"),
         };
     }
 
@@ -547,6 +548,7 @@ public static class SystemSheets
                 new("TPM", f?.Tpm is { } tpm && tpm != "Ausente" ? tpm : "—"),
             },
             Groups = groups,
+            Link = new("Temperaturas, ventoinhas e tensões ao vivo em Sensores", "PageSensors:board"),
         };
     }
 

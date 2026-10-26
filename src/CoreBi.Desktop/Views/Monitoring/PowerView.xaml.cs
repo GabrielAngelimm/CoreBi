@@ -20,6 +20,8 @@ namespace CoreBi.Desktop.Views;
 /// </summary>
 public partial class PowerView : UserControl
 {
+    private const string ProcBaseTip = "Quanto da velocidade do processador o Windows pode usar: o mínimo vale em repouso e o máximo, com carga.";
+
     public sealed record SettingItem(string Title, string Value, string? Tip, string BeforeText = "", bool Changed = false);
     public sealed record PlanItem(Guid Id, string Name, bool IsActive, bool IsPending);
 
@@ -221,7 +223,8 @@ public partial class PowerView : UserControl
         RegSection.Visibility = p.Active == null ? Visibility.Collapsed : Visibility.Visible;
         if (previewing) RegSection.SetResourceReference(Border.BackgroundProperty, "AccentSoft");
         else RegSection.ClearValue(Border.BackgroundProperty);
-        RegTitle.Text = previewing ? $"Ao trocar para {_pendingPlan!.Name}" : "Ajustes do plano";
+        // Título curto e de uma linha: o nome do plano já está na lista (marcado "novo plano"); um título longo quebrava e crescia o cartão
+        RegTitle.Text = previewing ? "Prévia da troca" : "Ajustes do plano";
         RegCaption.Visibility = battery && !previewing ? Visibility.Visible : Visibility.Collapsed;
         PlanConfirm.Visibility = previewing ? Visibility.Visible : Visibility.Collapsed;
         PlanApply.IsEnabled = !_applyingPlan;
@@ -237,6 +240,9 @@ public partial class PowerView : UserControl
             ProcMeter.From = min;
             ProcMeter.To = max;
             string current = Proc(now), target = Proc(shown);
+            // Máximo abaixo de 100 % segura o clock com carga: o aviso é a própria cor do valor (e a dica), sem linha extra que mude a altura do cartão
+            bool capped = max < 100;
+            string valueBrush = capped ? "Warn" : "Accent";
             ProcText.Inlines.Clear();
             if (previewing && current != target)
             {
@@ -244,13 +250,16 @@ public partial class PowerView : UserControl
                 old.SetResourceReference(TextElement.ForegroundProperty, "Faint");
                 ProcText.Inlines.Add(old);
                 var fresh = new Run(target);
-                fresh.SetResourceReference(TextElement.ForegroundProperty, "Accent");
+                fresh.SetResourceReference(TextElement.ForegroundProperty, valueBrush);
                 ProcText.Inlines.Add(fresh);
             }
-            else ProcText.Inlines.Add(new Run(target));
-            // Só o caso que pede atenção ganha texto: máximo abaixo de 100 % segura o clock com carga
-            ProcNote.Text = $"Máximo em {max} %: o processador não chega ao clock total neste plano.";
-            ProcNote.Visibility = max < 100 ? Visibility.Visible : Visibility.Collapsed;
+            else
+            {
+                var run = new Run(target);
+                if (capped) run.SetResourceReference(TextElement.ForegroundProperty, "Warn");
+                ProcText.Inlines.Add(run);
+            }
+            ProcBox.ToolTip = ProcBaseTip + (capped ? $"\nMáximo em {max} %: com carga o processador não chega ao clock total neste plano." : "");
         }
 
         string Text(PlanSetting s) => battery && s.Dc != s.Ac ? $"{s.Ac} · {s.Dc}" : s.Ac;

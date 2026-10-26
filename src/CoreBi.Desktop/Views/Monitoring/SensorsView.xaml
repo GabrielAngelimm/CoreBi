@@ -1,7 +1,203 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.SensorsView" xmlns:local="clr-namespace:CoreBi.Desktop">
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.SensorsView" xmlns:local="clr-namespace:CoreBi.Desktop" xmlns:inv="clr-namespace:CoreBi.Desktop.Features.Monitoring.Inventory">
+    <UserControl.Resources>
+        <!-- Cabeçalho das colunas de um grupo: miúdo e um tom abaixo, alinhado com os números (à direita) -->
+        <Style x:Key="ColHead" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Foreground" Value="{DynamicResource Faint}" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+        </Style>
+        <!-- Mínimo, média e máximo: mesmos algarismos tabulares da leitura, menores e em tom secundário -->
+        <Style x:Key="StatCell" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Readout}" />
+            <Setter Property="FontStretch" Value="SemiCondensed" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- Item do índice: fundo suave na seleção; o ícone fica num bloco que acende no azul-ciano -->
+        <Style x:Key="IndexItem" TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Grid Background="Transparent" Margin="0,0,0,2">
+                            <Border x:Name="hover" CornerRadius="10" Background="{DynamicResource Hover}" Opacity="0" />
+                            <Border x:Name="sel" CornerRadius="10" Background="{DynamicResource Selected}" Opacity="0" />
+                            <ContentPresenter Margin="10,8" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="hover" Property="Opacity" Value="1" />
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="sel" Property="Opacity" Value="1" />
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Linha de sensor: nome claro, leitura atual com a unidade e as três estatísticas sem unidade.
+             O fio fica em cima de cada linha; o mouse acende o fundo, que avança 8 px para os lados. -->
+        <DataTemplate x:Key="SensorLine">
+            <Grid x:Name="host" Margin="-8,0" Background="Transparent" ToolTip="{Binding Tip}">
+                <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="6" Opacity="0" />
+                <Border Height="1" VerticalAlignment="Top" Margin="8,0" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
+                <Grid Margin="8,0" Height="32">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MinWidth="120" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="74" />
+                        <ColumnDefinition Width="74" />
+                        <ColumnDefinition Width="74" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Label}" FontSize="13" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,0,8,0" />
+                    <TextBlock x:Name="value" Grid.Column="1" Style="{StaticResource ReadoutText}" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Run Text="{Binding Number, Mode=OneWay}" /><Run Text=" " FontSize="11" /><Run x:Name="unit" Text="{Binding Unit, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource UiFont}" />
+                    </TextBlock>
+                    <TextBlock Grid.Column="2" Text="{Binding MinNumber}" Style="{StaticResource StatCell}" />
+                    <TextBlock Grid.Column="3" Text="{Binding AvgNumber}" Style="{StaticResource StatCell}" />
+                    <TextBlock Grid.Column="4" Text="{Binding MaxNumber}" Style="{StaticResource StatCell}" />
+                </Grid>
+            </Grid>
+            <DataTemplate.Triggers>
+                <Trigger SourceName="host" Property="IsMouseOver" Value="True">
+                    <Setter TargetName="bg" Property="Opacity" Value="1" />
+                </Trigger>
+                <DataTrigger Binding="{Binding Level}" Value="1">
+                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Warn}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Level}" Value="2">
+                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding RawValue}" Value="{x:Null}">
+                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Faint}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Nomes das colunas: uma vez por cartão (no topo do corpo), com a mesma geometria das linhas -->
+        <DataTemplate x:Key="ColumnHeads">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="120" />
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="74" />
+                    <ColumnDefinition Width="74" />
+                    <ColumnDefinition Width="74" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="1" Text="Atual" Style="{StaticResource ColHead}" />
+                <TextBlock Grid.Column="2" Text="Mín." Style="{StaticResource ColHead}" />
+                <TextBlock Grid.Column="3" Text="Média" Style="{StaticResource ColHead}" />
+                <TextBlock Grid.Column="4" Text="Máx." Style="{StaticResource ColHead}" />
+            </Grid>
+        </DataTemplate>
+
+        <!-- Grupo de um tipo: o título é o maior e mais forte do bloco, com um filete de destaque; os sensores entram recuados embaixo -->
+        <DataTemplate x:Key="SectionTemplate">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Border Width="3" Height="16" CornerRadius="2" Background="{DynamicResource Accent}" Margin="0,0,9,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Title, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Rows.Count, Mode=OneWay}" FontSize="11.5" Foreground="{DynamicResource Faint}" Margin="10,2,0,0" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource SensorLine}" Focusable="False" />
+            </StackPanel>
+        </DataTemplate>
+
+        <!-- Cabeçalho de componente em duas faixas, de altura fixa (80 + 32), cada uma num tom: em cima, no tom mais forte, o nome em
+             destaque com o tipo e a quantidade de sensores embaixo; logo abaixo, num tom intermediário, os nomes das colunas. Os
+             sensores ficam no fundo do cartão, o mais claro dos três. É o mesmo modelo no começo de cada
+             bloco e no cabeçalho fixo do topo da rolagem, para a troca não dar salto. -->
+        <DataTemplate x:Key="ComponentHeader">
+            <StackPanel>
+                <Border Height="80" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" Padding="24,0,18,0" SnapsToDevicePixels="True">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" Typography.NumeralAlignment="Tabular">
+                                <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
+                            </TextBlock>
+                        </StackPanel>
+                        <Button x:Name="toggle" Grid.Column="1" Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="0" Margin="18,0,0,0" VerticalAlignment="Center" Click="Toggle_Click" ToolTip="Recolher" AutomationProperties.Name="Recolher ou expandir">
+                            <TextBlock x:Name="chev" Text="&#xE70E;" Style="{StaticResource IconGlyph}" FontSize="12" />
+                        </Button>
+                    </Grid>
+                </Border>
+                <!-- Faixa das colunas: a mesma geometria do corpo (24 de cada lado, duas colunas de grupos separadas por 44) -->
+                <Border Height="32" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="24,0,24,0" SnapsToDevicePixels="True">
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="44" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ContentPresenter x:Name="head1" Content="{Binding}" ContentTemplate="{StaticResource ColumnHeads}" />
+                        <ContentPresenter x:Name="head2" Grid.Column="2" Content="{Binding}" ContentTemplate="{StaticResource ColumnHeads}" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding SectionColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="1">
+                    <Setter TargetName="head1" Property="Grid.ColumnSpan" Value="3" />
+                    <Setter TargetName="head2" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Sections.Count}" Value="1">
+                    <Setter TargetName="head2" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding CanCollapse}" Value="False">
+                    <Setter TargetName="toggle" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Expanded}" Value="False">
+                    <Setter TargetName="chev" Property="Text" Value="&#xE70D;" />
+                    <Setter TargetName="toggle" Property="ToolTip" Value="Expandir" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Bloco de componente dentro do cartão único: cabeçalho e, embaixo, os grupos de sensores (em colunas quando há largura) -->
+        <DataTemplate x:Key="ComponentBlock">
+            <StackPanel>
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ComponentHeader}" />
+                <Border x:Name="body" Padding="24,18,24,26">
+                    <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource SectionTemplate}" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <inv:ColumnsPanel Columns="{Binding SectionColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" ColumnGap="44" RowGap="30" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </Border>
+            </StackPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Expanded}" Value="False">
+                    <Setter TargetName="body" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <!--
+        Monitor de hardware: à esquerda o índice (fixo): "Visão geral" mostra todos os componentes na ordem de uso, e escolher um
+        componente mostra só ele. À direita, o filtro por tipo e os cartões, que rolam. Cada cartão identifica o componente no
+        cabeçalho e lista os sensores agrupados por tipo, em duas colunas quando há largura. As leituras aparecem só nas
+        linhas, uma vez.
+    -->
     <Grid Style="{StaticResource PageGrid}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
@@ -14,35 +210,108 @@
                 <TextBlock Text="Sensores" Style="{StaticResource PageTitle}" />
                 <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
             </StackPanel>
-            <TextBox x:Name="SensorSearch" Grid.Column="1" Width="280" VerticalAlignment="Bottom" local:Ui.Icon="&#xE721;" local:Ui.Placeholder="Buscar sensor ou hardware" TextChanged="SensorSearch_Changed" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                <TextBox x:Name="SensorSearch" Width="280" local:Ui.Icon="&#xE721;" local:Ui.Placeholder="Buscar sensor ou componente" TextChanged="SensorSearch_Changed" />
+                <Button x:Name="BtnSensorsReset" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE777;" Content="Zerar estatísticas" Margin="10,0,0,0" Click="BtnSensorsReset_Click" ToolTip="Recomeça o mínimo, a média e o máximo de todos os sensores a partir de agora." />
+            </StackPanel>
         </Grid>
-        <WrapPanel x:Name="CategoryChips" Grid.Row="1" Margin="0,0,0,12" />
-        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Padding="4,6,4,4">
-            <DataGrid x:Name="SensorGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserResizeColumns="False">
-                <DataGrid.GroupStyle>
-                    <GroupStyle>
-                        <GroupStyle.HeaderTemplate>
+
+        <Grid x:Name="SensorBody" Grid.Row="1" SizeChanged="SensorBody_SizeChanged">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="IndexColumn" Width="300" />
+                <ColumnDefinition x:Name="IndexGap" Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Índice: um item por componente, na altura toda da página (a base alinha com a do cartão ao lado); escolher um mostra só ele -->
+            <Border x:Name="IndexCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="10,14,10,10">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Componentes" Style="{StaticResource Label}" Margin="10,0,10,8" />
+                    <ListBox x:Name="SensorIndex" ItemContainerStyle="{StaticResource IndexItem}" SelectionChanged="SensorIndex_Changed" HorizontalContentAlignment="Stretch">
+                        <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Margin="14,18,14,4" Padding="0,0,0,8">
-                                    <Grid>
-                                        <TextBlock Text="{Binding Name}" Style="{StaticResource SectionTitle}" FontSize="14" />
-                                        <TextBlock HorizontalAlignment="Right" Style="{StaticResource Caption}" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular">
-                                            <Run Text="{Binding ItemCount, Mode=OneWay}" /><Run Text=" sensores" />
-                                        </TextBlock>
-                                    </Grid>
-                                </Border>
+                                <Grid ToolTip="{Binding Note}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border x:Name="tile" Width="34" Height="34" CornerRadius="9" Background="{DynamicResource Raised}" Margin="0,0,12,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Glyph}" Style="{StaticResource ListNavIcon}" FontSize="16" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <!-- Nome inteiro: quebra em até duas linhas em vez de cortar -->
+                                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" LineHeight="17" MaxHeight="34" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Kind}" FontSize="12" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                        <Setter TargetName="tile" Property="Background" Value="{DynamicResource AccentSoft}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
                             </DataTemplate>
-                        </GroupStyle.HeaderTemplate>
-                    </GroupStyle>
-                </DataGrid.GroupStyle>
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Sensor" Binding="{Binding Name}" Width="*" />
-                    <DataGridTextColumn Header="Tipo" Binding="{Binding Category}" Width="140" ElementStyle="{StaticResource MutedCell}" />
-                    <DataGridTextColumn Header="Valor" Binding="{Binding Value}" Width="130" ElementStyle="{StaticResource ValueCell}" />
-                    <DataGridTextColumn Header="Mín." Binding="{Binding Min}" Width="120" ElementStyle="{StaticResource MutedMonoCell}" />
-                    <DataGridTextColumn Header="Máx." Binding="{Binding Max}" Width="120" ElementStyle="{StaticResource MutedMonoCell}" />
-                </DataGrid.Columns>
-            </DataGrid>
-        </Border>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- Filtros por tipo: sobre o cartão de sensores, alinhados com ele. O rótulo e as pílulas ficam num mesmo grupo de
+                 fundo próprio, para ler como um controle só; o índice e o cartão continuam começando na mesma linha. -->
+            <Border Grid.Column="2" HorizontalAlignment="Left" Margin="0,0,0,12" Padding="14,5,5,5" CornerRadius="18" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" SnapsToDevicePixels="True">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,5,12,0">
+                        <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,1,7,0" />
+                        <TextBlock Text="Filtrar por tipo de sensor" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
+                    </StackPanel>
+                    <WrapPanel x:Name="CategoryChips" Margin="0,0,0,-6" />
+                </DockPanel>
+            </Border>
+
+            <!-- Um cartão só para todos os componentes. O cabeçalho do componente à vista fica fixo no topo e é trocado, ou empurrado
+                 pelo seguinte, conforme a rolagem (ver SensorsView.UpdateSticky). -->
+            <Border x:Name="SensorCard" Grid.Row="1" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SensorCard_SizeChanged">
+                <Grid>
+                    <ScrollViewer x:Name="SensorScroll" VerticalScrollBarVisibility="Auto" ScrollChanged="SensorScroll_ScrollChanged">
+                        <!-- A barra de rolagem começa abaixo do cabeçalho fixo (112 = 80 + 32) para o cabeçalho nunca cobrir a barra -->
+                        <ScrollViewer.Template>
+                            <ControlTemplate TargetType="ScrollViewer">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" CanContentScroll="{TemplateBinding CanContentScroll}" />
+                                    <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Margin="0,116,2,4" Orientation="Vertical" Value="{TemplateBinding VerticalOffset}" Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+                                </Grid>
+                            </ControlTemplate>
+                        </ScrollViewer.Template>
+                        <StackPanel x:Name="SensorStack">
+                            <StackPanel x:Name="SensorEmpty" Margin="24,22" Visibility="Collapsed">
+                                <TextBlock x:Name="SensorEmptyTitle" Text="Detectando o hardware…" Style="{StaticResource SectionTitle}" />
+                                <TextBlock x:Name="SensorEmptyText" Style="{StaticResource Caption}" Margin="0,4,0,0" />
+                            </StackPanel>
+                            <ItemsControl x:Name="SensorCards" ItemTemplate="{StaticResource ComponentBlock}" Focusable="False" />
+                        </StackPanel>
+                    </ScrollViewer>
+                    <Grid x:Name="StickyHost" VerticalAlignment="Top" Visibility="Collapsed">
+                        <Grid.RenderTransform>
+                            <TranslateTransform x:Name="StickyShift" />
+                        </Grid.RenderTransform>
+                        <!-- Fundo das duas faixas na largura toda; a barra de rolagem começa abaixo delas (modelo da rolagem acima), então nada fica escondido -->
+                        <StackPanel>
+                            <Border Height="80" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" />
+                            <Border Height="32" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" />
+                        </StackPanel>
+                        <ContentControl x:Name="StickyHeader" ContentTemplate="{StaticResource ComponentHeader}" Focusable="False" />
+                    </Grid>
+                </Grid>
+            </Border>
+            <TextBlock x:Name="SensorFootnote" Grid.Row="2" Grid.ColumnSpan="3" Style="{StaticResource Footnote}" MaxWidth="1400" Margin="2,8,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+        </Grid>
     </Grid>
 </UserControl>

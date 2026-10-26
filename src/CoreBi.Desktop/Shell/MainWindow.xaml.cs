@@ -44,10 +44,7 @@ public partial class MainWindow : Window
         BuildPalette();
         ShowPage("PageDash");
 
-        // Sensores: a lista começa vazia e é preenchida quando a detecção do hardware termina (LoadHardwareAsync).
-        _view = CollectionViewSource.GetDefaultView(_monitor.Rows);
-        _view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(SensorRow.Hardware)));
-        SensorGrid.ItemsSource = _view;
+        // Sensores: a página começa vazia e é montada quando a detecção do hardware termina (LoadHardwareAsync).
         StatusText.Text = "Detectando o hardware…";
         SideVersion.Text = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1";
 
@@ -71,7 +68,7 @@ public partial class MainWindow : Window
             // por um instante e aparecia como engasgo no 1% low do benchmark.
             if (_gpuBenchActive) { UpdateStressPanel(); return; }
             _monitor.Refresh();
-            if (_monitor.IsOpen) StatusText.Text = $"{_monitor.Rows.Count} sensores · atualizado às {DateTime.Now:HH:mm:ss}";
+            PageSensors.Tick();
             UpdateStressPanel();
             UpdateGpuLive();
             UpdateSideStorage();
@@ -133,9 +130,7 @@ public partial class MainWindow : Window
             if (_features.IsClosing) return;
             _monitor.Refresh();
             UpdateCpuSensorWarning();
-            AddChip("Todos", null, isChecked: true);
-            foreach (var c in _monitor.Rows.Select(r => r.Category).Distinct().OrderBy(x => x))
-                AddChip(c, c);
+            PageSensors.Populate();
             UpdateDashboard();
         }
 
