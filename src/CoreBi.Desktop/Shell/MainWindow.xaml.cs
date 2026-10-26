@@ -48,7 +48,6 @@ public partial class MainWindow : Window
         _view = CollectionViewSource.GetDefaultView(_monitor.Rows);
         _view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(SensorRow.Hardware)));
         SensorGrid.ItemsSource = _view;
-        SystemSub.Text = "Lendo informações do sistema…";
         StatusText.Text = "Detectando o hardware…";
         SideVersion.Text = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1";
 
@@ -121,18 +120,7 @@ public partial class MainWindow : Window
     /// <summary>Coletas lentas da abertura, em paralelo e fora da thread da janela; cada parte preenche a tela quando fica pronta.</summary>
     internal async Task LoadHardwareAsync()
     {
-        async Task LoadInfo()
-        {
-            try
-            {
-                var info = await Task.Run(SystemInfoCollector.Collect);
-                if (_features.IsClosing) return;
-                InfoCategories.ItemsSource = info;
-                InfoCategories.SelectedIndex = 0;
-                SystemSub.Text = $"{Environment.MachineName} · {info.Count} categorias de hardware e software";
-            }
-            catch (Exception ex) { SystemSub.Text = $"Não foi possível ler as informações do sistema: {ex.Message}"; }
-        }
+        Task LoadInfo() => PageSystem.RefreshAsync();
 
         async Task LoadSensors()
         {
@@ -164,6 +152,7 @@ public partial class MainWindow : Window
                 GpuChips.Children.Add(chip);
             }
             if (_gpus.Count > 0) ShowGpu(_gpus[0]);
+            PageSystem.GpusReady();
 
             // Dependem do nome da GPU/CPU
             InitGames();

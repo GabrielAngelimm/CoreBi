@@ -49,6 +49,7 @@ internal static partial class Program
     public static int Main(string[] args)
     {
         if (args.FirstOrDefault() == "--process-fixture") return ProcessFixture(args);
+        if (args.FirstOrDefault() == "--report") return RealReport(args.Length > 1 ? args[1] : "report");
         Output = Path.GetFullPath(args.Length > 0 ? args[0] : "TestResults");
         Directory.CreateDirectory(Output);
         Environment.SetEnvironmentVariable("COREBI_DATA_DIR", Path.Combine(Output, "settings"));
@@ -73,6 +74,63 @@ internal static partial class Program
             Require(WmiCalendarDate.Format("20250926000000.000000+000") == "26/09/2025", "BIOS date shifted");
             Require(WmiCalendarDate.Format("20260722000000.000000+000") == "22/07/2026", "Driver date shifted");
             Require(WmiCalendarDate.Format(null) == "—", "Missing date"); return new { bios = "26/09/2025", driver = "22/07/2026" };
+        });
+        Check("inventory: RAM slots, channels, XMP and readable values", () =>
+        {
+            RamModule Module(string loc, string? ch, int? idx, int conf) => new("BANK 0", loc, ch != null ? $"{ch}{idx}" : loc, ch, idx, 16UL << 30, "DDR4", "DIMM",
+                2133, conf, "G.Skill", "F4-3600C16-16GVKC", "0", 64, 64, 2, 1.35, 1.2, 1.35);
+            var ram = new RamInfo { Modules = { Module("DIMM_A2", "A", 2, 3600), Module("DIMM_B2", "B", 2, 3600) }, Slots = 4, PartSpeed = 3600 };
+            Require(string.Join(",", ram.SlotMap().Select(s => s.Name + (s.Module != null ? "*" : ""))) == "A1,A2*,B1,B2*", "Slot map");
+            Require(ram.Channels == 2 && ram.Profile!.Tone == Tone.Ok && ram.ChannelFinding!.Tone == Tone.Ok, "Dual channel with XMP");
+            var off = new RamInfo { Modules = { Module("DIMM_A2", "A", 2, 2133), Module("DIMM_A1", "A", 1, 2133) }, Slots = 4, PartSpeed = 3600 };
+            Require(off.Profile!.Tone == Tone.Warn && off.ChannelFinding!.Tone == Tone.Warn, "XMP off and single channel must warn");
+            var odd = new RamInfo { Modules = { Module("XMM1", null, null, 3200) }, Slots = 2 };
+            Require(odd.SlotMap().Count == 2 && odd.SlotMap()[1].Module == null, "Unknown slot names keep empty slots");
+            Require(SystemInfoCollector.NvidiaVersion("32.0.15.6636") == "566.36" && SystemInfoCollector.NvidiaVersion("31.0.15.5222") == "552.22", "NVIDIA version");
+            Require(Fmt.IsPlaceholder("Default string") && Fmt.ShortMaker("ASUSTeK COMPUTER INC.") == "ASUS" && Fmt.Bytes(16UL << 30) == "16 GB", "Readable values");
+            Require(Fmt.Ago(new DateTime(2024, 3, 15), new DateTime(2025, 10, 20)) == "há 1 ano e 7 meses", "Age");
+
+            var inv = new SystemInventory { Ram = ram };
+            inv.Cpus.Add(new CpuInfo("AMD Ryzen 7 5700X 8-Core Processor", "AMD", "AM4", 8, 16, 3400, 25, 33, 2, "x64", true, false, 4096, 32768,
+                new CpuTopology(), new() { ("AVX2", true), ("AVX-512", false) }));
+            inv.Gpus.Add(new VideoAdapter("NVIDIA GeForce RTX 4060 Ti", "NVIDIA", "566.36", "32.0.15.6636", null, 8UL << 30));
+            inv.Displays.Add(new DisplayInfo(1, "NVIDIA GeForce RTX 4060 Ti", "LG ULTRAGEAR", "GSM", 27, 1920, 1080, 60, 144, 32, 0, 0, true, "DisplayPort", 2023, 22));
+            inv.Disks.Add(new PhysicalDiskInfo(0, "Samsung SSD 980 1TB", 1UL << 40, "NVMe", "SSD", "3B4QFXO7", "S64ANS0T", false, "Saudável", "GPT"));
+            inv.Board = new CoreBi.Engine.Monitoring.Inventory.BoardInfo("Gigabyte Technology Co., Ltd.", "B550M AORUS ELITE", "x.x", "MB-SERIAL-9", null, null, "Desktop");
+            inv.Firmware = new FirmwareInfo("American Megatrends International, LLC.", "FF", new DateTime(2025, 9, 26), "3.3", true, true, "2.0", true, "AMD", "3.94.2.5");
+            inv.Settings = new WindowsSettings(false, true, true, true, "(UTC-03:00) Brasília");
+            inv.Security = new WindowsSecurity("Windows Defender", true, true, DateTime.Now.AddDays(-1), "Nunca notificar");
+            inv.Os = new OsInfo("Windows 11 Pro", "Windows 11 Pro", "24H2", "26100.6899", "64 bits (x64)", new DateTime(2025, 10, 24), DateTime.Now.AddHours(-6), "PC", "user", "WORKGROUP", false, "português (Brasil)", null, null);
+            var (index, sheets) = CoreBi.Desktop.Features.Monitoring.Inventory.SystemSheets.Build(inv, Array.Empty<CoreBi.Engine.Monitoring.Graphics.GpuInfo>(), Array.Empty<CoreBi.Engine.Monitoring.Storage.DriveCard>(), DateTime.Now);
+            Require(index.Count == 6 && sheets.Count == 6, "Six sheets");
+            Require(index[0].Name == "Ryzen 7 5700X" && index[0].Spec.StartsWith("8 núcleos · 16 threads"), "CPU index: " + index[0].Spec);
+            var ramRows = sheets["ram"].Groups.SelectMany(g => g.Rows).ToList();
+            Require(ramRows.Any(r => r.Key == "Canais" && r.Value == "Dual channel" && r.Tone == Tone.Ok) && ramRows.Any(r => r.Key == "Perfil XMP/EXPO" && r.Tone == Tone.Ok), "RAM verdicts live in the rows");
+            Require(sheets["ram"].Groups.Any(g => g.Columns?.Count == 2 && g.Rows.All(r => r.Cells?.Count == 2)), "Two RAM modules side by side");
+            Require(sheets["cpu"].Readouts.Count == 4 && index.All(i => i.Glyph.Length == 1 && i.Glyph[0] >= '\uE000'), "Index glyphs are icon characters");
+            Require(sheets["gpu"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Atualização" && r.Tone == Tone.Warn), "Display below max Hz warns in the row and the index");
+            Require(sheets["storage"].Groups.Any(g => g.Rows.Any(r => r.Key == "Nº de série" && r.Value == "S64ANS0T")) && sheets["storage"].Disks![0].Meta.Length < 30, "Disk serial in its own row, not a truncated meta line");
+            Require(sheets["os"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Modo de jogo" && r.Tone == Tone.Warn), "Game mode off warns");
+            Require(sheets["ram"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Fabricante" && r.Cells![0] == "G.Skill"), "RAM maker");
+            var allRows = sheets.Values.SelectMany(sh => sh.Groups).SelectMany(g => g.Rows).ToList();
+            Require(allRows.All(r => r.Cells != null || r.Value != "—"), "Unreadable fields are hidden, not shown as a dash");
+            Require(allRows.All(r => !(r.Value + r.Tip + r.Help).Contains("CPU-Z")), "No references to other programs");
+            Require(sheets["gpu"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Fabricado em" && r.Value == "Maio de 2023"), "Monitor week becomes month and year");
+            Require(sheets["ram"].Groups.All(g => !g.Title.StartsWith("Uso")), "System page shows hardware, not live usage");
+            Require(sheets["os"].Groups.Any(g => g.Title == "Segurança do Windows" && g.Column == 0) && sheets["os"].Groups.Single(g => g.Title == "Sessão").Column == 1, "Windows groups keep their columns");
+            Require(sheets["storage"].Groups.All(g => g.Title != "Samsung SSD 980 1TB"), "Disk name appears once, in the disk line");
+            Require(new[] { ("cpu", "Nome completo"), ("gpu", "Modelo"), ("board", "Modelo"), ("board", "Versão"), ("ram", "Instalada"), ("os", "Edição") }
+                .All(k => sheets[k.Item1].Groups.SelectMany(g => g.Rows).Any(r => r.Key == k.Item2)), "Identification rows repeat what the plate summarizes");
+            var report = new CoreBi.Engine.Reports.ReportData { Machine = "PC-TESTE", AppVersion = "0.0.0", Sheets = CoreBi.Desktop.Features.Reports.SystemReport.From(index, sheets) };
+            string html = CoreBi.Engine.Reports.ReportBuilder.Html(report), json = CoreBi.Engine.Reports.ReportBuilder.Json(report);
+            Require(report.Sheets.Count == 6 && report.Sheets[0].Category == "Sistema operacional" && html.Contains("id=\"s6\""), "Report follows the six sheets, OS first");
+            Require(!html.Contains("S64ANS0T") && !json.Contains("S64ANS0T") && !html.Contains("MB-SERIAL-9") && !json.Contains("MB-SERIAL-9") && !html.Contains(">user<"), "Report leaves serials and the user name out");
+            Require(html.Contains("Maio de 2023") && JsonDocument.Parse(json).RootElement.GetProperty("fichas").GetArrayLength() == 6, "Report carries the same values as the page");
+            Require(inv.ToNodes().Count == 6, "Report keeps six categories");
+            string dark = CoreBi.Engine.Reports.ReportBuilder.Html(new CoreBi.Engine.Reports.ReportData { Machine = "PC-TESTE", Dark = true, Sheets = report.Sheets });
+            Require(html.Contains("data-theme=\"light\"") && dark.Contains("data-theme=\"dark\"") && html.Contains("id=\"theme\"") && html.Contains("id=\"print\"") && html.Contains("@media print"),
+                "Report opens in the app theme, can switch themes and print");
+            return new { slots = "A1,A2*,B1,B2*", index = index.Select(i => i.Name).ToArray() };
         });
         Check("bottleneck: missing data cannot be a positive verdict", () =>
         {
@@ -197,7 +255,7 @@ internal static partial class Program
                 sampleTimer.Tick += (_, _) => sampleFrame.Continue = false;
                 sampleTimer.Start(); Dispatcher.PushFrame(sampleFrame); sampleTimer.Stop();
                 Require(window._monitor.IsOpen && window._monitor.Rows.Count > 0, "Sensor collector not ready");
-                Require(window._gpus.Count > 0 && window.InfoCategories.Items.Count == 6, "Startup did not bind inventory");
+                Require(window._gpus.Count > 0 && window.PageSystem.CategoryCount == 6, "Startup did not bind inventory");
                 return new
                 {
                     sensorRows = window._monitor.Rows.Count,
@@ -328,5 +386,35 @@ internal static partial class Program
             finally { stress.Stop(); }
             Require(!stress.Running, "CPU stress did not stop"); return new { stopped = true, scope = "one second; no thermal stability certification" };
         });
+    }
+
+    /// <summary>Relatório com os dados reais desta máquina (HTML e JSON), sem abrir a janela: para conferir a exportação.</summary>
+    private static int RealReport(string folder)
+    {
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("pt-BR");
+        Directory.CreateDirectory(folder);
+        var inv = SystemInfoCollector.Read();
+        var gpus = GpuInfoCollector.Collect();
+        var drives = DriveMap.Read();
+        var (index, sheets) = CoreBi.Desktop.Features.Monitoring.Inventory.SystemSheets.Build(inv, gpus, drives, DateTime.Now, CoreBi.Engine.Monitoring.Memory.MemoryInfo.ReadSnapshot());
+        var data = new CoreBi.Engine.Reports.ReportData
+        {
+            AppVersion = typeof(CoreBi.Desktop.MainWindow).Assembly.GetName().Version?.ToString(3) ?? "",
+            Sheets = CoreBi.Desktop.Features.Reports.SystemReport.From(index, sheets),
+            System = inv.ToNodes().Select(CoreBi.Engine.Reports.ReportBuilder.ToNode).Where(n => n != null).Cast<CoreBi.Engine.Reports.ReportNode>().ToList(),
+            LogoBase64 = Logo("logo-dark.png"),
+            LogoOnDarkBase64 = Logo("logo.png"),
+        };
+        string name = $"CoreBi-{Environment.MachineName}", html = CoreBi.Engine.Reports.ReportBuilder.Html(data);
+        File.WriteAllText(Path.Combine(folder, name + ".html"), html, new System.Text.UTF8Encoding(true));
+        File.WriteAllText(Path.Combine(folder, name + ".json"), CoreBi.Engine.Reports.ReportBuilder.Json(data), new System.Text.UTF8Encoding(true));
+        // O mesmo caminho do botão Exportar > PDF.
+        try { CoreBi.Desktop.Features.Reports.PdfPrinter.PrintAsync(html, Path.Combine(folder, name + ".pdf")).GetAwaiter().GetResult(); }
+        catch (Exception ex) { Console.Error.WriteLine("PDF: " + ex.Message); }
+        Console.WriteLine(Path.GetFullPath(Path.Combine(folder, name + ".html")));
+        return 0;
+
+        static string? Logo(string file) =>
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "CoreBi.Desktop", "Assets", file) is var path && File.Exists(path) ? Convert.ToBase64String(File.ReadAllBytes(path)) : null;
     }
 }

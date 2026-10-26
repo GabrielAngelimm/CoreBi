@@ -42,22 +42,6 @@ public static class Ui
     }
 }
 
-/// <summary>Glifo de cada categoria do inventário (Sistema), pelo título que o coletor devolve.</summary>
-public sealed class CategoryIconConverter : IValueConverter
-{
-    public object Convert(object value, Type target, object parameter, CultureInfo culture) => (value as string) switch
-    {
-        "Sistema operacional" => "",
-        "Placa-mãe e BIOS" => "",
-        "Processador" => "",
-        "Memória RAM" => "",
-        "Placa de vídeo" => "",
-        "Armazenamento" => "",
-        _ => "",
-    };
-    public object ConvertBack(object value, Type target, object parameter, CultureInfo culture) => throw new NotSupportedException();
-}
-
 /// <summary>Texto vazio some do layout (rótulos opcionais em templates).</summary>
 public sealed class StringNotEmptyConverter : IValueConverter
 {

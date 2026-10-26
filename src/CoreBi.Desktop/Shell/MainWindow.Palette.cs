@@ -29,7 +29,7 @@ public partial class MainWindow
         }
         _paletteEntries.Add(new PaletteEntry("Alternar tema claro ou escuro", "Ação", "", "aparência modo cor",
             () => Theme_Click(this, new RoutedEventArgs())));
-        _paletteEntries.Add(new PaletteEntry("Exportar relatório do sistema", "Ação", "", "html json salvar",
+        _paletteEntries.Add(new PaletteEntry("Exportar relatório do sistema", "Ação", "", "html pdf json salvar imprimir",
             () => { NavSystem.IsChecked = true; BtnReport_Click(this, new RoutedEventArgs()); }));
         _paletteEntries.Add(new PaletteEntry("Mostrar ou ocultar o overlay", "Ação", "", "fps jogo ctrl shift o",
             () => ChkOverlay.IsChecked = ChkOverlay.IsChecked != true));
