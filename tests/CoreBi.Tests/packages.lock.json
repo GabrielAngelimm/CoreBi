@@ -194,16 +194,6 @@
           "SharpGen.Runtime": "2.4.2-beta"
         }
       },
-      "System.CodeDom": {
-        "type": "Transitive",
-        "resolved": "10.0.13",
-        "contentHash": "rTW3WGWYugm9qMihqSXXHxAIVP9Ay4ASkYc8CJLDbuscbc88lpO8U/asZpeYb9GiXbD8wNDhRoV5b2JEbHmtow=="
-      },
-      "System.Diagnostics.EventLog": {
-        "type": "Transitive",
-        "resolved": "10.0.13",
-        "contentHash": "DkNjtQyPR5Ud/zHnWHdsOuKbFRL9nIC92Q76z0NmHVDoQm40toLtsGFTIWq7toBoVa6fo/DInL3PLxY3Asixyw=="
-      },
       "System.IO.FileSystem.AccessControl": {
         "type": "Transitive",
         "resolved": "5.0.0",
@@ -220,20 +210,12 @@
       "System.Management": {
         "type": "Transitive",
         "resolved": "10.0.13",
-        "contentHash": "cL8qiJmJtlSIcAoZH4s07VTxTdddvEP12MFeM+KBZagn4CuD/0SFQsmKn5g9MLfiSrYjdAxIwOTO0kATY9A0UA==",
-        "dependencies": {
-          "System.CodeDom": "10.0.13"
-        }
+        "contentHash": "cL8qiJmJtlSIcAoZH4s07VTxTdddvEP12MFeM+KBZagn4CuD/0SFQsmKn5g9MLfiSrYjdAxIwOTO0kATY9A0UA=="
       },
       "System.Reflection.TypeExtensions": {
         "type": "Transitive",
         "resolved": "4.7.0",
         "contentHash": "VybpaOQQhqE6siHppMktjfGBw1GCwvCqiufqmP8F1nj7fTUNtW35LOEt3UZTEsECfo+ELAl/9o9nJx3U91i7vA=="
-      },
-      "System.Security.Cryptography.ProtectedData": {
-        "type": "Transitive",
-        "resolved": "10.0.2",
-        "contentHash": "me7W69hkjdu5EzHXCQSXv9OS3uAkMXT26oZuWTaabeoO5BPxSVuRVJ2FSfIW8xyGxBb6mKCE6ZKg7TLk3IzJBQ=="
       },
       "Vortice.D3DCompiler": {
         "type": "Transitive",
@@ -312,9 +294,7 @@
         "dependencies": {
           "LibreHardwareMonitorLib": "[0.9.6, )",
           "Microsoft.Diagnostics.Tracing.TraceEvent": "[4.0.0, )",
-          "System.Diagnostics.EventLog": "[10.0.13, )",
           "System.Management": "[10.0.13, )",
-          "System.Security.Cryptography.ProtectedData": "[10.0.2, )",
           "Vortice.D3DCompiler": "[3.8.3, )",
           "Vortice.Direct3D11": "[3.8.3, )",
           "Vortice.Direct3D12": "[3.8.3, )",
@@ -422,11 +402,6 @@
         "resolved": "10.0.3",
         "contentHash": "L1gcOL5kcfeeujKQbqJmpeTLsT0c6DeaJ9w6PY9oZ+/WESyya+Zj7StKguXR5j93o3o86FjcN05yufpoCz7R2g=="
       },
-      "System.Diagnostics.EventLog": {
-        "type": "Transitive",
-        "resolved": "10.0.13",
-        "contentHash": "DkNjtQyPR5Ud/zHnWHdsOuKbFRL9nIC92Q76z0NmHVDoQm40toLtsGFTIWq7toBoVa6fo/DInL3PLxY3Asixyw=="
-      },
       "System.IO.FileSystem.AccessControl": {
         "type": "Transitive",
         "resolved": "5.0.0",
@@ -443,10 +418,7 @@
       "System.Management": {
         "type": "Transitive",
         "resolved": "10.0.13",
-        "contentHash": "cL8qiJmJtlSIcAoZH4s07VTxTdddvEP12MFeM+KBZagn4CuD/0SFQsmKn5g9MLfiSrYjdAxIwOTO0kATY9A0UA==",
-        "dependencies": {
-          "System.CodeDom": "10.0.13"
-        }
+        "contentHash": "cL8qiJmJtlSIcAoZH4s07VTxTdddvEP12MFeM+KBZagn4CuD/0SFQsmKn5g9MLfiSrYjdAxIwOTO0kATY9A0UA=="
       },
       "Vortice.Dxc.Native": {
         "type": "Transitive",
