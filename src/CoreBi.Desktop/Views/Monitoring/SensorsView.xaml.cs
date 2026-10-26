@@ -16,6 +16,11 @@ public partial class SensorsView : UserControl
         DependencyProperty.Register(nameof(SectionColumns), typeof(int), typeof(SensorsView), new PropertyMetadata(2));
     public int SectionColumns { get => (int)GetValue(SectionColumnsProperty); set => SetValue(SectionColumnsProperty, value); }
 
+    /// <summary>Altura mínima do cartão quando há um componente só: preenche a área, e a base fica alinhada com a do índice.</summary>
+    public static readonly DependencyProperty CardMinHeightProperty =
+        DependencyProperty.Register(nameof(CardMinHeight), typeof(double), typeof(SensorsView), new PropertyMetadata(0.0));
+    public double CardMinHeight { get => (double)GetValue(CardMinHeightProperty); set => SetValue(CardMinHeightProperty, value); }
+
     private SensorMonitor? _monitor;
     private string? _component;       // componente escolhido no índice (null = visão geral)
     private string? _group;           // filtro por tipo (null = todos)
@@ -70,6 +75,7 @@ public partial class SensorsView : UserControl
         BuildChips(layout);
         _syncing = false;
         double offset = SensorScroll.VerticalOffset;
+        UpdateCardHeight();
         SensorCards.ItemsSource = layout.Cards;
         SensorScroll.ScrollToVerticalOffset(offset);
 
@@ -95,8 +101,11 @@ public partial class SensorsView : UserControl
     }
 
     private void UpdateFootnote() => SensorFootnote.Text =
-        $"Mínimo, média e máximo contam desde as {_since:HH:mm}. Leitura a cada segundo (pausada durante o teste de placa de vídeo do Benchmark). " +
-        "Passe o mouse num sensor para ver o nome técnico. Placas de rede virtuais e camadas de filtro do Windows não aparecem.";
+        $"Mínimo, média e máximo contam desde as {_since:HH:mm}. Leitura a cada segundo, pausada durante o teste de placa de vídeo. Passe o mouse num sensor para ver o nome técnico.";
+
+    private void UpdateCardHeight() => CardMinHeight = _component == null ? 0 : Math.Max(0, SensorScroll.ActualHeight - 17); // 16 de margem do cartão + 1 de folga, para não aparecer barra à toa
+
+    private void SensorScroll_SizeChanged(object sender, SizeChangedEventArgs e) => UpdateCardHeight();
 
     // ---------------- Índice e filtros ----------------
 

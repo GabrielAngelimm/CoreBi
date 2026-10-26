@@ -47,7 +47,7 @@ public sealed class SensorComponent : INotifyPropertyChanged
 /// </summary>
 public static class SensorBoard
 {
-    private const string Memory = "";
+    private const string Module = "\uEEA0", PhysicalGlyph = "\uE74C", VirtualGlyph = "\uE7C3", OverviewGlyph = "\uE71D";
     private const int PhysicalOrder = 90, VirtualOrder = 91, DimmOrder = 40;
 
     private sealed record Part(string Key, string Name, string Kind, string Glyph, int Channel, int Order, string? Note, List<SensorRow> Rows);
@@ -85,13 +85,13 @@ public static class SensorBoard
             if (type == HardwareType.Memory)
             {
                 if (IsVirtualMemory(first))
-                    parts.Add(new(group.Key, "Memória virtual", "Uso do Windows", Memory, 2, VirtualOrder,
+                    parts.Add(new(group.Key, "Memória virtual", "Uso do Windows", VirtualGlyph, 2, VirtualOrder,
                         "Memória física somada ao arquivo de paginação, no disco. É o limite que o Windows pode prometer aos programas.", all));
                 else if (all.Any(r => r.Name is "Memory" or "Memory Used"))
-                    parts.Add(new(group.Key, "Memória física", "Uso do Windows", Memory, 2, PhysicalOrder,
+                    parts.Add(new(group.Key, "Memória física", "Uso do Windows", PhysicalGlyph, 2, PhysicalOrder,
                         "A RAM instalada vista pelo Windows: quanto está em uso e quanto está livre agora.", all));
                 else
-                    dimms.Add(new(group.Key, PrettyName(first.Component), "Memória RAM", Memory, 2, DimmOrder, null, all));
+                    dimms.Add(new(group.Key, PrettyName(first.Component), "Memória RAM", Module, 2, DimmOrder, null, all));
                 continue;
             }
             var (kind, glyph, order) = Describe(type);
@@ -110,7 +110,7 @@ public static class SensorBoard
     public static SensorLayout Build(IEnumerable<SensorRow> rows, string? component, string? group, string search, ISet<string> collapsed)
     {
         var parts = Parts(rows);
-        var index = new List<IndexEntry> { new(null, "Visão geral", "Todos os componentes", "", null) };
+        var index = new List<IndexEntry> { new(null, "Visão geral", "Todos os componentes", OverviewGlyph, null) };
         index.AddRange(parts.Select(p => new IndexEntry(p.Key, p.Name, p.Kind, p.Glyph, p.Note)));
         if (component != null && parts.All(p => p.Key != component)) component = null;
 

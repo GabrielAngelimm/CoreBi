@@ -18,6 +18,36 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
+        <!-- Item do índice: fundo suave na seleção e um filete de destaque na borda; o ícone fica num bloco que acende no azul-ciano -->
+        <Style x:Key="IndexItem" TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Grid Background="Transparent" Margin="0,0,0,2">
+                            <Border x:Name="hover" CornerRadius="10" Background="{DynamicResource Hover}" Opacity="0" />
+                            <Border x:Name="sel" CornerRadius="10" Background="{DynamicResource Selected}" Opacity="0" />
+                            <Border x:Name="bar" Width="3" Height="24" CornerRadius="2" Background="{DynamicResource Accent}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,0" Opacity="0" />
+                            <ContentPresenter Margin="12,8,10,8" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="hover" Property="Opacity" Value="1" />
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="sel" Property="Opacity" Value="1" />
+                                <Setter TargetName="bar" Property="Opacity" Value="1" />
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Linha de sensor: nome claro, leitura atual com a unidade e as três estatísticas sem unidade.
              O fio fica em cima de cada linha; o mouse acende o fundo, que avança 8 px para os lados. -->
         <DataTemplate x:Key="SensorLine">
@@ -32,7 +62,7 @@
                         <ColumnDefinition Width="74" />
                         <ColumnDefinition Width="74" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="{Binding Label}" FontSize="13" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Label}" FontSize="13" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,0,8,0" />
                     <TextBlock x:Name="value" Grid.Column="1" Style="{StaticResource ReadoutText}" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Run Text="{Binding Number, Mode=OneWay}" /><Run Text=" " FontSize="11" /><Run x:Name="unit" Text="{Binding Unit, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource UiFont}" />
                     </TextBlock>
@@ -57,32 +87,38 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Grupo de um tipo: título e quantidade à esquerda, nomes das colunas alinhados com as células das linhas -->
+        <!-- Nomes das colunas: uma vez por cartão (no topo do corpo), com a mesma geometria das linhas -->
+        <DataTemplate x:Key="ColumnHeads">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="120" />
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="74" />
+                    <ColumnDefinition Width="74" />
+                    <ColumnDefinition Width="74" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="1" Text="Atual" Style="{StaticResource ColHead}" />
+                <TextBlock Grid.Column="2" Text="Mín." Style="{StaticResource ColHead}" />
+                <TextBlock Grid.Column="3" Text="Média" Style="{StaticResource ColHead}" />
+                <TextBlock Grid.Column="4" Text="Máx." Style="{StaticResource ColHead}" />
+            </Grid>
+        </DataTemplate>
+
+        <!-- Grupo de um tipo: o título é o maior e mais forte do bloco, com um filete de destaque; os sensores entram recuados embaixo -->
         <DataTemplate x:Key="SectionTemplate">
             <StackPanel>
-                <Grid Margin="0,0,0,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" MinWidth="120" />
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="74" />
-                        <ColumnDefinition Width="74" />
-                        <ColumnDefinition Width="74" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock VerticalAlignment="Bottom" TextTrimming="CharacterEllipsis">
-                        <Run Text="{Binding Title, Mode=OneWay}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" /><Run Text="   " /><Run Text="{Binding Rows.Count, Mode=OneWay}" FontSize="11.5" Foreground="{DynamicResource Faint}" />
-                    </TextBlock>
-                    <TextBlock Grid.Column="1" Text="Atual" Style="{StaticResource ColHead}" />
-                    <TextBlock Grid.Column="2" Text="Mín." Style="{StaticResource ColHead}" />
-                    <TextBlock Grid.Column="3" Text="Média" Style="{StaticResource ColHead}" />
-                    <TextBlock Grid.Column="4" Text="Máx." Style="{StaticResource ColHead}" />
-                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Border Width="3" Height="16" CornerRadius="2" Background="{DynamicResource Accent}" Margin="0,0,9,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Title, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Rows.Count, Mode=OneWay}" FontSize="11.5" Foreground="{DynamicResource Faint}" Margin="10,2,0,0" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular" />
+                </StackPanel>
                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource SensorLine}" Focusable="False" />
             </StackPanel>
         </DataTemplate>
 
-        <!-- Cartão de componente: ícone, tipo e nome; as leituras ficam só nos grupos, embaixo, em colunas -->
+        <!-- Cartão de componente: ícone, nome e, embaixo, o tipo; as leituras ficam só nos grupos, embaixo, em colunas -->
         <DataTemplate x:Key="ComponentCard">
-            <Border Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16">
+            <Border Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16" MinHeight="{Binding CardMinHeight, RelativeSource={RelativeSource AncestorType=UserControl}}">
                 <StackPanel>
                     <Grid Margin="24,18,18,18">
                         <Grid.ColumnDefinitions>
@@ -92,37 +128,47 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Border x:Name="tile" Width="44" Height="44" CornerRadius="10" Background="{DynamicResource AccentSoft}" VerticalAlignment="Center">
-                            <TextBlock x:Name="glyph" Text="{Binding Glyph}" Style="{StaticResource IconGlyph}" FontSize="20" Foreground="{DynamicResource Accent}" />
+                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource IconGlyph}" FontSize="20" Foreground="{DynamicResource Accent}" />
                         </Border>
                         <StackPanel Grid.Column="1" Margin="16,0,16,0" VerticalAlignment="Center">
-                            <TextBlock FontSize="12" Foreground="{DynamicResource Muted}" Typography.NumeralAlignment="Tabular">
-                                <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text=" · " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Faint}" />
+                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="20" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="0,3,0,0" Typography.NumeralAlignment="Tabular">
+                                <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Faint}" />
                             </TextBlock>
-                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                         <Button x:Name="toggle" Grid.Column="3" Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="0" Margin="18,0,0,0" VerticalAlignment="Center" Click="Toggle_Click" ToolTip="Recolher" AutomationProperties.Name="Recolher ou expandir">
                             <TextBlock x:Name="chev" Text="&#xE70E;" Style="{StaticResource IconGlyph}" FontSize="12" />
                         </Button>
                     </Grid>
                     <Border x:Name="body" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="24,18,24,20">
-                        <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource SectionTemplate}" Focusable="False">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <inv:ColumnsPanel Columns="{Binding SectionColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" ColumnGap="44" RowGap="26" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                        </ItemsControl>
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="44" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter x:Name="head1" Content="{Binding}" ContentTemplate="{StaticResource ColumnHeads}" />
+                                <ContentPresenter x:Name="head2" Grid.Column="2" Content="{Binding}" ContentTemplate="{StaticResource ColumnHeads}" />
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource SectionTemplate}" Focusable="False">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <inv:ColumnsPanel Columns="{Binding SectionColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" ColumnGap="44" RowGap="30" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding Channel}" Value="1">
-                    <Setter TargetName="tile" Property="Background" Value="{DynamicResource CopperSoft}" />
-                    <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Copper}" />
+                <DataTrigger Binding="{Binding SectionColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="1">
+                    <Setter TargetName="head1" Property="Grid.ColumnSpan" Value="3" />
+                    <Setter TargetName="head2" Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
-                <DataTrigger Binding="{Binding Channel}" Value="2">
-                    <Setter TargetName="tile" Property="Background" Value="{DynamicResource Raised}" />
-                    <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Steel}" />
+                <DataTrigger Binding="{Binding Sections.Count}" Value="1">
+                    <Setter TargetName="head2" Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding CanCollapse}" Value="False">
                     <Setter TargetName="toggle" Property="Visibility" Value="Collapsed" />
@@ -163,17 +209,21 @@
         </Grid>
 
         <Grid x:Name="SensorBody" Grid.Row="1" SizeChanged="SensorBody_SizeChanged">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="IndexColumn" Width="300" />
                 <ColumnDefinition x:Name="IndexGap" Width="16" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Índice: um item por componente; clicar leva ao cartão, e rolar a lista acende o componente à vista -->
-            <Border x:Name="IndexCard" Style="{StaticResource CardBorder}" Padding="10,14,10,10" VerticalAlignment="Top" MaxHeight="{Binding ActualHeight, ElementName=SensorBody}">
+            <!-- Índice: um item por componente, na altura toda da página (a base alinha com a do cartão ao lado); escolher um mostra só ele -->
+            <Border x:Name="IndexCard" Style="{StaticResource CardBorder}" Padding="10,14,10,10">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Componentes" Style="{StaticResource Label}" Margin="10,0,10,8" />
-                    <ListBox x:Name="SensorIndex" ItemContainerStyle="{StaticResource ListNavItem}" SelectionChanged="SensorIndex_Changed" HorizontalContentAlignment="Stretch">
+                    <ListBox x:Name="SensorIndex" ItemContainerStyle="{StaticResource IndexItem}" SelectionChanged="SensorIndex_Changed" HorizontalContentAlignment="Stretch">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid ToolTip="{Binding Note}">
@@ -181,13 +231,20 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding Glyph}" Style="{StaticResource ListNavIcon}" FontSize="15" Width="18" Margin="0,1,12,0" VerticalAlignment="Top" />
+                                    <Border x:Name="tile" Width="34" Height="34" CornerRadius="9" Background="{DynamicResource Raised}" Margin="0,0,12,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Glyph}" Style="{StaticResource ListNavIcon}" FontSize="16" />
+                                    </Border>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                         <!-- Nome inteiro: quebra em até duas linhas em vez de cortar -->
                                         <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" LineHeight="17" MaxHeight="34" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding Kind}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                        <TextBlock Text="{Binding Kind}" FontSize="12" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
                                     </StackPanel>
                                 </Grid>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                        <Setter TargetName="tile" Property="Background" Value="{DynamicResource AccentSoft}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
@@ -200,7 +257,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <WrapPanel x:Name="CategoryChips" Margin="0,0,0,12" />
-                <ScrollViewer x:Name="SensorScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" >
+                <ScrollViewer x:Name="SensorScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" SizeChanged="SensorScroll_SizeChanged">
                     <StackPanel x:Name="SensorStack">
                         <Border x:Name="SensorEmpty" Style="{StaticResource CardBorder}" Padding="24,22" Visibility="Collapsed">
                             <StackPanel>
@@ -209,10 +266,10 @@
                             </StackPanel>
                         </Border>
                         <ItemsControl x:Name="SensorCards" ItemTemplate="{StaticResource ComponentCard}" Focusable="False" />
-                        <TextBlock x:Name="SensorFootnote" Style="{StaticResource Footnote}" MaxWidth="900" Margin="2,2,0,6" />
                     </StackPanel>
                 </ScrollViewer>
             </Grid>
+            <TextBlock x:Name="SensorFootnote" Grid.Row="1" Grid.ColumnSpan="3" Style="{StaticResource Footnote}" Margin="2,8,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
         </Grid>
     </Grid>
 </UserControl>
