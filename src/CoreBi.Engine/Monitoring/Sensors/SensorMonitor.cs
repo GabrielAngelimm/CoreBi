@@ -87,7 +87,7 @@ public sealed class SensorMonitor : IDisposable
             if (!_open || _disposed) return;
             foreach (var hw in _source.Hardware)
             {
-                try { Walk(hw); _failedHardware.Remove(hw.Identifier.ToString()); }
+                try { Walk(hw, hw); _failedHardware.Remove(hw.Identifier.ToString()); }
                 catch (Exception ex)
                 {
                     if (_failedHardware.Add(hw.Identifier.ToString())) DiagnosticLog.Write("sensors.refresh", ex);
@@ -97,7 +97,7 @@ public sealed class SensorMonitor : IDisposable
         }
     }
 
-    private void Walk(IHardware hw)
+    private void Walk(IHardware hw, IHardware root)
     {
         hw.Update();
         bool inaccessibleCpu = hw.HardwareType == HardwareType.Cpu && !IsPawnIOInstalled
@@ -111,6 +111,9 @@ public sealed class SensorMonitor : IDisposable
                 {
                     Id = id,
                     Hardware = hw.Name,
+                    RootId = root.Identifier.ToString(),
+                    RootName = root.Name,
+                    RootType = root.HardwareType,
                     Category = SensorRow.CategoryName(s.SensorType),
                     Name = s.Name,
                     Type = s.SensorType,
@@ -123,7 +126,14 @@ public sealed class SensorMonitor : IDisposable
             row.Update(unavailable ? null : s.Value, unavailable ? null : s.Min, unavailable ? null : s.Max);
         }
         foreach (var sub in hw.SubHardware)
-            Walk(sub);
+            Walk(sub, root);
+    }
+
+    /// <summary>Recomeça mínimo, média e máximo de todos os sensores a partir da leitura atual.</summary>
+    public void ResetStats()
+    {
+        lock (_lifecycle)
+            foreach (var row in Rows) row.ResetStats();
     }
 
     /// <summary>Temperatura principal da CPU: Package (Intel) / Tctl-Tdie (AMD), senão a maior entre os núcleos.</summary>

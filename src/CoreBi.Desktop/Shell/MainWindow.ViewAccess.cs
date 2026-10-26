@@ -34,8 +34,6 @@ public partial class MainWindow
     internal Button BtnReport => PageSystem.BtnReport;
     internal TextBlock StatusText => PageSensors.StatusText;
     internal TextBox SensorSearch => PageSensors.SensorSearch;
-    internal WrapPanel CategoryChips => PageSensors.CategoryChips;
-    internal DataGrid SensorGrid => PageSensors.SensorGrid;
     internal WrapPanel GpuChips => PageGpu.GpuChips;
     internal TextBlock GpuName => PageGpu.GpuName;
     internal TextBlock GpuSubtitle => PageGpu.GpuSubtitle;
@@ -192,7 +190,7 @@ public partial class MainWindow
         PageEnergy.Initialize(_features, _monitor, () => _gpus.FirstOrDefault(), MainGpuPower);
         PageNet.Context = _features;
         PageDriver.Context = _features;
-        PageSensors.Owner = this;
+        PageSensors.Initialize(_monitor);
         PageGpu.Owner = this;
         PageGames.Owner = this;
         PageBottleneck.Owner = this;

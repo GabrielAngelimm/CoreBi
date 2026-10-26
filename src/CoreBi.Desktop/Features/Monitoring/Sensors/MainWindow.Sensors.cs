@@ -16,9 +16,6 @@ namespace CoreBi.Desktop;
 public partial class MainWindow
 {
     internal readonly SensorMonitor _monitor;
-    internal readonly ICollectionView _view;
-    internal string? _category;   // filtro por chip (null = todos)
-    internal string _search = ""; // filtro por texto
 
     // ---------------- Sensores da CPU (PawnIO) ----------------
 
@@ -79,40 +76,4 @@ public partial class MainWindow
         catch (Exception ex) { MessageBox.Show(this, "Não foi possível instalar o PawnIO: " + ex.Message, "CoreBi", MessageBoxButton.OK, MessageBoxImage.Warning); }
 
     }
-
-    // ---------------- Sensores ----------------
-
-    internal void AddChip(string label, string? category, bool isChecked = false)
-    {
-        var chip = new RadioButton
-        {
-            Content = label,
-            GroupName = "Category",
-            Style = (Style)FindResource("Chip"),
-            IsChecked = isChecked
-        };
-        chip.Checked += (_, _) => { _category = category; ApplySensorFilter(); };
-        CategoryChips.Children.Add(chip);
-    }
-
-    internal void SensorSearch_Changed(object sender, TextChangedEventArgs e)
-    {
-        _search = SensorSearch.Text.Trim();
-        ApplySensorFilter();
-    }
-
-    internal void ApplySensorFilter()
-    {
-        if (_view == null) return;
-        if (_category == null && _search.Length == 0) { _view.Filter = null; return; }
-        _view.Filter = o =>
-        {
-            var r = (SensorRow)o;
-            return (_category == null || r.Category == _category)
-                && (_search.Length == 0
-                    || r.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)
-                    || r.Hardware.Contains(_search, StringComparison.OrdinalIgnoreCase));
-        };
-    }
-
 }

@@ -58,6 +58,26 @@ internal static partial class Program
             Require(snapshot[0].RawValue == 42, "Snapshot shared mutable sensor state"); row.Update(float.NaN, float.PositiveInfinity, null);
             Require(row.RawValue == null && row.Value == "—", "Invalid float displayed as measurement"); return new { snapshotStable = true, invalidUnknown = true };
         });
+        Check("sensors: session statistics, reset and clear names", () =>
+        {
+            var row = new SensorRow { Id = "t", Name = "Core #3", Hardware = "cpu", HardwareType = HardwareType.Cpu, Type = SensorType.Clock };
+            row.Update(4000, 3000, 4500); row.Update(2000, null, null); row.Update(null, null, null); row.Update(3000, null, null);
+            Require(row.RawMin == 2000 && row.RawMax == 4500 && row.AvgValue == 3000, "Min/avg/max not tracked across readings");
+            Require(row.Label == "Núcleo 3" && row.Tip == "Core #3" && row.Unit == "MHz" && row.Value == "3000 MHz", "Clock row label or format");
+            row.ResetStats();
+            Require(row.RawMin == 3000 && row.RawMax == 3000 && row.AvgValue == 3000, "Reset did not restart statistics");
+            Require(SensorNaming.Label(HardwareType.GpuNvidia, SensorType.Temperature, "GPU Hot Spot") == "Ponto mais quente", "GPU name");
+            Require(SensorNaming.Label(HardwareType.Cpu, SensorType.Load, "CPU Core #2 Thread #1") == "Núcleo 2 · thread 1", "Thread name");
+            Require(SensorNaming.Label(HardwareType.Cpu, SensorType.Power, "Package") == "Total do processador", "Typed name");
+            Require(SensorNaming.Label(HardwareType.Storage, SensorType.Load, "Something New") == "Something New", "Unknown name changed");
+            var hot = new SensorRow { Name = "Temperature", HardwareType = HardwareType.Storage, Type = SensorType.Temperature };
+            hot.Update(64, null, null);
+            var written = new SensorRow { Name = "Data Written", HardwareType = HardwareType.Storage, Type = SensorType.Data };
+            written.Update(1200, null, null);
+            Require(hot.Level == 1 && hot.ValueFraction == 0.64, "Disk temperature verdict or scale");
+            Require(written.IsCounter && written.MaxNumber == "" && double.IsNaN(written.MaxFraction), "Counter shows statistics");
+            return new { label = row.Label, avg = row.AvgNumber, diskLevel = hot.Level };
+        });
         Check("driver downloads: official HTTPS and exact publisher only", () =>
         {
             Require(DriverDownloadPolicy.Validate("https://us.download.nvidia.com/driver.exe", "NVIDIA").Scheme == "https", "Official domain rejected");
