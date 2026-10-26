@@ -18,7 +18,7 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
-        <!-- Linha de sensor: nome claro, faixa da sessão, leitura atual com a unidade e as três estatísticas sem unidade.
+        <!-- Linha de sensor: nome claro, leitura atual com a unidade e as três estatísticas sem unidade.
              O fio fica em cima de cada linha; o mouse acende o fundo, que avança 8 px para os lados. -->
         <DataTemplate x:Key="SensorLine">
             <Grid x:Name="host" Margin="-8,0" Background="Transparent" ToolTip="{Binding Tip}">
@@ -27,22 +27,18 @@
                 <Grid Margin="8,0" Height="32">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" MinWidth="120" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="88" />
-                        <ColumnDefinition Width="10" />
-                        <ColumnDefinition Width="92" />
-                        <ColumnDefinition Width="62" />
-                        <ColumnDefinition Width="62" />
-                        <ColumnDefinition Width="62" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="74" />
+                        <ColumnDefinition Width="74" />
+                        <ColumnDefinition Width="74" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{Binding Label}" FontSize="13" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                    <local:SensorSpan Grid.Column="2" Value="{Binding ValueFraction}" Min="{Binding MinFraction}" Max="{Binding MaxFraction}" Channel="{Binding Channel}" Level="{Binding Level}" VerticalAlignment="Center" />
-                    <TextBlock x:Name="value" Grid.Column="4" Style="{StaticResource ReadoutText}" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="value" Grid.Column="1" Style="{StaticResource ReadoutText}" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <Run Text="{Binding Number, Mode=OneWay}" /><Run Text=" " FontSize="11" /><Run x:Name="unit" Text="{Binding Unit, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource UiFont}" />
                     </TextBlock>
-                    <TextBlock Grid.Column="5" Text="{Binding MinNumber}" Style="{StaticResource StatCell}" />
-                    <TextBlock Grid.Column="6" Text="{Binding AvgNumber}" Style="{StaticResource StatCell}" />
-                    <TextBlock Grid.Column="7" Text="{Binding MaxNumber}" Style="{StaticResource StatCell}" />
+                    <TextBlock Grid.Column="2" Text="{Binding MinNumber}" Style="{StaticResource StatCell}" />
+                    <TextBlock Grid.Column="3" Text="{Binding AvgNumber}" Style="{StaticResource StatCell}" />
+                    <TextBlock Grid.Column="4" Text="{Binding MaxNumber}" Style="{StaticResource StatCell}" />
                 </Grid>
             </Grid>
             <DataTemplate.Triggers>
@@ -67,53 +63,24 @@
                 <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" MinWidth="120" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="88" />
-                        <ColumnDefinition Width="10" />
-                        <ColumnDefinition Width="92" />
-                        <ColumnDefinition Width="62" />
-                        <ColumnDefinition Width="62" />
-                        <ColumnDefinition Width="62" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="74" />
+                        <ColumnDefinition Width="74" />
+                        <ColumnDefinition Width="74" />
                     </Grid.ColumnDefinitions>
                     <TextBlock VerticalAlignment="Bottom" TextTrimming="CharacterEllipsis">
                         <Run Text="{Binding Title, Mode=OneWay}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" /><Run Text="   " /><Run Text="{Binding Rows.Count, Mode=OneWay}" FontSize="11.5" Foreground="{DynamicResource Faint}" />
                     </TextBlock>
-                    <TextBlock Grid.Column="2" Text="Faixa" Style="{StaticResource ColHead}" HorizontalAlignment="Left" ToolTip="Do zero ao topo da escala: o trecho aceso vai do mínimo ao máximo; o traço é a leitura atual." />
-                    <TextBlock Grid.Column="4" Text="Atual" Style="{StaticResource ColHead}" />
-                    <TextBlock Grid.Column="5" Text="Mín." Style="{StaticResource ColHead}" />
-                    <TextBlock Grid.Column="6" Text="Média" Style="{StaticResource ColHead}" />
-                    <TextBlock Grid.Column="7" Text="Máx." Style="{StaticResource ColHead}" />
+                    <TextBlock Grid.Column="1" Text="Atual" Style="{StaticResource ColHead}" />
+                    <TextBlock Grid.Column="2" Text="Mín." Style="{StaticResource ColHead}" />
+                    <TextBlock Grid.Column="3" Text="Média" Style="{StaticResource ColHead}" />
+                    <TextBlock Grid.Column="4" Text="Máx." Style="{StaticResource ColHead}" />
                 </Grid>
                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource SensorLine}" Focusable="False" />
             </StackPanel>
         </DataTemplate>
 
-        <!-- Leitura de destaque no cabeçalho do componente: rótulo e número grande, separadas por um fio -->
-        <DataTemplate x:Key="ReadoutCell">
-            <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="22,0,0,0" Margin="22,0,0,0" ToolTip="{Binding Row.Label}" Background="Transparent">
-                <StackPanel>
-                    <TextBlock Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource Muted}" />
-                    <TextBlock x:Name="value" Style="{StaticResource ReadoutText}" FontSize="27" FontWeight="Light" Margin="0,3,0,0">
-                        <Run Text="{Binding Row.Number, Mode=OneWay}" /><Run Text=" " FontSize="12" /><Run Text="{Binding Row.Unit, Mode=OneWay}" FontSize="12" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource UiFont}" />
-                    </TextBlock>
-                </StackPanel>
-            </Border>
-            <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding First}" Value="True">
-                    <Setter TargetName="cell" Property="BorderThickness" Value="0" />
-                    <Setter TargetName="cell" Property="Padding" Value="0" />
-                    <Setter TargetName="cell" Property="Margin" Value="0" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Row.Level}" Value="1">
-                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Warn}" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Row.Level}" Value="2">
-                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Danger}" />
-                </DataTrigger>
-            </DataTemplate.Triggers>
-        </DataTemplate>
-
-        <!-- Cartão de componente: placa com ícone, tipo, nome e as leituras que o resumem; embaixo, os grupos em colunas -->
+        <!-- Cartão de componente: ícone, tipo e nome; as leituras ficam só nos grupos, embaixo, em colunas -->
         <DataTemplate x:Key="ComponentCard">
             <Border Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16">
                 <StackPanel>
@@ -133,11 +100,6 @@
                             </TextBlock>
                             <TextBlock Text="{Binding Name}" ToolTip="{Binding Name}" FontFamily="{StaticResource DisplayFont}" FontSize="20" FontWeight="SemiBold" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
-                        <ItemsControl Grid.Column="2" ItemsSource="{Binding Readouts}" ItemTemplate="{StaticResource ReadoutCell}" Focusable="False" VerticalAlignment="Center">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                        </ItemsControl>
                         <Button x:Name="toggle" Grid.Column="3" Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="0" Margin="18,0,0,0" VerticalAlignment="Center" Click="Toggle_Click" ToolTip="Recolher" AutomationProperties.Name="Recolher ou expandir">
                             <TextBlock x:Name="chev" Text="&#xE70E;" Style="{StaticResource IconGlyph}" FontSize="12" />
                         </Button>
@@ -172,9 +134,9 @@
     </UserControl.Resources>
 
     <!--
-        Monitor de hardware: à esquerda o índice dos componentes (fixo, com a leitura principal de cada um); à direita o filtro
-        por tipo e os cartões, que rolam. Cada cartão resume o componente no cabeçalho e lista os sensores agrupados por tipo,
-        em duas colunas quando há largura.
+        Monitor de hardware: à esquerda o índice dos componentes (fixo, só nomes); à direita o filtro por tipo e os cartões,
+        que rolam. Cada cartão identifica o componente no cabeçalho e lista os sensores agrupados por tipo, em duas colunas
+        quando há largura. As leituras aparecem só nas linhas, uma vez.
     -->
     <Grid Style="{StaticResource PageGrid}">
         <Grid.RowDefinitions>
@@ -198,7 +160,7 @@
 
         <Grid x:Name="SensorBody" Grid.Row="1" SizeChanged="SensorBody_SizeChanged">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="IndexColumn" Width="276" />
+                <ColumnDefinition x:Name="IndexColumn" Width="300" />
                 <ColumnDefinition x:Name="IndexGap" Width="16" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
@@ -214,16 +176,13 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding Glyph}" Style="{StaticResource ListNavIcon}" FontSize="15" Width="18" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Glyph}" Style="{StaticResource ListNavIcon}" FontSize="15" Width="18" Margin="0,1,12,0" VerticalAlignment="Top" />
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding ShortName}" FontSize="13" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding Kind}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
+                                        <!-- Nome inteiro: quebra em até duas linhas em vez de cortar -->
+                                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" LineHeight="17" MaxHeight="34" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Kind}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
                                     </StackPanel>
-                                    <TextBlock Grid.Column="2" Style="{StaticResource ReadoutText}" FontSize="14" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="10,0,0,0">
-                                        <Run Text="{Binding Lead.Row.Number, Mode=OneWay}" /><Run Text=" " FontSize="10" /><Run Text="{Binding Lead.Row.Unit, Mode=OneWay}" FontSize="10.5" FontFamily="{StaticResource UiFont}" />
-                                    </TextBlock>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -236,7 +195,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <WrapPanel x:Name="CategoryChips" Margin="0,0,0,10" />
+                <WrapPanel x:Name="CategoryChips" Margin="0,0,0,12" />
                 <ScrollViewer x:Name="SensorScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" ScrollChanged="SensorScroll_Changed">
                     <StackPanel x:Name="SensorStack">
                         <Border x:Name="SensorEmpty" Style="{StaticResource CardBorder}" Padding="24,22" Visibility="Collapsed">

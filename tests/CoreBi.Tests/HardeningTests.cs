@@ -74,8 +74,14 @@ internal static partial class Program
             hot.Update(64, null, null);
             var written = new SensorRow { Name = "Data Written", HardwareType = HardwareType.Storage, Type = SensorType.Data };
             written.Update(1200, null, null);
-            Require(hot.Level == 1 && hot.ValueFraction == 0.64, "Disk temperature verdict or scale");
-            Require(written.IsCounter && written.MaxNumber == "" && double.IsNaN(written.MaxFraction), "Counter shows statistics");
+            Require(hot.Level == 1 && hot.Number == 64f.ToString("0.0"), "Disk temperature verdict or fixed decimals");
+            Require(written.IsCounter && written.MaxNumber == "", "Counter shows statistics");
+            Require(!PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Intel(R) Ethernet Controller I225-V-WFP Native MAC Layer LightWeight Filter-0000", "Ethernet-WFP")
+                && !PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211, "Microsoft Wi-Fi Direct Virtual Adapter", "Conexão Local* 8")
+                && !PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Hyper-V Virtual Ethernet Adapter", "vEthernet (Default Switch)")
+                && !PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Microsoft Kernel Debug Network Adapter", "Ethernet (Depurador de Kernel)")
+                && PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Realtek Gaming 2.5GbE Family Controller", "Ethernet")
+                && PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211, "Intel(R) Wi-Fi 6 AX200 160MHz", "Wi-Fi"), "Physical network filter");
             return new { label = row.Label, avg = row.AvgNumber, diskLevel = hot.Level };
         });
         Check("driver downloads: official HTTPS and exact publisher only", () =>

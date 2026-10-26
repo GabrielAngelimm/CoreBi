@@ -94,26 +94,40 @@ public partial class SensorsView : UserControl
 
     private void UpdateFootnote() => SensorFootnote.Text =
         $"Mínimo, média e máximo contam desde as {_since:HH:mm}. Leitura a cada segundo (pausada durante o teste de placa de vídeo do Benchmark). " +
-        "A faixa vai do zero ao topo da escala: o trecho aceso é o intervalo visto e o traço, a leitura atual. Passe o mouse num sensor para ver o nome técnico.";
+        "Passe o mouse num sensor para ver o nome técnico. Placas de rede virtuais e camadas de filtro do Windows não aparecem.";
 
     // ---------------- Filtros ----------------
 
+    /// <summary>
+    /// Filtros por tipo, cada um com quantos sensores tem; "Todos" fica separado dos tipos por um fio. Só são refeitos
+    /// quando o conjunto de sensores muda.
+    /// </summary>
     private void BuildChips()
     {
         if (_monitor == null) return;
-        var groups = _monitor.Rows.Where(r => r.HasReading).Select(r => SensorNaming.Group(r.Type)).Distinct().OrderBy(g => g.Order).ToList();
-        string keys = string.Join(",", groups.Select(g => g.Key));
+        var live = _monitor.Rows.Where(r => r.HasReading).ToList();
+        var groups = live.GroupBy(r => SensorNaming.Filter(r.Type)).OrderBy(g => g.Key.Order).Select(g => (g.Key.Key, g.Key.Title, Count: g.Count())).ToList();
+        string keys = string.Join(",", groups.Select(g => $"{g.Key}:{g.Count}"));
         if (keys == _chipKeys) return;
         _chipKeys = keys;
         if (_group != null && groups.All(g => g.Key != _group)) _group = null;
         CategoryChips.Children.Clear();
-        AddChip("Todos", null);
-        foreach (var g in groups) AddChip(g.Title, g.Key);
+        AddChip("Todos", null, live.Count);
+        var divider = new Border { Width = 1, Height = 18, Margin = new Thickness(6, 0, 12, 6), VerticalAlignment = VerticalAlignment.Center };
+        divider.SetResourceReference(Border.BackgroundProperty, "LineStrong");
+        CategoryChips.Children.Add(divider);
+        foreach (var g in groups) AddChip(g.Title, g.Key, g.Count);
     }
 
-    private void AddChip(string label, string? key)
+    private void AddChip(string label, string? key, int count)
     {
-        var chip = new RadioButton { Content = label, GroupName = "SensorGroup", Style = (Style)FindResource("Chip"), IsChecked = key == _group };
+        var text = new TextBlock();
+        text.Inlines.Add(new System.Windows.Documents.Run(label));
+        var number = new System.Windows.Documents.Run("  " + count) { FontSize = 11.5 };
+        number.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Faint");
+        text.Inlines.Add(number);
+        System.Windows.Documents.Typography.SetNumeralAlignment(text, FontNumeralAlignment.Tabular);
+        var chip = new RadioButton { Content = text, GroupName = "SensorGroup", Style = (Style)FindResource("Chip"), IsChecked = key == _group };
         chip.Checked += (_, _) => { if (_group == key) return; _group = key; Rebuild(); SensorScroll.ScrollToTop(); };
         CategoryChips.Children.Add(chip);
     }
@@ -174,10 +188,10 @@ public partial class SensorsView : UserControl
     private void SensorBody_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         bool index = e.NewSize.Width >= 1000;
-        IndexColumn.Width = new GridLength(index ? 276 : 0);
+        IndexColumn.Width = new GridLength(index ? 300 : 0);
         IndexGap.Width = new GridLength(index ? 16 : 0);
         IndexCard.Visibility = index ? Visibility.Visible : Visibility.Collapsed;
-        double content = e.NewSize.Width - (index ? 292 : 0);
-        SectionColumns = content >= 1180 ? 2 : 1;
+        double content = e.NewSize.Width - (index ? 316 : 0);
+        SectionColumns = content >= 1060 ? 2 : 1;
     }
 }

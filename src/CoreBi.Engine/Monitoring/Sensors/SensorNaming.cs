@@ -215,4 +215,20 @@ public static class SensorNaming
         SensorType.Humidity => ("humidity", "Umidade", 14),
         _ => ("other", "Outros", 15)
     };
+
+    /// <summary>
+    /// Filtro da página, mais largo que o grupo: ventoinhas e o controle delas andam juntos, tensão e corrente também,
+    /// e o que é volume de dados (memória, transferência, níveis do disco) fica num filtro só.
+    /// </summary>
+    public static (string Key, string Title, int Order) Filter(SensorType t) => t switch
+    {
+        SensorType.Temperature => ("temp", "Temperaturas", 0),
+        SensorType.Load => ("load", "Uso", 1),
+        SensorType.Clock => ("clock", "Clocks", 2),
+        SensorType.Power or SensorType.Energy => ("power", "Consumo", 3),
+        SensorType.Fan or SensorType.Control => ("fan", "Ventoinhas", 4),
+        SensorType.Voltage or SensorType.Current => ("volt", "Tensões e correntes", 5),
+        SensorType.Throughput or SensorType.Data or SensorType.SmallData or SensorType.Level => ("data", "Dados", 6),
+        _ => ("other", "Outros", 7)
+    };
 }

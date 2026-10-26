@@ -90,18 +90,6 @@ public class SensorRow : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Topo da escala da faixa: 100 para porcentagem e temperatura (ou mais, se passou), senão o máximo visto.</summary>
-    public double ScaleTop => Type switch
-    {
-        SensorType.Load or SensorType.Control or SensorType.Level or SensorType.Humidity => 100,
-        SensorType.Temperature => Math.Max(100, Math.Ceiling((_max ?? 0) / 10) * 10),
-        _ => _max is > 0 ? _max.Value : double.NaN
-    };
-    public double ValueFraction => Fraction(_value);
-    public double MinFraction => IsCounter ? double.NaN : Fraction(_min);
-    public double MaxFraction => IsCounter ? double.NaN : Fraction(_max);
-    private double Fraction(float? v) => v is { } x && !double.IsNaN(ScaleTop) && ScaleTop > 0 ? Math.Clamp(x / ScaleTop, 0, 1) : double.NaN;
-
     /// <summary>
     /// Nova leitura. Mínimo, média e máximo são contados aqui, desde a abertura ou desde ResetStats; o mínimo e o máximo da
     /// biblioteca só servem de ponto de partida na primeira leitura.
