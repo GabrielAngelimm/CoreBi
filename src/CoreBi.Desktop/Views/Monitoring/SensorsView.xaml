@@ -114,30 +114,31 @@
             </StackPanel>
         </DataTemplate>
 
-        <!-- Cabeçalho de componente, de altura fixa (92): nome em destaque, tipo e quantidade de sensores embaixo e os nomes das colunas.
-             É o mesmo modelo no começo de cada bloco e no cabeçalho fixo que fica no topo da rolagem, para a troca não dar salto. -->
+        <!-- Cabeçalho de componente em duas faixas, de altura fixa (68 + 30): em cima o nome em destaque, com o tipo e a quantidade
+             de sensores embaixo; logo abaixo, numa faixa de tom próprio, os nomes das colunas. É o mesmo modelo no começo de cada
+             bloco e no cabeçalho fixo do topo da rolagem, para a troca não dar salto. -->
         <DataTemplate x:Key="ComponentHeader">
-            <Border Height="92" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="24,0,18,0" SnapsToDevicePixels="True">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="62" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel VerticalAlignment="Center" Margin="0,10,0,0">
-                        <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="21" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                        <TextBlock FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="0,3,0,0" Typography.NumeralAlignment="Tabular">
-                            <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
-                        </TextBlock>
-                    </StackPanel>
-                    <Button x:Name="toggle" Grid.Column="1" Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="0" Margin="18,10,0,0" VerticalAlignment="Center" Click="Toggle_Click" ToolTip="Recolher" AutomationProperties.Name="Recolher ou expandir">
-                        <TextBlock x:Name="chev" Text="&#xE70E;" Style="{StaticResource IconGlyph}" FontSize="12" />
-                    </Button>
-                    <!-- Colunas: a mesma geometria do corpo (24 de cada lado, duas colunas de grupos separadas por 44) -->
-                    <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,0,6,8" VerticalAlignment="Bottom">
+            <StackPanel>
+                <Border Height="68" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="24,0,18,0" SnapsToDevicePixels="True">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="21" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="0,2,0,0" Typography.NumeralAlignment="Tabular">
+                                <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
+                            </TextBlock>
+                        </StackPanel>
+                        <Button x:Name="toggle" Grid.Column="1" Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="0" Margin="18,0,0,0" VerticalAlignment="Center" Click="Toggle_Click" ToolTip="Recolher" AutomationProperties.Name="Recolher ou expandir">
+                            <TextBlock x:Name="chev" Text="&#xE70E;" Style="{StaticResource IconGlyph}" FontSize="12" />
+                        </Button>
+                    </Grid>
+                </Border>
+                <!-- Faixa das colunas: a mesma geometria do corpo (24 de cada lado, duas colunas de grupos separadas por 44) -->
+                <Border Height="30" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="24,0,24,0" SnapsToDevicePixels="True">
+                    <Grid VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="44" />
@@ -146,8 +147,8 @@
                         <ContentPresenter x:Name="head1" Content="{Binding}" ContentTemplate="{StaticResource ColumnHeads}" />
                         <ContentPresenter x:Name="head2" Grid.Column="2" Content="{Binding}" ContentTemplate="{StaticResource ColumnHeads}" />
                     </Grid>
-                </Grid>
-            </Border>
+                </Border>
+            </StackPanel>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding SectionColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="1">
                     <Setter TargetName="head1" Property="Grid.ColumnSpan" Value="3" />
@@ -170,7 +171,7 @@
         <DataTemplate x:Key="ComponentBlock">
             <StackPanel>
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ComponentHeader}" />
-                <Border x:Name="body" Padding="24,20,24,26">
+                <Border x:Name="body" Padding="24,18,24,26">
                     <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource SectionTemplate}" Focusable="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -274,11 +275,17 @@
                             <ItemsControl x:Name="SensorCards" ItemTemplate="{StaticResource ComponentBlock}" Focusable="False" />
                         </StackPanel>
                     </ScrollViewer>
-                    <ContentControl x:Name="StickyHeader" VerticalAlignment="Top" ContentTemplate="{StaticResource ComponentHeader}" Visibility="Collapsed">
-                        <ContentControl.RenderTransform>
+                    <Grid x:Name="StickyHost" VerticalAlignment="Top" Visibility="Collapsed">
+                        <Grid.RenderTransform>
                             <TranslateTransform x:Name="StickyShift" />
-                        </ContentControl.RenderTransform>
-                    </ContentControl>
+                        </Grid.RenderTransform>
+                        <!-- Fundo das duas faixas na largura toda, inclusive sobre a barra de rolagem, para não sobrar fresta -->
+                        <StackPanel>
+                            <Border Height="68" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" />
+                            <Border Height="30" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" />
+                        </StackPanel>
+                        <ContentControl x:Name="StickyHeader" ContentTemplate="{StaticResource ComponentHeader}" Focusable="False" />
+                    </Grid>
                 </Grid>
             </Border>
             <TextBlock x:Name="SensorFootnote" Grid.Row="2" Grid.ColumnSpan="3" Style="{StaticResource Footnote}" MaxWidth="1400" Margin="2,8,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />

@@ -16,7 +16,7 @@ public partial class SensorsView : UserControl
         DependencyProperty.Register(nameof(SectionColumns), typeof(int), typeof(SensorsView), new PropertyMetadata(2));
     public int SectionColumns { get => (int)GetValue(SectionColumnsProperty); set => SetValue(SectionColumnsProperty, value); }
 
-    private const double HeaderHeight = 92;   // altura do cabeçalho de componente (ComponentHeader no XAML)
+    private const double HeaderHeight = 98;   // altura do cabeçalho de componente: 68 + 30 (ComponentHeader no XAML)
 
     private SensorMonitor? _monitor;
     private string? _component;       // componente escolhido no índice (null = visão geral)
@@ -90,7 +90,7 @@ public partial class SensorsView : UserControl
         SensorIndex.ItemsSource = null;
         _cards = Array.Empty<SensorComponent>();
         StickyHeader.Content = null;
-        StickyHeader.Visibility = Visibility.Collapsed;
+        StickyHost.Visibility = Visibility.Collapsed;
         _builtRows = -1;
         _indexKeys = "";
     }
@@ -116,7 +116,7 @@ public partial class SensorsView : UserControl
     {
         if (_cards.Count == 0 || !IsVisible)
         {
-            StickyHeader.Visibility = Visibility.Collapsed;
+            StickyHost.Visibility = Visibility.Collapsed;
             return;
         }
         int current = 0;
@@ -131,10 +131,10 @@ public partial class SensorsView : UserControl
         }
         if (!ReferenceEquals(StickyHeader.Content, _cards[current])) StickyHeader.Content = _cards[current];
         StickyShift.Y = shift;
-        // O cabeçalho ocupa só a largura útil da rolagem, sem cobrir a barra.
+        // O fundo cobre a largura toda; o conteúdo fica na largura útil da rolagem, alinhado com as colunas dos sensores.
         double bar = Math.Max(0, SensorScroll.ActualWidth - SensorScroll.ViewportWidth);
         if (StickyHeader.Margin.Right != bar) StickyHeader.Margin = new Thickness(0, 0, bar, 0);
-        StickyHeader.Visibility = Visibility.Visible;
+        StickyHost.Visibility = Visibility.Visible;
     }
 
     private void SensorScroll_ScrollChanged(object sender, ScrollChangedEventArgs e) => UpdateSticky();

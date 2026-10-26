@@ -153,6 +153,7 @@ public static class SensorNaming
         (new Regex(@"^(?:CPU )?Core #(\d+) Distance to TjMax$"), "Núcleo $1 · margem até o limite"),
         (new Regex(@"^(?:CPU )?Core #(\d+) VID$"), "Núcleo $1 · VID"),
         (new Regex(@"^(?:CPU )?Core #(\d+) \(SMU\)$"), "Núcleo $1"),
+        (new Regex(@"^(?:CPU )?Core #(\d+) \(Effective\)$"), "Núcleo $1 · efetivo"),
         (new Regex(@"^(?:CPU )?Core #(\d+)$"), "Núcleo $1"),
         (new Regex(@"^CCD ?(\d+) \(Tdie\)$"), "Chiplet $1 (CCD$1)"),
         (new Regex(@"^GPU Fan (\d+)$"), "Ventoinha $1"),
