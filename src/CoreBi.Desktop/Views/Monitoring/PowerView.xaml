@@ -245,7 +245,7 @@
                             <Border x:Name="RegSection" Style="{StaticResource FeedSection}">
                                 <StackPanel>
                                     <Grid MinHeight="28">
-                                        <TextBlock x:Name="RegTitle" Text="Ajustes do plano" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,150,0" />
+                                        <TextBlock x:Name="RegTitle" Text="Ajustes do plano" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,0,160,0" />
                                         <TextBlock x:Name="RegCaption" Text="na tomada · na bateria" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed" />
                                         <StackPanel x:Name="PlanConfirm" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed">
                                             <Button x:Name="PlanCancel" Content="Cancelar" Style="{StaticResource GhostButton}" MinHeight="26" Padding="10,3" FontSize="12.5" Click="PlanCancel_Click" />
@@ -258,12 +258,8 @@
                                             <TextBlock x:Name="ProcText" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
                                         </Grid>
                                         <local:SpanMeter x:Name="ProcMeter" Margin="0,9,0,0" />
-                                        <!-- Sempre ocupa a linha (escondida, não recolhida), numa linha só, para o cartão não crescer ao trocar de plano -->
-                                        <TextBlock x:Name="ProcNote" FontSize="12" Height="17" Foreground="{DynamicResource Warn}" Margin="0,6,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Visibility="Hidden" />
                                     </StackPanel>
                                     <ItemsControl x:Name="PlanSettings" ItemTemplate="{StaticResource SettingRow}" Focusable="False" />
-                                    <!-- Guarda o lugar da linha do turbo (só aparece quando alguém a mudou), para a altura não variar -->
-                                    <Border x:Name="BoostSpacer" Height="37" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>

@@ -999,7 +999,7 @@
                                        FontFamily="{StaticResource Icons}" FontSize="12" Foreground="{DynamicResource Faint}"
                                        VerticalAlignment="Center" Margin="11,0,0,0"/>
                             <TextBlock x:Name="ph" Grid.Column="1" Text="{Binding Path=(local:Ui.Placeholder), RelativeSource={RelativeSource TemplatedParent}}"
-                                       Foreground="{DynamicResource Faint}" Margin="{TemplateBinding Padding}" Padding="7,0,0,0"
+                                       Foreground="{DynamicResource Faint}" Margin="{TemplateBinding Padding}" Padding="2,0,0,0"
                                        VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" TextTrimming="CharacterEllipsis"/>
                             <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
                             <TextBlock x:Name="sx" Grid.Column="2" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}"
@@ -1007,9 +1007,14 @@
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="Text" Value="">
+                        <!-- O texto de espera some quando o campo tem o foco: o cursor pisca sozinho, nunca em cima da primeira letra dele -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="Text" Value=""/>
+                                <Condition Property="IsKeyboardFocused" Value="False"/>
+                            </MultiTrigger.Conditions>
                             <Setter TargetName="ph" Property="Visibility" Value="Visible"/>
-                        </Trigger>
+                        </MultiTrigger>
                         <Trigger Property="local:Ui.Icon" Value="">
                             <Setter TargetName="ic" Property="Visibility" Value="Collapsed"/>
                         </Trigger>

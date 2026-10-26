@@ -119,7 +119,7 @@ public partial class OverlayPanel : UserControl
     {
         "gpu_load" or "cpu_load" or "vram_pct" or "ram_pct" => "100%",
         "cpu_maxcore" => "núcleo 100%",
-        "gpu_temp" or "cpu_temp" or "vram_temp" => "100 °C",
+        "gpu_temp" or "cpu_temp" => "100 °C",
         "gpu_hotspot" => "HS 100 °C",
         "gpu_clock" => "9999 MHz",
         "gpu_memclock" => "mem 99999 MHz",
