@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Optimize>true</Optimize>
     <Deterministic>true</Deterministic>
-    <Version>0.2.2</Version>
+    <Version>0.2.3</Version>
     <Product>CoreBi</Product>
     <Authors>CoreBi contributors</Authors>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
