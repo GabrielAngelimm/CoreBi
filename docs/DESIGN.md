@@ -146,7 +146,7 @@ Todos em `Shell/Theme.xaml`; templates de dados compartilhados em `Shell/Feature
 | Ação secundária | `SecondaryButton`, `GhostButton` | Ler novamente, abrir página, predefinições |
 | Interromper | `StopButton` | Teste em andamento |
 | Remover em lista | `DangerGhostButton` | Inicialização |
-| Opções exclusivas | `SegmentGroup` + `Segment` | Resolução, duração, preset (poucas opções fixas) |
+| Opções exclusivas | `SegmentGroup` + `Segment` | Resolução, duração, preset (poucas opções fixas); o item marcado reserva a largura do negrito, então marcar não desloca os vizinhos |
 | Filtro gerado | `Chip` | Categorias de sensores, GPUs, unidades de disco |
 | Escolha de teste | `TestTile` | Benchmark |
 | Componente a carregar | `ToggleCard` | Teste de carga |

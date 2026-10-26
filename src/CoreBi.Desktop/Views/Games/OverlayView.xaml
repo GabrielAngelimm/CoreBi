@@ -179,21 +179,11 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Margin="0,0,16,0">
+                                <StackPanel>
                                     <TextBlock Text="Posição e tamanho" Style="{StaticResource SectionTitle}" />
                                     <TextBlock Text="Clique num dos cantos tracejados da tela para levar o overlay até lá. A prévia segue o que está marcado em O que mostrar."
                                                Style="{StaticResource Caption}" Margin="0,3,0,0" />
                                 </StackPanel>
-                                <Border Grid.Column="1" Style="{StaticResource Badge}" Margin="0,1,0,0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Ellipse x:Name="OvPreviewDot" Width="6" Height="6" Fill="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,6,0" />
-                                        <TextBlock x:Name="OvPreviewNote" Text="Prévia com FPS de exemplo" Style="{StaticResource BadgeText}" />
-                                    </StackPanel>
-                                </Border>
                             </Grid>
 
                             <!-- Monitor: desenho fixo em 820 de largura, escalado para o espaço que sobrar -->
@@ -308,33 +298,43 @@
                                 </Viewbox>
                             </local:FillBox>
 
-                            <Grid Grid.Row="2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="&#xE81E;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Accent}" Margin="0,0,8,0" />
-                                    <TextBlock Text="Posição" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                    <TextBlock x:Name="OvCornerName" Text="Superior esquerdo" FontWeight="SemiBold" VerticalAlignment="Center" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <TextBlock Text="Opacidade" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                                    <Slider x:Name="OvOpacity" Style="{StaticResource OpacitySlider}" Minimum="30" Maximum="100" SmallChange="1" LargeChange="10"
-                                            TickFrequency="1" IsSnapToTickEnabled="True" IsMoveToPointEnabled="True" Width="130" VerticalAlignment="Center"
-                                            ValueChanged="OvOpacity_Changed" PreviewMouseWheel="OvOpacity_Wheel" ToolTip="Arraste, clique no trilho ou use a roda do mouse" />
-                                    <TextBlock x:Name="OvOpacityText" Text="100%" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" FontSize="12"
-                                               Width="38" TextAlignment="Right" VerticalAlignment="Center" Margin="6,0,22,0" />
-                                    <TextBlock Text="Tamanho" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                                    <Border Style="{StaticResource SegmentGroup}">
-                                        <StackPanel x:Name="OvScalePanel" Orientation="Horizontal">
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Pequeno" Tag="1" Checked="OvOption_Changed" />
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Médio" Tag="1.35" Checked="OvOption_Changed" />
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Grande" Tag="1.75" Checked="OvOption_Changed" />
-                                        </StackPanel>
-                                    </Border>
-                                </StackPanel>
-                            </Grid>
+                            <!-- Controles: três blocos de geometria fixa (posição, opacidade, tamanho) numa faixa só; nada muda de lugar ao trocar de opção -->
+                            <Border Grid.Row="2" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="10" Padding="16,0" Height="48">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE81E;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Accent}" Margin="0,0,8,0" />
+                                        <TextBlock Text="Posição" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock x:Name="OvCornerName" Text="Superior esquerdo" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="1" Height="22" Background="{DynamicResource Line}" Margin="18,0" />
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Opacidade" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                        <Slider x:Name="OvOpacity" Style="{StaticResource OpacitySlider}" Minimum="30" Maximum="100" SmallChange="1" LargeChange="10"
+                                                TickFrequency="1" IsSnapToTickEnabled="True" IsMoveToPointEnabled="True" Width="130" VerticalAlignment="Center"
+                                                ValueChanged="OvOpacity_Changed" PreviewMouseWheel="OvOpacity_Wheel" ToolTip="Arraste, clique no trilho ou use a roda do mouse" />
+                                        <TextBlock x:Name="OvOpacityText" Text="100%" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" FontSize="12"
+                                                   Width="38" TextAlignment="Right" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                    </StackPanel>
+                                    <Border Grid.Column="3" Width="1" Height="22" Background="{DynamicResource Line}" Margin="18,0" />
+                                    <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Tamanho" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                        <Border Style="{StaticResource SegmentGroup}">
+                                            <StackPanel x:Name="OvScalePanel" Orientation="Horizontal">
+                                                <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Pequeno" Tag="1" Checked="OvOption_Changed" />
+                                                <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Médio" Tag="1.35" Checked="OvOption_Changed" />
+                                                <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Grande" Tag="1.75" Checked="OvOption_Changed" />
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
                         </Grid>
                     </Border>
 
@@ -413,7 +413,7 @@
                 </Grid>
 
                 <!-- Estado da medição de FPS: uma linha só, o suficiente para saber se o overlay já está lendo o jogo -->
-                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,2,0,0">
+                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,2,0,0" MinHeight="18">
                     <Ellipse x:Name="OvStatusDot" Width="7" Height="7" Fill="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,8,0" />
                     <TextBlock x:Name="OvStatus" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="700" Style="{StaticResource Num}" />
                 </StackPanel>

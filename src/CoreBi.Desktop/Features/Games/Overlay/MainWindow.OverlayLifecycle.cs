@@ -212,10 +212,11 @@ public partial class MainWindow
     {
         (string text, string brush) = _rtssShowing ? ("Overlay publicado no jogo pelo RTSS", "Ok")
             : _frames.Error != null ? ($"Indisponível: {_frames.Error}", "Danger")
-            : !_frames.Running ? ("Desligada · começa quando o overlay é ligado", "Faint")
+            : !_frames.Running ? ("", "Faint")
             : f != null ? ($"{f.ProcessName}: {f.Fps:0} FPS ({f.FrameTimeMs:0.0} ms) · 1% low {f.Low1Fps:0}", "Ok")
             : ("Aguardando um jogo · o FPS aparece assim que ele abrir", "Accent");
         OvStatus.Text = text;
+        OvStatusDot.Visibility = text.Length == 0 ? Visibility.Hidden : Visibility.Visible; // desligado: a linha fica em branco, sem aviso
         // Só problemas do RTSS merecem dica; o estado normal já diz tudo.
         OvStatus.ToolTip = _rtssShowing ? null : _rtssStatus switch
         {

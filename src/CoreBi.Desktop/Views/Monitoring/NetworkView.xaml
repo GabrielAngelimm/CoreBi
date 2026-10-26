@@ -90,7 +90,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel VerticalAlignment="Center">
+                    <StackPanel VerticalAlignment="Top">
                         <TextBlock Text="Rede" Style="{StaticResource PageTitle}" />
                         <TextBlock Text="Descubra se o lag vem do seu PC, do Wi-Fi ou do provedor." Style="{StaticResource PageSubtitle}" MaxWidth="400" />
                     </StackPanel>

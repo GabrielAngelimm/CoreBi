@@ -5,7 +5,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Shapes;
 
 namespace CoreBi.Desktop.Views;
 
@@ -87,11 +86,6 @@ public partial class OverlayView : UserControl
     internal void ShowPreview(FrameStats f, IReadOnlyList<OverlayLine> lines, IReadOnlySet<string> show, string? extra, bool sample, bool overlayOn)
     {
         OvPreview.Update(f, lines, show, extra);
-        OvPreviewNote.Text = sample ? "Prévia com FPS de exemplo" : $"Prévia ao vivo · {f.ProcessName}";
-        OvPreviewNote.ToolTip = sample
-            ? "Com o CoreBi na frente não há jogo para medir, então o FPS da prévia é ilustrativo. Os sensores são lidos ao vivo."
-            : null;
-        OvPreviewDot.SetResourceReference(Shape.FillProperty, sample ? "Faint" : "Ok");
         OvLed.Fill = overlayOn ? LedOn : LedOff;
     }
 

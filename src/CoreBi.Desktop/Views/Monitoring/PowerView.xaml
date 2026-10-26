@@ -76,8 +76,12 @@
         <DataTemplate x:Key="SettingRow">
             <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,9" ToolTip="{Binding Tip}">
                 <Grid>
-                    <TextBlock Text="{Binding Title}" Foreground="{DynamicResource Muted}" />
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding Title}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                         <TextBlock x:Name="before" Text="{Binding BeforeText}" Foreground="{DynamicResource Faint}" Margin="0,0,8,0" Typography.NumeralAlignment="Tabular" Visibility="Collapsed" />
                         <TextBlock x:Name="value" Text="{Binding Value}" FontWeight="SemiBold" Typography.NumeralAlignment="Tabular" />
                     </StackPanel>
@@ -254,9 +258,12 @@
                                             <TextBlock x:Name="ProcText" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
                                         </Grid>
                                         <local:SpanMeter x:Name="ProcMeter" Margin="0,9,0,0" />
-                                        <TextBlock x:Name="ProcNote" FontSize="12" Foreground="{DynamicResource Warn}" Margin="0,6,0,0" TextWrapping="Wrap" Visibility="Collapsed" />
+                                        <!-- Sempre ocupa a linha (escondida, não recolhida), numa linha só, para o cartão não crescer ao trocar de plano -->
+                                        <TextBlock x:Name="ProcNote" FontSize="12" Height="17" Foreground="{DynamicResource Warn}" Margin="0,6,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Visibility="Hidden" />
                                     </StackPanel>
                                     <ItemsControl x:Name="PlanSettings" ItemTemplate="{StaticResource SettingRow}" Focusable="False" />
+                                    <!-- Guarda o lugar da linha do turbo (só aparece quando alguém a mudou), para a altura não variar -->
+                                    <Border x:Name="BoostSpacer" Height="37" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>

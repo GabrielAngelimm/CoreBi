@@ -249,14 +249,15 @@ public partial class PowerView : UserControl
             }
             else ProcText.Inlines.Add(new Run(target));
             // Só o caso que pede atenção ganha texto: máximo abaixo de 100 % segura o clock com carga
-            ProcNote.Text = $"Máximo em {max} %: o processador não chega ao clock total neste plano.";
-            ProcNote.Visibility = max < 100 ? Visibility.Visible : Visibility.Collapsed;
+            ProcNote.Text = $"Máximo em {max} %: sem o clock total neste plano.";
+            ProcNote.Visibility = max < 100 ? Visibility.Visible : Visibility.Hidden;
         }
 
         string Text(PlanSetting s) => battery && s.Dc != s.Ac ? $"{s.Ac} · {s.Dc}" : s.Ac;
         // O turbo é "Agressivo" em todos os planos de fábrica, então só ganha uma linha quando alguém o mudou (aqui ou no plano escolhido)
         bool OffDefault(PlanValues v) => v.Settings.Any(x => x.Key == "boost" && (x.Ac != "Agressivo" || x.Dc != "Agressivo"));
         bool showBoost = OffDefault(now) || (preview != null && OffDefault(preview));
+        BoostSpacer.Visibility = showBoost ? Visibility.Collapsed : Visibility.Visible;
         PlanSettings.ItemsSource = shown.Settings.Where(s => s.Key != "boost" || showBoost).Select(s =>
         {
             string before = now.Settings.FirstOrDefault(x => x.Key == s.Key) is { } cur ? Text(cur) : "";
