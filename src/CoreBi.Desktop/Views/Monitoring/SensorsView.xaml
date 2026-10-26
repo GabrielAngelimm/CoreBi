@@ -114,20 +114,21 @@
             </StackPanel>
         </DataTemplate>
 
-        <!-- Cabeçalho de componente em duas faixas, de altura fixa (68 + 30): em cima o nome em destaque, com o tipo e a quantidade
-             de sensores embaixo; logo abaixo, numa faixa de tom próprio, os nomes das colunas. É o mesmo modelo no começo de cada
+        <!-- Cabeçalho de componente em duas faixas, de altura fixa (80 + 32), cada uma num tom: em cima, no tom mais forte, o nome em
+             destaque com o tipo e a quantidade de sensores embaixo; logo abaixo, num tom intermediário, os nomes das colunas. Os
+             sensores ficam no fundo do cartão, o mais claro dos três. É o mesmo modelo no começo de cada
              bloco e no cabeçalho fixo do topo da rolagem, para a troca não dar salto. -->
         <DataTemplate x:Key="ComponentHeader">
             <StackPanel>
-                <Border Height="68" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="24,0,18,0" SnapsToDevicePixels="True">
+                <Border Height="80" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" Padding="24,0,18,0" SnapsToDevicePixels="True">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="21" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                            <TextBlock FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="0,2,0,0" Typography.NumeralAlignment="Tabular">
+                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" Typography.NumeralAlignment="Tabular">
                                 <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
                             </TextBlock>
                         </StackPanel>
@@ -137,7 +138,7 @@
                     </Grid>
                 </Border>
                 <!-- Faixa das colunas: a mesma geometria do corpo (24 de cada lado, duas colunas de grupos separadas por 44) -->
-                <Border Height="30" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="24,0,24,0" SnapsToDevicePixels="True">
+                <Border Height="32" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="24,0,24,0" SnapsToDevicePixels="True">
                     <Grid VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -260,13 +261,32 @@
             </Border>
 
             <!-- Filtros por tipo: uma faixa só, em cima do índice e dos sensores, que assim começam e terminam na mesma linha -->
-            <WrapPanel x:Name="CategoryChips" Grid.ColumnSpan="3" Margin="0,0,0,12" />
+            <DockPanel Grid.ColumnSpan="3" Margin="0,0,0,12">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="2,6,14,0">
+                    <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Faint}" Margin="0,1,7,0" />
+                    <TextBlock Text="Filtrar por tipo" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
+                </StackPanel>
+                <WrapPanel x:Name="CategoryChips" />
+            </DockPanel>
 
             <!-- Um cartão só para todos os componentes. O cabeçalho do componente à vista fica fixo no topo e é trocado, ou empurrado
                  pelo seguinte, conforme a rolagem (ver SensorsView.UpdateSticky). -->
             <Border x:Name="SensorCard" Grid.Row="1" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SensorCard_SizeChanged">
                 <Grid>
                     <ScrollViewer x:Name="SensorScroll" VerticalScrollBarVisibility="Auto" ScrollChanged="SensorScroll_ScrollChanged">
+                        <!-- A barra de rolagem começa abaixo do cabeçalho fixo (112 = 80 + 32) para o cabeçalho nunca cobrir a barra -->
+                        <ScrollViewer.Template>
+                            <ControlTemplate TargetType="ScrollViewer">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" CanContentScroll="{TemplateBinding CanContentScroll}" />
+                                    <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Margin="0,116,2,4" Orientation="Vertical" Value="{TemplateBinding VerticalOffset}" Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+                                </Grid>
+                            </ControlTemplate>
+                        </ScrollViewer.Template>
                         <StackPanel x:Name="SensorStack">
                             <StackPanel x:Name="SensorEmpty" Margin="24,22" Visibility="Collapsed">
                                 <TextBlock x:Name="SensorEmptyTitle" Text="Detectando o hardware…" Style="{StaticResource SectionTitle}" />
@@ -279,10 +299,10 @@
                         <Grid.RenderTransform>
                             <TranslateTransform x:Name="StickyShift" />
                         </Grid.RenderTransform>
-                        <!-- Fundo das duas faixas na largura toda, inclusive sobre a barra de rolagem, para não sobrar fresta -->
+                        <!-- Fundo das duas faixas na largura toda; a barra de rolagem começa abaixo delas (modelo da rolagem acima), então nada fica escondido -->
                         <StackPanel>
-                            <Border Height="68" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" />
-                            <Border Height="30" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" />
+                            <Border Height="80" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" />
+                            <Border Height="32" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" />
                         </StackPanel>
                         <ContentControl x:Name="StickyHeader" ContentTemplate="{StaticResource ComponentHeader}" Focusable="False" />
                     </Grid>

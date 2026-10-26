@@ -16,7 +16,7 @@ public partial class SensorsView : UserControl
         DependencyProperty.Register(nameof(SectionColumns), typeof(int), typeof(SensorsView), new PropertyMetadata(2));
     public int SectionColumns { get => (int)GetValue(SectionColumnsProperty); set => SetValue(SectionColumnsProperty, value); }
 
-    private const double HeaderHeight = 98;   // altura do cabeçalho de componente: 68 + 30 (ComponentHeader no XAML)
+    private const double HeaderHeight = 112;  // altura do cabeçalho de componente: 80 + 32 (ComponentHeader no XAML)
 
     private SensorMonitor? _monitor;
     private string? _component;       // componente escolhido no índice (null = visão geral)
