@@ -133,6 +133,8 @@ Raios: 8 em controles, 9 em poços internos, 12 em painéis, 14 na paleta. Selos
 
 ## Componentes
 
+No console de Rede, o botão inicia o teste e a troca de servidor é automática. A fonte acompanha o resultado e o relatório.
+
 Todos em `Shell/Theme.xaml`; templates de dados compartilhados em `Shell/FeatureTemplates.xaml`. As propriedades anexadas de `Shell/Ui.cs` evitam estilos duplicados:
 
 - `Ui.Icon`: glifo Segoe Fluent em botões, itens de navegação, ladrilhos de teste, cartões de componente e campos.

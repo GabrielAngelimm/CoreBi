@@ -16,6 +16,7 @@ Operações administrativas usam comandos específicos e diálogos Windows. Sele
 ## Estados e consistência
 
 - Dados ausentes: travessão, mensagem de causa ou estado desconhecido. Não preencher uma medição com zero fictício.
+- Rede: Cloudflare é a opção inicial; se a medição ficar incompleta, o M-Lab é tentado automaticamente. A origem acompanha o resultado, e a espera da Cloudflare não bloqueia o M-Lab. Nesta versão pessoal não há confirmação na tela; antes de distribuir, obter consentimento informado conforme as regras do M-Lab.
 - Cargas pesadas: apenas uma operação ativa, incluindo sua preparação. Cancelar a operação correta, restaurar botões/monitoramento e limpar temporários.
 - Inicialização/drivers/apps: preservar confirmação e resultado por operação; não alegar teste de instalação quando só houve inventário.
 - Relatórios e configurações pertencem ao CoreBi. Nome original pode aparecer nos créditos legais e documentação de origem, sem marca na interface.

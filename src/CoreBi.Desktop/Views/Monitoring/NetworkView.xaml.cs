@@ -50,32 +50,50 @@ public partial class NetworkView : UserControl
         if (_running) { _cancellation?.Cancel(); return; }
         using var workload = Context.Workloads.TryBegin("Network test");
         if (workload == null) { NetStatus.Text = "Termine o outro teste antes."; NetDetail.Text = ""; return; }
-
         _running = true;
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(Context.Lifetime);
         _cancellation = cancellation;
         Ui.SetRunning(BtnNetTest, true, "Testar a rede", "Cancelar");
+        LastResult = null;
         ShowResult(null);
         SetProgress(0, animate: false);
         NetMeta.Text = "Medindo agora";
         try
         {
-            var result = await NetworkTest.Run(p =>
+            int attempt = 0;
+            Action<NetworkProgress> Progress(int generation) => p =>
             {
                 if (Context.IsClosing) return;
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    if (Context.IsClosing || !_running) return;
+                    if (Context.IsClosing || !_running || _cancellation != cancellation || attempt != generation) return;
                     ShowProgress(p);
                 }));
-            }, cancellation.Token);
+            };
+            var result = await RunAutomatic(
+                selected => NetworkTest.Run(Progress(attempt), cancellation.Token, selected, mlabConsent: true),
+                cancellation.Token, () =>
+                {
+                    attempt++;
+                    NetStatus.Text = "Tentando outro servidor";
+                    SetProgress(0, animate: false);
+                });
             if (Context.IsClosing) return;
             LastResult = new[] { result.Card };
             ShowResult(result);
-            NetStatus.Text = $"Concluído às {result.TestedAt:HH:mm:ss}";
             NetDetail.Text = "";
-            SetStage(NetworkPhase.Done);
-            SetProgress(1, animate: true);
+            if (result.InterruptedPhase != null)
+            {
+                NetStatus.Text = result.RetryAfterUtc != null ? "Aguardando o servidor" : "Teste incompleto";
+                SetStage(result.InterruptedPhase ?? NetworkPhase.Preparing);
+                SetProgress(result.InterruptedFraction, animate: false);
+            }
+            else
+            {
+                NetStatus.Text = $"Concluído às {result.TestedAt:HH:mm:ss}";
+                SetStage(NetworkPhase.Done);
+                SetProgress(1, animate: true);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -91,6 +109,16 @@ public partial class NetworkView : UserControl
             _cancellation = null;
             if (!Context.IsClosing) Ui.SetRunning(BtnNetTest, false, LastResult != null ? "Testar de novo" : "Testar a rede");
         }
+    }
+
+    internal static async Task<NetworkResult> RunAutomatic(Func<NetworkSpeedProvider, Task<NetworkResult>> run,
+        CancellationToken ct, Action onFallback)
+    {
+        var result = await run(NetworkSpeedProvider.Cloudflare);
+        ct.ThrowIfCancellationRequested();
+        if (result.Adapter == null || result.InterruptedPhase == null) return result;
+        onFallback();
+        return await run(NetworkSpeedProvider.Mlab);
     }
 
     private void Reset(string status, string detail)
@@ -194,6 +222,7 @@ public partial class NetworkView : UserControl
         _result = r;
         SetReadout(NetDown, r?.DownloadMbps);
         SetReadout(NetUp, r?.UploadMbps);
+        NetUp.ToolTip = r?.UploadIncludesProtocol == true ? "Upload medido pelo contador TCP do servidor; inclui a sobrecarga do protocolo." : null;
         SetReadout(NetLatency, r?.LatencyMs);
         NetLatencyCaption.Text = r?.LatencyMs != null ? "ms até a internet" : "ms";
         DrawDial(r?.DownloadMbps, r?.UploadMbps);
@@ -286,15 +315,15 @@ public partial class NetworkView : UserControl
             DiskVerdict.Good => $"estável · jitter {Format(router!.Jitter)} ms",
             DiskVerdict.Warning => $"instável · perda {router!.LossPct.ToString("0.#", PtBr)} % · jitter {Format(router.Jitter)} ms",
             DiskVerdict.Critical => "sem conexão",
-            _ => "não responde a ping",
+            _ => router == null ? "não medido" : "não responde a ping",
         };
         string wanText = r.InternetVerdict switch
         {
             DiskVerdict.Good => $"estável · perda {r.LossPct?.ToString("0.#", PtBr) ?? "0"} %",
             DiskVerdict.Warning => r.LossPct > 1 ? $"perda de {r.LossPct?.ToString("0.#", PtBr)} %"
-                                 : r.LatencyMs > 80 ? "latência alta" : "jitter alto",
+                                 : r.LatencyMs > 80 ? "latência alta" : r.JitterMs > 20 ? "jitter alto" : "um alvo sem resposta",
             DiskVerdict.Critical => r.LatencyMs == null ? "sem resposta" : r.LossPct > 5 ? $"perda de {r.LossPct?.ToString("0.#", PtBr)} %" : "latência muito alta",
-            _ => "sem resposta a ping",
+            _ => r.Internet.Count == 0 ? "não medido" : "sem resposta a ping",
         };
         string lk = VerdictKey(r.LocalVerdict), wk = VerdictKey(r.InternetVerdict);
         SetLink(NetLinkLocal, NetLinkLocalText, lk == "Faint" ? "LineStrong" : lk, lk == "Faint" ? "Muted" : lk, local);
@@ -417,7 +446,8 @@ public partial class NetworkView : UserControl
         AddTraceText("Pings até 1.1.1.1", 0, 0, "Muted", null, readout: false);
         if (!has) return;
 
-        const double top = 20, bottom = 82, gapW = 18;
+        const double top = 16, gapW = 18;
+        double bottom = Math.Max(top + 5, NetTrace.ActualHeight - 18);
         double peak = idle.Concat(loaded).Where(v => v != null).Select(v => v!.Value).DefaultIfEmpty(10).Max();
         double max = new[] { 10.0, 20, 50, 100, 200, 500, 1000, 2000 }.FirstOrDefault(s => s >= peak * 1.1, 2000);
         int n = idle.Count + loaded.Count;
@@ -456,12 +486,12 @@ public partial class NetworkView : UserControl
 
         var idleRtts = idle.Where(v => v != null).Select(v => v!.Value).ToList();
         if (idle.Count > 0)
-            AddTraceText("Em repouso · média ", 0, bottom + 4, "Muted", idleRtts.Count > 0 ? $"{idleRtts.Average():0} ms" : "—", readout: false);
+            AddTraceText("Em repouso · média ", 0, bottom + 2, "Muted", idleRtts.Count > 0 ? $"{idleRtts.Average():0} ms" : "—", readout: false);
         if (loaded.Count > 0)
         {
             double xs = idle.Count * step + (idle.Count > 0 ? gapW : 0);
             if (idle.Count > 0) AddTraceLine(xs - gapW / 2, xs - gapW / 2, top, "LineStrong", dashed: true, vertical: bottom);
-            AddTraceText("Durante o download · média ", xs, bottom + 4, "Muted",
+            AddTraceText("Durante o download · média ", xs, bottom + 2, "Muted",
                 _result?.LoadedLatencyMs is { } l ? $"{l:0} ms" : "—", readout: false, valueKey: _result?.Bufferbloat == true ? "Warn" : "Fg");
         }
     }

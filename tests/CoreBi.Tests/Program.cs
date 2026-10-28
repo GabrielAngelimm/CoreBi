@@ -55,7 +55,7 @@ internal static partial class Program
         Environment.SetEnvironmentVariable("COREBI_DATA_DIR", Path.Combine(Output, "settings"));
         CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("pt-BR");
         if (args.Contains("--overlay-telemetry")) OverlayTelemetry();
-        else if (args.Contains("--bench")) Benches(); else if (args.Contains("--hardware")) Hardware(); else if (args.Contains("--startup")) Startup(); else if (args.Contains("--integrations")) Integrations(); else { Logic(); TelemetryTests(); RtssTests(); Hardening(); Ui(); }
+        else if (args.Contains("--bench")) Benches(); else if (args.Contains("--hardware")) Hardware(); else if (args.Contains("--startup")) Startup(); else if (args.Contains("--integrations")) Integrations(); else { Logic(); TelemetryTests(); RtssTests(); Hardening(); NetworkTests(); MlabTests(); Ui(); }
         var text = JsonSerializer.Serialize(Results, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(Path.Combine(Output, args.Contains("--bench") ? "bench.json" : args.Contains("--hardware") ? "hardware.json" : args.Contains("--startup") ? "startup.json" : args.Contains("--integrations") ? "integrations.json" : "tests.json"), text);
         return Failures == 0 ? 0 : 1;
@@ -217,12 +217,45 @@ internal static partial class Program
             string[] pages = { "PageDash", "PageSystem", "PageSensors", "PageGpu", "PageDisks", "PageEnergy", "PageNet", "PageGames", "PageBottleneck", "PageOverlay", "PageBench", "PageStress", "PageStartup", "PageDriver", "PageApps" };
             foreach (string page in pages) { window.ShowPage(page); Require(((FrameworkElement)window.FindName(page)).Visibility == Visibility.Visible, "Navigation failed: " + page); }
             foreach (string page in new[] { "PageOc", "PageOptimize", "PageInteg", "PageLauncher", "PageMakerDrv", "PageMakerPorts" }) Require(window.FindName(page) == null, "Removed page remained: " + page);
+            window.ShowPage("PageNet");
+            var demoAdapter = new CoreBi.Engine.Monitoring.Network.NetworkAdapterInfo("Ethernet", "Adaptador de rede", "Ethernet (cabo)", 1000,
+                "192.168.1.2", System.Net.IPAddress.Parse("192.168.1.1"), "1.1.1.1", "00-00-00-00-00-00");
+            var demoPing = new CoreBi.Engine.Monitoring.Network.PingResult("Internet", "1.1.1.1", new double?[] { 3, 4, 3, 4, 3, 4 });
+            var demo = new CoreBi.Engine.Monitoring.Network.NetworkResult
+            {
+                Card = new DiskHealthCard { Meta = "Ethernet · Cloudflare", Verdict = DiskVerdict.Good, Label = "ESTÁVEL" },
+                Adapter = demoAdapter,
+                Internet = new[] { demoPing },
+                Notes = new[] { "Latência baixa e sem perda nos alvos testados." },
+                DownloadMbps = 925,
+                UploadMbps = 520,
+                LatencyMs = 3,
+                JitterMs = 1,
+                LossPct = 0,
+                DnsMs = 5,
+                LoadedSamples = new double?[] { 5, 6, 5, 6, 5, 6 },
+                LoadedLatencyMs = 5,
+            };
+            window.PageNet.GetType().GetMethod("ShowResult", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window.PageNet, new object?[] { demo });
+            SaveNetworkPreview(window.PageNet, 1120, 800, "network-providers.png");
+            Require(window.PageNet.NetScroll.ScrollableHeight <= 1, $"Network result overflows: {window.PageNet.NetScroll.ScrollableHeight:0.0}px");
+            ThemeManager.Apply(true);
+            SaveNetworkPreview(window.PageNet, 760, 800, "network-providers-narrow-light.png");
+            ThemeManager.Apply(false);
             using (var held = window._workloads.TryBegin("test"))
             {
                 window.StartStress(); Require(window.StressHint.Text.Contains("benchmark"), "Stress ignored coordinator");
                 window.PageNet.RunOrCancelAsync().GetAwaiter().GetResult();
                 Require(window.PageNet.NetStatus.Text.Contains("Termine") && window.PageNet.LastResult == null, "Network ignored coordinator");
             }
+            var waiting = new CoreBi.Engine.Monitoring.Network.NetworkResult
+            {
+                Card = new DiskHealthCard { Verdict = DiskVerdict.Warning, Label = "ATENÇÃO" },
+                RetryAfterUtc = DateTimeOffset.UtcNow.AddMinutes(10),
+            };
+            window.PageNet.GetType().GetMethod("ShowResult", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window.PageNet, new object?[] { waiting });
+            Require(window.PageNet.NetLinkLocalText.Text == "não medido" && window.PageNet.NetLinkWanText.Text == "não medido",
+                "A skipped ping was presented as a failed ping");
             window.NavBench.IsChecked = true; Require(window.PageBench.Visibility == Visibility.Visible, "Sidebar event did not navigate");
             Require(window.PageBench.Owner == window, "Page not connected to shell");
             Require(window.Title == "CoreBi", "Original title remained");
@@ -236,6 +269,26 @@ internal static partial class Program
             return new { pages = pages.Length, removed = 6, sharedSensors = true, themeRoundTrip = true, stressBlockedDuringPreparation = true };
         });
         OverlayRenderingTests();
+    }
+
+    private static void SaveNetworkPreview(CoreBi.Desktop.Views.NetworkView page, int width, int height, string file)
+    {
+        page.Measure(new Size(width, height));
+        page.Arrange(new Rect(0, 0, width, height));
+        page.UpdateLayout();
+        var visual = new System.Windows.Media.DrawingVisual();
+        using (var context = visual.RenderOpen())
+        {
+            var area = new Rect(0, 0, width, height);
+            context.DrawRectangle((System.Windows.Media.Brush)Application.Current.FindResource("Bg"), null, area);
+            context.DrawRectangle(new System.Windows.Media.VisualBrush(page), null, area);
+        }
+        var image = new System.Windows.Media.Imaging.RenderTargetBitmap(width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        image.Render(visual);
+        var png = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image));
+        using var screenshot = File.Create(Path.Combine(Output, file));
+        png.Save(screenshot);
     }
     private static void Startup()
     {
