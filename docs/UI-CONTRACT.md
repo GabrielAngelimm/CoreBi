@@ -23,7 +23,7 @@ Operações administrativas usam comandos específicos e diálogos Windows. Sele
 - FPS estimado local, resposta da API e apresentação ETW têm fontes distintas; não converter a estimativa em leitura medida.
 
 - Botões de iniciar e parar trocam de papel no mesmo lugar (`Ui.SetRunning`): cor, glifo e texto mudam juntos.
-- Veredito usa somente `Ok`, `Warn` e `Danger`; o acento verde-água indica leitura ao vivo ou seleção, nunca saúde.
+- Veredito usa somente `Ok`, `Warn` e `Danger`, e saudável é discreto (LED verde e texto em tinta). Seleção, foco e ação principal são tinta (`Selected`, `Focus`, `Ink`), nunca uma cor; o sinal verde-água (`Signal`) indica só o que está ao vivo, e cada componente medido tem o seu canal (`Cpu`, `Gpu`, `Memory`, `Storage`).
 
 ## Reformulação e pendências
 
