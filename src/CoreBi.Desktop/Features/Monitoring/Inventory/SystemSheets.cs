@@ -13,6 +13,16 @@ namespace CoreBi.Desktop.Features.Monitoring.Inventory;
 public sealed record IndexItem(string Key, string Glyph, string Category, string Name, string Spec)
 {
     public string Tip => Spec.Length > 0 ? $"{Name} · {Spec}" : Name;
+
+    /// <summary>Canal do componente, o mesmo dos gráficos: pinta o ladrilho do botão e a luz da placa (Steel = aço, neutro).</summary>
+    public string Channel => Key switch
+    {
+        SystemSheets.Cpu => "Cpu",
+        SystemSheets.Gpu => "Gpu",
+        SystemSheets.Ram => "Memory",
+        SystemSheets.Storage => "Storage",
+        _ => "Steel",
+    };
 }
 
 /// <summary>Leitura grande da placa. First tira o fio e o recuo da primeira.</summary>

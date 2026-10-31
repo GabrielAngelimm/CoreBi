@@ -387,41 +387,53 @@ public partial class NetworkView : UserControl
 
     internal static double DialFraction(double? mbps) => mbps is not { } v ? 0 : Math.Clamp(Math.Log10(Math.Max(1, v)) / 3, 0, 1);
 
+    private double? _dialDown, _dialUp;
+
     private void DrawDial(double? down, double? up)
     {
+        (_dialDown, _dialUp) = (down, up);
         NetDial.Children.Clear();
         DrawSide(-1, down, "NetDown");
         DrawSide(1, up, "NetUp");
     }
 
+    /// <summary>O mostrador guarda as cores do momento do desenho (cada gomo tem a sua): refaz com a paleta nova.</summary>
+    internal void RedrawTheme() => DrawDial(_dialDown, _dialUp);
+
     private void DrawSide(int dir, double? value, string channel)
     {
         double lit = value == null ? -1 : DialFraction(value);
-        var on = new StreamGeometry();
-        var off = new StreamGeometry();
-        using (var onCtx = on.Open())
-        using (var offCtx = off.Open())
+        var outer = dir < 0 ? SweepDirection.Clockwise : SweepDirection.Counterclockwise;
+        var inner = dir < 0 ? SweepDirection.Counterclockwise : SweepDirection.Clockwise;
+        void Segment(StreamGeometryContext ctx, int i)
         {
-            for (int i = 0; i < DialSegments; i++)
-            {
-                double a0 = DialAngle(dir, (double)i / DialSegments), a1 = DialAngle(dir, (i + 0.7) / DialSegments);
-                var ctx = (i + 0.5) / DialSegments <= lit ? onCtx : offCtx;
-                var outer = dir < 0 ? SweepDirection.Clockwise : SweepDirection.Counterclockwise;
-                var inner = dir < 0 ? SweepDirection.Counterclockwise : SweepDirection.Clockwise;
-                ctx.BeginFigure(DialPoint(a0, DialR1), true, true);
-                ctx.LineTo(DialPoint(a0, DialR2), false, false);
-                ctx.ArcTo(DialPoint(a1, DialR2), new Size(DialR2, DialR2), 0, false, outer, false, false);
-                ctx.LineTo(DialPoint(a1, DialR1), false, false);
-                ctx.ArcTo(DialPoint(a0, DialR1), new Size(DialR1, DialR1), 0, false, inner, false, false);
-            }
+            double a0 = DialAngle(dir, (double)i / DialSegments), a1 = DialAngle(dir, (i + 0.7) / DialSegments);
+            ctx.BeginFigure(DialPoint(a0, DialR1), true, true);
+            ctx.LineTo(DialPoint(a0, DialR2), false, false);
+            ctx.ArcTo(DialPoint(a1, DialR2), new Size(DialR2, DialR2), 0, false, outer, false, false);
+            ctx.LineTo(DialPoint(a1, DialR1), false, false);
+            ctx.ArcTo(DialPoint(a0, DialR1), new Size(DialR1, DialR1), 0, false, inner, false, false);
         }
-        on.Freeze(); off.Freeze();
+
+        var off = new StreamGeometry();
+        using (var offCtx = off.Open())
+            for (int i = 0; i < DialSegments; i++)
+                if ((i + 0.5) / DialSegments > lit) Segment(offCtx, i);
+        off.Freeze();
         var offPath = new Path { Data = off };
         offPath.SetResourceReference(Shape.FillProperty, "Line");
-        var onPath = new Path { Data = on };
-        onPath.SetResourceReference(Shape.FillProperty, channel);
         NetDial.Children.Add(offPath);
-        NetDial.Children.Add(onPath);
+
+        // Aceso: cada gomo na sua cor, do tom de fundo do canal no começo ao brilho na ponta (o arco acende até a leitura)
+        for (int i = 0; i < DialSegments && (i + 0.5) / DialSegments <= lit; i++)
+        {
+            var seg = new StreamGeometry();
+            using (var ctx = seg.Open()) Segment(ctx, i);
+            seg.Freeze();
+            var color = new SolidColorBrush(ThemeManager.Blend(channel, (i + 0.5) / DialSegments / lit));
+            color.Freeze();
+            NetDial.Children.Add(new Path { Data = seg, Fill = color });
+        }
     }
 
     // ---------------- Traço de pings ----------------

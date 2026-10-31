@@ -11,7 +11,7 @@ namespace CoreBi.Desktop.Features.Monitoring.Sensors;
 public sealed record SensorSection(string Key, string Title, IReadOnlyList<SensorRow> Rows, string Tone = "Steel");
 
 /// <summary>Item do índice: um componente, ou a visão geral (Id nulo).</summary>
-public sealed record IndexEntry(string? Id, string Name, string Kind, string Glyph, string? Note);
+public sealed record IndexEntry(string? Id, string Name, string Kind, string Glyph, string? Note, string Tone = "Steel");
 
 /// <summary>Filtro por tipo de sensor, com quantos sensores ele tem no escopo atual.</summary>
 public sealed record SensorFilter(string Key, string Title, int Count);
@@ -146,8 +146,8 @@ public static class SensorBoard
     public static SensorLayout Build(IEnumerable<SensorRow> rows, string? component, string? group, string search, ISet<string> collapsed)
     {
         var parts = Parts(rows);
-        var index = new List<IndexEntry> { new(null, "Visão geral", "Todos os componentes", OverviewGlyph, null) };
-        index.AddRange(parts.Select(p => new IndexEntry(p.Key, p.Name, p.Kind, p.Glyph, p.Note)));
+        var index = new List<IndexEntry> { new(null, "Visão geral", "Todos os componentes", OverviewGlyph, null, "Signal") };
+        index.AddRange(parts.Select(p => new IndexEntry(p.Key, p.Name, p.Kind, p.Glyph, p.Note, p.Tone)));
         if (component != null && parts.All(p => p.Key != component)) component = null;
 
         var scope = parts.Where(p => component == null || p.Key == component).ToList();

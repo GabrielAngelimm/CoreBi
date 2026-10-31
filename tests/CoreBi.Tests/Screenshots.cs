@@ -127,7 +127,8 @@ internal static partial class Program
         {
             var area = new Rect(0, 0, width, height);
             context.DrawRectangle((Brush)Application.Current.FindResource("Bg"), null, area);
-            context.DrawRectangle(new VisualBrush(root), null, area);
+            // Viewbox fixo na área da janela: um brilho que vaza da borda não encolhe nem desloca o print
+            context.DrawRectangle(new VisualBrush(root) { Viewbox = area, ViewboxUnits = BrushMappingMode.Absolute }, null, area);
         }
         var image = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
         image.Render(visual);

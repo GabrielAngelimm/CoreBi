@@ -4,9 +4,10 @@
 
     <!--
         CoreBi · design system "Bancada" (docs/DESIGN.md)
-        O painel é neutro; a medição tem cor. Superfícies em grafite (ou papel) quase neutro, ações e seleção em tinta,
-        e cor só para três coisas: o canal de cada componente, o veredito quando algo pede atenção e o sinal ao vivo.
-        Os pincéis abaixo são os do tema escuro; ThemeManager troca todos em tempo de execução (é a única tabela de cores).
+        Um instrumento de bancada iluminado: painéis de grafite (ou papel) com luz de cima, a marca acendendo o que é
+        interativo e cada componente com a sua cor e o seu brilho. Saudável é discreto; o que pede atenção salta aos olhos.
+        Os pincéis abaixo são os do tema escuro, para o designer do XAML; ThemeManager é a fonte e troca todos em tempo de
+        execução (inclusive os gradientes e brilhos, que existem só lá).
     -->
 
     <!-- Paleta fixa do overlay e do aviso (Hud*), que não acompanha o tema: fica em HudPalette.xaml -->
@@ -14,48 +15,146 @@
         <ResourceDictionary Source="/CoreBi.Desktop;component/Shell/HudPalette.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 
-    <!-- ===================== Paleta (DynamicResource) ===================== -->
+    <!-- ===================== Paleta (DynamicResource; gerada da tabela do ThemeManager) ===================== -->
+    <!-- paleta:início (gerado por tools/sync_theme.py a partir do ThemeManager.cs; não editar à mão) -->
+    <!-- Superfícies: bancada → painel → elevado -->
     <SolidColorBrush x:Key="Bg" Color="#0E1214"/>
     <SolidColorBrush x:Key="Sidebar" Color="#0A0D0F"/>
     <SolidColorBrush x:Key="Surface" Color="#15191C"/>
     <SolidColorBrush x:Key="Raised" Color="#1C2022"/>
-    <SolidColorBrush x:Key="Hover" Color="#1E2325"/>
-    <SolidColorBrush x:Key="Selected" Color="#282D30"/>
+    <SolidColorBrush x:Key="Hover" Color="#1F2427"/>
+    <SolidColorBrush x:Key="Selected" Color="#282D31"/>
     <SolidColorBrush x:Key="Well" Color="#050708"/>
     <SolidColorBrush x:Key="Scrim" Color="#B8050708"/>
+    <!-- Fios -->
     <SolidColorBrush x:Key="Line" Color="#24282B"/>
     <SolidColorBrush x:Key="LineStrong" Color="#353A3D"/>
+    <!-- Texto -->
     <SolidColorBrush x:Key="Fg" Color="#E6EAEC"/>
     <SolidColorBrush x:Key="Muted" Color="#A3AAAE"/>
     <SolidColorBrush x:Key="Faint" Color="#737A7E"/>
-    <SolidColorBrush x:Key="Ink" Color="#E3E7E9"/>
-    <SolidColorBrush x:Key="InkHover" Color="#F8FAFC"/>
-    <SolidColorBrush x:Key="InkFg" Color="#101315"/>
-    <SolidColorBrush x:Key="Focus" Color="#C9CFD2"/>
+    <!-- Sinal: a marca. Ação principal, controles ligados, item escolhido na navegação, foco e o que está ao vivo -->
     <SolidColorBrush x:Key="Signal" Color="#27C9BC"/>
+    <SolidColorBrush x:Key="SignalDeep" Color="#12AA9D"/>
+    <SolidColorBrush x:Key="SignalHi" Color="#6FE3D6"/>
+    <SolidColorBrush x:Key="SignalFg" Color="#03201D"/>
     <SolidColorBrush x:Key="SignalSoft" Color="#2427C9BC"/>
-    <SolidColorBrush x:Key="Cpu" Color="#07A293"/>
-    <SolidColorBrush x:Key="Gpu" Color="#C77E50"/>
-    <SolidColorBrush x:Key="Memory" Color="#A183D4"/>
-    <SolidColorBrush x:Key="Storage" Color="#4E719D"/>
-    <SolidColorBrush x:Key="NetDown" Color="#07A293"/>
-    <SolidColorBrush x:Key="NetUp" Color="#C77E50"/>
+    <SolidColorBrush x:Key="Focus" Color="#5FDCCF"/>
+    <!-- Tinta: leituras neutras (bateria, sessão atual) e o miolo dos controles -->
+    <SolidColorBrush x:Key="Ink" Color="#E3E7E9"/>
+    <SolidColorBrush x:Key="InkFg" Color="#101315"/>
+    <!-- Canais: o que cada componente mede (gráficos, medidores, anéis, legendas e o ícone do componente) -->
+    <SolidColorBrush x:Key="Cpu" Color="#0CB7A4"/>
+    <SolidColorBrush x:Key="CpuDeep" Color="#079B8B"/>
+    <SolidColorBrush x:Key="CpuHi" Color="#67D9C8"/>
+    <SolidColorBrush x:Key="CpuSoft" Color="#2A0CB7A4"/>
+    <SolidColorBrush x:Key="Gpu" Color="#E8894A"/>
+    <SolidColorBrush x:Key="GpuDeep" Color="#C9682F"/>
+    <SolidColorBrush x:Key="GpuHi" Color="#F5B07C"/>
+    <SolidColorBrush x:Key="GpuSoft" Color="#28E8894A"/>
+    <SolidColorBrush x:Key="Memory" Color="#B296FF"/>
+    <SolidColorBrush x:Key="MemoryDeep" Color="#9573EC"/>
+    <SolidColorBrush x:Key="MemoryHi" Color="#D6C6FF"/>
+    <SolidColorBrush x:Key="MemorySoft" Color="#2AB296FF"/>
+    <SolidColorBrush x:Key="Storage" Color="#4A82CC"/>
+    <SolidColorBrush x:Key="StorageDeep" Color="#2F64AE"/>
+    <SolidColorBrush x:Key="StorageHi" Color="#86B4EE"/>
+    <SolidColorBrush x:Key="StorageSoft" Color="#304A82CC"/>
+    <SolidColorBrush x:Key="NetDown" Color="#0CB7A4"/>
+    <SolidColorBrush x:Key="NetDownDeep" Color="#079B8B"/>
+    <SolidColorBrush x:Key="NetDownHi" Color="#67D9C8"/>
+    <SolidColorBrush x:Key="NetUp" Color="#E8894A"/>
+    <SolidColorBrush x:Key="NetUpDeep" Color="#C9682F"/>
+    <SolidColorBrush x:Key="NetUpHi" Color="#F5B07C"/>
     <SolidColorBrush x:Key="Steel" Color="#8696A2"/>
+    <SolidColorBrush x:Key="SteelSoft" Color="#268696A2"/>
+    <!-- Veredito: só quando algo pede atenção ganha cor cheia; saudável é um LED discreto -->
     <SolidColorBrush x:Key="Ok" Color="#6FC889"/>
     <SolidColorBrush x:Key="OkSoft" Color="#226FC889"/>
     <SolidColorBrush x:Key="Warn" Color="#EDB755"/>
     <SolidColorBrush x:Key="WarnSoft" Color="#26EDB755"/>
     <SolidColorBrush x:Key="Danger" Color="#EE6E63"/>
     <SolidColorBrush x:Key="DangerSoft" Color="#26EE6E63"/>
+    <!-- Rolagem -->
     <SolidColorBrush x:Key="ThumbBrush" Color="#353A3D"/>
     <SolidColorBrush x:Key="ThumbHover" Color="#50575B"/>
     <SolidColorBrush x:Key="ThumbDrag" Color="#6E7579"/>
-
-    <!-- Canto entre as barras de rolagem, seleção nativa de texto e afins -->
     <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#0E1214"/>
-    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#282D30"/>
-    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#282D30"/>
-
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#282D31"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#282D31"/>
+    <!-- Gradientes (a luz dos painéis, a tecla acesa e o preenchimento dos canais) -->
+    <LinearGradientBrush x:Key="PanelFill" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#181C1F" Offset="0"/>
+        <GradientStop Color="#14181B" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PanelEdge" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#2D3236" Offset="0"/>
+        <GradientStop Color="#212528" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SignalFill" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#45D6C9" Offset="0"/>
+        <GradientStop Color="#1DB5A8" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SignalFillHover" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#6AE2D6" Offset="0"/>
+        <GradientStop Color="#2BC4B7" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="NavSelFill" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#2E27C9BC" Offset="0"/>
+        <GradientStop Color="#0A27C9BC" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SignalGrad" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#12AA9D" Offset="0"/>
+        <GradientStop Color="#6FE3D6" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CpuGrad" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#079B8B" Offset="0"/>
+        <GradientStop Color="#67D9C8" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GpuGrad" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#C9682F" Offset="0"/>
+        <GradientStop Color="#F5B07C" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="MemoryGrad" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#9573EC" Offset="0"/>
+        <GradientStop Color="#D6C6FF" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="StorageGrad" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#2F64AE" Offset="0"/>
+        <GradientStop Color="#86B4EE" Offset="1"/>
+    </LinearGradientBrush>
+    <!-- Brilhos (luz radial do canal atrás de uma leitura) -->
+    <RadialGradientBrush x:Key="SignalGlow">
+        <GradientStop Color="#3027C9BC" Offset="0"/>
+        <GradientStop Color="#1027C9BC" Offset="0.55"/>
+        <GradientStop Color="#0027C9BC" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="CpuGlow">
+        <GradientStop Color="#340CB7A4" Offset="0"/>
+        <GradientStop Color="#110CB7A4" Offset="0.55"/>
+        <GradientStop Color="#000CB7A4" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="GpuGlow">
+        <GradientStop Color="#30E8894A" Offset="0"/>
+        <GradientStop Color="#10E8894A" Offset="0.55"/>
+        <GradientStop Color="#00E8894A" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="MemoryGlow">
+        <GradientStop Color="#30B296FF" Offset="0"/>
+        <GradientStop Color="#10B296FF" Offset="0.55"/>
+        <GradientStop Color="#00B296FF" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="StorageGlow">
+        <GradientStop Color="#384A82CC" Offset="0"/>
+        <GradientStop Color="#124A82CC" Offset="0.55"/>
+        <GradientStop Color="#004A82CC" Offset="1"/>
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="SteelGlow">
+        <GradientStop Color="#268696A2" Offset="0"/>
+        <GradientStop Color="#0C8696A2" Offset="0.55"/>
+        <GradientStop Color="#008696A2" Offset="1"/>
+    </RadialGradientBrush>
+    <!-- paleta:fim -->
 
     <!-- ===================== Forma ===================== -->
     <!-- Raios por hierarquia: painel > poço > controle > selo. Pílulas (filtros) são inteiramente redondas. -->
@@ -68,12 +167,14 @@
 
     <!-- ===================== Tipografia ===================== -->
     <!--
-        Duas famílias com papéis claros: Bahnschrift (DIN 1451, a letra de instrumentos e da assinatura CoreBi) para títulos
-        e leituras; Segoe UI Variable para o texto da interface, no tamanho óptico certo (Small até 12 px).
+        Duas vozes. Bahnschrift (DIN 1451, a letra de instrumentos, placas e da assinatura CoreBi) é a estrutura: títulos,
+        navegação, botões, rótulos e leituras. Segoe UI Variable é o conteúdo: nomes, descrições e textos, no tamanho óptico
+        certo (Small até 12 px).
     -->
     <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI</FontFamily>
     <FontFamily x:Key="SmallFont">Segoe UI Variable Small, Segoe UI</FontFamily>
     <FontFamily x:Key="DisplayFont">Bahnschrift, Segoe UI</FontFamily>
+    <FontFamily x:Key="LabelFont">Bahnschrift, Segoe UI</FontFamily>
     <FontFamily x:Key="Readout">Bahnschrift, Segoe UI</FontFamily>
     <FontFamily x:Key="Mono">Cascadia Mono, Consolas</FontFamily>
     <FontFamily x:Key="Icons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
@@ -85,24 +186,24 @@
     <!-- Título da página: a mesma voz da assinatura -->
     <Style x:Key="PageTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="30"/>
+        <Setter Property="FontSize" Value="32"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
     <Style x:Key="PageSubtitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="LineHeight" Value="19"/>
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="LineHeight" Value="20"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="MaxWidth" Value="720"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
-        <Setter Property="Margin" Value="0,4,0,0"/>
+        <Setter Property="Margin" Value="0,3,0,0"/>
     </Style>
     <!-- Título de painel -->
     <Style x:Key="SectionTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="FontSize" Value="17"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -110,14 +211,15 @@
     <!-- Título de grupo dentro de uma ficha (Sensores, Sistema): um degrau abaixo do painel -->
     <Style x:Key="GroupTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontSize" Value="15.5"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
-    <!-- Rótulo de grupo: frase curta, sem caixa alta -->
+    <!-- Rótulo de grupo: frase curta, sem caixa alta, na letra da estrutura -->
     <Style x:Key="Label" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="Margin" Value="0,0,0,8"/>
@@ -158,21 +260,24 @@
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
     </Style>
     <Style x:Key="ReadoutLarge" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
-        <Setter Property="FontSize" Value="36"/>
+        <Setter Property="FontSize" Value="38"/>
         <Setter Property="FontWeight" Value="Light"/>
     </Style>
     <Style x:Key="ReadoutHero" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
-        <Setter Property="FontSize" Value="52"/>
+        <Setter Property="FontSize" Value="54"/>
         <Setter Property="FontWeight" Value="Light"/>
     </Style>
     <Style x:Key="Unit" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="VerticalAlignment" Value="Bottom"/>
         <Setter Property="Margin" Value="5,0,0,5"/>
     </Style>
+    <!-- Rótulo de uma leitura (Temp., Clock, Desgaste): gravado no painel, na letra do instrumento -->
     <Style x:Key="StatLabel" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
@@ -218,10 +323,13 @@
     <Style x:Key="PageHeader" TargetType="Grid">
         <Setter Property="Margin" Value="0,0,0,18"/>
     </Style>
-    <!-- Painel: agrupa um instrumento. Sem sombra; a profundidade vem do tom e de um fio de 1 px. -->
+    <!--
+        Painel: agrupa um instrumento. Sem sombra; a profundidade vem da luz de cima (o fundo clareia um passo no topo e o fio
+        de cima é mais claro que o de baixo, como um módulo de alumínio).
+    -->
     <Style x:Key="CardBorder" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource Surface}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="Background" Value="{DynamicResource PanelFill}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PanelEdge}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="{StaticResource RadiusPanel}"/>
         <Setter Property="Padding" Value="{StaticResource PanelPadding}"/>
@@ -246,7 +354,7 @@
         <Setter Property="Background" Value="{DynamicResource Line}"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
-    <!-- Ícone em ladrilho (botões de categoria, nós de um caminho): neutro, nunca colorido -->
+    <!-- Ícone em ladrilho neutro (ações, nós de um caminho). O ladrilho de um componente usa o tom do canal (ChannelTile). -->
     <Style x:Key="IconTile" TargetType="Border">
         <Setter Property="Width" Value="34"/>
         <Setter Property="Height" Value="34"/>
@@ -254,6 +362,39 @@
         <Setter Property="Background" Value="{DynamicResource Raised}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    <!--
+        Ladrilho de componente: fundo no tom suave do canal e o ícone na cor dele (Ui.Channel = Cpu, Gpu, Memory, Storage,
+        Signal; vazio = Steel). É o mesmo em Sistema, Sensores, Visão geral e OverlayBi, para cada peça ter um rosto só.
+    -->
+    <Style x:Key="ChannelTile" TargetType="Border">
+        <Setter Property="Width" Value="34"/>
+        <Setter Property="Height" Value="34"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}"/>
+        <Setter Property="Background" Value="{DynamicResource SteelSoft}"/>
+        <Setter Property="TextElement.Foreground" Value="{DynamicResource Steel}"/>
+        <Style.Triggers>
+            <Trigger Property="local:Ui.Channel" Value="Cpu">
+                <Setter Property="Background" Value="{DynamicResource CpuSoft}"/>
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Cpu}"/>
+            </Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Gpu">
+                <Setter Property="Background" Value="{DynamicResource GpuSoft}"/>
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Gpu}"/>
+            </Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Memory">
+                <Setter Property="Background" Value="{DynamicResource MemorySoft}"/>
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Memory}"/>
+            </Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Storage">
+                <Setter Property="Background" Value="{DynamicResource StorageSoft}"/>
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource StorageHi}"/>
+            </Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Signal">
+                <Setter Property="Background" Value="{DynamicResource SignalSoft}"/>
+                <Setter Property="TextElement.Foreground" Value="{DynamicResource Signal}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
     <!-- Marca de canal: o traço curto na cor do componente, ao lado do nome (legendas, cartões, listas) -->
     <Style x:Key="ChannelMark" TargetType="Border">
@@ -285,7 +426,8 @@
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
     <Style x:Key="BadgeText" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="12"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -306,51 +448,89 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <Style x:Key="KeyCapText" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="11.5"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
     </Style>
-    <!-- Barra de progresso de uma tarefa: trilho + preenchimento em tinta (o ScaleTransform nomeado fica na página) -->
+    <!-- Barra de progresso de uma tarefa: trilho + preenchimento no sinal (o ScaleTransform nomeado fica na página) -->
     <Style x:Key="ProgressTrack" TargetType="Grid">
         <Setter Property="Height" Value="4"/>
         <Setter Property="Background" Value="{DynamicResource Line}"/>
         <Setter Property="ClipToBounds" Value="True"/>
     </Style>
     <Style x:Key="ProgressFill" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource Ink}"/>
+        <Setter Property="Background" Value="{DynamicResource SignalGrad}"/>
         <Setter Property="RenderTransformOrigin" Value="0,0.5"/>
+    </Style>
+    <!-- Brilho de instrumento: luz radial do canal atrás da leitura principal de um painel (Ui.Channel escolhe o canal) -->
+    <Style x:Key="Glow" TargetType="Border">
+        <Setter Property="IsHitTestVisible" Value="False"/>
+        <Setter Property="Background" Value="{DynamicResource SignalGlow}"/>
+        <Style.Triggers>
+            <Trigger Property="local:Ui.Channel" Value="Cpu"><Setter Property="Background" Value="{DynamicResource CpuGlow}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Gpu"><Setter Property="Background" Value="{DynamicResource GpuGlow}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Memory"><Setter Property="Background" Value="{DynamicResource MemoryGlow}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Storage"><Setter Property="Background" Value="{DynamicResource StorageGlow}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Steel"><Setter Property="Background" Value="{DynamicResource SteelGlow}"/></Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- ===================== Botões ===================== -->
+    <!-- O mouse acende uma camada por cima (transição curta); o clique afunda 1 px -->
     <ControlTemplate x:Key="ButtonTemplate" TargetType="Button">
-        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource RadiusControl}" Padding="{TemplateBinding Padding}"
-                SnapsToDevicePixels="True">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center">
+        <Grid x:Name="root">
+            <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource RadiusControl}" SnapsToDevicePixels="True"/>
+            <Border x:Name="lit" Background="{Binding Path=(local:Ui.HoverFill), RelativeSource={RelativeSource TemplatedParent}}"
+                    CornerRadius="{StaticResource RadiusControl}" Opacity="0"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" Margin="{TemplateBinding Padding}">
                 <TextBlock x:Name="ic" Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                           Foreground="{Binding Path=(local:Ui.IconBrush), RelativeSource={RelativeSource TemplatedParent}}"
                            FontFamily="{StaticResource Icons}" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center"/>
                 <ContentPresenter VerticalAlignment="Center"/>
             </StackPanel>
-        </Border>
+        </Grid>
         <ControlTemplate.Triggers>
             <Trigger Property="local:Ui.Icon" Value="">
                 <Setter TargetName="ic" Property="Visibility" Value="Collapsed"/>
             </Trigger>
+            <!-- Sem cor própria, o glifo acompanha o texto -->
+            <Trigger Property="local:Ui.IconBrush" Value="{x:Null}">
+                <Setter TargetName="ic" Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource TemplatedParent}}"/>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="lit" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="lit" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
+            </Trigger>
             <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="b" Property="RenderTransform">
+                <Setter TargetName="root" Property="RenderTransform">
                     <Setter.Value>
                         <TranslateTransform Y="1"/>
                     </Setter.Value>
                 </Setter>
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="b" Property="Opacity" Value="0.4"/>
+                <Setter TargetName="root" Property="Opacity" Value="0.4"/>
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
     <Style x:Key="ButtonBase" TargetType="Button">
-        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="13.5"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Padding" Value="16,7"/>
         <Setter Property="MinHeight" Value="34"/>
@@ -361,35 +541,19 @@
         <Setter Property="Template" Value="{StaticResource ButtonTemplate}"/>
     </Style>
 
-    <!-- Ação principal da página: uma por tela, em tinta (papel sobre grafite, grafite sobre papel) -->
+    <!-- Ação principal da página: uma por tela, a tecla acesa da marca -->
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
-        <Setter Property="Background" Value="{DynamicResource Ink}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Ink}"/>
-        <Setter Property="Foreground" Value="{DynamicResource InkFg}"/>
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource InkHover}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource InkHover}"/>
-            </Trigger>
-            <Trigger Property="IsPressed" Value="True">
-                <Setter Property="Background" Value="{DynamicResource Ink}"/>
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="Background" Value="{DynamicResource SignalFill}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SignalDeep}"/>
+        <Setter Property="Foreground" Value="{DynamicResource SignalFg}"/>
+        <Setter Property="local:Ui.HoverFill" Value="{DynamicResource SignalFillHover}"/>
     </Style>
 
     <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
         <Setter Property="Background" Value="{DynamicResource Raised}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource Selected}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource Faint}"/>
-            </Trigger>
-            <Trigger Property="IsPressed" Value="True">
-                <Setter Property="Background" Value="{DynamicResource Hover}"/>
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="local:Ui.HoverFill" Value="{DynamicResource Selected}"/>
     </Style>
 
     <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
@@ -399,9 +563,11 @@
         <Setter Property="Padding" Value="10,6"/>
         <Setter Property="MinHeight" Value="30"/>
         <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="local:Ui.HoverFill" Value="{DynamicResource Hover}"/>
+        <!-- O glifo acende no sinal: é o que diz "isto é uma ação" num botão sem fundo -->
+        <Setter Property="local:Ui.IconBrush" Value="{DynamicResource Signal}"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource Hover}"/>
                 <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
             </Trigger>
         </Style.Triggers>
@@ -448,19 +614,15 @@
         <Setter Property="Background" Value="{DynamicResource DangerSoft}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
         <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource Danger}"/>
-                <Setter Property="Foreground" Value="{DynamicResource Bg}"/>
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="local:Ui.HoverFill" Value="{DynamicResource DangerSoft}"/>
     </Style>
 
     <!-- Ação destrutiva discreta dentro de listas (remover) -->
     <Style x:Key="DangerGhostButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+        <Setter Property="local:Ui.HoverFill" Value="{DynamicResource DangerSoft}"/>
+        <Setter Property="local:Ui.IconBrush" Value="{x:Null}"/>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource DangerSoft}"/>
                 <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
             </Trigger>
         </Style.Triggers>
@@ -485,7 +647,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="b" Property="Opacity" Value="0.4"/>
@@ -558,7 +720,7 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="&#xE721;" FontFamily="{StaticResource Icons}" FontSize="12" VerticalAlignment="Center" Margin="0,0,9,0"/>
+                            <TextBlock x:Name="glass" Text="&#xE721;" FontFamily="{StaticResource Icons}" FontSize="12" VerticalAlignment="Center" Margin="0,0,9,0"/>
                             <ContentPresenter Grid.Column="1" VerticalAlignment="Center"/>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Border Style="{StaticResource KeyCap}"><TextBlock Text="Ctrl" Style="{StaticResource KeyCapText}"/></Border>
@@ -570,6 +732,7 @@
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Raised}"/>
+                            <Setter TargetName="glass" Property="Foreground" Value="{DynamicResource Signal}"/>
                             <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -579,10 +742,14 @@
     </Style>
 
     <!-- ===================== Navegação lateral ===================== -->
-    <!-- Item selecionado: fundo elevado, texto e ícone acesos em tinta, com transição curta (sem barra lateral, sem cor) -->
+    <!--
+        Item da navegação, em Bahnschrift. O escolhido acende o ícone no sinal e ganha uma pílula tingida; dentro de um
+        SlidingSelectionPanel a pílula é uma só e desliza até o item escolhido (Ui.SlidingGroup), sem barra lateral.
+    -->
     <Style x:Key="NavItem" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="GroupName" Value="Nav"/>
         <Setter Property="Margin" Value="12,1"/>
@@ -592,7 +759,7 @@
                 <ControlTemplate TargetType="RadioButton">
                     <Grid Background="Transparent" Height="34">
                         <Border x:Name="hover" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Hover}" Opacity="0"/>
-                        <Border x:Name="sel" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Selected}" Opacity="0"/>
+                        <Border x:Name="sel" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource NavSelFill}" Opacity="0"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="34"/>
@@ -603,8 +770,8 @@
                                        Margin="4,0,0,0"/>
                             <TextBlock x:Name="icOn" Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
                                        FontFamily="{StaticResource Icons}" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Margin="4,0,0,0" Foreground="{DynamicResource Fg}" Opacity="0"/>
-                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="4,0,8,0"/>
+                                       Margin="4,0,0,0" Foreground="{DynamicResource Signal}" Opacity="0"/>
+                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="4,0,8,1"/>
                         </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -629,7 +796,6 @@
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="sel" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.16"/>
                                         <DoubleAnimation Storyboard.TargetName="icOn" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.16"/>
                                         <DoubleAnimation Storyboard.TargetName="ic" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.16"/>
                                     </Storyboard>
@@ -638,7 +804,6 @@
                             <Trigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="sel" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
                                         <DoubleAnimation Storyboard.TargetName="icOn" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
                                         <DoubleAnimation Storyboard.TargetName="ic" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
                                     </Storyboard>
@@ -646,23 +811,38 @@
                             </Trigger.ExitActions>
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter TargetName="hover" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True"/>
+                                <Condition Property="local:Ui.SlidingGroup" Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="sel" Property="Opacity" Value="1"/>
+                        </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
 
+    <!-- Trilho da navegação: um destaque só, tingido de sinal, que desliza até a página aberta -->
+    <Style x:Key="NavRail" TargetType="local:SlidingSelectionPanel">
+        <Setter Property="Highlight" Value="{DynamicResource NavSelFill}"/>
+        <Setter Property="HighlightRadius" Value="7"/>
+    </Style>
+
     <Style x:Key="NavHeader" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource SmallFont}"/>
-        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="12"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="Margin" Value="24,18,0,6"/>
     </Style>
 
     <!-- ===================== Seleção de opções ===================== -->
-    <!-- Controle segmentado: um poço com teclas; a escolhida sobe (fundo elevado e texto em tinta) -->
+    <!-- Controle segmentado: um poço com teclas; a escolhida sobe (fundo elevado, fio e texto em tinta) e, num
+         SlidingSelectionPanel, a tecla acesa desliza de uma opção para a outra -->
     <Style x:Key="SegmentGroup" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Bg}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
@@ -672,9 +852,17 @@
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
+    <!-- Trilho do controle segmentado (dentro do SegmentGroup): a tecla elevada desliza até a opção escolhida -->
+    <Style x:Key="SegmentRail" TargetType="local:SlidingSelectionPanel">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="Highlight" Value="{DynamicResource Selected}"/>
+        <Setter Property="HighlightBorder" Value="{DynamicResource LineStrong}"/>
+        <Setter Property="HighlightRadius" Value="5"/>
+    </Style>
     <Style x:Key="Segment" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
@@ -692,11 +880,17 @@
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
                         </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True"/>
+                                <Condition Property="local:Ui.SlidingGroup" Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
+                        </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="b" Property="Opacity" Value="0.45"/>
                         </Trigger>
@@ -706,10 +900,11 @@
         </Setter>
     </Style>
 
-    <!-- Filtro em pílula (listas geradas: tipos de sensor, GPUs, unidades). Marcado = fundo elevado e texto em tinta. -->
+    <!-- Filtro em pílula (listas geradas: tipos de sensor, GPUs, unidades). Marcado = fundo elevado, fio e texto em tinta. -->
     <Style x:Key="Chip" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Margin" Value="0,0,6,6"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
@@ -726,8 +921,8 @@
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Faint}"/>
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource SignalSoft}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalDeep}"/>
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -739,7 +934,7 @@
         </Setter>
     </Style>
 
-    <!-- Escolha do teste (Benchmark): ladrilho com glifo, nome e legenda -->
+    <!-- Escolha do teste (Benchmark): ladrilho com glifo, nome e legenda; o escolhido acende o glifo no sinal -->
     <Style x:Key="TestTile" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -748,12 +943,12 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="b" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
+                    <Border x:Name="b" Background="{DynamicResource PanelFill}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
                             CornerRadius="{StaticResource RadiusInset}" Padding="14,12">
                         <StackPanel>
                             <TextBlock x:Name="ic" Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
                                        FontFamily="{StaticResource Icons}" FontSize="17" Foreground="{DynamicResource Muted}" HorizontalAlignment="Left"/>
-                            <ContentPresenter Margin="0,10,0,0" TextElement.FontWeight="SemiBold" TextElement.FontSize="13"/>
+                            <ContentPresenter Margin="0,10,0,0" TextElement.FontWeight="SemiBold" TextElement.FontSize="13.5" TextElement.FontFamily="{StaticResource LabelFont}"/>
                             <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
                                        Foreground="{DynamicResource Faint}" FontFamily="{StaticResource SmallFont}" FontSize="11.5" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                         </StackPanel>
@@ -764,9 +959,9 @@
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Raised}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Muted}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalDeep}"/>
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
-                            <Setter TargetName="ic" Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter TargetName="ic" Property="Foreground" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="b" Property="Opacity" Value="0.5"/>
@@ -778,7 +973,7 @@
     </Style>
 
     <!-- ===================== Caixas de seleção ===================== -->
-    <!-- Padrão: caixa quadrada (seleção múltipla em listas); marcada = cheia em tinta -->
+    <!-- Padrão: caixa quadrada (seleção múltipla em listas); marcada = cheia no sinal -->
     <Style TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="FontSize" Value="13"/>
@@ -795,7 +990,7 @@
                         <Border x:Name="box" Width="18" Height="18" CornerRadius="{StaticResource RadiusSmall}" BorderThickness="1.5"
                                 BorderBrush="{DynamicResource LineStrong}" Background="{DynamicResource Raised}" VerticalAlignment="Center">
                             <TextBlock x:Name="mark" Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="11"
-                                       Foreground="{DynamicResource InkFg}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                       Foreground="{DynamicResource SignalFg}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
                         </Border>
                         <ContentPresenter x:Name="cp" Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center"/>
                     </Grid>
@@ -807,8 +1002,8 @@
                             <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Faint}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="box" Property="Background" Value="{DynamicResource Ink}"/>
-                            <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Ink}"/>
+                            <Setter TargetName="box" Property="Background" Value="{DynamicResource Signal}"/>
+                            <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Signal}"/>
                             <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -821,12 +1016,13 @@
     </Style>
 
     <!--
-        Chave de tema (rodapé da barra lateral): a linha inteira é clicável; ligada = modo escuro. O botão desliza e o ícone
-        troca entre lua e sol com uma transição curta, só em resposta ao clique.
+        Chave de tema (rodapé da barra lateral): a linha inteira é clicável; ligada = modo escuro. O botão desliza e o ícone troca
+        entre o sol (cobre) e a lua (lavanda) com um giro curto, só em resposta ao clique.
     -->
     <Style x:Key="ThemeToggle" TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="13.5"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
@@ -843,13 +1039,13 @@
                                 <Grid.RenderTransform>
                                     <RotateTransform x:Name="spin" Angle="0"/>
                                 </Grid.RenderTransform>
-                                <TextBlock x:Name="sun" Text="&#xE706;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{TemplateBinding Foreground}"/>
-                                <TextBlock x:Name="moon" Text="&#xE708;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{TemplateBinding Foreground}" Opacity="0"/>
+                                <TextBlock x:Name="sun" Text="&#xE706;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{DynamicResource Gpu}"/>
+                                <TextBlock x:Name="moon" Text="&#xE708;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Memory}" Opacity="0"/>
                             </Grid>
-                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="10,0,8,0"/>
+                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="10,0,8,1"/>
                             <Grid Grid.Column="2" Width="36" Height="20" VerticalAlignment="Center">
                                 <Border CornerRadius="10" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1"/>
-                                <Border x:Name="on" CornerRadius="10" Background="{DynamicResource Ink}" Opacity="0"/>
+                                <Border x:Name="on" CornerRadius="10" Background="{DynamicResource SignalFill}" Opacity="0"/>
                                 <Ellipse x:Name="knob" Width="14" Height="14" Margin="3,0" HorizontalAlignment="Left" Fill="{DynamicResource Muted}">
                                     <Ellipse.RenderTransform>
                                         <TranslateTransform x:Name="slide" X="0"/>
@@ -864,7 +1060,7 @@
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="knob" Property="Fill" Value="{DynamicResource InkFg}"/>
+                            <Setter TargetName="knob" Property="Fill" Value="{DynamicResource SignalFg}"/>
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
@@ -902,7 +1098,7 @@
         </Setter>
     </Style>
 
-    <!-- Interruptor: liga e desliga algo na hora. Ligado = trilho em tinta, botão à direita. -->
+    <!-- Interruptor: liga e desliga algo na hora. Ligado = trilho aceso no sinal, botão desliza para a direita. -->
     <Style x:Key="Switch" TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="FontSize" Value="13"/>
@@ -916,10 +1112,15 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Border x:Name="track" Width="38" Height="20" CornerRadius="10" BorderThickness="1"
-                                BorderBrush="{DynamicResource LineStrong}" Background="{DynamicResource Raised}" VerticalAlignment="Center">
-                            <Ellipse x:Name="knob" Width="12" Height="12" Margin="4,0" HorizontalAlignment="Left" Fill="{DynamicResource Muted}"/>
-                        </Border>
+                        <Grid Width="38" Height="20" VerticalAlignment="Center">
+                            <Border x:Name="track" CornerRadius="10" BorderThickness="1" BorderBrush="{DynamicResource LineStrong}" Background="{DynamicResource Raised}"/>
+                            <Border x:Name="on" CornerRadius="10" Background="{DynamicResource SignalFill}" Opacity="0"/>
+                            <Ellipse x:Name="knob" Width="14" Height="14" Margin="3,0" HorizontalAlignment="Left" Fill="{DynamicResource Muted}">
+                                <Ellipse.RenderTransform>
+                                    <TranslateTransform x:Name="slide" X="0"/>
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                        </Grid>
                         <ContentPresenter x:Name="cp" Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center"/>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -930,13 +1131,27 @@
                             <Setter TargetName="track" Property="BorderBrush" Value="{DynamicResource Faint}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="track" Property="Background" Value="{DynamicResource Ink}"/>
-                            <Setter TargetName="track" Property="BorderBrush" Value="{DynamicResource Ink}"/>
-                            <Setter TargetName="knob" Property="Fill" Value="{DynamicResource InkFg}"/>
-                            <Setter TargetName="knob" Property="HorizontalAlignment" Value="Right"/>
-                            <Setter TargetName="knob" Property="Width" Value="14"/>
-                            <Setter TargetName="knob" Property="Height" Value="14"/>
-                            <Setter TargetName="knob" Property="Margin" Value="3,0"/>
+                            <Setter TargetName="knob" Property="Fill" Value="{DynamicResource SignalFg}"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="slide" Storyboard.TargetProperty="X" To="18" Duration="0:0:0.2">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="slide" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.2">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="root" Property="Opacity" Value="0.4"/>
@@ -968,14 +1183,14 @@
                                            Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Muted}"/>
                             </Border>
                             <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
-                                <ContentPresenter TextElement.FontWeight="SemiBold"/>
+                                <ContentPresenter TextElement.FontWeight="SemiBold" TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="13.5"/>
                                 <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
                                            FontFamily="{StaticResource SmallFont}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                             <Border x:Name="dot" Grid.Column="2" Width="18" Height="18" CornerRadius="9" BorderThickness="1.5"
                                     BorderBrush="{DynamicResource LineStrong}" VerticalAlignment="Center">
                                 <TextBlock x:Name="mark" Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="10"
-                                           Foreground="{DynamicResource InkFg}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                           Foreground="{DynamicResource SignalFg}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
                             </Border>
                         </Grid>
                     </Border>
@@ -984,11 +1199,11 @@
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Muted}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalDeep}"/>
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
-                            <Setter TargetName="ic" Property="Foreground" Value="{DynamicResource Fg}"/>
-                            <Setter TargetName="dot" Property="Background" Value="{DynamicResource Ink}"/>
-                            <Setter TargetName="dot" Property="BorderBrush" Value="{DynamicResource Ink}"/>
+                            <Setter TargetName="ic" Property="Foreground" Value="{DynamicResource Signal}"/>
+                            <Setter TargetName="dot" Property="Background" Value="{DynamicResource Signal}"/>
+                            <Setter TargetName="dot" Property="BorderBrush" Value="{DynamicResource Signal}"/>
                             <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -1001,12 +1216,13 @@
     </Style>
 
     <!--
-        Opção em pílula (itens do overlay): ligada = fundo elevado com visto em tinta; desligada = contorno e "+".
-        O estado fica claro pela forma e pelo glifo, não pela cor.
+        Opção em pílula (itens do overlay): ligada = fundo elevado com visto aceso no sinal; desligada = contorno e "+".
+        O estado fica claro pela forma e pelo glifo, não só pela cor.
     -->
     <Style x:Key="OptionChip" TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Margin" Value="0,0,6,6"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
@@ -1030,7 +1246,7 @@
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Faint}"/>
                             <Setter TargetName="mark" Property="Text" Value="&#xE73E;"/>
-                            <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Signal}"/>
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -1049,9 +1265,9 @@
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CaretBrush" Value="{DynamicResource Fg}"/>
-        <Setter Property="SelectionBrush" Value="{DynamicResource Muted}"/>
-        <Setter Property="SelectionOpacity" Value="0.35"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource Signal}"/>
+        <Setter Property="SelectionBrush" Value="{DynamicResource Signal}"/>
+        <Setter Property="SelectionOpacity" Value="0.3"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Padding" Value="10,0"/>
         <Setter Property="MinHeight" Value="34"/>
@@ -1098,7 +1314,8 @@
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Faint}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Focus}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}"/>
+                            <Setter TargetName="ic" Property="Foreground" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="b" Property="Opacity" Value="0.4"/>
@@ -1114,9 +1331,9 @@
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CaretBrush" Value="{DynamicResource Fg}"/>
-        <Setter Property="SelectionBrush" Value="{DynamicResource Muted}"/>
-        <Setter Property="SelectionOpacity" Value="0.35"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource Signal}"/>
+        <Setter Property="SelectionBrush" Value="{DynamicResource Signal}"/>
+        <Setter Property="SelectionOpacity" Value="0.3"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Padding" Value="10,0"/>
         <Setter Property="MinHeight" Value="34"/>
@@ -1133,7 +1350,7 @@
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Faint}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Focus}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1238,7 +1455,7 @@
         </Setter>
     </Style>
 
-    <!-- Lista de itens selecionáveis (rack de Discos, paleta de comandos): mesma seleção da navegação lateral -->
+    <!-- Lista de itens selecionáveis (rack de Discos, paleta de comandos): a mesma seleção da navegação lateral -->
     <Style x:Key="ListNavItem" TargetType="ListBoxItem">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -1291,12 +1508,12 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <!-- Ícone de item em ListNavItem: cinza, aceso em tinta quando o item está selecionado -->
+    <!-- Ícone de item em ListNavItem: cinza, aceso no sinal quando o item está selecionado -->
     <Style x:Key="ListNavIcon" TargetType="TextBlock" BasedOn="{StaticResource IconGlyph}">
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>
@@ -1322,7 +1539,8 @@
 
     <Style TargetType="DataGridColumnHeader">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Template">
             <Setter.Value>

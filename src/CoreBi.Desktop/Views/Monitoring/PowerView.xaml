@@ -25,7 +25,8 @@
             <Setter Property="BorderThickness" Value="1,0,0,0" />
             <Setter Property="Padding" Value="22,14,16,16" />
         </Style>
-        <!-- Plano instalado: anel de seleção, nome e "em uso" no ativo; "novo" no escolhido que aguarda confirmação. Tudo em tinta. -->
+        <!-- Plano instalado: anel de seleção, nome e "em uso" no ativo (anel e ponto acesos no sinal, como um rádio ligado);
+             "novo" no escolhido que aguarda confirmação, em tinta. -->
         <DataTemplate x:Key="PlanRow">
             <Button Style="{StaticResource RowButton}" Tag="{Binding}" Click="PlanRow_Click" AutomationProperties.Name="{Binding Name}">
                 <Grid Height="22">
@@ -37,7 +38,7 @@
                     <Border x:Name="sel" Grid.ColumnSpan="3" Margin="-8,-5" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Selected}" Visibility="Collapsed" />
                     <Grid Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <Ellipse x:Name="ring" Stroke="{DynamicResource LineStrong}" StrokeThickness="1.5" />
-                        <Ellipse x:Name="dot" Width="6" Height="6" Fill="{DynamicResource Fg}" Visibility="Collapsed" />
+                        <Ellipse x:Name="dot" Width="6" Height="6" Fill="{DynamicResource Signal}" Visibility="Collapsed" />
                     </Grid>
                     <TextBlock x:Name="name" Grid.Column="1" Text="{Binding Name}" FontSize="13.5" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                     <TextBlock x:Name="used" Grid.Column="2" Text="em uso" FontSize="12" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Visibility="Collapsed" />
@@ -52,7 +53,7 @@
                     <Setter TargetName="name" Property="Foreground" Value="{DynamicResource Fg}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsActive}" Value="True">
-                    <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Fg}" />
+                    <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Signal}" />
                     <Setter TargetName="sel" Property="Visibility" Value="Visible" />
                     <Setter TargetName="dot" Property="Visibility" Value="Visible" />
                     <Setter TargetName="used" Property="Visibility" Value="Visible" />
@@ -184,8 +185,8 @@
                                             <ColumnDefinition Width="14" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <Border Style="{StaticResource IconTile}" Width="46" Height="46" CornerRadius="{StaticResource RadiusInset}">
-                                            <TextBlock x:Name="SourceGlyph" Text="&#xE945;" Style="{StaticResource IconGlyph}" FontSize="21" Foreground="{DynamicResource Fg}" />
+                                        <Border Style="{StaticResource ChannelTile}" local:Ui.Channel="Signal" Width="46" Height="46" CornerRadius="{StaticResource RadiusInset}">
+                                            <TextBlock x:Name="SourceGlyph" Text="&#xE945;" Style="{StaticResource IconGlyph}" FontSize="21" />
                                         </Border>
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                             <TextBlock x:Name="SourceTitle" Text="—" FontFamily="{StaticResource DisplayFont}" FontSize="21" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
@@ -247,7 +248,7 @@
                                     </Grid>
                                     <StackPanel x:Name="ProcBox" Margin="0,10,0,8" ToolTip="Quanto da velocidade do processador o Windows pode usar: o mínimo vale em repouso e o máximo, com carga.">
                                         <Grid>
-                                            <TextBlock Text="Faixa de desempenho" Foreground="{DynamicResource Muted}" />
+                                            <TextBlock Text="Faixa de desempenho" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="ProcText" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
                                         </Grid>
                                         <local:SpanMeter x:Name="ProcMeter" Margin="0,9,0,0" />
@@ -297,7 +298,7 @@
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal">
                                                     <Border Style="{StaticResource Dash}" Background="{DynamicResource Cpu}" />
-                                                    <TextBlock Text="Processador" Foreground="{DynamicResource Muted}" />
+                                                    <TextBlock Text="Processador" Style="{StaticResource StatLabel}" />
                                                 </StackPanel>
                                                 <TextBlock x:Name="CpuNow" Style="{StaticResource ChannelValue}" Text="—" />
                                             </StackPanel>
@@ -305,7 +306,7 @@
                                                 <StackPanel>
                                                     <StackPanel Orientation="Horizontal">
                                                         <Border Style="{StaticResource Dash}" Background="{DynamicResource Gpu}" />
-                                                        <TextBlock Text="Placa de vídeo" Foreground="{DynamicResource Muted}" />
+                                                        <TextBlock Text="Placa de vídeo" Style="{StaticResource StatLabel}" />
                                                     </StackPanel>
                                                     <TextBlock x:Name="GpuNow" Style="{StaticResource ChannelValue}" Text="—" />
                                                 </StackPanel>

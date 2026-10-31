@@ -7,7 +7,7 @@ namespace CoreBi.Desktop;
 /// <summary>
 /// Base dos instrumentos da página Energia: a mesma dos instrumentos de Discos (pincéis por referência de recurso, que
 /// acompanham o tema sozinhos) com os canais do processador e da placa de vídeo e o neutro técnico (aço). O que não é de
-/// um componente (carga da bateria, horas ligado) é desenhado em tinta ou em aço.
+/// um componente (carga da bateria) é desenhado em tinta ou em aço; a sessão atual do PC, que está "ao vivo", no sinal.
 /// </summary>
 public abstract class EnergyInstrument : DiskInstrument
 {
@@ -17,16 +17,59 @@ public abstract class EnergyInstrument : DiskInstrument
         DependencyProperty.Register(nameof(GpuBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty SteelBrushProperty =
         DependencyProperty.Register(nameof(SteelBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty SignalBrushProperty =
+        DependencyProperty.Register(nameof(SignalBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
+    // Tom de fundo e brilho de cada canal, para os medidores que acendem em degradê até a ponta
+    public static readonly DependencyProperty CpuDeepBrushProperty =
+        DependencyProperty.Register(nameof(CpuDeepBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty CpuHiBrushProperty =
+        DependencyProperty.Register(nameof(CpuHiBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty GpuDeepBrushProperty =
+        DependencyProperty.Register(nameof(GpuDeepBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty GpuHiBrushProperty =
+        DependencyProperty.Register(nameof(GpuHiBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
 
     public Brush CpuBrush { get => (Brush)GetValue(CpuBrushProperty); set => SetValue(CpuBrushProperty, value); }
     public Brush GpuBrush { get => (Brush)GetValue(GpuBrushProperty); set => SetValue(GpuBrushProperty, value); }
     public Brush SteelBrush { get => (Brush)GetValue(SteelBrushProperty); set => SetValue(SteelBrushProperty, value); }
+    public Brush SignalBrush { get => (Brush)GetValue(SignalBrushProperty); set => SetValue(SignalBrushProperty, value); }
+    public Brush CpuDeepBrush { get => (Brush)GetValue(CpuDeepBrushProperty); set => SetValue(CpuDeepBrushProperty, value); }
+    public Brush CpuHiBrush { get => (Brush)GetValue(CpuHiBrushProperty); set => SetValue(CpuHiBrushProperty, value); }
+    public Brush GpuDeepBrush { get => (Brush)GetValue(GpuDeepBrushProperty); set => SetValue(GpuDeepBrushProperty, value); }
+    public Brush GpuHiBrush { get => (Brush)GetValue(GpuHiBrushProperty); set => SetValue(GpuHiBrushProperty, value); }
 
     protected EnergyInstrument()
     {
         SetResourceReference(CpuBrushProperty, "Cpu");
         SetResourceReference(GpuBrushProperty, "Gpu");
         SetResourceReference(SteelBrushProperty, "Steel");
+        SetResourceReference(SignalBrushProperty, "Signal");
+        SetResourceReference(CpuDeepBrushProperty, "CpuDeep");
+        SetResourceReference(CpuHiBrushProperty, "CpuHi");
+        SetResourceReference(GpuDeepBrushProperty, "GpuDeep");
+        SetResourceReference(GpuHiBrushProperty, "GpuHi");
+    }
+
+    /// <summary>Processador e placa de vídeo ao longo de um medidor (0 = tom de fundo, 1 = brilho).</summary>
+    protected Brush CpuRamp(double t) => Mix(CpuDeepBrush, CpuHiBrush, t, CpuBrush);
+    protected Brush GpuRamp(double t) => Mix(GpuDeepBrush, GpuHiBrush, t, GpuBrush);
+
+    /// <summary>Área de gráfico na cor do pincel: a opacidade dada no topo, caindo até a de baixo.</summary>
+    protected static Brush Fade(Brush brush, byte top, byte bottom)
+    {
+        var c = ColorOf(brush, Colors.Gray);
+        var b = new LinearGradientBrush(Color.FromArgb(top, c.R, c.G, c.B), Color.FromArgb(bottom, c.R, c.G, c.B), 90);
+        b.Freeze();
+        return b;
+    }
+
+    /// <summary>Traço de gráfico: apagado na amostra mais antiga e aceso no "agora", como o fósforo de um osciloscópio.</summary>
+    protected static Brush Phosphor(Brush brush)
+    {
+        var c = ColorOf(brush, Colors.Gray);
+        var b = new LinearGradientBrush(Color.FromArgb(0x60, c.R, c.G, c.B), c, 0);
+        b.Freeze();
+        return b;
     }
 
     protected const double Period = 5, Gap = 1.5;
@@ -59,6 +102,7 @@ public sealed class PowerTrace : EnergyInstrument
     private IReadOnlyList<(float? Cpu, float? Gpu)> _samples = Array.Empty<(float?, float?)>();
     private IReadOnlyList<(float? Cpu, float? Gpu)>? _pending;
     private double? _hoverX;
+    private bool _fresh; // o próximo desenho traz uma amostra nova (o ponto atual pulsa)
 
     public static readonly DependencyProperty EmptyTextProperty =
         DependencyProperty.Register(nameof(EmptyText), typeof(string), typeof(PowerTrace), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
@@ -71,6 +115,7 @@ public sealed class PowerTrace : EnergyInstrument
         {
             if (_hoverX != null) { _pending = value; return; }
             _samples = value;
+            _fresh = true;
             InvalidateVisual();
         }
     }
@@ -144,10 +189,11 @@ public sealed class PowerTrace : EnergyInstrument
             return;
         }
 
-        // Faixas planas (sem degradê): a do processador embaixo, a da placa de vídeo por cima, cada uma no tom do seu traço
-        Brush cpuFill = Alpha(CpuBrush, 0x30), gpuFill = Alpha(GpuBrush, 0x26);
-        var cpuPen = new Pen(CpuBrush, 1.6) { LineJoin = PenLineJoin.Round };
-        var gpuPen = new Pen(GpuBrush, 2) { LineJoin = PenLineJoin.Round };
+        // Faixas no tom de cada traço, que acendem em cima e somem para baixo: a do processador embaixo, a da placa de vídeo
+        // por cima; os traços vão do apagado (mais antigo) ao aceso (agora)
+        Brush cpuFill = Fade(CpuBrush, 0x48, 0x00), gpuFill = Fade(GpuBrush, 0x40, 0x10);
+        var cpuPen = new Pen(Phosphor(CpuBrush), 1.6) { LineJoin = PenLineJoin.Round };
+        var gpuPen = new Pen(Phosphor(GpuBrush), 2) { LineJoin = PenLineJoin.Round };
         double floor = top + plotH;
         foreach (var run in runs.Where(r => r.Count >= 2))
         {
@@ -176,9 +222,19 @@ public sealed class PowerTrace : EnergyInstrument
         if (Known(_samples[last]))
         {
             var lx = X(last);
-            if (_samples[last].Cpu is float c) dc.DrawEllipse(SurfaceBrush, Stroke(CpuBrush, 2), new Point(lx, Y(c)), 4, 4);
-            if (_samples[last].Gpu != null) dc.DrawEllipse(SurfaceBrush, Stroke(GpuBrush, 2), new Point(lx, Y(Total(_samples[last]))), 4.5, 4.5);
+            bool pulse = _fresh && _hoverX == null;
+            if (_samples[last].Cpu is float c)
+            {
+                if (pulse) Pulse(dc, ColorOf(CpuBrush, Colors.Gray), new Point(lx, Y(c)));
+                dc.DrawEllipse(SurfaceBrush, Stroke(CpuBrush, 2), new Point(lx, Y(c)), 4, 4);
+            }
+            if (_samples[last].Gpu != null)
+            {
+                if (pulse) Pulse(dc, ColorOf(GpuBrush, Colors.Gray), new Point(lx, Y(Total(_samples[last]))));
+                dc.DrawEllipse(SurfaceBrush, Stroke(GpuBrush, 2), new Point(lx, Y(Total(_samples[last]))), 4.5, 4.5);
+            }
         }
+        _fresh = false;
         DrawHover(dc, w, left, top, plotW, plotH, X, Y);
     }
 
@@ -266,7 +322,10 @@ public sealed class SplitBar : EnergyInstrument
         if (w < 20) return;
         double a = double.IsNaN(First) ? 0 : Math.Max(0, First), b = double.IsNaN(Second) ? 0 : Math.Max(0, Second);
         double total = a + b;
-        Segments(dc, new Rect(0, 0, w, h), f => total <= 0 ? TrackBrush : f <= a / total ? CpuBrush : GpuBrush);
+        if (total <= 0) { Segments(dc, new Rect(0, 0, w, h), _ => TrackBrush); return; }
+        // Cada parte acende no degradê do seu canal, do começo dela até a ponta
+        double cut = a / total;
+        Segments(dc, new Rect(0, 0, w, h), f => f <= cut ? CpuRamp(f / cut) : GpuRamp((f - cut) / (1 - cut)));
     }
 }
 
@@ -374,7 +433,8 @@ public sealed class SpanMeter : EnergyInstrument
         bool known = !double.IsNaN(From) && !double.IsNaN(To);
         // Um gomo de folga de cada lado: com mínimo = máximo (plano que fixa o clock) a faixa vira um ponto e ainda acende o gomo
         double pad = 500 / w;
-        Segments(dc, new Rect(0, 0, w, ActualHeight), f => known && f * 100 >= From - pad && f * 100 <= To + pad ? CpuBrush : TrackBrush);
+        double lo = From - pad, span = Math.Max(1, To + pad - lo);
+        Segments(dc, new Rect(0, 0, w, ActualHeight), f => known && f * 100 >= lo && f * 100 <= To + pad ? CpuRamp((f * 100 - lo) / span) : TrackBrush);
     }
 }
 
@@ -434,7 +494,7 @@ public sealed class CapacityStack : EnergyInstrument
 }
 
 /// <summary>
-/// Quando o PC ficou ligado, um dia por linha (24 h): trechos ligados em aço, a sessão atual em tinta terminando num ponto e,
+/// Quando o PC ficou ligado, um dia por linha (24 h): trechos ligados em aço, a sessão atual no sinal terminando num ponto e,
 /// em vermelho, cada desligamento inesperado. Dias que o registro de eventos já não cobre ficam tracejados. Sob o mouse, a linha
 /// mostra os horários de cada trecho.
 /// </summary>
@@ -505,8 +565,8 @@ public sealed class UptimeChart : EnergyInstrument
             foreach (var (from, to, current) in d.Spans)
             {
                 double a = X(from), b = Math.Max(a + 2, X(to));
-                dc.DrawRoundedRectangle(current ? InkBrush : Alpha(SteelBrush, 0xD8), null, new Rect(a, by, b - a, barH), 2, 2);
-                if (current) dc.DrawEllipse(SurfaceBrush, Stroke(InkBrush, 2), new Point(b, cy), 4, 4);
+                dc.DrawRoundedRectangle(current ? SignalBrush : Alpha(SteelBrush, 0xD8), null, new Rect(a, by, b - a, barH), 2, 2);
+                if (current) dc.DrawEllipse(SurfaceBrush, Stroke(SignalBrush, 2), new Point(b, cy), 4, 4);
             }
             foreach (double c in d.Crashes)
             {

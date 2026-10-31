@@ -17,7 +17,7 @@
         <DataTemplate x:Key="DiskBay">
             <Grid Margin="4,3,2,3">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="24" />
+                    <ColumnDefinition Width="44" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
@@ -25,7 +25,10 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock Text="&#xEDA2;" Style="{StaticResource ListNavIcon}" FontSize="15" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,2,0,0" />
+                <!-- O disco no ladrilho do canal de armazenamento, o mesmo de Sistema e da Visão geral -->
+                <Border Grid.RowSpan="2" Style="{StaticResource ChannelTile}" local:Ui.Channel="Storage" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <TextBlock Text="&#xEDA2;" Style="{StaticResource IconGlyph}" FontSize="15" />
+                </Border>
                 <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                 <Ellipse Grid.Column="2" Style="{StaticResource DiskLed}" Margin="10,0,0,0" ToolTip="{Binding VerdictText}" />
                 <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Meta}" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
@@ -251,6 +254,8 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <TextBlock Text="Vida útil" Style="{StaticResource SectionTitle}" />
+                                <!-- O mostrador acende o painel por trás, na cor do canal -->
+                                <Border Grid.Row="1" Style="{StaticResource Glow}" local:Ui.Channel="Storage" Margin="24,8" />
                                 <local:LifeGauge x:Name="LifeDial" Grid.Row="1" MinHeight="210" Margin="0,6" Caption="vida útil restante" />
                                 <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
                                     <Grid>
@@ -305,7 +310,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <TextBlock Text="Situação" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
-                                        <TextBlock x:Name="TempState" FontSize="24" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center" />
+                                        <TextBlock x:Name="TempState" FontFamily="{StaticResource DisplayFont}" FontSize="24" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center" />
                                     </StackPanel>
                                     <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center">
                                         <TextBlock Text="Máx. registrado" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
@@ -316,7 +321,7 @@
                                 <local:TraceChart x:Name="TempTrace" Grid.Row="3" MinHeight="150" Margin="0,12,0,0" />
                                 <Border Grid.Row="4" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,11,0,0" Margin="0,12,0,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Atividade agora" Foreground="{DynamicResource Muted}" Margin="0,0,20,0" />
+                                        <TextBlock Text="Atividade agora" Style="{StaticResource StatLabel}" VerticalAlignment="Center" Margin="0,0,20,0" />
                                         <TextBlock x:Name="DiskActivity" Style="{StaticResource Num}" />
                                     </StackPanel>
                                 </Border>

@@ -14,6 +14,9 @@
                 <DockPanel>
                     <!-- Marca: símbolo vetorial (brand/geometry.json) + assinatura -->
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="22,0,0,0" Height="68" VerticalAlignment="Center">
+                        <!-- O "i" da marca acende o painel por trás, de leve: a única luz fixa da barra lateral -->
+                        <Grid VerticalAlignment="Center">
+                            <Border Style="{StaticResource Glow}" Width="68" Height="68" Margin="-16" />
                         <Viewbox Width="36" Height="36" VerticalAlignment="Center">
                             <Canvas Width="256" Height="256">
                                 <Polygon Points="141,35 81,35 34,82 34,174 81,221 141,221 141,195 93,195 60,162 60,94 93,61 141,61" Fill="{DynamicResource Fg}" />
@@ -22,6 +25,7 @@
                                 <Polygon Points="95,121 117,121 117,172 95,172" Fill="{DynamicResource Signal}" />
                             </Canvas>
                         </Viewbox>
+                        </Grid>
                         <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="27" Margin="12,4,0,0" VerticalAlignment="Center" />
                     </StackPanel>
 
@@ -37,7 +41,7 @@
                                 <Button Style="{StaticResource SecondaryButton}" Content="Corrigir" MinHeight="28" Padding="12,4" FontSize="12" HorizontalAlignment="Left" Margin="21,0,0,0" Click="BtnFixCpuSensors_Click" />
                             </StackPanel>
                         </Border>
-                        <!-- Central de monitoramento: quatro medidores segmentados, cada um na cor do seu componente. Some na Visão geral, que mostra o mesmo em tamanho grande. -->
+                        <!-- Central de monitoramento: quatro medidores segmentados, cada um no degradê do seu componente. Some na Visão geral, que mostra o mesmo em tamanho grande. -->
                         <Border x:Name="SideMonitor" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="10,14,10,12">
                             <StackPanel>
                                 <Grid>
@@ -46,13 +50,13 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="CPU" Foreground="{DynamicResource Muted}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock Text="CPU" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center" />
                                     <TextBlock x:Name="SideTemp" Grid.Column="1" Text="—" Style="{StaticResource ReadoutText}" FontSize="15" />
                                     <TextBlock x:Name="SideLoad" Grid.Column="2" Text="—" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Style="{StaticResource Num}" />
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource Cpu}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource CpuGrad}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideCpuBar" ScaleX="0" />
                                         </Border.RenderTransform>
@@ -64,13 +68,13 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="GPU" Foreground="{DynamicResource Muted}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock Text="GPU" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center" />
                                     <TextBlock x:Name="SideGpuTemp" Grid.Column="1" Text="—" Style="{StaticResource ReadoutText}" FontSize="15" />
                                     <TextBlock x:Name="SideGpuLoad" Grid.Column="2" Text="—" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Style="{StaticResource Num}" />
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource Gpu}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource GpuGrad}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideGpuBar" ScaleX="0" />
                                         </Border.RenderTransform>
@@ -82,13 +86,13 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="RAM" Foreground="{DynamicResource Muted}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock Text="RAM" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center" />
                                     <TextBlock x:Name="SideRam" Grid.Column="1" Text="—" Style="{StaticResource ReadoutText}" FontSize="15" />
                                     <TextBlock x:Name="SideRamLoad" Grid.Column="2" Text="—" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Style="{StaticResource Num}" />
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource Memory}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource MemoryGrad}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideRamBar" ScaleX="0" />
                                         </Border.RenderTransform>
@@ -100,13 +104,13 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Disco" Foreground="{DynamicResource Muted}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock Text="Disco" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center" />
                                     <TextBlock x:Name="SideDisk" Grid.Column="1" Text="—" Style="{StaticResource ReadoutText}" FontSize="15" />
                                     <TextBlock x:Name="SideDiskLoad" Grid.Column="2" Text="—" Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Style="{StaticResource Num}" />
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,0" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource Storage}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource StorageGrad}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideDiskBar" ScaleX="0" />
                                         </Border.RenderTransform>
@@ -121,7 +125,7 @@
 
                     <!-- Navegação -->
                     <ScrollViewer x:Name="NavScroll" VerticalScrollBarVisibility="Auto" Focusable="False">
-                        <StackPanel x:Name="NavPanel" Margin="0,4,0,12">
+                        <local:SlidingSelectionPanel x:Name="NavPanel" Style="{StaticResource NavRail}" Margin="0,4,0,12">
                             <RadioButton x:Name="NavDash" Style="{StaticResource NavItem}" Tag="PageDash" local:Ui.Icon="&#xE80F;" Content="Visão geral" Checked="Nav_Checked" IsChecked="True" />
                             <TextBlock Text="Monitoramento" Style="{StaticResource NavHeader}" />
                             <RadioButton x:Name="NavSystem" Style="{StaticResource NavItem}" Tag="PageSystem" local:Ui.Icon="&#xE7F8;" Content="Sistema" Checked="Nav_Checked" />
@@ -141,7 +145,7 @@
                             <RadioButton x:Name="NavStartup" Style="{StaticResource NavItem}" Tag="PageStartup" local:Ui.Icon="&#xE823;" Content="Inicialização" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavApps" Style="{StaticResource NavItem}" Tag="PageApps" local:Ui.Icon="&#xE719;" Content="Instalar apps" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavDriver" Style="{StaticResource NavItem}" Tag="PageDriver" local:Ui.Icon="&#xE896;" Content="Drivers" Checked="Nav_Checked" />
-                        </StackPanel>
+                        </local:SlidingSelectionPanel>
                     </ScrollViewer>
                 </DockPanel>
             </Border>

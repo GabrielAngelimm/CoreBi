@@ -6,7 +6,8 @@ exceção (ou pincel vazio) quando a tela abre. Este script cruza cada referênc
 - Theme.xaml: StaticResource precisa estar definido antes, no próprio arquivo (é carregado em ordem).
 - FeatureTemplates.xaml: pode usar o que vem antes nele mesmo ou qualquer chave do Theme.xaml.
 - Demais XAML: chaves do Theme.xaml, do FeatureTemplates.xaml ou definidas antes no próprio arquivo.
-- C#: FindResource/TryFindResource/Palette/SetResourceReference com literais de texto.
+- C#: FindResource/TryFindResource/Palette/SetResourceReference/ThemeManager com literais de texto.
+- A paleta repetida no Theme.xaml confere com a do ThemeManager.cs (tools/sync_theme.py).
 
 Uso: python tools/check_resources.py   (sai com código 1 se encontrar chave inexistente)
 """
@@ -16,6 +17,8 @@ import pathlib
 import re
 import sys
 
+import sync_theme
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "src" / "CoreBi.Desktop"
 THEME = ROOT / "Shell" / "Theme.xaml"
 TEMPLATES = ROOT / "Shell" / "FeatureTemplates.xaml"
@@ -24,7 +27,7 @@ HUD = ROOT / "Shell" / "HudPalette.xaml"
 
 KEY = re.compile(r'x:Key="([^"{]+)"')
 REF = re.compile(r"\{(StaticResource|DynamicResource)\s+([^}\s]+)\s*\}")
-CS_CALL = re.compile(r"(FindResource|TryFindResource|Palette|SetResourceReference|WithAlpha|Brush)\(([^;]*)")
+CS_CALL = re.compile(r"\b(FindResource|TryFindResource|Palette|SetResourceReference|WithAlpha|Brush|Channel|AreaFill)\(([^;]*)")
 LITERAL = re.compile(r'"([A-Za-z][A-Za-z0-9]*)"')
 
 
@@ -65,7 +68,8 @@ def main() -> int:
 
     # Estilos e chaves locais de UserControl.Resources não são visíveis no código do MainWindow: o código só usa as globais.
     for path in sorted(ROOT.rglob("*.cs")):
-        if "obj" in path.parts or "bin" in path.parts:
+        # O ThemeManager define as chaves (e monta nomes como key + "Deep"): não é consumidor
+        if "obj" in path.parts or "bin" in path.parts or path.name == "ThemeManager.cs":
             continue
         for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             literals: list[str] = []
@@ -76,6 +80,10 @@ def main() -> int:
             for key in literals:
                 if key not in app_keys:
                     problems.append(f"{path.relative_to(ROOT)}:{number}: chave '{key}' não definida")
+
+    theme_text = THEME.read_text(encoding="utf-8")
+    if sync_theme.render() not in theme_text:
+        problems.append("Shell/Theme.xaml: a paleta não confere com o ThemeManager.cs; rode python tools/sync_theme.py")
 
     for p in problems:
         print(p)

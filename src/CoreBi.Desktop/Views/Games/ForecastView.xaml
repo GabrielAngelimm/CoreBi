@@ -24,32 +24,32 @@
                     <StackPanel Margin="0,0,28,12">
                         <TextBlock Text="Resolução" Style="{StaticResource Label}" />
                         <Border Style="{StaticResource SegmentGroup}">
-                            <StackPanel x:Name="GameResPanel" Orientation="Horizontal">
+                            <local:SlidingSelectionPanel x:Name="GameResPanel" Style="{StaticResource SegmentRail}">
                                 <RadioButton Style="{StaticResource Segment}" GroupName="GameRes" Content="1080p" Tag="1920x1080" IsChecked="True" Checked="GameOption_Changed" />
                                 <RadioButton Style="{StaticResource Segment}" GroupName="GameRes" Content="1440p" Tag="2560x1440" Checked="GameOption_Changed" />
                                 <RadioButton Style="{StaticResource Segment}" GroupName="GameRes" Content="4K" Tag="3840x2160" Checked="GameOption_Changed" />
-                            </StackPanel>
+                            </local:SlidingSelectionPanel>
                         </Border>
                     </StackPanel>
                     <StackPanel x:Name="GamePresetBox" Margin="0,0,28,12">
                         <TextBlock Text="Qualidade gráfica" Style="{StaticResource Label}" />
                         <Border Style="{StaticResource SegmentGroup}">
-                            <StackPanel x:Name="GamePresetPanel" Orientation="Horizontal">
+                            <local:SlidingSelectionPanel x:Name="GamePresetPanel" Style="{StaticResource SegmentRail}">
                                 <RadioButton Style="{StaticResource Segment}" GroupName="GamePreset" Content="Baixo" Tag="Baixo" Checked="GameOption_Changed" />
                                 <RadioButton Style="{StaticResource Segment}" GroupName="GamePreset" Content="Médio" Tag="Médio" Checked="GameOption_Changed" />
                                 <RadioButton Style="{StaticResource Segment}" GroupName="GamePreset" Content="Alto" Tag="Alto" IsChecked="True" Checked="GameOption_Changed" />
                                 <RadioButton Style="{StaticResource Segment}" GroupName="GamePreset" Content="Ultra" Tag="Ultra" Checked="GameOption_Changed" />
-                            </StackPanel>
+                            </local:SlidingSelectionPanel>
                         </Border>
                     </StackPanel>
                     <StackPanel Margin="0,0,28,12">
                         <TextBlock Text="Upscaling (DLSS ou FSR)" Style="{StaticResource Label}" />
                         <Border Style="{StaticResource SegmentGroup}">
-                            <StackPanel x:Name="GameUpscalePanel" Orientation="Horizontal">
+                            <local:SlidingSelectionPanel x:Name="GameUpscalePanel" Style="{StaticResource SegmentRail}">
                                 <RadioButton Style="{StaticResource Segment}" GroupName="GameUp" Content="Nativo" Tag="Native" IsChecked="True" Checked="GameOption_Changed" />
                                 <RadioButton Style="{StaticResource Segment}" GroupName="GameUp" Content="Qualidade" Tag="Quality" Checked="GameOption_Changed" />
                                 <RadioButton Style="{StaticResource Segment}" GroupName="GameUp" Content="Desempenho" Tag="Performance" Checked="GameOption_Changed" />
-                            </StackPanel>
+                            </local:SlidingSelectionPanel>
                         </Border>
                     </StackPanel>
                 </WrapPanel>

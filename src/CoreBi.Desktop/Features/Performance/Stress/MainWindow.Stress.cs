@@ -256,7 +256,7 @@ public partial class MainWindow
         StTemp.Text = SideTemp.Text = temp == null ? "—" : $"{temp:0.#} °C";
         StTempMax.Text = _stressMaxTemp > 0 ? $"máx. {_stressMaxTemp:0.#} °C" : "máx. —";
         SideLoad.Text = load == null ? "—" : $"{load:0} %";
-        SideCpuBar.ScaleX = Math.Clamp((load ?? 0) / 100.0, 0, 1);
+        Ui.Glide(SideCpuBar, (load ?? 0) / 100.0, LiveMotion);
         StLoad.Text = load == null ? "carga —" : $"carga {load:0} %";
         StPower.Text = power == null ? "—" : $"{power:0.#} W";
 

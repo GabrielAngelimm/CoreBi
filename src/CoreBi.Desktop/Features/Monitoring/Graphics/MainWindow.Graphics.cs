@@ -52,7 +52,7 @@ public partial class MainWindow
             var load = MainGpuLoad();
             SideGpuTemp.Text = MainGpuTemp() is float t ? $"{t:0.#} °C" : "—";
             SideGpuLoad.Text = load is float l ? $"{l:0} %" : "—";
-            SideGpuBar.ScaleX = Math.Clamp((load ?? 0) / 100.0, 0, 1);
+            Ui.Glide(SideGpuBar, (load ?? 0) / 100.0, LiveMotion);
         }
         if (_gpu != null && PageGpu.IsVisible) GpuExtras.ItemsSource = _gpu.LiveExtras();
     }

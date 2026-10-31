@@ -12,7 +12,9 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding Icon}" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{DynamicResource Faint}" Width="22" HorizontalAlignment="Left" Margin="0,0,12,0" />
+                                <Border Style="{StaticResource ChannelTile}" local:Ui.Channel="{Binding Channel}" Width="32" Height="32" Margin="0,0,12,0">
+                                    <TextBlock Text="{Binding Icon}" Style="{StaticResource IconGlyph}" FontSize="14" />
+                                </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                     <TextBlock Text="{Binding Detail}" Style="{StaticResource StatSub}" ToolTip="{Binding Detail}" />
@@ -66,18 +68,18 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
                                     <Border Style="{StaticResource SegmentGroup}" Margin="0,0,8,0">
-                                        <StackPanel x:Name="DashMetricPanel" Orientation="Horizontal">
+                                        <local:SlidingSelectionPanel x:Name="DashMetricPanel" Style="{StaticResource SegmentRail}">
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashMetric" Content="Temperatura" Tag="temp" IsChecked="True" Checked="DashOption_Checked" />
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashMetric" Content="Carga" Tag="load" Checked="DashOption_Checked" />
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashMetric" Content="Consumo" Tag="power" Checked="DashOption_Checked" />
-                                        </StackPanel>
+                                        </local:SlidingSelectionPanel>
                                     </Border>
                                     <Border Style="{StaticResource SegmentGroup}">
-                                        <StackPanel x:Name="DashRangePanel" Orientation="Horizontal">
+                                        <local:SlidingSelectionPanel x:Name="DashRangePanel" Style="{StaticResource SegmentRail}">
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashRange" Content="1 min" Tag="60" Checked="DashOption_Checked" />
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashRange" Content="5 min" Tag="300" IsChecked="True" Checked="DashOption_Checked" />
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashRange" Content="15 min" Tag="900" Checked="DashOption_Checked" />
-                                        </StackPanel>
+                                        </local:SlidingSelectionPanel>
                                     </Border>
                                 </StackPanel>
                             </Grid>
@@ -131,7 +133,9 @@
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
-                                                <Border Style="{StaticResource ChannelMark}" Background="{Binding Channel}" VerticalAlignment="Top" Margin="0,8,10,0" />
+                                                <Border Style="{StaticResource ChannelTile}" local:Ui.Channel="{Binding Channel}" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Icon}" Style="{StaticResource IconGlyph}" FontSize="15" />
+                                                </Border>
                                                 <StackPanel Grid.Column="1" Margin="0,0,6,0" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Name}" Style="{StaticResource SectionTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
                                                     <TextBlock Text="{Binding Model}" Style="{StaticResource StatSub}" Margin="0,1,0,0" ToolTip="{Binding Model}" />
@@ -146,7 +150,7 @@
                                                 </StackPanel>
                                                 <Grid Height="6" Margin="0,8,0,14" OpacityMask="{StaticResource SegmentMask}">
                                                     <Border Background="{DynamicResource Line}" />
-                                                    <Border Background="{Binding Channel}" RenderTransformOrigin="0,0.5">
+                                                    <Border Background="{Binding Meter}" RenderTransformOrigin="0,0.5">
                                                         <Border.RenderTransform>
                                                             <ScaleTransform ScaleX="{Binding Fraction}" />
                                                         </Border.RenderTransform>
@@ -180,7 +184,11 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Canvas x:Name="DashRings" Width="150" Height="150" VerticalAlignment="Center" Margin="0,0,24,0" />
+                                <!-- Os anéis ficam sobre uma luz suave do canal da RAM, como um mostrador aceso por trás -->
+                                <Grid Width="150" Height="150" VerticalAlignment="Center" Margin="0,0,24,0">
+                                    <Border Style="{StaticResource Glow}" local:Ui.Channel="Memory" Margin="-16" />
+                                    <Canvas x:Name="DashRings" Width="150" Height="150" />
+                                </Grid>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock Text="Memória e disco" Style="{StaticResource SectionTitle}" Margin="0,0,0,6" />
                                     <!-- Cada linha leva à seção do item: RAM ao Sistema, VRAM à Placa de vídeo, disco a Discos -->

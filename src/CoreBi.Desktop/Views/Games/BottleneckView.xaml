@@ -83,11 +83,11 @@
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                             <Border Style="{StaticResource SegmentGroup}" Margin="0,0,10,0">
-                                <StackPanel x:Name="BnDurationPanel" Orientation="Horizontal">
+                                <local:SlidingSelectionPanel x:Name="BnDurationPanel" Style="{StaticResource SegmentRail}">
                                     <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="1 min" Tag="1" IsChecked="True" />
                                     <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="3 min" Tag="3" />
                                     <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="5 min" Tag="5" />
-                                </StackPanel>
+                                </local:SlidingSelectionPanel>
                             </Border>
                             <Button x:Name="BtnBnSession" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE768;" Content="Iniciar análise" Click="BtnBnSession_Click" />
                         </StackPanel>

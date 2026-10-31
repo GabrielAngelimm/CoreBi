@@ -2,7 +2,8 @@
     <UserControl.Resources>
         <!-- Cabeçalho das colunas de um grupo: miúdo e um tom abaixo, alinhado com os números (à direita) -->
         <Style x:Key="ColHead" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="{DynamicResource Faint}" />
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="VerticalAlignment" Value="Bottom" />
@@ -18,7 +19,7 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
-        <!-- Item do índice: fundo elevado na seleção; o ícone fica num bloco neutro que acende em tinta -->
+        <!-- Item do índice: fundo elevado na seleção; o ícone fica no ladrilho do canal do componente (o mesmo do filete dos grupos) -->
         <Style x:Key="IndexItem" TargetType="ListBoxItem">
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -127,8 +128,11 @@
              bloco e no cabeçalho fixo do topo da rolagem, para a troca não dar salto. -->
         <DataTemplate x:Key="ComponentHeader">
             <StackPanel>
-                <Border Height="80" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" Padding="24,0,18,0" SnapsToDevicePixels="True">
+                <!-- A luz do canal do componente acende a faixa por trás do nome, como a placa de Sistema -->
+                <Border Height="80" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" ClipToBounds="True">
                     <Grid>
+                    <Border Style="{StaticResource Glow}" local:Ui.Channel="{Binding Tone}" HorizontalAlignment="Left" Width="620" Margin="-140,0,0,0" />
+                    <Grid Margin="24,0,18,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -142,6 +146,7 @@
                         <Button x:Name="toggle" Grid.Column="1" Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="0" Margin="18,0,0,0" VerticalAlignment="Center" Click="Toggle_Click" ToolTip="Recolher" AutomationProperties.Name="Recolher ou expandir">
                             <TextBlock x:Name="chev" Text="&#xE70E;" Style="{StaticResource IconGlyph}" FontSize="12" />
                         </Button>
+                    </Grid>
                     </Grid>
                 </Border>
                 <!-- Faixa das colunas: a mesma geometria do corpo (24 de cada lado, duas colunas de grupos separadas por 44) -->
@@ -247,8 +252,8 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Border x:Name="tile" Width="34" Height="34" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Raised}" BorderBrush="Transparent" BorderThickness="1" Margin="0,0,12,0" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Glyph}" Style="{StaticResource ListNavIcon}" FontSize="16" />
+                                    <Border Style="{StaticResource ChannelTile}" local:Ui.Channel="{Binding Tone}" Margin="0,0,12,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Glyph}" Style="{StaticResource IconGlyph}" FontSize="16" />
                                     </Border>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                         <!-- Nome inteiro: quebra em até duas linhas em vez de cortar -->
@@ -256,12 +261,6 @@
                                         <TextBlock Text="{Binding Kind}" FontSize="12" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
                                     </StackPanel>
                                 </Grid>
-                                <DataTemplate.Triggers>
-                                    <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                                        <Setter TargetName="tile" Property="Background" Value="{DynamicResource Surface}" />
-                                        <Setter TargetName="tile" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
@@ -273,8 +272,8 @@
             <Border Grid.Column="2" HorizontalAlignment="Left" Margin="0,0,0,12" Padding="14,5,5,5" CornerRadius="18" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" SnapsToDevicePixels="True">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,5,12,0">
-                        <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,1,7,0" />
-                        <TextBlock Text="Filtrar por tipo de sensor" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
+                        <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Signal}" Margin="0,1,7,0" />
+                        <TextBlock Text="Filtrar por tipo de sensor" FontFamily="{StaticResource LabelFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
                     </StackPanel>
                     <WrapPanel x:Name="CategoryChips" Margin="0,0,0,-6" />
                 </DockPanel>

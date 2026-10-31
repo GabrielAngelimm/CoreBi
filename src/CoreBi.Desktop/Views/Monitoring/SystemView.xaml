@@ -12,15 +12,26 @@
         </Style>
 
         <Style x:Key="SheetLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
+            <Setter Property="FontSize" Value="12.5" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
         </Style>
 
-        <!-- Índice: seis botões numa faixa um tom abaixo do painel, só com ícone e categoria (o nome da peça está na ficha
-             logo abaixo). Cada um tem fundo e contorno próprios e uma seta discreta, para ler como botão; o mouse clareia
-             o fundo; o escolhido ganha o fundo da placa logo abaixo, contorno mais forte e texto e ícone acesos em tinta,
-             e perde a seta. Sem cor: a seleção se lê pelo contraste. -->
+        <!-- Fabricante no alto da placa: na cor do canal do componente, como a etiqueta de uma peça -->
+        <Style x:Key="PlateEyebrow" TargetType="TextBlock" BasedOn="{StaticResource SheetLabel}">
+            <Style.Triggers>
+                <Trigger Property="local:Ui.Channel" Value="Cpu"><Setter Property="Foreground" Value="{DynamicResource Cpu}" /></Trigger>
+                <Trigger Property="local:Ui.Channel" Value="Gpu"><Setter Property="Foreground" Value="{DynamicResource Gpu}" /></Trigger>
+                <Trigger Property="local:Ui.Channel" Value="Memory"><Setter Property="Foreground" Value="{DynamicResource Memory}" /></Trigger>
+                <Trigger Property="local:Ui.Channel" Value="Storage"><Setter Property="Foreground" Value="{DynamicResource StorageHi}" /></Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Índice: seis botões numa faixa um tom abaixo do painel, com o ladrilho do componente na cor do canal dele (a
+             mesma dos gráficos) e a categoria na letra de instrumento; o nome da peça está na ficha logo abaixo. Cada um tem
+             fundo e contorno próprios e uma seta discreta, para ler como botão; o mouse clareia o fundo; o escolhido ganha o
+             fundo da placa logo abaixo, contorno mais forte e texto aceso, e perde a seta. -->
         <Style x:Key="IndexCell" TargetType="ListBoxItem">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -31,17 +42,16 @@
                         <Border x:Name="face" Margin="5" CornerRadius="{StaticResource RadiusInset}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" SnapsToDevicePixels="True" Padding="12,12,14,12">
                             <DockPanel>
                                 <TextBlock x:Name="chev" DockPanel.Dock="Right" Text="&#xE76C;" Style="{StaticResource IconGlyph}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="8,0,0,0" />
-                                <Border x:Name="tile" Width="38" Height="38" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
-                                    <TextBlock x:Name="glyph" Text="{Binding Glyph}" Style="{StaticResource IconGlyph}" FontSize="18" Foreground="{DynamicResource Muted}" />
+                                <Border x:Name="tile" Style="{StaticResource ChannelTile}" local:Ui.Channel="{Binding Channel}" Width="38" Height="38">
+                                    <TextBlock Text="{Binding Glyph}" Style="{StaticResource IconGlyph}" FontSize="18" />
                                 </Border>
-                                <TextBlock x:Name="cat" Text="{Binding Category}" FontSize="14.5" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="13,0,0,1" />
+                                <TextBlock x:Name="cat" Text="{Binding Category}" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="13,0,0,1" />
                             </DockPanel>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="face" Property="Background" Value="{DynamicResource Hover}" />
                                 <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
-                                <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Fg}" />
                                 <Setter TargetName="cat" Property="Foreground" Value="{DynamicResource Fg}" />
                                 <Setter TargetName="chev" Property="Foreground" Value="{DynamicResource Muted}" />
                             </Trigger>
@@ -51,9 +61,6 @@
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="face" Property="Background" Value="{DynamicResource Selected}" />
                                 <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Faint}" />
-                                <Setter TargetName="tile" Property="Background" Value="{DynamicResource Surface}" />
-                                <Setter TargetName="tile" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
-                                <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Fg}" />
                                 <Setter TargetName="cat" Property="Foreground" Value="{DynamicResource Fg}" />
                                 <Setter TargetName="chev" Property="Visibility" Value="Hidden" />
                             </Trigger>
@@ -68,7 +75,7 @@
         <DataTemplate x:Key="ReadoutCell">
             <Border x:Name="cell" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1,0,0,0" Padding="28,0,0,0" Margin="28,0,0,0" ToolTip="{Binding Tip}" Background="Transparent">
                 <StackPanel>
-                    <TextBlock Text="{Binding Label}" FontSize="12" Foreground="{DynamicResource Muted}" />
+                    <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" />
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <TextBlock Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="38" FontWeight="Light" />
                         <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" FontSize="13" Margin="5,0,0,6" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" />
@@ -161,7 +168,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
+                                <TextBlock Text="{Binding}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -175,7 +182,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock x:Name="t" Text="{Binding Text}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" Margin="0,0,14,6" ToolTip="Suportada" />
+                                <TextBlock x:Name="t" Text="{Binding Text}" FontFamily="{StaticResource LabelFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" Margin="0,0,14,6" ToolTip="Suportada" />
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding On}" Value="False">
                                         <Setter TargetName="t" Property="Foreground" Value="{DynamicResource Faint}" />
@@ -279,8 +286,9 @@
              texto seminegrito; o mouse clareia, o clique afunda 1 px e, enquanto gera, o botão apaga e diz o que está fazendo. -->
         <Style x:Key="ReportButton" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Background" Value="{DynamicResource Ink}" />
-            <Setter Property="Foreground" Value="{DynamicResource InkFg}" />
+            <Setter Property="Background" Value="{DynamicResource SignalFill}" />
+            <Setter Property="Foreground" Value="{DynamicResource SignalFg}" />
+            <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
             <Setter Property="FontSize" Value="13.5" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
@@ -290,7 +298,7 @@
                         <Border x:Name="face" Background="{TemplateBinding Background}" CornerRadius="{StaticResource RadiusInset}" Padding="6,6,18,6" SnapsToDevicePixels="True">
                             <StackPanel Orientation="Horizontal">
                                 <Grid Width="30" Height="30">
-                                    <Border CornerRadius="5" Background="{DynamicResource InkFg}" Opacity="0.1" />
+                                    <Border CornerRadius="5" Background="{DynamicResource SignalFg}" Opacity="0.12" />
                                     <TextBlock Text="&#xE896;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{TemplateBinding Foreground}" />
                                 </Grid>
                                 <ContentPresenter VerticalAlignment="Center" Margin="11,0,0,1" TextElement.Foreground="{TemplateBinding Foreground}" />
@@ -298,11 +306,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="face" Property="Background" Value="{DynamicResource InkHover}" />
+                                <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalFillHover}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="face" Property="Margin" Value="0,1,0,-1" />
-                                <Setter TargetName="face" Property="Background" Value="{DynamicResource Ink}" />
+                                <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalFill}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="face" Property="Opacity" Value="0.55" />
@@ -324,8 +332,8 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="face" CornerRadius="{StaticResource RadiusControl}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="Transparent" Padding="12,8,12,8" SnapsToDevicePixels="True">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE9D9;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
-                                <TextBlock Text="{TemplateBinding Content}" FontSize="13" FontWeight="Medium" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="9,0,0,1" />
+                                <TextBlock Text="&#xE9D9;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Signal}" VerticalAlignment="Center" />
+                                <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource LabelFont}" FontSize="13.5" FontWeight="SemiBold" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="9,0,0,1" />
                                 <TextBlock x:Name="arrow" Text="&#xE76C;" Style="{StaticResource IconGlyph}" FontSize="10" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="10,1,0,0" />
                             </StackPanel>
                         </Border>
@@ -391,14 +399,17 @@
                     </Grid.RowDefinitions>
                     <!-- Placa: quem é o componente e as quatro leituras que o resumem -->
                     <!-- No tom mais forte, como o cabeçalho de componente em Sensores; o botão escolhido usa o mesmo fundo -->
-                    <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" Padding="32,28,32,26">
+                    <!-- A luz do canal do componente escolhido acende a placa por trás do nome -->
+                    <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" ClipToBounds="True">
                         <Grid>
+                        <Border Style="{StaticResource Glow}" local:Ui.Channel="{Binding SelectedItem.Channel, ElementName=SysIndex}" HorizontalAlignment="Left" Width="760" Margin="-150,0,0,0" />
+                        <Grid Margin="32,28,32,26">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Bottom" Margin="0,0,40,0">
-                                <TextBlock x:Name="SheetEyebrow" Style="{StaticResource SheetLabel}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock x:Name="SheetEyebrow" Style="{StaticResource PlateEyebrow}" local:Ui.Channel="{Binding SelectedItem.Channel, ElementName=SysIndex}" TextTrimming="CharacterEllipsis" />
                                 <TextBlock x:Name="SheetTitle" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
                                 <TextBlock x:Name="SheetSub" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,7,0,0" />
                             </StackPanel>
@@ -407,6 +418,7 @@
                                     <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                             </ItemsControl>
+                        </Grid>
                         </Grid>
                     </Border>
 

@@ -214,7 +214,7 @@ public partial class MainWindow : Window
         Task? work = null;
         switch (page)
         {
-            case "PageDash": UpdateDashboard(); break;
+            case "PageDash": UpdateDashboard(); RevealDashRings(); break;
             case "PageOverlay": UpdateOverlayPreview(); break;
             case "PageDisks": work = PageDisks.RefreshAsync(); break;
             case "PageEnergy": work = PageEnergy.RefreshAsync(); break;
@@ -290,7 +290,7 @@ public partial class MainWindow : Window
             double used = (double)(total - avail) / total;
             SideRam.Text = $"{(total - avail) / 1073741824.0:0.0} GB";
             SideRamLoad.Text = $"{used * 100:0} %";
-            SideRamBar.ScaleX = Math.Clamp(used, 0, 1);
+            Ui.Glide(SideRamBar, used, LiveMotion);
         }
         try
         {
@@ -299,11 +299,18 @@ public partial class MainWindow : Window
             double used = (double)(c.TotalSize - c.TotalFreeSpace) / c.TotalSize;
             SideDisk.Text = CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalFreeSpace) + " livres";
             SideDiskLoad.Text = $"{used * 100:0} %";
-            SideDiskBar.ScaleX = Math.Clamp(used, 0, 1);
+            Ui.Glide(SideDiskBar, used, LiveMotion);
             SideDiskRow.ToolTip = $"Disco {c.Name.TrimEnd('\\')}: {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize - c.TotalFreeSpace)} usados de {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize)}";
         }
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { }
     }
+
+    /// <summary>
+    /// Movimento que acompanha as leituras (o pulso do ponto ao vivo, os medidores que deslizam) só roda com a janela em primeiro
+    /// plano e sem benchmark ou teste de carga em andamento: o CoreBi fica aberto durante jogos e testes, e nada dele pode pesar
+    /// na medição. Respeita "mostrar animações" do Windows.
+    /// </summary>
+    internal bool LiveMotion => SystemParameters.ClientAreaAnimation && IsActive && !AnyBenchRunning && !TestRunning;
 
     /// <summary>Entrada da página: resposta curta à navegação (respeita "mostrar animações" do Windows).</summary>
     private static void AnimateIn(FrameworkElement page)

@@ -105,7 +105,7 @@ public partial class MainWindow
                               $"({Environment.ProcessorCount / 2} núcleos com SMT costumam render 8–12x).";
 
         _settings.BenchRuns.Insert(0, new BenchRun(DateTime.Now, mt, st, sustained, GameCatalog.ShortCpuName(_cpuName)));
-        AddEvent("", "Benchmark", "Render de CPU", mt is double mte ? $"{mte:N0} pts" : st is double ste ? $"{ste:N0} pts" : "");
+        AddEvent("\uE950", "Benchmark", "Render de CPU", mt is double mte ? $"{mte:N0} pts" : st is double ste ? $"{ste:N0} pts" : "", "Cpu");
         if (_settings.BenchRuns.Count > 10) _settings.BenchRuns.RemoveRange(10, _settings.BenchRuns.Count - 10);
         SaveSettings();
         UpdateBenchHistory();
