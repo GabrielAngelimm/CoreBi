@@ -34,8 +34,8 @@ public static class Ui
     public static void SetSuffix(DependencyObject d, string value) => d.SetValue(SuffixProperty, value);
 
     /// <summary>
-    /// Canal do componente (Cpu, Gpu, Memory, Storage ou Signal; vazio = Steel): o ladrilho de componente (ChannelTile) e o
-    /// brilho (Glow) pintam por ele, para cada peça ter a mesma cor em todas as telas.
+    /// Componente de hardware (Cpu, Gpu, Memory, Virtual, Storage, Board, Net ou Signal; vazio = Steel): o ícone (ChannelIcon) e o
+    /// fundo claro da ficha (ChannelWash) pintam por ele, para cada peça ter a mesma cor em todas as telas.
     /// </summary>
     public static readonly DependencyProperty ChannelProperty = DependencyProperty.RegisterAttached(
         "Channel", typeof(string), typeof(Ui), new FrameworkPropertyMetadata(""));

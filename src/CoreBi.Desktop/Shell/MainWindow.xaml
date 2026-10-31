@@ -37,7 +37,7 @@
                                 <Button Style="{StaticResource SecondaryButton}" Content="Corrigir" MinHeight="28" Padding="12,4" FontSize="12" HorizontalAlignment="Left" Margin="21,0,0,0" Click="BtnFixCpuSensors_Click" />
                             </StackPanel>
                         </Border>
-                        <!-- Central de monitoramento: quatro medidores segmentados, cada um no degradê do seu componente. Some na Visão geral, que mostra o mesmo em tamanho grande. -->
+                        <!-- Central de monitoramento: quatro medidores segmentados, cada um na cor do seu componente. Some na Visão geral, que mostra o mesmo em tamanho grande. -->
                         <Border x:Name="SideMonitor" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="10,14,10,12">
                             <StackPanel>
                                 <Grid>
@@ -52,7 +52,7 @@
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource CpuGrad}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource Cpu}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideCpuBar" ScaleX="0" />
                                         </Border.RenderTransform>
@@ -70,7 +70,7 @@
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource GpuGrad}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource Gpu}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideGpuBar" ScaleX="0" />
                                         </Border.RenderTransform>
@@ -88,7 +88,7 @@
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource MemoryGrad}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource Memory}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideRamBar" ScaleX="0" />
                                         </Border.RenderTransform>
@@ -106,7 +106,7 @@
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,0" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource StorageGrad}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource Storage}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideDiskBar" ScaleX="0" />
                                         </Border.RenderTransform>
@@ -124,12 +124,12 @@
                         <local:SlidingSelectionPanel x:Name="NavPanel" Style="{StaticResource NavRail}" Margin="0,4,0,12">
                             <RadioButton x:Name="NavDash" Style="{StaticResource NavItem}" Tag="PageDash" local:Ui.Icon="&#xE80F;" Content="Visão geral" Checked="Nav_Checked" IsChecked="True" />
                             <TextBlock Text="Monitoramento" Style="{StaticResource NavHeader}" />
-                            <RadioButton x:Name="NavSystem" Style="{StaticResource NavItem}" Tag="PageSystem" local:Ui.Icon="&#xE7F8;" Content="Sistema" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavSystem" Style="{StaticResource NavItem}" Tag="PageSystem" local:Ui.Icon="desktop" Content="Sistema" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavSensors" Style="{StaticResource NavItem}" Tag="PageSensors" local:Ui.Icon="&#xE9D9;" Content="Sensores" Checked="Nav_Checked" />
-                            <RadioButton x:Name="NavGpu" Style="{StaticResource NavItem}" Tag="PageGpu" local:Ui.Icon="&#xE7F4;" Content="Placa de vídeo" Checked="Nav_Checked" />
-                            <RadioButton x:Name="NavDisks" Style="{StaticResource NavItem}" Tag="PageDisks" local:Ui.Icon="&#xEDA2;" Content="Discos" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavGpu" Style="{StaticResource NavItem}" Tag="PageGpu" local:Ui.Icon="gpu" Content="Placa de vídeo" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavDisks" Style="{StaticResource NavItem}" Tag="PageDisks" local:Ui.Icon="storage" Content="Discos" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavEnergy" Style="{StaticResource NavItem}" Tag="PageEnergy" local:Ui.Icon="&#xE7E8;" Content="Energia" Checked="Nav_Checked" />
-                            <RadioButton x:Name="NavNet" Style="{StaticResource NavItem}" Tag="PageNet" local:Ui.Icon="&#xE839;" Content="Rede" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavNet" Style="{StaticResource NavItem}" Tag="PageNet" local:Ui.Icon="net" Content="Rede" Checked="Nav_Checked" />
                             <TextBlock Text="Jogos" Style="{StaticResource NavHeader}" />
                             <RadioButton x:Name="NavOverlay" Style="{StaticResource NavItem}" Tag="PageOverlay" local:Ui.Icon="&#xE81E;" Content="OverlayBi" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavGames" Style="{StaticResource NavItem}" Tag="PageGames" local:Ui.Icon="&#xEC49;" Content="FPS estimado" Checked="Nav_Checked" />
@@ -155,7 +155,7 @@
                 <!-- Barra de título: atalho de navegação, versão e controles da janela -->
                 <Button x:Name="BtnCommand" Style="{StaticResource CommandButton}" Content="Ir para uma página ou ação" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="36,9,0,0" WindowChrome.IsHitTestVisibleInChrome="True" Click="BtnCommand_Click" ToolTip="Paleta de comandos (Ctrl + K)" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True">
-                    <TextBlock x:Name="SideVersion" Text="0.2.4" Foreground="{DynamicResource Faint}" FontSize="11.5" Margin="0,0,14,0" VerticalAlignment="Top" Padding="0,12,0,0" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
+                    <TextBlock x:Name="SideVersion" Text="0.2.5" Foreground="{DynamicResource Faint}" FontSize="11.5" Margin="0,0,14,0" VerticalAlignment="Top" Padding="0,12,0,0" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
                     <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="Min_Click" ToolTip="Minimizar" />
                     <Button x:Name="BtnMax" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="Max_Click" ToolTip="Maximizar" />
                     <Button Style="{StaticResource CloseButton}" Content="&#xE8BB;" Click="Close_Click" ToolTip="Fechar" />
@@ -241,7 +241,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding Icon}" Style="{StaticResource ListNavIcon}" FontSize="14" HorizontalAlignment="Left" />
+                                            <local:HwIcon Kind="{Binding Icon}" Style="{StaticResource ListNavIcon}" Width="19" Height="19" HorizontalAlignment="Left" />
                                             <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                             <TextBlock Grid.Column="2" Text="{Binding Section}" Foreground="{DynamicResource Faint}" FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0" />
                                         </Grid>

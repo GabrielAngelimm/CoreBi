@@ -52,32 +52,34 @@ public sealed class SensorComponent : INotifyPropertyChanged
 /// </summary>
 public static class SensorBoard
 {
-    private const string Module = "\uEEA0", PhysicalGlyph = "\uE74C", VirtualGlyph = "\uE7C3", OverviewGlyph = "\uE71D";
+    private const string Module = "ram", PhysicalGlyph = "ram", VirtualGlyph = "ramv", OverviewGlyph = "\uE71D";
     private const int PhysicalOrder = 90, VirtualOrder = 91, DimmOrder = 40;
 
     private sealed record Part(string Key, string Name, string Kind, string Glyph, int Channel, int Order, string? Note, List<SensorRow> Rows, string Tone = "Steel");
 
     private static (string Kind, string Glyph, int Order) Describe(HardwareType t) => t switch
     {
-        HardwareType.Cpu => ("Processador", "", 0),
-        HardwareType.GpuNvidia or HardwareType.GpuAmd or HardwareType.GpuIntel => ("Placa de vídeo", "", 10),
-        HardwareType.Storage => ("Armazenamento", "", 20),
-        HardwareType.Motherboard or HardwareType.SuperIO => ("Placa-mãe", "", 30),
-        HardwareType.EmbeddedController => ("Controlador embarcado", "", 31),
-        HardwareType.Network => ("Rede", "", 50),
-        HardwareType.Cooler => ("Refrigeração", "", 60),
+        HardwareType.Cpu => ("Processador", "cpu", 0),
+        HardwareType.GpuNvidia or HardwareType.GpuAmd or HardwareType.GpuIntel => ("Placa de vídeo", "gpu", 10),
+        HardwareType.Storage => ("Armazenamento", "storage", 20),
+        HardwareType.Motherboard or HardwareType.SuperIO => ("Placa-mãe", "board", 30),
+        HardwareType.EmbeddedController => ("Controlador embarcado", "board", 31),
+        HardwareType.Network => ("Rede", "net", 50),
+        HardwareType.Cooler => ("Refrigeração", "fan", 60),
         HardwareType.Psu => ("Fonte", "", 61),
         HardwareType.Battery => ("Bateria", "", 62),
         _ => ("Outro", "", 70)
     };
 
-    /// <summary>Canal de cor do componente: o mesmo da Visão geral, da barra lateral e do Sistema.</summary>
+    /// <summary>Canal de cor do componente: o mesmo da Visão geral, da barra lateral e do Sistema (memória física e virtual do Windows usam o violeta escuro, "Virtual").</summary>
     private static string ToneOf(HardwareType t) => t switch
     {
         HardwareType.Cpu => "Cpu",
         HardwareType.GpuNvidia or HardwareType.GpuAmd or HardwareType.GpuIntel => "Gpu",
         HardwareType.Storage => "Storage",
         HardwareType.Memory => "Memory",
+        HardwareType.Motherboard or HardwareType.SuperIO or HardwareType.EmbeddedController => "Board",
+        HardwareType.Network => "Net",
         _ => "Steel"
     };
 
@@ -105,10 +107,10 @@ public static class SensorBoard
             {
                 if (IsVirtualMemory(first))
                     parts.Add(new(group.Key, "Memória virtual", "Uso do Windows", VirtualGlyph, 2, VirtualOrder,
-                        "Memória física somada ao arquivo de paginação, no disco. É o limite que o Windows pode prometer aos programas.", all, "Memory"));
+                        "Memória física somada ao arquivo de paginação, no disco. É o limite que o Windows pode prometer aos programas.", all, "Virtual"));
                 else if (all.Any(r => r.Name is "Memory" or "Memory Used"))
                     parts.Add(new(group.Key, "Memória física", "Uso do Windows", PhysicalGlyph, 2, PhysicalOrder,
-                        "A RAM instalada vista pelo Windows: quanto está em uso e quanto está livre agora.", all, "Memory"));
+                        "A RAM instalada vista pelo Windows: quanto está em uso e quanto está livre agora.", all, "Virtual"));
                 else
                     dimms.Add(new(group.Key, PrettyName(first.Component), "Memória RAM", Module, 2, DimmOrder, null, all, "Memory"));
                 continue;

@@ -35,9 +35,9 @@
                     <StackPanel>
                         <TextBlock Text="Componentes" Style="{StaticResource SectionTitle}" Margin="0,0,0,12" />
                         <UniformGrid Rows="1" Margin="0,0,-10,0">
-                            <CheckBox x:Name="ChkCpu" Style="{StaticResource ToggleCard}" Content="Processador" local:Ui.Icon="&#xE950;" local:Ui.Caption="Todos os núcleos" IsChecked="True" Margin="0,0,10,0" />
-                            <CheckBox x:Name="ChkRam" Style="{StaticResource ToggleCard}" Content="Memória RAM" local:Ui.Icon="&#xEEA0;" local:Ui.Caption="Verifica erros" Checked="ChkRam_Click" Unchecked="ChkRam_Click" Margin="0,0,10,0" />
-                            <CheckBox x:Name="ChkGpu" Style="{StaticResource ToggleCard}" Content="Placa de vídeo" local:Ui.Icon="&#xE7F4;" local:Ui.Caption="Janela 3D própria" Checked="ChkGpu_Click" Unchecked="ChkGpu_Click" Margin="0,0,10,0" />
+                            <CheckBox x:Name="ChkCpu" Style="{StaticResource ToggleCard}" Content="Processador" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Todos os núcleos" IsChecked="True" Margin="0,0,10,0" />
+                            <CheckBox x:Name="ChkRam" Style="{StaticResource ToggleCard}" Content="Memória RAM" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="Verifica erros" Checked="ChkRam_Click" Unchecked="ChkRam_Click" Margin="0,0,10,0" />
+                            <CheckBox x:Name="ChkGpu" Style="{StaticResource ToggleCard}" Content="Placa de vídeo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Janela 3D própria" Checked="ChkGpu_Click" Unchecked="ChkGpu_Click" Margin="0,0,10,0" />
                         </UniformGrid>
                         <Border Style="{StaticResource Divider}" Margin="0,18,0,14" />
                         <WrapPanel>

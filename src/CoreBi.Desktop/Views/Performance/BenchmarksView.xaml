@@ -33,12 +33,12 @@
 
         <!-- Escolha do teste: seis bancadas, cada uma com o componente que mede -->
         <UniformGrid x:Name="BenchTestPanel" Grid.Row="1" Rows="1" Margin="0,0,-10,18">
-            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Render" local:Ui.Icon="&#xE950;" local:Ui.Caption="Processador" Tag="render" IsChecked="True" Checked="BenchTest_Checked" />
-            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Cena de jogo" local:Ui.Icon="&#xE7F4;" local:Ui.Caption="Placa de vídeo" Tag="gpu" Checked="BenchTest_Checked" />
-            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Ray tracing" local:Ui.Icon="&#xE706;" local:Ui.Caption="Placa de vídeo" Tag="rt" Checked="BenchTest_Checked" />
-            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Simulação" local:Ui.Icon="&#xE7FC;" local:Ui.Caption="Processador" Tag="sim" Checked="BenchTest_Checked" />
-            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Memória" local:Ui.Icon="&#xEEA0;" local:Ui.Caption="RAM e carregamento" Tag="mem" Checked="BenchTest_Checked" />
-            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Disco" local:Ui.Icon="&#xEDA2;" local:Ui.Caption="Leitura e escrita" Tag="disk" Checked="BenchTest_Checked" />
+            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Render" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Processador" Tag="render" IsChecked="True" Checked="BenchTest_Checked" />
+            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Cena de jogo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Placa de vídeo" Tag="gpu" Checked="BenchTest_Checked" />
+            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Ray tracing" local:Ui.Icon="&#xE706;" local:Ui.Channel="Gpu" local:Ui.Caption="Placa de vídeo" Tag="rt" Checked="BenchTest_Checked" />
+            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Simulação" local:Ui.Icon="&#xE7FC;" local:Ui.Channel="Cpu" local:Ui.Caption="Processador" Tag="sim" Checked="BenchTest_Checked" />
+            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Memória" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="RAM e carregamento" Tag="mem" Checked="BenchTest_Checked" />
+            <RadioButton Style="{StaticResource TestTile}" GroupName="BenchTest" Content="Disco" local:Ui.Icon="storage" local:Ui.Channel="Storage" local:Ui.Caption="Leitura e escrita" Tag="disk" Checked="BenchTest_Checked" />
         </UniformGrid>
 
         <!-- ============ Render (CPU) ============ -->

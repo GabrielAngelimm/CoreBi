@@ -4,10 +4,10 @@
 
     <!--
         CoreBi · design system "Bancada" (docs/DESIGN.md)
-        Um instrumento de bancada iluminado: painéis de grafite (ou papel) com luz de cima, a marca acendendo o que é
-        interativo e cada componente com a sua cor e o seu brilho. Saudável é discreto; o que pede atenção salta aos olhos.
+        Um instrumento de bancada: painéis de grafite (ou papel), a marca acendendo o que é interativo e cada componente de
+        hardware com a sua cor, sempre chapada (sem degradês nem brilhos). Saudável é discreto; o que pede atenção salta aos olhos.
         Os pincéis abaixo são os do tema escuro, para o designer do XAML; ThemeManager é a fonte e troca todos em tempo de
-        execução (inclusive os gradientes e brilhos, que existem só lá).
+        execução.
     -->
 
     <!-- Paleta fixa do overlay e do aviso (Hud*), que não acompanha o tema: fica em HudPalette.xaml -->
@@ -35,39 +35,37 @@
     <SolidColorBrush x:Key="Faint" Color="#737A7E"/>
     <!-- Sinal: a marca. Ação principal, controles ligados, item escolhido na navegação, foco e o que está ao vivo -->
     <SolidColorBrush x:Key="Signal" Color="#27C9BC"/>
+    <SolidColorBrush x:Key="SignalHover" Color="#4DD9CD"/>
     <SolidColorBrush x:Key="SignalDeep" Color="#12AA9D"/>
-    <SolidColorBrush x:Key="SignalHi" Color="#6FE3D6"/>
     <SolidColorBrush x:Key="SignalFg" Color="#03201D"/>
     <SolidColorBrush x:Key="SignalSoft" Color="#2427C9BC"/>
     <SolidColorBrush x:Key="Focus" Color="#5FDCCF"/>
-    <!-- Tinta: leituras neutras (bateria, sessão atual) e o miolo dos controles -->
+    <!-- Página aberta na navegação: o verde-água da marca, bem escuro, num fundo só -->
+    <SolidColorBrush x:Key="NavSel" Color="#10373A"/>
+    <!-- Tinta: leituras neutras (bateria) -->
     <SolidColorBrush x:Key="Ink" Color="#E3E7E9"/>
     <SolidColorBrush x:Key="InkFg" Color="#101315"/>
-    <!-- Canais: o que cada componente mede (gráficos, medidores, anéis, legendas e o ícone do componente) -->
-    <SolidColorBrush x:Key="Cpu" Color="#0CB7A4"/>
-    <SolidColorBrush x:Key="CpuDeep" Color="#079B8B"/>
-    <SolidColorBrush x:Key="CpuHi" Color="#67D9C8"/>
-    <SolidColorBrush x:Key="CpuSoft" Color="#2A0CB7A4"/>
+    <!-- Componentes de hardware: a cor de cada peça em todas as telas (gráficos, medidores, anéis, legendas, ícone) e a -->
+    <!-- variante suave, o fundo claro da ficha do componente (Soft) -->
+    <SolidColorBrush x:Key="Cpu" Color="#1F8A48"/>
+    <SolidColorBrush x:Key="CpuSoft" Color="#161F8A48"/>
     <SolidColorBrush x:Key="Gpu" Color="#E8894A"/>
-    <SolidColorBrush x:Key="GpuDeep" Color="#C9682F"/>
-    <SolidColorBrush x:Key="GpuHi" Color="#F5B07C"/>
-    <SolidColorBrush x:Key="GpuSoft" Color="#28E8894A"/>
+    <SolidColorBrush x:Key="GpuSoft" Color="#1AE8894A"/>
     <SolidColorBrush x:Key="Memory" Color="#B296FF"/>
-    <SolidColorBrush x:Key="MemoryDeep" Color="#9573EC"/>
-    <SolidColorBrush x:Key="MemoryHi" Color="#D6C6FF"/>
-    <SolidColorBrush x:Key="MemorySoft" Color="#2AB296FF"/>
+    <SolidColorBrush x:Key="MemorySoft" Color="#1AB296FF"/>
+    <SolidColorBrush x:Key="Virtual" Color="#7A5AC8"/>
+    <SolidColorBrush x:Key="VirtualSoft" Color="#1E7A5AC8"/>
     <SolidColorBrush x:Key="Storage" Color="#4A82CC"/>
-    <SolidColorBrush x:Key="StorageDeep" Color="#2F64AE"/>
-    <SolidColorBrush x:Key="StorageHi" Color="#86B4EE"/>
-    <SolidColorBrush x:Key="StorageSoft" Color="#304A82CC"/>
-    <SolidColorBrush x:Key="NetDown" Color="#0CB7A4"/>
-    <SolidColorBrush x:Key="NetDownDeep" Color="#079B8B"/>
-    <SolidColorBrush x:Key="NetDownHi" Color="#67D9C8"/>
-    <SolidColorBrush x:Key="NetUp" Color="#E8894A"/>
-    <SolidColorBrush x:Key="NetUpDeep" Color="#C9682F"/>
-    <SolidColorBrush x:Key="NetUpHi" Color="#F5B07C"/>
+    <SolidColorBrush x:Key="StorageSoft" Color="#1A4A82CC"/>
+    <SolidColorBrush x:Key="Board" Color="#C8A370"/>
+    <SolidColorBrush x:Key="BoardSoft" Color="#1AC8A370"/>
+    <SolidColorBrush x:Key="Net" Color="#E3D45B"/>
+    <SolidColorBrush x:Key="NetSoft" Color="#18E3D45B"/>
+    <!-- Rede: o download na cor da rede e o upload no sinal -->
+    <SolidColorBrush x:Key="NetDown" Color="#E3D45B"/>
+    <SolidColorBrush x:Key="NetUp" Color="#27C9BC"/>
     <SolidColorBrush x:Key="Steel" Color="#8696A2"/>
-    <SolidColorBrush x:Key="SteelSoft" Color="#268696A2"/>
+    <SolidColorBrush x:Key="SteelSoft" Color="#208696A2"/>
     <!-- Veredito: só quando algo pede atenção ganha cor cheia; saudável é um LED discreto -->
     <SolidColorBrush x:Key="Ok" Color="#6FC889"/>
     <SolidColorBrush x:Key="OkSoft" Color="#226FC889"/>
@@ -82,78 +80,6 @@
     <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="#0E1214"/>
     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#282D31"/>
     <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#282D31"/>
-    <!-- Gradientes (a luz dos painéis, a tecla acesa e o preenchimento dos canais) -->
-    <LinearGradientBrush x:Key="PanelFill" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#181C1F" Offset="0"/>
-        <GradientStop Color="#14181B" Offset="1"/>
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="PanelEdge" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#2D3236" Offset="0"/>
-        <GradientStop Color="#212528" Offset="1"/>
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="SignalFill" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#45D6C9" Offset="0"/>
-        <GradientStop Color="#1DB5A8" Offset="1"/>
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="SignalFillHover" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#6AE2D6" Offset="0"/>
-        <GradientStop Color="#2BC4B7" Offset="1"/>
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="NavSelFill" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#2E27C9BC" Offset="0"/>
-        <GradientStop Color="#0A27C9BC" Offset="1"/>
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="SignalGrad" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#12AA9D" Offset="0"/>
-        <GradientStop Color="#6FE3D6" Offset="1"/>
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="CpuGrad" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#079B8B" Offset="0"/>
-        <GradientStop Color="#67D9C8" Offset="1"/>
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="GpuGrad" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#C9682F" Offset="0"/>
-        <GradientStop Color="#F5B07C" Offset="1"/>
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="MemoryGrad" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#9573EC" Offset="0"/>
-        <GradientStop Color="#D6C6FF" Offset="1"/>
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="StorageGrad" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#2F64AE" Offset="0"/>
-        <GradientStop Color="#86B4EE" Offset="1"/>
-    </LinearGradientBrush>
-    <!-- Brilhos (luz radial do canal atrás de uma leitura) -->
-    <RadialGradientBrush x:Key="SignalGlow">
-        <GradientStop Color="#3027C9BC" Offset="0"/>
-        <GradientStop Color="#1027C9BC" Offset="0.55"/>
-        <GradientStop Color="#0027C9BC" Offset="1"/>
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="CpuGlow">
-        <GradientStop Color="#340CB7A4" Offset="0"/>
-        <GradientStop Color="#110CB7A4" Offset="0.55"/>
-        <GradientStop Color="#000CB7A4" Offset="1"/>
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="GpuGlow">
-        <GradientStop Color="#30E8894A" Offset="0"/>
-        <GradientStop Color="#10E8894A" Offset="0.55"/>
-        <GradientStop Color="#00E8894A" Offset="1"/>
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="MemoryGlow">
-        <GradientStop Color="#30B296FF" Offset="0"/>
-        <GradientStop Color="#10B296FF" Offset="0.55"/>
-        <GradientStop Color="#00B296FF" Offset="1"/>
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="StorageGlow">
-        <GradientStop Color="#384A82CC" Offset="0"/>
-        <GradientStop Color="#124A82CC" Offset="0.55"/>
-        <GradientStop Color="#004A82CC" Offset="1"/>
-    </RadialGradientBrush>
-    <RadialGradientBrush x:Key="SteelGlow">
-        <GradientStop Color="#268696A2" Offset="0"/>
-        <GradientStop Color="#0C8696A2" Offset="0.55"/>
-        <GradientStop Color="#008696A2" Offset="1"/>
-    </RadialGradientBrush>
     <!-- paleta:fim -->
 
     <!-- ===================== Forma ===================== -->
@@ -324,12 +250,12 @@
         <Setter Property="Margin" Value="0,0,0,18"/>
     </Style>
     <!--
-        Painel: agrupa um instrumento. Sem sombra; a profundidade vem da luz de cima (o fundo clareia um passo no topo e o fio
+        Painel: agrupa um instrumento. Sem sombra nem degradê: a profundidade vem do tom (bancada → painel → elevado) e do fio
         de cima é mais claro que o de baixo, como um módulo de alumínio).
     -->
     <Style x:Key="CardBorder" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource PanelFill}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource PanelEdge}"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="{StaticResource RadiusPanel}"/>
         <Setter Property="Padding" Value="{StaticResource PanelPadding}"/>
@@ -354,46 +280,39 @@
         <Setter Property="Background" Value="{DynamicResource Line}"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
-    <!-- Ícone em ladrilho neutro (ações, nós de um caminho). O ladrilho de um componente usa o tom do canal (ChannelTile). -->
-    <Style x:Key="IconTile" TargetType="Border">
-        <Setter Property="Width" Value="34"/>
-        <Setter Property="Height" Value="34"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}"/>
-        <Setter Property="Background" Value="{DynamicResource Raised}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+    <!--
+        Ícone de componente: só o desenho, na cor do componente (Ui.Channel = Cpu, Gpu, Memory, Virtual, Storage, Board, Net,
+        Signal; vazio = Steel), sem superfície ao redor. Sem ladrilho para marcá-lo, o ícone é grande (26 a 40 px) e é a única
+        marca visual da peça: o mesmo em Sistema, Sensores, Visão geral, Discos, OverlayBi, Rede e nos testes.
+    -->
+    <Style x:Key="ChannelIcon" TargetType="local:HwIcon">
+        <Setter Property="Foreground" Value="{DynamicResource Steel}"/>
+        <Style.Triggers>
+            <Trigger Property="local:Ui.Channel" Value="Cpu"><Setter Property="Foreground" Value="{DynamicResource Cpu}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Gpu"><Setter Property="Foreground" Value="{DynamicResource Gpu}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Memory"><Setter Property="Foreground" Value="{DynamicResource Memory}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Virtual"><Setter Property="Foreground" Value="{DynamicResource Virtual}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Storage"><Setter Property="Foreground" Value="{DynamicResource Storage}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Board"><Setter Property="Foreground" Value="{DynamicResource Board}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Net"><Setter Property="Foreground" Value="{DynamicResource Net}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Signal"><Setter Property="Foreground" Value="{DynamicResource Signal}"/></Trigger>
+        </Style.Triggers>
     </Style>
     <!--
-        Ladrilho de componente: fundo no tom suave do canal e o ícone na cor dele (Ui.Channel = Cpu, Gpu, Memory, Storage,
-        Signal; vazio = Steel). É o mesmo em Sistema, Sensores, Visão geral e OverlayBi, para cada peça ter um rosto só.
+        Fundo claro da ficha de um componente (a placa de Sistema, o cabeçalho de Sensores): a cor dele numa transparência
+        baixa e uniforme, sobre o tom da ficha. Ui.Channel escolhe o componente.
     -->
-    <Style x:Key="ChannelTile" TargetType="Border">
-        <Setter Property="Width" Value="34"/>
-        <Setter Property="Height" Value="34"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}"/>
+    <Style x:Key="ChannelWash" TargetType="Border">
+        <Setter Property="IsHitTestVisible" Value="False"/>
         <Setter Property="Background" Value="{DynamicResource SteelSoft}"/>
-        <Setter Property="TextElement.Foreground" Value="{DynamicResource Steel}"/>
         <Style.Triggers>
-            <Trigger Property="local:Ui.Channel" Value="Cpu">
-                <Setter Property="Background" Value="{DynamicResource CpuSoft}"/>
-                <Setter Property="TextElement.Foreground" Value="{DynamicResource Cpu}"/>
-            </Trigger>
-            <Trigger Property="local:Ui.Channel" Value="Gpu">
-                <Setter Property="Background" Value="{DynamicResource GpuSoft}"/>
-                <Setter Property="TextElement.Foreground" Value="{DynamicResource Gpu}"/>
-            </Trigger>
-            <Trigger Property="local:Ui.Channel" Value="Memory">
-                <Setter Property="Background" Value="{DynamicResource MemorySoft}"/>
-                <Setter Property="TextElement.Foreground" Value="{DynamicResource Memory}"/>
-            </Trigger>
-            <Trigger Property="local:Ui.Channel" Value="Storage">
-                <Setter Property="Background" Value="{DynamicResource StorageSoft}"/>
-                <Setter Property="TextElement.Foreground" Value="{DynamicResource StorageHi}"/>
-            </Trigger>
-            <Trigger Property="local:Ui.Channel" Value="Signal">
-                <Setter Property="Background" Value="{DynamicResource SignalSoft}"/>
-                <Setter Property="TextElement.Foreground" Value="{DynamicResource Signal}"/>
-            </Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Cpu"><Setter Property="Background" Value="{DynamicResource CpuSoft}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Gpu"><Setter Property="Background" Value="{DynamicResource GpuSoft}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Memory"><Setter Property="Background" Value="{DynamicResource MemorySoft}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Virtual"><Setter Property="Background" Value="{DynamicResource VirtualSoft}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Storage"><Setter Property="Background" Value="{DynamicResource StorageSoft}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Board"><Setter Property="Background" Value="{DynamicResource BoardSoft}"/></Trigger>
+            <Trigger Property="local:Ui.Channel" Value="Net"><Setter Property="Background" Value="{DynamicResource NetSoft}"/></Trigger>
         </Style.Triggers>
     </Style>
     <!-- Marca de canal: o traço curto na cor do componente, ao lado do nome (legendas, cartões, listas) -->
@@ -443,7 +362,7 @@
         <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="BorderThickness" Value="1,1,1,2"/>
         <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}"/>
-        <Setter Property="Padding" Value="7,1,7,2"/>
+        <Setter Property="Padding" Value="7,3,7,0"/>
         <Setter Property="Margin" Value="0,0,4,0"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
@@ -460,20 +379,8 @@
         <Setter Property="ClipToBounds" Value="True"/>
     </Style>
     <Style x:Key="ProgressFill" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource SignalGrad}"/>
+        <Setter Property="Background" Value="{DynamicResource Signal}"/>
         <Setter Property="RenderTransformOrigin" Value="0,0.5"/>
-    </Style>
-    <!-- Brilho de instrumento: luz radial do canal atrás da leitura principal de um painel (Ui.Channel escolhe o canal) -->
-    <Style x:Key="Glow" TargetType="Border">
-        <Setter Property="IsHitTestVisible" Value="False"/>
-        <Setter Property="Background" Value="{DynamicResource SignalGlow}"/>
-        <Style.Triggers>
-            <Trigger Property="local:Ui.Channel" Value="Cpu"><Setter Property="Background" Value="{DynamicResource CpuGlow}"/></Trigger>
-            <Trigger Property="local:Ui.Channel" Value="Gpu"><Setter Property="Background" Value="{DynamicResource GpuGlow}"/></Trigger>
-            <Trigger Property="local:Ui.Channel" Value="Memory"><Setter Property="Background" Value="{DynamicResource MemoryGlow}"/></Trigger>
-            <Trigger Property="local:Ui.Channel" Value="Storage"><Setter Property="Background" Value="{DynamicResource StorageGlow}"/></Trigger>
-            <Trigger Property="local:Ui.Channel" Value="Steel"><Setter Property="Background" Value="{DynamicResource SteelGlow}"/></Trigger>
-        </Style.Triggers>
     </Style>
 
     <!-- ===================== Botões ===================== -->
@@ -543,10 +450,10 @@
 
     <!-- Ação principal da página: uma por tela, a tecla acesa da marca -->
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
-        <Setter Property="Background" Value="{DynamicResource SignalFill}"/>
+        <Setter Property="Background" Value="{DynamicResource Signal}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource SignalDeep}"/>
         <Setter Property="Foreground" Value="{DynamicResource SignalFg}"/>
-        <Setter Property="local:Ui.HoverFill" Value="{DynamicResource SignalFillHover}"/>
+        <Setter Property="local:Ui.HoverFill" Value="{DynamicResource SignalHover}"/>
     </Style>
 
     <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
@@ -759,19 +666,18 @@
                 <ControlTemplate TargetType="RadioButton">
                     <Grid Background="Transparent" Height="34">
                         <Border x:Name="hover" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Hover}" Opacity="0"/>
-                        <Border x:Name="sel" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource NavSelFill}" Opacity="0"/>
+                        <Border x:Name="sel" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource NavSel}" Opacity="0"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="34"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="ic" Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                       FontFamily="{StaticResource Icons}" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Margin="4,0,0,0"/>
-                            <TextBlock x:Name="icOn" Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                       FontFamily="{StaticResource Icons}" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Margin="4,0,0,0" Foreground="{DynamicResource Signal}" Opacity="0"/>
-                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="4,0,8,1"/>
+                            <local:HwIcon x:Name="ic" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                            <local:HwIcon x:Name="icOn" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0,0,0"
+                                          Foreground="{DynamicResource Signal}" Opacity="0"/>
+                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="4,1,8,0"/>
                         </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -828,7 +734,7 @@
 
     <!-- Trilho da navegação: um destaque só, tingido de sinal, que desliza até a página aberta -->
     <Style x:Key="NavRail" TargetType="local:SlidingSelectionPanel">
-        <Setter Property="Highlight" Value="{DynamicResource NavSelFill}"/>
+        <Setter Property="Highlight" Value="{DynamicResource NavSel}"/>
         <Setter Property="HighlightRadius" Value="7"/>
     </Style>
 
@@ -868,7 +774,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="5" Padding="12,4" MinHeight="26">
+                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="5" Padding="12,6,12,3" MinHeight="26">
                         <Grid>
                             <!-- Cópia invisível em seminegrito: o segmento já nasce com a largura do escolhido, então marcar um não desloca os vizinhos -->
                             <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Visibility="Hidden" HorizontalAlignment="Center"/>
@@ -912,7 +818,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
                     <Border x:Name="b" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="14"
-                            Padding="12,4,12,5" Background="Transparent" SnapsToDevicePixels="True">
+                            Padding="12,6,12,3" Background="Transparent" SnapsToDevicePixels="True">
                         <ContentPresenter VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -934,7 +840,7 @@
         </Setter>
     </Style>
 
-    <!-- Escolha do teste (Benchmark): ladrilho com glifo, nome e legenda; o escolhido acende o glifo no sinal -->
+    <!-- Escolha do teste (Benchmark): cartão com o ícone do componente testado (na cor dele), nome e legenda -->
     <Style x:Key="TestTile" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -943,12 +849,13 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="b" Background="{DynamicResource PanelFill}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
+                    <Border x:Name="b" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
                             CornerRadius="{StaticResource RadiusInset}" Padding="14,12">
                         <StackPanel>
-                            <TextBlock x:Name="ic" Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                       FontFamily="{StaticResource Icons}" FontSize="17" Foreground="{DynamicResource Muted}" HorizontalAlignment="Left"/>
-                            <ContentPresenter Margin="0,10,0,0" TextElement.FontWeight="SemiBold" TextElement.FontSize="13.5" TextElement.FontFamily="{StaticResource LabelFont}"/>
+                            <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Width="30" Height="30" HorizontalAlignment="Left" Margin="-2,0,0,0"/>
+                            <ContentPresenter Margin="0,8,0,0" TextElement.FontWeight="SemiBold" TextElement.FontSize="13.5" TextElement.FontFamily="{StaticResource LabelFont}"/>
                             <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
                                        Foreground="{DynamicResource Faint}" FontFamily="{StaticResource SmallFont}" FontSize="11.5" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                         </StackPanel>
@@ -961,7 +868,6 @@
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalDeep}"/>
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
-                            <Setter TargetName="ic" Property="Foreground" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="b" Property="Opacity" Value="0.5"/>
@@ -1042,10 +948,10 @@
                                 <TextBlock x:Name="sun" Text="&#xE706;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{DynamicResource Gpu}"/>
                                 <TextBlock x:Name="moon" Text="&#xE708;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Memory}" Opacity="0"/>
                             </Grid>
-                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="10,0,8,1"/>
+                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="10,1,8,0"/>
                             <Grid Grid.Column="2" Width="36" Height="20" VerticalAlignment="Center">
                                 <Border CornerRadius="10" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1"/>
-                                <Border x:Name="on" CornerRadius="10" Background="{DynamicResource SignalFill}" Opacity="0"/>
+                                <Border x:Name="on" CornerRadius="10" Background="{DynamicResource Signal}" Opacity="0"/>
                                 <Ellipse x:Name="knob" Width="14" Height="14" Margin="3,0" HorizontalAlignment="Left" Fill="{DynamicResource Muted}">
                                     <Ellipse.RenderTransform>
                                         <TranslateTransform x:Name="slide" X="0"/>
@@ -1114,7 +1020,7 @@
                         </Grid.ColumnDefinitions>
                         <Grid Width="38" Height="20" VerticalAlignment="Center">
                             <Border x:Name="track" CornerRadius="10" BorderThickness="1" BorderBrush="{DynamicResource LineStrong}" Background="{DynamicResource Raised}"/>
-                            <Border x:Name="on" CornerRadius="10" Background="{DynamicResource SignalFill}" Opacity="0"/>
+                            <Border x:Name="on" CornerRadius="10" Background="{DynamicResource Signal}" Opacity="0"/>
                             <Ellipse x:Name="knob" Width="14" Height="14" Margin="3,0" HorizontalAlignment="Left" Fill="{DynamicResource Muted}">
                                 <Ellipse.RenderTransform>
                                     <TranslateTransform x:Name="slide" X="0"/>
@@ -1178,10 +1084,9 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Border x:Name="tile" Style="{StaticResource IconTile}" Width="32" Height="32">
-                                <TextBlock x:Name="ic" Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                           Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Muted}"/>
-                            </Border>
+                            <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Width="30" Height="30" VerticalAlignment="Center"/>
                             <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
                                 <ContentPresenter TextElement.FontWeight="SemiBold" TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="13.5"/>
                                 <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
@@ -1201,7 +1106,6 @@
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalDeep}"/>
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
-                            <Setter TargetName="ic" Property="Foreground" Value="{DynamicResource Signal}"/>
                             <Setter TargetName="dot" Property="Background" Value="{DynamicResource Signal}"/>
                             <Setter TargetName="dot" Property="BorderBrush" Value="{DynamicResource Signal}"/>
                             <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
@@ -1230,10 +1134,10 @@
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
                     <Border x:Name="b" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="14"
-                            Padding="9,4,12,5" Background="Transparent" SnapsToDevicePixels="True">
+                            Padding="9,6,12,3" Background="Transparent" SnapsToDevicePixels="True">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock x:Name="mark" Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="10"
-                                       Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,7,0"/>
+                                       Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,0,7,5"/>
                             <ContentPresenter VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
@@ -1269,7 +1173,7 @@
         <Setter Property="SelectionBrush" Value="{DynamicResource Signal}"/>
         <Setter Property="SelectionOpacity" Value="0.3"/>
         <Setter Property="FontSize" Value="13"/>
-        <Setter Property="Padding" Value="10,0"/>
+        <Setter Property="Padding" Value="10,0,10,3"/>
         <Setter Property="MinHeight" Value="34"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -1335,7 +1239,7 @@
         <Setter Property="SelectionBrush" Value="{DynamicResource Signal}"/>
         <Setter Property="SelectionOpacity" Value="0.3"/>
         <Setter Property="FontSize" Value="13"/>
-        <Setter Property="Padding" Value="10,0"/>
+        <Setter Property="Padding" Value="10,0,10,3"/>
         <Setter Property="MinHeight" Value="34"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
@@ -1509,7 +1413,7 @@
         </Setter>
     </Style>
     <!-- Ícone de item em ListNavItem: cinza, aceso no sinal quando o item está selecionado -->
-    <Style x:Key="ListNavIcon" TargetType="TextBlock" BasedOn="{StaticResource IconGlyph}">
+    <Style x:Key="ListNavIcon" TargetType="local:HwIcon">
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">

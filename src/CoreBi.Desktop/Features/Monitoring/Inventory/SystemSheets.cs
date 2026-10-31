@@ -21,6 +21,7 @@ public sealed record IndexItem(string Key, string Glyph, string Category, string
         SystemSheets.Gpu => "Gpu",
         SystemSheets.Ram => "Memory",
         SystemSheets.Storage => "Storage",
+        SystemSheets.Board => "Board",
         _ => "Steel",
     };
 }
@@ -121,12 +122,12 @@ public static class SystemSheets
             string spec = error != null ? "Não foi possível ler" : IndexSpec(key, s, inv);
             index.Add(new IndexItem(key, glyph, category, error != null ? category : IndexName(key, s), spec));
         }
-        Add(Cpu, "\uE950", "Processador", inv.Errors.GetValueOrDefault(SystemInventory.CpuTitle));
-        Add(Gpu, "\uE7F4", "Placa de vídeo", inv.Errors.GetValueOrDefault(SystemInventory.GpuTitle));
-        Add(Ram, "\uEEA0", "Memória RAM", inv.Errors.GetValueOrDefault(SystemInventory.RamTitle));
-        Add(Board, "\uE964", "Placa-mãe e BIOS", inv.Errors.GetValueOrDefault(SystemInventory.BoardTitle));
-        Add(Storage, "\uEDA2", "Armazenamento", inv.Errors.GetValueOrDefault(SystemInventory.StorageTitle));
-        Add(Os, "\uE7F8", "Sistema operacional", inv.Errors.GetValueOrDefault(SystemInventory.OsTitle));
+        Add(Cpu, "cpu", "Processador", inv.Errors.GetValueOrDefault(SystemInventory.CpuTitle));
+        Add(Gpu, "gpu", "Placa de vídeo", inv.Errors.GetValueOrDefault(SystemInventory.GpuTitle));
+        Add(Ram, "ram", "Memória RAM", inv.Errors.GetValueOrDefault(SystemInventory.RamTitle));
+        Add(Board, "board", "Placa-mãe e BIOS", inv.Errors.GetValueOrDefault(SystemInventory.BoardTitle));
+        Add(Storage, "storage", "Armazenamento", inv.Errors.GetValueOrDefault(SystemInventory.StorageTitle));
+        Add(Os, "desktop", "Sistema operacional", inv.Errors.GetValueOrDefault(SystemInventory.OsTitle));
         return (index, sheets);
     }
 

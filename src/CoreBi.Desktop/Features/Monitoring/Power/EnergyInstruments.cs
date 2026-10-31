@@ -19,24 +19,11 @@ public abstract class EnergyInstrument : DiskInstrument
         DependencyProperty.Register(nameof(SteelBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty SignalBrushProperty =
         DependencyProperty.Register(nameof(SignalBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
-    // Tom de fundo e brilho de cada canal, para os medidores que acendem em degradê até a ponta
-    public static readonly DependencyProperty CpuDeepBrushProperty =
-        DependencyProperty.Register(nameof(CpuDeepBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
-    public static readonly DependencyProperty CpuHiBrushProperty =
-        DependencyProperty.Register(nameof(CpuHiBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
-    public static readonly DependencyProperty GpuDeepBrushProperty =
-        DependencyProperty.Register(nameof(GpuDeepBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
-    public static readonly DependencyProperty GpuHiBrushProperty =
-        DependencyProperty.Register(nameof(GpuHiBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
 
     public Brush CpuBrush { get => (Brush)GetValue(CpuBrushProperty); set => SetValue(CpuBrushProperty, value); }
     public Brush GpuBrush { get => (Brush)GetValue(GpuBrushProperty); set => SetValue(GpuBrushProperty, value); }
     public Brush SteelBrush { get => (Brush)GetValue(SteelBrushProperty); set => SetValue(SteelBrushProperty, value); }
     public Brush SignalBrush { get => (Brush)GetValue(SignalBrushProperty); set => SetValue(SignalBrushProperty, value); }
-    public Brush CpuDeepBrush { get => (Brush)GetValue(CpuDeepBrushProperty); set => SetValue(CpuDeepBrushProperty, value); }
-    public Brush CpuHiBrush { get => (Brush)GetValue(CpuHiBrushProperty); set => SetValue(CpuHiBrushProperty, value); }
-    public Brush GpuDeepBrush { get => (Brush)GetValue(GpuDeepBrushProperty); set => SetValue(GpuDeepBrushProperty, value); }
-    public Brush GpuHiBrush { get => (Brush)GetValue(GpuHiBrushProperty); set => SetValue(GpuHiBrushProperty, value); }
 
     protected EnergyInstrument()
     {
@@ -44,32 +31,6 @@ public abstract class EnergyInstrument : DiskInstrument
         SetResourceReference(GpuBrushProperty, "Gpu");
         SetResourceReference(SteelBrushProperty, "Steel");
         SetResourceReference(SignalBrushProperty, "Signal");
-        SetResourceReference(CpuDeepBrushProperty, "CpuDeep");
-        SetResourceReference(CpuHiBrushProperty, "CpuHi");
-        SetResourceReference(GpuDeepBrushProperty, "GpuDeep");
-        SetResourceReference(GpuHiBrushProperty, "GpuHi");
-    }
-
-    /// <summary>Processador e placa de vídeo ao longo de um medidor (0 = tom de fundo, 1 = brilho).</summary>
-    protected Brush CpuRamp(double t) => Mix(CpuDeepBrush, CpuHiBrush, t, CpuBrush);
-    protected Brush GpuRamp(double t) => Mix(GpuDeepBrush, GpuHiBrush, t, GpuBrush);
-
-    /// <summary>Área de gráfico na cor do pincel: a opacidade dada no topo, caindo até a de baixo.</summary>
-    protected static Brush Fade(Brush brush, byte top, byte bottom)
-    {
-        var c = ColorOf(brush, Colors.Gray);
-        var b = new LinearGradientBrush(Color.FromArgb(top, c.R, c.G, c.B), Color.FromArgb(bottom, c.R, c.G, c.B), 90);
-        b.Freeze();
-        return b;
-    }
-
-    /// <summary>Traço de gráfico: apagado na amostra mais antiga e aceso no "agora", como o fósforo de um osciloscópio.</summary>
-    protected static Brush Phosphor(Brush brush)
-    {
-        var c = ColorOf(brush, Colors.Gray);
-        var b = new LinearGradientBrush(Color.FromArgb(0x60, c.R, c.G, c.B), c, 0);
-        b.Freeze();
-        return b;
     }
 
     protected const double Period = 5, Gap = 1.5;
@@ -189,11 +150,10 @@ public sealed class PowerTrace : EnergyInstrument
             return;
         }
 
-        // Faixas no tom de cada traço, que acendem em cima e somem para baixo: a do processador embaixo, a da placa de vídeo
-        // por cima; os traços vão do apagado (mais antigo) ao aceso (agora)
-        Brush cpuFill = Fade(CpuBrush, 0x48, 0x00), gpuFill = Fade(GpuBrush, 0x40, 0x10);
-        var cpuPen = new Pen(Phosphor(CpuBrush), 1.6) { LineJoin = PenLineJoin.Round };
-        var gpuPen = new Pen(Phosphor(GpuBrush), 2) { LineJoin = PenLineJoin.Round };
+        // Faixas chapadas no tom de cada traço: a do processador embaixo, a da placa de vídeo por cima
+        Brush cpuFill = Alpha(CpuBrush, 0x30), gpuFill = Alpha(GpuBrush, 0x26);
+        var cpuPen = new Pen(CpuBrush, 1.6) { LineJoin = PenLineJoin.Round };
+        var gpuPen = new Pen(GpuBrush, 2) { LineJoin = PenLineJoin.Round };
         double floor = top + plotH;
         foreach (var run in runs.Where(r => r.Count >= 2))
         {
@@ -323,9 +283,7 @@ public sealed class SplitBar : EnergyInstrument
         double a = double.IsNaN(First) ? 0 : Math.Max(0, First), b = double.IsNaN(Second) ? 0 : Math.Max(0, Second);
         double total = a + b;
         if (total <= 0) { Segments(dc, new Rect(0, 0, w, h), _ => TrackBrush); return; }
-        // Cada parte acende no degradê do seu canal, do começo dela até a ponta
-        double cut = a / total;
-        Segments(dc, new Rect(0, 0, w, h), f => f <= cut ? CpuRamp(f / cut) : GpuRamp((f - cut) / (1 - cut)));
+        Segments(dc, new Rect(0, 0, w, h), f => f <= a / total ? CpuBrush : GpuBrush);
     }
 }
 
@@ -433,8 +391,7 @@ public sealed class SpanMeter : EnergyInstrument
         bool known = !double.IsNaN(From) && !double.IsNaN(To);
         // Um gomo de folga de cada lado: com mínimo = máximo (plano que fixa o clock) a faixa vira um ponto e ainda acende o gomo
         double pad = 500 / w;
-        double lo = From - pad, span = Math.Max(1, To + pad - lo);
-        Segments(dc, new Rect(0, 0, w, ActualHeight), f => known && f * 100 >= lo && f * 100 <= To + pad ? CpuRamp((f * 100 - lo) / span) : TrackBrush);
+        Segments(dc, new Rect(0, 0, w, ActualHeight), f => known && f * 100 >= From - pad && f * 100 <= To + pad ? CpuBrush : TrackBrush);
     }
 }
 
