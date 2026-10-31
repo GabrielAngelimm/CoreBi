@@ -14,9 +14,6 @@
                 <DockPanel>
                     <!-- Marca: símbolo vetorial (brand/geometry.json) + assinatura -->
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="22,0,0,0" Height="68" VerticalAlignment="Center">
-                        <!-- O "i" da marca acende o painel por trás, de leve: a única luz fixa da barra lateral -->
-                        <Grid VerticalAlignment="Center">
-                            <Border Style="{StaticResource Glow}" Width="68" Height="68" Margin="-16" />
                         <Viewbox Width="36" Height="36" VerticalAlignment="Center">
                             <Canvas Width="256" Height="256">
                                 <Polygon Points="141,35 81,35 34,82 34,174 81,221 141,221 141,195 93,195 60,162 60,94 93,61 141,61" Fill="{DynamicResource Fg}" />
@@ -25,7 +22,6 @@
                                 <Polygon Points="95,121 117,121 117,172 95,172" Fill="{DynamicResource Signal}" />
                             </Canvas>
                         </Viewbox>
-                        </Grid>
                         <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="27" Margin="12,4,0,0" VerticalAlignment="Center" />
                     </StackPanel>
 
@@ -159,7 +155,7 @@
                 <!-- Barra de título: atalho de navegação, versão e controles da janela -->
                 <Button x:Name="BtnCommand" Style="{StaticResource CommandButton}" Content="Ir para uma página ou ação" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="36,9,0,0" WindowChrome.IsHitTestVisibleInChrome="True" Click="BtnCommand_Click" ToolTip="Paleta de comandos (Ctrl + K)" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True">
-                    <TextBlock x:Name="SideVersion" Text="0.2.3" Foreground="{DynamicResource Faint}" FontSize="11.5" Margin="0,0,14,0" VerticalAlignment="Top" Padding="0,12,0,0" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
+                    <TextBlock x:Name="SideVersion" Text="0.2.4" Foreground="{DynamicResource Faint}" FontSize="11.5" Margin="0,0,14,0" VerticalAlignment="Top" Padding="0,12,0,0" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
                     <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="Min_Click" ToolTip="Minimizar" />
                     <Button x:Name="BtnMax" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="Max_Click" ToolTip="Maximizar" />
                     <Button Style="{StaticResource CloseButton}" Content="&#xE8BB;" Click="Close_Click" ToolTip="Fechar" />

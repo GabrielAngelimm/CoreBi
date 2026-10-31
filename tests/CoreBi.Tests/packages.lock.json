@@ -286,7 +286,7 @@
       "corebi.desktop": {
         "type": "Project",
         "dependencies": {
-          "CoreBi.Engine": "[0.2.3, )"
+          "CoreBi.Engine": "[0.2.4, )"
         }
       },
       "corebi.engine": {
