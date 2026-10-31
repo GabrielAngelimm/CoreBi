@@ -23,7 +23,8 @@ Operações administrativas usam comandos específicos e diálogos Windows. Sele
 - FPS estimado local, resposta da API e apresentação ETW têm fontes distintas; não converter a estimativa em leitura medida.
 
 - Botões de iniciar e parar trocam de papel no mesmo lugar (`Ui.SetRunning`): cor, glifo e texto mudam juntos.
-- Veredito usa somente `Ok`, `Warn` e `Danger`, e saudável é discreto (LED verde e texto em tinta). O que se clica acende no sinal verde-água (`Signal`: ação principal, item escolhido da navegação, controles ligados, foco), e cada componente medido tem o seu canal (`Cpu`, `Gpu`, `Memory`, `Storage`), nunca usado em botão, aba ou ícone de ação.
+- Veredito usa somente `Ok`, `Warn` e `Danger`, e saudável é discreto (LED verde e texto em tinta). O que se clica acende no sinal verde-água (`Signal`: ação principal, item escolhido da navegação, controles ligados, foco), e cada componente de hardware tem a sua cor (`Cpu`, `Gpu`, `Memory`, `Virtual`, `Storage`, `Board`, `Net`), nunca usada em botão, aba ou ícone de ação.
+- Ícone de componente é só o desenho (`HwIcon` com `ChannelIcon`), grande e sem fundo, na cor da peça; a interface não usa degradê, brilho nem ladrilho colorido.
 
 ## Reformulação e pendências
 
