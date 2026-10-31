@@ -74,7 +74,7 @@
             <TextBlock Grid.Column="1" Text="{Binding Value}" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" Style="{StaticResource Num}"/>
             <Grid Grid.Row="1" Grid.ColumnSpan="2" Height="8" Margin="0,7,0,0" OpacityMask="{StaticResource SegmentMask}">
                 <Border Background="{DynamicResource Line}"/>
-                <Border Background="{DynamicResource Accent}" RenderTransformOrigin="0,0.5">
+                <Border Background="{DynamicResource Signal}" RenderTransformOrigin="0,0.5">
                     <Border.RenderTransform>
                         <ScaleTransform ScaleX="{Binding Fraction}"/>
                     </Border.RenderTransform>

@@ -148,7 +148,7 @@
                         <Grid>
                             <StackPanel>
                                 <TextBlock Text="FPS agora" Style="{StaticResource StatLabel}" />
-                                <TextBlock x:Name="GbFpsNow" Text="—" Style="{StaticResource ReadoutHero}" Foreground="{DynamicResource Accent}" />
+                                <TextBlock x:Name="GbFpsNow" Text="—" Style="{StaticResource ReadoutHero}" Foreground="{DynamicResource Signal}" />
                             </StackPanel>
                             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,8">
                                 <TextBlock Text="Placa de vídeo" Style="{StaticResource StatLabel}" HorizontalAlignment="Right" />
@@ -221,7 +221,7 @@
                                 <Grid>
                                     <StackPanel>
                                         <TextBlock Text="FPS agora" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="RtFpsNow" Text="—" Style="{StaticResource ReadoutHero}" Foreground="{DynamicResource Accent}" />
+                                        <TextBlock x:Name="RtFpsNow" Text="—" Style="{StaticResource ReadoutHero}" Foreground="{DynamicResource Signal}" />
                                     </StackPanel>
                                     <StackPanel HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,8">
                                         <TextBlock Text="Etapa" Style="{StaticResource StatLabel}" HorizontalAlignment="Right" />

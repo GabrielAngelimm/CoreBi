@@ -21,6 +21,7 @@ public partial class MainWindow
     {
         UpdateDashboard();
         DrawChart();
+        PageNet.RedrawTheme();
         UpdateCpuSensorWarning();
     }
 }

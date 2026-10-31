@@ -55,7 +55,8 @@ public partial class MainWindow
 
     internal void SaveBenchRecord(string test, double score, string summary)
     {
-        AddEvent("", "Benchmark concluído", summary, "");
+        var kind = BenchEvent(new BenchRecord(DateTime.Now, test, score, summary)); // ícone e canal do teste
+        AddEvent(kind.Icon, "Benchmark concluído", summary, "", kind.Channel);
         _settings.BenchRecords.Insert(0, new BenchRecord(DateTime.Now, test, score, summary));
         // Mantém os 10 mais recentes de cada teste.
         _settings.BenchRecords = _settings.BenchRecords.GroupBy(r => r.Test).SelectMany(g => g.Take(10))

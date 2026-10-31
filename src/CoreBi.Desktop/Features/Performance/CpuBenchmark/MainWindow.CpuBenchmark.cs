@@ -105,7 +105,7 @@ public partial class MainWindow
                               $"({Environment.ProcessorCount / 2} núcleos com SMT costumam render 8–12x).";
 
         _settings.BenchRuns.Insert(0, new BenchRun(DateTime.Now, mt, st, sustained, GameCatalog.ShortCpuName(_cpuName)));
-        AddEvent("", "Benchmark", "Render de CPU", mt is double mte ? $"{mte:N0} pts" : st is double ste ? $"{ste:N0} pts" : "");
+        AddEvent("\uE950", "Benchmark", "Render de CPU", mt is double mte ? $"{mte:N0} pts" : st is double ste ? $"{ste:N0} pts" : "", "Cpu");
         if (_settings.BenchRuns.Count > 10) _settings.BenchRuns.RemoveRange(10, _settings.BenchRuns.Count - 10);
         SaveSettings();
         UpdateBenchHistory();
@@ -123,7 +123,7 @@ public partial class MainWindow
         {
             if (b < 0) continue;
             var (x, y, w, h) = _bench.Buckets[b];
-            var rect = new Rectangle { Width = w, Height = h, Stroke = Palette("Accent"), StrokeThickness = 2 };
+            var rect = new Rectangle { Width = w, Height = h, Stroke = Palette("Signal"), StrokeThickness = 2 };
             Canvas.SetLeft(rect, x); Canvas.SetTop(rect, y);
             BenchBuckets.Children.Add(rect);
         }

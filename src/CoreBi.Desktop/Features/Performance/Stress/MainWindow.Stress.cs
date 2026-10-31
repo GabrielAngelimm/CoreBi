@@ -201,9 +201,9 @@ public partial class MainWindow
     {
         StStatus.Text = text;
         bool live = !alert && TestRunning;
-        StatusCard.SetResourceReference(Border.BackgroundProperty, alert ? "DangerSoft" : live ? "AccentSoft" : "Surface");
-        StatusCard.SetResourceReference(Border.BorderBrushProperty, alert ? "Danger" : live ? "Accent" : "Line");
-        StStatus.SetResourceReference(TextBlock.ForegroundProperty, alert ? "Danger" : live ? "Accent" : "Fg");
+        StatusCard.SetResourceReference(Border.BackgroundProperty, alert ? "DangerSoft" : live ? "SignalSoft" : "Surface");
+        StatusCard.SetResourceReference(Border.BorderBrushProperty, alert ? "Danger" : live ? "Signal" : "Line");
+        StStatus.SetResourceReference(TextBlock.ForegroundProperty, alert ? "Danger" : live ? "Signal" : "Fg");
         StStatusLabel.SetResourceReference(TextBlock.ForegroundProperty, alert ? "Danger" : "Muted");
     }
 
@@ -256,7 +256,7 @@ public partial class MainWindow
         StTemp.Text = SideTemp.Text = temp == null ? "—" : $"{temp:0.#} °C";
         StTempMax.Text = _stressMaxTemp > 0 ? $"máx. {_stressMaxTemp:0.#} °C" : "máx. —";
         SideLoad.Text = load == null ? "—" : $"{load:0} %";
-        SideCpuBar.ScaleX = Math.Clamp((load ?? 0) / 100.0, 0, 1);
+        Ui.Glide(SideCpuBar, (load ?? 0) / 100.0, LiveMotion);
         StLoad.Text = load == null ? "carga —" : $"carga {load:0} %";
         StPower.Text = power == null ? "—" : $"{power:0.#} W";
 
@@ -350,7 +350,7 @@ public partial class MainWindow
                 line.Points.Add(new Point(left + (offset + i) * step, Y(data[i])));
             if (fill)
             {
-                var area = new Polygon { Fill = new SolidColorBrush(ThemeManager.WithAlpha("Accent", 0x22)) };
+                var area = new Polygon { Fill = new SolidColorBrush(ThemeManager.WithAlpha("Cpu", 0x22)) };
                 foreach (var p in line.Points) area.Points.Add(p);
                 area.Points.Add(new Point(line.Points[^1].X, top + plotH));
                 area.Points.Add(new Point(line.Points[0].X, top + plotH));
@@ -358,8 +358,8 @@ public partial class MainWindow
             }
             TempChart.Children.Add(line);
         }
-        Series(_gpuTempHistory, Palette("Copper"), fill: false);
-        Series(_tempHistory, Palette("Accent"), fill: true);
+        Series(_gpuTempHistory, Palette("Gpu"), fill: false);
+        Series(_tempHistory, Palette("Cpu"), fill: true);
     }
 
 }

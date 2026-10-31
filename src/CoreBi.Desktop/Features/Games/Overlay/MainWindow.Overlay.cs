@@ -29,15 +29,15 @@ public partial class MainWindow
         return set;
     }
 
-    /// <summary>Componentes na ordem do overlay: o que cada linha mede, glifo (todos na mesma cor).</summary>
+    /// <summary>Componentes na ordem do overlay: o que cada linha mede e o glifo (todos na mesma cor, a do sinal).</summary>
     private static readonly (string Group, string Caption, string Icon, string Brush)[] OvGroups =
     {
-        ("FPS", "Quadros por segundo e estabilidade", "\uEC4A", "Accent"),
-        ("GPU", "Placa de vídeo principal", "", "Accent"),
-        ("VRAM", "Memória da placa de vídeo", "\uE964", "Accent"),
-        ("CPU", "Processador", "\uE950", "Accent"),
-        ("RAM", "Memória do sistema", "\uEEA0", "Accent"),
-        ("Outros", "Nomes e rodapé do overlay", "", "Accent"),
+        ("FPS", "Quadros por segundo e estabilidade", "\uEC4A", "Signal"),
+        ("GPU", "Placa de vídeo principal", "", "Signal"),
+        ("VRAM", "Memória da placa de vídeo", "\uE964", "Signal"),
+        ("CPU", "Processador", "\uE950", "Signal"),
+        ("RAM", "Memória do sistema", "\uEEA0", "Signal"),
+        ("Outros", "Nomes e rodapé do overlay", "", "Signal"),
     };
 
     /// <summary>Itens que dependem da placa ou de permissão: a dica explica por que podem aparecer com travessão.</summary>
@@ -85,12 +85,15 @@ public partial class MainWindow
             var glyph = new TextBlock { Text = meta.Icon ?? "\uE946" };
             glyph.SetResourceReference(StyleProperty, "IconGlyph");
             glyph.FontSize = 14;
+            // Ladrilho aceso no sinal quando a linha aparece no overlay; neutro quando nada dela está marcado
             var tile = new Border { Child = glyph, VerticalAlignment = VerticalAlignment.Top };
-            tile.SetResourceReference(StyleProperty, "IconTile");
+            Ui.SetChannel(tile, "Signal");
             grid.Children.Add(tile);
 
             var name = new StackPanel { Margin = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
-            name.Children.Add(new TextBlock { Text = group, FontSize = 13.5, FontWeight = FontWeights.SemiBold });
+            var title = new TextBlock { Text = group, FontSize = 14.5, FontWeight = FontWeights.SemiBold };
+            title.SetResourceReference(TextBlock.FontFamilyProperty, "LabelFont");
+            name.Children.Add(title);
             var caption = new TextBlock { Text = meta.Caption ?? "", FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 1, 0, 0) };
             caption.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
             name.Children.Add(caption);
@@ -108,7 +111,8 @@ public partial class MainWindow
                 count.Text = $"{on}/{items.Count}";
                 count.ToolTip = on == 0 ? $"Nada marcado: a linha {group} não aparece no overlay." : $"{on} de {items.Count} itens no overlay.";
                 count.SetResourceReference(TextBlock.ForegroundProperty, on > 0 ? "Muted" : "Faint");
-                glyph.SetResourceReference(TextBlock.ForegroundProperty, on > 0 ? meta.Brush ?? "Accent" : "Faint");
+                glyph.SetResourceReference(TextBlock.ForegroundProperty, on > 0 ? meta.Brush ?? "Signal" : "Faint");
+                tile.SetResourceReference(StyleProperty, on > 0 ? "ChannelTile" : "IconTile");
             }
 
             var wrap = new WrapPanel { Margin = new Thickness(0, 3, 0, 0) };

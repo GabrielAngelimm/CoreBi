@@ -185,7 +185,7 @@ public partial class NetworkView : UserControl
         {
             var (label, check) = stages[i];
             int n = i + 1;
-            label.SetResourceReference(TextBlock.ForegroundProperty, n < current ? "Muted" : n == current ? "Accent" : "Faint");
+            label.SetResourceReference(TextBlock.ForegroundProperty, n < current ? "Muted" : n == current ? "Fg" : "Faint");
             label.FontWeight = n == current ? FontWeights.SemiBold : FontWeights.Normal;
             check.Visibility = n < current ? Visibility.Visible : Visibility.Collapsed;
         }
@@ -207,14 +207,6 @@ public partial class NetworkView : UserControl
         DiskVerdict.Warning => "Warn",
         DiskVerdict.Critical => "Danger",
         _ => "Faint",
-    };
-
-    private static string SoftKey(string key) => key switch
-    {
-        "Ok" => "OkSoft",
-        "Warn" => "WarnSoft",
-        "Danger" => "DangerSoft",
-        _ => "Raised",
     };
 
     private void ShowResult(NetworkResult? r)
@@ -246,9 +238,7 @@ public partial class NetworkView : UserControl
             NetMeta.Text = r.Card.Meta;
             string key = VerdictKey(r.Card.Verdict == DiskVerdict.Unknown ? DiskVerdict.Warning : r.Card.Verdict);
             NetBadge.Visibility = Visibility.Visible;
-            NetBadge.SetResourceReference(Border.BorderBrushProperty, key);
-            NetBadge.SetResourceReference(Border.BackgroundProperty, SoftKey(key));
-            NetBadgeText.SetResourceReference(TextBlock.ForegroundProperty, key);
+            Ui.SetTone(NetBadge, key);
             NetBadgeText.Text = new SentenceCaseConverter().Convert(r.Card.VerdictText, typeof(string), null!, PtBr) as string ?? "";
             ShowNotes(r, key);
         }
@@ -267,25 +257,24 @@ public partial class NetworkView : UserControl
             var row = new Grid { Margin = new Thickness(0, NetNotes.Children.Count == 0 ? 0 : 8, 0, 0) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             row.ColumnDefinitions.Add(new ColumnDefinition());
-            // Achado informativo (roteador que não responde a ping) não leva a cor do veredito.
+            // Achado informativo (roteador que não responde a ping) não leva a cor do veredito. O glifo fica solto, sem bolha
+            // colorida em volta: a cor está no sinal, não num enfeite (como a saúde do PC na Visão geral).
             bool info = note.StartsWith("O roteador não responde", StringComparison.Ordinal);
-            string noteKey = info ? "Steel" : key;
-            var dot = new Border { Width = 22, Height = 22, CornerRadius = new CornerRadius(11), Margin = new Thickness(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
-            dot.SetResourceReference(Border.BackgroundProperty, info ? "Raised" : SoftKey(key));
+            string noteKey = info ? "Muted" : key;
             var glyph = new TextBlock
             {
                 Text = good ? "" : info ? "" : "",
-                FontSize = 11,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
+                FontSize = 12,
+                Width = 22,
+                Margin = new Thickness(0, 3, 10, 0),
+                VerticalAlignment = VerticalAlignment.Top,
             };
             glyph.SetResourceReference(TextBlock.FontFamilyProperty, "Icons");
             glyph.SetResourceReference(TextBlock.ForegroundProperty, noteKey);
-            dot.Child = glyph;
             var text = new TextBlock { Text = note, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 1, 0, 0) };
             text.SetResourceReference(StyleProperty, "Body");
             Grid.SetColumn(text, 1);
-            row.Children.Add(dot);
+            row.Children.Add(glyph);
             row.Children.Add(text);
             NetNotes.Children.Add(row);
         }
@@ -325,10 +314,15 @@ public partial class NetworkView : UserControl
             DiskVerdict.Critical => r.LatencyMs == null ? "sem resposta" : r.LossPct > 5 ? $"perda de {r.LossPct?.ToString("0.#", PtBr)} %" : "latência muito alta",
             _ => r.Internet.Count == 0 ? "não medido" : "sem resposta a ping",
         };
+        // Trecho estável fica neutro (um fio cheio, mais claro que o de "não medido"); só o trecho com problema ganha cor,
+        // então o atraso salta aos olhos no ponto exato do caminho.
         string lk = VerdictKey(r.LocalVerdict), wk = VerdictKey(r.InternetVerdict);
-        SetLink(NetLinkLocal, NetLinkLocalText, lk == "Faint" ? "LineStrong" : lk, lk == "Faint" ? "Muted" : lk, local);
-        SetLink(NetLinkWan, NetLinkWanText, wk == "Faint" ? "LineStrong" : wk, wk == "Faint" ? "Muted" : wk, wanText);
+        SetLink(NetLinkLocal, NetLinkLocalText, LinkLine(lk), LinkText(lk), local);
+        SetLink(NetLinkWan, NetLinkWanText, LinkLine(wk), LinkText(wk), wanText);
     }
+
+    private static string LinkLine(string key) => key switch { "Ok" => "Faint", "Faint" => "LineStrong", _ => key };
+    private static string LinkText(string key) => key switch { "Ok" or "Faint" => "Muted", _ => key };
 
     private static void SetLink(Border line, TextBlock caption, string lineKey, string textKey, string text)
     {
@@ -393,41 +387,53 @@ public partial class NetworkView : UserControl
 
     internal static double DialFraction(double? mbps) => mbps is not { } v ? 0 : Math.Clamp(Math.Log10(Math.Max(1, v)) / 3, 0, 1);
 
+    private double? _dialDown, _dialUp;
+
     private void DrawDial(double? down, double? up)
     {
+        (_dialDown, _dialUp) = (down, up);
         NetDial.Children.Clear();
-        DrawSide(-1, down, "Accent");
-        DrawSide(1, up, "Copper");
+        DrawSide(-1, down, "NetDown");
+        DrawSide(1, up, "NetUp");
     }
+
+    /// <summary>O mostrador guarda as cores do momento do desenho (cada gomo tem a sua): refaz com a paleta nova.</summary>
+    internal void RedrawTheme() => DrawDial(_dialDown, _dialUp);
 
     private void DrawSide(int dir, double? value, string channel)
     {
         double lit = value == null ? -1 : DialFraction(value);
-        var on = new StreamGeometry();
-        var off = new StreamGeometry();
-        using (var onCtx = on.Open())
-        using (var offCtx = off.Open())
+        var outer = dir < 0 ? SweepDirection.Clockwise : SweepDirection.Counterclockwise;
+        var inner = dir < 0 ? SweepDirection.Counterclockwise : SweepDirection.Clockwise;
+        void Segment(StreamGeometryContext ctx, int i)
         {
-            for (int i = 0; i < DialSegments; i++)
-            {
-                double a0 = DialAngle(dir, (double)i / DialSegments), a1 = DialAngle(dir, (i + 0.7) / DialSegments);
-                var ctx = (i + 0.5) / DialSegments <= lit ? onCtx : offCtx;
-                var outer = dir < 0 ? SweepDirection.Clockwise : SweepDirection.Counterclockwise;
-                var inner = dir < 0 ? SweepDirection.Counterclockwise : SweepDirection.Clockwise;
-                ctx.BeginFigure(DialPoint(a0, DialR1), true, true);
-                ctx.LineTo(DialPoint(a0, DialR2), false, false);
-                ctx.ArcTo(DialPoint(a1, DialR2), new Size(DialR2, DialR2), 0, false, outer, false, false);
-                ctx.LineTo(DialPoint(a1, DialR1), false, false);
-                ctx.ArcTo(DialPoint(a0, DialR1), new Size(DialR1, DialR1), 0, false, inner, false, false);
-            }
+            double a0 = DialAngle(dir, (double)i / DialSegments), a1 = DialAngle(dir, (i + 0.7) / DialSegments);
+            ctx.BeginFigure(DialPoint(a0, DialR1), true, true);
+            ctx.LineTo(DialPoint(a0, DialR2), false, false);
+            ctx.ArcTo(DialPoint(a1, DialR2), new Size(DialR2, DialR2), 0, false, outer, false, false);
+            ctx.LineTo(DialPoint(a1, DialR1), false, false);
+            ctx.ArcTo(DialPoint(a0, DialR1), new Size(DialR1, DialR1), 0, false, inner, false, false);
         }
-        on.Freeze(); off.Freeze();
+
+        var off = new StreamGeometry();
+        using (var offCtx = off.Open())
+            for (int i = 0; i < DialSegments; i++)
+                if ((i + 0.5) / DialSegments > lit) Segment(offCtx, i);
+        off.Freeze();
         var offPath = new Path { Data = off };
         offPath.SetResourceReference(Shape.FillProperty, "Line");
-        var onPath = new Path { Data = on };
-        onPath.SetResourceReference(Shape.FillProperty, channel);
         NetDial.Children.Add(offPath);
-        NetDial.Children.Add(onPath);
+
+        // Aceso: cada gomo na sua cor, do tom de fundo do canal no começo ao brilho na ponta (o arco acende até a leitura)
+        for (int i = 0; i < DialSegments && (i + 0.5) / DialSegments <= lit; i++)
+        {
+            var seg = new StreamGeometry();
+            using (var ctx = seg.Open()) Segment(ctx, i);
+            seg.Freeze();
+            var color = new SolidColorBrush(ThemeManager.Blend(channel, (i + 0.5) / DialSegments / lit));
+            color.Freeze();
+            NetDial.Children.Add(new Path { Data = seg, Fill = color });
+        }
     }
 
     // ---------------- Traço de pings ----------------
@@ -481,7 +487,7 @@ public partial class NetworkView : UserControl
             Bars(loaded, idle.Count * step + (idle.Count > 0 ? gapW : 0), lc);
         }
         AddTracePath(idleGeo, "Steel");
-        AddTracePath(loadGeo, "Accent");
+        AddTracePath(loadGeo, "NetDown");
         AddTracePath(lostGeo, "Danger");
 
         var idleRtts = idle.Where(v => v != null).Select(v => v!.Value).ToList();

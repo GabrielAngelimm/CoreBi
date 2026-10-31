@@ -1,6 +1,6 @@
 # Segurança
 
-CoreBi 0.2.3 é uma prévia técnica. Correções se concentram na versão mais recente; não há promessa de suporte a versões antigas.
+CoreBi 0.2.4 é uma prévia técnica. Correções se concentram na versão mais recente; não há promessa de suporte a versões antigas.
 
 ## Reportar
 

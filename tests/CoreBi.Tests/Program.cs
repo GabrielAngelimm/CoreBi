@@ -50,6 +50,7 @@ internal static partial class Program
     {
         if (args.FirstOrDefault() == "--process-fixture") return ProcessFixture(args);
         if (args.FirstOrDefault() == "--report") return RealReport(args.Length > 1 ? args[1] : "report");
+        if (args.FirstOrDefault() == "--shots") return Shots(args);
         Output = Path.GetFullPath(args.Length > 0 ? args[0] : "TestResults");
         Directory.CreateDirectory(Output);
         Environment.SetEnvironmentVariable("COREBI_DATA_DIR", Path.Combine(Output, "settings"));

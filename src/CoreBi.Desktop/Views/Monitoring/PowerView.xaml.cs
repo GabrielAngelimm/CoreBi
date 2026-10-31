@@ -178,10 +178,7 @@ public partial class PowerView : UserControl
         if (!health) return;
         string tone = shown.Verdict switch { DiskVerdict.Good => "Ok", DiskVerdict.Warning => "Warn", DiskVerdict.Critical => "Danger", _ => "" };
         BatteryBadgeText.Text = shown.VerdictText;
-        string soft = tone switch { "Ok" => "OkSoft", "Warn" => "WarnSoft", "Danger" => "DangerSoft", _ => "Raised" };
-        BatteryBadge.SetResourceReference(Border.BackgroundProperty, soft);
-        BatteryBadge.SetResourceReference(Border.BorderBrushProperty, tone.Length > 0 ? tone : "LineStrong");
-        BatteryBadgeText.SetResourceReference(TextBlock.ForegroundProperty, tone.Length > 0 ? tone : "Muted");
+        Ui.SetTone(BatteryBadge, tone);
         BatteryCapacity.Design = shown.DesignWh ?? double.NaN;
         BatteryCapacity.Full = shown.FullWh ?? double.NaN;
         BatteryCapacity.Now = shown.RemainingWh ?? double.NaN;
@@ -221,7 +218,7 @@ public partial class PowerView : UserControl
         bool battery = Snapshot?.Batteries.Any(b => !b.IsUps) == true;
         bool previewing = preview != null;
         RegSection.Visibility = p.Active == null ? Visibility.Collapsed : Visibility.Visible;
-        if (previewing) RegSection.SetResourceReference(Border.BackgroundProperty, "AccentSoft");
+        if (previewing) RegSection.SetResourceReference(Border.BackgroundProperty, "Raised");
         else RegSection.ClearValue(Border.BackgroundProperty);
         // Título curto e de uma linha: o nome do plano já está na lista (marcado "novo plano"); um título longo quebrava e crescia o cartão
         RegTitle.Text = previewing ? "Prévia da troca" : "Ajustes do plano";
@@ -242,7 +239,7 @@ public partial class PowerView : UserControl
             string current = Proc(now), target = Proc(shown);
             // Máximo abaixo de 100 % segura o clock com carga: o aviso é a própria cor do valor (e a dica), sem linha extra que mude a altura do cartão
             bool capped = max < 100;
-            string valueBrush = capped ? "Warn" : "Accent";
+            string valueBrush = capped ? "Warn" : "Fg";
             ProcText.Inlines.Clear();
             if (previewing && current != target)
             {
@@ -402,7 +399,7 @@ public partial class PowerView : UserControl
     {
         var (cpu, gpu) = _trace.Count > 0 ? _trace[^1] : (null, null);
         bool any = cpu != null || gpu != null;
-        LiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, any ? "Accent" : "Faint");
+        LiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, any ? "Signal" : "Faint");
         LiveText.Text = any ? "Ao vivo" : _monitor.IsOpen ? "Sem leitura de consumo" : "Aguardando os sensores";
         Readout(TotalNow, any ? $"{(cpu ?? 0) + (gpu ?? 0):0}" : "—", any ? "W" : "");
         TotalCaption.Text = cpu != null && gpu != null ? "Agora · processador + placa de vídeo"

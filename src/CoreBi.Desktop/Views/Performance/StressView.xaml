@@ -44,11 +44,11 @@
                             <StackPanel Margin="0,0,28,12">
                                 <TextBlock Text="Uso da RAM livre" Style="{StaticResource Label}" />
                                 <Border Style="{StaticResource SegmentGroup}">
-                                    <StackPanel x:Name="RamFractionPanel" Orientation="Horizontal" IsEnabled="False">
+                                    <local:SlidingSelectionPanel x:Name="RamFractionPanel" IsEnabled="False" Style="{StaticResource SegmentRail}">
                                         <RadioButton Style="{StaticResource Segment}" GroupName="Ram" Content="40%" Tag="0.4" />
                                         <RadioButton Style="{StaticResource Segment}" GroupName="Ram" Content="60%" Tag="0.6" IsChecked="True" />
                                         <RadioButton Style="{StaticResource Segment}" GroupName="Ram" Content="80%" Tag="0.8" />
-                                    </StackPanel>
+                                    </local:SlidingSelectionPanel>
                                 </Border>
                             </StackPanel>
                         </WrapPanel>
@@ -56,32 +56,32 @@
                             <StackPanel Margin="0,0,28,12">
                                 <TextBlock Text="Placa de vídeo: resolução" Style="{StaticResource Label}" />
                                 <Border Style="{StaticResource SegmentGroup}">
-                                    <StackPanel x:Name="GpuResPanel" Orientation="Horizontal">
+                                    <local:SlidingSelectionPanel x:Name="GpuResPanel" Style="{StaticResource SegmentRail}">
                                         <RadioButton Style="{StaticResource Segment}" GroupName="GpuRes" Content="720p" Tag="1280x720" />
                                         <RadioButton Style="{StaticResource Segment}" GroupName="GpuRes" Content="1080p" Tag="1920x1080" IsChecked="True" />
                                         <RadioButton Style="{StaticResource Segment}" GroupName="GpuRes" Content="1440p" Tag="2560x1440" />
                                         <RadioButton Style="{StaticResource Segment}" GroupName="GpuRes" Content="Tela cheia" Tag="full" />
-                                    </StackPanel>
+                                    </local:SlidingSelectionPanel>
                                 </Border>
                             </StackPanel>
                             <StackPanel Margin="0,0,28,12">
                                 <TextBlock Text="Anti-aliasing" Style="{StaticResource Label}" />
                                 <Border Style="{StaticResource SegmentGroup}">
-                                    <StackPanel x:Name="GpuMsaaPanel" Orientation="Horizontal">
+                                    <local:SlidingSelectionPanel x:Name="GpuMsaaPanel" Style="{StaticResource SegmentRail}">
                                         <RadioButton Style="{StaticResource Segment}" GroupName="GpuMsaa" Content="Desligado" Tag="1" />
                                         <RadioButton Style="{StaticResource Segment}" GroupName="GpuMsaa" Content="4x MSAA" Tag="4" IsChecked="True" />
                                         <RadioButton Style="{StaticResource Segment}" GroupName="GpuMsaa" Content="8x MSAA" Tag="8" />
-                                    </StackPanel>
+                                    </local:SlidingSelectionPanel>
                                 </Border>
                             </StackPanel>
                             <StackPanel Margin="0,0,28,12">
                                 <TextBlock Text="Intensidade" Style="{StaticResource Label}" />
                                 <Border Style="{StaticResource SegmentGroup}">
-                                    <StackPanel x:Name="GpuIntensityPanel" Orientation="Horizontal">
+                                    <local:SlidingSelectionPanel x:Name="GpuIntensityPanel" Style="{StaticResource SegmentRail}">
                                         <RadioButton Style="{StaticResource Segment}" GroupName="GpuInt" Content="Normal" Tag="96,32" />
                                         <RadioButton Style="{StaticResource Segment}" GroupName="GpuInt" Content="Alta" Tag="128,48" IsChecked="True" />
                                         <RadioButton Style="{StaticResource Segment}" GroupName="GpuInt" Content="Extrema" Tag="160,64" />
-                                    </StackPanel>
+                                    </local:SlidingSelectionPanel>
                                 </Border>
                             </StackPanel>
                         </WrapPanel>
@@ -143,7 +143,7 @@
                         <Border Style="{StaticResource ReadingCell}" BorderThickness="0">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Style="{StaticResource Swatch}" Background="{DynamicResource Accent}" />
+                                    <Border Style="{StaticResource Swatch}" Background="{DynamicResource Cpu}" />
                                     <TextBlock Text="Temp. CPU" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
                                 <TextBlock x:Name="StTemp" Text="—" Style="{StaticResource StatValue}" />
@@ -160,7 +160,7 @@
                         <Border Style="{StaticResource ReadingCell}">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Style="{StaticResource Swatch}" Background="{DynamicResource Copper}" />
+                                    <Border Style="{StaticResource Swatch}" Background="{DynamicResource Gpu}" />
                                     <TextBlock Text="Temp. GPU" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
                                 <TextBlock x:Name="StGpuTemp" Text="—" Style="{StaticResource StatValue}" />
@@ -197,9 +197,9 @@
                     <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
                         <TextBlock Text="Temperatura nos últimos 5 minutos" Style="{StaticResource SectionTitle}" />
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Border Style="{StaticResource Swatch}" Background="{DynamicResource Accent}" />
+                            <Border Style="{StaticResource Swatch}" Background="{DynamicResource Cpu}" />
                             <TextBlock Text="Processador" Style="{StaticResource Caption}" Margin="0,0,16,0" />
-                            <Border Style="{StaticResource Swatch}" Background="{DynamicResource Copper}" />
+                            <Border Style="{StaticResource Swatch}" Background="{DynamicResource Gpu}" />
                             <TextBlock Text="Placa de vídeo" Style="{StaticResource Caption}" Margin="0,0,16,0" />
                             <Line X1="0" X2="16" Stroke="{DynamicResource Warn}" StrokeThickness="1.5" StrokeDashArray="3 2" VerticalAlignment="Center" Margin="0,0,7,0" />
                             <TextBlock Text="Limites" Style="{StaticResource Caption}" />
