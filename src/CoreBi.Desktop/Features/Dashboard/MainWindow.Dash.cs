@@ -83,8 +83,8 @@ public partial class MainWindow
         {
             string mode = r.Multi != null ? "Multi-core" : "Single-core";
             string cpu = string.IsNullOrWhiteSpace(r.Cpu) ? "" : $" · {r.Cpu}";
-            if (r.Multi is double m) yield return new DashEvent("\ue950", "Render de CPU", mode + cpu, $"{m:N0} pts", r.Date, "Cpu");
-            else if (r.Single is double s) yield return new DashEvent("\ue950", "Render de CPU", mode + cpu, $"{s:N0} pts", r.Date, "Cpu");
+            if (r.Multi is double m) yield return new DashEvent("cpu", "Render de CPU", mode + cpu, $"{m:N0} pts", r.Date, "Cpu");
+            else if (r.Single is double s) yield return new DashEvent("cpu", "Render de CPU", mode + cpu, $"{s:N0} pts", r.Date, "Cpu");
         }
         foreach (var r in _settings.BenchRecords)
             yield return BenchEvent(r);
@@ -99,16 +99,16 @@ public partial class MainWindow
         if (r.Test.StartsWith("rt:"))
         {
             // "1.499 pts · 150 FPS · Alta 1080p [· instável]" → Alta 1080p · 150 FPS [· instável]
-            return new DashEvent("\ue7f4", "Ray tracing", Join(new[] { Part(2), Part(1), Part(3) }), Part(0), r.Date, "Gpu");
+            return new DashEvent("gpu", "Ray tracing", Join(new[] { Part(2), Part(1), Part(3) }), Part(0), r.Date, "Gpu");
         }
         switch (r.Test)
         {
             case "gpu": // "4.286 pts · 429 FPS · 1080p"
-                return new DashEvent("\ue7f4", "Cena de jogo (GPU)", Join(parts.Skip(1)), Part(0), r.Date, "Gpu");
+                return new DashEvent("gpu", "Cena de jogo (GPU)", Join(parts.Skip(1)), Part(0), r.Date, "Gpu");
             case "sim": // "120 FPS · 1% low 95"
                 return new DashEvent("\ue7fc", "Simulação de jogo (CPU)", Part(1), Part(0), r.Date, "Cpu");
             case "mem": // "84 ns · 36 GB/s · mapa 0,19 s" → Leitura 36 GB/s · mapa em 0,19 s (a latência fica no valor)
-                return new DashEvent("\ueea0", "Benchmark de memória",
+                return new DashEvent("ram", "Benchmark de memória",
                                      Join(new[] { Part(1).Length > 0 ? "Leitura " + Part(1) : "", Part(2).Replace("mapa ", "mapa em ") }), Part(0), r.Date, "Memory");
             case "disk": // "C: · 2.929/3.320 MiB/s · 4K 14,6k IOPS"
                 {
@@ -116,10 +116,10 @@ public partial class MainWindow
                     int slash = speeds.IndexOf('/');
                     int space = speeds.IndexOf(' ');
                     if (slash > 0 && space > slash)
-                        return new DashEvent("\ueda2", $"Benchmark de disco ({Part(0).TrimEnd(':')}:)",
+                        return new DashEvent("storage", $"Benchmark de disco ({Part(0).TrimEnd(':')}:)",
                                              Join(new[] { $"Escrita {speeds[(slash + 1)..space]} {speeds[(space + 1)..]}", Part(2) }),
                                              $"{speeds[..slash]} {speeds[(space + 1)..]}", r.Date, "Storage");
-                    return new DashEvent("\ueda2", "Benchmark de disco", Join(parts.Skip(1)), Part(0), r.Date, "Storage");
+                    return new DashEvent("storage", "Benchmark de disco", Join(parts.Skip(1)), Part(0), r.Date, "Storage");
                 }
             default:
                 return new DashEvent("\ue8b9", r.Test, Join(parts.Skip(1)), Part(0), r.Date);
@@ -183,7 +183,7 @@ public partial class MainWindow
         var cpuLoad = _monitor.CpuLoad;
         var rows = new List<DashComponent>
         {
-            new("\uE950", "Cpu", "Processador", GameCatalog.ShortCpuName(_cpuName), "PageSystem:Processador", Palette("Cpu"),
+            new("cpu", "Cpu", "Processador", GameCatalog.ShortCpuName(_cpuName), "PageSystem:Processador", Palette("Cpu"),
                 F(cpuLoad, "0", " %"), "em uso", (cpuLoad ?? 0) / 100.0,
                 new[] { Stat("Temp.", F(_monitor.CpuTemperature, "0", " °C")), Stat("Clock", F(CpuClockAvg(), "0", " MHz")),
                         Stat("Consumo", F(_monitor.CpuPower, "0", " W")) }),
@@ -193,7 +193,7 @@ public partial class MainWindow
             var gpu = _gpus[0];
             uint? clk = gpu.NvmlHandle != IntPtr.Zero ? Nvml.Clock(gpu.NvmlHandle, Nvml.ClockGraphics) : null;
             var gpuLoad = MainGpuLoad();
-            rows.Add(new("\uE7F4", "Gpu", "Placa de vídeo", GameCatalog.ShortGpuName(gpu.Name), "PageGpu", Palette("Gpu"),
+            rows.Add(new("gpu", "Gpu", "Placa de vídeo", GameCatalog.ShortGpuName(gpu.Name), "PageGpu", Palette("Gpu"),
                          F(gpuLoad, "0", " %"), "em uso", (gpuLoad ?? 0) / 100.0,
                          new[] { Stat("Temp.", F(MainGpuTemp(), "0", " °C")), Stat("Clock", clk is uint c ? $"{c} MHz" : "—"),
                                  Stat("Consumo", F(MainGpuPower(), "0", " W")) }));
@@ -332,8 +332,8 @@ public partial class MainWindow
             foreach (var p in pts) trace.Points.Add(p);
             DashChart.Children.Add(trace);
         }
-        Area(gpuPts, "Gpu", 0x1C);
-        Area(cpuPts, "Cpu", 0x26);
+        Area(gpuPts, "Gpu", ThemeManager.IsLight ? (byte)0x10 : (byte)0x1C); // no papel a mesma opacidade pesa mais
+        Area(cpuPts, "Cpu", ThemeManager.IsLight ? (byte)0x1A : (byte)0x26);
         Trace(gpuPts, "Gpu", 1.8);
         Trace(cpuPts, "Cpu", 2);
 

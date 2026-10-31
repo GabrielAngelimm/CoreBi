@@ -132,9 +132,9 @@
         <DataTemplate x:Key="ComponentHeader">
             <StackPanel>
                 <!-- Fundo claro na cor do componente, uniforme, como a placa de Sistema -->
-                <Border Height="80" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" ClipToBounds="True">
+                <Border Height="80" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True">
                     <Grid>
-                    <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="{Binding Tone}" Margin="0,0,-60,0" />
+                    <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="{Binding Tone}" Margin="0,0,-12,0" />
                     <Grid Margin="24,0,18,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -255,9 +255,7 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Style="{StaticResource ChannelTile}" local:Ui.Channel="{Binding Tone}" Margin="0,0,12,0" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Glyph}" Style="{StaticResource IconGlyph}" FontSize="16" />
-                                    </Border>
+                                    <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Tone}" Kind="{Binding Glyph}" Width="30" Height="30" Margin="0,0,12,0" VerticalAlignment="Center" />
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                         <!-- Nome inteiro: quebra em até duas linhas em vez de cortar -->
                                         <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" LineHeight="17" MaxHeight="34" TextTrimming="CharacterEllipsis" />

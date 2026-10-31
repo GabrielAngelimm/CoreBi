@@ -43,10 +43,8 @@
                         <Border x:Name="face" Margin="5" CornerRadius="{StaticResource RadiusInset}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" SnapsToDevicePixels="True" Padding="12,12,14,12">
                             <DockPanel>
                                 <TextBlock x:Name="chev" DockPanel.Dock="Right" Text="&#xE76C;" Style="{StaticResource IconGlyph}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="8,0,0,0" />
-                                <Border x:Name="tile" Style="{StaticResource ChannelTile}" local:Ui.Channel="{Binding Channel}" Width="38" Height="38">
-                                    <TextBlock Text="{Binding Glyph}" Style="{StaticResource IconGlyph}" FontSize="18" />
-                                </Border>
-                                <TextBlock x:Name="cat" Text="{Binding Category}" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="13,0,0,1" />
+                                <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Channel}" Kind="{Binding Glyph}" Width="32" Height="32" />
+                                <TextBlock x:Name="cat" Text="{Binding Category}" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="13,3,0,0" />
                             </DockPanel>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -296,13 +294,10 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="face" Background="{TemplateBinding Background}" CornerRadius="{StaticResource RadiusInset}" Padding="6,6,18,6" SnapsToDevicePixels="True">
+                        <Border x:Name="face" Background="{TemplateBinding Background}" CornerRadius="{StaticResource RadiusInset}" Padding="14,9,18,9" SnapsToDevicePixels="True">
                             <StackPanel Orientation="Horizontal">
-                                <Grid Width="30" Height="30">
-                                    <Border CornerRadius="5" Background="{DynamicResource SignalFg}" Opacity="0.12" />
-                                    <TextBlock Text="&#xE896;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{TemplateBinding Foreground}" />
-                                </Grid>
-                                <ContentPresenter VerticalAlignment="Center" Margin="11,0,0,1" TextElement.Foreground="{TemplateBinding Foreground}" />
+                                <TextBlock Text="&#xE896;" Style="{StaticResource IconGlyph}" FontSize="19" Foreground="{TemplateBinding Foreground}" />
+                                <ContentPresenter VerticalAlignment="Center" Margin="10,0,0,2" TextElement.Foreground="{TemplateBinding Foreground}" />
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>

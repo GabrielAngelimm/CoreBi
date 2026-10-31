@@ -25,10 +25,8 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <!-- O disco no ladrilho do canal de armazenamento, o mesmo de Sistema e da Visão geral -->
-                <Border Grid.RowSpan="2" Style="{StaticResource ChannelTile}" local:Ui.Channel="Storage" HorizontalAlignment="Left" VerticalAlignment="Center">
-                    <TextBlock Text="&#xEDA2;" Style="{StaticResource IconGlyph}" FontSize="15" />
-                </Border>
+                <!-- O disco no ícone do canal de armazenamento, o mesmo de Sistema e da Visão geral -->
+                <local:HwIcon Grid.RowSpan="2" Style="{StaticResource ChannelIcon}" local:Ui.Channel="Storage" Kind="storage" Width="30" Height="30" HorizontalAlignment="Left" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                 <Ellipse Grid.Column="2" Style="{StaticResource DiskLed}" Margin="10,0,0,0" ToolTip="{Binding VerdictText}" />
                 <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Meta}" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />

@@ -124,12 +124,12 @@
                         <local:SlidingSelectionPanel x:Name="NavPanel" Style="{StaticResource NavRail}" Margin="0,4,0,12">
                             <RadioButton x:Name="NavDash" Style="{StaticResource NavItem}" Tag="PageDash" local:Ui.Icon="&#xE80F;" Content="Visão geral" Checked="Nav_Checked" IsChecked="True" />
                             <TextBlock Text="Monitoramento" Style="{StaticResource NavHeader}" />
-                            <RadioButton x:Name="NavSystem" Style="{StaticResource NavItem}" Tag="PageSystem" local:Ui.Icon="&#xE7F8;" Content="Sistema" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavSystem" Style="{StaticResource NavItem}" Tag="PageSystem" local:Ui.Icon="desktop" Content="Sistema" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavSensors" Style="{StaticResource NavItem}" Tag="PageSensors" local:Ui.Icon="&#xE9D9;" Content="Sensores" Checked="Nav_Checked" />
-                            <RadioButton x:Name="NavGpu" Style="{StaticResource NavItem}" Tag="PageGpu" local:Ui.Icon="&#xE7F4;" Content="Placa de vídeo" Checked="Nav_Checked" />
-                            <RadioButton x:Name="NavDisks" Style="{StaticResource NavItem}" Tag="PageDisks" local:Ui.Icon="&#xEDA2;" Content="Discos" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavGpu" Style="{StaticResource NavItem}" Tag="PageGpu" local:Ui.Icon="gpu" Content="Placa de vídeo" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavDisks" Style="{StaticResource NavItem}" Tag="PageDisks" local:Ui.Icon="storage" Content="Discos" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavEnergy" Style="{StaticResource NavItem}" Tag="PageEnergy" local:Ui.Icon="&#xE7E8;" Content="Energia" Checked="Nav_Checked" />
-                            <RadioButton x:Name="NavNet" Style="{StaticResource NavItem}" Tag="PageNet" local:Ui.Icon="&#xE839;" Content="Rede" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavNet" Style="{StaticResource NavItem}" Tag="PageNet" local:Ui.Icon="net" Content="Rede" Checked="Nav_Checked" />
                             <TextBlock Text="Jogos" Style="{StaticResource NavHeader}" />
                             <RadioButton x:Name="NavOverlay" Style="{StaticResource NavItem}" Tag="PageOverlay" local:Ui.Icon="&#xE81E;" Content="OverlayBi" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavGames" Style="{StaticResource NavItem}" Tag="PageGames" local:Ui.Icon="&#xEC49;" Content="FPS estimado" Checked="Nav_Checked" />
@@ -241,7 +241,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding Icon}" Style="{StaticResource ListNavIcon}" FontSize="14" HorizontalAlignment="Left" />
+                                            <local:HwIcon Kind="{Binding Icon}" Style="{StaticResource ListNavIcon}" Width="19" Height="19" HorizontalAlignment="Left" />
                                             <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                             <TextBlock Grid.Column="2" Text="{Binding Section}" Foreground="{DynamicResource Faint}" FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0" />
                                         </Grid>

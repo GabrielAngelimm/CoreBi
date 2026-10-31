@@ -108,7 +108,8 @@ internal static partial class Program
             var ramRows = sheets["ram"].Groups.SelectMany(g => g.Rows).ToList();
             Require(ramRows.Any(r => r.Key == "Canais" && r.Value == "Dual channel" && r.Tone == Tone.Ok) && ramRows.Any(r => r.Key == "Perfil XMP/EXPO" && r.Tone == Tone.Ok), "RAM verdicts live in the rows");
             Require(sheets["ram"].Groups.Any(g => g.Columns?.Count == 2 && g.Rows.All(r => r.Cells?.Count == 2)), "Two RAM modules side by side");
-            Require(sheets["cpu"].Readouts.Count == 4 && index.All(i => i.Glyph.Length == 1 && i.Glyph[0] >= '\uE000'), "Index glyphs are icon characters");
+            Require(sheets["cpu"].Readouts.Count == 4 && index.All(i => HwIcon.IsKnown(i.Glyph)), "Index icons are drawn pieces or icon-font glyphs");
+            Require(new[] { "cpu", "gpu", "ram", "ramv", "vram", "storage", "board", "net", "router", "desktop", "fan" }.All(HwIcon.IsKnown), "Every hardware icon is drawn");
             Require(sheets["gpu"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Atualização" && r.Tone == Tone.Warn), "Display below max Hz warns in the row and the index");
             Require(sheets["storage"].Groups.Any(g => g.Rows.Any(r => r.Key == "Nº de série" && r.Value == "S64ANS0T")) && sheets["storage"].Disks![0].Meta.Length < 30, "Disk serial in its own row, not a truncated meta line");
             Require(sheets["os"].Groups.SelectMany(g => g.Rows).Any(r => r.Key == "Modo de jogo" && r.Tone == Tone.Warn), "Game mode off warns");

@@ -152,7 +152,7 @@ public partial class PowerView : UserControl
         var ups = s.Batteries.FirstOrDefault(b => b.IsUps);
         bool onBattery = s.OnAc == false;
         SourceTitle.Text = SourceWord(s);
-        SourceGlyph.Text = battery == null ? "" : battery.Charging ? "" : "";
+        SourceGlyph.Kind = battery == null ? "" : battery.Charging ? "" : "";
         SourceCaption.Text = battery != null
             ? string.Join(" · ", new[] { s.Batteries.Count(b => !b.IsUps) > 1 ? $"{s.Batteries.Count(b => !b.IsUps)} baterias" : "Notebook", s.BatterySaver ? "economia de bateria ligada" : null }.Where(x => x != null))
             : ups != null ? "PC de mesa · nobreak conectado por USB"

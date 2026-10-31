@@ -42,6 +42,57 @@ public partial class NetworkView : UserControl
         NetConsole.Margin = narrow ? new Thickness(0, 16, 0, 0) : new Thickness(40, 0, 0, 0);
     }
 
+    // Larguras do painel de diagnóstico: abaixo de NarrowDiag a latência e as grandezas de apoio descem para uma faixa sob o
+    // instrumento (a latência à esquerda e as quatro grandezas em fila); abaixo de CompactDiag a faixa não comporta cinco
+    // colunas e volta ao arranjo do painel largo (latência em cima, grandezas em grade 2 × 2).
+    private const double NarrowDiag = 1200, CompactDiag = 900;
+    private int _diagState = -1; // 0 largo, 1 estreito, 2 compacto
+
+    private void NetDiagCard_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        double width = NetDiagCard.ActualWidth;
+        int state = width < CompactDiag ? 2 : width < NarrowDiag ? 1 : 0;
+        if (state == _diagState) return;
+        _diagState = state;
+        bool narrow = state > 0, inRow = state == 1;
+
+        NetMetricsColumn.MinWidth = narrow ? 0 : 380;
+        NetMetricsColumn.MaxWidth = narrow ? double.PositiveInfinity : 520;
+        Grid.SetColumnSpan(NetInstrument, narrow ? 2 : 1);
+        NetInstrument.MaxHeight = narrow ? 170 : 350;
+        NetInstrument.Margin = narrow ? new Thickness(24, 0, 24, 6) : new Thickness(24, 4, 16, 8);
+        NetInstrument.HorizontalAlignment = narrow ? HorizontalAlignment.Center : HorizontalAlignment.Left;
+        // Estreito, o nome da fonte do teste fica na mesma linha do título e a latência encolhe: a página continua numa tela só.
+        NetDiagTitle.Orientation = narrow ? Orientation.Horizontal : Orientation.Vertical;
+        NetMeta.Margin = narrow ? new Thickness(14, 4, 0, 0) : new Thickness(0, 3, 0, 0);
+
+        Grid.SetRow(NetMetricsPanel, narrow ? 1 : 0);
+        Grid.SetColumn(NetMetricsPanel, narrow ? 0 : 1);
+        Grid.SetColumnSpan(NetMetricsPanel, narrow ? 2 : 1);
+        NetMetricsPanel.BorderThickness = narrow ? new Thickness(0, 1, 0, 0) : new Thickness(1, 0, 0, 0);
+        NetMetricsPanel.Margin = narrow ? new Thickness(0) : new Thickness(0, 8, 0, 16);
+        NetMetricsPanel.Padding = !narrow ? new Thickness(32, 0, 24, 0) : inRow ? new Thickness(24, 8, 24, 8) : new Thickness(24, 12, 24, 12);
+
+        NetLatency.FontSize = inRow ? 44 : 64;
+        NetLatencyCaption.Margin = inRow ? new Thickness(8, 0, 0, 7) : new Thickness(8, 0, 0, 11);
+        NetHero.Children.OfType<StackPanel>().First().Margin = inRow ? new Thickness(0, 2, 0, 0) : new Thickness(0, 2, 0, 14);
+        Grid.SetColumnSpan(NetHero, inRow ? 1 : 2);
+        NetHero.VerticalAlignment = inRow ? VerticalAlignment.Center : VerticalAlignment.Top;
+        Grid.SetRow(NetCells, inRow ? 0 : 1);
+        Grid.SetColumn(NetCells, inRow ? 1 : 0);
+        Grid.SetColumnSpan(NetCells, inRow ? 1 : 2);
+        NetCells.Columns = inRow ? 4 : 2;
+        NetCells.Margin = inRow ? new Thickness(28, 0, 0, 0) : new Thickness(0);
+        NetCells.VerticalAlignment = inRow ? VerticalAlignment.Center : VerticalAlignment.Stretch;
+        var cells = new[] { NetCell1, NetCell2, NetCell3, NetCell4 };
+        for (int i = 0; i < cells.Length; i++)
+        {
+            bool second = i % 2 == 1;
+            cells[i].BorderThickness = inRow ? new Thickness(1, 0, 0, 0) : new Thickness(second ? 1 : 0, 1, 0, 0);
+            cells[i].Padding = inRow ? new Thickness(20, 0, 8, 0) : new Thickness(second ? 20 : 0, 14, second ? 0 : 16, 14);
+        }
+    }
+
     private async void BtnNetTest_Click(object sender, RoutedEventArgs e) => await RunOrCancelAsync();
 
     internal async Task RunOrCancelAsync()

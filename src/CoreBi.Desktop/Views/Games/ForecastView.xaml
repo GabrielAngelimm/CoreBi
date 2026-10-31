@@ -60,9 +60,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Border Style="{StaticResource IconTile}" VerticalAlignment="Top">
-                        <TextBlock Text="&#xE9D9;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Steel}" />
-                    </Border>
+                    <local:HwIcon Kind="&#xE9D9;" Foreground="{DynamicResource Steel}" Width="30" Height="30" VerticalAlignment="Top" />
                     <StackPanel Grid.Column="1" Margin="14,0,16,0" VerticalAlignment="Center">
                         <TextBlock x:Name="GameSourceTitle" FontWeight="SemiBold" />
                         <TextBlock x:Name="GameSourceText" Style="{StaticResource Caption}" Margin="0,3,0,0" MaxWidth="640" HorizontalAlignment="Left" />

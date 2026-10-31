@@ -185,9 +185,7 @@
                                             <ColumnDefinition Width="14" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <Border Style="{StaticResource ChannelTile}" local:Ui.Channel="Signal" Width="46" Height="46" CornerRadius="{StaticResource RadiusInset}">
-                                            <TextBlock x:Name="SourceGlyph" Text="&#xE945;" Style="{StaticResource IconGlyph}" FontSize="21" />
-                                        </Border>
+                                        <local:HwIcon x:Name="SourceGlyph" Style="{StaticResource ChannelIcon}" local:Ui.Channel="Signal" Kind="&#xE945;" Width="38" Height="38" HorizontalAlignment="Left" />
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                             <TextBlock x:Name="SourceTitle" Text="—" FontFamily="{StaticResource DisplayFont}" FontSize="21" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                             <TextBlock x:Name="SourceCaption" Style="{StaticResource Caption}" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />

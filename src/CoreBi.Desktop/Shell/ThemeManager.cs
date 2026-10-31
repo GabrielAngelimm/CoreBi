@@ -50,7 +50,7 @@ public static class ThemeManager
         // Componentes de hardware: a cor de cada peça em todas as telas (gráficos, medidores, anéis, legendas, ícone) e a
         // variante suave, o fundo claro da ficha do componente (Soft)
         ("Cpu", "#1F8A48", "#17703A"),
-        ("CpuSoft", "#1A1F8A48", "#1417703A"),
+        ("CpuSoft", "#161F8A48", "#1417703A"),
         ("Gpu", "#E8894A", "#C55F1D"),
         ("GpuSoft", "#1AE8894A", "#14C55F1D"),
         ("Memory", "#B296FF", "#8A66D9"),
