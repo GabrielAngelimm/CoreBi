@@ -109,7 +109,7 @@
                                 <!-- Medidor segmentado até 240 FPS, com marcas em 60 e 144 -->
                                 <Grid Height="8" Margin="0,10,0,4">
                                     <Grid Background="{DynamicResource Line}" OpacityMask="{StaticResource SegmentMask}">
-                                        <Border Background="{DynamicResource Accent}" RenderTransformOrigin="0,0.5">
+                                        <Border Background="{DynamicResource Signal}" RenderTransformOrigin="0,0.5">
                                             <Border.RenderTransform>
                                                 <ScaleTransform ScaleX="{Binding Bar}" />
                                             </Border.RenderTransform>

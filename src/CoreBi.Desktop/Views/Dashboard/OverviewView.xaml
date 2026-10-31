@@ -12,9 +12,7 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <Border Style="{StaticResource IconTile}" Width="32" Height="32" CornerRadius="16" Margin="0,0,12,0">
-                                    <TextBlock Text="{Binding Icon}" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Accent}" />
-                                </Border>
+                                <TextBlock Text="{Binding Icon}" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{DynamicResource Faint}" Width="22" HorizontalAlignment="Left" Margin="0,0,12,0" />
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                     <TextBlock Text="{Binding Detail}" Style="{StaticResource StatSub}" ToolTip="{Binding Detail}" />
@@ -40,7 +38,7 @@
                     <ColumnDefinition Width="364" />
                 </Grid.ColumnDefinitions>
 
-                <Grid Grid.ColumnSpan="3" Style="{StaticResource PageHeader}" Margin="0,0,0,22">
+                <Grid Grid.ColumnSpan="3" Style="{StaticResource PageHeader}">
                     <StackPanel>
                         <TextBlock Text="Visão geral" Style="{StaticResource PageTitle}" />
                         <TextBlock x:Name="DashMachine" Text="Leituras ao vivo do processador, da placa de vídeo, da memória e do disco do sistema." Style="{StaticResource PageSubtitle}" />
@@ -87,14 +85,14 @@
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,16,0,8">
                                 <StackPanel Margin="0,0,40,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="10" Height="3" CornerRadius="1.5" Background="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,7,0" />
+                                        <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Cpu}" Margin="0,0,8,0" />
                                         <TextBlock Text="Processador" Style="{StaticResource StatLabel}" />
                                     </StackPanel>
                                     <TextBlock x:Name="DashChartValue" Text="—" Style="{StaticResource ReadoutHero}" Margin="0,2,0,0" />
                                 </StackPanel>
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="10" Height="3" CornerRadius="1.5" Background="{DynamicResource Copper}" VerticalAlignment="Center" Margin="0,0,7,0" />
+                                        <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Gpu}" Margin="0,0,8,0" />
                                         <TextBlock Text="Placa de vídeo" Style="{StaticResource StatLabel}" />
                                     </StackPanel>
                                     <TextBlock x:Name="DashChartValue2" Text="—" Style="{StaticResource ReadoutHero}" Foreground="{DynamicResource Muted}" Margin="0,2,0,0" />
@@ -133,11 +131,9 @@
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
-                                                <Border Style="{StaticResource IconTile}">
-                                                    <TextBlock Text="{Binding Icon}" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{Binding Channel}" />
-                                                </Border>
-                                                <StackPanel Grid.Column="1" Margin="12,0,6,0" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                <Border Style="{StaticResource ChannelMark}" Background="{Binding Channel}" VerticalAlignment="Top" Margin="0,8,10,0" />
+                                                <StackPanel Grid.Column="1" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource SectionTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
                                                     <TextBlock Text="{Binding Model}" Style="{StaticResource StatSub}" Margin="0,1,0,0" ToolTip="{Binding Model}" />
                                                 </StackPanel>
                                                 <Button Grid.Column="2" Style="{StaticResource IconButton}" Width="28" Height="28" FontSize="11" Content="&#xE76C;" Tag="{Binding Target}" Click="DashGo_Click" ToolTip="Abrir detalhes" VerticalAlignment="Top" />
@@ -186,7 +182,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Canvas x:Name="DashRings" Width="150" Height="150" VerticalAlignment="Center" Margin="0,0,24,0" />
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="Memória e disco" FontWeight="SemiBold" Margin="0,0,0,4" />
+                                    <TextBlock Text="Memória e disco" Style="{StaticResource SectionTitle}" Margin="0,0,0,6" />
                                     <!-- Cada linha leva à seção do item: RAM ao Sistema, VRAM à Placa de vídeo, disco a Discos -->
                                     <ItemsControl x:Name="DashRingLegend" Margin="-8,0,-8,-4" Focusable="False">
                                         <ItemsControl.ItemTemplate>
@@ -241,7 +237,7 @@
                                     <TextBlock x:Name="DashScore" Text="—" Style="{StaticResource ReadoutHero}" />
                                     <TextBlock Text="pts" Style="{StaticResource Unit}" Margin="6,0,0,9" />
                                 </StackPanel>
-                                <TextBlock x:Name="DashScoreDelta" Style="{StaticResource Caption}" Foreground="{DynamicResource Accent}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,10" />
+                                <TextBlock x:Name="DashScoreDelta" Style="{StaticResource Caption}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,10" />
                             </Grid>
                             <TextBlock x:Name="DashScoreSub" Text="nenhum teste ainda" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" />
                             <Border Style="{StaticResource Divider}" Margin="0,14,0,8" />
@@ -254,7 +250,10 @@
                             <Grid Margin="0,0,0,4">
                                 <TextBlock Text="Saúde do PC" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                                 <Border x:Name="DashHealthBadge" Style="{StaticResource Badge}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed">
-                                    <TextBlock x:Name="DashHealthBadgeText" Style="{StaticResource BadgeText}" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Style="{StaticResource BadgeLed}" />
+                                        <TextBlock x:Name="DashHealthBadgeText" Style="{StaticResource BadgeText}" />
+                                    </StackPanel>
                                 </Border>
                             </Grid>
                             <ItemsControl x:Name="DashHealth" Focusable="False">
@@ -265,9 +264,7 @@
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <Border x:Name="dot" Width="22" Height="22" CornerRadius="11" Background="{DynamicResource WarnSoft}" Margin="0,0,12,0" VerticalAlignment="Top">
-                                                <TextBlock x:Name="chk" Text="&#xE7BA;" FontFamily="{StaticResource Icons}" FontSize="11" Foreground="{DynamicResource Warn}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Border>
+                                            <TextBlock x:Name="chk" Text="&#xE7BA;" FontFamily="{StaticResource Icons}" FontSize="12" Foreground="{DynamicResource Warn}" Width="22" Margin="0,3,10,0" VerticalAlignment="Top" />
                                             <StackPanel Grid.Column="1">
                                                 <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
                                                 <TextBlock Text="{Binding Detail}" Style="{StaticResource Caption}" Margin="0,2,0,0" />
@@ -277,7 +274,6 @@
                                             <DataTrigger Binding="{Binding Ok}" Value="True">
                                                 <Setter TargetName="chk" Property="Text" Value="&#xE73E;" />
                                                 <Setter TargetName="chk" Property="Foreground" Value="{DynamicResource Ok}" />
-                                                <Setter TargetName="dot" Property="Background" Value="{DynamicResource OkSoft}" />
                                             </DataTrigger>
                                         </DataTemplate.Triggers>
                                     </DataTemplate>

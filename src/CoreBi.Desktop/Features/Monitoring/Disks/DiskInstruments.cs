@@ -7,14 +7,15 @@ namespace CoreBi.Desktop;
 
 /// <summary>
 /// Base dos instrumentos da página Discos, desenhados direto no DrawingContext. Os pincéis seguem a paleta por
-/// referência de recurso: a troca de tema muda a propriedade e o instrumento se redesenha sozinho.
+/// referência de recurso: a troca de tema muda a propriedade e o instrumento se redesenha sozinho. ChannelBrush é a cor do
+/// que o instrumento mede (o canal Storage nos discos); veredito usa Warn e Danger, e a faixa normal fica neutra.
 /// </summary>
 public abstract class DiskInstrument : FrameworkElement
 {
     private static DependencyProperty Paint(string name) =>
         DependencyProperty.Register(name, typeof(Brush), typeof(DiskInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
 
-    public static readonly DependencyProperty AccentBrushProperty = Paint(nameof(AccentBrush));
+    public static readonly DependencyProperty ChannelBrushProperty = Paint(nameof(ChannelBrush));
     public static readonly DependencyProperty TrackBrushProperty = Paint(nameof(TrackBrush));
     public static readonly DependencyProperty InkBrushProperty = Paint(nameof(InkBrush));
     public static readonly DependencyProperty MutedBrushProperty = Paint(nameof(MutedBrush));
@@ -28,7 +29,7 @@ public abstract class DiskInstrument : FrameworkElement
     public static readonly DependencyProperty RaisedBrushProperty = Paint(nameof(RaisedBrush));
     public static readonly DependencyProperty LineStrongBrushProperty = Paint(nameof(LineStrongBrush));
 
-    public Brush AccentBrush { get => (Brush)GetValue(AccentBrushProperty); set => SetValue(AccentBrushProperty, value); }
+    public Brush ChannelBrush { get => (Brush)GetValue(ChannelBrushProperty); set => SetValue(ChannelBrushProperty, value); }
     public Brush TrackBrush { get => (Brush)GetValue(TrackBrushProperty); set => SetValue(TrackBrushProperty, value); }
     public Brush InkBrush { get => (Brush)GetValue(InkBrushProperty); set => SetValue(InkBrushProperty, value); }
     public Brush MutedBrush { get => (Brush)GetValue(MutedBrushProperty); set => SetValue(MutedBrushProperty, value); }
@@ -45,7 +46,7 @@ public abstract class DiskInstrument : FrameworkElement
     protected DiskInstrument()
     {
         SnapsToDevicePixels = true;
-        SetResourceReference(AccentBrushProperty, "Accent");
+        SetResourceReference(ChannelBrushProperty, "Storage");
         SetResourceReference(TrackBrushProperty, "Line");
         SetResourceReference(InkBrushProperty, "Fg");
         SetResourceReference(MutedBrushProperty, "Muted");
@@ -126,7 +127,7 @@ public sealed class LifeGauge : DiskInstrument
         Arc(critAt + 0.004, warnAt, rz, Stroke(WarnBrush, 2.5));
         Arc(warnAt + 0.004, 1, rz, Stroke(TrackBrush, 1));
 
-        Brush fill = rem <= critAt ? DangerBrush : rem <= warnAt ? WarnBrush : AccentBrush;
+        Brush fill = rem <= critAt ? DangerBrush : rem <= warnAt ? WarnBrush : ChannelBrush;
         for (int i = 0; i < Segments; i++)
         {
             double f0 = (double)i / Segments, f1 = (i + 0.72) / Segments, mid = (i + 0.5) / Segments;
@@ -159,8 +160,8 @@ public sealed class LifeGauge : DiskInstrument
 }
 
 /// <summary>
-/// Régua térmica: medidor segmentado de 20 °C até 10 °C além do limite crítico, com a faixa ideal, a de atenção e a
-/// crítica sublinhadas e o ponteiro da leitura atual.
+/// Régua térmica: medidor segmentado de 20 °C até 10 °C além do limite crítico, com a faixa ideal (neutra), a de atenção e
+/// a crítica sublinhadas e o ponteiro da leitura atual.
 /// </summary>
 public sealed class ThermalScale : DiskInstrument
 {
@@ -182,7 +183,7 @@ public sealed class ThermalScale : DiskInstrument
         double hi = CritAt + 10;
         double X(double v) => (Math.Clamp(v, lo, hi) - lo) / (hi - lo) * w;
         bool known = !double.IsNaN(Value);
-        Brush fill = !known ? TrackBrush : Value >= CritAt ? DangerBrush : Value >= WarnAt ? WarnBrush : AccentBrush;
+        Brush fill = !known ? TrackBrush : Value >= CritAt ? DangerBrush : Value >= WarnAt ? WarnBrush : ChannelBrush;
 
         int n = (int)Math.Floor((w + gap) / period);
         for (int i = 0; i < n; i++)
@@ -191,9 +192,9 @@ public sealed class ThermalScale : DiskInstrument
             dc.DrawRectangle(known && v <= Value ? fill : TrackBrush, null, new Rect(i * period, barTop, period - gap, barH));
         }
 
-        // Faixas: ideal, atenção e crítica
+        // Faixas: a ideal fica neutra (como a escala de um conta-giros), só atenção e crítica ganham cor
         double zoneY = barTop + barH + 4;
-        dc.DrawRectangle(OkBrush, null, new Rect(0, zoneY, Math.Max(0, X(WarnAt) - 1), 3));
+        dc.DrawRectangle(LineStrongBrush, null, new Rect(0, zoneY, Math.Max(0, X(WarnAt) - 1), 3));
         dc.DrawRectangle(WarnBrush, null, new Rect(X(WarnAt) + 1, zoneY, Math.Max(0, X(CritAt) - X(WarnAt) - 2), 3));
         dc.DrawRectangle(DangerBrush, null, new Rect(X(CritAt) + 1, zoneY, Math.Max(0, w - X(CritAt) - 1), 3));
 
@@ -308,7 +309,7 @@ public sealed class TraceChart : DiskInstrument
             return;
         }
 
-        var color = AccentBrush is SolidColorBrush s ? s.Color : Colors.Teal;
+        var color = ChannelBrush is SolidColorBrush s ? s.Color : Colors.SteelBlue;
         var area = new StreamGeometry();
         using (var g = area.Open())
         {
@@ -317,7 +318,9 @@ public sealed class TraceChart : DiskInstrument
             g.LineTo(new Point(points[^1].X, top + plotH), false, false);
         }
         area.Freeze();
-        dc.DrawGeometry(new LinearGradientBrush(Color.FromArgb(0x44, color.R, color.G, color.B), Color.FromArgb(0, color.R, color.G, color.B), 90), null, area);
+        var fill = new SolidColorBrush(Color.FromArgb(0x1C, color.R, color.G, color.B)); // área plana e clara, sem degradê
+        fill.Freeze();
+        dc.DrawGeometry(fill, null, area);
         var line = new StreamGeometry();
         using (var g = line.Open())
         {
@@ -325,8 +328,8 @@ public sealed class TraceChart : DiskInstrument
             g.PolyLineTo(points.Skip(1).ToList(), true, true);
         }
         line.Freeze();
-        dc.DrawGeometry(null, new Pen(AccentBrush, 2) { LineJoin = PenLineJoin.Round }, line);
-        dc.DrawEllipse(SurfaceBrush, Stroke(AccentBrush, 2), points[^1], 4.5, 4.5);
+        dc.DrawGeometry(null, new Pen(ChannelBrush, 2) { LineJoin = PenLineJoin.Round }, line);
+        dc.DrawEllipse(SurfaceBrush, Stroke(ChannelBrush, 2), points[^1], 4.5, 4.5);
         DrawHover(dc, w, left, top, plotW, plotH, X, Y);
     }
 
@@ -346,7 +349,7 @@ public sealed class TraceChart : DiskInstrument
         double px = x(nearest), py = y(_samples[nearest]!.Value);
         double lx = Math.Round(px) + 0.5;
         dc.DrawLine(Stroke(FaintBrush, 1, new DashStyle(new double[] { 3, 3 }, 0)), new Point(lx, top), new Point(lx, top + plotH));
-        dc.DrawEllipse(SurfaceBrush, Stroke(AccentBrush, 2.5), new Point(px, py), 5.5, 5.5);
+        dc.DrawEllipse(SurfaceBrush, Stroke(ChannelBrush, 2.5), new Point(px, py), 5.5, 5.5);
 
         int ago = _samples.Count - 1 - nearest;
         string when = ago <= 0 ? "agora" : ago >= 60 ? $"há {ago / 60} min {ago % 60:00} s" : $"há {ago} s";
@@ -377,7 +380,7 @@ public sealed class CapacityBar : DiskInstrument
     public CapacityBar()
     {
         Height = 16;
-        SetResourceReference(FillBrushProperty, "Steel");
+        SetResourceReference(FillBrushProperty, "Storage");
     }
 
     /// <summary>Tamanho e ocupado de cada unidade (mesma escala), mais o que sobra no disco sem letra.</summary>

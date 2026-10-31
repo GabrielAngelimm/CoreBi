@@ -123,7 +123,7 @@ public partial class MainWindow
         {
             if (b < 0) continue;
             var (x, y, w, h) = _bench.Buckets[b];
-            var rect = new Rectangle { Width = w, Height = h, Stroke = Palette("Accent"), StrokeThickness = 2 };
+            var rect = new Rectangle { Width = w, Height = h, Stroke = Palette("Signal"), StrokeThickness = 2 };
             Canvas.SetLeft(rect, x); Canvas.SetTop(rect, y);
             BenchBuckets.Children.Add(rect);
         }

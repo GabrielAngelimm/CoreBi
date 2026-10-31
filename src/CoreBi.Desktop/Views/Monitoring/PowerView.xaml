@@ -6,11 +6,7 @@
             <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
             <Setter Property="BorderThickness" Value="0,1,0,0" />
         </Style>
-        <Style x:Key="Dash" TargetType="Border">
-            <Setter Property="Width" Value="12" />
-            <Setter Property="Height" Value="3" />
-            <Setter Property="CornerRadius" Value="1.5" />
-            <Setter Property="VerticalAlignment" Value="Center" />
+        <Style x:Key="Dash" TargetType="Border" BasedOn="{StaticResource ChannelMark}">
             <Setter Property="Margin" Value="0,1,8,0" />
         </Style>
         <Style x:Key="ChannelValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
@@ -29,14 +25,7 @@
             <Setter Property="BorderThickness" Value="1,0,0,0" />
             <Setter Property="Padding" Value="22,14,16,16" />
         </Style>
-        <Style x:Key="Led" TargetType="Ellipse">
-            <Setter Property="Width" Value="7" />
-            <Setter Property="Height" Value="7" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Fill" Value="{DynamicResource Faint}" />
-        </Style>
-
-        <!-- Plano instalado: anel de seleção, nome e "em uso" no ativo; "novo" no escolhido que aguarda confirmação -->
+        <!-- Plano instalado: anel de seleção, nome e "em uso" no ativo; "novo" no escolhido que aguarda confirmação. Tudo em tinta. -->
         <DataTemplate x:Key="PlanRow">
             <Button Style="{StaticResource RowButton}" Tag="{Binding}" Click="PlanRow_Click" AutomationProperties.Name="{Binding Name}">
                 <Grid Height="22">
@@ -45,24 +34,25 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Border x:Name="sel" Grid.ColumnSpan="3" Margin="-8,-5" CornerRadius="8" Background="{DynamicResource Selected}" Visibility="Collapsed" />
+                    <Border x:Name="sel" Grid.ColumnSpan="3" Margin="-8,-5" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Selected}" Visibility="Collapsed" />
                     <Grid Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <Ellipse x:Name="ring" Stroke="{DynamicResource LineStrong}" StrokeThickness="1.5" />
-                        <Ellipse x:Name="dot" Width="6" Height="6" Fill="{DynamicResource Accent}" Visibility="Collapsed" />
+                        <Ellipse x:Name="dot" Width="6" Height="6" Fill="{DynamicResource Fg}" Visibility="Collapsed" />
                     </Grid>
                     <TextBlock x:Name="name" Grid.Column="1" Text="{Binding Name}" FontSize="13.5" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                    <TextBlock x:Name="used" Grid.Column="2" Text="em uso" FontSize="12" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Visibility="Collapsed" />
+                    <TextBlock x:Name="used" Grid.Column="2" Text="em uso" FontSize="12" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Visibility="Collapsed" />
                 </Grid>
             </Button>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsPending}" Value="True">
-                    <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Accent}" />
+                    <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Fg}" />
                     <Setter TargetName="used" Property="Text" Value="novo plano" />
                     <Setter TargetName="used" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="used" Property="Foreground" Value="{DynamicResource Fg}" />
                     <Setter TargetName="name" Property="Foreground" Value="{DynamicResource Fg}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsActive}" Value="True">
-                    <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Accent}" />
+                    <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Fg}" />
                     <Setter TargetName="sel" Property="Visibility" Value="Visible" />
                     <Setter TargetName="dot" Property="Visibility" Value="Visible" />
                     <Setter TargetName="used" Property="Visibility" Value="Visible" />
@@ -90,7 +80,7 @@
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding Changed}" Value="True">
                     <Setter TargetName="before" Property="Visibility" Value="Visible" />
-                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Accent}" />
+                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Fg}" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -154,7 +144,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,14">
+                <Grid Style="{StaticResource PageHeader}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -194,8 +184,8 @@
                                             <ColumnDefinition Width="14" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <Border Width="46" Height="46" CornerRadius="11" Background="{DynamicResource AccentSoft}">
-                                            <TextBlock x:Name="SourceGlyph" Text="&#xE945;" Style="{StaticResource IconGlyph}" FontSize="21" Foreground="{DynamicResource Accent}" />
+                                        <Border Style="{StaticResource IconTile}" Width="46" Height="46" CornerRadius="{StaticResource RadiusInset}">
+                                            <TextBlock x:Name="SourceGlyph" Text="&#xE945;" Style="{StaticResource IconGlyph}" FontSize="21" Foreground="{DynamicResource Fg}" />
                                         </Border>
                                         <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                             <TextBlock x:Name="SourceTitle" Text="—" FontFamily="{StaticResource DisplayFont}" FontSize="21" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
@@ -221,7 +211,10 @@
                                             <Grid>
                                                 <TextBlock Text="Saúde da bateria" Style="{StaticResource StatLabel}" VerticalAlignment="Center" />
                                                 <Border x:Name="BatteryBadge" Style="{StaticResource Badge}" HorizontalAlignment="Right">
-                                                    <TextBlock x:Name="BatteryBadgeText" Style="{StaticResource BadgeText}" />
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Ellipse Style="{StaticResource BadgeLed}" />
+                                                        <TextBlock x:Name="BatteryBadgeText" Style="{StaticResource BadgeText}" />
+                                                    </StackPanel>
                                                 </Border>
                                             </Grid>
                                             <local:CapacityStack x:Name="BatteryCapacity" Margin="0,10,0,6" />
@@ -280,7 +273,7 @@
                                     <TextBlock x:Name="SessionAge" Style="{StaticResource Caption}" Margin="12,3,0,0" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0">
-                                    <Ellipse x:Name="LiveDot" Style="{StaticResource Led}" Margin="0,1,7,0" />
+                                    <Ellipse x:Name="LiveDot" Style="{StaticResource StatusLed}" Margin="0,1,7,0" />
                                     <TextBlock x:Name="LiveText" Text="Aguardando os sensores" Style="{StaticResource Caption}" />
                                 </StackPanel>
                             </Grid>
@@ -291,7 +284,7 @@
                                     <ColumnDefinition Width="34" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border x:Name="HeroPlate" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="12" Padding="20,18,20,16" VerticalAlignment="Center">
+                                <Border x:Name="HeroPlate" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{StaticResource RadiusInset}" Padding="20,18,20,16" VerticalAlignment="Center">
                                     <StackPanel>
                                         <TextBlock x:Name="TotalCaption" Text="Agora · processador + placa de vídeo" Style="{StaticResource StatLabel}" />
                                         <TextBlock x:Name="TotalNow" Style="{StaticResource ReadoutHero}" FontSize="88" Text="—" Margin="-3,0,0,0" />
@@ -303,7 +296,7 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Border Style="{StaticResource Dash}" Background="{DynamicResource Accent}" />
+                                                    <Border Style="{StaticResource Dash}" Background="{DynamicResource Cpu}" />
                                                     <TextBlock Text="Processador" Foreground="{DynamicResource Muted}" />
                                                 </StackPanel>
                                                 <TextBlock x:Name="CpuNow" Style="{StaticResource ChannelValue}" Text="—" />
@@ -311,7 +304,7 @@
                                             <Border Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="16,0,0,0">
                                                 <StackPanel>
                                                     <StackPanel Orientation="Horizontal">
-                                                        <Border Style="{StaticResource Dash}" Background="{DynamicResource Copper}" />
+                                                        <Border Style="{StaticResource Dash}" Background="{DynamicResource Gpu}" />
                                                         <TextBlock Text="Placa de vídeo" Foreground="{DynamicResource Muted}" />
                                                     </StackPanel>
                                                     <TextBlock x:Name="GpuNow" Style="{StaticResource ChannelValue}" Text="—" />

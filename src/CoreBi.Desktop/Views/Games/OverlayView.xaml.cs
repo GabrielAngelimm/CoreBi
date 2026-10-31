@@ -15,8 +15,6 @@ public partial class OverlayView : UserControl
     /// com 25% de folga para o texto continuar legível. A caixa ocupa na prévia a mesma fatia da tela que ocupa no jogo.
     /// </summary>
     private static readonly double PreviewFactor = 798.0 / Math.Max(1280, SystemParameters.PrimaryScreenWidth) * 1.25;
-    private static readonly Brush LedOn = Frozen(Color.FromRgb(0x27, 0xC9, 0xBC));
-    private static readonly Brush LedOff = Frozen(Color.FromRgb(0x33, 0x41, 0x4C));
 
     private string? _corner;
 
@@ -86,13 +84,7 @@ public partial class OverlayView : UserControl
     internal void ShowPreview(FrameStats f, IReadOnlyList<OverlayLine> lines, IReadOnlySet<string> show, string? extra, bool sample, bool overlayOn)
     {
         OvPreview.Update(f, lines, show, extra);
-        OvLed.Fill = overlayOn ? LedOn : LedOff;
-    }
-
-    private static Brush Frozen(Color c)
-    {
-        var b = new SolidColorBrush(c);
-        b.Freeze();
-        return b;
+        // LED do monitor: aceso no sinal quando o overlay está ligado (paleta fixa, como a cena)
+        OvLed.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, overlayOn ? "HudSignal" : "HudSep");
     }
 }

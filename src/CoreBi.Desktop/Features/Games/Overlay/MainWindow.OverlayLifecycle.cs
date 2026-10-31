@@ -207,14 +207,17 @@ public partial class MainWindow
     private uint _rtssPublishedFrame;
     private long _rtssPendingSince;
 
-    /// <summary>Estado da detecção de FPS, com ponto de veredito: medindo um jogo, aguardando, desligada ou com erro.</summary>
+    /// <summary>
+    /// Estado da detecção de FPS, num LED: medindo um jogo (sinal, ao vivo), publicado pelo RTSS (ok), aguardando (cinza),
+    /// desligada ou com erro.
+    /// </summary>
     internal void UpdateOverlayStatus(FrameStats? f)
     {
         (string text, string brush) = _rtssShowing ? ("Overlay publicado no jogo pelo RTSS", "Ok")
             : _frames.Error != null ? ($"Indisponível: {_frames.Error}", "Danger")
             : !_frames.Running ? ("", "Faint")
-            : f != null ? ($"{f.ProcessName}: {f.Fps:0} FPS ({f.FrameTimeMs:0.0} ms) · 1% low {f.Low1Fps:0}", "Ok")
-            : ("Aguardando um jogo · o FPS aparece assim que ele abrir", "Accent");
+            : f != null ? ($"{f.ProcessName}: {f.Fps:0} FPS ({f.FrameTimeMs:0.0} ms) · 1% low {f.Low1Fps:0}", "Signal")
+            : ("Aguardando um jogo · o FPS aparece assim que ele abrir", "Muted");
         OvStatus.Text = text;
         OvStatusDot.Visibility = text.Length == 0 ? Visibility.Hidden : Visibility.Visible; // desligado: a linha fica em branco, sem aviso
         // Só problemas do RTSS merecem dica; o estado normal já diz tudo.

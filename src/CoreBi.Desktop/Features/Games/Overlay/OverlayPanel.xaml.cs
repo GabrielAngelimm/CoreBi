@@ -29,11 +29,7 @@ public partial class OverlayPanel : UserControl
     private sealed record ReadoutRow(string Label, string? Detail, IReadOnlyList<Readout> Parts);
     private IReadOnlyList<ReadoutRow> _rows = Array.Empty<ReadoutRow>();
     private HashSet<string> _selection = new();
-    private readonly Polyline _graphLine = new()
-    {
-        Stroke = new SolidColorBrush(Color.FromRgb(0x27, 0xC9, 0xBC)),
-        StrokeThickness = 1.2
-    };
+    private readonly Polyline _graphLine = new() { StrokeThickness = 1.2 };
 
     public OverlayPanel()
     {
@@ -41,13 +37,18 @@ public partial class OverlayPanel : UserControl
         OFps.MinWidth = TextWidth("9999", OFps.FontSize, OFps.FontWeight);
         OFrameTime.MinWidth = TextWidth("999,9 ms", OFrameTime.FontSize, OFrameTime.FontWeight);
         OLow.MinWidth = Math.Max(TextWidth("1% low 9999"), TextWidth("aguardando jogo"));
+        // Paleta fixa do overlay (Theme.xaml, Hud*): o traço no sinal e a linha de base num cinza translúcido
+        _graphLine.Stroke = (Brush)FindResource("HudSignal");
+        var muted = ((SolidColorBrush)FindResource("HudMuted")).Color;
+        var baseline = new SolidColorBrush(Color.FromArgb(0x40, muted.R, muted.G, muted.B));
+        baseline.Freeze();
         OGraph.Children.Add(new Line
         {
             X1 = 0,
             X2 = OGraph.Width,
             Y1 = OGraph.Height - 0.5,
             Y2 = OGraph.Height - 0.5,
-            Stroke = new SolidColorBrush(Color.FromArgb(0x40, 0x82, 0x97, 0xA6))
+            Stroke = baseline
         });
         OGraph.Children.Add(_graphLine);
     }

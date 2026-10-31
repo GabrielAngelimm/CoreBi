@@ -18,7 +18,7 @@
                 <Border x:Name="BnLiveCard" Style="{StaticResource CardBorder}" Padding="26,22">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <Ellipse Width="7" Height="7" Fill="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <Ellipse Width="7" Height="7" Fill="{DynamicResource Signal}" VerticalAlignment="Center" Margin="0,0,8,0" />
                             <TextBlock x:Name="BnLiveLabel" Text="Agora" Style="{StaticResource Label}" Margin="0" />
                         </StackPanel>
                         <TextBlock x:Name="BnLiveTitle" Text="—" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Margin="0,12,0,0" TextWrapping="Wrap" />
@@ -38,7 +38,7 @@
                             <Border Height="8" Background="{DynamicResource Line}" OpacityMask="{StaticResource SegmentMask}" VerticalAlignment="Center" />
                             <Border Width="2" Height="16" Background="{DynamicResource Steel}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             <Canvas x:Name="BnBalanceCanvas" SizeChanged="BnBalanceCanvas_SizeChanged">
-                                <Ellipse x:Name="BnBalanceDot" Width="16" Height="16" Fill="{DynamicResource Accent}" Stroke="{DynamicResource Surface}" StrokeThickness="3" Canvas.Top="5" />
+                                <Ellipse x:Name="BnBalanceDot" Width="16" Height="16" Fill="{DynamicResource Signal}" Stroke="{DynamicResource Surface}" StrokeThickness="3" Canvas.Top="5" />
                             </Canvas>
                         </Grid>
                         <Grid>

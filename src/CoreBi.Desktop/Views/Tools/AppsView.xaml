@@ -59,7 +59,7 @@
                                         <StackPanel Grid.Column="1">
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
                                             <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" Margin="0,2,0,0" />
-                                            <TextBlock Text="{Binding Status}" FontSize="12" Foreground="{DynamicResource Accent}" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="{Binding Status, Converter={StaticResource NotEmptyVis}}" />
+                                            <TextBlock Text="{Binding Status}" FontSize="12" Foreground="{DynamicResource Signal}" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="{Binding Status, Converter={StaticResource NotEmptyVis}}" />
                                         </StackPanel>
                                         <Border x:Name="badge" Grid.Column="2" Style="{StaticResource Badge}" Margin="10,0,0,0" Visibility="Collapsed" Background="{DynamicResource OkSoft}" BorderBrush="{DynamicResource Ok}">
                                             <StackPanel Orientation="Horizontal">
@@ -74,7 +74,7 @@
                                         <Setter TargetName="badge" Property="Visibility" Value="Visible" />
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Selected}" Value="True">
-                                        <Setter TargetName="tile" Property="BorderBrush" Value="{DynamicResource Accent}" />
+                                        <Setter TargetName="tile" Property="BorderBrush" Value="{DynamicResource Muted}" />
                                     </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>

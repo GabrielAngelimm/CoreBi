@@ -81,7 +81,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <Grid x:Name="NetHeader" Style="{StaticResource PageHeader}" Margin="0,0,0,12" SizeChanged="NetHeader_SizeChanged">
+                <Grid x:Name="NetHeader" Style="{StaticResource PageHeader}" SizeChanged="NetHeader_SizeChanged">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -182,7 +182,10 @@
                                 <TextBlock x:Name="NetMeta" Text="Ainda não testado nesta sessão" Style="{StaticResource Caption}" Margin="0,3,0,0" />
                             </StackPanel>
                             <Border x:Name="NetBadge" Style="{StaticResource Badge}" HorizontalAlignment="Right" Visibility="Collapsed">
-                                <TextBlock x:Name="NetBadgeText" Style="{StaticResource BadgeText}" />
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Style="{StaticResource BadgeLed}" />
+                                    <TextBlock x:Name="NetBadgeText" Style="{StaticResource BadgeText}" />
+                                </StackPanel>
                             </Border>
                         </Grid>
 
@@ -196,7 +199,7 @@
                             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <TextBlock Text="Download" Foreground="{DynamicResource Muted}" />
-                                    <Border Width="12" Height="3" CornerRadius="1.5" Background="{DynamicResource Accent}" VerticalAlignment="Center" Margin="8,1,0,0" />
+                                    <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource NetDown}" Margin="8,1,0,0" />
                                 </StackPanel>
                                 <TextBlock x:Name="NetDown" Text="—" Style="{StaticResource NetReadout}" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right" Margin="0,12,0,0" />
                                 <TextBlock Text="Mbps" Foreground="{DynamicResource Muted}" FontSize="14" HorizontalAlignment="Right" Margin="0,6,0,0" />
@@ -215,7 +218,7 @@
                             <!-- Canal B: upload -->
                             <StackPanel Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="6,0,0,0">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Width="12" Height="3" CornerRadius="1.5" Background="{DynamicResource Copper}" VerticalAlignment="Center" Margin="0,1,8,0" />
+                                    <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource NetUp}" Margin="0,1,8,0" />
                                     <TextBlock Text="Upload" Foreground="{DynamicResource Muted}" />
                                 </StackPanel>
                                 <TextBlock x:Name="NetUp" Text="—" Style="{StaticResource NetReadout}" Foreground="{DynamicResource Faint}" Margin="0,12,0,0" />
@@ -294,7 +297,7 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <Border Style="{StaticResource NetNodeTile}">
-                                        <TextBlock Text="&#xE7F8;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Steel}" />
+                                        <TextBlock Text="&#xE7F8;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Muted}" />
                                     </Border>
                                     <TextBlock Text="Este PC" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,4,0,0" />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -310,7 +313,7 @@
                                 </Grid>
                                 <StackPanel Grid.Column="2">
                                     <Border Style="{StaticResource NetNodeTile}">
-                                        <TextBlock Text="&#xE839;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Steel}" />
+                                        <TextBlock Text="&#xE839;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Muted}" />
                                     </Border>
                                     <TextBlock Text="Roteador" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,4,0,0" />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -326,7 +329,7 @@
                                 </Grid>
                                 <StackPanel Grid.Column="4">
                                     <Border Style="{StaticResource NetNodeTile}">
-                                        <TextBlock Text="&#xE774;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Steel}" />
+                                        <TextBlock Text="&#xE774;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Muted}" />
                                     </Border>
                                     <TextBlock Text="Internet" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,4,0,0" />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">

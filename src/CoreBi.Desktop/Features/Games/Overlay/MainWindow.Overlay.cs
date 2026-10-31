@@ -29,15 +29,15 @@ public partial class MainWindow
         return set;
     }
 
-    /// <summary>Componentes na ordem do overlay: o que cada linha mede, glifo (todos na mesma cor).</summary>
+    /// <summary>Componentes na ordem do overlay: o que cada linha mede, glifo (todos na mesma cor, em tinta).</summary>
     private static readonly (string Group, string Caption, string Icon, string Brush)[] OvGroups =
     {
-        ("FPS", "Quadros por segundo e estabilidade", "\uEC4A", "Accent"),
-        ("GPU", "Placa de vídeo principal", "", "Accent"),
-        ("VRAM", "Memória da placa de vídeo", "\uE964", "Accent"),
-        ("CPU", "Processador", "\uE950", "Accent"),
-        ("RAM", "Memória do sistema", "\uEEA0", "Accent"),
-        ("Outros", "Nomes e rodapé do overlay", "", "Accent"),
+        ("FPS", "Quadros por segundo e estabilidade", "\uEC4A", "Fg"),
+        ("GPU", "Placa de vídeo principal", "", "Fg"),
+        ("VRAM", "Memória da placa de vídeo", "\uE964", "Fg"),
+        ("CPU", "Processador", "\uE950", "Fg"),
+        ("RAM", "Memória do sistema", "\uEEA0", "Fg"),
+        ("Outros", "Nomes e rodapé do overlay", "", "Fg"),
     };
 
     /// <summary>Itens que dependem da placa ou de permissão: a dica explica por que podem aparecer com travessão.</summary>
@@ -108,7 +108,7 @@ public partial class MainWindow
                 count.Text = $"{on}/{items.Count}";
                 count.ToolTip = on == 0 ? $"Nada marcado: a linha {group} não aparece no overlay." : $"{on} de {items.Count} itens no overlay.";
                 count.SetResourceReference(TextBlock.ForegroundProperty, on > 0 ? "Muted" : "Faint");
-                glyph.SetResourceReference(TextBlock.ForegroundProperty, on > 0 ? meta.Brush ?? "Accent" : "Faint");
+                glyph.SetResourceReference(TextBlock.ForegroundProperty, on > 0 ? meta.Brush ?? "Fg" : "Faint");
             }
 
             var wrap = new WrapPanel { Margin = new Thickness(0, 3, 0, 0) };

@@ -6,21 +6,26 @@ namespace CoreBi.Desktop;
 
 /// <summary>
 /// Base dos instrumentos da página Energia: a mesma dos instrumentos de Discos (pincéis por referência de recurso, que
-/// acompanham o tema sozinhos) com os canais B (cobre, placa de vídeo) e o neutro técnico (aço).
+/// acompanham o tema sozinhos) com os canais do processador e da placa de vídeo e o neutro técnico (aço). O que não é de
+/// um componente (carga da bateria, horas ligado) é desenhado em tinta ou em aço.
 /// </summary>
 public abstract class EnergyInstrument : DiskInstrument
 {
-    public static readonly DependencyProperty CopperBrushProperty =
-        DependencyProperty.Register(nameof(CopperBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty CpuBrushProperty =
+        DependencyProperty.Register(nameof(CpuBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty GpuBrushProperty =
+        DependencyProperty.Register(nameof(GpuBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty SteelBrushProperty =
         DependencyProperty.Register(nameof(SteelBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
 
-    public Brush CopperBrush { get => (Brush)GetValue(CopperBrushProperty); set => SetValue(CopperBrushProperty, value); }
+    public Brush CpuBrush { get => (Brush)GetValue(CpuBrushProperty); set => SetValue(CpuBrushProperty, value); }
+    public Brush GpuBrush { get => (Brush)GetValue(GpuBrushProperty); set => SetValue(GpuBrushProperty, value); }
     public Brush SteelBrush { get => (Brush)GetValue(SteelBrushProperty); set => SetValue(SteelBrushProperty, value); }
 
     protected EnergyInstrument()
     {
-        SetResourceReference(CopperBrushProperty, "Copper");
+        SetResourceReference(CpuBrushProperty, "Cpu");
+        SetResourceReference(GpuBrushProperty, "Gpu");
         SetResourceReference(SteelBrushProperty, "Steel");
     }
 
@@ -45,7 +50,7 @@ public abstract class EnergyInstrument : DiskInstrument
 }
 
 /// <summary>
-/// Consumo dos últimos 5 min (1 amostra/s), empilhado: processador (verde-água) embaixo e placa de vídeo (cobre) por cima,
+/// Consumo dos últimos 5 min (1 amostra/s), empilhado: processador embaixo e placa de vídeo por cima, cada um no seu canal,
 /// então o contorno superior é a soma. Pausa sob o mouse e mostra a hora e cada parcela, como os gráficos de Discos e Visão geral.
 /// </summary>
 public sealed class PowerTrace : EnergyInstrument
@@ -139,16 +144,10 @@ public sealed class PowerTrace : EnergyInstrument
             return;
         }
 
-        Color a = ColorOf(AccentBrush, Colors.Teal), b = ColorOf(CopperBrush, Colors.Peru);
-        Brush Fade(Color c, byte from, byte to)
-        {
-            var g = new LinearGradientBrush(Color.FromArgb(from, c.R, c.G, c.B), Color.FromArgb(to, c.R, c.G, c.B), 90);
-            g.Freeze();
-            return g;
-        }
-        Brush cpuFill = Fade(a, 0x58, 0x12), gpuFill = Fade(b, 0x4C, 0x0E);
-        var cpuPen = new Pen(AccentBrush, 1.6) { LineJoin = PenLineJoin.Round };
-        var gpuPen = new Pen(CopperBrush, 2) { LineJoin = PenLineJoin.Round };
+        // Faixas planas (sem degradê): a do processador embaixo, a da placa de vídeo por cima, cada uma no tom do seu traço
+        Brush cpuFill = Alpha(CpuBrush, 0x30), gpuFill = Alpha(GpuBrush, 0x26);
+        var cpuPen = new Pen(CpuBrush, 1.6) { LineJoin = PenLineJoin.Round };
+        var gpuPen = new Pen(GpuBrush, 2) { LineJoin = PenLineJoin.Round };
         double floor = top + plotH;
         foreach (var run in runs.Where(r => r.Count >= 2))
         {
@@ -177,8 +176,8 @@ public sealed class PowerTrace : EnergyInstrument
         if (Known(_samples[last]))
         {
             var lx = X(last);
-            if (_samples[last].Cpu is float c) dc.DrawEllipse(SurfaceBrush, Stroke(AccentBrush, 2), new Point(lx, Y(c)), 4, 4);
-            if (_samples[last].Gpu != null) dc.DrawEllipse(SurfaceBrush, Stroke(CopperBrush, 2), new Point(lx, Y(Total(_samples[last]))), 4.5, 4.5);
+            if (_samples[last].Cpu is float c) dc.DrawEllipse(SurfaceBrush, Stroke(CpuBrush, 2), new Point(lx, Y(c)), 4, 4);
+            if (_samples[last].Gpu != null) dc.DrawEllipse(SurfaceBrush, Stroke(GpuBrush, 2), new Point(lx, Y(Total(_samples[last]))), 4.5, 4.5);
         }
         DrawHover(dc, w, left, top, plotW, plotH, X, Y);
     }
@@ -222,16 +221,16 @@ public sealed class PowerTrace : EnergyInstrument
         var s = _samples[nearest];
         double px = x(nearest), lx = Math.Round(px) + 0.5;
         dc.DrawLine(Stroke(FaintBrush, 1, new DashStyle(new double[] { 3, 3 }, 0)), new Point(lx, top), new Point(lx, top + plotH));
-        if (s.Cpu is float c) dc.DrawEllipse(SurfaceBrush, Stroke(AccentBrush, 2.5), new Point(px, y(c)), 5, 5);
-        if (s.Gpu != null) dc.DrawEllipse(SurfaceBrush, Stroke(CopperBrush, 2.5), new Point(px, y(Total(s))), 5.5, 5.5);
+        if (s.Cpu is float c) dc.DrawEllipse(SurfaceBrush, Stroke(CpuBrush, 2.5), new Point(px, y(c)), 5, 5);
+        if (s.Gpu != null) dc.DrawEllipse(SurfaceBrush, Stroke(GpuBrush, 2.5), new Point(px, y(Total(s))), 5.5, 5.5);
 
         int ago = _samples.Count - 1 - nearest;
         string when = ago <= 0 ? "agora" : ago >= 60 ? $"há {ago / 60} min {ago % 60:00} s" : $"há {ago} s";
         var time = Text(when, 11.5, FaintBrush, readout: false);
         var total = Text($"{Total(s):0.#} W", 16, InkBrush);
         var rows = new List<(Brush Dot, FormattedText Label, FormattedText Value)>();
-        if (s.Cpu is float cv) rows.Add((AccentBrush, Text("Processador", 12, MutedBrush, readout: false), Text($"{cv:0.#} W", 12.5, InkBrush)));
-        if (s.Gpu is float gv) rows.Add((CopperBrush, Text("Placa de vídeo", 12, MutedBrush, readout: false), Text($"{gv:0.#} W", 12.5, InkBrush)));
+        if (s.Cpu is float cv) rows.Add((CpuBrush, Text("Processador", 12, MutedBrush, readout: false), Text($"{cv:0.#} W", 12.5, InkBrush)));
+        if (s.Gpu is float gv) rows.Add((GpuBrush, Text("Placa de vídeo", 12, MutedBrush, readout: false), Text($"{gv:0.#} W", 12.5, InkBrush)));
         double labelW = rows.Count > 0 ? rows.Max(r => r.Label.Width) : 0, valueW = rows.Count > 0 ? rows.Max(r => r.Value.Width) : 0;
         double rowH = 18, bw = Math.Max(Math.Max(time.Width, total.Width), 14 + labelW + 14 + valueW) + 24;
         double bh = time.Height + total.Height + rows.Count * rowH + 18;
@@ -267,12 +266,12 @@ public sealed class SplitBar : EnergyInstrument
         if (w < 20) return;
         double a = double.IsNaN(First) ? 0 : Math.Max(0, First), b = double.IsNaN(Second) ? 0 : Math.Max(0, Second);
         double total = a + b;
-        Segments(dc, new Rect(0, 0, w, h), f => total <= 0 ? TrackBrush : f <= a / total ? AccentBrush : CopperBrush);
+        Segments(dc, new Rect(0, 0, w, h), f => total <= 0 ? TrackBrush : f <= a / total ? CpuBrush : GpuBrush);
     }
 }
 
 /// <summary>
-/// Trilho da fonte: escala de −10 % a +10 % em volta do nominal, com a tolerância ATX (±5 %) acesa em verde suave, o traço
+/// Trilho da fonte: escala de −10 % a +10 % em volta do nominal, com a tolerância ATX (±5 %) acesa em aço suave, o traço
 /// do nominal, a faixa vista desde que o CoreBi abriu (embaixo) e o ponteiro da leitura (âmbar fora da tolerância).
 /// </summary>
 public sealed class RailGauge : EnergyInstrument
@@ -301,7 +300,7 @@ public sealed class RailGauge : EnergyInstrument
         double lo = Nominal * (1 - Span), hi = Nominal * (1 + Span);
         double X(double v) => (Math.Clamp(v, lo, hi) - lo) / (hi - lo) * w;
         const double y0 = 3, bh = 10;
-        var band = Alpha(OkBrush, 0x55);
+        var band = Alpha(SteelBrush, 0x78);
         Segments(dc, new Rect(0, y0, w, bh), f => Math.Abs(f * 2 - 1) * Span <= Tol ? band : TrackBrush);
 
         if (!double.IsNaN(Min) && !double.IsNaN(Max))
@@ -375,11 +374,11 @@ public sealed class SpanMeter : EnergyInstrument
         bool known = !double.IsNaN(From) && !double.IsNaN(To);
         // Um gomo de folga de cada lado: com mínimo = máximo (plano que fixa o clock) a faixa vira um ponto e ainda acende o gomo
         double pad = 500 / w;
-        Segments(dc, new Rect(0, 0, w, ActualHeight), f => known && f * 100 >= From - pad && f * 100 <= To + pad ? AccentBrush : TrackBrush);
+        Segments(dc, new Rect(0, 0, w, ActualHeight), f => known && f * 100 >= From - pad && f * 100 <= To + pad ? CpuBrush : TrackBrush);
     }
 }
 
-/// <summary>Bateria desenhada: corpo com gomos de carga e o polo à direita. Âmbar abaixo de 20 % e vermelho abaixo de 10 % fora da tomada.</summary>
+/// <summary>Bateria desenhada: corpo com gomos de carga em tinta e o polo à direita. Âmbar abaixo de 20 % e vermelho abaixo de 10 % fora da tomada.</summary>
 public sealed class BatteryMeter : EnergyInstrument
 {
     public static readonly DependencyProperty ValueProperty = Number(nameof(Value), typeof(BatteryMeter));
@@ -400,7 +399,7 @@ public sealed class BatteryMeter : EnergyInstrument
         dc.DrawRoundedRectangle(LineStrongBrush, null, new Rect(w - nub, h * 0.3, nub, h * 0.4), 2, 2);
         bool known = !double.IsNaN(Value);
         double v = known ? Math.Clamp(Value, 0, 100) : 0;
-        Brush fill = !OnPower && v < 10 ? DangerBrush : !OnPower && v < 20 ? WarnBrush : AccentBrush;
+        Brush fill = !OnPower && v < 10 ? DangerBrush : !OnPower && v < 20 ? WarnBrush : InkBrush;
         var inner = new Rect(body.X + pad, body.Y + pad, body.Width - 2 * pad, body.Height - 2 * pad);
         int n = (int)Math.Floor((inner.Width + 2) / 8);
         double seg = (inner.Width + 2) / n;
@@ -411,7 +410,7 @@ public sealed class BatteryMeter : EnergyInstrument
 
 /// <summary>
 /// Capacidade da bateria: o contorno é a capacidade de fábrica, o aço é a capacidade máxima de hoje (o que o desgaste deixou)
-/// e o verde-água é a carga agora. A diferença entre o contorno e o aço é o desgaste.
+/// e a tinta é a carga agora. A diferença entre o contorno e o aço é o desgaste.
 /// </summary>
 public sealed class CapacityStack : EnergyInstrument
 {
@@ -430,12 +429,12 @@ public sealed class CapacityStack : EnergyInstrument
         double max = Math.Max(double.IsNaN(Design) ? 0 : Design, double.IsNaN(Full) ? 0 : Full);
         if (w < 40 || max <= 0) return;
         double full = double.IsNaN(Full) ? 0 : Full / max, now = double.IsNaN(Now) ? 0 : Now / max;
-        Segments(dc, new Rect(0, 0, w, h), f => f <= now ? AccentBrush : f <= full ? Alpha(SteelBrush, 0x8C) : TrackBrush);
+        Segments(dc, new Rect(0, 0, w, h), f => f <= now ? InkBrush : f <= full ? Alpha(SteelBrush, 0x8C) : TrackBrush);
     }
 }
 
 /// <summary>
-/// Quando o PC ficou ligado, um dia por linha (24 h): trechos ligados em verde-água, a sessão atual terminando num ponto e,
+/// Quando o PC ficou ligado, um dia por linha (24 h): trechos ligados em aço, a sessão atual em tinta terminando num ponto e,
 /// em vermelho, cada desligamento inesperado. Dias que o registro de eventos já não cobre ficam tracejados. Sob o mouse, a linha
 /// mostra os horários de cada trecho.
 /// </summary>
@@ -506,8 +505,8 @@ public sealed class UptimeChart : EnergyInstrument
             foreach (var (from, to, current) in d.Spans)
             {
                 double a = X(from), b = Math.Max(a + 2, X(to));
-                dc.DrawRoundedRectangle(current ? AccentBrush : Alpha(AccentBrush, 0xC8), null, new Rect(a, by, b - a, barH), 2, 2);
-                if (current) dc.DrawEllipse(SurfaceBrush, Stroke(AccentBrush, 2), new Point(b, cy), 4, 4);
+                dc.DrawRoundedRectangle(current ? InkBrush : Alpha(SteelBrush, 0xD8), null, new Rect(a, by, b - a, barH), 2, 2);
+                if (current) dc.DrawEllipse(SurfaceBrush, Stroke(InkBrush, 2), new Point(b, cy), 4, 4);
             }
             foreach (double c in d.Crashes)
             {

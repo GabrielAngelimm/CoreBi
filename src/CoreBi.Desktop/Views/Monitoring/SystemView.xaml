@@ -19,7 +19,8 @@
 
         <!-- Índice: seis botões numa faixa um tom abaixo do painel, só com ícone e categoria (o nome da peça está na ficha
              logo abaixo). Cada um tem fundo e contorno próprios e uma seta discreta, para ler como botão; o mouse clareia
-             o fundo; o escolhido ganha o fundo da placa logo abaixo, contorno e ícone verde-água, e perde a seta. -->
+             o fundo; o escolhido ganha o fundo da placa logo abaixo, contorno mais forte e texto e ícone acesos em tinta,
+             e perde a seta. Sem cor: a seleção se lê pelo contraste. -->
         <Style x:Key="IndexCell" TargetType="ListBoxItem">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -27,34 +28,33 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="face" Margin="5" CornerRadius="10" BorderThickness="1" BorderBrush="{DynamicResource LineStrong}" Background="{DynamicResource Surface}" SnapsToDevicePixels="True" Padding="12,12,14,12">
+                        <Border x:Name="face" Margin="5" CornerRadius="{StaticResource RadiusInset}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" SnapsToDevicePixels="True" Padding="12,12,14,12">
                             <DockPanel>
                                 <TextBlock x:Name="chev" DockPanel.Dock="Right" Text="&#xE76C;" Style="{StaticResource IconGlyph}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="8,0,0,0" />
-                                <Border x:Name="tile" Width="38" Height="38" CornerRadius="9" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
-                                    <TextBlock x:Name="glyph" Text="{Binding Glyph}" Style="{StaticResource IconGlyph}" FontSize="18" Foreground="{DynamicResource Fg}" Opacity="0.82" />
+                                <Border x:Name="tile" Width="38" Height="38" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
+                                    <TextBlock x:Name="glyph" Text="{Binding Glyph}" Style="{StaticResource IconGlyph}" FontSize="18" Foreground="{DynamicResource Muted}" />
                                 </Border>
-                                <TextBlock x:Name="cat" Text="{Binding Category}" FontSize="14.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" Opacity="0.86" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="13,0,0,1" />
+                                <TextBlock x:Name="cat" Text="{Binding Category}" FontSize="14.5" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="13,0,0,1" />
                             </DockPanel>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="face" Property="Background" Value="{DynamicResource Hover}" />
-                                <Setter TargetName="tile" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
-                                <Setter TargetName="glyph" Property="Opacity" Value="1" />
-                                <Setter TargetName="cat" Property="Opacity" Value="1" />
+                                <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
+                                <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Fg}" />
+                                <Setter TargetName="cat" Property="Foreground" Value="{DynamicResource Fg}" />
                                 <Setter TargetName="chev" Property="Foreground" Value="{DynamicResource Muted}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Accent}" />
+                                <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Focus}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="face" Property="Background" Value="{DynamicResource Selected}" />
-                                <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Accent}" />
-                                <Setter TargetName="tile" Property="Background" Value="{DynamicResource AccentSoft}" />
-                                <Setter TargetName="tile" Property="BorderBrush" Value="Transparent" />
-                                <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Accent}" />
-                                <Setter TargetName="glyph" Property="Opacity" Value="1" />
-                                <Setter TargetName="cat" Property="Opacity" Value="1" />
+                                <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Faint}" />
+                                <Setter TargetName="tile" Property="Background" Value="{DynamicResource Surface}" />
+                                <Setter TargetName="tile" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
+                                <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Fg}" />
+                                <Setter TargetName="cat" Property="Foreground" Value="{DynamicResource Fg}" />
                                 <Setter TargetName="chev" Property="Visibility" Value="Hidden" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -144,7 +144,7 @@
 
         <DataTemplate x:Key="SpecGroupTemplate">
             <StackPanel>
-                <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextWrapping="Wrap" Margin="0,8,0,8" />
+                <TextBlock Text="{Binding Title}" Style="{StaticResource GroupTitle}" Margin="0,8,0,8" />
                 <!-- Uma frase que explica o assunto do grupo, para quem não é do ramo -->
                 <TextBlock Text="{Binding Help}" Style="{StaticResource Explain}" Margin="0,-2,0,12"
                            Visibility="{Binding Help, Converter={StaticResource NotEmptyVis}}" />
@@ -227,7 +227,7 @@
                                 <DataTemplate>
                                     <Grid OpacityMask="{StaticResource SegmentMask}" ToolTip="{Binding Tip}" Background="Transparent">
                                         <Border Background="{DynamicResource Line}" />
-                                        <Border Background="{DynamicResource Steel}" RenderTransformOrigin="0,0.5">
+                                        <Border Background="{DynamicResource Storage}" RenderTransformOrigin="0,0.5">
                                             <Border.RenderTransform>
                                                 <ScaleTransform ScaleX="{Binding Used}" />
                                             </Border.RenderTransform>
@@ -275,22 +275,22 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Exportar relatório: a ação principal da página. Fundo verde-água cheio, ícone num ladrilho mais escuro e texto
-             seminegrito; o mouse clareia, o clique afunda 1 px e, enquanto gera, o botão apaga e diz o que está fazendo. -->
+        <!-- Exportar relatório: a ação principal da página, em tinta como toda ação principal. Ícone num ladrilho translúcido e
+             texto seminegrito; o mouse clareia, o clique afunda 1 px e, enquanto gera, o botão apaga e diz o que está fazendo. -->
         <Style x:Key="ReportButton" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Background" Value="{DynamicResource Accent}" />
-            <Setter Property="Foreground" Value="{DynamicResource AccentFg}" />
+            <Setter Property="Background" Value="{DynamicResource Ink}" />
+            <Setter Property="Foreground" Value="{DynamicResource InkFg}" />
             <Setter Property="FontSize" Value="13.5" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="face" Background="{TemplateBinding Background}" CornerRadius="10" Padding="6,6,18,6" SnapsToDevicePixels="True">
+                        <Border x:Name="face" Background="{TemplateBinding Background}" CornerRadius="{StaticResource RadiusInset}" Padding="6,6,18,6" SnapsToDevicePixels="True">
                             <StackPanel Orientation="Horizontal">
                                 <Grid Width="30" Height="30">
-                                    <Border CornerRadius="7" Background="{DynamicResource AccentFg}" Opacity="0.14" />
+                                    <Border CornerRadius="5" Background="{DynamicResource InkFg}" Opacity="0.1" />
                                     <TextBlock Text="&#xE896;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{TemplateBinding Foreground}" />
                                 </Grid>
                                 <ContentPresenter VerticalAlignment="Center" Margin="11,0,0,1" TextElement.Foreground="{TemplateBinding Foreground}" />
@@ -298,11 +298,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="face" Property="Background" Value="{DynamicResource AccentHover}" />
+                                <Setter TargetName="face" Property="Background" Value="{DynamicResource InkHover}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="face" Property="Margin" Value="0,1,0,-1" />
-                                <Setter TargetName="face" Property="Background" Value="{DynamicResource Accent}" />
+                                <Setter TargetName="face" Property="Background" Value="{DynamicResource Ink}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="face" Property="Opacity" Value="0.55" />
@@ -322,9 +322,9 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="face" CornerRadius="8" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="Transparent" Padding="12,8,12,8" SnapsToDevicePixels="True">
+                        <Border x:Name="face" CornerRadius="{StaticResource RadiusControl}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="Transparent" Padding="12,8,12,8" SnapsToDevicePixels="True">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE9D9;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Accent}" VerticalAlignment="Center" />
+                                <TextBlock Text="&#xE9D9;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
                                 <TextBlock Text="{TemplateBinding Content}" FontSize="13" FontWeight="Medium" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="9,0,0,1" />
                                 <TextBlock x:Name="arrow" Text="&#xE76C;" Style="{StaticResource IconGlyph}" FontSize="10" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="10,1,0,0" />
                             </StackPanel>
@@ -347,7 +347,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,22">
+        <Grid Style="{StaticResource PageHeader}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />

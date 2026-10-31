@@ -143,7 +143,7 @@
                         <Border Style="{StaticResource ReadingCell}" BorderThickness="0">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Style="{StaticResource Swatch}" Background="{DynamicResource Accent}" />
+                                    <Border Style="{StaticResource Swatch}" Background="{DynamicResource Cpu}" />
                                     <TextBlock Text="Temp. CPU" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
                                 <TextBlock x:Name="StTemp" Text="—" Style="{StaticResource StatValue}" />
@@ -160,7 +160,7 @@
                         <Border Style="{StaticResource ReadingCell}">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <Border Style="{StaticResource Swatch}" Background="{DynamicResource Copper}" />
+                                    <Border Style="{StaticResource Swatch}" Background="{DynamicResource Gpu}" />
                                     <TextBlock Text="Temp. GPU" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
                                 <TextBlock x:Name="StGpuTemp" Text="—" Style="{StaticResource StatValue}" />
@@ -197,9 +197,9 @@
                     <Grid DockPanel.Dock="Top" Margin="0,0,0,12">
                         <TextBlock Text="Temperatura nos últimos 5 minutos" Style="{StaticResource SectionTitle}" />
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <Border Style="{StaticResource Swatch}" Background="{DynamicResource Accent}" />
+                            <Border Style="{StaticResource Swatch}" Background="{DynamicResource Cpu}" />
                             <TextBlock Text="Processador" Style="{StaticResource Caption}" Margin="0,0,16,0" />
-                            <Border Style="{StaticResource Swatch}" Background="{DynamicResource Copper}" />
+                            <Border Style="{StaticResource Swatch}" Background="{DynamicResource Gpu}" />
                             <TextBlock Text="Placa de vídeo" Style="{StaticResource Caption}" Margin="0,0,16,0" />
                             <Line X1="0" X2="16" Stroke="{DynamicResource Warn}" StrokeThickness="1.5" StrokeDashArray="3 2" VerticalAlignment="Center" Margin="0,0,7,0" />
                             <TextBlock Text="Limites" Style="{StaticResource Caption}" />

@@ -18,7 +18,7 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
-        <!-- Item do índice: fundo suave na seleção; o ícone fica num bloco que acende no azul-ciano -->
+        <!-- Item do índice: fundo elevado na seleção; o ícone fica num bloco neutro que acende em tinta -->
         <Style x:Key="IndexItem" TargetType="ListBoxItem">
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -27,8 +27,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
                         <Grid Background="Transparent" Margin="0,0,0,2">
-                            <Border x:Name="hover" CornerRadius="10" Background="{DynamicResource Hover}" Opacity="0" />
-                            <Border x:Name="sel" CornerRadius="10" Background="{DynamicResource Selected}" Opacity="0" />
+                            <Border x:Name="hover" CornerRadius="{StaticResource RadiusInset}" Background="{DynamicResource Hover}" Opacity="0" />
+                            <Border x:Name="sel" CornerRadius="{StaticResource RadiusInset}" Background="{DynamicResource Selected}" Opacity="0" />
                             <ContentPresenter Margin="10,8" />
                         </Grid>
                         <ControlTemplate.Triggers>
@@ -102,16 +102,23 @@
             </Grid>
         </DataTemplate>
 
-        <!-- Grupo de um tipo: o título é o maior e mais forte do bloco, com um filete de destaque; os sensores entram recuados embaixo -->
+        <!-- Grupo de um tipo: o título é o maior e mais forte do bloco, com um filete na cor do canal do componente (o mesmo da
+             Visão geral e da barra lateral); os sensores entram recuados embaixo -->
         <DataTemplate x:Key="SectionTemplate">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <Border Width="3" Height="16" CornerRadius="2" Background="{DynamicResource Accent}" Margin="0,0,9,0" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding Title, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" />
+                    <Border x:Name="mark" Width="3" Height="15" CornerRadius="1.5" Background="{DynamicResource Steel}" Margin="0,1,9,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Title, Mode=OneWay}" Style="{StaticResource GroupTitle}" FontSize="16" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Rows.Count, Mode=OneWay}" FontSize="11.5" Foreground="{DynamicResource Faint}" Margin="10,2,0,0" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular" />
                 </StackPanel>
                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource SensorLine}" Focusable="False" />
             </StackPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Tone}" Value="Cpu"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Cpu}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="Gpu"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Gpu}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="Memory"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Memory}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="Storage"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Storage}" /></DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
 
         <!-- Cabeçalho de componente em duas faixas, de altura fixa (80 + 32), cada uma num tom: em cima, no tom mais forte, o nome em
@@ -127,7 +134,7 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="23" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                             <TextBlock FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" Typography.NumeralAlignment="Tabular">
                                 <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
                             </TextBlock>
@@ -201,7 +208,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,18">
+        <Grid Style="{StaticResource PageHeader}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
@@ -240,7 +247,7 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Border x:Name="tile" Width="34" Height="34" CornerRadius="9" Background="{DynamicResource Raised}" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <Border x:Name="tile" Width="34" Height="34" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Raised}" BorderBrush="Transparent" BorderThickness="1" Margin="0,0,12,0" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Glyph}" Style="{StaticResource ListNavIcon}" FontSize="16" />
                                     </Border>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -251,7 +258,8 @@
                                 </Grid>
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                                        <Setter TargetName="tile" Property="Background" Value="{DynamicResource AccentSoft}" />
+                                        <Setter TargetName="tile" Property="Background" Value="{DynamicResource Surface}" />
+                                        <Setter TargetName="tile" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
                                     </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>
@@ -262,7 +270,7 @@
 
             <!-- Filtros por tipo: sobre o cartão de sensores, alinhados com ele. O rótulo e as pílulas ficam num mesmo grupo de
                  fundo próprio, para ler como um controle só; o índice e o cartão continuam começando na mesma linha. -->
-            <Border Grid.Column="2" HorizontalAlignment="Left" Margin="0,0,0,12" Padding="14,5,5,5" CornerRadius="18" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" SnapsToDevicePixels="True">
+            <Border Grid.Column="2" HorizontalAlignment="Left" Margin="0,0,0,12" Padding="14,5,5,5" CornerRadius="18" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" SnapsToDevicePixels="True">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,5,12,0">
                         <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,1,7,0" />

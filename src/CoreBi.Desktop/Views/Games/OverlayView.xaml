@@ -14,22 +14,22 @@
                         <Grid Background="Transparent">
                             <Grid x:Name="zone" Width="150" Height="86" Margin="14"
                                   HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
-                                <Rectangle x:Name="dash" RadiusX="8" RadiusY="8" Stroke="#66B4C4CF" StrokeThickness="1.5" StrokeDashArray="3 2.5" Fill="#260A1015" />
-                                <TextBlock x:Name="plus" Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="13" Foreground="#99B4C4CF"
+                                <Rectangle x:Name="dash" RadiusX="8" RadiusY="8" Stroke="{StaticResource HudZone}" StrokeThickness="1.5" StrokeDashArray="3 2.5" Fill="{StaticResource HudZoneFill}" />
+                                <TextBlock x:Name="plus" Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="13" Foreground="{StaticResource HudZoneMark}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 <StackPanel x:Name="hint" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0">
-                                    <TextBlock Text="&#xE7C2;" FontFamily="{StaticResource Icons}" FontSize="15" Foreground="#27C9BC" HorizontalAlignment="Center" />
-                                    <TextBlock Text="Mover para cá" FontSize="12" FontWeight="SemiBold" Foreground="#E6EEF1" Margin="0,6,0,0" />
+                                    <TextBlock Text="&#xE7C2;" FontFamily="{StaticResource Icons}" FontSize="15" Foreground="{StaticResource HudFg}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Mover para cá" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource HudFg}" Margin="0,6,0,0" />
                                 </StackPanel>
                             </Grid>
-                            <!-- Foco de teclado: o mesmo contorno, em verde-água -->
-                            <Rectangle x:Name="focus" Width="158" Height="94" Margin="10" RadiusX="11" RadiusY="11" Stroke="#27C9BC" StrokeThickness="2" Visibility="Collapsed"
+                            <!-- Foco de teclado: o mesmo contorno, cheio e claro -->
+                            <Rectangle x:Name="focus" Width="158" Height="94" Margin="10" RadiusX="11" RadiusY="11" Stroke="{StaticResource HudFg}" StrokeThickness="2" Visibility="Collapsed"
                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="dash" Property="Stroke" Value="#27C9BC" />
-                                <Setter TargetName="dash" Property="Fill" Value="#3327C9BC" />
+                                <Setter TargetName="dash" Property="Stroke" Value="{StaticResource HudFg}" />
+                                <Setter TargetName="dash" Property="Fill" Value="{StaticResource HudZoneHover}" />
                                 <Setter TargetName="plus" Property="Visibility" Value="Collapsed" />
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
@@ -59,7 +59,7 @@
             </Setter>
         </Style>
 
-        <!-- Controle deslizante fino: trilho, parte preenchida em verde-água e botão redondo -->
+        <!-- Controle deslizante fino: trilho, parte preenchida em tinta e botão redondo -->
         <Style x:Key="OpacitySlider" TargetType="Slider">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -73,7 +73,7 @@
                                     <RepeatButton Command="Slider.DecreaseLarge" Focusable="False" IsTabStop="False">
                                         <RepeatButton.Template>
                                             <ControlTemplate TargetType="RepeatButton">
-                                                <Grid Background="Transparent"><Border Height="4" CornerRadius="2" Background="{DynamicResource Accent}" /></Grid>
+                                                <Grid Background="Transparent"><Border Height="4" CornerRadius="2" Background="{DynamicResource Ink}" /></Grid>
                                             </ControlTemplate>
                                         </RepeatButton.Template>
                                     </RepeatButton>
@@ -89,9 +89,9 @@
                                     <Thumb Focusable="False">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Ellipse x:Name="e" Width="16" Height="16" Fill="{DynamicResource Fg}" Stroke="{DynamicResource Accent}" StrokeThickness="2" />
+                                                <Ellipse x:Name="e" Width="16" Height="16" Fill="{DynamicResource Ink}" Stroke="{DynamicResource Raised}" StrokeThickness="3" />
                                                 <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="e" Property="Fill" Value="{DynamicResource Accent}" /></Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="e" Property="Fill" Value="{DynamicResource InkHover}" /></Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
                                         </Thumb.Template>
@@ -137,7 +137,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Cabeçalho: título à esquerda, interruptor e atalho à direita -->
-                <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,22">
+                <Grid Style="{StaticResource PageHeader}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -190,7 +190,7 @@
                             <local:FillBox x:Name="OvMonitorBox" Grid.Row="1" MinHeight="300" Margin="0,18,0,16">
                                 <Viewbox Stretch="Uniform">
                                     <StackPanel Width="820">
-                                        <Border CornerRadius="16" Background="#06090C" BorderBrush="#2B3944" BorderThickness="1" Padding="10,10,10,0">
+                                        <Border CornerRadius="16" Background="#06090C" BorderBrush="#2C3235" BorderThickness="1" Padding="10,10,10,0">
                                             <StackPanel>
                                                 <Grid Width="798" Height="449">
                                                     <Grid.Clip>
@@ -261,7 +261,7 @@
 
                                                     <!-- Prévia: a mesma caixa do overlay real, com os itens marcados e os sensores ao vivo -->
                                                     <Grid x:Name="OvPreviewHost" IsHitTestVisible="False" Margin="14" HorizontalAlignment="Left" VerticalAlignment="Top">
-                                                        <Rectangle Margin="-5" RadiusX="11" RadiusY="11" Stroke="#27C9BC" StrokeThickness="1.5" StrokeDashArray="3 2.5" Opacity="0.85" />
+                                                        <Rectangle Margin="-5" RadiusX="11" RadiusY="11" Stroke="{StaticResource HudZoneMark}" StrokeThickness="1.5" StrokeDashArray="3 2.5" />
                                                         <Decorator>
                                                             <Decorator.LayoutTransform>
                                                                 <ScaleTransform x:Name="OvPreviewScale" ScaleX="0.72" ScaleY="0.72" />
@@ -272,7 +272,7 @@
                                                 </Grid>
                                                 <!-- Moldura inferior com o LED: aceso quando o overlay está ligado -->
                                                 <Grid Height="22">
-                                                    <Ellipse x:Name="OvLed" Width="5" Height="5" Fill="#33414C" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    <Ellipse x:Name="OvLed" Width="5" Height="5" Fill="{StaticResource HudSep}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                                 </Grid>
                                             </StackPanel>
                                         </Border>
@@ -280,17 +280,17 @@
                                         <Path HorizontalAlignment="Center" Data="M14,0 L110,0 L124,58 L0,58 Z" Stretch="None">
                                             <Path.Fill>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                    <GradientStop Color="#0B1014" Offset="0" />
-                                                    <GradientStop Color="#1D272F" Offset="0.25" />
-                                                    <GradientStop Color="#26313A" Offset="1" />
+                                                    <GradientStop Color="#0C0F11" Offset="0" />
+                                                    <GradientStop Color="#1E2326" Offset="0.25" />
+                                                    <GradientStop Color="#272C30" Offset="1" />
                                                 </LinearGradientBrush>
                                             </Path.Fill>
                                         </Path>
-                                        <Border Width="270" Height="12" CornerRadius="6,6,8,8" HorizontalAlignment="Center" BorderBrush="#33424E" BorderThickness="0,1,0,0">
+                                        <Border Width="270" Height="12" CornerRadius="6,6,8,8" HorizontalAlignment="Center" BorderBrush="#353B3F" BorderThickness="0,1,0,0">
                                             <Border.Background>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                    <GradientStop Color="#2B3740" Offset="0" />
-                                                    <GradientStop Color="#151C22" Offset="1" />
+                                                    <GradientStop Color="#2C3236" Offset="0" />
+                                                    <GradientStop Color="#161A1D" Offset="1" />
                                                 </LinearGradientBrush>
                                             </Border.Background>
                                         </Border>
@@ -299,7 +299,7 @@
                             </local:FillBox>
 
                             <!-- Controles: três blocos de geometria fixa (posição, opacidade, tamanho) numa faixa só; nada muda de lugar ao trocar de opção -->
-                            <Border Grid.Row="2" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="10" Padding="16,0" Height="48">
+                            <Border Grid.Row="2" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{StaticResource RadiusInset}" Padding="16,0" Height="48">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -309,7 +309,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE81E;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Accent}" Margin="0,0,8,0" />
+                                        <TextBlock Text="&#xE81E;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Muted}" Margin="0,0,8,0" />
                                         <TextBlock Text="Posição" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
                                         <TextBlock x:Name="OvCornerName" Text="Superior esquerdo" FontWeight="SemiBold" VerticalAlignment="Center" />
                                     </StackPanel>
@@ -414,7 +414,7 @@
 
                 <!-- Estado da medição de FPS: uma linha só, o suficiente para saber se o overlay já está lendo o jogo -->
                 <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,2,0,0" MinHeight="18">
-                    <Ellipse x:Name="OvStatusDot" Width="7" Height="7" Fill="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,1,8,0" />
+                    <Ellipse x:Name="OvStatusDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
                     <TextBlock x:Name="OvStatus" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="700" Style="{StaticResource Num}" />
                 </StackPanel>
             </Grid>

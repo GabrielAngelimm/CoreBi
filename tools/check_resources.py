@@ -19,6 +19,8 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "src" / "CoreBi.Desktop"
 THEME = ROOT / "Shell" / "Theme.xaml"
 TEMPLATES = ROOT / "Shell" / "FeatureTemplates.xaml"
+# Paleta fixa do overlay e do aviso: entra no Theme.xaml como dicionário mesclado (carregado antes das chaves dele)
+HUD = ROOT / "Shell" / "HudPalette.xaml"
 
 KEY = re.compile(r'x:Key="([^"{]+)"')
 REF = re.compile(r"\{(StaticResource|DynamicResource)\s+([^}\s]+)\s*\}")
@@ -48,14 +50,16 @@ def check_xaml(path: pathlib.Path, shared: set[str], ordered: bool) -> list[str]
 
 
 def main() -> int:
-    theme_keys = {k for _, k in keys_with_positions(THEME.read_text(encoding="utf-8"))}
+    hud_keys = {k for _, k in keys_with_positions(HUD.read_text(encoding="utf-8"))}
+    theme_keys = {k for _, k in keys_with_positions(THEME.read_text(encoding="utf-8"))} | hud_keys
     template_keys = {k for _, k in keys_with_positions(TEMPLATES.read_text(encoding="utf-8"))}
     app_keys = theme_keys | template_keys
 
-    problems = check_xaml(THEME, set(), ordered=True)
+    problems = check_xaml(HUD, set(), ordered=True)
+    problems += check_xaml(THEME, hud_keys, ordered=True)
     problems += check_xaml(TEMPLATES, theme_keys, ordered=True)
     for path in sorted(ROOT.rglob("*.xaml")):
-        if path in (THEME, TEMPLATES) or "obj" in path.parts or "bin" in path.parts:
+        if path in (THEME, TEMPLATES, HUD) or "obj" in path.parts or "bin" in path.parts:
             continue
         problems += check_xaml(path, app_keys, ordered=True)
 

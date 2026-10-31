@@ -40,6 +40,38 @@ public static class Ui
         SetIcon(button, running ? "\uE71A" : idleIcon);
         button.Content = running ? runningText : idleText;
     }
+
+    /// <summary>
+    /// Selo de veredito (estilo Badge com um LED e um texto dentro): tone \u00E9 "Ok", "Warn", "Danger" ou "" (sem dados).
+    /// Saud\u00E1vel fica em tinta com o LED verde; aten\u00E7\u00E3o e cr\u00EDtico ganham fundo e texto na cor, porque pedem que algu\u00E9m olhe.
+    /// </summary>
+    public static void SetTone(System.Windows.Controls.Border badge, string tone)
+    {
+        bool alert = tone is "Warn" or "Danger";
+        string soft = tone + "Soft";
+        if (alert)
+        {
+            badge.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, soft);
+            badge.SetResourceReference(System.Windows.Controls.Border.BorderBrushProperty, soft);
+        }
+        else
+        {
+            badge.ClearValue(System.Windows.Controls.Border.BackgroundProperty); // o estilo Badge é transparente com fio
+            badge.ClearValue(System.Windows.Controls.Border.BorderBrushProperty);
+        }
+        if (badge.Child is not System.Windows.Controls.Panel panel) return;
+        foreach (var child in panel.Children)
+        {
+            if (child is System.Windows.Shapes.Ellipse led)
+                led.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, tone.Length > 0 ? tone : "Faint");
+            else if (child is System.Windows.Controls.TextBlock text)
+                text.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, alert ? tone : tone == "Ok" ? "Fg" : "Muted");
+        }
+    }
+
+    /// <summary>Raio dos pain\u00E9is (RadiusPanel), para recortar cantos desenhados em c\u00F3digo.</summary>
+    public static double PanelRadius(FrameworkElement element) =>
+        element.TryFindResource("RadiusPanel") is CornerRadius r ? r.TopLeft : 10;
 }
 
 /// <summary>Texto vazio some do layout (rótulos opcionais em templates).</summary>
