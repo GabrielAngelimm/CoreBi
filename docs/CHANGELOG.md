@@ -1,5 +1,12 @@
 # Mudanças
 
+## 0.2.5 — 2026-10-31
+
+- Refino da identidade visual: cor chapada, sem degradês nem brilhos. A página aberta no menu tem fundo fixo em verde-água escuro. Cada peça do computador tem a sua cor em todas as telas (processador verde escuro, placa de vídeo laranja, memória violeta, memória física e virtual em violeta mais escuro, armazenamento azul, placa-mãe bege, rede amarelo), e a placa de Sistema e o cabeçalho de Sensores ganham fundo claro na cor do componente.
+- Ícones sem fundo e maiores em todo o app, inclusive no OverlayBi. As peças têm desenho próprio (processador, placa de vídeo, memória, VRAM, SSD, placa-mãe, rede, roteador, ventoinha).
+- Texto de filtros, segmentos, opções, teclas e abas centralizado na vertical.
+- Rede reorganizada: download e upload grandes à esquerda, latência e métricas à direita, caminho até a internet ocupando o espaço que sobra; cabe em 1120 × 800.
+
 ## 0.2.4 — 2026-10-31
 
 - Identidade visual nova, a "Bancada iluminada" (docs/DESIGN.md): a interface deixa de ter verde-água em tudo e ganha cor com intenção. O que se clica acende no verde-água da marca (o botão principal de cada tela, o item escolhido no menu, numa pílula que desliza até a página aberta, interruptores, caixas marcadas, filtros e o foco do teclado). Cada peça do computador tem a sua cor, a mesma em todas as telas (processador verde-água, placa de vídeo cobre, memória lavanda, armazenamento azul, conferidas para daltonismo): gráficos com área que acende e some para baixo, anéis e medidores que acendem até a ponta, o ícone da peça num ladrilho da cor dela (Sistema, Sensores, Visão geral, Discos) e uma luz suave atrás do instrumento principal de cada tela. Saudável continua discreto (LED verde); só atenção e crítico ganham cor cheia. Títulos, menu, botões e rótulos passam para a letra DIN do logo, com títulos maiores. Movimento curto e com função: a seleção desliza, os anéis da Visão geral enchem ao abrir a página e o ponto ao vivo dos gráficos pulsa a cada leitura (só com a janela em primeiro plano e sem benchmark ou teste de carga rodando, para não pesar na medição). No OverlayBi os ícones dos grupos ficam todos na mesma cor.
