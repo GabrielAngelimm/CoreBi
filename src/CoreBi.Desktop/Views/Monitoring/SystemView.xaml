@@ -24,7 +24,8 @@
                 <Trigger Property="local:Ui.Channel" Value="Cpu"><Setter Property="Foreground" Value="{DynamicResource Cpu}" /></Trigger>
                 <Trigger Property="local:Ui.Channel" Value="Gpu"><Setter Property="Foreground" Value="{DynamicResource Gpu}" /></Trigger>
                 <Trigger Property="local:Ui.Channel" Value="Memory"><Setter Property="Foreground" Value="{DynamicResource Memory}" /></Trigger>
-                <Trigger Property="local:Ui.Channel" Value="Storage"><Setter Property="Foreground" Value="{DynamicResource StorageHi}" /></Trigger>
+                <Trigger Property="local:Ui.Channel" Value="Storage"><Setter Property="Foreground" Value="{DynamicResource Storage}" /></Trigger>
+                <Trigger Property="local:Ui.Channel" Value="Board"><Setter Property="Foreground" Value="{DynamicResource Board}" /></Trigger>
             </Style.Triggers>
         </Style>
 
@@ -286,7 +287,7 @@
              texto seminegrito; o mouse clareia, o clique afunda 1 px e, enquanto gera, o botão apaga e diz o que está fazendo. -->
         <Style x:Key="ReportButton" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Background" Value="{DynamicResource SignalFill}" />
+            <Setter Property="Background" Value="{DynamicResource Signal}" />
             <Setter Property="Foreground" Value="{DynamicResource SignalFg}" />
             <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
             <Setter Property="FontSize" Value="13.5" />
@@ -306,11 +307,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalFillHover}" />
+                                <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalHover}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="face" Property="Margin" Value="0,1,0,-1" />
-                                <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalFill}" />
+                                <Setter TargetName="face" Property="Background" Value="{DynamicResource Signal}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="face" Property="Opacity" Value="0.55" />
@@ -399,10 +400,10 @@
                     </Grid.RowDefinitions>
                     <!-- Placa: quem é o componente e as quatro leituras que o resumem -->
                     <!-- No tom mais forte, como o cabeçalho de componente em Sensores; o botão escolhido usa o mesmo fundo -->
-                    <!-- A luz do canal do componente escolhido acende a placa por trás do nome -->
+                    <!-- Toda a placa tem o fundo claro da cor do componente escolhido -->
                     <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" ClipToBounds="True">
                         <Grid>
-                        <Border Style="{StaticResource Glow}" local:Ui.Channel="{Binding SelectedItem.Channel, ElementName=SysIndex}" HorizontalAlignment="Left" Width="760" Margin="-150,0,0,0" />
+                        <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="{Binding SelectedItem.Channel, ElementName=SysIndex}" />
                         <Grid Margin="32,28,32,26">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />

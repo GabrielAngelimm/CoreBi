@@ -73,7 +73,7 @@
                                     <RepeatButton Command="Slider.DecreaseLarge" Focusable="False" IsTabStop="False">
                                         <RepeatButton.Template>
                                             <ControlTemplate TargetType="RepeatButton">
-                                                <Grid Background="Transparent"><Border Height="4" CornerRadius="2" Background="{DynamicResource SignalGrad}" /></Grid>
+                                                <Grid Background="Transparent"><Border Height="4" CornerRadius="2" Background="{DynamicResource Signal}" /></Grid>
                                             </ControlTemplate>
                                         </RepeatButton.Template>
                                     </RepeatButton>
@@ -89,7 +89,7 @@
                                     <Thumb Focusable="False">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Ellipse x:Name="e" Width="16" Height="16" Fill="{DynamicResource SignalHi}" Stroke="{DynamicResource Raised}" StrokeThickness="3" />
+                                                <Ellipse x:Name="e" Width="16" Height="16" Fill="{DynamicResource Fg}" Stroke="{DynamicResource Raised}" StrokeThickness="3" />
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="e" Property="Fill" Value="{DynamicResource Fg}" /></Trigger>
                                                 </ControlTemplate.Triggers>

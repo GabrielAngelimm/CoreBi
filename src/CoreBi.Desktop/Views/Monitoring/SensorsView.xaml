@@ -119,6 +119,9 @@
                 <DataTrigger Binding="{Binding Tone}" Value="Gpu"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Gpu}" /></DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Memory"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Memory}" /></DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Storage"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Storage}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="Virtual"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Virtual}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="Board"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Board}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="Net"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Net}" /></DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
 
@@ -128,10 +131,10 @@
              bloco e no cabeçalho fixo do topo da rolagem, para a troca não dar salto. -->
         <DataTemplate x:Key="ComponentHeader">
             <StackPanel>
-                <!-- A luz do canal do componente acende a faixa por trás do nome, como a placa de Sistema -->
+                <!-- Fundo claro na cor do componente, uniforme, como a placa de Sistema -->
                 <Border Height="80" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" ClipToBounds="True">
                     <Grid>
-                    <Border Style="{StaticResource Glow}" local:Ui.Channel="{Binding Tone}" HorizontalAlignment="Left" Width="620" Margin="-140,0,0,0" />
+                    <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="{Binding Tone}" Margin="0,0,-60,0" />
                     <Grid Margin="24,0,18,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />

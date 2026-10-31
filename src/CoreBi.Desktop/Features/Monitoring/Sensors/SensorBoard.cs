@@ -71,13 +71,15 @@ public static class SensorBoard
         _ => ("Outro", "", 70)
     };
 
-    /// <summary>Canal de cor do componente: o mesmo da Visão geral, da barra lateral e do Sistema.</summary>
+    /// <summary>Canal de cor do componente: o mesmo da Visão geral, da barra lateral e do Sistema (memória física e virtual do Windows usam o violeta escuro, "Virtual").</summary>
     private static string ToneOf(HardwareType t) => t switch
     {
         HardwareType.Cpu => "Cpu",
         HardwareType.GpuNvidia or HardwareType.GpuAmd or HardwareType.GpuIntel => "Gpu",
         HardwareType.Storage => "Storage",
         HardwareType.Memory => "Memory",
+        HardwareType.Motherboard or HardwareType.SuperIO or HardwareType.EmbeddedController => "Board",
+        HardwareType.Network => "Net",
         _ => "Steel"
     };
 
@@ -105,10 +107,10 @@ public static class SensorBoard
             {
                 if (IsVirtualMemory(first))
                     parts.Add(new(group.Key, "Memória virtual", "Uso do Windows", VirtualGlyph, 2, VirtualOrder,
-                        "Memória física somada ao arquivo de paginação, no disco. É o limite que o Windows pode prometer aos programas.", all, "Memory"));
+                        "Memória física somada ao arquivo de paginação, no disco. É o limite que o Windows pode prometer aos programas.", all, "Virtual"));
                 else if (all.Any(r => r.Name is "Memory" or "Memory Used"))
                     parts.Add(new(group.Key, "Memória física", "Uso do Windows", PhysicalGlyph, 2, PhysicalOrder,
-                        "A RAM instalada vista pelo Windows: quanto está em uso e quanto está livre agora.", all, "Memory"));
+                        "A RAM instalada vista pelo Windows: quanto está em uso e quanto está livre agora.", all, "Virtual"));
                 else
                     dimms.Add(new(group.Key, PrettyName(first.Component), "Memória RAM", Module, 2, DimmOrder, null, all, "Memory"));
                 continue;

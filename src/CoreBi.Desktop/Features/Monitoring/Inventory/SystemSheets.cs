@@ -21,6 +21,7 @@ public sealed record IndexItem(string Key, string Glyph, string Category, string
         SystemSheets.Gpu => "Gpu",
         SystemSheets.Ram => "Memory",
         SystemSheets.Storage => "Storage",
+        SystemSheets.Board => "Board",
         _ => "Steel",
     };
 }

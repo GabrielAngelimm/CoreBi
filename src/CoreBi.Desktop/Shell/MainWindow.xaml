@@ -37,7 +37,7 @@
                                 <Button Style="{StaticResource SecondaryButton}" Content="Corrigir" MinHeight="28" Padding="12,4" FontSize="12" HorizontalAlignment="Left" Margin="21,0,0,0" Click="BtnFixCpuSensors_Click" />
                             </StackPanel>
                         </Border>
-                        <!-- Central de monitoramento: quatro medidores segmentados, cada um no degradê do seu componente. Some na Visão geral, que mostra o mesmo em tamanho grande. -->
+                        <!-- Central de monitoramento: quatro medidores segmentados, cada um na cor do seu componente. Some na Visão geral, que mostra o mesmo em tamanho grande. -->
                         <Border x:Name="SideMonitor" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="10,14,10,12">
                             <StackPanel>
                                 <Grid>
@@ -52,7 +52,7 @@
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource CpuGrad}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource Cpu}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideCpuBar" ScaleX="0" />
                                         </Border.RenderTransform>
@@ -70,7 +70,7 @@
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource GpuGrad}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource Gpu}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideGpuBar" ScaleX="0" />
                                         </Border.RenderTransform>
@@ -88,7 +88,7 @@
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,10" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource MemoryGrad}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource Memory}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideRamBar" ScaleX="0" />
                                         </Border.RenderTransform>
@@ -106,7 +106,7 @@
                                 </Grid>
                                 <Grid Height="5" Margin="0,5,0,0" OpacityMask="{StaticResource SegmentMask}">
                                     <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource StorageGrad}" RenderTransformOrigin="0,0.5">
+                                    <Border Background="{DynamicResource Storage}" RenderTransformOrigin="0,0.5">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="SideDiskBar" ScaleX="0" />
                                         </Border.RenderTransform>

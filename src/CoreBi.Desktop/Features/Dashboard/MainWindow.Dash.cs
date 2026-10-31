@@ -24,7 +24,7 @@ namespace CoreBi.Desktop;
 public partial class MainWindow
 {
     /// <summary>
-    /// Cartão de uso ao vivo: Hero é a carga, com medidor segmentado no degradê do canal (Meter); Stats só traz leituras que
+    /// Cartão de uso ao vivo: Hero é a carga, com medidor segmentado na cor do canal (Meter); Stats só traz leituras que
     /// existem para o componente. Channel (Cpu, Gpu) pinta o ladrilho do ícone.
     /// </summary>
     public sealed record DashComponent(string Icon, string Channel, string Name, string Model, string Target, Brush Meter,
@@ -183,7 +183,7 @@ public partial class MainWindow
         var cpuLoad = _monitor.CpuLoad;
         var rows = new List<DashComponent>
         {
-            new("\uE950", "Cpu", "Processador", GameCatalog.ShortCpuName(_cpuName), "PageSystem:Processador", ThemeManager.Channel("Cpu", 0, 0, 1, 0),
+            new("\uE950", "Cpu", "Processador", GameCatalog.ShortCpuName(_cpuName), "PageSystem:Processador", Palette("Cpu"),
                 F(cpuLoad, "0", " %"), "em uso", (cpuLoad ?? 0) / 100.0,
                 new[] { Stat("Temp.", F(_monitor.CpuTemperature, "0", " °C")), Stat("Clock", F(CpuClockAvg(), "0", " MHz")),
                         Stat("Consumo", F(_monitor.CpuPower, "0", " W")) }),
@@ -193,7 +193,7 @@ public partial class MainWindow
             var gpu = _gpus[0];
             uint? clk = gpu.NvmlHandle != IntPtr.Zero ? Nvml.Clock(gpu.NvmlHandle, Nvml.ClockGraphics) : null;
             var gpuLoad = MainGpuLoad();
-            rows.Add(new("\uE7F4", "Gpu", "Placa de vídeo", GameCatalog.ShortGpuName(gpu.Name), "PageGpu", ThemeManager.Channel("Gpu", 0, 0, 1, 0),
+            rows.Add(new("\uE7F4", "Gpu", "Placa de vídeo", GameCatalog.ShortGpuName(gpu.Name), "PageGpu", Palette("Gpu"),
                          F(gpuLoad, "0", " %"), "em uso", (gpuLoad ?? 0) / 100.0,
                          new[] { Stat("Temp.", F(MainGpuTemp(), "0", " °C")), Stat("Clock", clk is uint c ? $"{c} MHz" : "—"),
                                  Stat("Consumo", F(MainGpuPower(), "0", " W")) }));
@@ -234,7 +234,7 @@ public partial class MainWindow
 
     /// <summary>
     /// Gráfico em retícula, como a tela de um instrumento: o processador (canal Cpu) e a placa de vídeo (canal Gpu), cada um
-    /// com a sua área em degradê. O valor atual fica nas leituras grandes acima, não no gráfico.
+    /// com a sua área chapada. O valor atual fica nas leituras grandes acima, não no gráfico.
     /// </summary>
     internal void DrawDashChart()
     {
@@ -307,8 +307,7 @@ public partial class MainWindow
         _dashPlot = new DashPlot(data, cpu, gpu, unit, left, top, plotW, plotH, X, Y);
         if (data.Count < 2) { DrawDashHover(); return; }
 
-        // Cada canal: uma área que acende no tom dele e some até o fundo, e o traço por cima. O traço é mais apagado na amostra
-        // mais antiga e aceso no "agora", como o fósforo de um osciloscópio. As áreas vêm antes dos traços, para nenhum traço
+        // Cada canal: uma área chapada no tom do canal e o traço por cima. As áreas vêm antes dos traços, para nenhum traço
         // ficar tingido pela área do outro.
         var gpuPts = new List<Point>();
         var cpuPts = new List<Point>();
@@ -320,7 +319,7 @@ public partial class MainWindow
         void Area(List<Point> pts, string channel, byte alpha)
         {
             if (pts.Count < 2) return;
-            var area = new Polygon { Fill = ThemeManager.AreaFill(channel, alpha) };
+            var area = new Polygon { Fill = ThemeManager.Tint(channel, alpha) };
             foreach (var p in pts) area.Points.Add(p);
             area.Points.Add(new Point(pts[^1].X, top + plotH));
             area.Points.Add(new Point(pts[0].X, top + plotH));
@@ -329,12 +328,12 @@ public partial class MainWindow
         void Trace(List<Point> pts, string channel, double thickness)
         {
             if (pts.Count < 2) return;
-            var trace = new Polyline { Stroke = ThemeManager.Trace(channel), StrokeThickness = thickness, StrokeLineJoin = PenLineJoin.Round };
+            var trace = new Polyline { Stroke = Palette(channel), StrokeThickness = thickness, StrokeLineJoin = PenLineJoin.Round };
             foreach (var p in pts) trace.Points.Add(p);
             DashChart.Children.Add(trace);
         }
-        Area(gpuPts, "Gpu", 0x2C);
-        Area(cpuPts, "Cpu", 0x44);
+        Area(gpuPts, "Gpu", 0x1C);
+        Area(cpuPts, "Cpu", 0x26);
         Trace(gpuPts, "Gpu", 1.8);
         Trace(cpuPts, "Cpu", 2);
 
@@ -548,10 +547,7 @@ public partial class MainWindow
         DashRingLegend.ItemsSource = rings.Select(r => r.Item).ToList();
     }
 
-    /// <summary>
-    /// Trilho neutro e, por cima, o arco em degradê ao longo do anel: do tom de fundo do canal no começo ao brilho na ponta
-    /// (a ponta é o que se lê, então é o que mais acende).
-    /// </summary>
+    /// <summary>Trilho neutro e, por cima, o arco do canal (RAM, VRAM e disco) até a fração ocupada.</summary>
     private void DrawDashRings()
     {
         DashRings.Children.Clear();
@@ -569,7 +565,14 @@ public partial class MainWindow
                 StrokeThickness = thickness,
                 Margin = new Thickness(cx - r, cy - r, 0, 0)
             });
-            AddRingArc(DashRings, _rings[i].Frac * reveal, cx, cy, r, thickness, _rings[i].Channel);
+            DashRings.Children.Add(new Path
+            {
+                Data = RingArc(_rings[i].Frac * reveal, cx, cy, r),
+                Stroke = Palette(_rings[i].Channel),
+                StrokeThickness = thickness,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round
+            });
         }
         var center = new TextBlock
         {
@@ -585,34 +588,14 @@ public partial class MainWindow
         DashRings.Children.Add(center);
     }
 
-    /// <summary>Arco em fatias finas, cada uma na cor do ponto em que está; as pontas são arredondadas.</summary>
-    internal static void AddRingArc(Canvas canvas, double frac, double cx, double cy, double r, double thickness, string channel)
+    /// <summary>Arco no sentido horário a partir do topo, até a fração da volta dada.</summary>
+    internal static Geometry RingArc(double frac, double cx, double cy, double r)
     {
         frac = Math.Clamp(frac, 0, 0.9999);
-        if (frac <= 0.001) return;
-        int n = Math.Max(2, (int)Math.Ceiling(frac * 72));
-        for (int k = 0; k < n; k++)
-        {
-            double from = frac * k / n, to = Math.Min(frac, frac * (k + 1) / n + 0.003); // cada fatia invade um pouco a próxima: sem frestas
-            var color = new SolidColorBrush(ThemeManager.Blend(channel, (k + 0.5) / n));
-            color.Freeze();
-            canvas.Children.Add(new Path
-            {
-                Data = Arc(from, to, cx, cy, r),
-                Stroke = color,
-                StrokeThickness = thickness,
-                StrokeStartLineCap = k == 0 ? PenLineCap.Round : PenLineCap.Flat,
-                StrokeEndLineCap = k == n - 1 ? PenLineCap.Round : PenLineCap.Flat
-            });
-        }
-    }
-
-    /// <summary>Arco no sentido horário entre duas frações da volta, a partir do topo.</summary>
-    private static Geometry Arc(double from, double to, double cx, double cy, double r)
-    {
-        Point At(double f) => new(cx + r * Math.Sin(f * 2 * Math.PI), cy - r * Math.Cos(f * 2 * Math.PI));
-        var fig = new PathFigure { StartPoint = At(from) };
-        fig.Segments.Add(new ArcSegment(At(to), new Size(r, r), 0, to - from > 0.5, SweepDirection.Clockwise, true));
+        if (frac <= 0.001) return Geometry.Empty;
+        double a = frac * 2 * Math.PI;
+        var fig = new PathFigure { StartPoint = new Point(cx, cy - r) };
+        fig.Segments.Add(new ArcSegment(new Point(cx + r * Math.Sin(a), cy - r * Math.Cos(a)), new Size(r, r), 0, frac > 0.5, SweepDirection.Clockwise, true));
         var g = new PathGeometry(new[] { fig });
         g.Freeze();
         return g;

@@ -254,8 +254,6 @@
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <TextBlock Text="Vida útil" Style="{StaticResource SectionTitle}" />
-                                <!-- O mostrador acende o painel por trás, na cor do canal -->
-                                <Border Grid.Row="1" Style="{StaticResource Glow}" local:Ui.Channel="Storage" Margin="24,8" />
                                 <local:LifeGauge x:Name="LifeDial" Grid.Row="1" MinHeight="210" Margin="0,6" Caption="vida útil restante" />
                                 <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
                                     <Grid>

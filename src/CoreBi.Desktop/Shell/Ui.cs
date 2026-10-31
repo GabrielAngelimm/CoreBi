@@ -35,7 +35,7 @@ public static class Ui
 
     /// <summary>
     /// Canal do componente (Cpu, Gpu, Memory, Storage ou Signal; vazio = Steel): o ladrilho de componente (ChannelTile) e o
-    /// brilho (Glow) pintam por ele, para cada peça ter a mesma cor em todas as telas.
+    /// fundo claro da ficha (ChannelWash) pintam por ele, para cada peça ter a mesma cor em todas as telas.
     /// </summary>
     public static readonly DependencyProperty ChannelProperty = DependencyProperty.RegisterAttached(
         "Channel", typeof(string), typeof(Ui), new FrameworkPropertyMetadata(""));

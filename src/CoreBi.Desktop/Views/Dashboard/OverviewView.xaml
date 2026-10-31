@@ -184,11 +184,7 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <!-- Os anéis ficam sobre uma luz suave do canal da RAM, como um mostrador aceso por trás -->
-                                <Grid Width="150" Height="150" VerticalAlignment="Center" Margin="0,0,24,0">
-                                    <Border Style="{StaticResource Glow}" local:Ui.Channel="Memory" Margin="-16" />
-                                    <Canvas x:Name="DashRings" Width="150" Height="150" />
-                                </Grid>
+                                <Canvas x:Name="DashRings" Width="150" Height="150" VerticalAlignment="Center" Margin="0,0,24,0" />
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock Text="Memória e disco" Style="{StaticResource SectionTitle}" Margin="0,0,0,6" />
                                     <!-- Cada linha leva à seção do item: RAM ao Sistema, VRAM à Placa de vídeo, disco a Discos -->

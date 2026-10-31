@@ -424,16 +424,13 @@ public partial class NetworkView : UserControl
         offPath.SetResourceReference(Shape.FillProperty, "Line");
         NetDial.Children.Add(offPath);
 
-        // Aceso: cada gomo na sua cor, do tom de fundo do canal no começo ao brilho na ponta (o arco acende até a leitura)
-        for (int i = 0; i < DialSegments && (i + 0.5) / DialSegments <= lit; i++)
-        {
-            var seg = new StreamGeometry();
-            using (var ctx = seg.Open()) Segment(ctx, i);
-            seg.Freeze();
-            var color = new SolidColorBrush(ThemeManager.Blend(channel, (i + 0.5) / DialSegments / lit));
-            color.Freeze();
-            NetDial.Children.Add(new Path { Data = seg, Fill = color });
-        }
+        var onGeo = new StreamGeometry();
+        using (var ctx = onGeo.Open())
+            for (int i = 0; i < DialSegments && (i + 0.5) / DialSegments <= lit; i++) Segment(ctx, i);
+        onGeo.Freeze();
+        var onPath = new Path { Data = onGeo };
+        onPath.SetResourceReference(Shape.FillProperty, channel);
+        NetDial.Children.Add(onPath);
     }
 
     // ---------------- Traço de pings ----------------
