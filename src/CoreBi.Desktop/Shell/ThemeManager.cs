@@ -5,48 +5,83 @@ namespace CoreBi.Desktop;
 
 /// <summary>
 /// Troca entre os temas "Grafite" (escuro) e "Papel" (claro) substituindo os pincéis da paleta (Theme.xaml). O XAML os
-/// referencia com DynamicResource, então a troca vale na hora, sem recarregar janelas. Overlay e notificações ficam sempre
-/// escuros (aparecem sobre jogos e sobre a área de trabalho).
+/// referencia com DynamicResource, então a troca vale na hora, sem recarregar janelas. Overlay e notificações usam a paleta
+/// fixa Hud* (aparecem sobre jogos e sobre a área de trabalho).
 /// </summary>
 public static class ThemeManager
 {
     public static bool IsLight { get; private set; }
 
-    /// <summary>Chave, cor no tema escuro, cor no tema claro. Os tons derivam da marca (brand/geometry.json).</summary>
+    /// <summary>
+    /// Chave, cor no tema escuro, cor no tema claro. Esta tabela é a única fonte das cores do app (docs/DESIGN.md): o painel é
+    /// grafite (ou papel), a marca acende o que é interativo e cada componente de hardware tem a sua cor e uma variante suave
+    /// (o fundo claro das fichas). Tudo é cor chapada: o app não usa degradês nem brilhos.
+    /// </summary>
     private static readonly (object Key, string Dark, string Light)[] Palette =
     {
-        ("Bg", "#0D141A", "#F2F5F6"),
-        ("Sidebar", "#0A1015", "#E8EEF0"),
-        ("Surface", "#121B23", "#FFFFFF"),
-        ("Raised", "#18232D", "#F7F9FA"),
-        ("Hover", "#1B2731", "#E9EFF1"),
-        ("Selected", "#21303C", "#DDE7EA"),
-        ("Line", "#1F2B35", "#DCE3E7"),
-        ("LineStrong", "#2D3D4A", "#C3CFD5"),
-        ("Fg", "#E6EEF1", "#122029"),
-        ("Muted", "#93A4B0", "#4B5D69"),
-        ("Faint", "#61717D", "#7A8A95"),
-        ("Accent", "#27C9BC", "#087E78"),
-        ("AccentHover", "#45D8CC", "#0A958E"),
-        ("AccentSoft", "#2427C9BC", "#1A087E78"),
-        ("AccentFg", "#04211E", "#FFFFFF"),
-        ("Copper", "#D99067", "#A35F37"),
-        ("CopperSoft", "#24D99067", "#1AA35F37"),
-        ("Steel", "#7F93A2", "#5D7280"),
-        ("Ok", "#5FC385", "#1F7F49"),
-        ("OkSoft", "#245FC385", "#1A1F7F49"),
-        ("Warn", "#E8B550", "#9A6400"),
-        ("WarnSoft", "#26E8B550", "#1F9A6400"),
-        ("Danger", "#EF6B5E", "#C0392B"),
-        ("DangerSoft", "#26EF6B5E", "#1AC0392B"),
-        ("Scrim", "#B8050A0E", "#80182630"),
-        ("Well", "#080C10", "#0D141A"),
-        ("ThumbBrush", "#2D3D4A", "#C3CFD5"),
-        ("ThumbHover", "#4A5D6B", "#9AABB5"),
-        ("ThumbDrag", "#6F8391", "#73868F"),
-        (SystemColors.ControlBrushKey, "#0D141A", "#F2F5F6"),
-        (SystemColors.HighlightBrushKey, "#21303C", "#DDE7EA"),
-        (SystemColors.InactiveSelectionHighlightBrushKey, "#21303C", "#DDE7EA"),
+        // Superfícies: bancada → painel → elevado
+        ("Bg", "#0E1214", "#F1F4F6"),
+        ("Sidebar", "#0A0D0F", "#EAEEF1"),
+        ("Surface", "#15191C", "#FFFFFF"),
+        ("Raised", "#1C2022", "#F6F8FA"),
+        ("Hover", "#1F2427", "#ECEFF2"),
+        ("Selected", "#282D31", "#E2E7EA"),
+        ("Well", "#050708", "#101315"),
+        ("Scrim", "#B8050708", "#80182228"),
+        // Fios
+        ("Line", "#24282B", "#DCE0E3"),
+        ("LineStrong", "#353A3D", "#C4CACD"),
+        // Texto
+        ("Fg", "#E6EAEC", "#182228"),
+        ("Muted", "#A3AAAE", "#525D62"),
+        ("Faint", "#737A7E", "#7A8388"),
+        // Sinal: a marca. Ação principal, controles ligados, item escolhido na navegação, foco e o que está ao vivo
+        ("Signal", "#27C9BC", "#0A857C"),
+        ("SignalHover", "#4DD9CD", "#08766E"),
+        ("SignalDeep", "#12AA9D", "#076B64"),
+        ("SignalFg", "#03201D", "#FFFFFF"),
+        ("SignalSoft", "#2427C9BC", "#1A0A857C"),
+        ("Focus", "#5FDCCF", "#0A857C"),
+        // Página aberta na navegação: o verde-água da marca, bem escuro, num fundo só
+        ("NavSel", "#10373A", "#CFE5E4"),
+        // Tinta: leituras neutras (bateria)
+        ("Ink", "#E3E7E9", "#1A242A"),
+        ("InkFg", "#101315", "#FAFCFD"),
+        // Componentes de hardware: a cor de cada peça em todas as telas (gráficos, medidores, anéis, legendas, ícone) e a
+        // variante suave, o fundo claro da ficha do componente (Soft)
+        ("Cpu", "#1F8A48", "#17703A"),
+        ("CpuSoft", "#161F8A48", "#1417703A"),
+        ("Gpu", "#E8894A", "#C55F1D"),
+        ("GpuSoft", "#1AE8894A", "#14C55F1D"),
+        ("Memory", "#B296FF", "#8A66D9"),
+        ("MemorySoft", "#1AB296FF", "#148A66D9"),
+        ("Virtual", "#7A5AC8", "#5B3FA6"),
+        ("VirtualSoft", "#1E7A5AC8", "#145B3FA6"),
+        ("Storage", "#4A82CC", "#1F5FA8"),
+        ("StorageSoft", "#1A4A82CC", "#141F5FA8"),
+        ("Board", "#C8A370", "#9A7430"),
+        ("BoardSoft", "#1AC8A370", "#149A7430"),
+        ("Net", "#E3D45B", "#9A8700"),
+        ("NetSoft", "#18E3D45B", "#149A8700"),
+        // Rede: o download na cor da rede e o upload no sinal
+        ("NetDown", "#E3D45B", "#9A8700"),
+        ("NetUp", "#27C9BC", "#0A857C"),
+        ("Steel", "#8696A2", "#6A7D8A"),
+        ("SteelSoft", "#208696A2", "#186A7D8A"),
+        // Veredito: só quando algo pede atenção ganha cor cheia; saudável é um LED discreto
+        ("Ok", "#6FC889", "#25804A"),
+        ("OkSoft", "#226FC889", "#1A25804A"),
+        ("Warn", "#EDB755", "#9A6400"),
+        ("WarnSoft", "#26EDB755", "#1F9A6400"),
+        ("Danger", "#EE6E63", "#C0392B"),
+        ("DangerSoft", "#26EE6E63", "#1AC0392B"),
+        // Rolagem
+        ("ThumbBrush", "#353A3D", "#C4CACD"),
+        ("ThumbHover", "#50575B", "#9EA6AB"),
+        ("ThumbDrag", "#6E7579", "#7F888D"),
+        (SystemColors.ControlBrushKey, "#0E1214", "#F1F4F6"),
+        (SystemColors.HighlightBrushKey, "#282D31", "#E2E7EA"),
+        (SystemColors.InactiveSelectionHighlightBrushKey, "#282D31", "#E2E7EA"),
     };
 
     public static void Apply(bool light)
@@ -54,12 +89,15 @@ public static class ThemeManager
         IsLight = light;
         var res = Application.Current.Resources;
         foreach (var (key, dark, lightHex) in Palette)
-        {
-            var color = (Color)ColorConverter.ConvertFromString(light ? lightHex : dark);
-            var brush = new SolidColorBrush(color);
-            brush.Freeze();
-            res[key] = brush; // o XAML usa DynamicResource: trocar o pincel atualiza todos os controles na hora
-        }
+            res[key] = Frozen(new SolidColorBrush(Parse(light ? lightHex : dark))); // o XAML usa DynamicResource: trocar o pincel atualiza tudo
+    }
+
+    private static Color Parse(string hex) => (Color)ColorConverter.ConvertFromString(hex);
+
+    private static T Frozen<T>(T brush) where T : Freezable
+    {
+        brush.Freeze();
+        return brush;
     }
 
     /// <summary>Pincel atual da paleta (para gráficos desenhados em código).</summary>
@@ -70,5 +108,13 @@ public static class ThemeManager
     {
         var c = Brush(key).Color;
         return Color.FromArgb(alpha, c.R, c.G, c.B);
+    }
+
+    /// <summary>Área sob uma linha de gráfico: o canal numa opacidade só, chapado.</summary>
+    public static SolidColorBrush Tint(string key, byte alpha)
+    {
+        var brush = new SolidColorBrush(WithAlpha(key, alpha));
+        brush.Freeze();
+        return brush;
     }
 }

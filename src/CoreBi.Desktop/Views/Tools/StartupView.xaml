@@ -46,9 +46,9 @@
                                 </Border>
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding Enabled}" Value="True">
-                                        <Setter TargetName="badge" Property="Background" Value="{DynamicResource AccentSoft}" />
-                                        <Setter TargetName="badge" Property="BorderBrush" Value="{DynamicResource Accent}" />
-                                        <Setter TargetName="badgeText" Property="Foreground" Value="{DynamicResource Accent}" />
+                                        <Setter TargetName="badge" Property="Background" Value="{DynamicResource SignalSoft}" />
+                                        <Setter TargetName="badge" Property="BorderBrush" Value="{DynamicResource Signal}" />
+                                        <Setter TargetName="badgeText" Property="Foreground" Value="{DynamicResource Signal}" />
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding FileMissing}" Value="True">
                                         <Setter TargetName="badge" Property="Background" Value="{DynamicResource WarnSoft}" />
