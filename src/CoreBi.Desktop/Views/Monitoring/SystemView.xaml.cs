@@ -150,7 +150,8 @@ public partial class SystemView : UserControl
     private void SheetCard_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         // Cantos arredondados também para a faixa do índice.
-        SheetCard.Clip = new RectangleGeometry(new Rect(e.NewSize), 12, 12);
+        double r = Ui.PanelRadius(SheetCard);
+        SheetCard.Clip = new RectangleGeometry(new Rect(e.NewSize), r, r);
         Layout(e.NewSize.Width);
     }
 
@@ -181,7 +182,7 @@ public partial class SystemView : UserControl
         catch { return; }
         if (FindTagged(host, "copy") is not TextBlock icon) return;
         icon.Text = "";
-        icon.SetResourceReference(TextBlock.ForegroundProperty, "Accent");
+        icon.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
         var reset = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.2) };
         reset.Tick += (_, _) =>
         {
