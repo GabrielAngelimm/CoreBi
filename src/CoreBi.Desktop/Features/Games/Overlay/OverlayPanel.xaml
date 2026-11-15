@@ -3,19 +3,22 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!--
         Conteúdo do overlay, usado por cima do jogo (OverlayWindow) e na prévia da aba Overlay: os dois mostram
-        exatamente a mesma caixa. Paleta fixa de grafite translúcido (independe do tema do app) e números em
-        Bahnschrift com algarismos de largura fixa, para os valores não "dançarem" a cada atualização.
+        exatamente a mesma caixa. Paleta fixa Hud* (grafite, independe do tema do app), com o FPS no sinal da marca, e
+        números em Bahnschrift com algarismos de largura fixa, para os valores não "dançarem" a cada atualização.
     -->
-    <Border x:Name="Box" Background="#0D141A" BorderBrush="#2C3B47" BorderThickness="1" CornerRadius="8" Padding="12,10">
+    <UserControl.Resources>
+        <ResourceDictionary Source="/CoreBi.Desktop;component/Shell/HudPalette.xaml"/>
+    </UserControl.Resources>
+    <Border x:Name="Box" Background="{StaticResource HudBg}" BorderBrush="{StaticResource HudLine}" BorderThickness="1" CornerRadius="8" Padding="12,10">
         <StackPanel TextElement.FontFamily="Bahnschrift" TextElement.FontStretch="SemiCondensed" TextElement.FontSize="13"
-                    TextElement.Foreground="#E6EEF1" Typography.NumeralAlignment="Tabular">
+                    TextElement.Foreground="{StaticResource HudFg}" Typography.NumeralAlignment="Tabular">
             <!-- FPS em destaque (cada parte aparece só se escolhida na aba Overlay) -->
             <StackPanel x:Name="OFpsRow" Orientation="Horizontal">
-                <TextBlock x:Name="OFps" Text="—" FontSize="28" FontWeight="SemiBold" Foreground="#27C9BC"/>
-                <TextBlock x:Name="OFpsUnit" Text=" FPS" Foreground="#8297A6" VerticalAlignment="Bottom" Margin="0,0,0,5"/>
-                <TextBlock x:Name="OFrameTime" Text="" Foreground="#8297A6" VerticalAlignment="Bottom" Margin="12,0,0,5"/>
+                <TextBlock x:Name="OFps" Text="—" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource HudSignal}"/>
+                <TextBlock x:Name="OFpsUnit" Text=" FPS" Foreground="{StaticResource HudMuted}" VerticalAlignment="Bottom" Margin="0,0,0,5"/>
+                <TextBlock x:Name="OFrameTime" Text="" Foreground="{StaticResource HudMuted}" VerticalAlignment="Bottom" Margin="12,0,0,5"/>
             </StackPanel>
-            <TextBlock x:Name="OLow" Text="1% low —" Foreground="#8297A6"/>
+            <TextBlock x:Name="OLow" Text="1% low —" Foreground="{StaticResource HudMuted}"/>
             <!-- Gráfico de frametime -->
             <Canvas x:Name="OGraph" Width="190" Height="30" Margin="0,6,0,4" ClipToBounds="True" HorizontalAlignment="Left"/>
             <!-- Linhas de sensores: GPU, VRAM, CPU, RAM... montadas pelo que foi escolhido -->
@@ -29,8 +32,8 @@
                             </Grid.ColumnDefinitions>
                             <!-- Rótulo da linha e, se escolhido, o nome do hardware; a coluna tem a largura da linha mais longa -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,6,0">
-                                <TextBlock Text="{Binding Label}" Foreground="#8297A6" FontWeight="SemiBold"/>
-                                <TextBlock x:Name="det" Text="{Binding Detail}" Foreground="#E6EEF1" FontWeight="SemiBold" Margin="7,0,0,0"/>
+                                <TextBlock Text="{Binding Label}" Foreground="{StaticResource HudMuted}" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="det" Text="{Binding Detail}" Foreground="{StaticResource HudFg}" FontWeight="SemiBold" Margin="7,0,0,0"/>
                             </StackPanel>
                             <!-- Cada dado da linha é separado por um traço vertical discreto -->
                             <ItemsControl Grid.Column="1" ItemsSource="{Binding Parts}" AlternationCount="100">
@@ -40,7 +43,7 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
-                                            <Border x:Name="bar" Width="1" Height="11" Margin="8,0,8,0" Background="#3F505C" VerticalAlignment="Center"/>
+                                            <Border x:Name="bar" Width="1" Height="11" Margin="8,0,8,0" Background="{StaticResource HudSep}" VerticalAlignment="Center"/>
                                             <TextBlock Text="{Binding Value}" MinWidth="{Binding Width}"/>
                                         </StackPanel>
                                         <DataTemplate.Triggers>
@@ -60,7 +63,7 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <TextBlock x:Name="OGame" Text="" Foreground="#5E6E7A" FontSize="11" Margin="0,5,0,0"/>
+            <TextBlock x:Name="OGame" Text="" Foreground="{StaticResource HudFaint}" FontSize="11" Margin="0,5,0,0"/>
         </StackPanel>
     </Border>
 </UserControl>

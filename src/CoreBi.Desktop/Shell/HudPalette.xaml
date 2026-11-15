@@ -1,0 +1,25 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Paleta fixa (não acompanha o tema): o overlay e o aviso aparecem por cima de jogos e da área de trabalho, então são
+        sempre grafite. Os tons são os do tema escuro do app (ThemeManager); o FPS, o gráfico e o ícone do aviso usam o sinal
+        da marca. O Theme.xaml inclui este arquivo, e o overlay e o aviso o carregam por conta própria (funcionam sem o app).
+    -->
+    <SolidColorBrush x:Key="HudBg" Color="#0E1214"/>
+    <SolidColorBrush x:Key="HudPanel" Color="#F215191C"/>
+    <SolidColorBrush x:Key="HudLine" Color="#30363A"/>
+    <SolidColorBrush x:Key="HudSep" Color="#3B4246"/>
+    <SolidColorBrush x:Key="HudFg" Color="#E6EAEC"/>
+    <SolidColorBrush x:Key="HudMuted" Color="#8F979C"/>
+    <SolidColorBrush x:Key="HudFaint" Color="#646B6F"/>
+    <SolidColorBrush x:Key="HudSignal" Color="#27C9BC"/>
+    <SolidColorBrush x:Key="HudSignalSoft" Color="#2027C9BC"/>
+    <!-- Cantos livres sobre a cena do monitor (OverlayBi): contorno tracejado claro e o realce sob o mouse -->
+    <SolidColorBrush x:Key="HudZone" Color="#66C9CFD2"/>
+    <SolidColorBrush x:Key="HudZoneMark" Color="#99C9CFD2"/>
+    <SolidColorBrush x:Key="HudZoneFill" Color="#260A0D0F"/>
+    <SolidColorBrush x:Key="HudZoneHover" Color="#1FE6EAEC"/>
+    <!-- Fechar a janela: o vermelho do próprio Windows, igual em qualquer tema -->
+    <SolidColorBrush x:Key="CloseHover" Color="#C42B1C"/>
+</ResourceDictionary>

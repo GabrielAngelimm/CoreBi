@@ -178,8 +178,11 @@ public partial class SensorsView : UserControl
     private void SensorScroll_ScrollChanged(object sender, ScrollChangedEventArgs e) => UpdateSticky();
 
     /// <summary>Cantos redondos de verdade: os cabeçalhos têm fundo e vazariam pelos cantos do cartão.</summary>
-    private void SensorCard_SizeChanged(object sender, SizeChangedEventArgs e) =>
-        SensorCard.Clip = new System.Windows.Media.RectangleGeometry(new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), 11, 11);
+    private void SensorCard_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        double r = Ui.PanelRadius(SensorCard) - 1;
+        SensorCard.Clip = new System.Windows.Media.RectangleGeometry(new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), r, r);
+    }
 
     // ---------------- Índice e filtros ----------------
 

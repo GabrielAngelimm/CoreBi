@@ -163,7 +163,7 @@ public partial class DisksView : UserControl
         TempScale.Value = now ?? double.NaN;
         ShowTempState(now, d);
         TempLiveText.Text = live ? "Ao vivo" : $"Leitura do Windows às {_readAt:HH:mm}";
-        TempLiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, live ? "Accent" : "Faint");
+        TempLiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, live ? "Signal" : "Faint");
         TempTrace.Samples = trace?.Temps.ToList() ?? new List<float?>();
         double? peak = trace?.Peak ?? d.TemperatureMax;
         TempPeak.Text = peak is double pk ? $"{pk:0} °C" : "—";
@@ -185,16 +185,13 @@ public partial class DisksView : UserControl
         DiskModel.Text = card.Title;
         DiskBadgeText.Text = bay.VerdictText;
         string tone = bay.State;
-        string soft = tone switch { "Ok" => "OkSoft", "Warn" => "WarnSoft", "Danger" => "DangerSoft", _ => "Raised" };
-        DiskBadge.SetResourceReference(Border.BackgroundProperty, soft);
-        DiskBadge.SetResourceReference(Border.BorderBrushProperty, tone.Length > 0 ? tone : "LineStrong");
-        DiskBadgeText.SetResourceReference(TextBlock.ForegroundProperty, tone.Length > 0 ? tone : "Muted");
+        Ui.SetTone(DiskBadge, tone);
         // Saudável: uma linha discreta no pé da placa, só quando o veredito vem de leituras reais. Atenção, crítico e "sem dados" explicam o motivo.
         bool healthy = card.Verdict == DiskVerdict.Good;
         DiskReasons.Text = healthy ? "Nenhum problema encontrado nas leituras disponíveis" : card.Reasons;
         DiskReasons.Visibility = DiskReasonIcon.Visibility = Visibility.Visible;
         DiskReasonIcon.Text = healthy ? "\uE73E" : card.Verdict == DiskVerdict.Unknown ? "\uE946" : "\uE7BA";
-        DiskReasonIcon.SetResourceReference(TextBlock.ForegroundProperty, tone.Length > 0 ? tone : "Faint");
+        DiskReasonIcon.SetResourceReference(TextBlock.ForegroundProperty, healthy ? "Muted" : tone.Length > 0 ? tone : "Faint");
         DiskReasons.SetResourceReference(TextBlock.ForegroundProperty, healthy ? "Muted" : "Fg");
 
         // Erro de leitura: só a placa com o motivo
@@ -289,12 +286,13 @@ public partial class DisksView : UserControl
 
     private void ShowTempState(double? t, DiskDetail d)
     {
+        // Na faixa ideal fica em tinta: a cor só aparece quando a temperatura pede atenção
         (string text, string key) = t switch
         {
             null => ("Sem leitura", "Faint"),
             double v when v >= d.TempCritAt => ("Crítica", "Danger"),
             double v when v >= d.TempWarnAt => ("Alta", "Warn"),
-            _ => ("Na faixa ideal", "Ok"),
+            _ => ("Na faixa ideal", "Fg"),
         };
         TempState.Text = text;
         TempState.SetResourceReference(TextBlock.ForegroundProperty, key);

@@ -23,10 +23,14 @@ namespace CoreBi.Desktop;
 /// </summary>
 public partial class MainWindow
 {
-    /// <summary>Cartão de uso ao vivo: Hero é a carga, com medidor segmentado; Stats só traz leituras que existem para o componente.</summary>
-    public sealed record DashComponent(string Icon, string Name, string Model, string Target, Brush Channel,
+    /// <summary>
+    /// Cartão de uso ao vivo: Hero é a carga, com medidor segmentado na cor do canal (Meter); Stats só traz leituras que
+    /// existem para o componente. Channel (Cpu, Gpu) pinta o ladrilho do ícone.
+    /// </summary>
+    public sealed record DashComponent(string Icon, string Channel, string Name, string Model, string Target, Brush Meter,
                                        string Hero, string HeroUnit, double Fraction, IReadOnlyList<KeyValuePair<string, string>> Stats);
-    public sealed record DashEvent(string Icon, string Title, string Detail, string Value, DateTime At)
+    /// <summary>Linha da atividade recente; Channel é o canal do componente testado (pinta o ladrilho do ícone).</summary>
+    public sealed record DashEvent(string Icon, string Title, string Detail, string Value, DateTime At, string Channel = "")
     {
         public string When => At.Date == DateTime.Today ? $"hoje {At:HH:mm}" : $"{At:dd/MM HH:mm}";
     }
@@ -65,9 +69,9 @@ public partial class MainWindow
 
     // ---------------- eventos recentes ----------------
 
-    internal void AddEvent(string icon, string title, string detail, string value)
+    internal void AddEvent(string icon, string title, string detail, string value, string channel = "")
     {
-        _events.Insert(0, new DashEvent(icon, title, detail, value, DateTime.Now));
+        _events.Insert(0, new DashEvent(icon, title, detail, value, DateTime.Now, channel));
         if (_events.Count > 30) _events.RemoveAt(_events.Count - 1);
         if (PageDash.IsVisible) ShowEvents();
     }
@@ -79,15 +83,15 @@ public partial class MainWindow
         {
             string mode = r.Multi != null ? "Multi-core" : "Single-core";
             string cpu = string.IsNullOrWhiteSpace(r.Cpu) ? "" : $" · {r.Cpu}";
-            if (r.Multi is double m) yield return new DashEvent("\ue8b9", "Render de CPU", mode + cpu, $"{m:N0} pts", r.Date);
-            else if (r.Single is double s) yield return new DashEvent("\ue8b9", "Render de CPU", mode + cpu, $"{s:N0} pts", r.Date);
+            if (r.Multi is double m) yield return new DashEvent("cpu", "Render de CPU", mode + cpu, $"{m:N0} pts", r.Date, "Cpu");
+            else if (r.Single is double s) yield return new DashEvent("cpu", "Render de CPU", mode + cpu, $"{s:N0} pts", r.Date, "Cpu");
         }
         foreach (var r in _settings.BenchRecords)
             yield return BenchEvent(r);
     }
 
     /// <summary>Título, detalhe e valor legíveis a partir do resumo salvo ("valor · detalhe · detalhe").</summary>
-    private static DashEvent BenchEvent(BenchRecord r)
+    internal static DashEvent BenchEvent(BenchRecord r)
     {
         var parts = r.Summary.Split('·', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         string Part(int i) => i < parts.Length ? parts[i] : "";
@@ -95,27 +99,27 @@ public partial class MainWindow
         if (r.Test.StartsWith("rt:"))
         {
             // "1.499 pts · 150 FPS · Alta 1080p [· instável]" → Alta 1080p · 150 FPS [· instável]
-            return new DashEvent("\ue8b9", "Ray tracing", Join(new[] { Part(2), Part(1), Part(3) }), Part(0), r.Date);
+            return new DashEvent("gpu", "Ray tracing", Join(new[] { Part(2), Part(1), Part(3) }), Part(0), r.Date, "Gpu");
         }
         switch (r.Test)
         {
             case "gpu": // "4.286 pts · 429 FPS · 1080p"
-                return new DashEvent("\ue7f4", "Cena de jogo (GPU)", Join(parts.Skip(1)), Part(0), r.Date);
+                return new DashEvent("gpu", "Cena de jogo (GPU)", Join(parts.Skip(1)), Part(0), r.Date, "Gpu");
             case "sim": // "120 FPS · 1% low 95"
-                return new DashEvent("\ue7fc", "Simulação de jogo (CPU)", Part(1), Part(0), r.Date);
+                return new DashEvent("\ue7fc", "Simulação de jogo (CPU)", Part(1), Part(0), r.Date, "Cpu");
             case "mem": // "84 ns · 36 GB/s · mapa 0,19 s" → Leitura 36 GB/s · mapa em 0,19 s (a latência fica no valor)
-                return new DashEvent("\ueda2", "Benchmark de memória",
-                                     Join(new[] { Part(1).Length > 0 ? "Leitura " + Part(1) : "", Part(2).Replace("mapa ", "mapa em ") }), Part(0), r.Date);
+                return new DashEvent("ram", "Benchmark de memória",
+                                     Join(new[] { Part(1).Length > 0 ? "Leitura " + Part(1) : "", Part(2).Replace("mapa ", "mapa em ") }), Part(0), r.Date, "Memory");
             case "disk": // "C: · 2.929/3.320 MiB/s · 4K 14,6k IOPS"
                 {
                     string speeds = Part(1);
                     int slash = speeds.IndexOf('/');
                     int space = speeds.IndexOf(' ');
                     if (slash > 0 && space > slash)
-                        return new DashEvent("\ueda2", $"Benchmark de disco ({Part(0).TrimEnd(':')}:)",
+                        return new DashEvent("storage", $"Benchmark de disco ({Part(0).TrimEnd(':')}:)",
                                              Join(new[] { $"Escrita {speeds[(slash + 1)..space]} {speeds[(space + 1)..]}", Part(2) }),
-                                             $"{speeds[..slash]} {speeds[(space + 1)..]}", r.Date);
-                    return new DashEvent("\ueda2", "Benchmark de disco", Join(parts.Skip(1)), Part(0), r.Date);
+                                             $"{speeds[..slash]} {speeds[(space + 1)..]}", r.Date, "Storage");
+                    return new DashEvent("storage", "Benchmark de disco", Join(parts.Skip(1)), Part(0), r.Date, "Storage");
                 }
             default:
                 return new DashEvent("\ue8b9", r.Test, Join(parts.Skip(1)), Part(0), r.Date);
@@ -179,7 +183,7 @@ public partial class MainWindow
         var cpuLoad = _monitor.CpuLoad;
         var rows = new List<DashComponent>
         {
-            new("", "Processador", GameCatalog.ShortCpuName(_cpuName), "PageSystem:Processador", Palette("Accent"),
+            new("cpu", "Cpu", "Processador", GameCatalog.ShortCpuName(_cpuName), "PageSystem:Processador", Palette("Cpu"),
                 F(cpuLoad, "0", " %"), "em uso", (cpuLoad ?? 0) / 100.0,
                 new[] { Stat("Temp.", F(_monitor.CpuTemperature, "0", " °C")), Stat("Clock", F(CpuClockAvg(), "0", " MHz")),
                         Stat("Consumo", F(_monitor.CpuPower, "0", " W")) }),
@@ -189,7 +193,7 @@ public partial class MainWindow
             var gpu = _gpus[0];
             uint? clk = gpu.NvmlHandle != IntPtr.Zero ? Nvml.Clock(gpu.NvmlHandle, Nvml.ClockGraphics) : null;
             var gpuLoad = MainGpuLoad();
-            rows.Add(new("", "Placa de vídeo", GameCatalog.ShortGpuName(gpu.Name), "PageGpu", Palette("Copper"),
+            rows.Add(new("gpu", "Gpu", "Placa de vídeo", GameCatalog.ShortGpuName(gpu.Name), "PageGpu", Palette("Gpu"),
                          F(gpuLoad, "0", " %"), "em uso", (gpuLoad ?? 0) / 100.0,
                          new[] { Stat("Temp.", F(MainGpuTemp(), "0", " °C")), Stat("Clock", clk is uint c ? $"{c} MHz" : "—"),
                                  Stat("Consumo", F(MainGpuPower(), "0", " W")) }));
@@ -208,6 +212,7 @@ public partial class MainWindow
             {
                 double d = runs[0].Multi!.Value - runs[1].Multi!.Value;
                 DashScoreDelta.Text = d >= 0 ? $"+{d:N0} desde o anterior" : $"−{-d:N0} desde o anterior";
+                DashScoreDelta.SetResourceReference(TextBlock.ForegroundProperty, d > 0 ? "Ok" : "Muted"); // subir é a boa notícia
             }
             else DashScoreDelta.Text = "";
         }
@@ -228,8 +233,8 @@ public partial class MainWindow
     // ---------------- osciloscópio (CPU × GPU) ----------------
 
     /// <summary>
-    /// Gráfico em retícula, como a tela de um instrumento: canal A (processador, verde-água, com área)
-    /// e canal B (placa de vídeo, cobre). O valor atual fica nas leituras grandes acima, não no gráfico.
+    /// Gráfico em retícula, como a tela de um instrumento: o processador (canal Cpu) e a placa de vídeo (canal Gpu), cada um
+    /// com a sua área chapada. O valor atual fica nas leituras grandes acima, não no gráfico.
     /// </summary>
     internal void DrawDashChart()
     {
@@ -302,39 +307,64 @@ public partial class MainWindow
         _dashPlot = new DashPlot(data, cpu, gpu, unit, left, top, plotW, plotH, X, Y);
         if (data.Count < 2) { DrawDashHover(); return; }
 
-        // Canal B: placa de vídeo
-        var copper = Palette("Copper");
-        var gLine = new Polyline { Stroke = copper, StrokeThickness = 1.6, StrokeLineJoin = PenLineJoin.Round };
-        for (int i = 0; i < data.Count; i++) if (gpu(data[i]) is float g) gLine.Points.Add(new Point(X(i), Y(g)));
-        DashChart.Children.Add(gLine);
-
-        // Canal A: processador, com área em degradê do próprio tom
-        var accent = Palette("Accent");
-        var pts = new List<Point>();
-        for (int i = 0; i < data.Count; i++) if (cpu(data[i]) is float c) pts.Add(new Point(X(i), Y(c)));
-        if (pts.Count < 2) return;
-        var col = accent.Color;
-        var area = new Polygon
+        // Cada canal: uma área chapada no tom do canal e o traço por cima. As áreas vêm antes dos traços, para nenhum traço
+        // ficar tingido pela área do outro.
+        var gpuPts = new List<Point>();
+        var cpuPts = new List<Point>();
+        for (int i = 0; i < data.Count; i++)
         {
-            Fill = new LinearGradientBrush(Color.FromArgb(0x44, col.R, col.G, col.B), Color.FromArgb(0x00, col.R, col.G, col.B), 90)
-        };
-        foreach (var p in pts) area.Points.Add(p);
-        area.Points.Add(new Point(pts[^1].X, top + plotH));
-        area.Points.Add(new Point(pts[0].X, top + plotH));
-        DashChart.Children.Add(area);
-        var cLine = new Polyline { Stroke = accent, StrokeThickness = 2, StrokeLineJoin = PenLineJoin.Round };
-        foreach (var p in pts) cLine.Points.Add(p);
-        DashChart.Children.Add(cLine);
-
-        // Ponto de leitura atual em cada canal
-        void Cursor(Point p, Brush stroke)
+            if (gpu(data[i]) is float g) gpuPts.Add(new Point(X(i), Y(g)));
+            if (cpu(data[i]) is float c) cpuPts.Add(new Point(X(i), Y(c)));
+        }
+        void Area(List<Point> pts, string channel, byte alpha)
         {
-            var dot = new Ellipse { Width = 9, Height = 9, Stroke = stroke, StrokeThickness = 2, Fill = Palette("Surface") };
+            if (pts.Count < 2) return;
+            var area = new Polygon { Fill = ThemeManager.Tint(channel, alpha) };
+            foreach (var p in pts) area.Points.Add(p);
+            area.Points.Add(new Point(pts[^1].X, top + plotH));
+            area.Points.Add(new Point(pts[0].X, top + plotH));
+            DashChart.Children.Add(area);
+        }
+        void Trace(List<Point> pts, string channel, double thickness)
+        {
+            if (pts.Count < 2) return;
+            var trace = new Polyline { Stroke = Palette(channel), StrokeThickness = thickness, StrokeLineJoin = PenLineJoin.Round };
+            foreach (var p in pts) trace.Points.Add(p);
+            DashChart.Children.Add(trace);
+        }
+        Area(gpuPts, "Gpu", ThemeManager.IsLight ? (byte)0x10 : (byte)0x1C); // no papel a mesma opacidade pesa mais
+        Area(cpuPts, "Cpu", ThemeManager.IsLight ? (byte)0x1A : (byte)0x26);
+        Trace(gpuPts, "Gpu", 1.8);
+        Trace(cpuPts, "Cpu", 2);
+
+        // Ponto de leitura atual em cada canal; a cada amostra nova ele pulsa uma vez (o gráfico está vivo)
+        void Cursor(Point p, string channel)
+        {
+            if (LiveMotion)
+            {
+                var pulse = new ScaleTransform(0.45, 0.45);
+                var halo = new Ellipse
+                {
+                    Width = 24,
+                    Height = 24,
+                    Fill = new SolidColorBrush(ThemeManager.WithAlpha(channel, 0x50)),
+                    IsHitTestVisible = false,
+                    RenderTransformOrigin = new Point(0.5, 0.5),
+                    RenderTransform = pulse
+                };
+                Canvas.SetLeft(halo, p.X - 12); Canvas.SetTop(halo, p.Y - 12);
+                DashChart.Children.Add(halo);
+                var grow = new DoubleAnimation(0.45, 1, TimeSpan.FromMilliseconds(850)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+                pulse.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+                pulse.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
+                halo.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(850)));
+            }
+            var dot = new Ellipse { Width = 9, Height = 9, Stroke = Palette(channel), StrokeThickness = 2, Fill = Palette("Surface") };
             Canvas.SetLeft(dot, p.X - 4.5); Canvas.SetTop(dot, p.Y - 4.5);
             DashChart.Children.Add(dot);
         }
-        if (gLine.Points.Count > 0) Cursor(gLine.Points[^1], copper);
-        Cursor(pts[^1], accent);
+        if (gpuPts.Count > 0) Cursor(gpuPts[^1], "Gpu");
+        if (cpuPts.Count > 0) Cursor(cpuPts[^1], "Cpu");
         DrawDashHover();
     }
 
@@ -432,8 +462,8 @@ public partial class MainWindow
             dot.SetResourceReference(Shape.FillProperty, "Surface");
             return dot;
         }
-        _hoverCpu = Dot("Accent");
-        _hoverGpu = Dot("Copper");
+        _hoverCpu = Dot("Cpu");
+        _hoverGpu = Dot("Gpu");
 
         var readout = (FontFamily)FindResource("Readout");
         TextBlock Value()
@@ -467,7 +497,7 @@ public partial class MainWindow
             BorderThickness = new Thickness(1),
             Padding = new Thickness(11, 8, 11, 9),
             IsHitTestVisible = false,
-            Child = new StackPanel { Children = { _hoverTime, Row("Accent", "Processador", _hoverCpuText), Row("Copper", "Placa de vídeo", _hoverGpuText) } }
+            Child = new StackPanel { Children = { _hoverTime, Row("Cpu", "Processador", _hoverCpuText), Row("Gpu", "Placa de vídeo", _hoverGpuText) } }
         };
         _hoverTip.SetResourceReference(Border.BackgroundProperty, "Raised");
         _hoverTip.SetResourceReference(Border.BorderBrushProperty, "LineStrong");
@@ -476,8 +506,22 @@ public partial class MainWindow
 
     // ---------------- anéis concêntricos (ocupação) ----------------
 
+    private List<(double Frac, string Channel)> _rings = new();
+    private string _ringCenter = "—";
+
+    /// <summary>Quanto dos anéis já foi desenhado: vai de 0 a 1 quando a Visão geral abre, e cada anel enche até a leitura.</summary>
+    private static readonly DependencyProperty RingRevealProperty = DependencyProperty.Register(
+        "RingReveal", typeof(double), typeof(MainWindow), new PropertyMetadata(1.0, (d, _) => ((MainWindow)d).DrawDashRings()));
+
+    /// <summary>Os anéis enchem do zero até a leitura atual ao abrir a página (respeita "mostrar animações" do Windows).</summary>
+    internal void RevealDashRings()
+    {
+        if (!SystemParameters.ClientAreaAnimation) return;
+        BeginAnimation(RingRevealProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(900)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+    }
+
     /// <summary>
-    /// Mostrador de anéis: RAM no verde-água, VRAM no cobre e disco do sistema no aço. Memória e disco não têm
+    /// Mostrador de anéis: RAM no canal Memory, VRAM no da placa de vídeo e o disco do sistema no Storage. Memória e disco não têm
     /// temperatura nem clock, então o mostrador fala só de ocupação: fração usada, quanto está em uso e o que sobra.
     /// </summary>
     internal void UpdateDashRings()
@@ -485,22 +529,32 @@ public partial class MainWindow
         static string Gb(double bytes) => $"{bytes / 1073741824.0:0.0} GB";
         var (total, avail) = MemoryInfo.MemoryStatus();
         double ram = total > 0 ? (double)(total - avail) / total : 0;
-        Brush accent = Palette("Accent"), copper = Palette("Copper"), steel = Palette("Steel");
+        Brush memoryBrush = Palette("Memory"), gpuBrush = Palette("Gpu"), storageBrush = Palette("Storage");
 
-        var rings = new List<(double Frac, DashRingItem Item)>();
-        if (total > 0) rings.Add((ram, new(accent, "RAM", $"{ram:P0}", $"{Gb(total - avail)} de {total / 1073741824.0:0} GB · {Gb(avail)} livres", "PageSystem:Memória RAM")));
+        var rings = new List<(double Frac, string Channel, DashRingItem Item)>();
+        if (total > 0) rings.Add((ram, "Memory", new(memoryBrush, "RAM", $"{ram:P0}", $"{Gb(total - avail)} de {total / 1073741824.0:0} GB · {Gb(avail)} livres", "PageSystem:Memória RAM")));
         if (_gpus.Count > 0 && _gpus[0].NvmlHandle != IntPtr.Zero && Nvml.MemoryInfo(_gpus[0].NvmlHandle) is Nvml.Memory m && m.Total > 0)
         {
             double vram = (double)m.Used / m.Total;
-            rings.Add((vram, new(copper, "VRAM", $"{vram:P0}", $"{Gb(m.Used)} de {m.Total / 1073741824.0:0} GB · placa de vídeo", "PageGpu")));
+            rings.Add((vram, "Gpu", new(gpuBrush, "VRAM", $"{vram:P0}", $"{Gb(m.Used)} de {m.Total / 1073741824.0:0} GB · placa de vídeo", "PageGpu")));
         }
         if (_drives.FirstOrDefault(d => d.Letter.StartsWith("C", StringComparison.OrdinalIgnoreCase)) is { } c0)
-            rings.Add((c0.UsedFraction, new(steel, $"Disco {c0.Letter}", c0.UsedPercent, $"{DriveCard.Fmt(c0.Free)} livres de {DriveCard.Fmt(c0.Total)}", "PageDisks")));
+            rings.Add((c0.UsedFraction, "Storage", new(storageBrush, $"Disco {c0.Letter}", c0.UsedPercent, $"{DriveCard.Fmt(c0.Free)} livres de {DriveCard.Fmt(c0.Total)}", "PageDisks")));
 
+        _rings = rings.Select(r => (r.Frac, r.Channel)).ToList();
+        _ringCenter = total > 0 ? $"{ram:P0}" : "—";
+        DrawDashRings();
+        DashRingLegend.ItemsSource = rings.Select(r => r.Item).ToList();
+    }
+
+    /// <summary>Trilho neutro e, por cima, o arco do canal (RAM, VRAM e disco) até a fração ocupada.</summary>
+    private void DrawDashRings()
+    {
         DashRings.Children.Clear();
+        double reveal = (double)GetValue(RingRevealProperty);
         const double thickness = 9, step = 17;
         double cx = DashRings.Width / 2, cy = DashRings.Height / 2;
-        for (int i = 0; i < rings.Count; i++)
+        for (int i = 0; i < _rings.Count; i++)
         {
             double r = cx - thickness / 2 - 1 - i * step;
             DashRings.Children.Add(new Ellipse
@@ -513,8 +567,8 @@ public partial class MainWindow
             });
             DashRings.Children.Add(new Path
             {
-                Data = RingArc(rings[i].Frac, cx, cy, r),
-                Stroke = rings[i].Item.Swatch,
+                Data = RingArc(_rings[i].Frac * reveal, cx, cy, r),
+                Stroke = Palette(_rings[i].Channel),
                 StrokeThickness = thickness,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round
@@ -522,7 +576,7 @@ public partial class MainWindow
         }
         var center = new TextBlock
         {
-            Text = total > 0 ? $"{ram:P0}" : "—",
+            Text = _ringCenter,
             FontFamily = (FontFamily)FindResource("Readout"),
             FontStretch = FontStretches.SemiCondensed,
             FontSize = 21,
@@ -532,10 +586,9 @@ public partial class MainWindow
         center.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(center, cx - center.DesiredSize.Width / 2); Canvas.SetTop(center, cy - center.DesiredSize.Height / 2);
         DashRings.Children.Add(center);
-
-        DashRingLegend.ItemsSource = rings.Select(r => r.Item).ToList();
     }
 
+    /// <summary>Arco no sentido horário a partir do topo, até a fração da volta dada.</summary>
     internal static Geometry RingArc(double frac, double cx, double cy, double r)
     {
         frac = Math.Clamp(frac, 0, 0.9999);
@@ -576,8 +629,6 @@ public partial class MainWindow
         int alerts = list.Count(c => !c.Ok);
         DashHealthBadge.Visibility = list.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         DashHealthBadgeText.Text = alerts == 0 ? "Tudo certo" : alerts == 1 ? "1 alerta" : $"{alerts} alertas";
-        DashHealthBadge.SetResourceReference(Border.BackgroundProperty, alerts == 0 ? "OkSoft" : "WarnSoft");
-        DashHealthBadge.SetResourceReference(Border.BorderBrushProperty, alerts == 0 ? "OkSoft" : "WarnSoft");
-        DashHealthBadgeText.SetResourceReference(TextBlock.ForegroundProperty, alerts == 0 ? "Ok" : "Warn");
+        Ui.SetTone(DashHealthBadge, alerts == 0 ? "Ok" : "Warn");
     }
 }
