@@ -18,7 +18,6 @@ public partial class BottleneckView : UserControl
         BnGapColumn.Width = new GridLength(narrow ? 0 : 16);
         BnStackGap.Height = new GridLength(narrow ? 16 : 0);
         Grid.SetColumn(BnSideCard, narrow ? 0 : 2);
-        Grid.SetRow(BnSideCard, narrow ? 4 : 0);
-        Grid.SetRowSpan(BnSideCard, narrow ? 1 : 3);
+        Grid.SetRow(BnSideCard, narrow ? 2 : 0);
     }
 }

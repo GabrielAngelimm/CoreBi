@@ -93,86 +93,92 @@
                         <ColumnDefinition x:Name="BnSideColumn" Width="540" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="16" />
                         <RowDefinition Height="*" />
                         <!-- Em janelas estreitas o painel de leituras desce para cá -->
                         <RowDefinition x:Name="BnStackGap" Height="0" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- Veredito: o que limita agora, em grande; cor só quando há limitação -->
-                    <Border x:Name="BnLiveCard" Style="{StaticResource CardBorder}" Padding="28,24,28,26">
-                        <StackPanel>
-                            <StackPanel x:Name="BnGameLine" Orientation="Horizontal" Margin="0,0,0,10" Visibility="Collapsed">
-                                <Ellipse x:Name="BnLiveDot" Style="{StaticResource StatusLed}" Fill="{DynamicResource Signal}" Margin="0,1,8,0" ToolTip="Medindo o FPS do jogo em primeiro plano" />
-                                <TextBlock x:Name="BnLiveGame" Style="{StaticResource StatLabel}" />
-                            </StackPanel>
-                            <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" FontFamily="{StaticResource DisplayFont}" FontSize="44" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextWrapping="Wrap" />
-                            <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,10,0,0" />
-                            <ItemsControl x:Name="BnFrameStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,24,0,0" Focusable="False" Visibility="Collapsed">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Análise de sessão: a única ação da página -->
-                    <Border x:Name="BnSessionCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="28,20,28,24">
-                        <StackPanel>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Análise de sessão" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"
-                                           ToolTip="Mede o jogo em primeiro plano durante o tempo escolhido e mostra por quanto tempo cada peça limitou o FPS." />
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Border Style="{StaticResource SegmentGroup}" Margin="0,0,12,0">
-                                        <local:SlidingSelectionPanel x:Name="BnDurationPanel" Style="{StaticResource SegmentRail}">
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="1 min" Tag="1" IsChecked="True" />
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="3 min" Tag="3" />
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="5 min" Tag="5" />
-                                        </local:SlidingSelectionPanel>
-                                    </Border>
-                                    <Button x:Name="BtnBnSession" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE768;" Content="Iniciar análise" Click="BtnBnSession_Click" />
+                    <!-- Coluna principal: o veredito em cima e a análise de sessão na sobra de altura -->
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <!-- Veredito: o que limita agora, em grande; cor só quando há limitação -->
+                        <Border x:Name="BnLiveCard" Style="{StaticResource CardBorder}" Padding="28,24,28,26">
+                            <StackPanel>
+                                <StackPanel x:Name="BnGameLine" Orientation="Horizontal" Margin="0,0,0,10" Visibility="Collapsed">
+                                    <Ellipse x:Name="BnLiveDot" Style="{StaticResource StatusLed}" Fill="{DynamicResource Signal}" Margin="0,1,8,0" ToolTip="Medindo o FPS do jogo em primeiro plano" />
+                                    <TextBlock x:Name="BnLiveGame" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
-                            </Grid>
-                            <TextBlock x:Name="BnSessionStatus" Text="Nenhuma análise feita ainda." Style="{StaticResource Caption}" FontSize="13" Margin="0,16,0,0" Typography.NumeralAlignment="Tabular" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
-                            <Grid x:Name="BnSessionBar" Style="{StaticResource ProgressTrack}" Margin="0,10,0,0" Visibility="Collapsed">
-                                <Border Style="{StaticResource ProgressFill}">
-                                    <Border.RenderTransform>
-                                        <ScaleTransform x:Name="BnSessionProgress" ScaleX="0" />
-                                    </Border.RenderTransform>
-                                </Border>
-                            </Grid>
-                            <StackPanel x:Name="BnResult" Visibility="Collapsed" Margin="0,20,0,0">
-                                <Border Style="{StaticResource Divider}" Margin="0,0,0,20" />
-                                <TextBlock x:Name="BnResultTitle" FontFamily="{StaticResource DisplayFont}" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap" />
-                                <ItemsControl x:Name="BnResultStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,18,0,0" Focusable="False">
+                                <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" FontFamily="{StaticResource DisplayFont}" FontSize="44" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextWrapping="Wrap" />
+                                <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,10,0,0" />
+                                <ItemsControl x:Name="BnFrameStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,24,0,0" Focusable="False" Visibility="Collapsed">
                                     <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                                        <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                 </ItemsControl>
-                                <TextBlock Text="Tempo em cada situação" Style="{StaticResource Label}" Margin="0,24,0,2" />
-                                <ItemsControl x:Name="BnDistribution" ItemTemplate="{StaticResource LimitMeter}" Focusable="False">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemContainerStyle>
-                                        <Style TargetType="ContentPresenter">
-                                            <Setter Property="Margin" Value="0,0,32,0" />
-                                        </Style>
-                                    </ItemsControl.ItemContainerStyle>
-                                </ItemsControl>
-                                <TextBlock x:Name="BnResultAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,10,0,0" />
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
+                        </Border>
+
+                        <!-- Análise de sessão: a única ação da página -->
+                        <Border x:Name="BnSessionCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="28,20,28,24">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Análise de sessão" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"
+                                               ToolTip="Mede o jogo em primeiro plano durante o tempo escolhido e mostra por quanto tempo cada peça limitou o FPS." />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Border Style="{StaticResource SegmentGroup}" Margin="0,0,12,0">
+                                            <local:SlidingSelectionPanel x:Name="BnDurationPanel" Style="{StaticResource SegmentRail}">
+                                                <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="1 min" Tag="1" IsChecked="True" />
+                                                <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="3 min" Tag="3" />
+                                                <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="5 min" Tag="5" />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
+                                        <Button x:Name="BtnBnSession" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE768;" Content="Iniciar análise" Click="BtnBnSession_Click" />
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock x:Name="BnSessionStatus" Text="Nenhuma análise feita ainda." Style="{StaticResource Caption}" FontSize="13" Margin="0,16,0,0" Typography.NumeralAlignment="Tabular" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
+                                <Grid x:Name="BnSessionBar" Style="{StaticResource ProgressTrack}" Margin="0,10,0,0" Visibility="Collapsed">
+                                    <Border Style="{StaticResource ProgressFill}">
+                                        <Border.RenderTransform>
+                                            <ScaleTransform x:Name="BnSessionProgress" ScaleX="0" />
+                                        </Border.RenderTransform>
+                                    </Border>
+                                </Grid>
+                                <StackPanel x:Name="BnResult" Visibility="Collapsed" Margin="0,20,0,0">
+                                    <Border Style="{StaticResource Divider}" Margin="0,0,0,20" />
+                                    <TextBlock x:Name="BnResultTitle" FontFamily="{StaticResource DisplayFont}" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <ItemsControl x:Name="BnResultStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,18,0,0" Focusable="False">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                    <TextBlock Text="Tempo em cada situação" Style="{StaticResource Label}" Margin="0,24,0,2" />
+                                    <ItemsControl x:Name="BnDistribution" ItemTemplate="{StaticResource LimitMeter}" Focusable="False">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemContainerStyle>
+                                            <Style TargetType="ContentPresenter">
+                                                <Setter Property="Margin" Value="0,0,32,0" />
+                                            </Style>
+                                        </ItemsControl.ItemContainerStyle>
+                                    </ItemsControl>
+                                    <TextBlock x:Name="BnResultAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,10,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
 
                     <!-- As leituras que provam o veredito e, embaixo, o equilíbrio estimado pela tabela de desempenho -->
-                    <Border x:Name="BnSideCard" Grid.Column="2" Grid.RowSpan="3" Style="{StaticResource CardBorder}" Padding="0">
+                    <Border x:Name="BnSideCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0">
                         <DockPanel>
                             <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="24,18,24,22">
                                 <StackPanel>
