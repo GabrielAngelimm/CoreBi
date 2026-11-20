@@ -1593,10 +1593,10 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <!-- Placa do palco: quem está sendo medido (nome em DIN 21) e o estado do teste à direita -->
+    <!-- Placa do palco: quem está sendo medido (nome em DIN 24, como o da peça em Sensores e Discos) e o estado do teste à direita -->
     <Style x:Key="TestPlateTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="21"/>
+        <Setter Property="FontSize" Value="24"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>

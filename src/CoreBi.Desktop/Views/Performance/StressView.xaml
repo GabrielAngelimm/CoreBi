@@ -21,7 +21,8 @@
         <Style x:Key="ComponentColumn" TargetType="Border">
             <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
             <Setter Property="BorderThickness" Value="1,0,0,0" />
-            <Setter Property="Padding" Value="24,18,24,8" />
+            <!-- Recuo do painel; embaixo 10, que com os 10 da última leitura dão os 20 -->
+            <Setter Property="Padding" Value="24,20,24,10" />
         </Style>
         <!-- Nome do componente no alto da coluna: só com duas ou mais colunas (com uma, a tecla marcada já diz qual é) -->
         <Style x:Key="ComponentHead" TargetType="StackPanel">
@@ -69,17 +70,18 @@
                     <RowDefinition Height="16" />
                     <RowDefinition Height="*" MinHeight="620" />
                 </Grid.RowDefinitions>
-                <Grid Style="{StaticResource PageHeader}">
-                    <TextBlock Text="Teste de carga" Style="{StaticResource PageTitle}" />
+                <!-- Cabeçalho de altura fixa (62, a de título com subtítulo): a faixa das teclas começa na mesma altura das outras páginas -->
+                <Grid Style="{StaticResource PageHeader}" MinHeight="62">
+                    <TextBlock Text="Teste de carga" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
                 </Grid>
 
                 <!-- O que carregar: uma tecla por componente, várias ao mesmo tempo -->
-                <UniformGrid Grid.Row="1" Rows="1" Margin="-5,0">
-                    <CheckBox x:Name="ChkCpu" Style="{StaticResource TestToggle}" Margin="5,0" Content="Processador" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Todos os núcleos" IsChecked="True"
+                <UniformGrid Grid.Row="1" Rows="1" Margin="-6">
+                    <CheckBox x:Name="ChkCpu" Style="{StaticResource TestToggle}" Margin="6" Content="Processador" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Todos os núcleos" IsChecked="True"
                               Checked="ChkCpu_Click" Unchecked="ChkCpu_Click" />
-                    <CheckBox x:Name="ChkRam" Style="{StaticResource TestToggle}" Margin="5,0" Content="Memória RAM" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="Procura erros de memória"
+                    <CheckBox x:Name="ChkRam" Style="{StaticResource TestToggle}" Margin="6" Content="Memória RAM" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="Procura erros de memória"
                               Checked="ChkRam_Click" Unchecked="ChkRam_Click" />
-                    <CheckBox x:Name="ChkGpu" Style="{StaticResource TestToggle}" Margin="5,0" Content="Placa de vídeo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Abre uma janela 3D"
+                    <CheckBox x:Name="ChkGpu" Style="{StaticResource TestToggle}" Margin="6" Content="Placa de vídeo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Abre uma janela 3D"
                               Checked="ChkGpu_Click" Unchecked="ChkGpu_Click" />
                 </UniformGrid>
 
@@ -100,7 +102,7 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <!-- Placa: o tempo decorrido de quanto à esquerda; à direita o estado (LED no sinal rodando, vermelho no corte) e o detalhe -->
-                            <Grid Margin="24,18,24,16">
+                            <Grid Margin="{StaticResource PanelPadding}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -226,7 +228,7 @@
                             </UniformGrid>
 
                             <!-- Temperatura dos últimos 5 minutos, com os nomes e os limites rotulados no próprio gráfico -->
-                            <Border Grid.Row="3" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="24,16,24,14">
+                            <Border Grid.Row="3" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="{StaticResource PanelPadding}">
                                 <DockPanel>
                                     <TextBlock DockPanel.Dock="Top" Text="Temperatura" Style="{StaticResource Label}" Margin="0,0,0,10" />
                                     <Canvas x:Name="TempChart" MinHeight="160" ClipToBounds="True" SizeChanged="TempChart_SizeChanged" />

@@ -476,7 +476,7 @@ public partial class MainWindow
 
         if (series.Count == 0)
         {
-            var empty = Text("Sem leitura de temperatura ainda.", faint, 12, ui);
+            var empty = Text("Sem leitura de temperatura ainda.", Palette("Muted"), 13, ui);
             empty.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             Place(empty, left + (plotW - empty.DesiredSize.Width) / 2, top + (plotH - empty.DesiredSize.Height) / 2);
             return;

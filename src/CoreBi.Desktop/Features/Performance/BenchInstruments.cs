@@ -68,7 +68,7 @@ public sealed class RunTrace : EnergyInstrument
 
         if (_samples.Count < 2)
         {
-            var t = Text(EmptyText, 12.5, MutedBrush, readout: false);
+            var t = Text(EmptyText, 13, MutedBrush, readout: false);
             t.MaxTextWidth = Math.Max(40, plotW - 40);
             t.TextAlignment = TextAlignment.Center;
             dc.DrawText(t, new Point(left + 20, top + plotH / 2 - t.Height / 2));

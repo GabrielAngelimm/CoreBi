@@ -13,7 +13,7 @@
             <Setter Property="ClipToBounds" Value="True" />
         </Style>
         <Style x:Key="Plate" TargetType="Grid">
-            <Setter Property="Margin" Value="24,18,24,16" />
+            <Setter Property="Margin" Value="{StaticResource PanelPadding}" />
         </Style>
         <Style x:Key="PlateSpec" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
             <Setter Property="Margin" Value="0,3,0,0" />
@@ -53,11 +53,22 @@
         <Style x:Key="Cell" TargetType="Border">
             <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
             <Setter Property="BorderThickness" Value="1,0,0,0" />
-            <Setter Property="Padding" Value="24,14,16,16" />
+            <Setter Property="Padding" Value="{StaticResource PanelPadding}" />
             <Setter Property="Background" Value="Transparent" />
         </Style>
         <Style x:Key="CellSub" TargetType="TextBlock" BasedOn="{StaticResource StatSub}">
             <Setter Property="Margin" Value="0,3,0,0" />
+        </Style>
+        <!-- Estado vazio do palco de imagem: frase em Segoe 13 Muted centrada, fora do Viewbox para não escalar com a imagem -->
+        <Style x:Key="StageEmpty" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="24,0" />
         </Style>
         <ItemsPanelTemplate x:Key="RulerPanel">
             <UniformGrid Rows="1" />
@@ -219,23 +230,24 @@
                     <RowDefinition Height="16" />
                     <RowDefinition Height="*" MinHeight="560" />
                 </Grid.RowDefinitions>
-                <Grid Style="{StaticResource PageHeader}">
-                    <TextBlock Text="Benchmark" Style="{StaticResource PageTitle}" />
+                <!-- Cabeçalho de altura fixa (62, a de título com subtítulo): a faixa das teclas começa na mesma altura das outras páginas -->
+                <Grid Style="{StaticResource PageHeader}" MinHeight="62">
+                    <TextBlock Text="Benchmark" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
                 </Grid>
 
                 <!-- Escolha do teste: uma tecla por teste, agrupadas pelo componente que medem -->
-                <UniformGrid x:Name="BenchTestPanel" Grid.Row="1" Rows="1" Margin="-5,0">
-                    <RadioButton Style="{StaticResource TestTab}" Margin="5,0" GroupName="BenchTest" Content="Render 3D" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Processador" Tag="render" IsChecked="True" Checked="BenchTest_Checked"
+                <UniformGrid x:Name="BenchTestPanel" Grid.Row="1" Rows="1" Margin="-6">
+                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Render 3D" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Processador" Tag="render" IsChecked="True" Checked="BenchTest_Checked"
                                  ToolTip="Uma cena 3D renderizada por path tracing no processador, bloco a bloco, em todos os núcleos e em um núcleo só." />
-                    <RadioButton Style="{StaticResource TestTab}" Margin="5,0" GroupName="BenchTest" Content="Simulação de jogo" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Processador" Tag="sim" Checked="BenchTest_Checked"
+                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Simulação de jogo" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Processador" Tag="sim" Checked="BenchTest_Checked"
                                  ToolTip="Lógica, física, colisão e IA de 30 mil unidades. A nota é quantos quadros por segundo o processador aguenta." />
-                    <RadioButton Style="{StaticResource TestTab}" Margin="5,0" GroupName="BenchTest" Content="Cena de jogo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Placa de vídeo" Tag="gpu" Checked="BenchTest_Checked"
+                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Cena de jogo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Placa de vídeo" Tag="gpu" Checked="BenchTest_Checked"
                                  ToolTip="Sobrevoo de um vale em Direct3D 11 (terreno, 40 mil árvores, sombras, água e HDR), com trajeto e resolução fixos: o trabalho é o mesmo em qualquer PC." />
-                    <RadioButton Style="{StaticResource TestTab}" Margin="5,0" GroupName="BenchTest" Content="Ray tracing" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Placa de vídeo" Tag="rt" Checked="BenchTest_Checked"
+                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Ray tracing" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Placa de vídeo" Tag="rt" Checked="BenchTest_Checked"
                                  ToolTip="Ray tracing por hardware (DXR 1.1, Direct3D 12) nos núcleos de RT da placa: aquecimento e 3 passadas, com a nota pela mediana." />
-                    <RadioButton Style="{StaticResource TestTab}" Margin="5,0" GroupName="BenchTest" Content="Memória" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="RAM e carregamento" Tag="mem" Checked="BenchTest_Checked"
+                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Memória" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="RAM e carregamento" Tag="mem" Checked="BenchTest_Checked"
                                  ToolTip="Latência e banda da memória RAM e o tempo para carregar um mapa de jogo do disco." />
-                    <RadioButton Style="{StaticResource TestTab}" Margin="5,0" GroupName="BenchTest" Content="Disco" local:Ui.Icon="storage" local:Ui.Channel="Storage" local:Ui.Caption="Armazenamento" Tag="disk" Checked="BenchTest_Checked"
+                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Disco" local:Ui.Icon="storage" local:Ui.Channel="Storage" local:Ui.Caption="Armazenamento" Tag="disk" Checked="BenchTest_Checked"
                                  ToolTip="Leitura e escrita sequenciais e aleatórias de 4 KB, direto no disco, sem o cache do Windows." />
                 </UniformGrid>
 
@@ -314,16 +326,19 @@
                                     </Border>
                                 </UniformGrid>
                             </Border>
-                            <local:FillBox Grid.Row="3" Margin="24,20" MinHeight="200">
-                                <Viewbox Stretch="Uniform">
-                                    <Border Style="{StaticResource TestStage}" Tag="{Binding ElementName=BenchIdle}" Width="960" Height="540">
-                                        <Grid>
-                                            <Image x:Name="BenchImage" Width="960" Height="540" RenderOptions.BitmapScalingMode="HighQuality" />
-                                            <Canvas x:Name="BenchBuckets" Width="960" Height="540" />
-                                            <TextBlock x:Name="BenchIdle" Text="A imagem aparece bloco a bloco durante o teste" Foreground="{DynamicResource Faint}" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Grid>
-                                    </Border>
-                                </Viewbox>
+                            <!-- O poço ocupa o palco no recuo do painel; a imagem 16:9 fica centrada nele, na proporção -->
+                            <local:FillBox Grid.Row="3" Margin="{StaticResource PanelPadding}" MinHeight="200">
+                                <Border Style="{StaticResource TestStage}" Tag="{Binding ElementName=BenchIdle}">
+                                    <Grid>
+                                        <Viewbox Stretch="Uniform">
+                                            <Grid Width="960" Height="540">
+                                                <Image x:Name="BenchImage" Width="960" Height="540" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                <Canvas x:Name="BenchBuckets" Width="960" Height="540" />
+                                            </Grid>
+                                        </Viewbox>
+                                        <TextBlock x:Name="BenchIdle" Text="A imagem aparece bloco a bloco durante o teste." Style="{StaticResource StageEmpty}" />
+                                    </Grid>
+                                </Border>
                             </local:FillBox>
                         </Grid>
                     </Border>
@@ -416,15 +431,15 @@
                             <Border Grid.Row="2" Style="{StaticResource Ruler}">
                                 <ItemsControl x:Name="SimResult" ItemTemplate="{StaticResource StatCell}" ItemsPanel="{StaticResource RulerPanel}" AlternationCount="16" Focusable="False" />
                             </Border>
-                            <local:FillBox Grid.Row="3" Margin="24,20" MinHeight="200">
-                                <Viewbox Stretch="Uniform">
-                                    <Border Style="{StaticResource TestStage}" Tag="{Binding ElementName=SimIdle}" Width="440" Height="440">
-                                        <Grid>
+                            <local:FillBox Grid.Row="3" Margin="{StaticResource PanelPadding}" MinHeight="200">
+                                <Border Style="{StaticResource TestStage}" Tag="{Binding ElementName=SimIdle}">
+                                    <Grid>
+                                        <Viewbox Stretch="Uniform">
                                             <Image x:Name="SimImage" Width="440" Height="440" RenderOptions.BitmapScalingMode="NearestNeighbor" />
-                                            <TextBlock x:Name="SimIdle" Text="30 mil unidades em batalha" Foreground="{DynamicResource Faint}" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Grid>
-                                    </Border>
-                                </Viewbox>
+                                        </Viewbox>
+                                        <TextBlock x:Name="SimIdle" Text="30 mil unidades em batalha aparecem aqui durante o teste." Style="{StaticResource StageEmpty}" />
+                                    </Grid>
+                                </Border>
                             </local:FillBox>
                         </Grid>
                     </Border>
@@ -506,7 +521,7 @@
                             <Border Grid.Row="2" Style="{StaticResource Ruler}">
                                 <ItemsControl x:Name="GbResult" ItemTemplate="{StaticResource StatCell}" ItemsPanel="{StaticResource RulerPanel}" AlternationCount="16" Focusable="False" />
                             </Border>
-                            <local:RunTrace x:Name="GbTrace" Grid.Row="3" Margin="20,20,24,16" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
+                            <local:RunTrace x:Name="GbTrace" Grid.Row="3" Margin="{StaticResource PanelPadding}" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
                                             EmptyText="A cena abre numa janela própria. Esc cancela." />
                         </Grid>
                     </Border>
@@ -595,7 +610,7 @@
                             <Border Grid.Row="2" Style="{StaticResource Ruler}">
                                 <ItemsControl x:Name="RtResult" ItemTemplate="{StaticResource StatCell}" ItemsPanel="{StaticResource RulerPanel}" AlternationCount="16" Focusable="False" />
                             </Border>
-                            <local:RunTrace x:Name="RtTrace" Grid.Row="3" Margin="20,20,24,16" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
+                            <local:RunTrace x:Name="RtTrace" Grid.Row="3" Margin="{StaticResource PanelPadding}" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
                                             EmptyText="A cena abre numa janela própria. Esc cancela." />
                         </Grid>
                     </Border>
@@ -686,7 +701,7 @@
                                 </Border>
                             </Grid>
                             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Focusable="False">
-                                <ItemsControl x:Name="MemResult" ItemTemplate="{StaticResource MeasureRow}" Margin="24,4,24,12" Focusable="False" />
+                                <ItemsControl x:Name="MemResult" ItemTemplate="{StaticResource MeasureRow}" Margin="24,8" Focusable="False" />
                             </ScrollViewer>
                         </Grid>
                     </Border>
@@ -751,7 +766,7 @@
                                 </Border>
                             </Grid>
                             <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Focusable="False">
-                                <ItemsControl x:Name="DiskResult" ItemTemplate="{StaticResource MeasureRow}" Margin="24,4,24,12" Focusable="False" />
+                                <ItemsControl x:Name="DiskResult" ItemTemplate="{StaticResource MeasureRow}" Margin="24,8" Focusable="False" />
                             </ScrollViewer>
                         </Grid>
                     </Border>
