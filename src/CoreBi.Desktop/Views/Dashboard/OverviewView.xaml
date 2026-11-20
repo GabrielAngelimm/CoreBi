@@ -24,6 +24,17 @@
                             </Grid>
                         </Border>
                     </DataTemplate>
+        <!-- Linha chave/valor do Desempenho com a altura padrão de 32 px (o KeyValueRow comum, de 27, segue nas outras telas) -->
+        <DataTemplate x:Key="DashScoreRow">
+            <Grid Height="32">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Key}" Foreground="{DynamicResource Muted}" Margin="0,0,12,0" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding Value}" HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Style="{StaticResource Num}" />
+            </Grid>
+        </DataTemplate>
     </UserControl.Resources>
     <ScrollViewer x:Name="DashScroll" VerticalScrollBarVisibility="Auto">
         <Grid MinHeight="{Binding ViewportHeight, ElementName=DashScroll}">
@@ -181,10 +192,11 @@
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <Canvas x:Name="DashRings" Width="150" Height="150" VerticalAlignment="Center" Margin="0,0,24,0" />
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="Memória e disco" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
+                                <!-- Título no topo, alinhado com os de Processador e Placa de vídeo; a legenda assenta no pé, como as grandezas deles -->
+                                <DockPanel Grid.Column="1">
+                                    <TextBlock DockPanel.Dock="Top" Text="Memória e disco" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
                                     <!-- Cada linha leva à seção do item: RAM ao Sistema, VRAM à Placa de vídeo, disco a Discos -->
-                                    <ItemsControl x:Name="DashRingLegend" Margin="-8,0,-8,-4" Focusable="False">
+                                    <ItemsControl x:Name="DashRingLegend" Margin="-8,0,-8,-4" VerticalAlignment="Bottom" Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Button Style="{StaticResource RowButton}" Tag="{Binding Target}" Click="DashGo_Click" ToolTip="Abrir detalhes">
@@ -207,7 +219,7 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
-                                </StackPanel>
+                                </DockPanel>
                             </Grid>
                         </Border>
                     </Grid>
@@ -240,8 +252,8 @@
                                 <TextBlock x:Name="DashScoreDelta" Style="{StaticResource Caption}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,10" />
                             </Grid>
                             <TextBlock x:Name="DashScoreSub" Text="Nenhum teste ainda" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" />
-                            <Border Style="{StaticResource Divider}" Margin="0,16,0,8" />
-                            <ItemsControl x:Name="DashScores" ItemTemplate="{StaticResource KeyValueRow}" Focusable="False" />
+                            <Border Style="{StaticResource Divider}" Margin="0,16,0,4" />
+                            <ItemsControl x:Name="DashScores" ItemTemplate="{StaticResource DashScoreRow}" Focusable="False" />
                         </StackPanel>
                     </Border>
 

@@ -132,8 +132,6 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
-                    <RowDefinition Height="16" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <!-- Cabeçalho: título à esquerda, interruptor e atalho à direita -->
@@ -181,10 +179,26 @@
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Posição e tamanho" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                            <!-- Estado real: sem jogo medido, o FPS da prévia é de exemplo (os sensores são ao vivo) -->
-                            <TextBlock x:Name="OvSampleNote" Text="Prévia com FPS de exemplo" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                       ToolTip="Enquanto o CoreBi não mede um jogo, a prévia mostra 144 FPS de exemplo. Os sensores são lidos ao vivo." Visibility="Collapsed" />
+                            <!--
+                                Título à esquerda; à direita, o estado da detecção de FPS (LED e uma linha, só quando há o que dizer) e, sem jogo
+                                medido, a nota da prévia. O estado mora aqui, e não numa faixa sob os cartões, para a página terminar na mesma
+                                linha que as outras.
+                            -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Posição e tamanho" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="24,0,0,0">
+                                    <Ellipse x:Name="OvStatusDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
+                                    <TextBlock x:Name="OvStatus" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="460" Style="{StaticResource Num}" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <!-- Estado real: sem jogo medido, o FPS da prévia é de exemplo (os sensores são ao vivo) -->
+                                <TextBlock x:Name="OvSampleNote" Grid.Column="2" Text="Prévia com FPS de exemplo" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="20,0,0,0"
+                                           ToolTip="Enquanto o CoreBi não mede um jogo, a prévia mostra 144 FPS de exemplo. Os sensores são lidos ao vivo." Visibility="Collapsed" />
+                            </Grid>
 
                             <!-- Monitor: desenho fixo em 820 de largura, escalado para o espaço que sobrar -->
                             <local:FillBox x:Name="OvMonitorBox" Grid.Row="1" MinHeight="300" Margin="0,16">
@@ -359,11 +373,6 @@
                     </Border>
                 </Grid>
 
-                <!-- Estado da medição de FPS: uma linha só, o suficiente para saber se o overlay já está lendo o jogo -->
-                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,2,0,0" MinHeight="18">
-                    <Ellipse x:Name="OvStatusDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
-                    <TextBlock x:Name="OvStatus" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="700" Style="{StaticResource Num}" />
-                </StackPanel>
             </Grid>
         </Grid>
     </ScrollViewer>

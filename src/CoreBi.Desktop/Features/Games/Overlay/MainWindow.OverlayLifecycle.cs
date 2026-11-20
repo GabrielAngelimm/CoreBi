@@ -219,7 +219,7 @@ public partial class MainWindow
             : f != null ? ($"Medindo {f.ProcessName}", "Signal")
             : ("Aguardando um jogo", "Muted");
         OvStatus.Text = text;
-        OvStatusDot.Visibility = text.Length == 0 ? Visibility.Hidden : Visibility.Visible; // desligado: a linha fica em branco, sem aviso
+        OvStatusDot.Visibility = text.Length == 0 ? Visibility.Collapsed : Visibility.Visible; // desligado: nada no título do cartão, sem aviso
         // Só problemas do RTSS merecem dica; o estado normal já diz tudo.
         OvStatus.ToolTip = _rtssShowing ? null : _rtssStatus switch
         {
@@ -227,7 +227,8 @@ public partial class MainWindow
             RtssStatus.Incompatible => "RTSS: protocolo incompatível ou ainda não inicializado. Atualize o RTSS.",
             RtssStatus.SlotsFull => "RTSS: todos os slots de OSD estão ocupados por outros programas.",
             RtssStatus.ContentTooLarge => "RTSS: os itens escolhidos excedem a capacidade do OSD.",
-            _ => null
+            // O erro pode passar da largura da linha no título do cartão: inteiro na dica
+            _ => _frames.Error != null ? text : null
         };
         OvStatusDot.SetResourceReference(Shape.FillProperty, brush);
     }

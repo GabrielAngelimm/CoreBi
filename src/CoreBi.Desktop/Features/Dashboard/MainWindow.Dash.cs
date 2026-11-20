@@ -664,9 +664,9 @@ public partial class MainWindow
         var errs = HardwareEventReader.ErrorsSince(DateTime.Now.AddDays(-7));
         static string Count(int n, string one, string many) => n == 1 ? $"1 {one}" : $"{n} {many}";
         list.Add(Item(errs.Error == null && errs.Total == 0, "Erros de hardware",
-                      "Nenhum WHEA ou reinício do driver de vídeo em 7 dias.",
+                      "Sem WHEA nem reinício da GPU em 7 dias.", // curto para caber numa linha da coluna de 364 px
                       errs.Error != null ? "Não foi possível ler o registro do Windows."
-                                         : $"{Count(errs.Whea, "erro WHEA", "erros WHEA")} e {Count(errs.GpuResets, "reinício", "reinícios")} do driver de vídeo em 7 dias."));
+                                         : $"{Count(errs.Whea, "erro WHEA", "erros WHEA")} e {Count(errs.GpuResets, "reinício", "reinícios")} da GPU em 7 dias."));
 
         _health = list;
         DashHealth.ItemsSource = _health;

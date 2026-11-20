@@ -148,7 +148,7 @@
                         <TextBlock Text="Discos" Style="{StaticResource PageTitle}" />
                         <TextBlock x:Name="DiskHealthStatus" Text="Lendo os discos…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
                     </StackPanel>
-                    <Button x:Name="BtnDiskRefresh" Grid.Column="1" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" VerticalAlignment="Top" Click="BtnDiskRefresh_Click" />
+                    <Button x:Name="BtnDiskRefresh" Grid.Column="1" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Height="36" VerticalAlignment="Top" Click="BtnDiskRefresh_Click" />
                 </Grid>
 
                 <Grid x:Name="DiskBody" Grid.Row="1" SizeChanged="DiskBody_SizeChanged">
@@ -169,7 +169,8 @@
                             <TextBlock Text="Instalados" Style="{StaticResource Label}" Margin="0" />
                             <TextBlock x:Name="RackCount" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
                         </Grid>
-                        <ListBox x:Name="DiskCards" Grid.Row="1" ItemTemplate="{StaticResource DiskBay}" ItemContainerStyle="{StaticResource ListNavItem}"
+                        <!-- Sem o 1 px de recuo padrão da ListBox: a baia vai até a borda do rack e fica a 16 px do painel -->
+                        <ListBox x:Name="DiskCards" Grid.Row="1" Padding="0" ItemTemplate="{StaticResource DiskBay}" ItemContainerStyle="{StaticResource ListNavItem}"
                                  ScrollViewer.VerticalScrollBarVisibility="Disabled" SelectionChanged="DiskCards_SelectionChanged" AutomationProperties.Name="Discos instalados" />
                     </Grid>
 

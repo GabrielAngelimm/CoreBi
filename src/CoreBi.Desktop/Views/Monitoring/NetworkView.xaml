@@ -61,7 +61,8 @@
                     <RowDefinition Height="*" MinHeight="250" />
                 </Grid.RowDefinitions>
 
-                <Grid x:Name="NetHeader" Style="{StaticResource PageHeader}" SizeChanged="NetHeader_SizeChanged">
+                <!-- Cabeçalho de altura fixa (62 px), como nas outras páginas: título no topo e o console na faixa de título + subtítulo -->
+                <Grid x:Name="NetHeader" Style="{StaticResource PageHeader}" MinHeight="62" SizeChanged="NetHeader_SizeChanged">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -70,14 +71,14 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Rede" Style="{StaticResource PageTitle}" VerticalAlignment="Center" />
+                    <TextBlock Text="Rede" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
 
                     <!--
                         Console do teste, com o desenho do console de tarefa de Ferramentas (62 px): ação principal de 36 px, estado em
                         uma linha com a etapa à direita ("2 de 3 · Download") e a barra contínua com as três estações, que só aparece
                         durante o teste (oculta, sem mudar a altura, em repouso), assim como a porcentagem.
                     -->
-                    <Border x:Name="NetConsole" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="12,12,22,12" Margin="40,0,0,0">
+                    <Border x:Name="NetConsole" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="12,12,22,12" Margin="40,0,0,0" Height="62" VerticalAlignment="Top">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
