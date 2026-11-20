@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -15,7 +16,11 @@ public partial class GraphicsView : UserControl
     {
         InitializeComponent();
         SizeChanged += (_, _) => FitColumns();
+        ((INotifyCollectionChanged)GpuSections.Items).CollectionChanged += (_, _) => FitColumns();
     }
+
+    /// <summary>Nenhum instrumento teve leitura: uma frase no lugar deles.</summary>
+    internal void ShowNoSensors(bool none) => GpuNoSensors.Visibility = none ? Visibility.Visible : Visibility.Collapsed;
 
     private void GaugeGrid_Loaded(object sender, RoutedEventArgs e)
     {
@@ -33,7 +38,8 @@ public partial class GraphicsView : UserControl
 
     /// <summary>
     /// Instrumentos numa fila só a partir de 1300 px (abaixo, quatro por linha); ficha técnica em 4, 3, 2 ou 1 coluna conforme a
-    /// largura, para cada coluna ter ao menos uns 340 px (chave e valor sem quebrar).
+    /// largura, para cada coluna ter ao menos uns 340 px (chave e valor sem quebrar), e nunca mais colunas que grupos (com duas no
+    /// mínimo): três grupos dividem a largura em três em vez de deixar a quarta coluna vazia.
     /// </summary>
     private void FitColumns()
     {
@@ -47,7 +53,8 @@ public partial class GraphicsView : UserControl
         if (_specColumns != null && GpuSections.ActualWidth > 0)
         {
             double s = GpuSections.ActualWidth;
-            _specColumns.Columns = s >= 1460 ? 4 : s >= 1080 ? 3 : s >= 700 ? 2 : 1;
+            int fit = s >= 1460 ? 4 : s >= 1080 ? 3 : s >= 700 ? 2 : 1;
+            _specColumns.Columns = Math.Min(fit, Math.Max(2, GpuSections.Items.Count));
         }
     }
 

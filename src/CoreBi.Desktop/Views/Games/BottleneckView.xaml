@@ -1,8 +1,8 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.BottleneckView" xmlns:local="clr-namespace:CoreBi.Desktop">
     <UserControl.Resources>
-        <!-- Medidor do Gargalo: rótulo e leitura, medidor segmentado na cor do componente e a marca do ponto em que o CoreBi
-             considera a peça no limite (a mesma regra que dá o veredito). A linha de complemento fica reservada, para todos terem a
-             mesma altura. -->
+        <!-- Medidor do Gargalo: rótulo e leitura, medidor segmentado na cor do componente (trilho em LineStrong, que não some no
+             tema claro) e a marca do ponto em que o CoreBi considera a peça no limite (a mesma regra que dá o veredito; legenda sob
+             "Leituras" e o número na dica). A linha de complemento fica reservada, para todos terem a mesma altura. -->
         <DataTemplate x:Key="LimitMeter">
             <Grid Margin="0,6" ToolTip="{Binding Tip}" Background="Transparent">
                 <Grid.RowDefinitions>
@@ -14,7 +14,7 @@
                 <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="20" HorizontalAlignment="Right" />
                 <Grid Grid.Row="1" Height="8" Margin="0,8,0,0">
                     <Grid OpacityMask="{StaticResource SegmentMask}">
-                        <Border Background="{DynamicResource Line}" />
+                        <Border Background="{DynamicResource LineStrong}" />
                         <Border x:Name="fill" Background="{DynamicResource Steel}" RenderTransformOrigin="0,0.5">
                             <Border.RenderTransform>
                                 <ScaleTransform ScaleX="{Binding Fraction}" />
@@ -54,7 +54,7 @@
 
         <!-- Leitura em régua: rótulo e número, separadas por fios; a primeira sem fio -->
         <DataTemplate x:Key="RulerCell">
-            <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="24,0,0,0" Margin="24,0,0,0">
+            <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="24,0,0,0" Margin="24,0,0,0" ToolTip="{Binding Tip}" Background="Transparent">
                 <StackPanel>
                     <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
@@ -110,11 +110,12 @@
                         <Border x:Name="BnLiveCard" Style="{StaticResource CardBorder}" Padding="28,24,28,26">
                             <StackPanel>
                                 <StackPanel x:Name="BnGameLine" Orientation="Horizontal" Margin="0,0,0,10" Visibility="Collapsed">
-                                    <Ellipse x:Name="BnLiveDot" Style="{StaticResource StatusLed}" Fill="{DynamicResource Signal}" Margin="0,1,8,0" ToolTip="Medindo o FPS do jogo em primeiro plano" />
+                                    <Ellipse x:Name="BnLiveDot" Style="{StaticResource StatusLed}" Fill="{DynamicResource Signal}" Margin="0,1,8,0" ToolTip="Medindo o FPS do programa em primeiro plano" />
                                     <TextBlock x:Name="BnLiveGame" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
-                                <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" FontFamily="{StaticResource DisplayFont}" FontSize="44" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextWrapping="Wrap" />
-                                <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,10,0,0" />
+                                <!-- Manchete (DIN 44) só para veredito; sem veredito, corpo grande no tom secundário (MainWindow.SetLiveTitle) -->
+                                <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" FontFamily="{StaticResource UiFont}" FontSize="18" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" />
+                                <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,8,0,0" />
                                 <ItemsControl x:Name="BnFrameStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,24,0,0" Focusable="False" Visibility="Collapsed">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
@@ -123,36 +124,50 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Análise de sessão: a única ação da página -->
+                        <!-- Análise de sessão: a única ação da página. Sem resultado, o espaço dela diz o que fazer, centrado; com resultado,
+                             o relatório vem logo abaixo do estado. -->
                         <Border x:Name="BnSessionCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="28,20,28,24">
-                            <StackPanel>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Análise de sessão" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"
-                                               ToolTip="Mede o jogo em primeiro plano durante o tempo escolhido e mostra por quanto tempo cada peça limitou o FPS." />
+                                    <TextBlock Text="Análise de sessão" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Border Style="{StaticResource SegmentGroup}" Margin="0,0,12,0">
+                                        <Border Style="{StaticResource SegmentGroup}" Margin="0,0,12,0" ToolTip="Duração da análise">
                                             <local:SlidingSelectionPanel x:Name="BnDurationPanel" Style="{StaticResource SegmentRail}">
                                                 <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="1 min" Tag="1" IsChecked="True" />
                                                 <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="3 min" Tag="3" />
                                                 <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="5 min" Tag="5" />
                                             </local:SlidingSelectionPanel>
                                         </Border>
-                                        <Button x:Name="BtnBnSession" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE768;" Content="Iniciar análise" Click="BtnBnSession_Click" />
+                                        <Button x:Name="BtnBnSession" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE768;" Content="Iniciar análise" Click="BtnBnSession_Click"
+                                                ToolTip="Precisa de um jogo aberto em primeiro plano. Mede pelo tempo escolhido e mostra por quanto tempo cada peça limitou o FPS." />
                                     </StackPanel>
                                 </Grid>
-                                <TextBlock x:Name="BnSessionStatus" Text="Nenhuma análise feita ainda." Style="{StaticResource Caption}" FontSize="13" Margin="0,16,0,0" Typography.NumeralAlignment="Tabular" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
-                                <Grid x:Name="BnSessionBar" Style="{StaticResource ProgressTrack}" Margin="0,10,0,0" Visibility="Collapsed">
-                                    <Border Style="{StaticResource ProgressFill}">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="BnSessionProgress" ScaleX="0" />
-                                        </Border.RenderTransform>
-                                    </Border>
-                                </Grid>
-                                <StackPanel x:Name="BnResult" Visibility="Collapsed" Margin="0,20,0,0">
+                                <StackPanel Grid.Row="1">
+                                    <TextBlock x:Name="BnSessionStatus" Style="{StaticResource Caption}" FontSize="13" Margin="0,16,0,0" Typography.NumeralAlignment="Tabular" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
+                                    <Grid x:Name="BnSessionBar" Style="{StaticResource ProgressTrack}" Margin="0,10,0,0" Visibility="Collapsed">
+                                        <Border Style="{StaticResource ProgressFill}">
+                                            <Border.RenderTransform>
+                                                <ScaleTransform x:Name="BnSessionProgress" ScaleX="0" />
+                                            </Border.RenderTransform>
+                                        </Border>
+                                    </Grid>
+                                </StackPanel>
+                                <!-- Sem resultado (antes, durante, cancelada ou sem amostras): o que a análise pede e o que ela entrega -->
+                                <StackPanel x:Name="BnSessionEmpty" Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="460" Margin="0,24,0,0">
+                                    <TextBlock Text="A análise precisa de um jogo aberto" Style="{StaticResource GroupTitle}" TextAlignment="Center" />
+                                    <TextBlock Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextAlignment="Center" Margin="0,8,0,0"
+                                               Text="Deixe-o em primeiro plano até o fim. Depois, o CoreBi mostra por quanto tempo cada peça limitou o FPS." />
+                                </StackPanel>
+                                <StackPanel x:Name="BnResult" Grid.Row="2" Visibility="Collapsed" Margin="0,20,0,0">
                                     <Border Style="{StaticResource Divider}" Margin="0,0,0,20" />
                                     <TextBlock x:Name="BnResultTitle" FontFamily="{StaticResource DisplayFont}" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap" />
                                     <ItemsControl x:Name="BnResultStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,18,0,0" Focusable="False">
@@ -173,7 +188,7 @@
                                     </ItemsControl>
                                     <TextBlock x:Name="BnResultAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,10,0,0" />
                                 </StackPanel>
-                            </StackPanel>
+                            </Grid>
                         </Border>
                     </Grid>
 
@@ -197,7 +212,7 @@
                                         </Grid>
                                         <!-- Régua logarítmica da razão GPU/CPU: centro = equilibrado -->
                                         <Grid Height="24" Margin="0,10,0,4">
-                                            <Border Height="8" Background="{DynamicResource Line}" OpacityMask="{StaticResource SegmentMask}" VerticalAlignment="Center" />
+                                            <Border Height="8" Background="{DynamicResource LineStrong}" OpacityMask="{StaticResource SegmentMask}" VerticalAlignment="Center" />
                                             <Border Width="2" Height="16" Background="{DynamicResource Steel}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                             <Canvas x:Name="BnBalanceCanvas" SizeChanged="BnBalanceCanvas_SizeChanged">
                                                 <Ellipse x:Name="BnBalanceDot" Width="16" Height="16" Fill="{DynamicResource Fg}" Stroke="{DynamicResource Surface}" StrokeThickness="3" Canvas.Top="4" />
@@ -212,15 +227,22 @@
                                     <TextBlock x:Name="BnBalanceText" Style="{StaticResource Body}" Margin="0,14,0,0" />
                                 </StackPanel>
                             </Border>
-                            <DockPanel Margin="24,20,24,14">
-                                <TextBlock DockPanel.Dock="Top" Text="Leituras" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"
-                                           ToolTip="A marca em cada medidor é o ponto a partir do qual o CoreBi considera aquela peça no limite." />
+                            <!-- Leituras em espaçamento fixo, de cima para baixo; a sobra fica entre elas e o equilíbrio, que fecha o painel -->
+                            <StackPanel Margin="24,20,24,14">
+                                <TextBlock Text="Leituras" Style="{StaticResource SectionTitle}" />
+                                <!-- Legenda da marca de cada medidor -->
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,10">
+                                    <Border Width="2" Height="12" Background="{DynamicResource Muted}" VerticalAlignment="Center" SnapsToDevicePixels="True" />
+                                    <TextBlock Text="Limite a partir do qual a peça segura o FPS" Style="{StaticResource Footnote}" Margin="8,0,0,0" VerticalAlignment="Center" />
+                                </StackPanel>
                                 <ItemsControl x:Name="BnMeters" ItemTemplate="{StaticResource LimitMeter}" Focusable="False">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate><local:SpreadPanel /></ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style TargetType="ContentPresenter">
+                                            <Setter Property="Margin" Value="0,0,0,8" />
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
                                 </ItemsControl>
-                            </DockPanel>
+                            </StackPanel>
                         </DockPanel>
                     </Border>
                 </Grid>

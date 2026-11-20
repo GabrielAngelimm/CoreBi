@@ -100,6 +100,8 @@
                                 <TextBlock x:Name="GpuName" Text="Lendo a placa de vídeo…" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
                                 <TextBlock x:Name="GpuSubtitle" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,7,0,0"
                                            Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
+                                <!-- O atalho fica com o nome da placa (o texto alinha com o nome; o fundo do botão sobra à esquerda) -->
+                                <Button x:Name="GpuSensorsLink" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE9D9;" Content="Todos os sensores da placa" Click="GpuSensorsLink_Click" HorizontalAlignment="Left" Margin="-10,8,0,-6" />
                             </StackPanel>
                             <ItemsControl x:Name="GpuReadouts" Grid.Column="2" VerticalAlignment="Center" ItemTemplate="{StaticResource PlateReadout}" Focusable="False">
                                 <ItemsControl.ItemsPanel>
@@ -110,29 +112,30 @@
                     </Grid>
                 </Border>
 
-                <!-- Instrumentos ao vivo, um por grandeza, na largura toda -->
+                <!-- Instrumentos ao vivo, um por grandeza, na largura toda; sem nenhum sensor, uma frase só no lugar deles -->
+                <TextBlock x:Name="GpuNoSensors" Grid.Row="1" Visibility="Collapsed" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="28,16,28,18"
+                           Text="Sem leituras ao vivo: o driver desta placa não informa uso, clock nem temperatura." />
                 <ItemsControl x:Name="GpuGauges" Grid.Row="1" ItemTemplate="{StaticResource GaugeTile}" Focusable="False" SizeChanged="GpuGauges_SizeChanged">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate><UniformGrid Rows="1" Loaded="GaugeGrid_Loaded" /></ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
 
-                <!-- Leituras do driver e o atalho para todos os sensores da placa -->
-                <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="28,10,20,10">
-                    <DockPanel>
-                        <Button x:Name="GpuSensorsLink" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE9D9;" Content="Todos os sensores da placa" Click="GpuSensorsLink_Click" VerticalAlignment="Center" />
-                        <ItemsControl x:Name="GpuExtras" ItemTemplate="{StaticResource FactCell}" VerticalAlignment="Center" Focusable="False">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                        </ItemsControl>
-                    </DockPanel>
+                <!-- Leituras do driver (estado de desempenho, limitador...): a faixa só existe quando o driver as informa -->
+                <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="28,14,20,14"
+                        Visibility="{Binding HasItems, ElementName=GpuExtras, Converter={StaticResource BoolVis}}">
+                    <ItemsControl x:Name="GpuExtras" ItemTemplate="{StaticResource FactCell}" VerticalAlignment="Center" Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
                 </Border>
             </Grid>
         </Border>
 
-        <!-- Ficha técnica: grupos chave/valor em colunas; rola dentro do painel se a janela for baixa -->
-        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Padding="0">
+        <!-- Ficha técnica: grupos chave/valor em colunas que dividem a largura; o painel tem a altura do conteúdo e rola por dentro se
+             a janela for baixa -->
+        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Padding="0" VerticalAlignment="Top">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />

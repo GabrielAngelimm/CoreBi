@@ -142,8 +142,8 @@ internal static class GpuSheet
 
         if (V(d, "Falha ao ler") is { } error) Group("Leitura", new GpuSpecRow("Falha ao ler", error));
 
+        // O nome da placa é o título da página (o completo na dica), então a ficha não o repete como "Modelo".
         Group("Identificação",
-            new GpuSpecRow("Modelo", g.Name),
             R("Fabricante da placa"),
             R("Chip"),
             R("Arquitetura"),
@@ -195,7 +195,7 @@ internal static class GpuSheet
                 : new GpuSpecRow("Em uso", now.Split(" (")[0], null, "Em repouso a conexão cai para economizar energia e volta ao máximo em jogo."),
             R("Localização"));
 
-        Group("Driver e BIOS",
+        Group(V(d, "BIOS (VBIOS)") != null ? "Driver e BIOS" : "Driver",
             R("Versão do driver", "Versão"),
             R("Data do driver", "Data"),
             R("Assinatura digital", "Assinatura"),
@@ -253,6 +253,10 @@ internal sealed class GpuBoard
     private readonly Dictionary<string, List<float?>> _history = new();
     private readonly HashSet<string> _seen = new();
     private DateTime _last = DateTime.MinValue;
+    private bool _sampledWithSensors;
+
+    /// <summary>Já houve leitura com os sensores abertos e nenhum instrumento respondeu: a página diz isso uma vez.</summary>
+    public bool NoSensors => _sampledWithSensors && Gauges.Count == 0;
 
     public ObservableCollection<GpuGauge> Gauges { get; } = new();
 
@@ -290,6 +294,7 @@ internal sealed class GpuBoard
         _last = now;
         var h = _gpu.NvmlHandle;
         bool nvml = h != IntPtr.Zero;
+        if (m.IsOpen) _sampledWithSensors = true;
 
         float? load = _gpu.WindowsLoad;
         float? core = nvml && Nvml.Clock(h, Nvml.ClockGraphics) is uint c ? c : Row(m, SensorType.Clock, "GPU Core")?.RawValue;

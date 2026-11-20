@@ -31,7 +31,14 @@ public partial class MainWindow
         GpuExtras.ItemsSource = facts;
         _gpuBoard = new GpuBoard(g, spec);
         PageGpu.GpuGauges.ItemsSource = _gpuBoard.Gauges;
-        if (PageGpu.IsVisible) _gpuBoard.Sample(_monitor);
+        PageGpu.ShowNoSensors(false);
+        if (PageGpu.IsVisible) SampleGpuBoard();
+    }
+
+    private void SampleGpuBoard()
+    {
+        _gpuBoard!.Sample(_monitor);
+        PageGpu.ShowNoSensors(_gpuBoard.NoSensors);
     }
 
     /// <summary>Nenhuma placa encontrada pelo Windows: a página diz isso em vez de ficar lendo para sempre.</summary>
@@ -41,6 +48,7 @@ public partial class MainWindow
         GpuName.Text = "Nenhuma placa de vídeo encontrada";
         GpuSubtitle.Text = "";
         PageGpu.GpuSensorsLink.Visibility = System.Windows.Visibility.Collapsed;
+        PageGpu.ShowNoSensors(false);
     }
 
     /// <summary>Sensores da placa à vista, em Sensores já filtrado nela.</summary>
@@ -60,7 +68,7 @@ public partial class MainWindow
         // A página só consulta o driver quando está à vista: o CoreBi fica aberto em jogos.
         if (_gpu != null && _gpuBoard != null && PageGpu.IsVisible)
         {
-            _gpuBoard.Sample(_monitor);
+            SampleGpuBoard();
             GpuExtras.ItemsSource = GpuSheet.Facts(_gpu);
         }
     }

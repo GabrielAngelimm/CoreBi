@@ -45,8 +45,8 @@ public sealed class LimitReading : INotifyPropertyChanged
     }
 }
 
-/// <summary>Leitura em régua (FPS, médias da sessão): rótulo, número e unidade; a primeira sem fio.</summary>
-public sealed record RulerStat(string Label, string Value, string Unit, bool First);
+/// <summary>Leitura em régua (FPS, médias da sessão): rótulo, número, unidade e dica; a primeira sem fio.</summary>
+public sealed record RulerStat(string Label, string Value, string Unit, bool First, string? Tip = null);
 
 public partial class MainWindow
 {
@@ -78,7 +78,14 @@ public partial class MainWindow
         PageBottleneck.BnBalanceRuler.Visibility = _balanceKnown ? Visibility.Visible : Visibility.Collapsed;
         BnCpuName.Text = HardwareCatalog.ShortCpuName(_cpuName);
         BnGpuName.Text = HardwareCatalog.ShortGpuName(gpuName);
-        BnBalanceText.Text = text;
+        // Fora da tabela, a frase diz qual das duas peças falta (o motor só sabe que falta uma).
+        BnBalanceText.Text = _balanceKnown ? text : (cpuPerf > 0, gpuPerf > 0) switch
+        {
+            (false, false) => "Estimativa indisponível: nem o processador nem a placa de vídeo estão na tabela de desempenho relativo.",
+            (false, true) => $"Estimativa indisponível: o processador{Named(BnCpuName.Text)} não está na tabela de desempenho relativo.",
+            _ => $"Estimativa indisponível: a placa de vídeo{Named(BnGpuName.Text)} não está na tabela de desempenho relativo.",
+        };
+        static string Named(string name) => name.Length > 0 ? $" ({name})" : "";
         BnMeters.ItemsSource = new[] { _bnGpu, _bnCpu, _bnVram, _bnRam, _bnGpuTemp, _bnCpuTemp };
 
         // Preferências do overlay
@@ -124,6 +131,39 @@ public partial class MainWindow
         r.Tone = temp >= 95 ? "Danger" : "";
     }
 
+    /// <summary>
+    /// Título do cartão ao vivo. Com veredito (tone não nulo), manchete em DIN 44, na cor do veredito ("" = tinta); sem veredito,
+    /// corpo grande no tom secundário, abaixo do título da página.
+    /// </summary>
+    private void SetLiveTitle(string text, string? tone)
+    {
+        bool verdict = tone != null;
+        BnLiveTitle.Text = text;
+        BnLiveTitle.FontFamily = (System.Windows.Media.FontFamily)FindResource(verdict ? "DisplayFont" : "UiFont");
+        BnLiveTitle.FontSize = verdict ? 44 : 18;
+        BnLiveTitle.FontWeight = verdict ? FontWeights.SemiBold : FontWeights.Normal;
+        BnLiveTitle.SetResourceReference(TextBlock.ForegroundProperty, !verdict ? "Muted" : tone == "" ? "Fg" : tone!);
+    }
+
+    /// <summary>
+    /// Nome do programa medido. Fica no nome do processo de propósito: abrir um handle do jogo para ler a descrição
+    /// do executável pode chamar a atenção de anticheats, e o CoreBi roda ao lado de jogos online.
+    /// </summary>
+    private static string AppName(FrameStats f) => f.ProcessName;
+
+    /// <summary>Com FPS mas sem veredito: diz o que falta (o motor classifica só com o uso da GPU e o da CPU).</summary>
+    private static (string Title, string Advice) Unclassified(LoadSample s, FrameStats f)
+    {
+        if (f.Fps is not > 0) return ("Sem quadros novos", "O programa em primeiro plano não entregou nenhum quadro no último segundo.");
+        string missing = (s.GpuLoad == null, s.CpuTotal == null) switch
+        {
+            (true, true) => "o uso da GPU e da CPU",
+            (true, false) => "o uso da GPU",
+            _ => "o uso da CPU",
+        };
+        return ($"Falta {missing}", "O FPS chega, mas sem essa leitura não dá para dizer o que limita.");
+    }
+
     /// <summary>Tom do veredito: só o que pede ação ganha cor; GPU no limite é o esperado num jogo e fica em tinta.</summary>
     private static string VerdictTone(Limiter l) => l switch
     {
@@ -143,22 +183,32 @@ public partial class MainWindow
         if (PageBottleneck.IsVisible)
         {
             bool game = frames != null;
+            bool verdict = game && lim != Limiter.Unknown;
             PageBottleneck.BnGameLine.Visibility = game ? Visibility.Visible : Visibility.Collapsed;
-            BnLiveGame.Text = game ? $"Medindo {frames!.ProcessName}" : "";
-            BnLiveTitle.Text = game ? BottleneckAnalyzer.Title(lim) : "Nenhum jogo em primeiro plano";
-            BnLiveAdvice.Text = game ? BottleneckAnalyzer.Advice(lim) : "Abra um jogo e deixe-o em primeiro plano. O veredito aparece quando houver FPS.";
+            BnLiveGame.Text = game ? $"Medindo {AppName(frames!)}" : "";
+            string tone = verdict ? VerdictTone(lim) : "";
+            if (verdict)
+            {
+                SetLiveTitle(BottleneckAnalyzer.Title(lim), tone);
+                BnLiveAdvice.Text = BottleneckAnalyzer.Advice(lim);
+            }
+            else
+            {
+                var (title, advice) = game ? Unclassified(s, frames!)
+                    : ("Nenhum jogo em primeiro plano", "Abra um jogo e deixe-o em primeiro plano. O veredito aparece quando houver FPS.");
+                SetLiveTitle(title, null);
+                BnLiveAdvice.Text = advice;
+            }
             PageBottleneck.BnFrameStats.Visibility = game ? Visibility.Visible : Visibility.Collapsed;
             if (game)
                 PageBottleneck.BnFrameStats.ItemsSource = new[]
                 {
-                    new RulerStat("FPS", $"{frames!.Fps:0}", "", true),
-                    new RulerStat("1% low", $"{frames.Low1Fps:0}", "FPS", false),
+                    new RulerStat("Agora", $"{frames!.Fps:0}", "FPS", true, "Quadros entregues no último segundo."),
+                    new RulerStat("1% low", $"{frames.Low1Fps:0}", "FPS", false, "O FPS dos quadros mais lentos (o pior 1 % dos últimos 10 s). Mostra as travadas."),
                 };
 
-            string tone = game ? VerdictTone(lim) : "";
             BnLiveCard.SetResourceReference(Border.BackgroundProperty, tone == "Danger" ? "DangerSoft" : tone == "Warn" ? "WarnSoft" : "Surface");
             BnLiveCard.SetResourceReference(Border.BorderBrushProperty, tone == "" ? "Line" : tone);
-            BnLiveTitle.SetResourceReference(TextBlock.ForegroundProperty, tone == "" ? "Fg" : tone);
 
             SetPct(_bnGpu, s.GpuLoad);
             SetPct(_bnCpu, s.CpuMaxCore);
@@ -180,12 +230,14 @@ public partial class MainWindow
             _bnSession.Add(s);
             var el = DateTime.Now - _bnSession.Start;
             BnSessionStatus.Text = frames != null
-                ? $"Medindo {frames.ProcessName}: {el:m\\:ss} de {_bnSession.Duration:m\\:ss}, {_bnSession.Count} amostras"
+                ? $"Medindo {AppName(frames)}: {el:m\\:ss} de {_bnSession.Duration:m\\:ss}, {_bnSession.Count} amostras"
                 : $"Aguardando um jogo em primeiro plano: {el:m\\:ss} de {_bnSession.Duration:m\\:ss}";
             PageBottleneck.BnSessionProgress.ScaleX = Math.Clamp(el / _bnSession.Duration, 0, 1);
             if (_bnSession.Done) FinishBottleneckSession();
         }
     }
+
+    private const string SessionTip = "Precisa de um jogo aberto em primeiro plano. Mede pelo tempo escolhido e mostra por quanto tempo cada peça limitou o FPS.";
 
     internal void BtnBnSession_Click(object sender, RoutedEventArgs e)
     {
@@ -193,6 +245,7 @@ public partial class MainWindow
         {
             _bnSession = null;
             Ui.SetRunning(BtnBnSession, false, "Iniciar análise");
+            BtnBnSession.ToolTip = SessionTip;
             PageBottleneck.BnSessionBar.Visibility = Visibility.Collapsed;
             BnSessionStatus.Text = "Análise cancelada.";
             return;
@@ -201,9 +254,11 @@ public partial class MainWindow
         _bnSession = new BottleneckSession { Duration = TimeSpan.FromMinutes(minutes) };
         BnResult.Visibility = Visibility.Collapsed;
         Ui.SetRunning(BtnBnSession, true, "Iniciar análise", "Cancelar");
+        BtnBnSession.ToolTip = null;
         PageBottleneck.BnSessionProgress.ScaleX = 0;
         PageBottleneck.BnSessionBar.Visibility = Visibility.Visible;
         BnSessionStatus.Text = "Aguardando um jogo em primeiro plano.";
+        PageBottleneck.BnSessionEmpty.Visibility = Visibility.Visible;
     }
 
     /// <summary>Canal de cor de cada situação na distribuição do tempo: a peça que limitou (térmico é veredito, nada no limite é aço).</summary>
@@ -221,15 +276,22 @@ public partial class MainWindow
         var sess = _bnSession!;
         _bnSession = null;
         Ui.SetRunning(BtnBnSession, false, "Iniciar análise");
+        BtnBnSession.ToolTip = SessionTip;
         PageBottleneck.BnSessionBar.Visibility = Visibility.Collapsed;
-        BnSessionStatus.Text = sess.Count > 0
-            ? $"Análise concluída às {DateTime.Now:HH:mm}, com {sess.Count} amostras."
-            : $"Análise concluída às {DateTime.Now:HH:mm}, sem nenhuma amostra com jogo em primeiro plano.";
+        // Sem amostra classificada não há relatório: nada de veredito "Dados insuficientes" em manchete.
+        if (sess.Count == 0)
+        {
+            BnSessionStatus.Text = $"Análise concluída às {DateTime.Now:HH:mm} sem nenhuma amostra classificável: faltou o FPS de um jogo ou o uso da GPU e da CPU.";
+            BnResult.Visibility = Visibility.Collapsed;
+            PageBottleneck.BnSessionEmpty.Visibility = Visibility.Visible;
+            return;
+        }
+        BnSessionStatus.Text = $"Análise concluída às {DateTime.Now:HH:mm}, com {sess.Count} amostras.";
 
         var main = sess.Main ?? Limiter.Unknown;
         BnResultTitle.Text = BottleneckAnalyzer.Title(main);
         var stats = new List<(string Label, string Value, string Unit)>();
-        if (sess.AvgFps is double fps) stats.Add(("FPS médio", $"{fps:0}", ""));
+        if (sess.AvgFps is double fps) stats.Add(("Média", $"{fps:0}", "FPS"));
         if (sess.Avg(x => x.GpuLoad) is double g) stats.Add(("Uso médio da GPU", $"{g:0}", "%"));
         if (sess.Avg(x => x.CpuTotal) is double c) stats.Add(("Uso médio da CPU", $"{c:0}", "%"));
         if (sess.Avg(x => x.CpuMaxCore) is double k) stats.Add(("Núcleo mais ocupado", $"{k:0}", "%"));
@@ -241,5 +303,6 @@ public partial class MainWindow
             .ToList();
         BnResultAdvice.Text = BottleneckAnalyzer.Advice(main);
         BnResult.Visibility = Visibility.Visible;
+        PageBottleneck.BnSessionEmpty.Visibility = Visibility.Collapsed;
     }
 }
