@@ -55,8 +55,9 @@
                             <Button x:Name="BtnDrvScan" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler drivers de novo" MinWidth="164" Height="36" FontSize="14"
                                     VerticalAlignment="Center" Click="BtnDrvScan_Click"
                                     ToolTip="Lê de novo os drivers instalados, a placa de vídeo e a placa-mãe e consulta a versão mais recente na NVIDIA ou na AMD. Para atualizações do Windows, use Procurar atualizações." />
-                            <StackPanel Grid.Column="1" Margin="22,0,0,0" VerticalAlignment="Center">
-                                <Grid Margin="0,0,0,9">
+                            <!-- O estado fica centrado no console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
+                            <Grid Grid.Column="1" Margin="22,0,0,0">
+                                <Grid VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
@@ -64,14 +65,14 @@
                                     <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource TaskStatus}" />
                                     <TextBlock x:Name="DrvDetail" Grid.Column="1" Style="{StaticResource TaskDetail}" />
                                 </Grid>
-                                <Grid Style="{StaticResource ProgressTrack}" Visibility="Hidden">
+                                <Grid Style="{StaticResource ProgressTrack}" Visibility="Hidden" VerticalAlignment="Bottom">
                                     <Border x:Name="DrvProgressFill" Style="{StaticResource ProgressFill}">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="DrvProgress" ScaleX="0" />
                                         </Border.RenderTransform>
                                     </Border>
                                 </Grid>
-                            </StackPanel>
+                            </Grid>
                         </Grid>
                     </Border>
                 </Grid>

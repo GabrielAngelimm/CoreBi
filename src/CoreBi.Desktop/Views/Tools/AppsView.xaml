@@ -115,8 +115,9 @@
                         <Button x:Name="BtnAppsInstall" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE896;" Content="Instalar apps" MinWidth="164" Height="36" FontSize="14"
                                 VerticalAlignment="Center" IsEnabled="False" Click="BtnAppsInstall_Click" ToolTipService.ShowOnDisabled="True"
                                 ToolTip="Instala pelo winget, um app de cada vez e sem janelas: cada instalador vem do site oficial do fabricante e é conferido antes de abrir." />
-                        <StackPanel Grid.Column="1" Margin="22,0,0,0" VerticalAlignment="Center">
-                            <Grid Margin="0,0,0,9">
+                        <!-- O estado fica centrado no console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
+                        <Grid Grid.Column="1" Margin="22,0,0,0">
+                            <Grid VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -124,14 +125,14 @@
                                 <TextBlock x:Name="AppsStatus" Text="Lendo aplicativos instalados…" Style="{StaticResource TaskStatus}" />
                                 <TextBlock x:Name="AppsDetail" Grid.Column="1" Style="{StaticResource TaskDetail}" />
                             </Grid>
-                            <Grid Style="{StaticResource ProgressTrack}" Visibility="Hidden">
+                            <Grid Style="{StaticResource ProgressTrack}" Visibility="Hidden" VerticalAlignment="Bottom">
                                 <Border x:Name="AppsProgressFill" Style="{StaticResource ProgressFill}">
                                     <Border.RenderTransform>
                                         <ScaleTransform x:Name="AppsProgress" ScaleX="0" />
                                     </Border.RenderTransform>
                                 </Border>
                             </Grid>
-                        </StackPanel>
+                        </Grid>
                         <!-- Sem o winget não há como instalar: o atalho para atualizá-lo fica no próprio console -->
                         <Button x:Name="BtnAppsStore" Grid.Column="2" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE719;" Content="Abrir na Microsoft Store"
                                 Margin="22,0,0,0" VerticalAlignment="Center" Visibility="Collapsed" Click="BtnAppsStore_Click"

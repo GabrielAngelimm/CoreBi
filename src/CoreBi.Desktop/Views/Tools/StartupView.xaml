@@ -69,8 +69,9 @@
                             <Button Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" MinWidth="164" Height="36" FontSize="14"
                                     VerticalAlignment="Center" Click="BtnStartupScan_Click"
                                     ToolTip="Lê de novo as chaves Run do registro e as pastas Inicializar do usuário e de todos os usuários." />
-                            <StackPanel Grid.Column="1" Margin="22,0,0,0" VerticalAlignment="Center">
-                                <Grid Margin="0,0,0,9">
+                            <!-- O estado fica centrado no console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
+                            <Grid Grid.Column="1" Margin="22,0,0,0">
+                                <Grid VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
@@ -78,14 +79,14 @@
                                     <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource TaskStatus}" />
                                     <TextBlock x:Name="StartupResult" Grid.Column="1" Style="{StaticResource TaskDetail}" />
                                 </Grid>
-                                <Grid Style="{StaticResource ProgressTrack}" Visibility="Hidden">
+                                <Grid Style="{StaticResource ProgressTrack}" Visibility="Hidden" VerticalAlignment="Bottom">
                                     <Border x:Name="StartupProgressFill" Style="{StaticResource ProgressFill}">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="StartupProgress" ScaleX="0" />
                                         </Border.RenderTransform>
                                     </Border>
                                 </Grid>
-                            </StackPanel>
+                            </Grid>
                         </Grid>
                     </Border>
                 </Grid>
