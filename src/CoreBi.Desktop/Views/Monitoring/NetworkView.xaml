@@ -87,8 +87,9 @@
                             <Button x:Name="BtnNetTest" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE768;" Content="Testar a rede"
                                     MinWidth="164" Height="36" FontSize="14" VerticalAlignment="Center" Click="BtnNetTest_Click"
                                     ToolTip="Envia pings ao roteador e aos DNS 1.1.1.1 e 8.8.8.8 e transfere dados para medir a velocidade. O consumo pode chegar a centenas de MB." />
-                            <StackPanel Grid.Column="1" Margin="22,0,0,0" VerticalAlignment="Center">
-                                <Grid Margin="0,0,0,9">
+                            <!-- O estado fica centrado no console; o trilho, que só aparece durante o teste, corre rente ao pé -->
+                            <Grid Grid.Column="1" Margin="22,0,0,0">
+                                <Grid VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
@@ -97,7 +98,7 @@
                                     <TextBlock x:Name="NetDetail" Grid.Column="1" Style="{StaticResource Caption}" Typography.NumeralAlignment="Tabular"
                                                TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" HorizontalAlignment="Right" Margin="16,0,0,0" />
                                 </Grid>
-                                <Grid x:Name="NetTrack" Visibility="Hidden">
+                                <Grid x:Name="NetTrack" Visibility="Hidden" VerticalAlignment="Bottom">
                                     <Grid Style="{StaticResource ProgressTrack}">
                                         <Border Style="{StaticResource ProgressFill}">
                                             <Border.RenderTransform>
@@ -118,7 +119,7 @@
                                         <Border Grid.Column="3" Background="{DynamicResource Surface}" />
                                     </Grid>
                                 </Grid>
-                            </StackPanel>
+                            </Grid>
                             <!-- Porcentagem só durante o teste: parado, nada aqui (nenhum travessão solto) -->
                             <StackPanel x:Name="NetPercentBox" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Hidden">
                                 <TextBlock x:Name="NetPercent" Style="{StaticResource ReadoutText}" FontSize="30" FontWeight="Light" LineHeight="36" LineStackingStrategy="BlockLineHeight" />
