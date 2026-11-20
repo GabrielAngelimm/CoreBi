@@ -188,10 +188,28 @@
     <Style x:Key="ReadoutLarge" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
         <Setter Property="FontSize" Value="38"/>
         <Setter Property="FontWeight" Value="Light"/>
+        <Style.Triggers>
+            <!-- Sem leitura: o travessão da Bahnschrift Light vira uma barra larga; encolhe e fica um tom abaixo, na mesma altura de linha -->
+            <Trigger Property="Text" Value="—">
+                <Setter Property="FontSize" Value="24"/>
+                <Setter Property="LineHeight" Value="48"/>
+                <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+                <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
     <Style x:Key="ReadoutHero" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
         <Setter Property="FontSize" Value="54"/>
         <Setter Property="FontWeight" Value="Light"/>
+        <Style.Triggers>
+            <!-- Sem leitura: o travessão da Bahnschrift Light vira uma barra larga; encolhe e fica um tom abaixo, na mesma altura de linha -->
+            <Trigger Property="Text" Value="—">
+                <Setter Property="FontSize" Value="28"/>
+                <Setter Property="LineHeight" Value="68"/>
+                <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+                <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
     <Style x:Key="Unit" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
