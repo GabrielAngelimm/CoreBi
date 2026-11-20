@@ -192,6 +192,7 @@ internal static partial class Program
         Check("settings: separate storage, atomic save and removed FPS API key dropped", () =>
         {
             // Configuração gravada por uma versão com o FPS estimado: carrega normalmente e a chave cifrada da API não volta ao arquivo.
+            Directory.CreateDirectory(AppSettings.Folder);
             var path = Path.Combine(AppSettings.Folder, "settings.json");
             File.WriteAllText(path, "{\"HowManyFpsKeyProtected\":\"chave-cifrada-de-teste\",\"LightTheme\":true}");
             var loaded = AppSettings.Load(); Require(loaded.LightTheme, "Settings from the previous version were not loaded");
