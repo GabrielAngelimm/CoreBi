@@ -74,6 +74,14 @@ public partial class DriversView : UserControl
         if (frac.HasValue) ToolPage.SetProgress(DrvProgressFill, frac.Value);
     }
 
+    /// <summary>A tarefa parou com erro: o console diz o quê e o trilho some (parado, o console não mostra progresso).</summary>
+    private void DrvFail(string text, string detail)
+    {
+        if (Context.IsClosing) return;
+        ToolPage.Say(DrvStatus, DrvDetail, text, detail);
+        ToolPage.EndProgress(DrvProgressFill);
+    }
+
     internal void DrvBusy(bool busy)
     {
         _drvBusy = busy;
@@ -112,14 +120,14 @@ public partial class DriversView : UserControl
                 if (g.Vendor == "NVIDIA") await DriverManager.CheckNvidiaAsync(g, studio, _drvCts.Token);
                 else if (g.Vendor == "AMD") await DriverManager.CheckAmdAsync(g, _drvCts.Token);
                 else if (g.Vendor == "Intel") g.Message = "A Intel não tem consulta automática. Veja a versão mais recente na página oficial.";
-                else g.Message = "Fabricante não reconhecido.";
+                else g.Message = "Sem consulta automática para esta placa: o driver dela chega pelo Windows Update.";
                 i++;
             }
             if (Context.IsClosing) return;
             ShowGpus();
-            DrvSet($"Verificado às {DateTime.Now:HH:mm}", 1);
+            DrvSet($"Lido às {DateTime.Now:HH:mm}", 1);
         }
-        catch (Exception ex) { DrvSet("Não foi possível verificar", 0, ex.Message); }
+        catch (Exception ex) { DrvFail("Não foi possível ler os drivers", ex.Message); }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!Context.IsClosing) DrvBusy(false); }
     }
 
@@ -136,14 +144,34 @@ public partial class DriversView : UserControl
         DrvGpuEmpty.Visibility = _drvGpus.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         DrvStudio.Visibility = _drvGpus.Any(g => g.Vendor == "NVIDIA") ? Visibility.Visible : Visibility.Collapsed;
         BtnDrvInstall.Visibility = _drvGpus.Any(g => g.Vendor is "NVIDIA" or "AMD") ? Visibility.Visible : Visibility.Collapsed;
+        // Só há página oficial quando o fabricante é conhecido (NVIDIA, AMD, Intel); sem ela, o botão não aparece.
+        BtnDrvGpuPage.Visibility = _drvGpus.Any(g => g.OfficialPage.Length > 0) ? Visibility.Visible : Visibility.Collapsed;
 
         // O botão diz a versão que vai instalar. Sem driver mais novo, reinstalar não é a ação principal da tela.
         var target = _drvGpus.FirstOrDefault(x => x.CanAutoInstall);
-        bool recommended = target != null && (target.UpdateAvailable || target.Vendor == "AMD");
         BtnDrvInstall.Content = target == null ? "Baixar e instalar"
             : target.Vendor == "NVIDIA" && !target.UpdateAvailable ? $"Reinstalar {target.Latest}"
             : $"Baixar e instalar {target.Latest}";
-        if (TryFindResource(recommended || target == null ? "PrimaryButton" : "SecondaryButton") is Style style) BtnDrvInstall.Style = style;
+        UpdatePrimary();
+    }
+
+    /// <summary>
+    /// Uma ação principal por tela: o driver novo da placa de vídeo, quando há; senão, instalar o que o Windows Update achou;
+    /// senão, procurar no Windows Update. As outras ficam secundárias.
+    /// </summary>
+    private void UpdatePrimary()
+    {
+        var target = _drvGpus.FirstOrDefault(x => x.CanAutoInstall);
+        bool gpu = target != null && (target.UpdateAvailable || target.Vendor == "AMD");
+        bool wuInstall = !gpu && _drvWu.Count > 0;
+        Emphasize(BtnDrvInstall, gpu);
+        Emphasize(BtnDrvWuInstall, wuInstall);
+        Emphasize(BtnDrvWuSearch, !gpu && !wuInstall);
+    }
+
+    private void Emphasize(Button button, bool primary)
+    {
+        if (TryFindResource(primary ? "PrimaryButton" : "SecondaryButton") is Style style && button.Style != style) button.Style = style;
     }
 
     internal void ShowBoard()
@@ -168,7 +196,7 @@ public partial class DriversView : UserControl
         BtnDrvBoardPage.Content = b.Brand.Length > 0 ? $"Suporte da {b.Brand}" : "Suporte do fabricante";
         BtnDrvBoardPage.Visibility = known ? Visibility.Visible : Visibility.Collapsed;
         BtnDrvBoardPage.IsEnabled = known;
-        DrvBoardNote.Visibility = known ? Visibility.Collapsed : Visibility.Visible;
+        DrvBoardNote.Visibility = known || b.Model.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
     // ------------------------------------------------------------------ tabela de drivers instalados
@@ -259,7 +287,7 @@ public partial class DriversView : UserControl
                 DrvSet(t, f, f > 0 && f < 1 ? (f * 100).ToString("0", PtBr) + " %" : ""))), _drvCts.Token);
             DrvSet(r, 1);
         }
-        catch (Exception ex) { DrvSet("Não foi possível instalar o driver", 0, ex.Message); }
+        catch (Exception ex) { DrvFail("Não foi possível instalar o driver", ex.Message); }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!Context.IsClosing) DrvBusy(false); }
     }
 
@@ -270,7 +298,9 @@ public partial class DriversView : UserControl
         DrvWuCount.Text = _drvWu.Count > 0 ? _drvWu.Count.ToString(PtBr) : "";
         BtnDrvWuInstall.Visibility = _drvWu.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         BtnDrvWuInstall.Content = _drvWu.Count == 1 ? "Instalar 1 driver" : $"Instalar {_drvWu.Count} drivers";
-        DrvWuList.Visibility = _drvWu.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+        DrvWuEmpty.Visibility = _drvWu.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+        DrvWuScroll.Visibility = _drvWu.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        UpdatePrimary();
     }
 
     internal async void BtnDrvWuSearch_Click(object sender, RoutedEventArgs e)
@@ -292,7 +322,7 @@ public partial class DriversView : UserControl
             _drvWu = new();
             ShowWu();
             DrvWuList.Text = "Não foi possível procurar: " + ex.Message;
-            DrvSet("Não foi possível procurar no Windows Update", 0, ex.Message);
+            DrvFail("Não foi possível procurar no Windows Update", ex.Message);
         }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!Context.IsClosing) DrvBusy(false); }
     }
@@ -318,7 +348,7 @@ public partial class DriversView : UserControl
             ShowWu();
             DrvWuList.Text = r;
         }
-        catch (Exception ex) { DrvSet("Não foi possível instalar pelo Windows Update", 0, ex.Message); }
+        catch (Exception ex) { DrvFail("Não foi possível instalar pelo Windows Update", ex.Message); }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!Context.IsClosing) DrvBusy(false); }
     }
 
@@ -337,7 +367,7 @@ public partial class DriversView : UserControl
             string r = await DriverManager.BackupAsync(t => Dispatcher.BeginInvoke(new Action(() => DrvSet(t))), _drvCts.Token);
             DrvSet(r, 1);
         }
-        catch (Exception ex) { DrvSet("Não foi possível fazer o backup", 0, ex.Message); }
+        catch (Exception ex) { DrvFail("Não foi possível fazer o backup", ex.Message); }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!Context.IsClosing) DrvBusy(false); }
     }
 }
@@ -345,6 +375,27 @@ public partial class DriversView : UserControl
 /// <summary>Linha da tabela de drivers: os dados do inventário e a classe do Windows com nome em português e ordem de leitura.</summary>
 public sealed record DriverLine(string Device, string Vendor, string Version, string Date, bool Signed, string Group, int Order)
 {
+    /// <summary>
+    /// Nomes genéricos que o Windows em inglês dá ao fabricante dos drivers que vêm com ele; o Windows em português mostra
+    /// estes. Só a exibição muda: o inventário continua com o texto original.
+    /// </summary>
+    private static readonly Dictionary<string, string> StandardVendors = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["(Standard system devices)"] = "(Dispositivos padrão do sistema)",
+        ["(Standard display types)"] = "(Tipos de vídeo padrão)",
+        ["(Standard disk drives)"] = "(Unidades de disco padrão)",
+        ["(Standard keyboards)"] = "(Teclados padrão)",
+        ["(Standard monitor types)"] = "(Tipos de monitor padrão)",
+        ["(Standard USB Host Controller)"] = "(Controlador host USB padrão)",
+        ["(Standard USB HUBs)"] = "(Hubs USB padrão)",
+    };
+
+    /// <summary>21/06/2006 é a data fixa que a Microsoft põe nos drivers que vêm com o Windows, não a idade do driver.</summary>
+    private const string InboxDate = "21/06/2006";
+
+    /// <summary>Dica da data: só nos drivers com a data padrão do Windows.</summary>
+    public string? DateTip => Date == InboxDate ? "Data padrão dos drivers que vêm com o Windows. A versão diz qual é o driver." : null;
+
     internal static DriverLine From(DriverRow r)
     {
         var (group, order) = r.Class switch
@@ -361,7 +412,8 @@ public sealed record DriverLine(string Device, string Vendor, string Version, st
         };
         // Versão ou data ausente chega como "—": a célula fica vazia em vez de mostrar o travessão.
         static string Value(string v) => v == "—" ? "" : v;
-        return new DriverLine(r.Device, r.Vendor, Value(r.Version), Value(r.Date), r.Signed, group, order);
+        string vendor = StandardVendors.TryGetValue(r.Vendor.Trim(), out var pt) ? pt : r.Vendor;
+        return new DriverLine(r.Device, vendor, Value(r.Version), Value(r.Date), r.Signed, group, order);
     }
 }
 

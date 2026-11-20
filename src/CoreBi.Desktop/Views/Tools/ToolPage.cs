@@ -7,7 +7,7 @@ namespace CoreBi.Desktop.Views;
 
 /// <summary>
 /// Peças comuns das páginas de Ferramentas (Inicialização, Instalar apps, Drivers): o console de tarefa (estilo TaskConsole),
-/// que fica ao lado do título em janelas largas e embaixo dele nas estreitas, como o de Rede, e as tabelas feitas à mão, cujo
+/// que fica ao lado do título (centrado na altura dele) em janelas largas e embaixo dele nas estreitas, e as tabelas feitas à mão, cujo
 /// cabeçalho de colunas acompanha a largura útil da lista quando a barra de rolagem aparece.
 /// </summary>
 internal static class ToolPage
@@ -28,16 +28,19 @@ internal static class ToolPage
     }
 
     /// <summary>
-    /// Leva a barra até a fração nova: ao avançar desliza 400 ms com desaceleração; ao recomeçar (ou com "Mostrar animações
-    /// no Windows" desligado) vai direto ao valor. Quando a tarefa termina, a barra cheia apaga em 300 ms e volta ao trilho vazio:
-    /// console parado não mostra progresso. Nada de animação contínua.
+    /// Leva a barra até a fração nova e mostra o trilho, que só existe durante uma tarefa: parado, o console não tem linha
+    /// nenhuma (o espaço fica reservado, para a altura não mudar). Ao avançar desliza 400 ms com desaceleração; ao recomeçar
+    /// (ou com "Mostrar animações no Windows" desligado) vai direto ao valor. Quando a tarefa termina, o trilho cheio apaga
+    /// em 300 ms e some. Nada de animação contínua.
     /// </summary>
     public static void SetProgress(Border fill, double fraction)
     {
         var scale = (ScaleTransform)fill.RenderTransform;
+        var track = (FrameworkElement)fill.Parent;
         fraction = Math.Clamp(double.IsFinite(fraction) ? fraction : 0, 0, 1);
-        fill.BeginAnimation(UIElement.OpacityProperty, null);
-        fill.Opacity = 1;
+        track.BeginAnimation(UIElement.OpacityProperty, null);
+        track.Opacity = 1;
+        track.Visibility = Visibility.Visible;
         bool animate = SystemParameters.ClientAreaAnimation;
         if (!animate || fraction <= scale.ScaleX)
         {
@@ -53,13 +56,22 @@ internal static class ToolPage
         var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(animate ? 300 : 0)) { BeginTime = TimeSpan.FromMilliseconds(animate ? 900 : 600) };
         fade.Completed += (_, _) =>
         {
-            if (fill.Opacity > 0.01) return;
-            scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-            scale.ScaleX = 0;
-            fill.BeginAnimation(UIElement.OpacityProperty, null);
-            fill.Opacity = 1;
+            if (track.Opacity > 0.01) return;
+            EndProgress(fill);
         };
-        fill.BeginAnimation(UIElement.OpacityProperty, fade);
+        track.BeginAnimation(UIElement.OpacityProperty, fade);
+    }
+
+    /// <summary>A tarefa parou sem terminar (erro, leitura sem etapas): o trilho some na hora e a barra volta ao começo.</summary>
+    public static void EndProgress(Border fill)
+    {
+        var scale = (ScaleTransform)fill.RenderTransform;
+        var track = (FrameworkElement)fill.Parent;
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        scale.ScaleX = 0;
+        track.BeginAnimation(UIElement.OpacityProperty, null);
+        track.Opacity = 1;
+        track.Visibility = Visibility.Hidden;
     }
 
     /// <summary>Estado e detalhe do console; o texto inteiro fica na dica, porque a linha corta o que não cabe.</summary>

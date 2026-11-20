@@ -48,25 +48,32 @@ public partial class StartupView : UserControl
             try { _removed = await Task.Run(() => _startup.Backups, Context.Lifetime); }
             catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); backupError = "Não foi possível ler os removidos: " + ex.Message; }
         }
-        catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); ToolPage.SetProgress(StartupProgressFill, 0); return; }
+        catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); ToolPage.EndProgress(StartupProgressFill); return; }
         finally { _scanning = false; }
         if (Context.IsClosing) return;
 
         StartupList.ItemsSource = list;
         StartupEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         StartupCount.Text = list.Count > 0 ? list.Count.ToString() : "";
-        int off = list.Count(e => !e.Enabled);
+        StartupOff.Text = OffText(list.Count, list.Count(e => !e.Enabled));
         if (announce)
         {
             ToolPage.SetProgress(StartupProgressFill, 1);
-            Say($"Lido às {DateTime.Now:HH:mm}",
-                backupError.Length > 0 ? backupError : list.Count == 0 ? "" : off == 0 ? "Todos ligados" : off == 1 ? "1 desligado" : $"{off} desligados");
+            Say($"Lido às {DateTime.Now:HH:mm}", backupError);
         }
         else if (backupError.Length > 0) StartupResult.Text = backupError;
-        BtnStartupRestore.IsEnabled = _removed.Count > 0;
-        BtnStartupRestore.Content = _removed.Count > 0
-            ? $"Restaurar removidos ({_removed.Count})" : "Restaurar removidos";
+        // Sem nada removido por aqui, não há o que restaurar: o botão só aparece quando há.
+        BtnStartupRestore.Visibility = _removed.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        BtnStartupRestore.Content = $"Restaurar removidos ({_removed.Count})";
     }
+
+    /// <summary>O que acompanha a contagem no título da tabela: quantos estão desligados.</summary>
+    private static string OffText(int total, int off) => total switch
+    {
+        0 => "",
+        1 => off == 0 ? "ligado" : "desligado",
+        _ => off == 0 ? "todos ligados" : off == total ? "todos desligados" : off == 1 ? "1 desligado" : $"{off} desligados",
+    };
 
     internal async void BtnStartupScan_Click(object sender, RoutedEventArgs e) => await ScanStartupAsync();
 

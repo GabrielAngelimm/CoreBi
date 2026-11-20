@@ -54,7 +54,7 @@ public static class AppInstaller
         new() { Name = "Discord", Description = "Chat de voz e texto para jogar com os amigos.", WingetId = "Discord.Discord", DisplayPrefix = "Discord" },
         new() { Name = "Lightshot", Description = "Captura de tela rápida com a tecla Print Screen.", WingetId = "Skillbrains.Lightshot", DisplayPrefix = "Lightshot" },
         new() { Name = "7-Zip", Description = "Compactador gratuito para zip, rar e 7z.", WingetId = "7zip.7zip", DisplayPrefix = "7-Zip" },
-        new() { Name = "WinRAR", Description = "Compactador clássico (pago após o teste). Escolha ele ou o 7-Zip.", WingetId = "RARLab.WinRAR", DisplayPrefix = "WinRAR", PreSelect = false },
+        new() { Name = "WinRAR", Description = "Compactador clássico, pago depois do teste.", WingetId = "RARLab.WinRAR", DisplayPrefix = "WinRAR", PreSelect = false },
         new() { Name = "VLC", Description = "Player de vídeo e música que abre qualquer formato.", WingetId = "VideoLAN.VLC", DisplayPrefix = "VLC media player" },
     };
 

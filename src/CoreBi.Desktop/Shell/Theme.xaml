@@ -1486,12 +1486,13 @@
 
     <!-- rodada-unslop: ferramentas início -->
     <!--
-        Console de tarefa (Inicialização, Instalar apps, Drivers; o mesmo desenho do console de Rede): fica ao lado do título,
-        com o botão da tarefa (46 px), o estado em uma linha, um detalhe curto à direita e a barra contínua no sinal, que só
-        avança quando a tarefa informa trabalho feito.
+        Console de tarefa (Inicialização, Instalar apps, Drivers): fica ao lado do título, centrado na altura dele, com o botão
+        da tarefa (36 px), o estado em uma linha, um detalhe curto à direita e a barra contínua no sinal, que só aparece durante
+        uma tarefa e só avança quando ela informa trabalho feito. Com 62 px de altura, o primeiro painel começa na mesma linha
+        das páginas com título e subtítulo.
     -->
     <Style x:Key="TaskConsole" TargetType="Border" BasedOn="{StaticResource CardBorder}">
-        <Setter Property="Padding" Value="14,14,22,14"/>
+        <Setter Property="Padding" Value="12,12,22,12"/>
     </Style>
     <Style x:Key="TaskStatus" TargetType="TextBlock">
         <Setter Property="FontSize" Value="13"/>
