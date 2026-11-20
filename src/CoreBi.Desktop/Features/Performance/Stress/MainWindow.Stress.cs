@@ -48,16 +48,25 @@ public partial class MainWindow
 
     internal void ChkCpu_Click(object sender, RoutedEventArgs e) => StressSelectionChanged();
 
-    internal void ChkRam_Click(object sender, RoutedEventArgs e)
+    internal void ChkRam_Click(object sender, RoutedEventArgs e) => StressSelectionChanged();
+
+    internal void ChkGpu_Click(object sender, RoutedEventArgs e) => StressSelectionChanged();
+
+    /// <summary>Duração escolhida com o teste parado: a placa já mostra o total ("00:00 de 30:00").</summary>
+    internal void StressDurationChanged()
     {
-        if (RamFractionPanel != null) RamFractionPanel.IsEnabled = ChkRam.IsChecked == true;
-        StressSelectionChanged();
+        if (PageStress == null || TestRunning) return;
+        double minutes = double.Parse(CheckedTag(StressDurationPanel) ?? "10", CultureInfo.InvariantCulture);
+        ShowStressTime(TimeSpan.Zero, TimeSpan.FromMinutes(minutes));
     }
 
-    internal void ChkGpu_Click(object sender, RoutedEventArgs e)
+    /// <summary>Tempo decorrido e o total do teste, no mesmo formato: minutos e segundos abaixo de 1 h, horas acima e sem limite.</summary>
+    private void ShowStressTime(TimeSpan elapsed, TimeSpan duration)
     {
-        if (GpuOptions != null) GpuOptions.IsEnabled = GpuTempLimit.IsEnabled = ChkGpu.IsChecked == true;
-        StressSelectionChanged();
+        bool hours = duration <= TimeSpan.Zero || duration.TotalHours >= 1;
+        static string Clock(TimeSpan t, bool h) => h ? $"{(int)t.TotalHours}:{t:mm\\:ss}" : $"{(int)t.TotalMinutes:00}:{t:ss}";
+        StElapsed.Text = Clock(elapsed, hours);
+        PageStress.StTotal.Text = duration > TimeSpan.Zero ? "de " + Clock(duration, hours) : "sem limite";
     }
 
     private void StressSelectionChanged()
@@ -67,21 +76,33 @@ public partial class MainWindow
         DrawChart(); // mostra só as séries e os limites dos componentes escolhidos
     }
 
-    /// <summary>Uma coluna de leituras por componente escolhido; sem nada escolhido fica a do processador.
-    /// Só a primeira coluna visível perde o fio da esquerda.</summary>
+    /// <summary>Uma coluna de leituras por componente escolhido; sem nada escolhido fica a do processador. Só a primeira coluna
+    /// visível perde o fio da esquerda, e o nome no alto das colunas só aparece com duas ou mais. A configuração mostra só as
+    /// opções dos componentes marcados (o corte do processador vale também para a RAM, que esquenta o processador).</summary>
     internal void UpdateStressColumns()
     {
         bool cpu = ChkCpu.IsChecked == true, ram = ChkRam.IsChecked == true, gpu = ChkGpu.IsChecked == true;
-        CpuColumn.Visibility = cpu || ram || !gpu ? Visibility.Visible : Visibility.Collapsed;
-        RamColumn.Visibility = ram ? Visibility.Visible : Visibility.Collapsed;
-        GpuColumn.Visibility = gpu ? Visibility.Visible : Visibility.Collapsed;
+        bool cpuSide = cpu || ram || !gpu;
+        static Visibility Show(bool on) => on ? Visibility.Visible : Visibility.Collapsed;
+        CpuColumn.Visibility = Show(cpuSide);
+        RamColumn.Visibility = Show(ram);
+        GpuColumn.Visibility = Show(gpu);
         bool first = true;
+        int columns = 0;
         foreach (var col in new[] { CpuColumn, RamColumn, GpuColumn })
         {
             if (col.Visibility != Visibility.Visible) continue;
             col.BorderThickness = first ? new Thickness(0) : new Thickness(1, 0, 0, 0);
             first = false;
+            columns++;
         }
+        var page = PageStress;
+        page.CpuHead.Visibility = page.RamHead.Visibility = page.GpuHead.Visibility = Show(columns > 1);
+        page.CpuLimitRow.Visibility = Show(cpuSide);
+        page.GpuLimitRow.Visibility = Show(gpu);
+        page.GpuLimitRow.Margin = new Thickness(0, cpuSide ? 8 : 0, 0, 0);
+        page.RamSection.Visibility = Show(ram);
+        GpuOptions.Visibility = Show(gpu);
     }
 
     internal static string? CheckedTag(Panel panel)
@@ -97,8 +118,8 @@ public partial class MainWindow
         bool cpu = ChkCpu.IsChecked == true, ram = ChkRam.IsChecked == true, gpu = ChkGpu.IsChecked == true;
         if (!cpu && !ram && !gpu) { StressHint.Text = "Escolha pelo menos um componente."; return; }
 
-        if (!double.TryParse(TempLimit.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out _tempLimit)
-            || _tempLimit < 40 || _tempLimit > 110)
+        if ((cpu || ram) && (!double.TryParse(TempLimit.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out _tempLimit)
+                             || _tempLimit < 40 || _tempLimit > 110))
         {
             StressHint.Text = "O limite do processador vai de 40 a 110 °C.";
             return;
@@ -172,7 +193,7 @@ public partial class MainWindow
             ResetStressReadings();
             SetStressControls(running: true);
             SetStatus("Rodando", aborted: false);
-            StDetail.Text = minutes > 0 ? $"Termina às {_stressStart + _stressDuration:HH:mm}" : "Sem limite de tempo";
+            StDetail.Text = minutes > 0 ? $"Termina às {_stressStart + _stressDuration:HH:mm}" : "";
             Log($"Iniciado: {string.Join(", ", parts)}; {(minutes > 0 ? DurationText(_stressDuration) : "sem limite de tempo")}");
         }
         catch (Exception ex)
@@ -189,7 +210,7 @@ public partial class MainWindow
     /// <summary>Limpa as leituras do teste anterior: sem valor, a linha some até a primeira leitura.</summary>
     private void ResetStressReadings()
     {
-        StElapsed.Text = "00:00:00";
+        ShowStressTime(TimeSpan.Zero, _stressDuration);
         StProgress.ScaleX = 0;
         StTempMax.Text = StGpuTempMax.Text = StFps.Text = StFpsAvg.Text = StRam.Text = StRamSize.Text = "";
         StRamErrors.Text = "—";
@@ -234,17 +255,19 @@ public partial class MainWindow
     internal void SetStressControls(bool running)
     {
         Ui.SetRunning(BtnStress, running, "Iniciar teste");
+        // Durante o teste a configuração inteira baixa (TestSection): o que está valendo continua legível, mas não parece escolha.
         ChkCpu.IsEnabled = ChkRam.IsEnabled = ChkGpu.IsEnabled = !running;
-        RamFractionPanel.IsEnabled = !running && ChkRam.IsChecked == true;
-        GpuOptions.IsEnabled = GpuTempLimit.IsEnabled = !running && ChkGpu.IsChecked == true;
-        TempLimit.IsEnabled = StressDurationPanel.IsEnabled = !running;
+        var page = PageStress;
+        page.StressDurationSection.IsEnabled = page.StressLimitSection.IsEnabled = page.RamSection.IsEnabled = GpuOptions.IsEnabled = !running;
     }
 
-    /// <summary>Estado do teste: o LED fica no sinal enquanto roda e no vermelho depois de um corte; o texto só muda de cor no corte.</summary>
+    /// <summary>Estado do teste: o LED só aparece com estado real (no sinal enquanto roda, vermelho depois de um corte); o texto
+    /// só muda de cor no corte.</summary>
     internal void SetStatus(string text, bool aborted)
     {
         StStatus.Text = text;
-        StLed.SetResourceReference(Shape.FillProperty, aborted ? "Danger" : TestRunning ? "Signal" : "Faint");
+        StLed.Visibility = aborted || TestRunning ? Visibility.Visible : Visibility.Collapsed;
+        StLed.SetResourceReference(Shape.FillProperty, aborted ? "Danger" : "Signal");
         StStatus.SetResourceReference(TextBlock.ForegroundProperty, aborted ? "Danger" : "Fg");
     }
 
@@ -325,7 +348,7 @@ public partial class MainWindow
         if (TestRunning)
         {
             var elapsed = DateTime.Now - _stressStart;
-            StElapsed.Text = elapsed.ToString(@"hh\:mm\:ss");
+            ShowStressTime(elapsed, _stressDuration);
             StProgress.ScaleX = _stressDuration > TimeSpan.Zero ? Math.Clamp(elapsed / _stressDuration, 0, 1) : 0;
             if (_stress.MemoryAllocatedBytes > 0)
             {
@@ -365,7 +388,8 @@ public partial class MainWindow
     internal void TempChart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
 
     /// <summary>Temperatura dos últimos 5 minutos: uma série por componente escolhido, com o nome e o valor no fim da linha
-    /// e o limite de corte tracejado e rotulado. Sem legenda separada.</summary>
+    /// e o limite de corte tracejado e rotulado. Sem legenda separada. As margens vêm dos rótulos: à esquerda o mais largo do
+    /// eixo ("100 °C"), à direita o do fim da linha; sem série, o gráfico vai até a borda do painel.</summary>
     internal void DrawChart()
     {
         TempChart.Children.Clear();
@@ -374,13 +398,9 @@ public partial class MainWindow
 
         bool showGpu = ChkGpu.IsChecked == true;
         bool showCpu = ChkCpu.IsChecked == true || ChkRam.IsChecked == true || !showGpu;
-        const double left = 34, right = 132, top = 8, bottom = 22;
-        double plotW = w - left - right, plotH = h - top - bottom;
-        if (plotW < 40) return;
-        double yMin = 20, yMax = Math.Max(110, Math.Max(_tempLimit, showGpu ? _gpuTempLimit : 0) + 10);
-        double Y(double v) => top + plotH * (1 - (Math.Clamp(v, yMin, yMax) - yMin) / (yMax - yMin));
         var ui = (FontFamily)FindResource("UiFont");
         var readout = (FontFamily)FindResource("Readout");
+        var faint = Palette("Faint");
 
         TextBlock Text(string text, Brush fg, double size = 10.5, FontFamily? font = null)
         {
@@ -388,20 +408,43 @@ public partial class MainWindow
             System.Windows.Documents.Typography.SetNumeralAlignment(tb, FontNumeralAlignment.Tabular);
             return tb;
         }
+        static double Width(TextBlock tb)
+        {
+            tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            return tb.DesiredSize.Width;
+        }
         void Place(UIElement e, double x, double y) { Canvas.SetLeft(e, x); Canvas.SetTop(e, y); TempChart.Children.Add(e); }
 
-        // Grade fina e rótulos discretos
+        // Séries com leitura e o rótulo do fim de cada uma (decide a margem da direita)
+        var series = new List<(List<double> Data, string Channel, byte Alpha, TextBlock Label)>();
+        if (showGpu && _gpuTempHistory.Count >= 2)
+            series.Add((_gpuTempHistory, "Gpu", 0x1C, Text($"Placa de vídeo {_gpuTempHistory[^1]:0} °C", Palette("Gpu"), 11.5, ui)));
+        if (showCpu && _tempHistory.Count >= 2)
+            series.Add((_tempHistory, "Cpu", 0x22, Text($"Processador {_tempHistory[^1]:0} °C", Palette("Cpu"), 11.5, ui)));
+        double right = series.Count == 0 ? 0 : series.Max(x => Width(x.Label)) + 10;
+
+        double yMin = 20, yMax = Math.Max(110, Math.Max(_tempLimit, showGpu ? _gpuTempLimit : 0) + 10);
+        var ticks = new List<(double Value, TextBlock Label)>();
+        for (double v = yMin; v <= yMax; v += 20) ticks.Add((v, Text($"{v:0} °C", faint)));
+        double left = ticks.Max(t => Width(t.Label)) + 8;
+        const double top = 8, bottom = 22;
+        double plotW = w - left - right, plotH = h - top - bottom;
+        if (plotW < 40) return;
+        double Y(double v) => top + plotH * (1 - (Math.Clamp(v, yMin, yMax) - yMin) / (yMax - yMin));
+
+        // Grade fina e rótulos discretos; no tempo, o começo, o meio e agora
         var grid = Palette("Line");
-        var faint = Palette("Faint");
-        for (double v = yMin; v <= yMax; v += 20)
+        foreach (var (v, label) in ticks)
         {
             TempChart.Children.Add(new Line { X1 = left, X2 = left + plotW, Y1 = Y(v), Y2 = Y(v), Stroke = grid, StrokeThickness = 1 });
-            Place(Text($"{v:0}°", faint), 0, Y(v) - 7);
+            Place(label, 0, Y(v) - 7);
         }
-        Place(Text("−5 min", faint, font: ui), left, top + plotH + 6);
+        double axisY = top + plotH + 6;
+        Place(Text("−5 min", faint, font: ui), left, axisY);
+        var mid = Text("−2,5 min", faint, font: ui);
+        Place(mid, left + (plotW - Width(mid)) / 2, axisY);
         var now = Text("agora", faint, font: ui);
-        now.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        Place(now, left + plotW - now.DesiredSize.Width, top + plotH + 6);
+        Place(now, left + plotW - Width(now), axisY);
 
         // Limites de corte: tracejado âmbar com o valor escrito sobre a linha, à esquerda
         var warn = Palette("Warn");
@@ -431,32 +474,7 @@ public partial class MainWindow
             lastLabelY = ly;
         }
 
-        // Séries, alinhadas à direita (a última amostra é agora)
-        double step = plotW / (HistoryLength - 1);
-        var ends = new List<(double Y, string Label, Brush Brush)>();
-        void Series(List<double> data, string channel, byte areaAlpha, string name)
-        {
-            if (data.Count < 2) return;
-            var stroke = Palette(channel);
-            int offset = HistoryLength - data.Count;
-            var line = new Polyline { Stroke = stroke, StrokeThickness = 1.8, StrokeLineJoin = PenLineJoin.Round };
-            for (int i = 0; i < data.Count; i++)
-                line.Points.Add(new Point(left + (offset + i) * step, Y(data[i])));
-            var area = new Polygon { Fill = new SolidColorBrush(ThemeManager.WithAlpha(channel, areaAlpha)) };
-            foreach (var p in line.Points) area.Points.Add(p);
-            area.Points.Add(new Point(line.Points[^1].X, top + plotH));
-            area.Points.Add(new Point(line.Points[0].X, top + plotH));
-            TempChart.Children.Add(area);
-            TempChart.Children.Add(line);
-            var end = line.Points[^1];
-            var dot = new Ellipse { Width = 6, Height = 6, Fill = stroke };
-            Place(dot, end.X - 3, end.Y - 3);
-            ends.Add((end.Y, $"{name} {data[^1]:0} °C", stroke));
-        }
-        if (showGpu) Series(_gpuTempHistory, "Gpu", 0x1C, "Placa de vídeo");
-        if (showCpu) Series(_tempHistory, "Cpu", 0x22, "Processador");
-
-        if (ends.Count == 0)
+        if (series.Count == 0)
         {
             var empty = Text("Sem leitura de temperatura ainda.", faint, 12, ui);
             empty.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -464,17 +482,39 @@ public partial class MainWindow
             return;
         }
 
+        // Séries, alinhadas à direita (a última amostra é agora)
+        double step = plotW / (HistoryLength - 1);
+        var ends = new List<(double Y, TextBlock Label)>();
+        foreach (var (data, channel, areaAlpha, endLabel) in series)
+        {
+            var stroke = Palette(channel);
+            int offset = HistoryLength - data.Count;
+            var line = new Polyline { Stroke = stroke, StrokeThickness = 1.8, StrokeLineJoin = PenLineJoin.Round };
+            for (int i = 0; i < data.Count; i++)
+                line.Points.Add(new Point(left + (offset + i) * step, Y(data[i])));
+            var area = new Polygon { Fill = new SolidColorBrush(ThemeManager.WithAlpha(channel, areaAlpha)) };
+            foreach (var pt in line.Points) area.Points.Add(pt);
+            area.Points.Add(new Point(line.Points[^1].X, top + plotH));
+            area.Points.Add(new Point(line.Points[0].X, top + plotH));
+            TempChart.Children.Add(area);
+            TempChart.Children.Add(line);
+            var end = line.Points[^1];
+            var dot = new Ellipse { Width = 6, Height = 6, Fill = stroke };
+            Place(dot, end.X - 3, end.Y - 3);
+            ends.Add((end.Y, endLabel));
+        }
+
         // Rótulos diretos no fim de cada linha; se os dois ficam a menos de uma linha de texto, afasta um do outro
         const double labelH = 15;
-        var placed = ends.OrderBy(e => e.Y).Select(e => (Y: e.Y - labelH / 2, e.Label, e.Brush)).ToList();
+        var placed = ends.OrderBy(e => e.Y).Select(e => (Y: e.Y - labelH / 2, e.Label)).ToList();
         if (placed.Count == 2 && placed[1].Y - placed[0].Y < labelH)
         {
-            double mid = (placed[0].Y + placed[1].Y) / 2;
-            placed[0] = (mid - labelH / 2 - 1, placed[0].Label, placed[0].Brush);
-            placed[1] = (mid + labelH / 2 + 1, placed[1].Label, placed[1].Brush);
+            double center = (placed[0].Y + placed[1].Y) / 2;
+            placed[0] = (center - labelH / 2 - 1, placed[0].Label);
+            placed[1] = (center + labelH / 2 + 1, placed[1].Label);
         }
-        foreach (var (y, label, brush) in placed)
-            Place(Text(label, brush, 11.5, ui), left + plotW + 10, Math.Clamp(y, 0, h - labelH));
+        foreach (var (y, label) in placed)
+            Place(label, left + plotW + 10, Math.Clamp(y, 0, h - labelH));
     }
 
 }

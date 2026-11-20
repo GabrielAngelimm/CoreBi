@@ -169,7 +169,7 @@ public partial class MainWindow
             GbFpsNow.Text = bench.CurrentFps > 0 ? $"{bench.CurrentFps:0}" : "—";
             GbProgress.ScaleX = bench.Progress;
             GbTrace.Add(bench.Progress, bench.CurrentFps);
-            GbDetail.Text = $"{bench.Progress:P0}";
+            GbDetail.Text = $"{bench.Progress * 100:0} %";
         }, Dispatcher);
         timer.Start();
         _gpuBenchActive = true;
@@ -243,7 +243,7 @@ public partial class MainWindow
         {
             DrawSim(sim);
             SimProgress.ScaleX = sim.Progress;
-            if (sim.FramesDone > 0) { SimStatus.Text = "Simulando"; SimDetail.Text = $"{sim.Progress:P0}"; }
+            if (sim.FramesDone > 0) { SimStatus.Text = "Simulando"; SimDetail.Text = $"{sim.Progress * 100:0} %"; }
             SimFpsNow.Text = sim.CurrentFps > 0 ? $"{sim.CurrentFps:0}" : "—";
         }, Dispatcher);
         timer.Start();
@@ -327,7 +327,7 @@ public partial class MainWindow
         var timer = new DispatcherTimer(TimeSpan.FromMilliseconds(150), DispatcherPriority.Normal, (_, _) =>
         {
             MemStatus.Text = progress.Phase;
-            MemDetail.Text = $"{progress.Frac:P0}";
+            MemDetail.Text = $"{progress.Frac * 100:0} %";
             MemProgress.ScaleX = progress.Frac;
         }, Dispatcher);
         timer.Start();

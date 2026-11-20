@@ -12,5 +12,6 @@ public partial class StressView : UserControl
     private void ChkCpu_Click(object sender, RoutedEventArgs e) => Owner?.ChkCpu_Click(sender, e);
     private void ChkGpu_Click(object sender, RoutedEventArgs e) => Owner?.ChkGpu_Click(sender, e);
     private void ChkRam_Click(object sender, RoutedEventArgs e) => Owner?.ChkRam_Click(sender, e);
+    private void StressDuration_Checked(object sender, RoutedEventArgs e) => Owner?.StressDurationChanged();
     private void TempChart_SizeChanged(object sender, SizeChangedEventArgs e) => Owner?.TempChart_SizeChanged(sender, e);
 }

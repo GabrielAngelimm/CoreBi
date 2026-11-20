@@ -3,13 +3,11 @@
     <!--
         Bancada de teste (a mesma composição do Teste de carga): as teclas do teste numa faixa em cima; embaixo, à esquerda, o
         palco e, à direita, numa coluna de 330 px, a configuração com a ação principal e o histórico. O palco tem a placa (o que
-        está sendo medido e o estado do teste), a barra de progresso no lugar do fio, a leitura ao vivo (mostrador à esquerda e
-        o que é medido à direita) e a régua do resultado. Cabe numa tela com a janela maximizada; em janelas menores a página rola.
+        está sendo medido, as leituras ao vivo e o estado do teste), a barra de progresso no lugar do fio, a régua do resultado
+        logo abaixo, com a nota no maior número da tela, e embaixo o visual do teste (a imagem ou o traço do FPS). Cabe numa tela
+        com a janela maximizada; em janelas menores a página rola.
     -->
     <UserControl.Resources>
-        <!-- Largura da coluna de leitura do palco (o código troca para 200 em janelas estreitas) -->
-        <GridLength x:Key="ReadoutWidth">260</GridLength>
-
         <Style x:Key="StageCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
             <Setter Property="Padding" Value="0" />
             <Setter Property="ClipToBounds" Value="True" />
@@ -23,15 +21,34 @@
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
             <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
         </Style>
-        <!-- Coluna do mostrador: separada do que é medido por um fio -->
-        <Style x:Key="ReadoutColumn" TargetType="Border">
-            <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
-            <Setter Property="BorderThickness" Value="0,0,1,0" />
-            <Setter Property="Padding" Value="24,20,24,16" />
+        <!-- Coluna do estado na placa (TestStatus com o LED e o detalhe embaixo) -->
+        <Style x:Key="PlateState" TargetType="StackPanel">
+            <Setter Property="Margin" Value="24,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
+        <!-- LED do estado: aceso no sinal só enquanto um teste roda (as teclas dos testes ficam travadas durante o teste) -->
+        <Style x:Key="RunLed" TargetType="Ellipse" BasedOn="{StaticResource TestStatusLed}">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsEnabled, ElementName=BenchTestPanel}" Value="False">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <!-- Leitura ao vivo na placa: some quando não há leitura (Tag recebe o texto do número) -->
+        <Style x:Key="PlateLive" TargetType="StackPanel" BasedOn="{StaticResource TestLiveCell}">
+            <Setter Property="Margin" Value="0,0,32,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Style.Triggers>
+                <Trigger Property="Tag" Value="—">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!-- Régua do resultado, logo abaixo da placa; o fio de baixo a separa do visual do teste -->
         <Style x:Key="Ruler" TargetType="Border">
             <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
-            <Setter Property="BorderThickness" Value="0,1,0,0" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
         </Style>
         <Style x:Key="Cell" TargetType="Border">
             <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
@@ -46,14 +63,15 @@
             <UniformGrid Rows="1" />
         </ItemsPanelTemplate>
 
-        <!-- Célula da régua do resultado (BenchStat): a primeira não tem fio à esquerda; a linha de contexto reserva a altura -->
+        <!-- Célula da régua do resultado (BenchStat): a primeira é a nota do teste, no número maior, e não tem fio à esquerda;
+             a unidade some junto com o travessão; a linha de contexto reserva a altura -->
         <DataTemplate x:Key="StatCell">
             <Border x:Name="cell" Style="{StaticResource Cell}" ToolTip="{Binding Tip}">
                 <StackPanel>
                     <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                        <TextBlock Text="{Binding Value}" Style="{StaticResource TestCellValue}" />
-                        <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" />
+                        <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource TestCellValue}" />
+                        <TextBlock x:Name="unit" Text="{Binding Unit}" Style="{StaticResource Unit}" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
                         <Ellipse x:Name="led" Style="{StaticResource StatusLed}" Width="6" Height="6" Margin="0,1,6,0" Visibility="Collapsed" />
@@ -64,6 +82,13 @@
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}" Value="0">
                     <Setter TargetName="cell" Property="BorderThickness" Value="0" />
+                    <Setter TargetName="value" Property="Style" Value="{StaticResource TestResult}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Unit}" Value="">
+                    <Setter TargetName="unit" Property="Visibility" Value="Collapsed" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Value}" Value="—">
+                    <Setter TargetName="unit" Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Ok">
                     <Setter TargetName="led" Property="Visibility" Value="Visible" />
@@ -78,18 +103,19 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Leitura ao vivo na coluna do mostrador (BenchStat): uma por linha, com fio embaixo -->
+        <!-- Leitura ao vivo na placa (BenchStat): rótulo em cima e número embaixo, lado a lado; o código só põe as que o sensor dá -->
         <DataTemplate x:Key="LiveCell">
-            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,12,0,14" ToolTip="{Binding Tip}">
-                <StackPanel>
-                    <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                        <TextBlock Text="{Binding Value}" Style="{StaticResource TestCellValue}" />
-                        <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" />
-                    </StackPanel>
+            <StackPanel Style="{StaticResource PlateLive}" Background="Transparent" ToolTip="{Binding Tip}">
+                <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Value}" Style="{StaticResource TestLiveValue}" />
+                    <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" Margin="5,0,0,3" />
                 </StackPanel>
-            </Border>
+            </StackPanel>
         </DataTemplate>
+        <ItemsPanelTemplate x:Key="LivePanel">
+            <StackPanel Orientation="Horizontal" />
+        </ItemsPanelTemplate>
 
         <!-- Medição de memória e disco (MemRow): nome e contexto à esquerda, leitura à direita; a explicação fica na dica -->
         <DataTemplate x:Key="MeasureRow">
@@ -170,9 +196,6 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        <Style x:Key="HistoryCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
-            <Setter Property="Padding" Value="24,20,8,6" />
-        </Style>
         <Style x:Key="HistoryTitle" TargetType="TextBlock" BasedOn="{StaticResource SectionTitle}">
             <Setter Property="Margin" Value="0,0,16,16" />
             <Setter Property="HorizontalAlignment" Value="Left" />
@@ -228,20 +251,25 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <Grid Style="{StaticResource Plate}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock x:Name="BenchDevice" Text="Processador" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="BenchDeviceSpec" Style="{StaticResource PlateSpec}" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock x:Name="BenchStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                <ItemsControl x:Name="BenchLive" Grid.Column="1" ItemTemplate="{StaticResource LiveCell}" ItemsPanel="{StaticResource LivePanel}" VerticalAlignment="Center" Margin="24,0,0,0" Focusable="False" />
+                                <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Ellipse Style="{StaticResource RunLed}" />
+                                        <TextBlock x:Name="BenchStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                    </StackPanel>
                                     <TextBlock x:Name="BenchElapsed" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
                             </Grid>
@@ -252,34 +280,14 @@
                                     </Border.RenderTransform>
                                 </Border>
                             </Grid>
-                            <Grid Grid.Row="2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="{DynamicResource ReadoutWidth}" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Style="{StaticResource ReadoutColumn}" Padding="24,6,24,16">
-                                    <ItemsControl x:Name="BenchLive" ItemTemplate="{StaticResource LiveCell}" Focusable="False" />
-                                </Border>
-                                <local:FillBox Grid.Column="1" Margin="24,20" MinHeight="200">
-                                    <Viewbox Stretch="Uniform">
-                                        <Border Style="{StaticResource StageBorder}" Width="960" Height="540">
-                                            <Grid>
-                                                <Image x:Name="BenchImage" Width="960" Height="540" RenderOptions.BitmapScalingMode="HighQuality" />
-                                                <Canvas x:Name="BenchBuckets" Width="960" Height="540" />
-                                                <TextBlock x:Name="BenchIdle" Text="A imagem aparece bloco a bloco durante o teste" Foreground="{DynamicResource Faint}" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Grid>
-                                        </Border>
-                                    </Viewbox>
-                                </local:FillBox>
-                            </Grid>
-                            <Border Grid.Row="3" Style="{StaticResource Ruler}">
+                            <Border Grid.Row="2" Style="{StaticResource Ruler}">
                                 <UniformGrid Rows="1">
                                     <Border Style="{StaticResource Cell}" BorderThickness="0">
                                         <StackPanel>
                                             <TextBlock Text="Multi-core" Style="{StaticResource StatLabel}" />
                                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                <TextBlock x:Name="BenchMt" Text="—" Style="{StaticResource TestCellValue}" />
-                                                <TextBlock Text="pts" Style="{StaticResource Unit}" />
+                                                <TextBlock x:Name="BenchMt" Text="—" Style="{StaticResource TestResult}" />
+                                                <TextBlock Text="pts" Style="{StaticResource TestUnit}" Tag="{Binding Text, ElementName=BenchMt}" />
                                             </StackPanel>
                                             <TextBlock x:Name="BenchMtVs" Style="{StaticResource CellSub}" />
                                         </StackPanel>
@@ -288,24 +296,35 @@
                                         <StackPanel>
                                             <TextBlock Text="Single-core" Style="{StaticResource StatLabel}" />
                                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                <TextBlock x:Name="BenchSt" Text="—" Style="{StaticResource TestCellValue}" />
-                                                <TextBlock Text="pts" Style="{StaticResource Unit}" />
+                                                <TextBlock x:Name="BenchSt" Text="—" Style="{StaticResource TestResult}" />
+                                                <TextBlock Text="pts" Style="{StaticResource TestUnit}" Tag="{Binding Text, ElementName=BenchSt}" />
                                             </StackPanel>
                                             <TextBlock x:Name="BenchStVs" Style="{StaticResource CellSub}" />
                                         </StackPanel>
                                     </Border>
-                                    <Border Style="{StaticResource Cell}" ToolTip="Quantas vezes o resultado com todos os núcleos rende mais que o de um núcleo só.">
+                                    <Border Style="{StaticResource Cell}" ToolTip="Multi-core dividido pelo single-core: quantas vezes todos os núcleos juntos rendem mais que um só. Aparece quando o teste roda os dois.">
                                         <StackPanel>
-                                            <TextBlock Text="Multi ÷ single" Style="{StaticResource StatLabel}" />
+                                            <TextBlock Text="Ganho com todos os núcleos" Style="{StaticResource StatLabel}" />
                                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                                 <TextBlock x:Name="BenchRatio" Text="—" Style="{StaticResource TestCellValue}" />
-                                                <TextBlock Text="x" Style="{StaticResource Unit}" />
+                                                <TextBlock Text="×" Style="{StaticResource TestUnit}" Tag="{Binding Text, ElementName=BenchRatio}" />
                                             </StackPanel>
                                             <TextBlock x:Name="BenchRatioSub" Style="{StaticResource CellSub}" />
                                         </StackPanel>
                                     </Border>
                                 </UniformGrid>
                             </Border>
+                            <local:FillBox Grid.Row="3" Margin="24,20" MinHeight="200">
+                                <Viewbox Stretch="Uniform">
+                                    <Border Style="{StaticResource TestStage}" Tag="{Binding ElementName=BenchIdle}" Width="960" Height="540">
+                                        <Grid>
+                                            <Image x:Name="BenchImage" Width="960" Height="540" RenderOptions.BitmapScalingMode="HighQuality" />
+                                            <Canvas x:Name="BenchBuckets" Width="960" Height="540" />
+                                            <TextBlock x:Name="BenchIdle" Text="A imagem aparece bloco a bloco durante o teste" Foreground="{DynamicResource Faint}" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Border>
+                                </Viewbox>
+                            </local:FillBox>
                         </Grid>
                     </Border>
                     <Grid Grid.Column="2">
@@ -316,27 +335,29 @@
                         </Grid.RowDefinitions>
                         <Border Style="{StaticResource CardBorder}">
                             <StackPanel>
-                                <TextBlock Text="Núcleos" Style="{StaticResource Label}" />
-                                <Border Style="{StaticResource SegmentGroup}">
-                                    <local:SlidingSelectionPanel x:Name="BenchModePanel" Style="{StaticResource SegmentRail}">
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="BenchMode" Content="Multi-core" Tag="mt" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="BenchMode" Content="Single-core" Tag="st" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="BenchMode" Content="Os dois" Tag="both" IsChecked="True" />
-                                    </local:SlidingSelectionPanel>
-                                </Border>
-                                <TextBlock Text="Duração" Style="{StaticResource ConfigLabel}" />
-                                <Border Style="{StaticResource SegmentGroup}">
-                                    <local:SlidingSelectionPanel x:Name="BenchDurationPanel" Style="{StaticResource SegmentRail}">
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="BenchDur" Content="Uma passada" Tag="0" IsChecked="True" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="BenchDur" Content="Mínimo de 10 min" Tag="10"
-                                                     ToolTip="Repete a cena até completar 10 minutos: mostra se o processador mantém o desempenho quente." />
-                                    </local:SlidingSelectionPanel>
-                                </Border>
+                                <StackPanel x:Name="BenchOptions" Style="{StaticResource TestSection}">
+                                    <TextBlock Text="Núcleos" Style="{StaticResource Label}" />
+                                    <Border Style="{StaticResource SegmentGroup}">
+                                        <local:SlidingSelectionPanel x:Name="BenchModePanel" Style="{StaticResource SegmentRail}">
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="BenchMode" Content="Multi-core" Tag="mt" />
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="BenchMode" Content="Single-core" Tag="st" />
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="BenchMode" Content="Os dois" Tag="both" IsChecked="True" />
+                                        </local:SlidingSelectionPanel>
+                                    </Border>
+                                    <TextBlock Text="Duração" Style="{StaticResource ConfigLabel}" />
+                                    <Border Style="{StaticResource SegmentGroup}">
+                                        <local:SlidingSelectionPanel x:Name="BenchDurationPanel" Style="{StaticResource SegmentRail}">
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="BenchDur" Content="Uma passada" Tag="0" IsChecked="True" />
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="BenchDur" Content="Mínimo de 10 min" Tag="10"
+                                                         ToolTip="Repete a cena até completar 10 minutos: mostra se o processador mantém o desempenho quente." />
+                                        </local:SlidingSelectionPanel>
+                                    </Border>
+                                </StackPanel>
                                 <Button x:Name="BtnBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnBench_Click" />
                                 <TextBlock x:Name="BenchHint" Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" Margin="0,10,0,0" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=BenchHistory}">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}"
                                            ToolTip="Cada barra compara com o melhor resultado com a mesma duração." />
@@ -360,20 +381,28 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <Grid Style="{StaticResource Plate}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock x:Name="SimDevice" Text="Processador" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="SimDeviceSpec" Style="{StaticResource PlateSpec}" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock x:Name="SimStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                <StackPanel Grid.Column="1" Style="{StaticResource PlateLive}" Tag="{Binding Text, ElementName=SimFpsNow}">
+                                    <TextBlock Text="FPS agora" Style="{StaticResource StatLabel}" />
+                                    <TextBlock x:Name="SimFpsNow" Text="—" Style="{StaticResource TestLiveValue}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Ellipse Style="{StaticResource RunLed}" />
+                                        <TextBlock x:Name="SimStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                    </StackPanel>
                                     <TextBlock x:Name="SimDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
                             </Grid>
@@ -384,31 +413,19 @@
                                     </Border.RenderTransform>
                                 </Border>
                             </Grid>
-                            <Grid Grid.Row="2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="{DynamicResource ReadoutWidth}" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Style="{StaticResource ReadoutColumn}">
-                                    <StackPanel>
-                                        <TextBlock Text="FPS agora" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="SimFpsNow" Text="—" Style="{StaticResource TestHero}" />
-                                    </StackPanel>
-                                </Border>
-                                <local:FillBox Grid.Column="1" Margin="24,20" MinHeight="200">
-                                    <Viewbox Stretch="Uniform">
-                                        <Border Style="{StaticResource StageBorder}" Width="440" Height="440">
-                                            <Grid>
-                                                <Image x:Name="SimImage" Width="440" Height="440" RenderOptions.BitmapScalingMode="NearestNeighbor" />
-                                                <TextBlock x:Name="SimIdle" Text="30 mil unidades em batalha" Foreground="{DynamicResource Faint}" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Grid>
-                                        </Border>
-                                    </Viewbox>
-                                </local:FillBox>
-                            </Grid>
-                            <Border Grid.Row="3" Style="{StaticResource Ruler}">
+                            <Border Grid.Row="2" Style="{StaticResource Ruler}">
                                 <ItemsControl x:Name="SimResult" ItemTemplate="{StaticResource StatCell}" ItemsPanel="{StaticResource RulerPanel}" AlternationCount="16" Focusable="False" />
                             </Border>
+                            <local:FillBox Grid.Row="3" Margin="24,20" MinHeight="200">
+                                <Viewbox Stretch="Uniform">
+                                    <Border Style="{StaticResource TestStage}" Tag="{Binding ElementName=SimIdle}" Width="440" Height="440">
+                                        <Grid>
+                                            <Image x:Name="SimImage" Width="440" Height="440" RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                                            <TextBlock x:Name="SimIdle" Text="30 mil unidades em batalha" Foreground="{DynamicResource Faint}" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Border>
+                                </Viewbox>
+                            </local:FillBox>
                         </Grid>
                     </Border>
                     <Grid Grid.Column="2">
@@ -429,7 +446,7 @@
                                 <Button x:Name="BtnSimBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnSimBench_Click" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=SimHistory}">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}" />
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
@@ -452,20 +469,30 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <Grid Style="{StaticResource Plate}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock x:Name="GbDevice" Text="Placa de vídeo" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="GbDeviceSpec" Text="Direct3D 11" Style="{StaticResource PlateSpec}" />
+                                    <TextBlock x:Name="GbGpuNow" Style="{StaticResource PlateSpec}" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}"
+                                               ToolTip="Cada leitura dos sensores trava o driver por um instante e apareceria como engasgo no 1% low." />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock x:Name="GbStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                <StackPanel Grid.Column="1" Style="{StaticResource PlateLive}" Tag="{Binding Text, ElementName=GbFpsNow}">
+                                    <TextBlock Text="FPS agora" Style="{StaticResource StatLabel}" />
+                                    <TextBlock x:Name="GbFpsNow" Text="—" Style="{StaticResource TestLiveValue}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Ellipse Style="{StaticResource RunLed}" />
+                                        <TextBlock x:Name="GbStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                    </StackPanel>
                                     <TextBlock x:Name="GbDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
                             </Grid>
@@ -476,25 +503,11 @@
                                     </Border.RenderTransform>
                                 </Border>
                             </Grid>
-                            <Grid Grid.Row="2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="{DynamicResource ReadoutWidth}" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Style="{StaticResource ReadoutColumn}">
-                                    <StackPanel>
-                                        <TextBlock Text="FPS agora" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="GbFpsNow" Text="—" Style="{StaticResource TestHero}" />
-                                        <TextBlock x:Name="GbGpuNow" Style="{StaticResource Caption}" Margin="0,14,0,0" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}"
-                                                   ToolTip="Cada leitura dos sensores trava o driver por um instante e apareceria como engasgo no 1% low." />
-                                    </StackPanel>
-                                </Border>
-                                <local:RunTrace x:Name="GbTrace" Grid.Column="1" Margin="20,20,24,16" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
-                                                EmptyText="A cena abre numa janela própria. Esc cancela." />
-                            </Grid>
-                            <Border Grid.Row="3" Style="{StaticResource Ruler}">
+                            <Border Grid.Row="2" Style="{StaticResource Ruler}">
                                 <ItemsControl x:Name="GbResult" ItemTemplate="{StaticResource StatCell}" ItemsPanel="{StaticResource RulerPanel}" AlternationCount="16" Focusable="False" />
                             </Border>
+                            <local:RunTrace x:Name="GbTrace" Grid.Row="3" Margin="20,20,24,16" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
+                                            EmptyText="A cena abre numa janela própria. Esc cancela." />
                         </Grid>
                     </Border>
                     <Grid Grid.Column="2">
@@ -523,7 +536,7 @@
                                 <Button x:Name="BtnGpuBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnGpuBench_Click" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=GbHistory}">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}"
                                            ToolTip="Cada barra compara com o melhor resultado na mesma resolução." />
@@ -547,20 +560,28 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <Grid Style="{StaticResource Plate}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock x:Name="RtDevice" Text="Placa de vídeo" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="RtDeviceSpec" Text="DXR 1.1, Direct3D 12" Style="{StaticResource PlateSpec}" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock x:Name="RtStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                <StackPanel Grid.Column="1" Style="{StaticResource PlateLive}" Tag="{Binding Text, ElementName=RtFpsNow}">
+                                    <TextBlock Text="FPS agora" Style="{StaticResource StatLabel}" />
+                                    <TextBlock x:Name="RtFpsNow" Text="—" Style="{StaticResource TestLiveValue}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Ellipse Style="{StaticResource RunLed}" />
+                                        <TextBlock x:Name="RtStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                    </StackPanel>
                                     <TextBlock x:Name="RtDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
                             </Grid>
@@ -571,23 +592,11 @@
                                     </Border.RenderTransform>
                                 </Border>
                             </Grid>
-                            <Grid Grid.Row="2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="{DynamicResource ReadoutWidth}" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border Style="{StaticResource ReadoutColumn}">
-                                    <StackPanel>
-                                        <TextBlock Text="FPS agora" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="RtFpsNow" Text="—" Style="{StaticResource TestHero}" />
-                                    </StackPanel>
-                                </Border>
-                                <local:RunTrace x:Name="RtTrace" Grid.Column="1" Margin="20,20,24,16" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
-                                                EmptyText="A cena abre numa janela própria. Esc cancela." />
-                            </Grid>
-                            <Border Grid.Row="3" Style="{StaticResource Ruler}">
+                            <Border Grid.Row="2" Style="{StaticResource Ruler}">
                                 <ItemsControl x:Name="RtResult" ItemTemplate="{StaticResource StatCell}" ItemsPanel="{StaticResource RulerPanel}" AlternationCount="16" Focusable="False" />
                             </Border>
+                            <local:RunTrace x:Name="RtTrace" Grid.Row="3" Margin="20,20,24,16" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
+                                            EmptyText="A cena abre numa janela própria. Esc cancela." />
                         </Grid>
                     </Border>
                     <Grid Grid.Column="2">
@@ -621,11 +630,11 @@
                                         <RadioButton Style="{StaticResource Segment}" GroupName="RtMode" Content="Rápido" Tag="quick" ToolTip="Aquece 5 s e mede 3 passadas de 10 s (cerca de 35 s). Só para uma ideia rápida." />
                                     </local:SlidingSelectionPanel>
                                 </Border>
-                                <Button x:Name="BtnRtBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnRtBench_Click"
+                                <Button x:Name="BtnRtBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnRtBench_Click" ToolTipService.ShowOnDisabled="True"
                                         ToolTip="Compare só resultados com a mesma resolução, o mesmo preset e o mesmo driver, com o PC na tomada e sem outros programas pesados abertos." />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=RtHistory}">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}"
                                            ToolTip="Cada barra compara com o melhor resultado no mesmo preset e na mesma resolução." />
@@ -655,13 +664,17 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock x:Name="MemDevice" Text="Memória RAM" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="MemDeviceSpec" Style="{StaticResource PlateSpec}" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock x:Name="MemStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Ellipse Style="{StaticResource RunLed}" />
+                                        <TextBlock x:Name="MemStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                    </StackPanel>
                                     <TextBlock x:Name="MemDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
                             </Grid>
@@ -687,7 +700,7 @@
                             <Button x:Name="BtnMemBench" Style="{StaticResource StartButton}" Margin="0" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnMemBench_Click"
                                     ToolTip="Lê um pacote de 512 MB e mil arquivos de 64 KB da pasta temporária, sem o cache do Windows. Os arquivos são apagados no final." />
                         </Border>
-                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=MemHistory}">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}" />
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
@@ -716,13 +729,17 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock x:Name="DiskDevice" Text="Unidade" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="DiskDeviceSpec" Style="{StaticResource PlateSpec}" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock x:Name="DiskStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Ellipse Style="{StaticResource RunLed}" />
+                                        <TextBlock x:Name="DiskStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                    </StackPanel>
                                     <TextBlock x:Name="DiskDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
                             </Grid>
@@ -760,7 +777,7 @@
                                         ToolTip="Grava um arquivo temporário na unidade escolhida, mede sem o cache do Windows e apaga o arquivo no final. Feche outros programas pesados antes." />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=DiskHistory}">
                             <DockPanel>
                                 <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}"
                                            ToolTip="Cada barra compara com o melhor resultado da mesma unidade." />

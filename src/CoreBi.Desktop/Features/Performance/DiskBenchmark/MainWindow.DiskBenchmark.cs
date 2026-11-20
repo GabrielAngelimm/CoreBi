@@ -90,7 +90,7 @@ public partial class MainWindow
         var timer = new DispatcherTimer(TimeSpan.FromMilliseconds(150), DispatcherPriority.Normal, (_, _) =>
         {
             DiskStatus.Text = progress.Phase;
-            DiskDetail.Text = $"{progress.Frac:P0}";
+            DiskDetail.Text = $"{progress.Frac * 100:0} %";
             DiskProgress.ScaleX = progress.Frac;
         }, Dispatcher);
         timer.Start();

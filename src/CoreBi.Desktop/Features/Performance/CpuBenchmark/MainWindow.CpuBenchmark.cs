@@ -52,7 +52,7 @@ public partial class MainWindow
         _benchCts = CancellationTokenSource.CreateLinkedTokenSource(_features.Lifetime);
         var ct = _benchCts.Token;
         Ui.SetRunning(BtnBench, true, "Iniciar teste", "Cancelar");
-        BenchModePanel.IsEnabled = BenchDurationPanel.IsEnabled = BenchTestPanel.IsEnabled = false;
+        PageBench.BenchOptions.IsEnabled = BenchTestPanel.IsEnabled = false;
         BenchHint.Text = "";
         BenchIdle.Visibility = Visibility.Collapsed;
         BenchMt.Text = BenchSt.Text = BenchRatio.Text = "—";
@@ -87,7 +87,7 @@ public partial class MainWindow
         bool cancelled = ct.IsCancellationRequested;
         _benchCts = null;
         Ui.SetRunning(BtnBench, false, "Iniciar teste", "Cancelar");
-        BenchModePanel.IsEnabled = BenchDurationPanel.IsEnabled = BenchTestPanel.IsEnabled = true;
+        PageBench.BenchOptions.IsEnabled = BenchTestPanel.IsEnabled = true;
         BenchBuckets.Children.Clear();
         BenchElapsed.Text = "";
 
@@ -139,7 +139,7 @@ public partial class MainWindow
             // Tempo restante da passada atual, pela velocidade até agora (só depois de 3% para não oscilar).
             var phaseElapsed = DateTime.Now - _benchPhaseStart;
             string eta = frac >= 0.03 ? $", faltam cerca de {TimeSpan.FromSeconds(phaseElapsed.TotalSeconds * (1 - frac) / frac):m\\:ss}" : "";
-            BenchStatus.Text = $"{_benchPhase}, {frac:P0}";
+            BenchStatus.Text = $"{_benchPhase}, {frac * 100:0} %";
             BenchElapsed.Text = (DateTime.Now - _benchStart).ToString(@"mm\:ss") + eta;
         }
         else BenchProgress.ScaleX = 0;
