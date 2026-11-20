@@ -65,6 +65,9 @@ public static class SensorNaming
         ["CPU Platform"] = "Plataforma",
         ["Misc"] = "Outros",
         ["Bus Speed"] = "Barramento",
+        ["Cores (Average)"] = "Núcleos · média",
+        ["Cores (Average Effective)"] = "Núcleos · média efetiva",
+        ["Cores (Max)"] = "Núcleos · máximo",
         ["Core Max"] = "Núcleo mais alto",
         ["Core Average"] = "Média dos núcleos",
         // Placa de vídeo
