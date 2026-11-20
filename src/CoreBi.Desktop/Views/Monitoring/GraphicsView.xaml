@@ -65,14 +65,13 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <!-- Cabeçalho de altura fixa (a de título + subtítulo nas outras páginas): sem subtítulo, o título fica no topo e o primeiro
-             painel começa na mesma altura das outras telas -->
-        <Grid Style="{StaticResource PageHeader}" MinHeight="62">
+        <!-- Sem subtítulo: 9 embaixo (e não 14), para o primeiro painel ficar a 20 do pé do título, o mesmo respiro da busca ao título -->
+        <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,9">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Text="Placa de vídeo" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
+            <TextBlock Text="Placa de vídeo" Style="{StaticResource PageTitle}" />
             <!-- Uma pílula por placa, só quando há mais de uma (MainWindow.LoadGpu) -->
             <WrapPanel x:Name="GpuChips" Grid.Column="1" VerticalAlignment="Top" Margin="0,6,0,0" />
         </Grid>

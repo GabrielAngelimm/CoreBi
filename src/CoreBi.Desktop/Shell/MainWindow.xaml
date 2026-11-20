@@ -187,7 +187,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <!-- Barra de título: atalho de navegação, versão e controles da janela -->
-                <Button x:Name="BtnCommand" Style="{StaticResource CommandButton}" Content="Ir para uma página ou ação" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="36,9,0,0" WindowChrome.IsHitTestVisibleInChrome="True" Click="BtnCommand_Click" ToolTip="Paleta de comandos (Ctrl + K)" />
+                <Button x:Name="BtnCommand" Style="{StaticResource CommandButton}" Content="Ir para uma página ou ação" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="36,20,0,0" WindowChrome.IsHitTestVisibleInChrome="True" Click="BtnCommand_Click" ToolTip="Paleta de comandos (Ctrl + K)" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True">
                     <TextBlock x:Name="SideVersion" Text="0.2.6" Foreground="{DynamicResource Faint}" FontSize="11.5" Margin="0,0,14,0" VerticalAlignment="Top" Padding="0,12,0,0" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
                     <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="Min_Click" ToolTip="Minimizar" />
@@ -219,7 +219,7 @@
                         </Grid.RowDefinitions>
                         <StackPanel x:Name="LoadingBars" Grid.RowSpan="2">
                             <Border Width="170" Height="28" HorizontalAlignment="Left" CornerRadius="5" Background="{DynamicResource Line}" />
-                            <Border Width="260" Height="12" HorizontalAlignment="Left" CornerRadius="6" Background="{DynamicResource Line}" Margin="0,12,0,26" />
+                            <Border Width="260" Height="12" HorizontalAlignment="Left" CornerRadius="6" Background="{DynamicResource Line}" Margin="0,12,0,23" />
                             <Border Style="{StaticResource CardBorder}" Padding="24,22">
                                 <StackPanel>
                                     <Border Width="140" Height="12" HorizontalAlignment="Left" CornerRadius="6" Background="{DynamicResource LineStrong}" Margin="0,0,0,22" />
