@@ -29,15 +29,18 @@ public partial class MainWindow
         return set;
     }
 
-    /// <summary>Componentes na ordem do overlay: o que cada linha mede e o glifo (todos na mesma cor, a do sinal).</summary>
-    private static readonly (string Group, string Caption, string Icon, string Brush)[] OvGroups =
+    /// <summary>
+    /// Componentes na ordem do overlay e o glifo de cada linha (todos na mesma cor, a do sinal). O nome é o rótulo da linha no
+    /// overlay e o glifo diz qual peça ela mede, então a linha não leva legenda embaixo.
+    /// </summary>
+    private static readonly (string Group, string Icon, string Brush)[] OvGroups =
     {
-        ("FPS", "Quadros por segundo e estabilidade", "\uEC4A", "Signal"),
-        ("GPU", "Placa de vídeo principal", "gpu", "Signal"),
-        ("VRAM", "Memória da placa de vídeo", "vram", "Signal"),
-        ("CPU", "Processador", "cpu", "Signal"),
-        ("RAM", "Memória do sistema", "ram", "Signal"),
-        ("Outros", "Nomes e rodapé do overlay", "", "Signal"),
+        ("FPS", "\uEC4A", "Signal"),
+        ("GPU", "gpu", "Signal"),
+        ("VRAM", "vram", "Signal"),
+        ("CPU", "cpu", "Signal"),
+        ("RAM", "ram", "Signal"),
+        ("Outros", "", "Signal"),
     };
 
     /// <summary>Itens que dependem da placa ou de permissão: a dica explica por que podem aparecer com travessão.</summary>
@@ -64,7 +67,7 @@ public partial class MainWindow
         ["termico"] = new() { "hwnames", "fps", "gpu_temp", "gpu_hotspot", "gpu_power", "gpu_fan", "cpu_temp", "cpu_power", "cpu_clock", "clock" },
     };
 
-    /// <summary>Monta "O que mostrar": uma linha por componente (glifo, nome, o que mede) com os itens em pílulas e a contagem.</summary>
+    /// <summary>Monta "O que mostrar": uma linha por componente (glifo e nome) com os itens em pílulas e a contagem.</summary>
     internal void BuildOverlayPicker()
     {
         OvItemsPanel.Children.Clear();
@@ -78,7 +81,7 @@ public partial class MainWindow
             row.SetResourceReference(Border.BorderBrushProperty, "Line");
             var grid = new Grid { VerticalAlignment = VerticalAlignment.Center };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
@@ -86,17 +89,13 @@ public partial class MainWindow
             var glyph = new HwIcon { Kind = meta.Icon ?? "\uE946", Width = 30, Height = 30, VerticalAlignment = VerticalAlignment.Top };
             grid.Children.Add(glyph);
 
-            var name = new StackPanel { Margin = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
-            var title = new TextBlock { Text = group, FontSize = 14.5, FontWeight = FontWeights.SemiBold };
+            // O nome fica na altura do glifo (30 px), como a primeira fila de pílulas ao lado
+            var title = new TextBlock { Text = group, FontSize = 14.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top, Padding = new Thickness(0, 6, 0, 0) };
             title.SetResourceReference(TextBlock.FontFamilyProperty, "LabelFont");
-            name.Children.Add(title);
-            var caption = new TextBlock { Text = meta.Caption ?? "", FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 1, 0, 0) };
-            caption.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
-            name.Children.Add(caption);
-            Grid.SetColumn(name, 1);
-            grid.Children.Add(name);
+            Grid.SetColumn(title, 1);
+            grid.Children.Add(title);
 
-            var count = new TextBlock { FontSize = 12, Margin = new Thickness(12, 7, 0, 0), VerticalAlignment = VerticalAlignment.Top };
+            var count = new TextBlock { FontSize = 12, Margin = new Thickness(12, 8, 0, 0), VerticalAlignment = VerticalAlignment.Top };
             System.Windows.Documents.Typography.SetNumeralAlignment(count, FontNumeralAlignment.Tabular);
             Grid.SetColumn(count, 3);
             grid.Children.Add(count);
@@ -110,7 +109,7 @@ public partial class MainWindow
                 glyph.SetResourceReference(Control.ForegroundProperty, on > 0 ? meta.Brush ?? "Signal" : "Faint");
             }
 
-            var wrap = new WrapPanel { Margin = new Thickness(0, 3, 0, 0) };
+            var wrap = new WrapPanel { Margin = new Thickness(0, 2, 0, 0) };
             foreach (var m in items)
             {
                 var chip = new CheckBox { Content = m.Label, Tag = m.Key, IsChecked = OvShow.Contains(m.Key) };

@@ -103,15 +103,17 @@ public partial class DisksView : UserControl
             DiskCards.SelectedItem = _bays.FirstOrDefault(b => b.Card.Index == keep) ?? _bays.FirstOrDefault();
             RackCount.Text = _bays.Count.ToString();
 
+            // Uma coisa por vez: o que pede atenção, quando há; senão só a hora da leitura (a contagem fica no rack)
             int bad = cards.Count(c => c.Verdict is DiskVerdict.Warning or DiskVerdict.Critical);
             int unknown = cards.Count(c => c.Verdict == DiskVerdict.Unknown);
-            string summary = bad > 0 ? $"{bad} precisa(m) de atenção"
-                : unknown > 0 ? $"{unknown} sem dados suficientes" : "nenhum problema encontrado";
+            string read = $"Lido às {_readAt:HH:mm}.";
             DiskHealthStatus.Text = cards.Count == 0 ? "Nenhum disco encontrado."
-                : $"{cards.Count} disco(s) · {summary} · lido às {_readAt:HH:mm:ss}";
+                : bad > 0 ? $"{(bad == 1 ? "1 disco precisa" : $"{bad} discos precisam")} de atenção. {read}"
+                : unknown > 0 ? $"{(unknown == 1 ? "1 disco" : $"{unknown} discos")} sem dados de saúde. {read}"
+                : $"Lido às {_readAt:HH:mm}";
             DiskPanel.Visibility = cards.Count == 0 ? Visibility.Hidden : Visibility.Visible;
         }
-        catch (Exception ex) { if (!_context.IsClosing) DiskHealthStatus.Text = "Falhou: " + ex.Message; }
+        catch (Exception ex) { if (!_context.IsClosing) DiskHealthStatus.Text = "Não foi possível ler os discos: " + ex.Message; }
         finally
         {
             _refreshing = false;
@@ -167,7 +169,7 @@ public partial class DisksView : UserControl
         TempTrace.Samples = trace?.Temps.ToList() ?? new List<float?>();
         double? peak = trace?.Peak ?? d.TemperatureMax;
         TempPeak.Text = peak is double pk ? $"{pk:0} °C" : "—";
-        DiskActivity.Text = trace?.Read == null && trace?.Write == null ? "sem sensor de atividade para este disco"
+        DiskActivity.Text = trace?.Read == null && trace?.Write == null ? "Sem sensor de atividade"
             : $"Leitura {Rate(trace!.Read)}     Escrita {Rate(trace.Write)}";
     }
 
@@ -186,10 +188,12 @@ public partial class DisksView : UserControl
         DiskBadgeText.Text = bay.VerdictText;
         string tone = bay.State;
         Ui.SetTone(DiskBadge, tone);
-        // Saudável: uma linha discreta no pé da placa, só quando o veredito vem de leituras reais. Atenção, crítico e "sem dados" explicam o motivo.
+        // Saudável é silencioso: o selo já diz "Saudável" (a ressalva das leituras disponíveis fica na dica dele). Atenção,
+        // crítico e "sem dados" ganham a linha com o motivo no pé da placa.
         bool healthy = card.Verdict == DiskVerdict.Good;
-        DiskReasons.Text = healthy ? "Nenhum problema encontrado nas leituras disponíveis" : card.Reasons;
-        DiskReasons.Visibility = DiskReasonIcon.Visibility = Visibility.Visible;
+        DiskBadge.ToolTip = healthy ? "Nenhum problema encontrado nas leituras disponíveis." : null;
+        DiskReasons.Text = healthy ? "" : card.Reasons;
+        DiskReasons.Visibility = DiskReasonIcon.Visibility = healthy ? Visibility.Collapsed : Visibility.Visible;
         DiskReasonIcon.Text = healthy ? "\uE73E" : card.Verdict == DiskVerdict.Unknown ? "\uE946" : "\uE7BA";
         DiskReasonIcon.SetResourceReference(TextBlock.ForegroundProperty, healthy ? "Muted" : tone.Length > 0 ? tone : "Faint");
         DiskReasons.SetResourceReference(TextBlock.ForegroundProperty, healthy ? "Muted" : "Fg");
@@ -255,7 +259,7 @@ public partial class DisksView : UserControl
     private void ShowLife(DiskDetail d)
     {
         LifeDial.Value = d.Wear is double w ? Math.Clamp(100 - w, 0, 100) : double.NaN;
-        LifeDial.Caption = d.Wear != null ? "vida útil restante" : "não informada";
+        LifeDial.Caption = d.Wear != null ? "restante" : "não informada";
         Readout(LifeWear, d.Wear is double wear ? $"{wear:0}" : "—", d.Wear != null ? "%" : "");
         Readout(LifeSpare, d.AvailableSpare is double sp ? $"{sp:0}" : "—", d.AvailableSpare != null ? "%" : "");
 
@@ -280,7 +284,7 @@ public partial class DisksView : UserControl
         TempScale.CritAt = d.TempCritAt;
         TempTrace.WarnAt = d.TempWarnAt;
         TempTrace.EmptyText = d.SensorHardware == null
-            ? "Sem sensor ao vivo para este disco: a temperatura acima é a leitura do Windows."
+            ? "Sem sensor ao vivo para este disco."
             : "Coletando as primeiras amostras…";
     }
 
@@ -393,7 +397,7 @@ public partial class DisksView : UserControl
         OdoGrid.Children.Clear();
         int columns = _wide ? 1 : Math.Max(1, Math.Min(_odoCells.Count, 2));
         OdoGrid.Columns = columns;
-        OdoCard.Padding = _wide ? new Thickness(0) : new Thickness(0, 18, 0, 18);
+        OdoCard.Padding = _wide ? new Thickness(0) : new Thickness(0, 20, 0, 20);
         for (int i = 0; i < _odoCells.Count; i++)
         {
             var cell = _odoCells[i];
@@ -409,7 +413,7 @@ public partial class DisksView : UserControl
             {
                 cell.BorderThickness = new Thickness(i % columns == 0 ? 0 : 1, 0, 0, 0);
                 cell.Padding = new Thickness(24, 0, 24, 0);
-                cell.Margin = new Thickness(0, i >= columns ? 18 : 0, 0, 0);
+                cell.Margin = new Thickness(0, i >= columns ? 16 : 0, 0, 0);
                 ((StackPanel)cell.Child).VerticalAlignment = VerticalAlignment.Top;
             }
             // leituras centralizadas: a mesma folga à esquerda e à direita

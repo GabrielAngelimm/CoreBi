@@ -80,7 +80,7 @@ public abstract class DiskInstrument : FrameworkElement
     }
 
     /// <summary>
-    /// Pulso da leitura nova: um halo do canal que cresce e some em menos de um segundo em volta do ponto atual, desenhado com
+    /// Pulso da leitura nova: um halo do canal que cresce e some em 400 ms em volta do ponto atual, desenhado com
     /// relógios de animação (o instrumento não precisa se redesenhar para ele andar). Só quando a janela permite movimento ao
     /// vivo (MainWindow.LiveMotion).
     /// </summary>
@@ -89,7 +89,7 @@ public abstract class DiskInstrument : FrameworkElement
         if (Window.GetWindow(this) is not MainWindow { LiveMotion: true }) return;
         var halo = new SolidColorBrush(Color.FromArgb(0x50, color.R, color.G, color.B));
         halo.Freeze();
-        var span = TimeSpan.FromMilliseconds(850);
+        var span = TimeSpan.FromMilliseconds(400);
         var grow = new System.Windows.Media.Animation.DoubleAnimation(5, 12, span) { EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut } }.CreateClock();
         var fade = new System.Windows.Media.Animation.DoubleAnimation(1, 0, span).CreateClock();
         dc.PushOpacity(1, fade);
@@ -379,12 +379,12 @@ public sealed class TraceChart : DiskInstrument
         string when = ago <= 0 ? "agora" : ago >= 60 ? $"há {ago / 60} min {ago % 60:00} s" : $"há {ago} s";
         var time = Text(when, 11.5, FaintBrush, readout: false);
         var value = Text($"{_samples[nearest]!.Value:0.#} °C", 16, InkBrush);
-        double bw = Math.Max(time.Width, value.Width) + 22, bh = time.Height + value.Height + 14;
+        double bw = Math.Max(time.Width, value.Width) + 24, bh = time.Height + value.Height + 16;
         double bx = px + 14 + bw > w ? px - 14 - bw : px + 14;
         double by = Math.Clamp(py - bh / 2, top, Math.Max(top, top + plotH - bh));
         dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bw, bh), 8, 8);
-        dc.DrawText(time, new Point(bx + 11, by + 7));
-        dc.DrawText(value, new Point(bx + 11, by + 7 + time.Height));
+        dc.DrawText(time, new Point(bx + 12, by + 8));
+        dc.DrawText(value, new Point(bx + 12, by + 8 + time.Height));
     }
 }
 

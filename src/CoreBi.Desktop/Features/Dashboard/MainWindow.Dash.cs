@@ -207,7 +207,7 @@ public partial class MainWindow
         if (runs.Count > 0)
         {
             DashScore.Text = $"{runs[0].Multi:N0}";
-            DashScoreSub.Text = $"Render multi-core, medido em {runs[0].Date:dd/MM 'às' HH:mm}";
+            DashScoreSub.Text = $"Medido em {runs[0].Date:dd/MM 'às' HH:mm}";
             if (runs.Count > 1)
             {
                 double d = runs[0].Multi!.Value - runs[1].Multi!.Value;
@@ -216,7 +216,7 @@ public partial class MainWindow
             }
             else DashScoreDelta.Text = "";
         }
-        else { DashScore.Text = "—"; DashScoreDelta.Text = ""; DashScoreSub.Text = "Rode o benchmark para ter uma nota de referência."; }
+        else { DashScore.Text = "—"; DashScoreDelta.Text = ""; DashScoreSub.Text = "Nenhum teste ainda"; }
 
         string Last(string test) => _settings.BenchRecords.FirstOrDefault(r => r.Test == test)?.Summary.Split('·')[0].Trim() ?? "—";
         var single = _settings.BenchRuns.FirstOrDefault(r => r.Single != null)?.Single;
@@ -337,7 +337,7 @@ public partial class MainWindow
         Trace(gpuPts, "Gpu", 1.8);
         Trace(cpuPts, "Cpu", 2);
 
-        // Ponto de leitura atual em cada canal; a cada amostra nova ele pulsa uma vez (o gráfico está vivo)
+        // Ponto de leitura atual em cada canal; a cada amostra nova ele pulsa uma vez, em 400 ms (o gráfico está vivo)
         void Cursor(Point p, string channel)
         {
             if (LiveMotion)
@@ -354,10 +354,10 @@ public partial class MainWindow
                 };
                 Canvas.SetLeft(halo, p.X - 12); Canvas.SetTop(halo, p.Y - 12);
                 DashChart.Children.Add(halo);
-                var grow = new DoubleAnimation(0.45, 1, TimeSpan.FromMilliseconds(850)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+                var grow = new DoubleAnimation(0.45, 1, TimeSpan.FromMilliseconds(400)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
                 pulse.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
                 pulse.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
-                halo.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(850)));
+                halo.BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(400)));
             }
             var dot = new Ellipse { Width = 9, Height = 9, Stroke = Palette(channel), StrokeThickness = 2, Fill = Palette("Surface") };
             Canvas.SetLeft(dot, p.X - 4.5); Canvas.SetTop(dot, p.Y - 4.5);
@@ -387,7 +387,7 @@ public partial class MainWindow
         _dashHoverX = e.GetPosition(DashChart).X;
         DrawDashHover();
         if (!entering) return;
-        DashChartDelta.Text = "Pausado enquanto o mouse está sobre o gráfico";
+        DashChartDelta.Text = "Pausado";
         if (_hoverTip is { Visibility: Visibility.Visible } tip)
             tip.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
     }
@@ -468,7 +468,7 @@ public partial class MainWindow
         var readout = (FontFamily)FindResource("Readout");
         TextBlock Value()
         {
-            var t = new TextBlock { FontFamily = readout, FontStretch = FontStretches.SemiCondensed, FontSize = 15, Margin = new Thickness(18, 0, 0, 0), HorizontalAlignment = HorizontalAlignment.Right };
+            var t = new TextBlock { FontFamily = readout, FontStretch = FontStretches.SemiCondensed, FontSize = 15, Margin = new Thickness(16, 0, 0, 0), HorizontalAlignment = HorizontalAlignment.Right };
             t.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
             return t;
         }
@@ -477,7 +477,7 @@ public partial class MainWindow
             var row = new Grid { Margin = new Thickness(0, 4, 0, 0) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             row.ColumnDefinitions.Add(new ColumnDefinition());
-            var swatch = new Border { Width = 10, Height = 3, CornerRadius = new CornerRadius(1.5), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 7, 0) };
+            var swatch = new Border { Width = 10, Height = 3, CornerRadius = new CornerRadius(1.5), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
             swatch.SetResourceReference(Border.BackgroundProperty, channel);
             var label = new TextBlock { Text = name, FontSize = 12, VerticalAlignment = VerticalAlignment.Center };
             label.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
@@ -495,7 +495,7 @@ public partial class MainWindow
         {
             CornerRadius = new CornerRadius(8),
             BorderThickness = new Thickness(1),
-            Padding = new Thickness(11, 8, 11, 9),
+            Padding = new Thickness(12, 8, 12, 8),
             IsHitTestVisible = false,
             Child = new StackPanel { Children = { _hoverTime, Row("Cpu", "Processador", _hoverCpuText), Row("Gpu", "Placa de vídeo", _hoverGpuText) } }
         };
@@ -513,11 +513,11 @@ public partial class MainWindow
     private static readonly DependencyProperty RingRevealProperty = DependencyProperty.Register(
         "RingReveal", typeof(double), typeof(MainWindow), new PropertyMetadata(1.0, (d, _) => ((MainWindow)d).DrawDashRings()));
 
-    /// <summary>Os anéis enchem do zero até a leitura atual ao abrir a página (respeita "mostrar animações" do Windows).</summary>
+    /// <summary>Os anéis enchem do zero até a leitura atual ao abrir a página, em 400 ms (respeita "mostrar animações" do Windows).</summary>
     internal void RevealDashRings()
     {
         if (!SystemParameters.ClientAreaAnimation) return;
-        BeginAnimation(RingRevealProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(900)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+        BeginAnimation(RingRevealProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(400)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
     }
 
     /// <summary>
@@ -536,10 +536,10 @@ public partial class MainWindow
         if (_gpus.Count > 0 && _gpus[0].NvmlHandle != IntPtr.Zero && Nvml.MemoryInfo(_gpus[0].NvmlHandle) is Nvml.Memory m && m.Total > 0)
         {
             double vram = (double)m.Used / m.Total;
-            rings.Add((vram, "Gpu", new(gpuBrush, "VRAM", $"{vram:P0}", $"{Gb(m.Used)} de {m.Total / 1073741824.0:0} GB · placa de vídeo", "PageGpu")));
+            rings.Add((vram, "Gpu", new(gpuBrush, "VRAM", $"{vram:P0}", $"{Gb(m.Used)} de {m.Total / 1073741824.0:0} GB · {Gb(m.Total - m.Used)} livres", "PageGpu")));
         }
         if (_drives.FirstOrDefault(d => d.Letter.StartsWith("C", StringComparison.OrdinalIgnoreCase)) is { } c0)
-            rings.Add((c0.UsedFraction, "Storage", new(storageBrush, $"Disco {c0.Letter}", c0.UsedPercent, $"{DriveCard.Fmt(c0.Free)} livres de {DriveCard.Fmt(c0.Total)}", "PageDisks")));
+            rings.Add((c0.UsedFraction, "Storage", new(storageBrush, $"Disco {c0.Letter}", c0.UsedPercent, $"{DriveCard.Fmt(c0.Total - c0.Free)} de {DriveCard.Fmt(c0.Total)} · {DriveCard.Fmt(c0.Free)} livres", "PageDisks")));
 
         _rings = rings.Select(r => (r.Frac, r.Channel)).ToList();
         _ringCenter = total > 0 ? $"{ram:P0}" : "—";
@@ -616,11 +616,13 @@ public partial class MainWindow
                           "Temperatura e consumo disponíveis.", SensorMonitor.Explain(sensors).Split('.')[0] + "."));
         }
 
+        // O título é o assunto (como "Sensores da CPU"); o glifo e o detalhe dizem se está tudo bem
         var errs = HardwareEventReader.ErrorsSince(DateTime.Now.AddDays(-7));
-        list.Add(Item(errs.Error == null && errs.Total == 0, "Sem erros de hardware",
+        static string Count(int n, string one, string many) => n == 1 ? $"1 {one}" : $"{n} {many}";
+        list.Add(Item(errs.Error == null && errs.Total == 0, "Erros de hardware",
                       "Nenhum WHEA ou reinício do driver de vídeo em 7 dias.",
                       errs.Error != null ? "Não foi possível ler o registro do Windows."
-                                         : $"{errs.Whea} WHEA · {errs.GpuResets} reinícios do driver em 7 dias."));
+                                         : $"{Count(errs.Whea, "erro WHEA", "erros WHEA")} e {Count(errs.GpuResets, "reinício", "reinícios")} do driver de vídeo em 7 dias."));
 
         _health = list;
         DashHealth.ItemsSource = _health;

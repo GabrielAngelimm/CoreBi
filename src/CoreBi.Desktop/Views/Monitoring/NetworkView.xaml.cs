@@ -64,7 +64,7 @@ public partial class NetworkView : UserControl
         NetInstrument.HorizontalAlignment = narrow ? HorizontalAlignment.Center : HorizontalAlignment.Left;
         // Estreito, o nome da fonte do teste fica na mesma linha do título e a latência encolhe: a página continua numa tela só.
         NetDiagTitle.Orientation = narrow ? Orientation.Horizontal : Orientation.Vertical;
-        NetMeta.Margin = narrow ? new Thickness(14, 4, 0, 0) : new Thickness(0, 3, 0, 0);
+        NetMeta.Margin = narrow ? new Thickness(16, 4, 0, 0) : new Thickness(0, 4, 0, 0);
 
         Grid.SetRow(NetMetricsPanel, narrow ? 1 : 0);
         Grid.SetColumn(NetMetricsPanel, narrow ? 0 : 1);
@@ -75,7 +75,7 @@ public partial class NetworkView : UserControl
 
         NetLatency.FontSize = inRow ? 44 : 64;
         NetLatencyCaption.Margin = inRow ? new Thickness(8, 0, 0, 7) : new Thickness(8, 0, 0, 11);
-        NetHero.Children.OfType<StackPanel>().First().Margin = inRow ? new Thickness(0, 2, 0, 0) : new Thickness(0, 2, 0, 14);
+        NetHero.Children.OfType<StackPanel>().First().Margin = inRow ? new Thickness(0, 4, 0, 0) : new Thickness(0, 4, 0, 16);
         Grid.SetColumnSpan(NetHero, inRow ? 1 : 2);
         NetHero.VerticalAlignment = inRow ? VerticalAlignment.Center : VerticalAlignment.Top;
         Grid.SetRow(NetCells, inRow ? 0 : 1);
@@ -213,7 +213,7 @@ public partial class NetworkView : UserControl
         else
         {
             NetProgress.BeginAnimation(ScaleTransform.ScaleXProperty,
-                new DoubleAnimation(fraction, TimeSpan.FromMilliseconds(420)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+                new DoubleAnimation(fraction, TimeSpan.FromMilliseconds(400)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
         }
         bool started = fraction > 0 || _running;
         NetPercent.Text = started ? (fraction * 100).ToString("0", PtBr) : "—";
