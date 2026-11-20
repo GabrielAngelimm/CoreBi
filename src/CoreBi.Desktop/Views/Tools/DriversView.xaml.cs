@@ -51,6 +51,9 @@ public partial class DriversView : UserControl
         bool narrow = DrvBody.ActualWidth < 1180;
         if (narrow == _narrowBody) return;
         _narrowBody = narrow;
+        // Estreita, a tabela desce para baixo da coluna e a página cresce e rola; larga, a página tem a altura da janela
+        if (narrow) DrvRoot.ClearValue(HeightProperty);
+        else DrvRoot.SetBinding(HeightProperty, new Binding(nameof(ScrollViewer.ViewportHeight)) { Source = DrvScroll });
         DrvSideColumn.Width = narrow ? new GridLength(1, GridUnitType.Star) : new GridLength(520);
         DrvGap.Width = new GridLength(narrow ? 0 : 16);
         Grid.SetColumnSpan(DrvSide, narrow ? 3 : 1);

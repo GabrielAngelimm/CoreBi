@@ -46,6 +46,7 @@ public partial class StartupView : UserControl
             if (Context.IsClosing) return;
             if (announce) ToolPage.SetProgress(StartupProgressFill, 0.5);
             try { _removed = await Task.Run(() => _startup.Backups, Context.Lifetime); }
+            catch (UnauthorizedAccessException) { _removed = Array.Empty<StartupBackup>(); backupError = "Os removidos só aparecem com o CoreBi aberto como administrador."; }
             catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); backupError = "Não foi possível ler os removidos: " + ex.Message; }
         }
         catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); ToolPage.EndProgress(StartupProgressFill); return; }

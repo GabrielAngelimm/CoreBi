@@ -42,7 +42,8 @@
         aparece nele quando há algo removido. A tabela ocupa a altura que sobra e rola por dentro.
     -->
     <ScrollViewer x:Name="StartupScroll" VerticalScrollBarVisibility="Auto">
-        <Grid MinHeight="{Binding ViewportHeight, ElementName=StartupScroll}">
+        <!-- Altura da janela (e não mínima): assim a lista longa rola dentro do painel; abaixo de 520 px a página rola -->
+        <Grid Height="{Binding ViewportHeight, ElementName=StartupScroll}" MinHeight="520">
             <Grid Style="{StaticResource PageGrid}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
