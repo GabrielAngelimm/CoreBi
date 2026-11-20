@@ -52,7 +52,7 @@
                                     <TextBlock x:Name="DrvDetail" Grid.Column="1" Style="{StaticResource TaskDetail}" />
                                 </Grid>
                                 <Grid Style="{StaticResource ProgressTrack}">
-                                    <Border Style="{StaticResource ProgressFill}">
+                                    <Border x:Name="DrvProgressFill" Style="{StaticResource ProgressFill}">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="DrvProgress" ScaleX="0" />
                                         </Border.RenderTransform>

@@ -78,7 +78,7 @@
                                     <TextBlock x:Name="StartupResult" Grid.Column="1" Style="{StaticResource TaskDetail}" />
                                 </Grid>
                                 <Grid Style="{StaticResource ProgressTrack}">
-                                    <Border Style="{StaticResource ProgressFill}">
+                                    <Border x:Name="StartupProgressFill" Style="{StaticResource ProgressFill}">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="StartupProgress" ScaleX="0" />
                                         </Border.RenderTransform>

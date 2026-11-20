@@ -37,18 +37,18 @@ public partial class StartupView : UserControl
     {
         if (_scanning || Context.IsClosing) return;
         _scanning = true;
-        if (announce) { Say("Lendo programas…"); ToolPage.SetProgress(StartupProgress, 0); }
+        if (announce) { Say("Lendo programas…"); ToolPage.SetProgress(StartupProgressFill, 0); }
         List<StartupEntry> list;
         string backupError = "";
         try
         {
             list = await Task.Run(StartupManager.List, Context.Lifetime);
             if (Context.IsClosing) return;
-            if (announce) ToolPage.SetProgress(StartupProgress, 0.5);
+            if (announce) ToolPage.SetProgress(StartupProgressFill, 0.5);
             try { _removed = await Task.Run(() => _startup.Backups, Context.Lifetime); }
             catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); backupError = "Não foi possível ler os removidos: " + ex.Message; }
         }
-        catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); ToolPage.SetProgress(StartupProgress, 0); return; }
+        catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); ToolPage.SetProgress(StartupProgressFill, 0); return; }
         finally { _scanning = false; }
         if (Context.IsClosing) return;
 
@@ -58,7 +58,7 @@ public partial class StartupView : UserControl
         int off = list.Count(e => !e.Enabled);
         if (announce)
         {
-            ToolPage.SetProgress(StartupProgress, 1);
+            ToolPage.SetProgress(StartupProgressFill, 1);
             Say($"Lido às {DateTime.Now:HH:mm}",
                 backupError.Length > 0 ? backupError : list.Count == 0 ? "" : off == 0 ? "Todos ligados" : off == 1 ? "1 desligado" : $"{off} desligados");
         }
@@ -118,12 +118,12 @@ public partial class StartupView : UserControl
         var failed = new List<string>();
         int done = 0;
         Say(removed.Count == 1 ? "Restaurando 1 programa…" : $"Restaurando {removed.Count} programas…");
-        ToolPage.SetProgress(StartupProgress, 0);
+        ToolPage.SetProgress(StartupProgressFill, 0);
         foreach (var b in removed.ToList())
         {
             try { using var critical = Context.BeginCriticalOperation(); await Task.Run(() => _startup.Restore(b)); }
             catch (Exception ex) { failed.Add($"{b.Name} ({ex.Message})"); }
-            ToolPage.SetProgress(StartupProgress, (double)++done / removed.Count);
+            ToolPage.SetProgress(StartupProgressFill, (double)++done / removed.Count);
         }
         int ok = removed.Count - failed.Count;
         if (failed.Count == 0) Say(ok == 1 ? "1 programa restaurado" : $"{ok} programas restaurados", NextBoot);

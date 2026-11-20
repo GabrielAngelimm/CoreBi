@@ -28,20 +28,38 @@ internal static class ToolPage
     }
 
     /// <summary>
-    /// Leva a barra até a fração nova: ao avançar desliza 420 ms com desaceleração; ao recomeçar (ou com "Mostrar animações
-    /// no Windows" desligado) vai direto ao valor. Nada de animação contínua.
+    /// Leva a barra até a fração nova: ao avançar desliza 400 ms com desaceleração; ao recomeçar (ou com "Mostrar animações
+    /// no Windows" desligado) vai direto ao valor. Quando a tarefa termina, a barra cheia apaga em 300 ms e volta ao trilho vazio:
+    /// console parado não mostra progresso. Nada de animação contínua.
     /// </summary>
-    public static void SetProgress(ScaleTransform fill, double fraction)
+    public static void SetProgress(Border fill, double fraction)
     {
+        var scale = (ScaleTransform)fill.RenderTransform;
         fraction = Math.Clamp(double.IsFinite(fraction) ? fraction : 0, 0, 1);
-        if (!SystemParameters.ClientAreaAnimation || fraction <= fill.ScaleX)
+        fill.BeginAnimation(UIElement.OpacityProperty, null);
+        fill.Opacity = 1;
+        bool animate = SystemParameters.ClientAreaAnimation;
+        if (!animate || fraction <= scale.ScaleX)
         {
-            fill.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-            fill.ScaleX = fraction;
-            return;
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            scale.ScaleX = fraction;
         }
-        fill.BeginAnimation(ScaleTransform.ScaleXProperty,
-            new DoubleAnimation(fraction, TimeSpan.FromMilliseconds(420)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+        else
+        {
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty,
+                new DoubleAnimation(fraction, TimeSpan.FromMilliseconds(400)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+        }
+        if (fraction < 1) return;
+        var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(animate ? 300 : 0)) { BeginTime = TimeSpan.FromMilliseconds(animate ? 900 : 600) };
+        fade.Completed += (_, _) =>
+        {
+            if (fill.Opacity > 0.01) return;
+            scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            scale.ScaleX = 0;
+            fill.BeginAnimation(UIElement.OpacityProperty, null);
+            fill.Opacity = 1;
+        };
+        fill.BeginAnimation(UIElement.OpacityProperty, fade);
     }
 
     /// <summary>Estado e detalhe do console; o texto inteiro fica na dica, porque a linha corta o que não cabe.</summary>

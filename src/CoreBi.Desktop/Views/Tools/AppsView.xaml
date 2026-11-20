@@ -130,7 +130,7 @@
                                 <TextBlock x:Name="AppsDetail" Grid.Column="1" Style="{StaticResource TaskDetail}" />
                             </Grid>
                             <Grid Style="{StaticResource ProgressTrack}">
-                                <Border Style="{StaticResource ProgressFill}">
+                                <Border x:Name="AppsProgressFill" Style="{StaticResource ProgressFill}">
                                     <Border.RenderTransform>
                                         <ScaleTransform x:Name="AppsProgress" ScaleX="0" />
                                     </Border.RenderTransform>

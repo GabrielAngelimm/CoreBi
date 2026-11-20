@@ -76,7 +76,7 @@ public partial class AppsView : UserControl
             }
             _wingetAvailable = AppInstaller.WingetAvailable;
             BtnAppsStore.Visibility = _wingetAvailable ? Visibility.Collapsed : Visibility.Visible;
-            ToolPage.SetProgress(AppsProgress, 0);
+            ToolPage.SetProgress(AppsProgressFill, 0);
             int installed = _installApps.Count(a => a.Installed);
             if (_wingetAvailable) Say($"{installed} de {_installApps.Count} já instalados");
             else Say("winget não encontrado", "Atualize o Instalador de Aplicativo na Microsoft Store e abra esta página de novo.");
@@ -132,7 +132,7 @@ public partial class AppsView : UserControl
         foreach (var t in sel) t.Phase = AppPhase.Queued;
         int ok = 0, done = 0;
         var failed = new List<string>();
-        ToolPage.SetProgress(AppsProgress, 0);
+        ToolPage.SetProgress(AppsProgressFill, 0);
 
         try
         {
@@ -152,7 +152,7 @@ public partial class AppsView : UserControl
                 }
                 catch (Exception ex) { app.Status = $"Falhou: {ex.Message}"; tile.Phase = AppPhase.Failed; failed.Add(app.Name); }
                 done++;
-                ToolPage.SetProgress(AppsProgress, (double)done / sel.Count);
+                ToolPage.SetProgress(AppsProgressFill, (double)done / sel.Count);
             }
 
             AppInstaller.RefreshInstalled(_installApps);

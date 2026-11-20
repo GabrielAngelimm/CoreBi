@@ -71,7 +71,7 @@ public partial class DriversView : UserControl
     {
         if (Context.IsClosing) return;
         ToolPage.Say(DrvStatus, DrvDetail, text, detail);
-        if (frac.HasValue) ToolPage.SetProgress(DrvProgress, frac.Value);
+        if (frac.HasValue) ToolPage.SetProgress(DrvProgressFill, frac.Value);
     }
 
     internal void DrvBusy(bool busy)
