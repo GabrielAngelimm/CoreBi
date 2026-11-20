@@ -300,7 +300,11 @@ public partial class MainWindow
         DashChartValue.Visibility = cNow != null ? Visibility.Visible : Visibility.Collapsed;
         DashChartValue2.Visibility = gNow != null ? Visibility.Visible : Visibility.Collapsed;
         var firstC = data.Select(cpu).FirstOrDefault(v => v != null);
-        DashChartDelta.Text = cNow is float a && firstC is float b
+        // Carga oscila muito de um segundo para outro: a média diz mais que a diferença entre a primeira e a última amostra
+        var cpuLoads = metric == "load" ? data.Select(cpu).Where(v => v != null).Select(v => (double)v!.Value).ToList() : null;
+        DashChartDelta.Text = cpuLoads is { Count: > 0 }
+            ? $"Processador em média {cpuLoads.Average():0.#} % no período"
+            : cNow is float a && firstC is float b
             ? $"Processador {(a - b >= 0 ? "+" : "−")}{Math.Abs(a - b):0.#}{unit} no período"
             : cNow == null && metric != "load" ? "Sem leitura do processador. Veja o aviso na barra lateral." : "Coletando as primeiras amostras…";
 
