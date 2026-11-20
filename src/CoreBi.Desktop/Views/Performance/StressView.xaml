@@ -70,9 +70,9 @@
                     <RowDefinition Height="16" />
                     <RowDefinition Height="*" MinHeight="620" />
                 </Grid.RowDefinitions>
-                <!-- Cabeçalho de altura fixa (62, a de título com subtítulo): a faixa das teclas começa na mesma altura das outras páginas -->
-                <Grid Style="{StaticResource PageHeader}" MinHeight="62">
-                    <TextBlock Text="Teste de carga" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
+                <!-- Sem subtítulo: 9 embaixo (e não 14), para o primeiro painel ficar a 20 do pé do título, o mesmo respiro da busca ao título -->
+                <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,9">
+                    <TextBlock Text="Teste de carga" Style="{StaticResource PageTitle}" />
                 </Grid>
 
                 <!-- O que carregar: uma tecla por componente, várias ao mesmo tempo -->
