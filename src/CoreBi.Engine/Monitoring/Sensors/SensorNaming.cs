@@ -139,6 +139,11 @@ public static class SensorNaming
         ["Percentage Used"] = "Desgaste",
         ["Remaining Life"] = "Vida restante",
         ["Composite Temperature"] = "Temperatura",
+        ["Warning Temperature"] = "Temperatura de aviso",
+        ["Critical Temperature"] = "Temperatura crítica",
+        ["Free Space"] = "Espaço livre",
+        ["Total Space"] = "Espaço total",
+        ["Life"] = "Vida útil",
         // Rede
         ["Network Utilization"] = "Utilização",
         ["Data Uploaded"] = "Total enviado",
