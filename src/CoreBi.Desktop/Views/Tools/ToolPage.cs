@@ -23,7 +23,7 @@ internal static class ToolPage
         Grid.SetRow(console, narrow ? 1 : 0);
         Grid.SetColumn(console, narrow ? 0 : 1);
         Grid.SetColumnSpan(console, narrow ? 2 : 1);
-        console.Margin = narrow ? new Thickness(0, 16, 0, 0) : new Thickness(40, 0, 0, 0);
+        console.Margin = narrow ? new Thickness(0, 16, 0, 0) : new Thickness(40, 5, 0, 0);
         return narrow;
     }
 

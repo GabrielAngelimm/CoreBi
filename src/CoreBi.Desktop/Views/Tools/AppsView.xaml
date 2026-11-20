@@ -94,7 +94,8 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Grid x:Name="AppsHeader" Style="{StaticResource PageHeader}" SizeChanged="AppsHeader_SizeChanged">
+            <!-- Console ao lado do título: o topo dele fica na altura do topo das letras do título (5 abaixo da caixa) e o primeiro painel a 20 do pé dele -->
+            <Grid x:Name="AppsHeader" Style="{StaticResource PageHeader}" Margin="0,0,0,20" SizeChanged="AppsHeader_SizeChanged">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -103,10 +104,9 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <!-- Cabeçalho de altura fixa: título no topo como nas outras páginas; o console (62 px) fica rente ao topo, na faixa de título e subtítulo -->
                 <TextBlock Text="Instalar apps" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
 
-                <Border x:Name="AppsConsole" Grid.Column="1" Style="{StaticResource TaskConsole}" Margin="40,0,0,0" Height="62" VerticalAlignment="Top">
+                <Border x:Name="AppsConsole" Grid.Column="1" Style="{StaticResource TaskConsole}" Margin="40,5,0,0" Height="62" VerticalAlignment="Top">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
