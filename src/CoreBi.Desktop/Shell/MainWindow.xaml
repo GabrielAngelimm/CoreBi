@@ -132,7 +132,6 @@
                             <RadioButton x:Name="NavNet" Style="{StaticResource NavItem}" Tag="PageNet" local:Ui.Icon="net" Content="Rede" Checked="Nav_Checked" />
                             <TextBlock Text="Jogos" Style="{StaticResource NavHeader}" />
                             <RadioButton x:Name="NavOverlay" Style="{StaticResource NavItem}" Tag="PageOverlay" local:Ui.Icon="&#xE81E;" Content="OverlayBi" Checked="Nav_Checked" />
-                            <RadioButton x:Name="NavGames" Style="{StaticResource NavItem}" Tag="PageGames" local:Ui.Icon="&#xEC49;" Content="FPS estimado" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavBottleneck" Style="{StaticResource NavItem}" Tag="PageBottleneck" local:Ui.Icon="&#xE9D2;" Content="Gargalo" Checked="Nav_Checked" />
                             <TextBlock Text="Desempenho" Style="{StaticResource NavHeader}" />
                             <RadioButton x:Name="NavBench" Style="{StaticResource NavItem}" Tag="PageBench" local:Ui.Icon="&#xE8B9;" Content="Benchmark" Checked="Nav_Checked" />
@@ -155,7 +154,7 @@
                 <!-- Barra de título: atalho de navegação, versão e controles da janela -->
                 <Button x:Name="BtnCommand" Style="{StaticResource CommandButton}" Content="Ir para uma página ou ação" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="36,9,0,0" WindowChrome.IsHitTestVisibleInChrome="True" Click="BtnCommand_Click" ToolTip="Paleta de comandos (Ctrl + K)" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True">
-                    <TextBlock x:Name="SideVersion" Text="0.2.5" Foreground="{DynamicResource Faint}" FontSize="11.5" Margin="0,0,14,0" VerticalAlignment="Top" Padding="0,12,0,0" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
+                    <TextBlock x:Name="SideVersion" Text="0.2.6" Foreground="{DynamicResource Faint}" FontSize="11.5" Margin="0,0,14,0" VerticalAlignment="Top" Padding="0,12,0,0" Style="{StaticResource Num}" ToolTip="Versão do CoreBi" />
                     <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="Min_Click" ToolTip="Minimizar" />
                     <Button x:Name="BtnMax" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="Max_Click" ToolTip="Maximizar" />
                     <Button Style="{StaticResource CloseButton}" Content="&#xE8BB;" Click="Close_Click" ToolTip="Fechar" />
@@ -170,7 +169,6 @@
                     <views:DriversView x:Name="PageDriver" Visibility="Collapsed" />
                     <views:SensorsView x:Name="PageSensors" Visibility="Collapsed" />
                     <views:GraphicsView x:Name="PageGpu" Visibility="Collapsed" />
-                    <views:ForecastView x:Name="PageGames" Visibility="Collapsed" />
                     <views:BottleneckView x:Name="PageBottleneck" Visibility="Collapsed" />
                     <views:OverlayView x:Name="PageOverlay" Visibility="Collapsed" />
                     <views:BenchmarksView x:Name="PageBench" Visibility="Collapsed" />

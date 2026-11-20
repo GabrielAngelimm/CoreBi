@@ -189,12 +189,15 @@ internal static partial class Program
             var result = new GpuRtResult(new[] { new RtPass(0, 0, 0), new RtPass(0, 0, 0), new RtPass(0, 0, 0) }, 320, 180, "normal", "test", 0);
             Require(!result.Reliable, "Zero-frame result approved"); return new { result.Reliable };
         });
-        Check("settings: separate storage, atomic save and protected API key", () =>
+        Check("settings: separate storage, atomic save and removed FPS API key dropped", () =>
         {
-            var settings = new AppSettings { LightTheme = true, HowManyFpsKey = "local-test-key" }; settings.Save();
-            var loaded = AppSettings.Load(); Require(loaded.LightTheme && loaded.HowManyFpsKey == "local-test-key", "Settings roundtrip");
-            var path = Path.Combine(AppSettings.Folder, "settings.json"); Require(!File.ReadAllText(path).Contains("local-test-key"), "Plaintext API key");
-            Require(!Directory.GetFiles(AppSettings.Folder, "*.tmp").Any(), "Temporary settings left"); return new { isolated = true, encrypted = true };
+            // Configuração gravada por uma versão com o FPS estimado: carrega normalmente e a chave cifrada da API não volta ao arquivo.
+            var path = Path.Combine(AppSettings.Folder, "settings.json");
+            File.WriteAllText(path, "{\"HowManyFpsKeyProtected\":\"chave-cifrada-de-teste\",\"LightTheme\":true}");
+            var loaded = AppSettings.Load(); Require(loaded.LightTheme, "Settings from the previous version were not loaded");
+            loaded.Save(); Require(!File.ReadAllText(path).Contains("HowManyFpsKeyProtected"), "Removed FPS API key kept in settings");
+            Require(AppSettings.Load().LightTheme, "Settings roundtrip");
+            Require(!Directory.GetFiles(AppSettings.Folder, "*.tmp").Any(), "Temporary settings left"); return new { isolated = true, removedKeyDropped = true };
         });
         Check("CPU render: deterministic samples and cancellation", () =>
         {
@@ -211,14 +214,15 @@ internal static partial class Program
     }
     private static void Ui()
     {
-        Check("WPF: all 15 selected pages load and navigate", () =>
+        Check("WPF: all 14 selected pages load and navigate", () =>
         {
             var app = new TestApplication();
             SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
             var window = new MainWindow();
-            string[] pages = { "PageDash", "PageSystem", "PageSensors", "PageGpu", "PageDisks", "PageEnergy", "PageNet", "PageGames", "PageBottleneck", "PageOverlay", "PageBench", "PageStress", "PageStartup", "PageDriver", "PageApps" };
+            string[] pages = { "PageDash", "PageSystem", "PageSensors", "PageGpu", "PageDisks", "PageEnergy", "PageNet", "PageBottleneck", "PageOverlay", "PageBench", "PageStress", "PageStartup", "PageDriver", "PageApps" };
             foreach (string page in pages) { window.ShowPage(page); Require(((FrameworkElement)window.FindName(page)).Visibility == Visibility.Visible, "Navigation failed: " + page); }
-            foreach (string page in new[] { "PageOc", "PageOptimize", "PageInteg", "PageLauncher", "PageMakerDrv", "PageMakerPorts" }) Require(window.FindName(page) == null, "Removed page remained: " + page);
+            foreach (string page in new[] { "PageOc", "PageOptimize", "PageInteg", "PageLauncher", "PageMakerDrv", "PageMakerPorts", "PageGames" }) Require(window.FindName(page) == null, "Removed page remained: " + page);
+            Require(window.FindName("NavGames") == null, "Removed menu item remained: FPS estimado");
             window.ShowPage("PageNet");
             var demoAdapter = new CoreBi.Engine.Monitoring.Network.NetworkAdapterInfo("Ethernet", "Adaptador de rede", "Ethernet (cabo)", 1000,
                 "192.168.1.2", System.Net.IPAddress.Parse("192.168.1.1"), "1.1.1.1", "00-00-00-00-00-00");
