@@ -1,25 +1,26 @@
-using LibreHardwareMonitor.Hardware;
-using System.ComponentModel;
 using System.Globalization;
-using System.Runtime.InteropServices;
-using System.Windows.Data;
-using System.Windows.Shapes;
-using System.Windows.Threading;
-using CoreBi.Engine.Performance.Benchmarks;
-using CoreBi.Engine.Persistence;
-
 using System.Windows;
 using System.Windows.Controls;
-
 using System.Windows.Media;
+using System.Windows.Threading;
+using CoreBi.Engine.Games;
+using CoreBi.Engine.Monitoring.Memory;
+using CoreBi.Engine.Performance.Benchmarks;
+using CoreBi.Engine.Persistence;
 
 namespace CoreBi.Desktop;
 
 public partial class MainWindow
 {
-    // ---------------- Benchmark: benchmarks de jogo ----------------
+    // ---------------- Benchmark: palco, régua e histórico comuns ----------------
 
-    public sealed record MemRow(string Label, string Value, string Hint);
+    /// <summary>Célula da régua do resultado (e da coluna ao vivo): rótulo, número, unidade e uma linha de contexto (Tone = Ok ou Warn acende um LED).</summary>
+    public sealed record BenchStat(string Label, string Value, string Unit = "", string Sub = "", string Tone = "", string? Tip = null);
+    /// <summary>Medição de memória e disco: nome, leitura, unidade, contexto visível e a explicação (dica).</summary>
+    public sealed record MemRow(string Label, string Value, string Unit, string Sub = "", string? Hint = null);
+    /// <summary>Linha do histórico: resultado principal, detalhe, data e a fração do melhor resultado comparável (0–1).</summary>
+    public sealed record BenchHistoryRow(string Date, string Value, string Detail, double Fraction);
+
     internal bool _gameBenchRunning;
     internal GpuGameBench? _gpuBench;
     internal bool _gpuBenchActive;
@@ -41,16 +42,48 @@ public partial class MainWindow
         BenchPanelMem.Visibility = test == "mem" ? Visibility.Visible : Visibility.Collapsed;
         BenchPanelDisk.Visibility = test == "disk" ? Visibility.Visible : Visibility.Collapsed;
         if (test == "disk") InitDiskBench();
-        BenchSub.Text = test switch
-        {
-            "gpu" => "Cena de jogo em Direct3D 11 para medir a placa de vídeo, no estilo 3DMark e Unigine.",
-            "rt" => "Ray tracing por hardware (DXR 1.1, Direct3D 12) nos núcleos de RT da placa, com 3 passadas e nota pela mediana.",
-            "sim" => "Quanto FPS o processador aguenta numa simulação de jogo com milhares de unidades.",
-            "mem" => "Latência e banda da memória RAM e velocidade de carregamento do disco.",
-            "disk" => "Leitura e escrita do disco, sequenciais e aleatórias de 4 KB, no estilo CrystalDiskMark.",
-            _ => "Renderização 3D por path tracing no processador, no mesmo princípio do Cinebench.",
-        };
+        UpdateBenchPlates();
         UpdateGameBenchHistory();
+    }
+
+    /// <summary>Réguas e tabelas com os rótulos e travessões antes do primeiro teste, para o palco não mudar de altura ao terminar.</summary>
+    internal void ResetBenchStages()
+    {
+        GbResult.ItemsSource = GpuStats(null);
+        RtResult.ItemsSource = RtStats(null);
+        SimResult.ItemsSource = SimStats(null);
+        MemResult.ItemsSource = MemRows(null, null, null);
+        DiskResult.ItemsSource = DiskRows(null);
+    }
+
+    /// <summary>Placa de cada palco: a peça que o teste mede e o que a identifica.</summary>
+    internal void UpdateBenchPlates()
+    {
+        string cpu = HardwareCatalog.ShortCpuName(_cpuName);
+        if (cpu.Length == 0) cpu = _cpuName.Length > 0 ? _cpuName : "Processador";
+        BenchDevice.Text = SimDevice.Text = cpu;
+        BenchDeviceSpec.Text = SimDeviceSpec.Text = $"{Environment.ProcessorCount} threads";
+        GbDevice.Text = RtDevice.Text = _gpus.Count > 0 ? _gpus[0].Name : "Placa de vídeo";
+
+        string temp = System.IO.Path.GetPathRoot(System.IO.Path.GetTempPath())?.TrimEnd('\\') ?? "";
+        MemDeviceSpec.Text = MemoryInfo.ReadPhysicalUsage() is { } ram
+            ? $"{ram.Total / 1073741824.0:0} GB instalados, carregamento pela unidade {temp}"
+            : $"Carregamento pela unidade {temp}";
+        UpdateDiskPlate();
+    }
+
+    /// <summary>Partes do resumo salvo ("valor · detalhe · detalhe"), o mesmo formato que a Visão geral lê.</summary>
+    internal static string[] SummaryParts(string summary) =>
+        summary.Split('·', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+    /// <summary>Comparação com o melhor resultado anterior comparável; vazio quando não há anterior.</summary>
+    internal static string VsBest(double score, IEnumerable<double> previous)
+    {
+        var prev = previous.Where(v => v > 0 && double.IsFinite(v)).ToList();
+        if (prev.Count == 0 || score <= 0) return "";
+        double pct = (score / prev.Max() - 1) * 100;
+        if (Math.Abs(pct) < 0.5) return "igual ao melhor anterior";
+        return pct > 0 ? $"{pct:0} % acima do melhor anterior" : $"{-pct:0} % abaixo do melhor anterior";
     }
 
     internal void SaveBenchRecord(string test, double score, string summary)
@@ -67,34 +100,54 @@ public partial class MainWindow
 
     internal void UpdateGameBenchHistory()
     {
-        List<MeterItem> For(string test)
+        IEnumerable<BenchRecord> Of(Func<BenchRecord, bool> test) => _settings.BenchRecords.Where(test);
+        // A barra só compara o que é comparável: a cena de jogo na mesma resolução, o ray tracing no mesmo preset e resolução,
+        // o disco na mesma unidade.
+        GbHistory.ItemsSource = History(Of(r => r.Test == "gpu"), r => SummaryParts(r.Summary).LastOrDefault() ?? "");
+        RtHistory.ItemsSource = History(Of(r => r.Test.StartsWith("rt:")), r => r.Test);
+        SimHistory.ItemsSource = History(Of(r => r.Test == "sim"), _ => "");
+        MemHistory.ItemsSource = History(Of(r => r.Test == "mem"), _ => "");
+        DiskHistory.ItemsSource = History(Of(r => r.Test == "disk"), r => SummaryParts(r.Summary).FirstOrDefault() ?? "", valueIndex: 1);
+    }
+
+    internal static List<BenchHistoryRow> History(IEnumerable<BenchRecord> records, Func<BenchRecord, string> group, int valueIndex = 0)
+    {
+        var list = records.OrderByDescending(r => r.Date).ToList();
+        var best = list.GroupBy(group).ToDictionary(g => g.Key, g => g.Max(r => r.Score));
+        return list.Select(r =>
         {
-            var list = _settings.BenchRecords.Where(r => r.Test == test).ToList();
-            double best = list.Count > 0 ? list.Max(r => r.Score) : 1;
-            return list.Select(r => new MeterItem($"{r.Date:dd/MM HH:mm}", r.Summary, best > 0 ? r.Score / best : 0)).ToList();
-        }
-        GbHistory.ItemsSource = For("gpu");
-        RtHistory.ItemsSource = RtHistoryItems();
-        SimHistory.ItemsSource = For("sim");
-        MemHistory.ItemsSource = For("mem");
-        DiskHistory.ItemsSource = For("disk");
+            var parts = SummaryParts(r.Summary);
+            string value = valueIndex < parts.Length ? parts[valueIndex] : r.Summary;
+            string detail = string.Join(", ", parts.Where((_, i) => i != valueIndex));
+            double b = best[group(r)];
+            return new BenchHistoryRow($"{r.Date:dd/MM HH:mm}", value, detail, b > 0 ? r.Score / b : 0);
+        }).ToList();
     }
 
     internal void SetGameBenchRunning(Button btn, bool running)
     {
         _gameBenchRunning = running;
-        Ui.SetRunning(btn, running, "Iniciar", "Cancelar");
+        Ui.SetRunning(btn, running, "Iniciar teste", "Cancelar");
         BenchTestPanel.IsEnabled = !running;
     }
 
     // ----- Cena de jogo (GPU) -----
 
+    internal static List<BenchStat> GpuStats(GpuGameResult? r, string vs = "") => new()
+    {
+        new("Nota", r is null ? "—" : $"{r.Score:N0}", "pts", vs),
+        new("FPS médio", r is null ? "—" : $"{r.AvgFps:0.0}", "FPS"),
+        new("1% low", r is null ? "—" : $"{r.Low1Fps:0.0}", "FPS", Tip: "Média do 1% de quadros mais lentos: mostra os engasgos que o FPS médio esconde."),
+        new("Quadros", r is null ? "—" : $"{r.Frames:N0}"),
+        new("Resolução", r is null ? "—" : $"{r.Width} × {r.Height}"),
+    };
+
     internal async void BtnGpuBench_Click(object sender, RoutedEventArgs e)
     {
         if (_workloads.ActiveOperation == "GPU raster") { _gpuBench?.Cancel(); return; }
-        if (AnyBenchRunning || TestRunning) { GbStatus.Text = "Termine o outro teste antes."; return; }
+        if (AnyBenchRunning || TestRunning) { GbStatus.Text = "Termine o outro teste antes."; GbDetail.Text = ""; return; }
         using var workload = _workloads.TryBegin("GPU raster");
-        if (workload == null) { GbStatus.Text = "Termine o outro teste antes."; return; }
+        if (workload == null) { GbStatus.Text = "Termine o outro teste antes."; GbDetail.Text = ""; return; }
 
         var size = (CheckedTag(GbResPanel) ?? "1920x1080").Split('x').Select(int.Parse).ToArray();
         int secs = int.Parse(CheckedTag(GbDurPanel) ?? "60");
@@ -106,17 +159,21 @@ public partial class MainWindow
             AdapterName = _gpus.Count > 0 ? _gpus[0].Name : ""
         };
         SetGameBenchRunning(BtnGpuBench, true);
-        GbResult.ItemsSource = null;
+        GbResult.ItemsSource = GpuStats(null);
+        GbTrace.Clear();
+        GbStatus.Text = $"Rodando em {size[0]} × {size[1]}";
+        GbDetail.Text = "";
         var bench = _gpuBench;
         var timer = new DispatcherTimer(TimeSpan.FromMilliseconds(250), DispatcherPriority.Normal, (_, _) =>
         {
             GbFpsNow.Text = bench.CurrentFps > 0 ? $"{bench.CurrentFps:0}" : "—";
             GbProgress.ScaleX = bench.Progress;
-            GbStatus.Text = $"Rodando · {size[0]}x{size[1]} · {bench.Progress:P0}";
+            GbTrace.Add(bench.Progress, bench.CurrentFps);
+            GbDetail.Text = $"{bench.Progress:P0}";
         }, Dispatcher);
         timer.Start();
         _gpuBenchActive = true;
-        GbGpuNow.Text = "sensores pausados";
+        GbGpuNow.Text = "Sensores pausados durante o teste";
         bool overlayWasOn = ChkOverlay.IsChecked == true;
         if (overlayWasOn) ChkOverlay.IsChecked = false; // o overlay também consulta a GPU
 
@@ -126,13 +183,13 @@ public partial class MainWindow
         {
             r = await Task.Factory.StartNew(bench.Run, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
-        catch (Exception ex) { GbStatus.Text = "Falhou: " + ex.Message; return; }
+        catch (Exception ex) { GbStatus.Text = "Falhou: " + ex.Message; GbDetail.Text = ""; return; }
         finally
         {
             timer.Stop();
             _gpuBenchActive = false;
             if (overlayWasOn) ChkOverlay.IsChecked = true;
-            GbGpuNow.Text = "—";
+            GbGpuNow.Text = "";
             SetGameBenchRunning(BtnGpuBench, false);
             GbProgress.ScaleX = 0;
             GbFpsNow.Text = "—";
@@ -141,28 +198,33 @@ public partial class MainWindow
         if (r == null)
         {
             GbStatus.Text = bench.Cancelled ? "Cancelado" : $"Falhou: {bench.Error}";
+            GbDetail.Text = "";
             return;
         }
-        GbStatus.Text = $"Concluído · {r.Adapter}";
-        GbResult.ItemsSource = new[]
-        {
-            new KeyValuePair<string, string>("Nota", $"{r.Score:N0} pts"),
-            new KeyValuePair<string, string>("FPS médio", $"{r.AvgFps:0.0}"),
-            new KeyValuePair<string, string>("1% low", $"{r.Low1Fps:0.0}"),
-            new KeyValuePair<string, string>("Resolução", $"{r.Width}x{r.Height}"),
-            new KeyValuePair<string, string>("Frames", $"{r.Frames:N0}"),
-        };
+        string vs = VsBest(r.Score, _settings.BenchRecords
+            .Where(x => x.Test == "gpu" && SummaryParts(x.Summary).LastOrDefault() == $"{r.Height}p").Select(x => x.Score));
+        GbStatus.Text = $"Concluído em {TimeSpan.FromSeconds(r.Seconds):m\\:ss}";
+        GbDetail.Text = "";
+        GbResult.ItemsSource = GpuStats(r, vs);
         SaveBenchRecord("gpu", r.Score, $"{r.Score:N0} pts · {r.AvgFps:0} FPS · {r.Height}p");
     }
 
     // ----- Simulação de jogo (CPU) -----
 
+    internal static List<BenchStat> SimStats(GameSimResult? r, string vs = "") => new()
+    {
+        new("FPS médio", r is null ? "—" : $"{r.AvgFps:0}", "FPS", vs, Tip: "A nota do teste é o FPS médio."),
+        new("1% low", r is null ? "—" : $"{r.Low1Fps:0}", "FPS", Tip: "Média do 1% de quadros mais lentos."),
+        new("Thread principal", r is null ? "—" : $"{r.MainThreadMs:0.00}", "ms/quadro", Tip: "Grade espacial, lógica e preparo do desenho, numa thread só."),
+        new("Física e IA", r is null ? "—" : $"{r.ParallelMs:0.00}", "ms/quadro", Tip: "Física, colisão e IA das unidades, em paralelo nas outras threads."),
+    };
+
     internal async void BtnSimBench_Click(object sender, RoutedEventArgs e)
     {
         if (_workloads.ActiveOperation == "CPU simulation") { _gameBenchCts?.Cancel(); return; }
-        if (AnyBenchRunning || TestRunning) { SimStatus.Text = "Termine o outro teste antes."; return; }
+        if (AnyBenchRunning || TestRunning) { SimStatus.Text = "Termine o outro teste antes."; SimDetail.Text = ""; return; }
         using var workload = _workloads.TryBegin("CPU simulation");
-        if (workload == null) { SimStatus.Text = "Termine o outro teste antes."; return; }
+        if (workload == null) { SimStatus.Text = "Termine o outro teste antes."; SimDetail.Text = ""; return; }
 
         int secs = int.Parse(CheckedTag(SimDurPanel) ?? "20");
         _simBitmap ??= new System.Windows.Media.Imaging.WriteableBitmap(SimView, SimView, 96, 96, PixelFormats.Bgra32, null);
@@ -174,14 +236,15 @@ public partial class MainWindow
         _gameBenchCts = CancellationTokenSource.CreateLinkedTokenSource(_features.Lifetime);
         var ct = _gameBenchCts.Token;
         SetGameBenchRunning(BtnSimBench, true);
-        SimResult.ItemsSource = null;
-        SimStatus.Text = "Aquecendo (2 s)…";
+        SimResult.ItemsSource = SimStats(null);
+        SimStatus.Text = "Aquecendo";
+        SimDetail.Text = "";
         var timer = new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Render, (_, _) =>
         {
             DrawSim(sim);
             SimProgress.ScaleX = sim.Progress;
-            if (sim.FramesDone > 0) SimStatus.Text = $"Simulando · {sim.Progress:P0}";
-            SimFpsNow.Text = sim.CurrentFps > 0 ? $"{sim.CurrentFps:0} FPS" : "";
+            if (sim.FramesDone > 0) { SimStatus.Text = "Simulando"; SimDetail.Text = $"{sim.Progress:P0}"; }
+            SimFpsNow.Text = sim.CurrentFps > 0 ? $"{sim.CurrentFps:0}" : "—";
         }, Dispatcher);
         timer.Start();
 
@@ -189,29 +252,24 @@ public partial class MainWindow
         try
         {
             r = await Task.Run(() => sim.Run(TimeSpan.FromSeconds(secs), ct));
-            if (ct.IsCancellationRequested) { SimStatus.Text = "Cancelado"; return; }
+            if (ct.IsCancellationRequested) { SimStatus.Text = "Cancelado"; SimDetail.Text = ""; return; }
         }
-        catch (OperationCanceledException) { SimStatus.Text = "Cancelado"; return; }
-        catch (Exception ex) { SimStatus.Text = "Falhou: " + ex.Message; return; }
+        catch (OperationCanceledException) { SimStatus.Text = "Cancelado"; SimDetail.Text = ""; return; }
+        catch (Exception ex) { SimStatus.Text = "Falhou: " + ex.Message; SimDetail.Text = ""; return; }
         finally
         {
             timer.Stop();
             SetGameBenchRunning(BtnSimBench, false);
             SimProgress.ScaleX = 0;
-            SimFpsNow.Text = "";
+            SimFpsNow.Text = "—";
             _gameBenchCts?.Dispose();
             _gameBenchCts = null;
         }
 
-        SimStatus.Text = $"Concluído · {r.Frames:N0} frames em {r.Seconds:0} s";
-        SimResult.ItemsSource = new[]
-        {
-            new KeyValuePair<string, string>("FPS médio (nota)", $"{r.AvgFps:0}"),
-            new KeyValuePair<string, string>("1% low", $"{r.Low1Fps:0}"),
-            new KeyValuePair<string, string>("Thread principal", $"{r.MainThreadMs:0.00} ms/frame"),
-            new KeyValuePair<string, string>("Física + IA (paralelo)", $"{r.ParallelMs:0.00} ms/frame"),
-            new KeyValuePair<string, string>("Unidades", $"{GameSimBench.Entities:N0}"),
-        };
+        string vs = VsBest(r.Score, _settings.BenchRecords.Where(x => x.Test == "sim").Select(x => x.Score));
+        SimStatus.Text = $"Concluído em {TimeSpan.FromSeconds(r.Seconds):m\\:ss}";
+        SimDetail.Text = $"{r.Frames:N0} quadros";
+        SimResult.ItemsSource = SimStats(r, vs);
         SaveBenchRecord("sim", r.Score, $"{r.AvgFps:0} FPS · 1% low {r.Low1Fps:0}");
     }
 
@@ -232,55 +290,71 @@ public partial class MainWindow
 
     // ----- Memória e carregamento -----
 
+    /// <summary>As seis medições, com travessão nas que ainda não foram feitas (a tabela já nasce com a altura final).</summary>
+    internal static List<MemRow> MemRows(double? lat, (double Read, double Copy)? bw, LoadResult? load)
+    {
+        static string F(double? v, string format) => v is double d ? d.ToString(format, CultureInfo.CurrentCulture) : "—";
+        string drive = load?.Drive.TrimEnd('\\') ?? "";
+        return new()
+        {
+            new("Latência da RAM", F(lat, "0.0"), "ns", "", "Acesso aleatório à memória. Quanto menor, melhor."),
+            new("Leitura da RAM", F(bw?.Read, "0.0"), "GB/s", "", "Todas as threads lendo em sequência."),
+            new("Cópia da RAM", F(bw?.Copy, "0.0"), "GB/s", "", "Leitura e escrita ao mesmo tempo."),
+            new("Leitura do pacote do mapa", F(load?.SeqReadMBs, "N0"), "MiB/s", load is null ? "" : $"512 MB em sequência na unidade {drive}",
+                "Leitura sequencial, sem o cache do Windows."),
+            new("Arquivos pequenos", F(load?.FilesPerSec, "N0"), "arq/s", load is null ? "" : $"{load.SmallFilesMBs:N0} MiB/s",
+                "Mil arquivos de 64 KB lidos por 8 threads, sem o cache do Windows."),
+            new("Carregamento do mapa", F(load?.MapLoadSeconds, "0.00"), "s", "", "Pacote e arquivos pequenos juntos. Quanto menor, mais rápido o jogo carrega."),
+        };
+    }
+
     internal async void BtnMemBench_Click(object sender, RoutedEventArgs e)
     {
         if (_workloads.ActiveOperation == "RAM and loading") { _gameBenchCts?.Cancel(); return; }
-        if (AnyBenchRunning || TestRunning) { MemStatus.Text = "Termine o outro teste antes."; return; }
+        if (AnyBenchRunning || TestRunning) { MemStatus.Text = "Termine o outro teste antes."; MemDetail.Text = ""; return; }
         using var workload = _workloads.TryBegin("RAM and loading");
-        if (workload == null) { MemStatus.Text = "Termine o outro teste antes."; return; }
+        if (workload == null) { MemStatus.Text = "Termine o outro teste antes."; MemDetail.Text = ""; return; }
 
         _gameBenchCts = CancellationTokenSource.CreateLinkedTokenSource(_features.Lifetime);
         var ct = _gameBenchCts.Token;
         SetGameBenchRunning(BtnMemBench, true);
-        var rows = new List<MemRow>();
-        void Show() => MemResult.ItemsSource = rows.ToList();
+        double? lat = null;
+        (double Read, double Copy)? bw = null;
+        LoadResult? load = null;
+        void Show() => MemResult.ItemsSource = MemRows(lat, bw, load);
+        Show();
         (string Phase, double Frac) progress = ("", 0);
         var timer = new DispatcherTimer(TimeSpan.FromMilliseconds(150), DispatcherPriority.Normal, (_, _) =>
         {
             MemStatus.Text = progress.Phase;
+            MemDetail.Text = $"{progress.Frac:P0}";
             MemProgress.ScaleX = progress.Frac;
         }, Dispatcher);
         timer.Start();
 
         try
         {
-            progress = ("Medindo latência da RAM…", 0.05);
-            double lat = await Task.Run(() => MemoryBench.MeasureLatencyNs(ct));
+            progress = ("Medindo a latência da RAM", 0.05);
+            lat = await Task.Run(() => MemoryBench.MeasureLatencyNs(ct));
             ct.ThrowIfCancellationRequested();
-            rows.Add(new MemRow("Latência da RAM", $"{lat:0.0} ns", "Acesso aleatório. Menor é melhor; pesa muito em jogos competitivos."));
             Show();
 
-            progress = ("Medindo banda da RAM…", 0.2);
-            var bw = await Task.Run(() => MemoryBench.MeasureBandwidth(ct));
+            progress = ("Medindo a banda da RAM", 0.2);
+            bw = await Task.Run(() => MemoryBench.MeasureBandwidth(ct));
             ct.ThrowIfCancellationRequested();
-            rows.Add(new MemRow("Banda de leitura da RAM", $"{bw.Read:0.0} GB/s", "Todas as threads lendo em sequência."));
-            rows.Add(new MemRow("Banda de cópia da RAM", $"{bw.Copy:0.0} GB/s", "Leitura + escrita."));
             Show();
 
-            var load = await Task.Run(() => MemoryBench.MeasureLoading((phase, f) => progress = (phase, 0.35 + f * 0.6), ct));
-            rows.Add(new MemRow($"SSD {load.Drive} · leitura sequencial", $"{load.SeqReadMBs:N0} MiB/s", "Pacote de 512 MB, sem cache do Windows."));
-            rows.Add(new MemRow("Assets pequenos", $"{load.FilesPerSec:N0} arq/s",
-                                $"Mil arquivos de 64 KB com 8 threads ({load.SmallFilesMBs:N0} MiB/s), como engines modernas."));
-            rows.Add(new MemRow("Carregamento do mapa", $"{load.MapLoadSeconds:0.00} s", "Pacote + assets: quanto menor, mais rápido o jogo carrega."));
+            load = await Task.Run(() => MemoryBench.MeasureLoading((phase, f) => progress = (phase, 0.35 + f * 0.6), ct));
             Show();
 
-            MemStatus.Text = "Concluído. Os arquivos de teste foram apagados.";
+            MemStatus.Text = "Concluído";
+            MemDetail.Text = "Arquivos de teste apagados";
             // Nota para a barra do histórico: mais rápido = maior (inverso da latência × velocidade de carga).
-            SaveBenchRecord("mem", 1000 / lat + 10 / load.MapLoadSeconds,
-                            $"{lat:0} ns · {bw.Read:0} GB/s · mapa {load.MapLoadSeconds:0.00} s");
+            SaveBenchRecord("mem", 1000 / lat.Value + 10 / load.MapLoadSeconds,
+                            $"{lat:0} ns · {bw.Value.Read:0} GB/s · mapa {load.MapLoadSeconds:0.00} s");
         }
-        catch (OperationCanceledException) { MemStatus.Text = "Cancelado (arquivos de teste apagados)"; }
-        catch (Exception ex) { MemStatus.Text = $"Falhou: {ex.Message}"; }
+        catch (OperationCanceledException) { MemStatus.Text = "Cancelado"; MemDetail.Text = "Arquivos de teste apagados"; }
+        catch (Exception ex) { MemStatus.Text = $"Falhou: {ex.Message}"; MemDetail.Text = ""; }
         finally
         {
             timer.Stop();
