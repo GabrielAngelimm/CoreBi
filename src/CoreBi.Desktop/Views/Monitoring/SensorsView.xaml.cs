@@ -16,6 +16,11 @@ public partial class SensorsView : UserControl
         DependencyProperty.Register(nameof(SectionColumns), typeof(int), typeof(SensorsView), new PropertyMetadata(2));
     public int SectionColumns { get => (int)GetValue(SectionColumnsProperty); set => SetValue(SectionColumnsProperty, value); }
 
+    /// <summary>Dica de Mín., Média e Máx. nos cabeçalhos dos componentes: desde quando as estatísticas contam.</summary>
+    public static readonly DependencyProperty StatsNoteProperty =
+        DependencyProperty.Register(nameof(StatsNote), typeof(string), typeof(SensorsView), new PropertyMetadata(""));
+    public string StatsNote { get => (string)GetValue(StatsNoteProperty); set => SetValue(StatsNoteProperty, value); }
+
     private const double HeaderHeight = 112;  // altura do cabeçalho de componente: 80 + 32 (ComponentHeader no XAML)
 
     private SensorMonitor? _monitor;
@@ -35,6 +40,7 @@ public partial class SensorsView : UserControl
     public SensorsView()
     {
         InitializeComponent();
+        UpdateStatsNote();
         IsVisibleChanged += (_, _) => { if (IsVisible) Rebuild(); else Release(); };
         // A busca solta o foco (cursor e seleção) com um clique em qualquer lugar fora dela, como um campo de busca comum
         Focusable = true;
@@ -119,7 +125,7 @@ public partial class SensorsView : UserControl
         if (layout.Cards.Count == 0)
             ShowEmpty("Nenhum sensor encontrado", _search.Length > 0 ? $"Nada corresponde a “{_search}” neste filtro." : "Este tipo de sensor não existe neste componente.");
         else SensorEmpty.Visibility = Visibility.Collapsed;
-        UpdateFootnote();
+        UpdateStatsNote();
     }
 
     private void Release()
@@ -140,8 +146,12 @@ public partial class SensorsView : UserControl
         SensorEmpty.Visibility = Visibility.Visible;
     }
 
-    private void UpdateFootnote() => SensorFootnote.Text =
-        $"Mínimo, média e máximo contam desde as {_since:HH:mm}. A leitura pausa durante o teste de placa de vídeo.";
+    /// <summary>Desde quando contam mínimo, média e máximo: na dica de "Zerar estatísticas" e na dos nomes das colunas.</summary>
+    private void UpdateStatsNote()
+    {
+        BtnSensorsReset.ToolTip = $"Mínimo, média e máximo contam desde as {_since:HH:mm}. Zerar recomeça a contagem a partir de agora.";
+        StatsNote = $"Contam desde as {_since:HH:mm}. A leitura pausa durante o teste de placa de vídeo.";
+    }
 
     // ---------------- Cabeçalho fixo ----------------
 
@@ -256,7 +266,7 @@ public partial class SensorsView : UserControl
     {
         _monitor?.ResetStats();
         _since = DateTime.Now;
-        UpdateFootnote();
+        UpdateStatsNote();
     }
 
     private void Toggle_Click(object sender, RoutedEventArgs e)

@@ -359,17 +359,21 @@
                     ToolTip="Salva a ficha do computador em HTML, PDF (A4) ou JSON. Números de série e o nome do usuário ficam de fora." />
         </Grid>
 
-        <!-- Um painel só: o índice da máquina em cima e a ficha do componente escolhido embaixo -->
+        <!-- Um painel só: o índice da máquina em cima e a ficha do componente escolhido embaixo. Vai até o pé da página em toda
+             aba, de propósito: a ficha muda de altura de uma aba para outra, e um painel que encolhesse ao conteúdo faria a borda
+             de baixo pular a cada troca; as fichas longas (vários discos, quatro módulos de memória) rolam dentro dele. -->
         <Border x:Name="SheetCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SheetCard_SizeChanged">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <!-- Faixa do índice: tom intermediário (o mesmo da faixa de colunas de Sensores), para os botões se destacarem -->
+                <!-- Faixa do índice: tom intermediário (o mesmo da faixa de colunas de Sensores), para os botões se destacarem.
+                     20 + 4 da margem de cada aba = 24 nas laterais, a borda das abas alinha com a placa e a ficha (PanelPadding);
+                     em cima e embaixo fica 12 para a faixa não crescer, também na grade de 3 × 2 das janelas estreitas. -->
                 <Rectangle Fill="{DynamicResource Raised}" />
                 <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" />
-                <ListBox x:Name="SysIndex" ItemContainerStyle="{StaticResource IndexCell}" Margin="8" SelectionChanged="SysIndex_Changed"
+                <ListBox x:Name="SysIndex" ItemContainerStyle="{StaticResource IndexCell}" Margin="20,8" SelectionChanged="SysIndex_Changed"
                          KeyboardNavigation.DirectionalNavigation="Cycle">
                     <!-- Sem rolagem nem borda própria -->
                     <ListBox.Template>
@@ -392,7 +396,7 @@
                     <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" ClipToBounds="True">
                         <Grid>
                         <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="{Binding SelectedItem.Channel, ElementName=SysIndex}" />
-                        <Grid Margin="32,28">
+                        <Grid Margin="{StaticResource PanelPadding}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -412,9 +416,10 @@
                     </Border>
 
                     <!-- Os dados na largura toda, em grupos que se distribuem em colunas; o atalho para as leituras ao vivo vem logo
-                         depois do último grupo, no fim da ficha, em vez de solto no pé do cartão -->
+                         depois do último grupo, no fim da ficha, em vez de solto no pé do cartão. Recuo de 24 nas laterais, como
+                         a placa e as abas; em cima 12 + os 8 do título do grupo = 20 (PanelPadding). -->
                     <ScrollViewer x:Name="SpecScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" Focusable="False">
-                        <StackPanel Margin="32,18,32,28">
+                        <StackPanel Margin="24,12,24,20">
                             <!-- Armazenamento: os discos em cima, com as unidades; a ficha de cada um vem nos grupos abaixo -->
                             <ItemsControl x:Name="DiskList" ItemTemplate="{StaticResource DiskTemplate}" Margin="0,-8,0,20" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Focusable="False" />
                             <ItemsControl x:Name="SpecGroups" ItemTemplate="{StaticResource SpecGroupTemplate}" Focusable="False">

@@ -87,7 +87,8 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Nomes das colunas: uma vez por cartão (no topo do corpo), com a mesma geometria das linhas -->
+        <!-- Nomes das colunas: uma vez por cartão (no topo do corpo), com a mesma geometria das linhas. A dica das estatísticas diz
+             desde quando elas contam (SensorsView.StatsNote). -->
         <DataTemplate x:Key="ColumnHeads">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -98,9 +99,9 @@
                     <ColumnDefinition Width="74" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="1" Text="Atual" Style="{StaticResource ColHead}" />
-                <TextBlock Grid.Column="2" Text="Mín." Style="{StaticResource ColHead}" />
-                <TextBlock Grid.Column="3" Text="Média" Style="{StaticResource ColHead}" />
-                <TextBlock Grid.Column="4" Text="Máx." Style="{StaticResource ColHead}" />
+                <TextBlock Grid.Column="2" Text="Mín." Style="{StaticResource ColHead}" ToolTip="{Binding StatsNote, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                <TextBlock Grid.Column="3" Text="Média" Style="{StaticResource ColHead}" ToolTip="{Binding StatsNote, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                <TextBlock Grid.Column="4" Text="Máx." Style="{StaticResource ColHead}" ToolTip="{Binding StatsNote, RelativeSource={RelativeSource AncestorType=UserControl}}" />
             </Grid>
         </DataTemplate>
 
@@ -227,11 +228,14 @@
             </Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock Text="Sensores" Style="{StaticResource PageTitle}" />
-                <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
+                <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" HorizontalAlignment="Left"
+                           ToolTip="A leitura é a cada segundo e pausa durante o teste de placa de vídeo." />
             </StackPanel>
+            <!-- Busca e botão em 36 px, a altura dos botões de cabeçalho de todas as páginas. A dica do botão diz desde quando as
+                 estatísticas contam (SensorsView.UpdateStatsNote). -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                <TextBox x:Name="SensorSearch" Width="280" local:Ui.Icon="&#xE721;" local:Ui.Placeholder="Buscar sensor ou componente" TextChanged="SensorSearch_Changed" />
-                <Button x:Name="BtnSensorsReset" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE777;" Content="Zerar estatísticas" Margin="10,0,0,0" Click="BtnSensorsReset_Click" ToolTip="Recomeça o mínimo, a média e o máximo de todos os sensores a partir de agora." />
+                <TextBox x:Name="SensorSearch" Width="280" MinHeight="36" local:Ui.Icon="&#xE721;" local:Ui.Placeholder="Buscar sensor ou componente" TextChanged="SensorSearch_Changed" />
+                <Button x:Name="BtnSensorsReset" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE777;" Content="Zerar estatísticas" MinHeight="36" Margin="10,0,0,0" Click="BtnSensorsReset_Click" />
             </StackPanel>
         </Grid>
 
@@ -239,7 +243,6 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="IndexColumn" Width="300" />
@@ -247,8 +250,9 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Índice: um item por componente, na altura toda da página (a base alinha com a do cartão ao lado); escolher um mostra só ele -->
-            <Border x:Name="IndexCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="10,14,10,10">
+            <!-- Índice: um item por componente, na altura toda da página (a base alinha com a do cartão ao lado); escolher um mostra só ele.
+                 14 do cartão + 10 do item = 24, o recuo dos outros painéis; o fundo da seleção avança 10 para os lados. -->
+            <Border x:Name="IndexCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="14,20,14,12">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Componentes" Style="{StaticResource Label}" Margin="10,0,10,8" />
                     <ListBox x:Name="SensorIndex" ItemContainerStyle="{StaticResource IndexItem}" SelectionChanged="SensorIndex_Changed" HorizontalContentAlignment="Stretch">
@@ -325,7 +329,6 @@
                     </Grid>
                 </Grid>
             </Border>
-            <TextBlock x:Name="SensorFootnote" Grid.Row="2" Grid.ColumnSpan="3" Style="{StaticResource Footnote}" MaxWidth="1400" Margin="2,8,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
         </Grid>
     </Grid>
 </UserControl>

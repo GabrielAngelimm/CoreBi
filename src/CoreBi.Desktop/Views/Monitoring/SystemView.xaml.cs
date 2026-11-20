@@ -167,7 +167,7 @@ public partial class SystemView : UserControl
         }
         if (_columns != null)
         {
-            double specs = width - 64;
+            double specs = width - 48;  // 24 de cada lado (SpecScroll)
             _columns.Columns = specs >= 1100 ? 3 : specs >= 620 ? 2 : 1;
         }
     }
