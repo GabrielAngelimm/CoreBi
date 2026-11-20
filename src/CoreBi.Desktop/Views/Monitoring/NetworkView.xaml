@@ -61,8 +61,8 @@
                     <RowDefinition Height="*" MinHeight="250" />
                 </Grid.RowDefinitions>
 
-                <!-- Cabeçalho de altura fixa (62 px), como nas outras páginas: título no topo e o console na faixa de título + subtítulo -->
-                <Grid x:Name="NetHeader" Style="{StaticResource PageHeader}" MinHeight="62" SizeChanged="NetHeader_SizeChanged">
+                <!-- Console ao lado do título: o topo dele fica na altura do topo das letras do título (5 abaixo da caixa) e o primeiro painel a 20 do pé dele -->
+                <Grid x:Name="NetHeader" Style="{StaticResource PageHeader}" Margin="0,0,0,20" SizeChanged="NetHeader_SizeChanged">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -78,7 +78,7 @@
                         uma linha com a etapa à direita ("2 de 3 · Download") e a barra contínua com as três estações, que só aparece
                         durante o teste (oculta, sem mudar a altura, em repouso), assim como a porcentagem.
                     -->
-                    <Border x:Name="NetConsole" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="12,12,22,12" Margin="40,0,0,0" Height="62" VerticalAlignment="Top">
+                    <Border x:Name="NetConsole" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="12,12,22,12" Margin="40,5,0,0" Height="62" VerticalAlignment="Top">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />

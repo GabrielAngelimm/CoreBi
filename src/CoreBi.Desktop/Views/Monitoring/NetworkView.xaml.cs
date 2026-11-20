@@ -39,7 +39,7 @@ public partial class NetworkView : UserControl
         Grid.SetRow(NetConsole, narrow ? 1 : 0);
         Grid.SetColumn(NetConsole, narrow ? 0 : 1);
         Grid.SetColumnSpan(NetConsole, narrow ? 2 : 1);
-        NetConsole.Margin = narrow ? new Thickness(0, 16, 0, 0) : new Thickness(40, 0, 0, 0);
+        NetConsole.Margin = narrow ? new Thickness(0, 16, 0, 0) : new Thickness(40, 5, 0, 0);
     }
 
     // Larguras do painel de diagnóstico: abaixo de NarrowDiag a latência e as grandezas de apoio descem para uma faixa sob o
