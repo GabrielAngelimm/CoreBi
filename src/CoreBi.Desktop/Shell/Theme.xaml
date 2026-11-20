@@ -1626,6 +1626,13 @@
         <Setter Property="LineHeight" Value="76"/>
         <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
         <Setter Property="Margin" Value="-3,4,0,0"/>
+        <Style.Triggers>
+            <!-- Sem leitura: o travessão a 72 px vira uma barra; fica no tamanho de uma leitura comum e um tom abaixo -->
+            <Trigger Property="Text" Value="—">
+                <Setter Property="FontSize" Value="32"/>
+                <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
     <!-- Célula da régua de resultado: fio à esquerda (a primeira não tem), rótulo, número e unidade, e uma linha de contexto -->
     <Style x:Key="TestCellValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
