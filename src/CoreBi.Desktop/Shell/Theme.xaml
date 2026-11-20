@@ -1486,7 +1486,7 @@
 
     <!-- rodada-unslop: ferramentas início -->
     <!--
-        Console de tarefa (Inicialização, Instalar apps, Drivers): fica ao lado do título, centrado na altura dele, com o botão
+        Console de tarefa (Inicialização, Instalar apps, Drivers): fica ao lado do título, rente ao topo do cabeçalho, com o botão
         da tarefa (36 px), o estado em uma linha, um detalhe curto à direita e a barra contínua no sinal, que só aparece durante
         uma tarefa e só avança quando ela informa trabalho feito. Com 62 px de altura, o primeiro painel começa na mesma linha
         das páginas com título e subtítulo.

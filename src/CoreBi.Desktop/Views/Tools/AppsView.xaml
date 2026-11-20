@@ -4,7 +4,8 @@
             Cartão de app: o cartão inteiro marca e desmarca. Nome em DIN e descrição em até duas linhas; o canto de cima à direita
             é sempre o do estado: o marcador redondo enquanto dá para escolher e, no lugar dele, o estado de verdade em texto
             curto ("Na fila", "Instalando…", "Instalado", "Falhou"). Marcado leva o sinal (borda e realce); já instalado perde o
-            fundo e o marcador e não reage ao mouse, para não parecer uma opção.
+            marcador e não reage ao mouse, para não parecer uma opção. Desmarcado e instalado têm o fundo do painel: só o
+            marcado ganha realce.
         -->
         <Style x:Key="AppCard" TargetType="CheckBox">
             <Setter Property="Foreground" Value="{DynamicResource Fg}" />
@@ -15,7 +16,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
-                        <Border x:Name="b" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
+                        <Border x:Name="b" Background="Transparent" BorderBrush="{DynamicResource Line}" BorderThickness="1"
                                 CornerRadius="{StaticResource RadiusInset}" Padding="16,13,14,14" SnapsToDevicePixels="True">
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -68,9 +69,8 @@
                             <DataTrigger Binding="{Binding Tone}" Value="Faint">
                                 <Setter TargetName="state" Property="Foreground" Value="{DynamicResource Faint}" />
                             </DataTrigger>
-                            <!-- Já instalado: nada a marcar; sem fundo nem marcador, o cartão continua legível e o canto diz "Instalado" -->
+                            <!-- Já instalado: nada a marcar; sem marcador, o cartão continua legível e o canto diz "Instalado" -->
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="b" Property="Background" Value="Transparent" />
                                 <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Line}" />
                                 <Setter TargetName="dot" Property="Visibility" Value="Collapsed" />
                                 <Setter Property="Cursor" Value="Arrow" />
@@ -103,19 +103,20 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Instalar apps" Style="{StaticResource PageTitle}" VerticalAlignment="Center" />
+                <!-- Cabeçalho de altura fixa: título no topo como nas outras páginas; o console (62 px) fica rente ao topo, na faixa de título e subtítulo -->
+                <TextBlock Text="Instalar apps" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
 
-                <Border x:Name="AppsConsole" Grid.Column="1" Style="{StaticResource TaskConsole}" Margin="40,0,0,0">
+                <Border x:Name="AppsConsole" Grid.Column="1" Style="{StaticResource TaskConsole}" Margin="40,0,0,0" Height="62" VerticalAlignment="Top">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Button x:Name="BtnAppsInstall" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE896;" Content="Instalar apps" MinWidth="164" Height="36" FontSize="14"
+                        <Button x:Name="BtnAppsInstall" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE896;" Content="Instalar apps" MinWidth="164" Height="36"
                                 VerticalAlignment="Center" IsEnabled="False" Click="BtnAppsInstall_Click" ToolTipService.ShowOnDisabled="True"
                                 ToolTip="Instala pelo winget, um app de cada vez e sem janelas: cada instalador vem do site oficial do fabricante e é conferido antes de abrir." />
-                        <!-- O estado fica centrado no console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
+                        <!-- O estado fica no meio da altura do console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
                         <Grid Grid.Column="1" Margin="22,0,0,0">
                             <Grid VerticalAlignment="Center">
                                 <Grid.ColumnDefinitions>
@@ -152,8 +153,12 @@
                             <TextBlock Text="Aplicativos" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                             <TextBlock x:Name="AppsCount" Style="{StaticResource TitleCount}" />
                         </StackPanel>
-                        <!-- Um botão só, que diz o que vai fazer: marca os que faltam ou, com todos marcados, desmarca -->
-                        <Button x:Name="BtnAppsToggleAll" Grid.Column="1" Style="{StaticResource GhostButton}" Content="Marcar todos" VerticalAlignment="Center"
+                        <!--
+                            Um link só (o mesmo de "Abrir benchmark" da Visão geral: glifo no sinal), que diz o que vai fazer: marca os
+                            que faltam ou, com todos marcados, desmarca. A margem negativa alinha o texto com a borda dos cartões.
+                        -->
+                        <Button x:Name="BtnAppsToggleAll" Grid.Column="1" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE8B3;" Content="Marcar todos"
+                                VerticalAlignment="Center" Margin="0,0,-10,0"
                                 Click="BtnAppsToggleAll_Click" ToolTip="Marca os que ainda não estão instalados." />
                     </Grid>
                     <ItemsControl x:Name="AppsList" Focusable="False" SizeChanged="AppsList_SizeChanged">

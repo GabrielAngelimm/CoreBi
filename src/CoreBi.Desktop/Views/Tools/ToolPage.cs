@@ -7,7 +7,7 @@ namespace CoreBi.Desktop.Views;
 
 /// <summary>
 /// Peças comuns das páginas de Ferramentas (Inicialização, Instalar apps, Drivers): o console de tarefa (estilo TaskConsole),
-/// que fica ao lado do título (centrado na altura dele) em janelas largas e embaixo dele nas estreitas, e as tabelas feitas à mão, cujo
+/// que fica ao lado do título (rente ao topo do cabeçalho) em janelas largas e embaixo dele nas estreitas, e as tabelas feitas à mão, cujo
 /// cabeçalho de colunas acompanha a largura útil da lista quando a barra de rolagem aparece.
 /// </summary>
 internal static class ToolPage

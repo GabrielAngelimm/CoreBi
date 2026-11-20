@@ -44,18 +44,19 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Drivers" Style="{StaticResource PageTitle}" VerticalAlignment="Center" />
+                    <!-- Cabeçalho de altura fixa: título no topo como nas outras páginas; o console (62 px) fica rente ao topo, na faixa de título e subtítulo -->
+                    <TextBlock Text="Drivers" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
 
-                    <Border x:Name="DrvConsole" Grid.Column="1" Style="{StaticResource TaskConsole}" Margin="40,0,0,0">
+                    <Border x:Name="DrvConsole" Grid.Column="1" Style="{StaticResource TaskConsole}" Margin="40,0,0,0" Height="62" VerticalAlignment="Top">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Button x:Name="BtnDrvScan" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler drivers de novo" MinWidth="164" Height="36" FontSize="14"
+                            <Button x:Name="BtnDrvScan" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler drivers de novo" MinWidth="164" Height="36"
                                     VerticalAlignment="Center" Click="BtnDrvScan_Click"
                                     ToolTip="Lê de novo os drivers instalados, a placa de vídeo e a placa-mãe e consulta a versão mais recente na NVIDIA ou na AMD. Para atualizações do Windows, use Procurar atualizações." />
-                            <!-- O estado fica centrado no console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
+                            <!-- O estado fica no meio da altura do console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
                             <Grid Grid.Column="1" Margin="22,0,0,0">
                                 <Grid VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
@@ -219,7 +220,7 @@
                                 </StackPanel>
                                 <StackPanel x:Name="DrvWuEmpty" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="380" Margin="0,16,0,8">
                                     <TextBlock x:Name="DrvWuList" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextAlignment="Center"
-                                               Text="Procura drivers certificados pela Microsoft para as peças deste PC." />
+                                               Text="Procura drivers certificados pela Microsoft para este PC." />
                                     <Button x:Name="BtnDrvWuSearch" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE721;" Content="Procurar atualizações" Margin="0,14,0,0"
                                             HorizontalAlignment="Center" Click="BtnDrvWuSearch_Click"
                                             ToolTip="Consulta o Windows Update; pode levar 1 minuto. Nada é instalado sem você confirmar." />

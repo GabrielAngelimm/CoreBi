@@ -66,6 +66,7 @@ public partial class AppsView : UserControl
         var open = _installApps.Where(a => !a.Installed).ToList();
         bool all = open.Count > 0 && open.All(a => a.Selected);
         BtnAppsToggleAll.Content = all ? "Desmarcar todos" : "Marcar todos";
+        Ui.SetIcon(BtnAppsToggleAll, all ? "" : "");
         BtnAppsToggleAll.ToolTip = all ? null : "Marca os que ainda não estão instalados.";
         BtnAppsToggleAll.Visibility = open.Count > 0 ? Visibility.Visible : Visibility.Hidden;
     }
