@@ -52,25 +52,10 @@
                         <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="27" Margin="12,4,0,0" VerticalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- Rodapé: aviso de sensores, central de monitoramento e, por último, a chave de tema (que não muda de lugar quando a central some) -->
+                    <!-- Rodapé: central de monitoramento, aviso de sensores e, por último, a chave de tema; nada muda de lugar entre as páginas -->
                     <StackPanel DockPanel.Dock="Bottom" Margin="14,6,14,14">
-                        <!-- Aviso de sensores: o que falta numa linha, o motivo e o botão na linha de baixo (cabe sem rolar o menu em 1920 × 1032) -->
-                        <Border x:Name="CpuSensorWarn" Visibility="Collapsed" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource Warn}" BorderThickness="1" CornerRadius="{StaticResource RadiusInset}" Padding="10,8" Margin="0,0,0,8">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <TextBlock Grid.ColumnSpan="2" Text="CPU sem temperatura e consumo" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap" />
-                                <TextBlock x:Name="CpuSensorWarnText" Grid.Row="1" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,4,8,0" />
-                                <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Corrigir" MinHeight="26" Padding="10,3" FontSize="12" VerticalAlignment="Center" Margin="0,4,0,0" Click="BtnFixCpuSensors_Click" />
-                            </Grid>
-                        </Border>
-                        <!-- Central de monitoramento: quatro medidores segmentados, cada um na cor do seu componente. Some na Visão geral, que mostra o mesmo em tamanho grande. -->
+                        <!-- Central de monitoramento: quatro medidores segmentados, cada um na cor do seu componente. Na Visão geral, que mostra o
+                             mesmo em tamanho grande, fica oculta sem sair do lugar (Hidden): o aviso e a chave de tema não pulam ao navegar. -->
                         <Border x:Name="SideMonitor" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="10,12,10,10">
                             <StackPanel>
                                 <Grid>
@@ -146,6 +131,23 @@
                                     </Border>
                                 </Grid>
                             </StackPanel>
+                        </Border>
+                        <!-- Aviso de sensores: o que falta numa linha, o motivo e o botão na linha de baixo (cabe sem rolar o menu em 1920 × 1032).
+                             Fica abaixo da central para não mudar de lugar quando ela se esconde na Visão geral. -->
+                        <Border x:Name="CpuSensorWarn" Visibility="Collapsed" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource Warn}" BorderThickness="1" CornerRadius="{StaticResource RadiusInset}" Padding="10,8" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.ColumnSpan="2" Text="CPU sem temperatura e consumo" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap" />
+                                <TextBlock x:Name="CpuSensorWarnText" Grid.Row="1" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,4,8,0" />
+                                <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Corrigir" MinHeight="26" Padding="10,3" FontSize="12" VerticalAlignment="Center" Margin="0,4,0,0" Click="BtnFixCpuSensors_Click" />
+                            </Grid>
                         </Border>
                         <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,8,0,0">
                             <CheckBox x:Name="ThemeSwitch" Style="{StaticResource ThemeToggle}" Content="Modo escuro" Click="Theme_Click" AutomationProperties.Name="Modo escuro" />

@@ -271,7 +271,7 @@ public partial class MainWindow : Window
             p.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         }
         SetLoadingVeil(deferred);
-        SideMonitor.Visibility = name == "PageDash" ? Visibility.Collapsed : Visibility.Visible;
+        SideMonitor.Visibility = name == "PageDash" ? Visibility.Hidden : Visibility.Visible; // Hidden: o rodapé não pula
         UpdateFrameMonitoring();
     }
 

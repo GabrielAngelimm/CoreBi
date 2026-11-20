@@ -82,8 +82,10 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Grid Style="{StaticResource PageHeader}">
-                    <TextBlock Text="Gargalo" Style="{StaticResource PageTitle}" />
+                <!-- Cabeçalho de altura fixa (a de título + subtítulo nas outras páginas): sem subtítulo, o título fica no topo e os
+                     painéis começam na mesma altura das outras telas -->
+                <Grid Style="{StaticResource PageHeader}" MinHeight="62">
+                    <TextBlock Text="Gargalo" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
                 </Grid>
 
                 <Grid Grid.Row="1">
@@ -107,14 +109,15 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <!-- Veredito: o que limita agora, em grande; cor só quando há limitação -->
-                        <Border x:Name="BnLiveCard" Style="{StaticResource CardBorder}" Padding="28,24,28,26">
+                        <Border x:Name="BnLiveCard" Style="{StaticResource CardBorder}">
                             <StackPanel>
                                 <StackPanel x:Name="BnGameLine" Orientation="Horizontal" Margin="0,0,0,10" Visibility="Collapsed">
                                     <Ellipse x:Name="BnLiveDot" Style="{StaticResource StatusLed}" Fill="{DynamicResource Signal}" Margin="0,1,8,0" ToolTip="Medindo o FPS do programa em primeiro plano" />
                                     <TextBlock x:Name="BnLiveGame" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
-                                <!-- Manchete (DIN 44) só para veredito; sem veredito, corpo grande no tom secundário (MainWindow.SetLiveTitle) -->
-                                <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" FontFamily="{StaticResource UiFont}" FontSize="18" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" />
+                                <!-- Manchete (DIN 44) só para veredito; sem veredito, DIN 18 seminegrito no tom secundário, da família do título de painel
+                                     (MainWindow.SetLiveTitle) -->
+                                <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" FontFamily="{StaticResource DisplayFont}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" />
                                 <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,8,0,0" />
                                 <ItemsControl x:Name="BnFrameStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,24,0,0" Focusable="False" Visibility="Collapsed">
                                     <ItemsControl.ItemsPanel>
@@ -126,7 +129,7 @@
 
                         <!-- Análise de sessão: a única ação da página. Sem resultado, o espaço dela diz o que fazer, centrado; com resultado,
                              o relatório vem logo abaixo do estado. -->
-                        <Border x:Name="BnSessionCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="28,20,28,24">
+                        <Border x:Name="BnSessionCard" Grid.Row="2" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -161,9 +164,10 @@
                                         </Border>
                                     </Grid>
                                 </StackPanel>
-                                <!-- Sem resultado (antes, durante, cancelada ou sem amostras): o que a análise pede e o que ela entrega -->
+                                <!-- Sem resultado (antes, durante, cancelada ou sem amostras): o que a análise pede e o que ela entrega, no estado vazio
+                                     padrão (título DIN 15 em tinta, frase de 13 no tom secundário, centrados) -->
                                 <StackPanel x:Name="BnSessionEmpty" Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="460" Margin="0,24,0,0">
-                                    <TextBlock Text="A análise precisa de um jogo aberto" Style="{StaticResource GroupTitle}" TextAlignment="Center" />
+                                    <TextBlock Text="A análise precisa de um jogo aberto" Style="{StaticResource GroupTitle}" FontSize="15" TextAlignment="Center" />
                                     <TextBlock Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextAlignment="Center" Margin="0,8,0,0"
                                                Text="Deixe-o em primeiro plano até o fim. Depois, o CoreBi mostra por quanto tempo cada peça limitou o FPS." />
                                 </StackPanel>
@@ -195,7 +199,7 @@
                     <!-- As leituras que provam o veredito e, embaixo, o equilíbrio estimado pela tabela de desempenho -->
                     <Border x:Name="BnSideCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0">
                         <DockPanel>
-                            <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="24,18,24,22">
+                            <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="{StaticResource PanelPadding}">
                                 <StackPanel>
                                     <TextBlock Text="Equilíbrio estimado" Style="{StaticResource SectionTitle}"
                                                ToolTip="Estimativa pela tabela de desempenho relativo de processadores e placas de vídeo do CoreBi, não uma medição. Cada jogo pesa diferente; as leituras ao vivo mostram o que acontece de fato." />

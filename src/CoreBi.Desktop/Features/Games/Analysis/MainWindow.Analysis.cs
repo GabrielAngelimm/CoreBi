@@ -133,15 +133,13 @@ public partial class MainWindow
 
     /// <summary>
     /// Título do cartão ao vivo. Com veredito (tone não nulo), manchete em DIN 44, na cor do veredito ("" = tinta); sem veredito,
-    /// corpo grande no tom secundário, abaixo do título da página.
+    /// DIN 18 seminegrito no tom secundário (a família do título de painel), abaixo do título da página.
     /// </summary>
     private void SetLiveTitle(string text, string? tone)
     {
         bool verdict = tone != null;
         BnLiveTitle.Text = text;
-        BnLiveTitle.FontFamily = (System.Windows.Media.FontFamily)FindResource(verdict ? "DisplayFont" : "UiFont");
         BnLiveTitle.FontSize = verdict ? 44 : 18;
-        BnLiveTitle.FontWeight = verdict ? FontWeights.SemiBold : FontWeights.Normal;
         BnLiveTitle.SetResourceReference(TextBlock.ForegroundProperty, !verdict ? "Muted" : tone == "" ? "Fg" : tone!);
     }
 

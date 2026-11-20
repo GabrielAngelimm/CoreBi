@@ -23,7 +23,7 @@
         <!-- Instrumento ao vivo: rótulo, leitura de mostrador, complemento (linha reservada, para os sete terem a mesma altura) e
              o último minuto em área chapada no canal Gpu. Separados por fios, como as leituras da placa. -->
         <DataTemplate x:Key="GaugeTile">
-            <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="20,18,20,20" ToolTip="{Binding Tip}" Background="Transparent">
+            <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="20" ToolTip="{Binding Tip}" Background="Transparent">
                 <StackPanel>
                     <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
@@ -37,7 +37,7 @@
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding First}" Value="True">
                     <Setter TargetName="cell" Property="BorderThickness" Value="0" />
-                    <Setter TargetName="cell" Property="Padding" Value="28,18,20,20" />
+                    <Setter TargetName="cell" Property="Padding" Value="24,20,20,20" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Danger">
                     <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Danger}" />
@@ -65,14 +65,16 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid Style="{StaticResource PageHeader}">
+        <!-- Cabeçalho de altura fixa (a de título + subtítulo nas outras páginas): sem subtítulo, o título fica no topo e o primeiro
+             painel começa na mesma altura das outras telas -->
+        <Grid Style="{StaticResource PageHeader}" MinHeight="62">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock Text="Placa de vídeo" Style="{StaticResource PageTitle}" VerticalAlignment="Bottom" />
+            <TextBlock Text="Placa de vídeo" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
             <!-- Uma pílula por placa, só quando há mais de uma (MainWindow.LoadGpu) -->
-            <WrapPanel x:Name="GpuChips" Grid.Column="1" VerticalAlignment="Bottom" />
+            <WrapPanel x:Name="GpuChips" Grid.Column="1" VerticalAlignment="Top" Margin="0,6,0,0" />
         </Grid>
 
         <!-- O painel da placa: a identificação em cima e as leituras vivas embaixo -->
@@ -87,7 +89,7 @@
                 <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" CornerRadius="9,9,0,0" ClipToBounds="True">
                     <Grid>
                         <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="Gpu" CornerRadius="9,9,0,0" />
-                        <Grid Margin="28,24,32,24">
+                        <Grid Margin="{StaticResource PanelPadding}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -113,7 +115,7 @@
                 </Border>
 
                 <!-- Instrumentos ao vivo, um por grandeza, na largura toda; sem nenhum sensor, uma frase só no lugar deles -->
-                <TextBlock x:Name="GpuNoSensors" Grid.Row="1" Visibility="Collapsed" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="28,16,28,18"
+                <TextBlock x:Name="GpuNoSensors" Grid.Row="1" Visibility="Collapsed" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="{StaticResource PanelPadding}"
                            Text="Sem leituras ao vivo: o driver desta placa não informa uso, clock nem temperatura." />
                 <ItemsControl x:Name="GpuGauges" Grid.Row="1" ItemTemplate="{StaticResource GaugeTile}" Focusable="False" SizeChanged="GpuGauges_SizeChanged">
                     <ItemsControl.ItemsPanel>
@@ -122,7 +124,7 @@
                 </ItemsControl>
 
                 <!-- Leituras do driver (estado de desempenho, limitador...): a faixa só existe quando o driver as informa -->
-                <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="28,14,20,14"
+                <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="24,14"
                         Visibility="{Binding HasItems, ElementName=GpuExtras, Converter={StaticResource BoolVis}}">
                     <ItemsControl x:Name="GpuExtras" ItemTemplate="{StaticResource FactCell}" VerticalAlignment="Center" Focusable="False">
                         <ItemsControl.ItemsPanel>
@@ -141,9 +143,9 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <TextBlock Text="Especificações" Style="{StaticResource SectionTitle}" Margin="28,20,28,0" />
+                <TextBlock Text="Especificações" Style="{StaticResource SectionTitle}" Margin="24,20,24,0" />
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Focusable="False" Margin="0,16,0,0">
-                    <ItemsControl x:Name="GpuSections" ItemTemplate="{StaticResource GpuSection}" Margin="28,0,28,20" Focusable="False">
+                    <ItemsControl x:Name="GpuSections" ItemTemplate="{StaticResource GpuSection}" Margin="24,0,24,20" Focusable="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><inv:ColumnsPanel Columns="4" ColumnGap="40" RowGap="24" Loaded="SpecColumns_Loaded" /></ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
