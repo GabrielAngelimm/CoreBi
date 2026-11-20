@@ -222,7 +222,8 @@
     </UserControl.Resources>
 
     <ScrollViewer x:Name="BenchScroll" VerticalScrollBarVisibility="Auto">
-        <Grid MinHeight="{Binding ViewportHeight, ElementName=BenchScroll}">
+        <!-- Altura da janela (e não mínima): assim a lista longa rola dentro do painel; abaixo de 780 px a página rola -->
+        <Grid Height="{Binding ViewportHeight, ElementName=BenchScroll}" MinHeight="780">
             <Grid Style="{StaticResource PageGrid}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
