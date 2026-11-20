@@ -24,6 +24,10 @@ jobs:
       - run: dotnet format whitespace CoreBi.slnx --no-restore --verify-no-changes
       - run: dotnet build CoreBi.slnx -c Release --no-restore
       - run: dotnet run --project tests/CoreBi.Tests -c Release --no-build -- artifacts/tests
+      - name: Tela de 1920 × 1080 para as capturas
+        continue-on-error: true
+        shell: pwsh
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
       - name: Capturas das páginas (claro e escuro)
         continue-on-error: true
         timeout-minutes: 6
