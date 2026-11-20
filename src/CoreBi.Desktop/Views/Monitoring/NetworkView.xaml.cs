@@ -136,13 +136,11 @@ public partial class NetworkView : UserControl
             if (result.InterruptedPhase != null)
             {
                 NetStatus.Text = result.RetryAfterUtc != null ? "Aguardando o servidor" : "Teste incompleto";
-                SetStage(result.InterruptedPhase ?? NetworkPhase.Preparing);
                 SetProgress(result.InterruptedFraction, animate: false);
             }
             else
             {
                 NetStatus.Text = $"Concluído às {result.TestedAt:HH:mm:ss}";
-                SetStage(NetworkPhase.Done);
                 SetProgress(1, animate: true);
             }
         }
@@ -158,7 +156,11 @@ public partial class NetworkView : UserControl
         {
             _running = false;
             _cancellation = null;
-            if (!Context.IsClosing) Ui.SetRunning(BtnNetTest, false, LastResult != null ? "Testar de novo" : "Testar a rede");
+            if (!Context.IsClosing)
+            {
+                Ui.SetRunning(BtnNetTest, false, LastResult != null ? "Testar de novo" : "Testar a rede");
+                ShowTrack(false); // em repouso o console fica só com o botão e o estado
+            }
         }
     }
 
@@ -176,7 +178,6 @@ public partial class NetworkView : UserControl
     {
         NetStatus.Text = status;
         NetDetail.Text = detail;
-        SetStage(NetworkPhase.Preparing);
         SetProgress(0, animate: false);
         ShowResult(null);
         NetMeta.Text = "Sem resultado";
@@ -187,8 +188,7 @@ public partial class NetworkView : UserControl
     private void ShowProgress(NetworkProgress p)
     {
         NetStatus.Text = p.Text;
-        NetDetail.Text = "";
-        SetStage(p.Phase);
+        NetDetail.Text = StageText(p.Phase);
         SetProgress(p.Fraction, animate: true);
         // Leituras parciais: só o que já foi medido; o restante continua com travessão.
         SetReadout(NetLatency, p.LatencyMs);
@@ -215,32 +215,24 @@ public partial class NetworkView : UserControl
             NetProgress.BeginAnimation(ScaleTransform.ScaleXProperty,
                 new DoubleAnimation(fraction, TimeSpan.FromMilliseconds(400)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
         }
-        bool started = fraction > 0 || _running;
-        NetPercent.Text = started ? (fraction * 100).ToString("0", PtBr) : "—";
-        NetPercent.SetResourceReference(TextBlock.ForegroundProperty, started ? "Fg" : "Faint");
-        NetPercentUnit.Visibility = started ? Visibility.Visible : Visibility.Collapsed;
+        NetPercent.Text = (fraction * 100).ToString("0", PtBr);
+        ShowTrack(_running);
     }
 
-    private void SetStage(NetworkPhase phase)
+    /// <summary>Barra e porcentagem só durante o teste; ocultas (sem mudar a altura do console) em repouso.</summary>
+    private void ShowTrack(bool on)
     {
-        int current = phase switch
-        {
-            NetworkPhase.Latency => 1,
-            NetworkPhase.Download => 2,
-            NetworkPhase.Upload => 3,
-            NetworkPhase.Analysis or NetworkPhase.Done => 4,
-            _ => 0,
-        };
-        var stages = new[] { (NetStage1, NetStage1Check), (NetStage2, NetStage2Check), (NetStage3, NetStage3Check) };
-        for (int i = 0; i < stages.Length; i++)
-        {
-            var (label, check) = stages[i];
-            int n = i + 1;
-            label.SetResourceReference(TextBlock.ForegroundProperty, n < current ? "Muted" : n == current ? "Fg" : "Faint");
-            label.FontWeight = n == current ? FontWeights.SemiBold : FontWeights.Normal;
-            check.Visibility = n < current ? Visibility.Visible : Visibility.Collapsed;
-        }
+        NetTrack.Visibility = NetPercentBox.Visibility = on ? Visibility.Visible : Visibility.Hidden;
     }
+
+    /// <summary>Etapa atual à direita do estado: "1 de 3 · Latência" (a barra tem um corte entre as três estações).</summary>
+    private static string StageText(NetworkPhase phase) => phase switch
+    {
+        NetworkPhase.Latency => "1 de 3 · Latência",
+        NetworkPhase.Download => "2 de 3 · Download",
+        NetworkPhase.Upload => "3 de 3 · Upload",
+        _ => "",
+    };
 
     // ---------------- Resultado ----------------
 
@@ -288,7 +280,9 @@ public partial class NetworkView : UserControl
         {
             NetMeta.Text = r.Card.Meta;
             string key = VerdictKey(r.Card.Verdict == DiskVerdict.Unknown ? DiskVerdict.Warning : r.Card.Verdict);
-            NetBadge.Visibility = Visibility.Visible;
+            // Estável: a linha do veredito ("Latência baixa e sem perda…", com o visto) já diz isso; o selo repetiria (U14).
+            // Atenção e ruim mantêm o selo, que resume a gravidade dos achados listados embaixo.
+            NetBadge.Visibility = r.Card.Verdict == DiskVerdict.Good ? Visibility.Collapsed : Visibility.Visible;
             Ui.SetTone(NetBadge, key);
             NetBadgeText.Text = new SentenceCaseConverter().Convert(r.Card.VerdictText, typeof(string), null!, PtBr) as string ?? "";
             ShowNotes(r, key);
@@ -400,17 +394,20 @@ public partial class NetworkView : UserControl
             NetPcLink.Text = "—"; NetPcLinkUnit.Text = "de link"; NetPcDetail.Text = "sem conexão"; NetRouterIp.Text = "—";
             return;
         }
-        NetInfo.ItemsSource = new[]
+        // Linha que não acrescenta nada some: o nome que o Windows dá à conexão quando é só o tipo ("Ethernet", "Wi-Fi") e a
+        // descrição genérica da placa ou igual ao nome
+        var rows = new List<KeyValuePair<string, string>>();
+        if (!IsGenericName(a.Name, a.Kind)) rows.Add(new("Adaptador", a.Name));
+        if (!IsGenericName(a.Description, a.Kind) && !a.Description.Equals(a.Name, StringComparison.OrdinalIgnoreCase)) rows.Add(new("Placa", a.Description));
+        NetInfo.ItemsSource = rows.Concat(new KeyValuePair<string, string>[]
         {
-            new KeyValuePair<string, string>("Adaptador", a.Name),
-            new("Placa", a.Description),
             new("Tipo", a.Kind),
             new("Velocidade do link", a.LinkText),
             new("IP local", a.LocalIp),
             new("Gateway", a.Gateway.ToString()),
             new("Servidor DNS", a.Dns),
             new("Endereço físico", a.Mac),
-        };
+        }).ToList();
         if (a.LinkMbps is { } mbps)
         {
             bool giga = mbps >= 1000;
@@ -420,6 +417,17 @@ public partial class NetworkView : UserControl
         else { NetPcLink.Text = "—"; NetPcLinkUnit.Text = "de link"; }
         NetPcDetail.Text = $"{(a.Kind == "Ethernet (cabo)" ? "Cabo" : a.Kind)} · {a.LocalIp}";
         NetRouterIp.Text = a.Gateway.ToString();
+    }
+
+    private static readonly string[] GenericAdapterNames = { "Adaptador de rede", "Network adapter", "Ethernet", "Wi-Fi", "WiFi", "Conexão local", "Local Area Connection" };
+
+    /// <summary>Vazio, um nome genérico ou só o tipo da conexão (o Tipo já diz "Ethernet (cabo)" ou "Wi-Fi").</summary>
+    private static bool IsGenericName(string? value, string kind)
+    {
+        value = value?.Trim();
+        if (string.IsNullOrEmpty(value)) return true;
+        return GenericAdapterNames.Any(g => g.Equals(value, StringComparison.OrdinalIgnoreCase))
+            || kind.StartsWith(value, StringComparison.OrdinalIgnoreCase);
     }
 
     // ---------------- Mostrador ----------------

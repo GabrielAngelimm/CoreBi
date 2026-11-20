@@ -1502,4 +1502,57 @@
         </Setter>
     </Style>
 
+    <!-- rodada-unslop: visao-overlay-discos-rede início -->
+    <!--
+        Pílula de opção em que marcado leva o sinal: fio e visto verde-água sobre o fundo tingido (SignalSoft). O OptionChip usa
+        o cinza Selected, que no tema claro fica quase igual à pílula desmarcada e lembra um controle desabilitado.
+        Desmarcado: só o fio e o "+"; desabilitado: tudo esmaecido.
+    -->
+    <Style x:Key="OptionChipSignal" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,0,6,6"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Border x:Name="b" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="14"
+                            Padding="9,6,12,3" Background="Transparent" SnapsToDevicePixels="True">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="mark" Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="10"
+                                       Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,0,7,5"/>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Faint}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource SignalSoft}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}"/>
+                            <Setter TargetName="mark" Property="Text" Value="&#xE73E;"/>
+                            <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Signal}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalHover}"/>
+                        </MultiTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!-- rodada-unslop: visao-overlay-discos-rede fim -->
+
 </ResourceDictionary>

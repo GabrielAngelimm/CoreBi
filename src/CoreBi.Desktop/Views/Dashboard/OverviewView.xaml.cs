@@ -14,6 +14,7 @@ public partial class OverviewView : UserControl
     private void DashChart_MouseLeave(object sender, MouseEventArgs e) => Owner?.DashChart_MouseLeave(sender, e);
     private void DashGo_Click(object sender, RoutedEventArgs e) => Owner?.DashGo_Click(sender, e);
     private void DashOption_Checked(object sender, RoutedEventArgs e) => Owner?.DashOption_Checked(sender, e);
+    private void DashStart_Click(object sender, RoutedEventArgs e) => Owner?.DashStart_Click(sender, e);
     private void DashSensors_Click(object sender, RoutedEventArgs e) => Owner?.DashSensors_Click(sender, e);
     private void DashEventsMore_Click(object sender, RoutedEventArgs e) => ShowHistory(DashEventsAll.Visibility != Visibility.Visible);
 

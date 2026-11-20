@@ -144,10 +144,46 @@ public partial class MainWindow
 
     // ---------------- atualização ----------------
 
-    internal void DashOption_Checked(object sender, RoutedEventArgs e) { if (DashChart != null) DrawDashChart(); }
+    internal void DashOption_Checked(object sender, RoutedEventArgs e)
+    {
+        // A pessoa escolheu a grandeza: daqui em diante a Visão geral não troca mais de aba sozinha
+        if (!_dashMetricAuto && sender is RadioButton { GroupName: "DashMetric" }) _dashMetricChosen = true;
+        if (DashChart != null) DrawDashChart();
+    }
+
+    private bool _dashMetricChosen, _dashMetricAuto;
+
+    /// <summary>
+    /// Sem sensor de temperatura (nem do processador nem da placa de vídeo) o gráfico abre na carga, que sempre tem leitura;
+    /// quando a temperatura aparece, volta para ela. Só enquanto a pessoa não escolheu uma aba.
+    /// </summary>
+    private void PickDashMetric()
+    {
+        if (_dashMetricChosen || !_monitor.IsOpen || _dash.Count < 3) return;
+        bool temp = _dash.Skip(Math.Max(0, _dash.Count - 60)).Any(s => s.CpuT != null || s.GpuT != null);
+        string want = temp ? "temp" : "load";
+        if (CheckedTag(DashMetricPanel) == want) return;
+        _dashMetricAuto = true;
+        try
+        {
+            foreach (var rb in DashMetricPanel.Children.OfType<RadioButton>())
+                if ((string)rb.Tag == want) rb.IsChecked = true;
+        }
+        finally { _dashMetricAuto = false; }
+    }
     internal void DashChart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawDashChart();
     internal void DashEvents_SizeChanged(object sender, SizeChangedEventArgs e) { if (e.HeightChanged) ShowEvents(); }
     internal void DashBench_Click(object sender, RoutedEventArgs e) => NavBench.IsChecked = true;
+
+    /// <summary>Atalhos da atividade vazia. Tag = "PageStress" ou "PageBench:teste" (o teste já vem escolhido em Benchmark).</summary>
+    internal void DashStart_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string target }) return;
+        var parts = target.Split(':', 2);
+        (parts[0] == "PageStress" ? NavStress : NavBench).IsChecked = true;
+        if (parts.Length == 2 && BenchTestPanel.Children.OfType<RadioButton>().FirstOrDefault(r => (string)r.Tag == parts[1]) is { } tile)
+            tile.IsChecked = true;
+    }
     internal void DashSensors_Click(object sender, RoutedEventArgs e) => NavSensors.IsChecked = true;
 
     /// <summary>Setas e linhas da Visão geral. Tag = página ou "página:categoria" (categoria do inventário em Sistema).</summary>
@@ -163,7 +199,11 @@ public partial class MainWindow
     internal void UpdateDashboard(bool full = true)
     {
         // Com o mouse sobre o gráfico ele fica parado na leitura que a pessoa está olhando; volta a andar ao sair.
-        if (_dashHoverX == null) DrawDashChart();
+        if (_dashHoverX == null)
+        {
+            PickDashMetric();
+            DrawDashChart();
+        }
         UpdateDashComponents();
         UpdateDashRings();
         if (full)
@@ -217,6 +257,7 @@ public partial class MainWindow
             else DashScoreDelta.Text = "";
         }
         else { DashScore.Text = "—"; DashScoreDelta.Text = ""; DashScoreSub.Text = "Nenhum teste ainda"; }
+        PageDash.DashScoreUnit.Visibility = runs.Count > 0 ? Visibility.Visible : Visibility.Collapsed; // sem nota, sem "pts" ao lado do travessão
 
         string Last(string test) => _settings.BenchRecords.FirstOrDefault(r => r.Test == test)?.Summary.Split('·')[0].Trim() ?? "—";
         var single = _settings.BenchRuns.FirstOrDefault(r => r.Single != null)?.Single;
@@ -253,20 +294,31 @@ public partial class MainWindow
 
         float? cNow = data.Count > 0 ? cpu(data[^1]) : null, gNow = data.Count > 0 ? gpu(data[^1]) : null;
         DashChartLabel.Text = $"{name} nos últimos {span}";
+        // Canal sem leitura fica só com a legenda (nome e cor), sem travessão solto embaixo
         DashChartValue.Text = cNow is float cv ? $"{cv:0.#}{unit}" : "—";
         DashChartValue2.Text = gNow is float gv ? $"{gv:0.#}{unit}" : "—";
+        DashChartValue.Visibility = cNow != null ? Visibility.Visible : Visibility.Collapsed;
+        DashChartValue2.Visibility = gNow != null ? Visibility.Visible : Visibility.Collapsed;
         var firstC = data.Select(cpu).FirstOrDefault(v => v != null);
         DashChartDelta.Text = cNow is float a && firstC is float b
             ? $"Processador {(a - b >= 0 ? "+" : "−")}{Math.Abs(a - b):0.#}{unit} no período"
             : cNow == null && metric != "load" ? "Sem leitura do processador. Veja o aviso na barra lateral." : "Coletando as primeiras amostras…";
 
         var all = data.SelectMany(s => new[] { cpu(s), gpu(s) }).Where(v => v != null).Select(v => (double)v!.Value).ToList();
+        double peak = all.Count > 0 ? all.Max() : 0;
+        // Escala em passos redondos, todos rotulados com a unidade (como os gráficos de Energia e Discos)
         double yMin = metric == "temp" ? 20 : 0;
+        double step = metric switch
+        {
+            "load" => 25,
+            "power" => peak <= 80 ? 20 : peak <= 200 ? 50 : peak <= 400 ? 100 : 200,
+            _ => 20,
+        };
         double yMax = metric switch
         {
             "load" => 100,
-            "power" => Math.Max(50, all.Count > 0 ? Math.Ceiling(all.Max() * 1.2 / 10) * 10 : 50),
-            _ => Math.Max(100, all.Count > 0 ? Math.Ceiling((all.Max() + 5) / 10) * 10 : 100)
+            "power" => Math.Max(step * 4, Math.Ceiling(peak * 1.15 / step) * step),
+            _ => Math.Max(100, yMin + Math.Ceiling((peak + 5 - yMin) / step) * step),
         };
         const double left = 44, bottom = 22, top = 6;
         double plotW = w - left, plotH = h - top - bottom;
@@ -277,24 +329,24 @@ public partial class MainWindow
         var faint = Palette("Faint");
         var readout = (FontFamily)FindResource("Readout");
 
-        // Retícula: 4 divisões em cada eixo, com a borda do quadro um tom acima
-        for (int k = 0; k <= 4; k++)
+        // Retícula: uma linha por passo da escala, cada uma com o seu rótulo, e 4 divisões no tempo
+        for (double v = yMin; v <= yMax + 0.1; v += step)
         {
-            double v = yMin + (yMax - yMin) * k / 4, y = Y(v);
+            double y = Y(v);
             DashChart.Children.Add(new Line { X1 = left, X2 = w, Y1 = y, Y2 = y, Stroke = line, StrokeThickness = 1, SnapsToDevicePixels = true });
-            if (k % 2 == 0)
-            {
-                var lbl = new TextBlock { Text = $"{v:0}{unit.Trim()}", FontSize = 11, Foreground = faint, FontFamily = readout };
-                Canvas.SetLeft(lbl, 0); Canvas.SetTop(lbl, y - 8);
-                DashChart.Children.Add(lbl);
-            }
+            var lbl = new TextBlock { Text = $"{v:0}{unit}", FontSize = 11, Foreground = faint, FontFamily = readout };
+            Canvas.SetLeft(lbl, 0); Canvas.SetTop(lbl, y - 8);
+            DashChart.Children.Add(lbl);
         }
         for (int k = 0; k <= 4; k++)
         {
             double x = left + plotW * k / 4;
             DashChart.Children.Add(new Line { X1 = x, X2 = x, Y1 = top, Y2 = top + plotH, Stroke = line, StrokeThickness = 1, SnapsToDevicePixels = true });
         }
-        string[] xs = { $"−{span}", range >= 120 ? $"−{range / 120} min" : $"−{range / 2} s", "agora" };
+        // Meio do período: 1 min → −30 s, 5 min → −2,5 min, 15 min → −7,5 min
+        double half = range / 2.0;
+        string mid = half >= 60 ? $"−{(half / 60).ToString("0.#", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))} min" : $"−{half:0} s";
+        string[] xs = { $"−{span}", mid, "agora" };
         for (int k = 0; k < 3; k++)
         {
             var t = new TextBlock { Text = xs[k], FontSize = 11, Foreground = faint, FontFamily = readout };
@@ -507,7 +559,6 @@ public partial class MainWindow
     // ---------------- anéis concêntricos (ocupação) ----------------
 
     private List<(double Frac, string Channel)> _rings = new();
-    private string _ringCenter = "—";
 
     /// <summary>Quanto dos anéis já foi desenhado: vai de 0 a 1 quando a Visão geral abre, e cada anel enche até a leitura.</summary>
     private static readonly DependencyProperty RingRevealProperty = DependencyProperty.Register(
@@ -527,22 +578,22 @@ public partial class MainWindow
     internal void UpdateDashRings()
     {
         static string Gb(double bytes) => $"{bytes / 1073741824.0:0.0} GB";
+        static string Pct(double fraction) => $"{fraction * 100:0} %"; // o "P0" do pt-BR cola o sinal no número
         var (total, avail) = MemoryInfo.MemoryStatus();
         double ram = total > 0 ? (double)(total - avail) / total : 0;
         Brush memoryBrush = Palette("Memory"), gpuBrush = Palette("Gpu"), storageBrush = Palette("Storage");
 
         var rings = new List<(double Frac, string Channel, DashRingItem Item)>();
-        if (total > 0) rings.Add((ram, "Memory", new(memoryBrush, "RAM", $"{ram:P0}", $"{Gb(total - avail)} de {total / 1073741824.0:0} GB · {Gb(avail)} livres", "PageSystem:Memória RAM")));
+        if (total > 0) rings.Add((ram, "Memory", new(memoryBrush, "RAM", Pct(ram), $"{Gb(total - avail)} de {total / 1073741824.0:0} GB · {Gb(avail)} livres", "PageSystem:Memória RAM")));
         if (_gpus.Count > 0 && _gpus[0].NvmlHandle != IntPtr.Zero && Nvml.MemoryInfo(_gpus[0].NvmlHandle) is Nvml.Memory m && m.Total > 0)
         {
             double vram = (double)m.Used / m.Total;
-            rings.Add((vram, "Gpu", new(gpuBrush, "VRAM", $"{vram:P0}", $"{Gb(m.Used)} de {m.Total / 1073741824.0:0} GB · {Gb(m.Total - m.Used)} livres", "PageGpu")));
+            rings.Add((vram, "Gpu", new(gpuBrush, "VRAM", Pct(vram), $"{Gb(m.Used)} de {m.Total / 1073741824.0:0} GB · {Gb(m.Total - m.Used)} livres", "PageGpu")));
         }
         if (_drives.FirstOrDefault(d => d.Letter.StartsWith("C", StringComparison.OrdinalIgnoreCase)) is { } c0)
-            rings.Add((c0.UsedFraction, "Storage", new(storageBrush, $"Disco {c0.Letter}", c0.UsedPercent, $"{DriveCard.Fmt(c0.Total - c0.Free)} de {DriveCard.Fmt(c0.Total)} · {DriveCard.Fmt(c0.Free)} livres", "PageDisks")));
+            rings.Add((c0.UsedFraction, "Storage", new(storageBrush, $"Disco {c0.Letter}", Pct(c0.UsedFraction), $"{DriveCard.Fmt(c0.Total - c0.Free)} de {DriveCard.Fmt(c0.Total)} · {DriveCard.Fmt(c0.Free)} livres", "PageDisks")));
 
         _rings = rings.Select(r => (r.Frac, r.Channel)).ToList();
-        _ringCenter = total > 0 ? $"{ram:P0}" : "—";
         DrawDashRings();
         DashRingLegend.ItemsSource = rings.Select(r => r.Item).ToList();
     }
@@ -574,18 +625,7 @@ public partial class MainWindow
                 StrokeEndLineCap = PenLineCap.Round
             });
         }
-        var center = new TextBlock
-        {
-            Text = _ringCenter,
-            FontFamily = (FontFamily)FindResource("Readout"),
-            FontStretch = FontStretches.SemiCondensed,
-            FontSize = 21,
-            Foreground = Palette("Fg"),
-            ToolTip = "RAM em uso"
-        };
-        center.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        Canvas.SetLeft(center, cx - center.DesiredSize.Width / 2); Canvas.SetTop(center, cy - center.DesiredSize.Height / 2);
-        DashRings.Children.Add(center);
+        // Sem número no centro: cada anel tem a sua porcentagem na linha ao lado, na mesma cor
     }
 
     /// <summary>Arco no sentido horário a partir do topo, até a fração da volta dada.</summary>
@@ -633,4 +673,14 @@ public partial class MainWindow
         DashHealthBadgeText.Text = alerts == 0 ? "Tudo certo" : alerts == 1 ? "1 alerta" : $"{alerts} alertas";
         Ui.SetTone(DashHealthBadge, alerts == 0 ? "Ok" : "Warn");
     }
+}
+
+/// <summary>Atalho da atividade recente vazia: um teste que ainda não rodou (ícone neutro, porque é uma ação).</summary>
+public sealed class DashStart
+{
+    public string Icon { get; set; } = "";
+    public string Title { get; set; } = "";
+    public string Detail { get; set; } = "";
+    public string Target { get; set; } = "";
+    public string Tip { get; set; } = "";
 }

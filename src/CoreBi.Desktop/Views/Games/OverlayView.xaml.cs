@@ -12,9 +12,9 @@ public partial class OverlayView : UserControl
 {
     /// <summary>
     /// Escala da prévia em relação ao overlay real: largura da tela desenhada (798) pela do monitor principal,
-    /// com 25% de folga para o texto continuar legível. A caixa ocupa na prévia a mesma fatia da tela que ocupa no jogo.
+    /// com 40 % de folga para o texto continuar legível; mesmo no tamanho Grande a caixa cabe no quarto da tela do seu canto.
     /// </summary>
-    private static readonly double PreviewFactor = 798.0 / Math.Max(1280, SystemParameters.PrimaryScreenWidth) * 1.25;
+    private static readonly double PreviewFactor = 798.0 / Math.Max(1280, SystemParameters.PrimaryScreenWidth) * 1.4;
 
     private string? _corner;
 
@@ -30,7 +30,7 @@ public partial class OverlayView : UserControl
     private void OvOpacity_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (OvOpacityText == null || OvPreviewHost == null) return; // disparado durante InitializeComponent
-        OvOpacityText.Text = $"{e.NewValue:0}%";
+        OvOpacityText.Text = $"{e.NewValue:0} %";
         OvPreviewHost.Opacity = OpacityOf(e.NewValue);
         Owner?.OvOpacity_Changed(OpacityOf(e.NewValue));
     }
@@ -75,10 +75,10 @@ public partial class OverlayView : UserControl
         OvPreviewScale.ScaleX = OvPreviewScale.ScaleY = PreviewFactor * scale;
         OvCornerName.Text = corner switch
         {
-            "TR" => "Superior direito",
-            "BL" => "Inferior esquerdo",
-            "BR" => "Inferior direito",
-            _ => "Superior esquerdo",
+            "TR" => "Canto superior direito",
+            "BL" => "Canto inferior esquerdo",
+            "BR" => "Canto inferior direito",
+            _ => "Canto superior esquerdo",
         };
         if (_corner != null && _corner != corner && SystemParameters.ClientAreaAnimation)
             OvPreviewHost.BeginAnimation(OpacityProperty, new DoubleAnimation(0.25, OpacityOf(OvOpacity.Value), TimeSpan.FromMilliseconds(180)) { FillBehavior = FillBehavior.Stop });
@@ -89,6 +89,7 @@ public partial class OverlayView : UserControl
     internal void ShowPreview(FrameStats f, IReadOnlyList<OverlayLine> lines, IReadOnlySet<string> show, string? extra, bool sample, bool overlayOn)
     {
         OvPreview.Update(f, lines, show, extra);
+        OvSampleNote.Visibility = sample ? Visibility.Visible : Visibility.Collapsed;
         // LED do monitor: aceso no sinal quando o overlay está ligado (paleta fixa, como a cena)
         OvLed.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, overlayOn ? "HudSignal" : "HudSep");
     }

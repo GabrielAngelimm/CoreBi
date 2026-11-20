@@ -217,11 +217,21 @@ public sealed class ThermalScale : DiskInstrument
         dc.DrawRectangle(WarnBrush, null, new Rect(X(WarnAt) + 1, zoneY, Math.Max(0, X(CritAt) - X(WarnAt) - 2), 3));
         dc.DrawRectangle(DangerBrush, null, new Rect(X(CritAt) + 1, zoneY, Math.Max(0, w - X(CritAt) - 1), 3));
 
+        // Escala de 10 em 10 e, na cor de cada faixa, o ponto exato em que a atenção e a crítica começam (o mesmo limiar da
+        // linha tracejada do gráfico); um número da escala que cairia em cima de um limiar dá lugar a ele.
+        var marks = new[] { (At: WarnAt, Brush: WarnBrush), (At: CritAt, Brush: DangerBrush) }.Where(m => !double.IsNaN(m.At) && m.At > lo && m.At < hi).ToList();
+        double last = lo + Math.Floor((hi - lo) / 10 + 0.01) * 10;
         for (double v = lo; v <= hi + 0.1; v += 10)
         {
-            var t = Text($"{v:0}", 11, FaintBrush);
+            if (marks.Any(m => Math.Abs(X(m.At) - X(v)) < 26)) continue;
+            var t = Text(v >= last - 0.1 ? $"{v:0} °C" : $"{v:0}", 11, FaintBrush); // a unidade uma vez, no fim da régua
             double x = v <= lo ? 0 : v >= hi ? w - t.Width : X(v) - t.Width / 2;
             dc.DrawText(t, new Point(x, zoneY + 8));
+        }
+        foreach (var m in marks)
+        {
+            var t = Text($"{m.At:0}", 11, m.Brush);
+            dc.DrawText(t, new Point(Math.Clamp(X(m.At) - t.Width / 2, 0, w - t.Width), zoneY + 8));
         }
 
         if (known) dc.DrawRectangle(InkBrush, null, new Rect(X(Value) - 1, barTop - 4, 2, barH + 8));
@@ -282,7 +292,7 @@ public sealed class TraceChart : DiskInstrument
         double w = ActualWidth, h = ActualHeight;
         if (w < 80 || h < 50) return;
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, h)); // área clicável para o cursor
-        const double left = 34, bottom = 20, top = 6, lo = 20;
+        const double left = 44, bottom = 20, top = 6, lo = 20;
         double plotW = w - left, plotH = h - top - bottom;
         var values = _samples.Where(v => v != null).Select(v => (double)v!.Value).ToList();
         double peak = values.Count > 0 ? values.Max() : 0;
@@ -295,7 +305,7 @@ public sealed class TraceChart : DiskInstrument
         {
             double v = lo + (hi - lo) * k / 3, y = Math.Round(Y(v)) + 0.5;
             dc.DrawLine(grid, new Point(left, y), new Point(w, y));
-            var t = Text($"{v:0}°", 11, FaintBrush);
+            var t = Text($"{v:0} °C", 11, FaintBrush);
             dc.DrawText(t, new Point(0, y - t.Height / 2));
         }
         for (int k = 0; k <= 4; k++)

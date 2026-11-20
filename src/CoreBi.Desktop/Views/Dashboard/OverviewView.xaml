@@ -235,7 +235,7 @@
                             <Grid Margin="0,12,0,0">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock x:Name="DashScore" Text="—" Style="{StaticResource ReadoutHero}" />
-                                    <TextBlock Text="pts" Style="{StaticResource Unit}" Margin="6,0,0,9" />
+                                    <TextBlock x:Name="DashScoreUnit" Text="pts" Style="{StaticResource Unit}" Margin="6,0,0,9" Visibility="Collapsed" />
                                 </StackPanel>
                                 <TextBlock x:Name="DashScoreDelta" Style="{StaticResource Caption}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,10" />
                             </Grid>
@@ -292,7 +292,41 @@
                             </Grid>
                             <!-- O host não pede altura: a lista mostra só as linhas que cabem, sem esticar a página -->
                             <local:FitHost SizeChanged="DashEvents_SizeChanged">
-                                <TextBlock x:Name="DashEventsEmpty" Text="Benchmarks, testes de carga e dispositivos conectados aparecem aqui assim que acontecerem." Style="{StaticResource Caption}" Margin="0,10,0,0" />
+                                <!--
+                                    Sem nenhum evento: a frase e os três testes que ainda não rodaram, cada um numa linha da mesma altura
+                                    das linhas de evento (a lista já tem o formato que vai ter). Some com o primeiro evento.
+                                -->
+                                <StackPanel VerticalAlignment="Top" Visibility="{Binding Visibility, ElementName=DashEventsEmpty}">
+                                    <TextBlock x:Name="DashEventsEmpty" Text="Nenhum teste ainda. Os resultados e os dispositivos conectados aparecem aqui." Style="{StaticResource Caption}" Margin="0,10,0,8" />
+                                    <ItemsControl Margin="-8,0" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Style="{StaticResource RowButton}" Tag="{Binding Target}" Click="DashStart_Click" Height="{x:Static local:MainWindow.DashEventHeight}" ToolTip="{Binding Tip}">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <local:HwIcon Kind="{Binding Icon}" Foreground="{DynamicResource Muted}" Width="26" Height="26" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource StatSub}" />
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="2" Text="&#xE76C;" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                                    </Grid>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                        <ItemsControl.ItemsSource>
+                                            <x:Array Type="local:DashStart">
+                                                <local:DashStart Icon="&#xE945;" Title="Teste de carga" Detail="Processador, memória e placa no limite" Target="PageStress" Tip="Abrir Teste de carga" />
+                                                <local:DashStart Icon="gpu" Title="Cena de jogo" Detail="FPS da placa de vídeo numa cena 3D" Target="PageBench:gpu" Tip="Abrir o benchmark da placa de vídeo" />
+                                                <local:DashStart Icon="storage" Title="Benchmark de disco" Detail="Leitura e escrita do disco" Target="PageBench:disk" Tip="Abrir o benchmark de disco" />
+                                            </x:Array>
+                                        </ItemsControl.ItemsSource>
+                                    </ItemsControl>
+                                </StackPanel>
                                 <ItemsControl x:Name="DashEvents" ItemTemplate="{StaticResource DashEventTemplate}" VerticalAlignment="Top" ClipToBounds="True" Focusable="False" />
                                 <!-- Histórico: o próprio cartão passa a rolar, sem mudar de tamanho -->
                                 <!-- Rola de linha em linha (painel virtualizado) e a altura é sempre múltipla da linha, então nada fica cortado -->

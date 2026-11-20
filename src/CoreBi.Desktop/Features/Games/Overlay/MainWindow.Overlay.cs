@@ -113,7 +113,7 @@ public partial class MainWindow
             foreach (var m in items)
             {
                 var chip = new CheckBox { Content = m.Label, Tag = m.Key, IsChecked = OvShow.Contains(m.Key) };
-                chip.SetResourceReference(StyleProperty, "OptionChip");
+                chip.SetResourceReference(StyleProperty, "OptionChipSignal");
                 if (OvItemHints.TryGetValue(m.Key, out var hint)) chip.ToolTip = hint;
                 chip.Click += (_, _) =>
                 {

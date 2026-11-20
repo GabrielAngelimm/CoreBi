@@ -13,12 +13,16 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Baia do rack: só o nome do disco e as características principais -->
+        <!--
+            Baia do rack: o nome do disco, a letra da unidade em destaque (dois discos do mesmo modelo só se distinguem por ela)
+            e as características principais
+        -->
         <DataTemplate x:Key="DiskBay">
             <Grid Margin="4,2,2,2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="44" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
@@ -28,14 +32,15 @@
                 <!-- O disco no ícone do canal de armazenamento, o mesmo de Sistema e da Visão geral -->
                 <local:HwIcon Grid.RowSpan="2" Style="{StaticResource ChannelIcon}" local:Ui.Channel="Storage" Kind="storage" Width="30" Height="30" HorizontalAlignment="Left" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                <Ellipse Grid.Column="2" Style="{StaticResource DiskLed}" Margin="10,0,0,0" ToolTip="{Binding VerdictText}" />
-                <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding Meta}" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                <TextBlock Grid.Column="2" Text="{Binding Letters}" Style="{StaticResource ReadoutText}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,0,0,0" />
+                <Ellipse Grid.Column="3" Style="{StaticResource DiskLed}" Margin="10,0,0,0" ToolTip="{Binding VerdictText}" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Meta}" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
             </Grid>
         </DataTemplate>
 
         <!-- Selo de especificação na placa do disco -->
         <DataTemplate x:Key="SpecChip">
-            <Border Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{StaticResource RadiusSmall}" Padding="8,2,8,3" Margin="0,0,6,6">
+            <Border Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{StaticResource RadiusSmall}" Padding="8,2,8,3" Margin="0,0,6,6" ToolTip="{Binding Tip}">
                 <TextBlock FontSize="12" Typography.NumeralAlignment="Tabular">
                     <Run Text="{Binding Key, Mode=OneWay}" Foreground="{DynamicResource Muted}" /><Run Text="{Binding Value, Mode=OneWay}" Foreground="{DynamicResource Fg}" FontWeight="SemiBold" />
                 </TextBlock>
@@ -57,9 +62,9 @@
         </DataTemplate>
 
         <!-- Linha da integridade: LED, o que é verificado e o valor lido. Saudável fica em tinta (o LED já diz que está bem);
-             atenção e crítico viram um selo na cor, para saltar aos olhos. -->
+             atenção e crítico viram um selo na cor, para saltar aos olhos. Sem valor (a frase única de "não informa"), sem selo. -->
         <DataTemplate x:Key="CheckRow">
-            <Grid Margin="0,4" VerticalAlignment="Center">
+            <Grid Margin="0,4" VerticalAlignment="Center" Background="Transparent" ToolTip="{Binding Tip}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="16" />
                     <ColumnDefinition Width="Auto" />
@@ -67,7 +72,7 @@
                 </Grid.ColumnDefinitions>
                 <Ellipse Style="{StaticResource DiskLed}" HorizontalAlignment="Left" />
                 <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="0,0,8,0" VerticalAlignment="Center" />
-                <Border x:Name="pill" Grid.Column="2" Style="{StaticResource Badge}" VerticalAlignment="Center" Padding="8,1,8,2" ToolTip="{Binding Tip}">
+                <Border x:Name="pill" Grid.Column="2" Style="{StaticResource Badge}" VerticalAlignment="Center" Padding="8,1,8,2">
                     <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource BadgeText}" Typography.NumeralAlignment="Tabular" />
                 </Border>
             </Grid>
@@ -75,8 +80,11 @@
                 <DataTrigger Binding="{Binding State}" Value="">
                     <Setter TargetName="pill" Property="Background" Value="Transparent" />
                     <Setter TargetName="pill" Property="BorderBrush" Value="Transparent" />
-                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Faint}" />
+                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Muted}" />
                     <Setter TargetName="value" Property="FontWeight" Value="Normal" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Value}" Value="">
+                    <Setter TargetName="pill" Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding State}" Value="Ok">
                     <Setter TargetName="pill" Property="Background" Value="Transparent" />
@@ -106,6 +114,11 @@
             <Setter Property="FontSize" Value="34" />
             <Setter Property="Margin" Value="0,4,0,0" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <!-- Leituras do topo da temperatura: mesma altura de linha em bloco, para as três bases coincidirem -->
+        <Style x:Key="TempValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
+            <Setter Property="LineHeight" Value="76" />
+            <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
         </Style>
         <Style x:Key="LifeValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
             <Setter Property="FontSize" Value="21" />
@@ -294,24 +307,26 @@
                                         <TextBlock x:Name="TempLiveText" Style="{StaticResource Caption}" Typography.NumeralAlignment="Tabular" />
                                     </StackPanel>
                                 </Grid>
+                                <!--
+                                    Três leituras com rótulo, na mesma linha de base: os três valores têm a mesma altura de linha
+                                    (bloco de 76 px, fonte Bahnschrift nos três), então a base cai no mesmo ponto em todos.
+                                -->
                                 <Grid Grid.Row="1" Margin="0,16,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <TextBlock x:Name="TempNow" Style="{StaticResource ReadoutHero}" FontSize="72" Text="—" />
-                                        <TextBlock Text="°C" Style="{StaticResource Unit}" FontSize="20" Margin="6,0,0,13" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <TextBlock Text="Situação" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
-                                        <TextBlock x:Name="TempState" FontFamily="{StaticResource DisplayFont}" FontSize="24" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center" />
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <TextBlock Text="Máx. registrado" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
-                                        <TextBlock x:Name="TempPeak" Style="{StaticResource ReadoutText}" FontSize="28" Margin="0,4,0,0" HorizontalAlignment="Center" />
-                                    </StackPanel>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="Agora" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="Situação" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="Máx. registrado" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                    <TextBlock x:Name="TempNow" Grid.Row="1" Style="{StaticResource TempValue}" FontSize="28" FontWeight="Light" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center" Text="—" />
+                                    <TextBlock x:Name="TempState" Grid.Row="1" Grid.Column="1" Style="{StaticResource TempValue}" FontFamily="{StaticResource DisplayFont}" FontStretch="Normal" FontSize="24" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                                    <TextBlock x:Name="TempPeak" Grid.Row="1" Grid.Column="2" Style="{StaticResource TempValue}" FontSize="28" HorizontalAlignment="Center" />
                                 </Grid>
                                 <local:ThermalScale x:Name="TempScale" Grid.Row="2" Margin="0,16,0,0" />
                                 <local:TraceChart x:Name="TempTrace" Grid.Row="3" MinHeight="150" Margin="0,12,0,0" />
