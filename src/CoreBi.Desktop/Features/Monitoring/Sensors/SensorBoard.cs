@@ -6,7 +6,7 @@ namespace CoreBi.Desktop.Features.Monitoring.Sensors;
 
 /// <summary>
 /// Grupo de um tipo dentro do componente (Temperaturas, Clocks...), com as linhas na ordem da biblioteca. Tone é o canal do
-/// componente (chave da paleta: Cpu, Gpu, Memory, Storage ou Steel), usado no filete do título.
+/// componente (chave da paleta: Cpu, Gpu, Memory, Virtual, Storage, Board, Net ou Steel), usado no filete do título.
 /// </summary>
 public sealed record SensorSection(string Key, string Title, IReadOnlyList<SensorRow> Rows, string Tone = "Steel");
 
@@ -27,7 +27,7 @@ public sealed class SensorComponent : INotifyPropertyChanged
     public required string Kind { get; init; }
     public required string Glyph { get; init; }
     public required int Channel { get; init; }
-    /// <summary>Canal do componente na paleta (Cpu, Gpu, Memory, Storage ou Steel).</summary>
+    /// <summary>Canal do componente na paleta (Cpu, Gpu, Memory, Virtual, Storage, Board, Net ou Steel).</summary>
     public string Tone { get; init; } = "Steel";
     public string? Note { get; init; }
     public required IReadOnlyList<SensorSection> Sections { get; init; }

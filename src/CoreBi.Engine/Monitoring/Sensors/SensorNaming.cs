@@ -155,7 +155,7 @@ public static class SensorNaming
         (new Regex(@"^(?:CPU )?Core #(\d+) \(SMU\)$"), "Núcleo $1"),
         (new Regex(@"^(?:CPU )?Core #(\d+) \(Effective\)$"), "Núcleo $1 · efetivo"),
         (new Regex(@"^(?:CPU )?Core #(\d+)$"), "Núcleo $1"),
-        (new Regex(@"^CCD ?(\d+) \(Tdie\)$"), "Chiplet $1 (CCD$1)"),
+        (new Regex(@"^CCD ?(\d+) \(Tdie\)$"), "Chiplet $1"),
         (new Regex(@"^GPU Fan (\d+)$"), "Ventoinha $1"),
         (new Regex(@"^(?:Chassis|System) Fan #?(\d+)$"), "Gabinete $1"),
         (new Regex(@"^Fan #?(\d+)$"), "Ventoinha $1"),
@@ -196,7 +196,7 @@ public static class SensorNaming
         return name;
     }
 
-    /// <summary>Grupo de tipo dentro de um componente: título no plural e ordem (temperatura primeiro, como no HWMonitor moderno).</summary>
+    /// <summary>Grupo de tipo dentro de um componente: título no plural e ordem (temperatura primeiro, o que mais se procura).</summary>
     public static (string Key, string Title, int Order) Group(SensorType t) => t switch
     {
         SensorType.Temperature => ("temp", "Temperaturas", 0),

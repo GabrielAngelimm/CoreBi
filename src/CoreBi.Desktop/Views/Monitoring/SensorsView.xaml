@@ -19,7 +19,7 @@
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
-        <!-- Item do índice: fundo elevado na seleção; o ícone fica no ladrilho do canal do componente (o mesmo do filete dos grupos) -->
+        <!-- Item do índice: fundo elevado na seleção; o ícone, sem fundo, na cor do canal do componente (a mesma do filete dos grupos) -->
         <Style x:Key="IndexItem" TargetType="ListBoxItem">
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -108,7 +108,7 @@
         <DataTemplate x:Key="SectionTemplate">
             <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <Border x:Name="mark" Width="3" Height="15" CornerRadius="1.5" Background="{DynamicResource Steel}" Margin="0,1,9,0" VerticalAlignment="Center" />
+                    <Border x:Name="mark" Width="3" Height="15" CornerRadius="1.5" Background="{DynamicResource Steel}" Margin="0,1,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Title, Mode=OneWay}" Style="{StaticResource GroupTitle}" FontSize="16" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Rows.Count, Mode=OneWay}" FontSize="11.5" Foreground="{DynamicResource Faint}" Margin="10,2,0,0" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular" />
                 </StackPanel>
@@ -187,11 +187,11 @@
         <DataTemplate x:Key="ComponentBlock">
             <StackPanel>
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ComponentHeader}" />
-                <Border x:Name="body" Padding="24,18,24,26">
+                <Border x:Name="body" Padding="24,18,24,24">
                     <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource SectionTemplate}" Focusable="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <inv:ColumnsPanel Columns="{Binding SectionColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" ColumnGap="44" RowGap="30" />
+                                <inv:ColumnsPanel Columns="{Binding SectionColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" ColumnGap="44" RowGap="32" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
@@ -273,7 +273,7 @@
             <Border Grid.Column="2" HorizontalAlignment="Left" Margin="0,0,0,12" Padding="14,5,5,5" CornerRadius="18" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" SnapsToDevicePixels="True">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,5,12,0">
-                        <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Signal}" Margin="0,1,7,0" />
+                        <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Signal}" Margin="0,1,8,0" />
                         <TextBlock Text="Filtrar por tipo de sensor" FontFamily="{StaticResource LabelFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
                     </StackPanel>
                     <WrapPanel x:Name="CategoryChips" Margin="0,0,0,-6" />
@@ -299,7 +299,7 @@
                             </ControlTemplate>
                         </ScrollViewer.Template>
                         <StackPanel x:Name="SensorStack">
-                            <StackPanel x:Name="SensorEmpty" Margin="24,22" Visibility="Collapsed">
+                            <StackPanel x:Name="SensorEmpty" Margin="24,20" Visibility="Collapsed">
                                 <TextBlock x:Name="SensorEmptyTitle" Text="Detectando o hardware…" Style="{StaticResource SectionTitle}" />
                                 <TextBlock x:Name="SensorEmptyText" Style="{StaticResource Caption}" Margin="0,4,0,0" />
                             </StackPanel>

@@ -141,7 +141,7 @@ public partial class SensorsView : UserControl
     }
 
     private void UpdateFootnote() => SensorFootnote.Text =
-        $"Mínimo, média e máximo contam desde as {_since:HH:mm}. Leitura a cada segundo, pausada durante o teste de placa de vídeo. Passe o mouse num sensor para ver o nome técnico.";
+        $"Mínimo, média e máximo contam desde as {_since:HH:mm}. A leitura pausa durante o teste de placa de vídeo.";
 
     // ---------------- Cabeçalho fixo ----------------
 

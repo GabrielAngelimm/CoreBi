@@ -198,15 +198,16 @@ public sealed class SensorMonitor : IDisposable
 
     public static string Explain(CpuSensorProblem p) => p switch
     {
+        // A primeira frase vale sozinha (a Visão geral mostra só ela); sem citar outros programas.
         CpuSensorProblem.NotElevated =>
-            "O CoreBi não está rodando como administrador, e o Windows só libera os sensores internos da CPU " +
-            "nesse modo. Feche e abra de novo aceitando o pedido de administrador.",
+            "O Windows só libera os sensores internos do processador com o CoreBi aberto como administrador. " +
+            "Feche e abra de novo aceitando o pedido de administrador.",
         CpuSensorProblem.PawnIOMissing =>
-            "Falta o driver PawnIO, que lê a temperatura e o consumo da CPU. Ele é gratuito, assinado e usado também " +
-            "pelo LibreHardwareMonitor e pelo FanControl. Depois de instalar, feche e abra o CoreBi.",
+            "Falta o driver PawnIO, que lê a temperatura e o consumo do processador. Ele é gratuito e assinado. " +
+            "Depois de instalar, feche e abra o CoreBi.",
         CpuSensorProblem.ReadFailed =>
             "O PawnIO está instalado, mas a leitura falhou. Se acabou de instalar, reinicie o PC. Se continuar, " +
-            "confira se o antivírus não bloqueou o driver ou se a CPU é muito antiga/recente para a biblioteca de sensores.",
+            "confira se o antivírus bloqueou o driver ou se a biblioteca de sensores ainda não reconhece este processador.",
         _ => ""
     };
 

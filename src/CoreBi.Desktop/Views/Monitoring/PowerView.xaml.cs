@@ -114,7 +114,7 @@ public partial class PowerView : UserControl
         _refreshing = true;
         _dirty = false;
         BtnEnergyRefresh.IsEnabled = false;
-        EnergyStatus.Text = "Lendo bateria e energia…";
+        EnergyStatus.Text = "Lendo fonte e plano de energia…";
         try
         {
             var power = Task.Run(PowerStatus.Read);
@@ -130,9 +130,9 @@ public partial class PowerView : UserControl
             ShowPlan(Plan);
             ShowHistory(History);
             ShowLive();
-            EnergyStatus.Text = $"Atualizado às {DateTime.Now:HH:mm:ss}";
+            EnergyStatus.Text = $"Lido às {DateTime.Now:HH:mm}";
         }
-        catch (Exception ex) { if (!_context.IsClosing) EnergyStatus.Text = "Falhou: " + ex.Message; }
+        catch (Exception ex) { if (!_context.IsClosing) EnergyStatus.Text = "Não foi possível ler a energia: " + ex.Message; }
         finally
         {
             _refreshing = false;
@@ -191,7 +191,7 @@ public partial class PowerView : UserControl
             if (value == null) return;
             var box = new StackPanel();
             box.Children.Add(new TextBlock { Text = label, Style = (Style)FindResource("StatLabel") });
-            var t = new TextBlock { Style = (Style)FindResource("ReadoutText"), FontSize = 21, Margin = new Thickness(0, 3, 0, 0) };
+            var t = new TextBlock { Style = (Style)FindResource("ReadoutText"), FontSize = 21, Margin = new Thickness(0, 4, 0, 0) };
             Readout(t, value, unit);
             box.Children.Add(t);
             BatteryStats.Children.Add(box);
@@ -308,7 +308,7 @@ public partial class PowerView : UserControl
             Plan = await Task.Run(PowerPlans.Read);
             if (_context.IsClosing) return;
             ShowPlan(Plan);
-            EnergyStatus.Text = error == 0 ? $"Plano {plan.Name} ativado às {DateTime.Now:HH:mm:ss}" : $"O Windows recusou a troca de plano (erro {error}).";
+            EnergyStatus.Text = error == 0 ? $"Plano {plan.Name} ativado às {DateTime.Now:HH:mm}" : $"O Windows recusou a troca de plano (erro {error}).";
         }
         finally { _applyingPlan = false; }
     }
@@ -321,7 +321,14 @@ public partial class PowerView : UserControl
         Uptime.Visibility = failed ? Visibility.Collapsed : Visibility.Visible;
         DaysEmpty.Visibility = failed ? Visibility.Visible : Visibility.Collapsed;
         DaysEmpty.Text = h.Error != null ? "Não foi possível ler o registro de eventos do Windows: " + h.Error : "O registro de eventos do Windows está vazio.";
-        if (failed) { DaysToday.Text = DaysAverage.Text = DaysCrashes.Text = "—"; return; }
+        if (failed)
+        {
+            DaysToday.Text = DaysAverage.Text = DaysWeek.Text = DaysLongest.Text = DaysTurnOns.Text = DaysCrashes.Text = "—";
+            CrashBox.Visibility = Visibility.Collapsed;
+            DaysCells.Columns = 5;
+            DaysCaption.Visibility = Visibility.Collapsed;
+            return;
+        }
 
         var days = new List<UptimeChart.Day>();
         var culture = System.Globalization.CultureInfo.CurrentCulture;
@@ -400,19 +407,19 @@ public partial class PowerView : UserControl
         var (cpu, gpu) = _trace.Count > 0 ? _trace[^1] : (null, null);
         bool any = cpu != null || gpu != null;
         LiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, any ? "Signal" : "Faint");
-        LiveText.Text = any ? "Ao vivo" : _monitor.IsOpen ? "Sem leitura de consumo" : "Aguardando os sensores";
+        LiveText.Text = any ? "Ao vivo" : _monitor.IsOpen ? "Sem leitura" : "Aguardando os sensores";
         Readout(TotalNow, any ? $"{(cpu ?? 0) + (gpu ?? 0):0}" : "—", any ? "W" : "");
-        TotalCaption.Text = cpu != null && gpu != null ? "Agora · processador + placa de vídeo"
-            : gpu != null ? "Agora · só a placa de vídeo"
-            : cpu != null ? "Agora · só o processador"
-            : "Sem leitura de consumo";
+        // Sem leitura nenhuma, o "Sem leitura" do canto e o aviso do gráfico já dizem: o rótulo continua dizendo o que a leitura soma
+        TotalCaption.Text = gpu != null && cpu == null ? "Agora · só a placa de vídeo"
+            : cpu != null && gpu == null ? "Agora · só o processador"
+            : "Agora · processador + placa de vídeo";
         Split.First = cpu ?? 0;
         Split.Second = gpu ?? 0;
         Readout(CpuNow, cpu is float c ? $"{c:0.0}" : "—", cpu != null ? "W" : "");
         Readout(GpuNow, gpu is float g ? $"{g:0.0}" : "—", gpu != null ? "W" : "");
         ShowCpuProblem(cpu);
         GpuCaption.Visibility = gpu == null && _mainGpu() != null ? Visibility.Visible : Visibility.Collapsed;
-        GpuCaption.Text = "sem leitura do sensor de consumo";
+        GpuCaption.Text = "Sem leitura do sensor de consumo";
         Trace.EmptyText = _monitor.IsOpen ? "Nenhum sensor de consumo do processador ou da placa de vídeo respondeu." : "Coletando as primeiras amostras…";
         if (any || _trace.Count > 0) Trace.Samples = _trace.ToList();
         ShowSession();
@@ -427,9 +434,9 @@ public partial class PowerView : UserControl
         var problem = _monitor.DiagnoseCpuSensors();
         CpuCaption.Text = problem switch
         {
-            SensorMonitor.CpuSensorProblem.NotElevated => "sem leitura: abra como administrador",
-            SensorMonitor.CpuSensorProblem.PawnIOMissing => "sem leitura: falta o driver PawnIO",
-            _ => "sem leitura do sensor de consumo",
+            SensorMonitor.CpuSensorProblem.NotElevated => "Sem leitura: abra como administrador",
+            SensorMonitor.CpuSensorProblem.PawnIOMissing => "Sem leitura: falta o driver PawnIO",
+            _ => "Sem leitura do sensor de consumo",
         };
         CpuCaption.ToolTip = SensorMonitor.Explain(problem) is { Length: > 0 } why ? why : null;
     }
@@ -503,11 +510,18 @@ public partial class PowerView : UserControl
         VoltDivider.Visibility = rails && comps ? Visibility.Visible : Visibility.Collapsed;
         VoltComponentsTitle.Visibility = rails && comps ? Visibility.Visible : Visibility.Collapsed;
         VoltRows.Visibility = comps ? Visibility.Visible : Visibility.Collapsed;
-        VoltRows.Margin = new Thickness(0, rails ? 0 : 12, 0, 0);
+        VoltRows.Margin = new Thickness(0, rails ? 0 : 16, 0, 0);
         VoltEmpty.Visibility = rails || comps ? Visibility.Collapsed : Visibility.Visible;
-        VoltEmpty.Text = !_monitor.IsOpen ? "Aguardando os sensores…"
-            : _monitor.DiagnoseCpuSensors() is var p && p != SensorMonitor.CpuSensorProblem.None ? "Os sensores da placa-mãe e do processador não responderam. " + SensorMonitor.Explain(p)
-            : "A placa-mãe não expõe as tensões para a biblioteca de sensores.";
+        // Uma frase curta com o que fazer; o motivo completo fica na dica, como no aviso do consumo
+        var problem = _monitor.IsOpen ? _monitor.DiagnoseCpuSensors() : SensorMonitor.CpuSensorProblem.None;
+        VoltEmpty.Text = !_monitor.IsOpen ? "Aguardando os sensores…" : problem switch
+        {
+            SensorMonitor.CpuSensorProblem.NotElevated => "Sem leitura: abra o CoreBi como administrador.",
+            SensorMonitor.CpuSensorProblem.PawnIOMissing => "Sem leitura: falta o driver PawnIO.",
+            SensorMonitor.CpuSensorProblem.None => "A biblioteca de sensores não lê as tensões desta placa-mãe.",
+            _ => "Os sensores da placa-mãe e do processador não responderam.",
+        };
+        VoltEmpty.ToolTip = SensorMonitor.Explain(problem) is { Length: > 0 } why ? why : null;
         VoltAll.Visibility = map.Total > 0 ? Visibility.Visible : Visibility.Collapsed;
         VoltAllText.Text = map.Total == 1 ? "A tensão em Sensores" : $"Todas as {map.Total} tensões em Sensores";
     }

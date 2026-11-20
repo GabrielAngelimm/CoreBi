@@ -29,7 +29,7 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Índice: seis botões numa faixa um tom abaixo do painel, com o ladrilho do componente na cor do canal dele (a
+        <!-- Índice: seis botões numa faixa um tom abaixo do painel, com o ícone do componente, sem fundo, na cor do canal dele (a
              mesma dos gráficos) e a categoria na letra de instrumento; o nome da peça está na ficha logo abaixo. Cada um tem
              fundo e contorno próprios e uma seta discreta, para ler como botão; o mouse clareia o fundo; o escolhido ganha o
              fundo da placa logo abaixo, contorno mais forte e texto aceso, e perde a seta. -->
@@ -40,11 +40,11 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="face" Margin="5" CornerRadius="{StaticResource RadiusInset}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" SnapsToDevicePixels="True" Padding="12,12,14,12">
+                        <Border x:Name="face" Margin="4" CornerRadius="{StaticResource RadiusInset}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" SnapsToDevicePixels="True" Padding="12,12,14,12">
                             <DockPanel>
                                 <TextBlock x:Name="chev" DockPanel.Dock="Right" Text="&#xE76C;" Style="{StaticResource IconGlyph}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="8,0,0,0" />
                                 <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Channel}" Kind="{Binding Glyph}" Width="32" Height="32" />
-                                <TextBlock x:Name="cat" Text="{Binding Category}" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="13,3,0,0" />
+                                <TextBlock x:Name="cat" Text="{Binding Category}" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,3,0,0" />
                             </DockPanel>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -77,7 +77,7 @@
                     <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" />
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <TextBlock Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="38" FontWeight="Light" />
-                        <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" FontSize="13" Margin="5,0,0,6" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" />
+                        <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" FontSize="13" Margin="4,0,0,6" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" />
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -96,7 +96,7 @@
             <Grid x:Name="host" Margin="-10,0" Background="Transparent" Cursor="Hand" ToolTip="{Binding Tip}" MouseLeftButtonUp="SpecRow_Click">
                 <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="6" Opacity="0" />
                 <Border Height="1" VerticalAlignment="Top" Margin="10,0" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
-                <Grid Margin="10,9,8,9">
+                <Grid Margin="10,8,8,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="44*" />
                         <ColumnDefinition Width="16" />
@@ -131,7 +131,7 @@
                         </ItemsControl>
                     </Grid>
                     <TextBlock x:Name="copy" Grid.Column="3" Tag="copy" Text="&#xE8C8;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0" Opacity="0" />
-                    <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Help}" Style="{StaticResource Explain}" Margin="0,8,0,1"
+                    <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Help}" Style="{StaticResource Explain}" Margin="0,8,0,0"
                                Visibility="{Binding Help, Converter={StaticResource NotEmptyVis}}" />
                 </Grid>
             </Grid>
@@ -245,7 +245,7 @@
                         <ItemsControl ItemsSource="{Binding Volumes}" Margin="0,12,0,0">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Margin="0,0,0,7">
+                                    <Grid Margin="0,0,0,8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="28" />
                                             <ColumnDefinition Width="*" />
@@ -281,8 +281,8 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Exportar relatório: a ação principal da página, em tinta como toda ação principal. Ícone num ladrilho translúcido e
-             texto seminegrito; o mouse clareia, o clique afunda 1 px e, enquanto gera, o botão apaga e diz o que está fazendo. -->
+        <!-- Exportar relatório: a ação principal da página, no sinal chapado como toda ação principal. Ícone solto e texto
+             seminegrito; o mouse clareia, o clique afunda 1 px e, enquanto gera, o botão esmaece e diz o que está fazendo. -->
         <Style x:Key="ReportButton" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Background" Value="{DynamicResource Signal}" />
@@ -329,7 +329,7 @@
                         <Border x:Name="face" CornerRadius="{StaticResource RadiusControl}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="Transparent" Padding="12,8,12,8" SnapsToDevicePixels="True">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE9D9;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Signal}" VerticalAlignment="Center" />
-                                <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource LabelFont}" FontSize="13.5" FontWeight="SemiBold" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="9,0,0,1" />
+                                <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource LabelFont}" FontSize="13.5" FontWeight="SemiBold" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="8,0,0,1" />
                                 <TextBlock x:Name="arrow" Text="&#xE76C;" Style="{StaticResource IconGlyph}" FontSize="10" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="10,1,0,0" />
                             </StackPanel>
                         </Border>
@@ -361,7 +361,7 @@
                 <TextBlock x:Name="SystemSub" Text="Lendo informações do sistema…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
             </StackPanel>
             <Button x:Name="BtnReport" Grid.Column="1" Style="{StaticResource ReportButton}" Content="Exportar relatório" VerticalAlignment="Center" Click="BtnReport_Click"
-                    ToolTip="Salva a ficha completa do computador em HTML (abre no navegador, com tema claro e escuro e botão de imprimir), em PDF (A4, pronto para enviar) ou em JSON (dados). Números de série e o nome do usuário ficam de fora." />
+                    ToolTip="Salva a ficha do computador em HTML, PDF (A4) ou JSON. Números de série e o nome do usuário ficam de fora." />
         </Grid>
 
         <!-- Um painel só: o índice da máquina em cima e a ficha do componente escolhido embaixo -->
@@ -393,13 +393,12 @@
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <!-- Placa: quem é o componente e as quatro leituras que o resumem -->
-                    <!-- No tom mais forte, como o cabeçalho de componente em Sensores; o botão escolhido usa o mesmo fundo -->
-                    <!-- Toda a placa tem o fundo claro da cor do componente escolhido -->
+                    <!-- Placa: quem é o componente e as quatro leituras que o resumem. No tom mais forte, como o cabeçalho de
+                         componente em Sensores (o botão escolhido usa o mesmo fundo), com o fundo claro da cor do componente. -->
                     <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" ClipToBounds="True">
                         <Grid>
                         <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="{Binding SelectedItem.Channel, ElementName=SysIndex}" />
-                        <Grid Margin="32,28,32,26">
+                        <Grid Margin="32,28">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
@@ -407,7 +406,7 @@
                             <StackPanel VerticalAlignment="Bottom" Margin="0,0,40,0">
                                 <TextBlock x:Name="SheetEyebrow" Style="{StaticResource PlateEyebrow}" local:Ui.Channel="{Binding SelectedItem.Channel, ElementName=SysIndex}" TextTrimming="CharacterEllipsis" />
                                 <TextBlock x:Name="SheetTitle" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
-                                <TextBlock x:Name="SheetSub" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,7,0,0" />
+                                <TextBlock x:Name="SheetSub" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,8,0,0" />
                             </StackPanel>
                             <ItemsControl x:Name="SheetReadouts" Grid.Column="1" VerticalAlignment="Bottom" ItemTemplate="{StaticResource ReadoutCell}">
                                 <ItemsControl.ItemsPanel>
@@ -420,12 +419,12 @@
 
                     <!-- Os dados na largura toda, em grupos que se distribuem em colunas -->
                     <ScrollViewer x:Name="SpecScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" Focusable="False">
-                        <StackPanel Margin="32,18,32,14">
+                        <StackPanel Margin="32,18,32,16">
                             <!-- Armazenamento: os discos em cima, com as unidades; a ficha de cada um vem nos grupos abaixo -->
                             <ItemsControl x:Name="DiskList" ItemTemplate="{StaticResource DiskTemplate}" Margin="0,-8,0,20" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Focusable="False" />
                             <ItemsControl x:Name="SpecGroups" ItemTemplate="{StaticResource SpecGroupTemplate}" Focusable="False">
                                 <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate><inv:ColumnsPanel Loaded="SpecColumns_Loaded" /></ItemsPanelTemplate>
+                                    <ItemsPanelTemplate><inv:ColumnsPanel RowGap="24" Loaded="SpecColumns_Loaded" /></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemContainerStyle>
                                     <Style TargetType="ContentPresenter">
@@ -436,7 +435,7 @@
                         </StackPanel>
                     </ScrollViewer>
                     <!-- Rodapé do card: atalho para as leituras ao vivo, no canto inferior esquerdo -->
-                    <Border x:Name="SheetFooter" Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="32,12,32,14">
+                    <Border x:Name="SheetFooter" Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="32,12">
                         <Button x:Name="SheetLink" Style="{StaticResource SheetLink}" HorizontalAlignment="Left" Click="SheetLink_Click" />
                     </Border>
                 </Grid>
