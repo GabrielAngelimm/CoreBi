@@ -126,7 +126,8 @@ public static class SensorBoard
 
     /// <summary>
     /// Componente que um atalho de outra página quer abrir: "cpu" (processador), "ram" (primeiro módulo de RAM, ou a memória
-    /// física se os módulos não têm sensor) ou "board" (placa-mãe). Null se o PC não tem esse componente.
+    /// física se os módulos não têm sensor), "board" (placa-mãe) ou "gpu" / "gpu:&lt;nome&gt;" (placa de vídeo). Null se o PC não tem
+    /// esse componente.
     /// </summary>
     public static string? Find(IEnumerable<SensorRow> rows, string target)
     {
@@ -136,6 +137,11 @@ public static class SensorBoard
             "cpu" => parts.FirstOrDefault(p => p.Order == 0),
             "ram" => parts.FirstOrDefault(p => p.Order >= DimmOrder && p.Order < 50) ?? parts.FirstOrDefault(p => p.Order == PhysicalOrder),
             "board" => parts.FirstOrDefault(p => p.Order == 30),
+            // "gpu" abre a primeira placa de vídeo; "gpu:<nome>" abre a placa com esse nome (página Placa de vídeo)
+            "gpu" => parts.FirstOrDefault(p => p.Order == 10),
+            _ when target.StartsWith("gpu:", StringComparison.Ordinal) =>
+                parts.FirstOrDefault(p => p.Order == 10 && p.Rows.Any(r => r.Hardware == target[4..] || r.Component == target[4..]))
+                ?? parts.FirstOrDefault(p => p.Order == 10),
             _ => null
         };
         return hit?.Key;

@@ -146,6 +146,7 @@ public partial class MainWindow : Window
                 GpuChips.Children.Add(chip);
             }
             if (_gpus.Count > 0) ShowGpu(_gpus[0]);
+            else ShowNoGpu();
             PageSystem.GpusReady();
 
             // Dependem do nome da GPU/CPU

@@ -1,107 +1,224 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.BottleneckView" xmlns:local="clr-namespace:CoreBi.Desktop">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Style="{StaticResource Page}">
-            <Grid Style="{StaticResource PageHeader}">
-                <StackPanel>
-                    <TextBlock Text="Gargalo" Style="{StaticResource PageTitle}" />
-                    <TextBlock Text="O que está limitando o seu FPS agora: placa de vídeo, processador, memória ou temperatura." Style="{StaticResource PageSubtitle}" />
-                </StackPanel>
-            </Grid>
-
-            <!-- Leitura principal: o limitador do momento, com o jogo em primeiro plano -->
-            <Grid Margin="0,0,0,16">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.15*" />
-                    <ColumnDefinition Width="16" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Border x:Name="BnLiveCard" Style="{StaticResource CardBorder}" Padding="26,22">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal">
-                            <Ellipse Width="7" Height="7" Fill="{DynamicResource Signal}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <TextBlock x:Name="BnLiveLabel" Text="Agora" Style="{StaticResource Label}" Margin="0" />
-                        </StackPanel>
-                        <TextBlock x:Name="BnLiveTitle" Text="—" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Margin="0,12,0,0" TextWrapping="Wrap" />
-                        <TextBlock x:Name="BnLiveGame" Style="{StaticResource Caption}" FontSize="13" Margin="0,6,0,14" Typography.NumeralAlignment="Tabular" />
-                        <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" />
-                    </StackPanel>
-                </Border>
-                <Border Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,22">
-                    <StackPanel>
-                        <TextBlock Text="Equilíbrio do hardware" Style="{StaticResource SectionTitle}" />
-                        <Grid Margin="0,14,0,0">
-                            <TextBlock x:Name="BnCpuName" Style="{StaticResource Caption}" />
-                            <TextBlock x:Name="BnGpuName" Style="{StaticResource Caption}" HorizontalAlignment="Right" />
-                        </Grid>
-                        <!-- Régua logarítmica: centro = equilibrado -->
-                        <Grid Height="26" Margin="0,8,0,4">
-                            <Border Height="8" Background="{DynamicResource Line}" OpacityMask="{StaticResource SegmentMask}" VerticalAlignment="Center" />
-                            <Border Width="2" Height="16" Background="{DynamicResource Steel}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            <Canvas x:Name="BnBalanceCanvas" SizeChanged="BnBalanceCanvas_SizeChanged">
-                                <Ellipse x:Name="BnBalanceDot" Width="16" Height="16" Fill="{DynamicResource Signal}" Stroke="{DynamicResource Surface}" StrokeThickness="3" Canvas.Top="5" />
-                            </Canvas>
-                        </Grid>
-                        <Grid>
-                            <TextBlock Text="Limita a GPU" Style="{StaticResource Footnote}" />
-                            <TextBlock Text="Equilibrado" Style="{StaticResource Footnote}" HorizontalAlignment="Center" />
-                            <TextBlock Text="Limita a CPU" Style="{StaticResource Footnote}" HorizontalAlignment="Right" />
-                        </Grid>
-                        <TextBlock x:Name="BnBalanceText" Style="{StaticResource Body}" Margin="0,16,0,0" />
-                        <TextBlock Text="Estimativa pelo desempenho relativo típico. O detector ao vivo mostra a realidade de cada jogo." Style="{StaticResource Footnote}" Margin="0,8,0,0" />
-                    </StackPanel>
-                </Border>
-            </Grid>
-
-            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,16" Padding="24,20,24,8">
-                <StackPanel>
-                    <TextBlock Text="Leituras ao vivo" Style="{StaticResource SectionTitle}" Margin="0,0,0,12" />
-                    <ItemsControl x:Name="BnMeters" ItemTemplate="{StaticResource Meter}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Columns="3" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemContainerStyle>
-                            <Style TargetType="ContentPresenter">
-                                <Setter Property="Margin" Value="0,0,28,0" />
-                            </Style>
-                        </ItemsControl.ItemContainerStyle>
-                    </ItemsControl>
-                </StackPanel>
-            </Border>
-
-            <Border Style="{StaticResource CardBorder}" Padding="24,20">
-                <StackPanel>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Margin="0,0,16,0">
-                            <TextBlock Text="Análise de sessão" Style="{StaticResource SectionTitle}" />
-                            <TextBlock Text="Inicie, abra o jogo e jogue normalmente. No fim você recebe o diagnóstico da sessão inteira." Style="{StaticResource Caption}" Margin="0,3,0,0" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Border Style="{StaticResource SegmentGroup}" Margin="0,0,10,0">
-                                <local:SlidingSelectionPanel x:Name="BnDurationPanel" Style="{StaticResource SegmentRail}">
-                                    <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="1 min" Tag="1" IsChecked="True" />
-                                    <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="3 min" Tag="3" />
-                                    <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="5 min" Tag="5" />
-                                </local:SlidingSelectionPanel>
-                            </Border>
-                            <Button x:Name="BtnBnSession" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE768;" Content="Iniciar análise" Click="BtnBnSession_Click" />
-                        </StackPanel>
+    <UserControl.Resources>
+        <!-- Medidor do Gargalo: rótulo e leitura, medidor segmentado na cor do componente e a marca do ponto em que o CoreBi
+             considera a peça no limite (a mesma regra que dá o veredito). A linha de complemento fica reservada, para todos terem a
+             mesma altura. -->
+        <DataTemplate x:Key="LimitMeter">
+            <Grid Margin="0,6" ToolTip="{Binding Tip}" Background="Transparent">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" VerticalAlignment="Bottom" Margin="0,0,12,2" />
+                <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="20" HorizontalAlignment="Right" />
+                <Grid Grid.Row="1" Height="8" Margin="0,8,0,0">
+                    <Grid OpacityMask="{StaticResource SegmentMask}">
+                        <Border Background="{DynamicResource Line}" />
+                        <Border x:Name="fill" Background="{DynamicResource Steel}" RenderTransformOrigin="0,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="{Binding Fraction}" />
+                            </Border.RenderTransform>
+                        </Border>
                     </Grid>
-                    <TextBlock x:Name="BnSessionStatus" Style="{StaticResource Caption}" Margin="0,14,0,0" Typography.NumeralAlignment="Tabular" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
-                    <StackPanel x:Name="BnResult" Visibility="Collapsed" Margin="0,18,0,0">
-                        <Border Style="{StaticResource Divider}" Margin="0,0,0,18" />
-                        <TextBlock x:Name="BnResultTitle" FontFamily="{StaticResource DisplayFont}" FontSize="22" FontWeight="SemiBold" />
-                        <TextBlock x:Name="BnResultSummary" Style="{StaticResource Caption}" FontSize="13" Margin="0,4,0,16" Typography.NumeralAlignment="Tabular" />
-                        <ItemsControl x:Name="BnDistribution" ItemTemplate="{StaticResource Meter}" HorizontalAlignment="Left" Width="640" />
-                        <TextBlock x:Name="BnResultAdvice" Style="{StaticResource Body}" Margin="0,6,0,0" />
+                    <!-- Marca do limite -->
+                    <Grid x:Name="mark" Visibility="{Binding HasMark, Converter={StaticResource BoolVis}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="{Binding MarkLeft}" />
+                            <ColumnDefinition Width="2" />
+                            <ColumnDefinition Width="{Binding MarkRight}" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="1" Height="16" Margin="0,-4" Background="{DynamicResource Muted}" SnapsToDevicePixels="True" />
+                    </Grid>
+                </Grid>
+                <TextBlock x:Name="sub" Grid.Row="2" Text="{Binding Sub}" Style="{StaticResource StatSub}" Height="16" Margin="0,6,0,0" />
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Channel}" Value="Cpu"><Setter TargetName="fill" Property="Background" Value="{DynamicResource Cpu}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Channel}" Value="Gpu"><Setter TargetName="fill" Property="Background" Value="{DynamicResource Gpu}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Channel}" Value="Memory"><Setter TargetName="fill" Property="Background" Value="{DynamicResource Memory}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Channel}" Value="Danger"><Setter TargetName="fill" Property="Background" Value="{DynamicResource Danger}" /></DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="Warn">
+                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Warn}" />
+                    <Setter TargetName="sub" Property="Foreground" Value="{DynamicResource Warn}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="Danger">
+                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Danger}" />
+                    <Setter TargetName="sub" Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Sub}" Value="">
+                    <Setter TargetName="sub" Property="Visibility" Value="Hidden" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Leitura em régua: rótulo e número, separadas por fios; a primeira sem fio -->
+        <DataTemplate x:Key="RulerCell">
+            <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="24,0,0,0" Margin="24,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <TextBlock Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="28" FontWeight="Light" />
+                        <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" FontSize="13" Margin="5,0,0,4" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" />
                     </StackPanel>
                 </StackPanel>
             </Border>
-        </StackPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding First}" Value="True">
+                    <Setter TargetName="cell" Property="BorderThickness" Value="0" />
+                    <Setter TargetName="cell" Property="Padding" Value="0" />
+                    <Setter TargetName="cell" Property="Margin" Value="0" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <!-- Com a janela maximizada a página cabe inteira (a altura mínima é a da janela e as linhas "*" ocupam a sobra); em
+         janelas baixas ou estreitas ela rola. -->
+    <ScrollViewer x:Name="BnScroll" VerticalScrollBarVisibility="Auto" Focusable="False">
+        <Border MinHeight="{Binding ViewportHeight, ElementName=BnScroll}">
+            <Grid x:Name="BnPage" Style="{StaticResource PageGrid}" SizeChanged="BnPage_SizeChanged">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid Style="{StaticResource PageHeader}">
+                    <TextBlock Text="Gargalo" Style="{StaticResource PageTitle}" />
+                </Grid>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition x:Name="BnGapColumn" Width="16" />
+                        <ColumnDefinition x:Name="BnSideColumn" Width="540" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="16" />
+                        <RowDefinition Height="*" />
+                        <!-- Em janelas estreitas o painel de leituras desce para cá -->
+                        <RowDefinition x:Name="BnStackGap" Height="0" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Veredito: o que limita agora, em grande; cor só quando há limitação -->
+                    <Border x:Name="BnLiveCard" Style="{StaticResource CardBorder}" Padding="28,24,28,26">
+                        <StackPanel>
+                            <StackPanel x:Name="BnGameLine" Orientation="Horizontal" Margin="0,0,0,10" Visibility="Collapsed">
+                                <Ellipse x:Name="BnLiveDot" Style="{StaticResource StatusLed}" Fill="{DynamicResource Signal}" Margin="0,1,8,0" ToolTip="Medindo o FPS do jogo em primeiro plano" />
+                                <TextBlock x:Name="BnLiveGame" Style="{StaticResource StatLabel}" />
+                            </StackPanel>
+                            <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" FontFamily="{StaticResource DisplayFont}" FontSize="44" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextWrapping="Wrap" />
+                            <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,10,0,0" />
+                            <ItemsControl x:Name="BnFrameStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,24,0,0" Focusable="False" Visibility="Collapsed">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Análise de sessão: a única ação da página -->
+                    <Border x:Name="BnSessionCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="28,20,28,24">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Análise de sessão" Style="{StaticResource SectionTitle}" VerticalAlignment="Center"
+                                           ToolTip="Mede o jogo em primeiro plano durante o tempo escolhido e mostra por quanto tempo cada peça limitou o FPS." />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Border Style="{StaticResource SegmentGroup}" Margin="0,0,12,0">
+                                        <local:SlidingSelectionPanel x:Name="BnDurationPanel" Style="{StaticResource SegmentRail}">
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="1 min" Tag="1" IsChecked="True" />
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="3 min" Tag="3" />
+                                            <RadioButton Style="{StaticResource Segment}" GroupName="BnDur" Content="5 min" Tag="5" />
+                                        </local:SlidingSelectionPanel>
+                                    </Border>
+                                    <Button x:Name="BtnBnSession" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE768;" Content="Iniciar análise" Click="BtnBnSession_Click" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock x:Name="BnSessionStatus" Text="Nenhuma análise feita ainda." Style="{StaticResource Caption}" FontSize="13" Margin="0,16,0,0" Typography.NumeralAlignment="Tabular" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
+                            <Grid x:Name="BnSessionBar" Style="{StaticResource ProgressTrack}" Margin="0,10,0,0" Visibility="Collapsed">
+                                <Border Style="{StaticResource ProgressFill}">
+                                    <Border.RenderTransform>
+                                        <ScaleTransform x:Name="BnSessionProgress" ScaleX="0" />
+                                    </Border.RenderTransform>
+                                </Border>
+                            </Grid>
+                            <StackPanel x:Name="BnResult" Visibility="Collapsed" Margin="0,20,0,0">
+                                <Border Style="{StaticResource Divider}" Margin="0,0,0,20" />
+                                <TextBlock x:Name="BnResultTitle" FontFamily="{StaticResource DisplayFont}" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                <ItemsControl x:Name="BnResultStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,18,0,0" Focusable="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <TextBlock Text="Tempo em cada situação" Style="{StaticResource Label}" Margin="0,24,0,2" />
+                                <ItemsControl x:Name="BnDistribution" ItemTemplate="{StaticResource LimitMeter}" Focusable="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style TargetType="ContentPresenter">
+                                            <Setter Property="Margin" Value="0,0,32,0" />
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
+                                </ItemsControl>
+                                <TextBlock x:Name="BnResultAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,10,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- As leituras que provam o veredito e, embaixo, o equilíbrio estimado pela tabela de desempenho -->
+                    <Border x:Name="BnSideCard" Grid.Column="2" Grid.RowSpan="3" Style="{StaticResource CardBorder}" Padding="0">
+                        <DockPanel>
+                            <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="24,18,24,22">
+                                <StackPanel>
+                                    <TextBlock Text="Equilíbrio estimado" Style="{StaticResource SectionTitle}"
+                                               ToolTip="Estimativa pela tabela de desempenho relativo de processadores e placas de vídeo do CoreBi, não uma medição. Cada jogo pesa diferente; as leituras ao vivo mostram o que acontece de fato." />
+                                    <StackPanel x:Name="BnBalanceRuler" Margin="0,14,0,0">
+                                        <Grid>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Cpu}" Margin="0,1,8,0" />
+                                                <TextBlock x:Name="BnCpuName" Style="{StaticResource Caption}" FontSize="13" Foreground="{DynamicResource Fg}" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <TextBlock x:Name="BnGpuName" Style="{StaticResource Caption}" FontSize="13" Foreground="{DynamicResource Fg}" />
+                                                <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Gpu}" Margin="8,1,0,0" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <!-- Régua logarítmica da razão GPU/CPU: centro = equilibrado -->
+                                        <Grid Height="24" Margin="0,10,0,4">
+                                            <Border Height="8" Background="{DynamicResource Line}" OpacityMask="{StaticResource SegmentMask}" VerticalAlignment="Center" />
+                                            <Border Width="2" Height="16" Background="{DynamicResource Steel}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <Canvas x:Name="BnBalanceCanvas" SizeChanged="BnBalanceCanvas_SizeChanged">
+                                                <Ellipse x:Name="BnBalanceDot" Width="16" Height="16" Fill="{DynamicResource Fg}" Stroke="{DynamicResource Surface}" StrokeThickness="3" Canvas.Top="4" />
+                                            </Canvas>
+                                        </Grid>
+                                        <Grid>
+                                            <TextBlock Text="Limita a GPU" Style="{StaticResource Footnote}" />
+                                            <TextBlock Text="Equilibrado" Style="{StaticResource Footnote}" HorizontalAlignment="Center" />
+                                            <TextBlock Text="Limita a CPU" Style="{StaticResource Footnote}" HorizontalAlignment="Right" />
+                                        </Grid>
+                                    </StackPanel>
+                                    <TextBlock x:Name="BnBalanceText" Style="{StaticResource Body}" Margin="0,14,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <DockPanel Margin="24,20,24,14">
+                                <TextBlock DockPanel.Dock="Top" Text="Leituras" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"
+                                           ToolTip="A marca em cada medidor é o ponto a partir do qual o CoreBi considera aquela peça no limite." />
+                                <ItemsControl x:Name="BnMeters" ItemTemplate="{StaticResource LimitMeter}" Focusable="False">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><local:SpreadPanel /></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                            </DockPanel>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
     </ScrollViewer>
 </UserControl>

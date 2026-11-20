@@ -77,31 +77,29 @@ public static class BottleneckAnalyzer
         Limiter.Cpu => "Gargalo de CPU",
         Limiter.Vram => "Memória de vídeo cheia",
         Limiter.Ram => "Memória RAM cheia",
-        Limiter.Thermal => "Alerta térmico",
+        Limiter.Thermal => "Temperatura no limite",
         _ => "Nada no limite"
     };
 
     public static string Advice(Limiter l) => l switch
     {
-        Limiter.Unknown => "Abra um jogo e aguarde FPS e sensores válidos. Sem esses dados não é possível classificar o gargalo.",
-        Limiter.Gpu => "Normal em jogos pesados: a placa de vídeo está sendo bem aproveitada. Para mais FPS, reduza " +
-                       "resolução ou qualidade gráfica, ou ative DLSS/FSR.",
-        Limiter.Cpu => "A CPU (ou um núcleo dela) não acompanha a GPU. Subir resolução/gráficos quase não custa FPS. " +
-                       "Para ganhar FPS: reduza opções que pesam na CPU (distância de visão, multidões, física), feche " +
-                       "programas em segundo plano e confira se o XMP/EXPO da RAM está ativo na BIOS.",
-        Limiter.Vram => "A memória da placa de vídeo encheu, o que causa travadas. Reduza a qualidade das texturas " +
-                        "ou a resolução.",
+        Limiter.Unknown => "Sem o FPS de um jogo em primeiro plano e as leituras dos sensores, não há como classificar.",
+        Limiter.Gpu => "Normal em jogos pesados: a placa de vídeo está sendo bem aproveitada. Para mais FPS, reduza a resolução " +
+                       "ou a qualidade gráfica, ou ative DLSS ou FSR.",
+        Limiter.Cpu => "A CPU, ou um núcleo dela, não acompanha a placa de vídeo. Reduza o que pesa nela (distância de visão, " +
+                       "multidões, física), feche programas em segundo plano e confira se o XMP ou EXPO da RAM está ativo na BIOS.",
+        Limiter.Vram => "A memória da placa de vídeo encheu, e isso causa travadas. Reduza a qualidade das texturas ou a resolução.",
         Limiter.Ram => "Pouca RAM livre: o Windows passa a usar o disco e o jogo engasga. Feche navegadores e outros programas.",
-        Limiter.Thermal => "Temperatura alta está derrubando o clock. Verifique ventilação do gabinete, poeira e pasta térmica.",
-        _ => "Nem CPU nem GPU estão no limite: provavelmente há trava de FPS, V-Sync/G-Sync limitando, ou o jogo " +
-             "está em menu/pausa. Normal se o FPS já é o desejado."
+        Limiter.Thermal => "A temperatura alta está derrubando o clock. Verifique a ventilação do gabinete, a poeira e a pasta térmica.",
+        _ => "Nem a CPU nem a placa de vídeo estão no limite. Provavelmente há trava de FPS ou V-Sync, ou o jogo está em menu " +
+             "ou pausa. Normal se o FPS já é o desejado."
     };
 
     /// <summary>Equilíbrio teórico pelo desempenho relativo (GPU: RTX 4070 = 100; CPU: Ryzen 7 7700X = 100).</summary>
     public static (double Ratio, string Text) Balance(double gpuIdx, double cpuIdx)
     {
         if (!double.IsFinite(gpuIdx) || !double.IsFinite(cpuIdx) || gpuIdx <= 0 || cpuIdx <= 0)
-            return (1, "Hardware fora da base de referência. A comparação teórica está indisponível; o monitoramento em jogo continua disponível.");
+            return (1, "Estimativa indisponível: o processador ou a placa de vídeo não está na tabela de desempenho relativo.");
         double ratio = gpuIdx / cpuIdx;
         string text = ratio switch
         {

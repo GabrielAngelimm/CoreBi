@@ -40,14 +40,12 @@ public partial class MainWindow
     internal TextBlock GpuVendor => PageGpu.GpuVendor;
     internal ItemsControl GpuSections => PageGpu.GpuSections;
     internal ItemsControl GpuExtras => PageGpu.GpuExtras;
-    internal ItemsControl GpuLive => PageGpu.GpuLive;
     internal TextBlock BnCpuName => PageBottleneck.BnCpuName;
     internal TextBlock BnGpuName => PageBottleneck.BnGpuName;
     internal Canvas BnBalanceCanvas => PageBottleneck.BnBalanceCanvas;
     internal Ellipse BnBalanceDot => PageBottleneck.BnBalanceDot;
     internal TextBlock BnBalanceText => PageBottleneck.BnBalanceText;
     internal Border BnLiveCard => PageBottleneck.BnLiveCard;
-    internal TextBlock BnLiveLabel => PageBottleneck.BnLiveLabel;
     internal TextBlock BnLiveTitle => PageBottleneck.BnLiveTitle;
     internal TextBlock BnLiveGame => PageBottleneck.BnLiveGame;
     internal TextBlock BnLiveAdvice => PageBottleneck.BnLiveAdvice;
@@ -57,7 +55,6 @@ public partial class MainWindow
     internal TextBlock BnSessionStatus => PageBottleneck.BnSessionStatus;
     internal StackPanel BnResult => PageBottleneck.BnResult;
     internal TextBlock BnResultTitle => PageBottleneck.BnResultTitle;
-    internal TextBlock BnResultSummary => PageBottleneck.BnResultSummary;
     internal ItemsControl BnDistribution => PageBottleneck.BnDistribution;
     internal TextBlock BnResultAdvice => PageBottleneck.BnResultAdvice;
     internal CheckBox ChkOverlay => PageOverlay.ChkOverlay;
