@@ -190,7 +190,7 @@ public static class DriverManager
             g.Latest = ver!.Trim();
             g.DownloadUrl = dl!.Replace("http://", "https://");
             g.SizeText = size ?? "";
-            g.Message = g.UpdateAvailable ? $"Há um driver mais novo: {g.Latest} (instalado: {g.Installed})." : $"Você já está com o mais recente ({g.Installed}).";
+            g.Message = g.UpdateAvailable ? "Há um driver mais novo." : "Você já está com o mais recente.";
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) { g.Message = "Não foi possível consultar a NVIDIA: " + ex.Message; }
@@ -207,7 +207,7 @@ public static class DriverManager
         try
         {
             var m = Regex.Match(g.GpuName, @"RX\s*(\d{4})\s*(XTX|XT|GRE|M)?", RegexOptions.IgnoreCase);
-            if (!m.Success) { g.Message = "AMD: modelo não reconhecido para consulta automática. Use a página oficial."; return; }
+            if (!m.Success) { g.Message = "Modelo não reconhecido para consulta automática. Use a página oficial."; return; }
             int n = int.Parse(m.Groups[1].Value);
             string fam = $"radeon-rx-{n / 1000}000-series";
             string suffix = m.Groups[2].Success ? "-" + m.Groups[2].Value.ToLowerInvariant() : "";
@@ -219,11 +219,11 @@ public static class DriverManager
             string html = await resp.Content.ReadAsStringAsync(ct);
             var hit = Regex.Match(html, @"https://drivers\.amd\.com/drivers/[^""'\s<>\\]*win11[^""'\s<>\\]*\.exe", RegexOptions.IgnoreCase);
             if (!hit.Success) hit = Regex.Match(html, @"https://drivers\.amd\.com/drivers/[^""'\s<>\\]*\.exe", RegexOptions.IgnoreCase);
-            if (!hit.Success) { g.Message = "AMD: o site não devolveu o link do instalador (pode estar protegido). Abra a página oficial do seu modelo."; return; }
+            if (!hit.Success) { g.Message = "O site da AMD não devolveu o link do instalador. Abra a página oficial do seu modelo."; return; }
             g.DownloadUrl = hit.Value;
             var v = Regex.Match(hit.Value, @"edition-([\d.]+)", RegexOptions.IgnoreCase);
             g.Latest = v.Success ? v.Groups[1].Value : Path.GetFileNameWithoutExtension(hit.Value);
-            g.Message = $"AMD Software Adrenalin {g.Latest} disponível para o seu modelo. Compare com a versão mostrada no AMD Software (o Windows mostra {g.Installed}).";
+            g.Message = "O Windows mostra o número interno do driver, que não dá para comparar com a versão do pacote da AMD.";
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) { g.Message = "Não foi possível consultar a AMD: " + ex.Message; }
