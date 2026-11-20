@@ -25,6 +25,7 @@ internal static partial class Program
     {
         Check("settings: null collections and invalid scale recover safely", () =>
         {
+            Directory.CreateDirectory(AppSettings.Folder);
             string file = Path.Combine(AppSettings.Folder, "settings.json");
             File.WriteAllText(file, "{\"BenchRuns\":null,\"BenchRecords\":null,\"StartupRemoved\":null,\"OverlayScale\":999,\"OverlayCorner\":\"bad\"}");
             var settings = AppSettings.Load();
