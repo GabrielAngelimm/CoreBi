@@ -47,10 +47,11 @@
             </Setter>
         </Style>
 
-        <!-- Linha de sensor: nome claro, leitura atual com a unidade e as três estatísticas sem unidade.
-             O fio fica em cima de cada linha; o mouse acende o fundo, que avança 8 px para os lados. -->
+        <!-- Linha de sensor: nome claro, leitura atual com a unidade e as três estatísticas sem unidade (a unidade está ao lado do
+             título do grupo). O fio fica em cima de cada linha; o mouse acende o fundo, que avança 8 px para os lados. A dica do
+             "Núcleo mais exigido" diz qual núcleo é, na hora (SensorLine_ToolTipOpening). -->
         <DataTemplate x:Key="SensorLine">
-            <Grid x:Name="host" Margin="-8,0" Background="Transparent" ToolTip="{Binding Tip}">
+            <Grid x:Name="host" Margin="-8,0" Background="Transparent" ToolTip="{Binding Tip}" ToolTipOpening="SensorLine_ToolTipOpening">
                 <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="6" Opacity="0" />
                 <Border Height="1" VerticalAlignment="Top" Margin="8,0" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
                 <Grid Margin="8,0" Height="32">
@@ -104,17 +105,20 @@
         </DataTemplate>
 
         <!-- Grupo de um tipo: o título é o maior e mais forte do bloco, com um filete na cor do canal do componente (o mesmo da
-             Visão geral e da barra lateral); os sensores entram recuados embaixo -->
+             Visão geral e da barra lateral) e a unidade do grupo ao lado ("em °C"), que vale para mínimo, média e máximo; sem
+             contagem, que o cabeçalho do componente já dá. Os sensores entram recuados embaixo. A segunda metade de um grupo
+             longo (coluna da direita) não repete o título, mas guarda a altura dele para as linhas das duas colunas alinharem. -->
         <DataTemplate x:Key="SectionTemplate">
             <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <StackPanel x:Name="head" Orientation="Horizontal" Margin="0,0,0,8">
                     <Border x:Name="mark" Width="3" Height="15" CornerRadius="1.5" Background="{DynamicResource Steel}" Margin="0,1,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Title, Mode=OneWay}" Style="{StaticResource GroupTitle}" FontSize="16" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding Rows.Count, Mode=OneWay}" FontSize="11.5" Foreground="{DynamicResource Faint}" Margin="10,2,0,0" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular" />
+                    <TextBlock Text="{Binding UnitText, Mode=OneWay}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="8,2,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource SensorLine}" Focusable="False" />
             </StackPanel>
             <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Continued}" Value="True"><Setter TargetName="head" Property="Visibility" Value="Hidden" /></DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Cpu"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Cpu}" /></DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Gpu"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Gpu}" /></DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Memory"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Memory}" /></DataTrigger>
@@ -285,7 +289,9 @@
             <Border x:Name="SensorCard" Grid.Row="1" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SensorCard_SizeChanged">
                 <Grid>
                     <ScrollViewer x:Name="SensorScroll" VerticalScrollBarVisibility="Auto" ScrollChanged="SensorScroll_ScrollChanged">
-                        <!-- A barra de rolagem começa abaixo do cabeçalho fixo (112 = 80 + 32) para o cabeçalho nunca cobrir a barra -->
+                        <!-- A barra de rolagem começa abaixo do cabeçalho fixo (112 = 80 + 32) para o cabeçalho nunca cobrir a barra. O
+                             conteúdo ocupa a largura toda e a barra passa por cima da margem direita (24 px): assim os cabeçalhos
+                             de cada bloco terminam na mesma borda do cabeçalho fixo, com ou sem barra. -->
                         <ScrollViewer.Template>
                             <ControlTemplate TargetType="ScrollViewer">
                                 <Grid>
@@ -293,7 +299,7 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" CanContentScroll="{TemplateBinding CanContentScroll}" />
+                                    <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" Grid.ColumnSpan="2" CanContentScroll="{TemplateBinding CanContentScroll}" />
                                     <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Margin="0,116,2,4" Orientation="Vertical" Value="{TemplateBinding VerticalOffset}" Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
                                 </Grid>
                             </ControlTemplate>

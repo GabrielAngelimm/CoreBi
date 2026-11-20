@@ -103,7 +103,7 @@ public partial class SensorsView : UserControl
             _pending = null;
             SensorScroll.ScrollToTop();
         }
-        var layout = SensorBoard.Build(rows, _component, _group, _search, _collapsed);
+        var layout = SensorBoard.Build(rows, _component, _group, _search, _collapsed, SectionColumns);
         _component = layout.SelectedId;
         _builtRows = _monitor.Rows.Count(r => r.HasReading);
         _syncing = true;
@@ -176,6 +176,13 @@ public partial class SensorsView : UserControl
     }
 
     private void SensorScroll_ScrollChanged(object sender, ScrollChangedEventArgs e) => UpdateSticky();
+
+    /// <summary>"Núcleo mais exigido" e "Núcleo mais quente": a dica diz qual núcleo é, na hora em que abre.</summary>
+    private void SensorLine_ToolTipOpening(object sender, ToolTipEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: SensorRow row } host && _monitor != null && SensorBoard.PeakTip(_monitor.Rows, row) is { } tip)
+            host.ToolTip = tip;
+    }
 
     /// <summary>Cantos redondos de verdade: os cabeçalhos têm fundo e vazariam pelos cantos do cartão.</summary>
     private void SensorCard_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -268,6 +275,9 @@ public partial class SensorsView : UserControl
         IndexCard.Visibility = index ? Visibility.Visible : Visibility.Collapsed;
         if (!index && _component != null) { _component = null; Rebuild(); } // sem o índice não há como voltar à visão geral
         double content = e.NewSize.Width - (index ? 316 : 0);
-        SectionColumns = content >= 1060 ? 2 : 1;
+        int columns = content >= 1060 ? 2 : 1;
+        if (columns == SectionColumns) return;
+        SectionColumns = columns;
+        if (IsVisible) Rebuild(); // um grupo só se divide entre as duas colunas, e volta a uma com uma coluna
     }
 }

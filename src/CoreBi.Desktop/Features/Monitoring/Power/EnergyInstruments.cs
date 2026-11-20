@@ -374,7 +374,10 @@ public sealed class RangeStrip : EnergyInstrument
     }
 }
 
-/// <summary>Faixa de 0 a 100 % com o trecho entre o mínimo e o máximo aceso (estado do processador no plano).</summary>
+/// <summary>
+/// Faixa de 0 a 100 % do estado do processador no plano, acesa até o máximo, para a barra ler como o valor (100 % = cheia):
+/// cheia até o mínimo, que vale mesmo em repouso, e mais clara do mínimo ao máximo, aonde ele só chega com carga.
+/// </summary>
 public sealed class SpanMeter : EnergyInstrument
 {
     public static readonly DependencyProperty FromProperty = Number(nameof(From), typeof(SpanMeter));
@@ -389,9 +392,8 @@ public sealed class SpanMeter : EnergyInstrument
         double w = ActualWidth;
         if (w < 20) return;
         bool known = !double.IsNaN(From) && !double.IsNaN(To);
-        // Um gomo de folga de cada lado: com mínimo = máximo (plano que fixa o clock) a faixa vira um ponto e ainda acende o gomo
-        double pad = 500 / w;
-        Segments(dc, new Rect(0, 0, w, ActualHeight), f => known && f * 100 >= From - pad && f * 100 <= To + pad ? CpuBrush : TrackBrush);
+        var load = Alpha(CpuBrush, 0x8C);
+        Segments(dc, new Rect(0, 0, w, ActualHeight), f => !known || f * 100 > To ? TrackBrush : f * 100 <= From ? CpuBrush : load);
     }
 }
 

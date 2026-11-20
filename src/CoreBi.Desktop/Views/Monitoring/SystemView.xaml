@@ -1,13 +1,11 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.SystemView" xmlns:local="clr-namespace:CoreBi.Desktop" xmlns:inv="clr-namespace:CoreBi.Desktop.Features.Monitoring.Inventory">
     <UserControl.Resources>
-        <!-- Explicação: complemento do dado, nunca o dado. Itálico, um ponto menor e um tom abaixo, com mais ar acima,
-             para a hierarquia ficar chave → valor → explicação. -->
+        <!-- O que fazer, embaixo do valor de uma linha âmbar ("Ative na BIOS"): um ponto menor e um tom abaixo do valor. A
+             explicação do que o dado é fica na dica da linha, não na tela. -->
         <Style x:Key="Explain" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontStyle" Value="Italic" />
-            <Setter Property="LineHeight" Value="17" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="LineHeight" Value="18" />
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
-            <Setter Property="Opacity" Value="0.82" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
 
@@ -18,21 +16,16 @@
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
         </Style>
 
-        <!-- Fabricante no alto da placa: na cor do canal do componente, como a etiqueta de uma peça -->
+        <!-- Fabricante no alto da placa, em tom de texto secundário: a cor do componente já está no fundo da placa, e o verde ou o
+             bege em letra de 13 px sobre ele ficava sem contraste no tema claro -->
         <Style x:Key="PlateEyebrow" TargetType="TextBlock" BasedOn="{StaticResource SheetLabel}">
-            <Style.Triggers>
-                <Trigger Property="local:Ui.Channel" Value="Cpu"><Setter Property="Foreground" Value="{DynamicResource Cpu}" /></Trigger>
-                <Trigger Property="local:Ui.Channel" Value="Gpu"><Setter Property="Foreground" Value="{DynamicResource Gpu}" /></Trigger>
-                <Trigger Property="local:Ui.Channel" Value="Memory"><Setter Property="Foreground" Value="{DynamicResource Memory}" /></Trigger>
-                <Trigger Property="local:Ui.Channel" Value="Storage"><Setter Property="Foreground" Value="{DynamicResource Storage}" /></Trigger>
-                <Trigger Property="local:Ui.Channel" Value="Board"><Setter Property="Foreground" Value="{DynamicResource Board}" /></Trigger>
-            </Style.Triggers>
+            <Setter Property="FontSize" Value="13" />
         </Style>
 
-        <!-- Índice: seis botões numa faixa um tom abaixo do painel, com o ícone do componente, sem fundo, na cor do canal dele (a
-             mesma dos gráficos) e a categoria na letra de instrumento; o nome da peça está na ficha logo abaixo. Cada um tem
-             fundo e contorno próprios e uma seta discreta, para ler como botão; o mouse clareia o fundo; o escolhido ganha o
-             fundo da placa logo abaixo, contorno mais forte e texto aceso, e perde a seta. -->
+        <!-- Índice: seis abas numa faixa um tom abaixo do painel, com o ícone do componente, sem fundo, na cor do canal dele (a
+             mesma dos gráficos) e a categoria na letra de instrumento; o nome da peça está na ficha logo abaixo. Cada uma tem
+             fundo e contorno próprios, sem seta (seta é de link que leva a outra página); o mouse clareia o fundo; a escolhida
+             ganha o fundo da placa logo abaixo, contorno mais forte e texto aceso. -->
         <Style x:Key="IndexCell" TargetType="ListBoxItem">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -42,7 +35,6 @@
                     <ControlTemplate TargetType="ListBoxItem">
                         <Border x:Name="face" Margin="4" CornerRadius="{StaticResource RadiusInset}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" SnapsToDevicePixels="True" Padding="12,12,14,12">
                             <DockPanel>
-                                <TextBlock x:Name="chev" DockPanel.Dock="Right" Text="&#xE76C;" Style="{StaticResource IconGlyph}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="8,0,0,0" />
                                 <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Channel}" Kind="{Binding Glyph}" Width="32" Height="32" />
                                 <TextBlock x:Name="cat" Text="{Binding Category}" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,3,0,0" />
                             </DockPanel>
@@ -52,7 +44,6 @@
                                 <Setter TargetName="face" Property="Background" Value="{DynamicResource Hover}" />
                                 <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
                                 <Setter TargetName="cat" Property="Foreground" Value="{DynamicResource Fg}" />
-                                <Setter TargetName="chev" Property="Foreground" Value="{DynamicResource Muted}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Focus}" />
@@ -61,7 +52,6 @@
                                 <Setter TargetName="face" Property="Background" Value="{DynamicResource Selected}" />
                                 <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Faint}" />
                                 <Setter TargetName="cat" Property="Foreground" Value="{DynamicResource Fg}" />
-                                <Setter TargetName="chev" Property="Visibility" Value="Hidden" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -76,7 +66,7 @@
                 <StackPanel>
                     <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" />
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <TextBlock Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="38" FontWeight="Light" />
+                        <TextBlock x:Name="num" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="38" FontWeight="Light" />
                         <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" FontSize="13" Margin="4,0,0,6" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" />
                     </StackPanel>
                 </StackPanel>
@@ -87,13 +77,20 @@
                     <Setter TargetName="cell" Property="Padding" Value="0" />
                     <Setter TargetName="cell" Property="Margin" Value="0" />
                 </DataTrigger>
+                <!-- Sem dado: o travessão da letra Light a 38 px vira uma barra larga; encolhe e fica um tom abaixo, na mesma altura de linha -->
+                <DataTrigger Binding="{Binding Value}" Value="—">
+                    <Setter TargetName="num" Property="FontSize" Value="24" />
+                    <Setter TargetName="num" Property="LineHeight" Value="48" />
+                    <Setter TargetName="num" Property="LineStackingStrategy" Value="BlockLineHeight" />
+                    <Setter TargetName="num" Property="Foreground" Value="{DynamicResource Faint}" />
+                </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
 
         <!-- Linha chave/valor: o fio fica sob o texto; o fundo do mouse avança 10 px para os lados. Clique copia o valor.
-             Tudo em texto: a explicação, quando há, vem embaixo em letra menor. -->
+             Tudo em texto: a explicação fica na dica; embaixo, em letra menor, só o que fazer numa linha âmbar. -->
         <DataTemplate x:Key="SpecRowTemplate">
-            <Grid x:Name="host" Margin="-10,0" Background="Transparent" Cursor="Hand" ToolTip="{Binding Tip}" MouseLeftButtonUp="SpecRow_Click">
+            <Grid x:Name="host" Margin="-10,0" Background="Transparent" Cursor="Hand" ToolTip="{Binding Hint}" MouseLeftButtonUp="SpecRow_Click">
                 <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="6" Opacity="0" />
                 <Border Height="1" VerticalAlignment="Top" Margin="10,0" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
                 <Grid Margin="10,8,8,8">
@@ -131,8 +128,8 @@
                         </ItemsControl>
                     </Grid>
                     <TextBlock x:Name="copy" Grid.Column="3" Tag="copy" Text="&#xE8C8;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0" Opacity="0" />
-                    <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Help}" Style="{StaticResource Explain}" Margin="0,8,0,0"
-                               Visibility="{Binding Help, Converter={StaticResource NotEmptyVis}}" />
+                    <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding Action}" Style="{StaticResource Explain}" Margin="0,6,0,0"
+                               Visibility="{Binding Action, Converter={StaticResource NotEmptyVis}}" />
                 </Grid>
             </Grid>
             <DataTemplate.Triggers>
@@ -150,10 +147,8 @@
 
         <DataTemplate x:Key="SpecGroupTemplate">
             <StackPanel>
-                <TextBlock Text="{Binding Title}" Style="{StaticResource GroupTitle}" Margin="0,8,0,8" />
-                <!-- Uma frase que explica o assunto do grupo, para quem não é do ramo -->
-                <TextBlock Text="{Binding Help}" Style="{StaticResource Explain}" Margin="0,-2,0,12"
-                           Visibility="{Binding Help, Converter={StaticResource NotEmptyVis}}" />
+                <!-- A frase que explica o assunto do grupo, para quem não é do ramo, é a dica do título -->
+                <TextBlock Text="{Binding Title}" Style="{StaticResource GroupTitle}" Margin="0,8,0,8" HorizontalAlignment="Left" Background="Transparent" ToolTip="{Binding Help}" />
                 <!-- Cabeçalho das colunas (módulos lado a lado), alinhado com as células das linhas -->
                 <Grid x:Name="columns" Margin="0,0,30,6">
                     <Grid.ColumnDefinitions>
@@ -318,7 +313,7 @@
             </Setter>
         </Style>
 
-        <!-- Leva às leituras ao vivo: botão discreto no rodapé do card, com ícone de pulso e seta -->
+        <!-- Leva às leituras ao vivo (outra página, por isso a seta): botão discreto logo depois do último grupo, com ícone de pulso -->
         <Style x:Key="SheetLink" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Foreground" Value="{DynamicResource Fg}" />
@@ -391,7 +386,6 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <!-- Placa: quem é o componente e as quatro leituras que o resumem. No tom mais forte, como o cabeçalho de
                          componente em Sensores (o botão escolhido usa o mesmo fundo), com o fundo claro da cor do componente. -->
@@ -404,7 +398,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Bottom" Margin="0,0,40,0">
-                                <TextBlock x:Name="SheetEyebrow" Style="{StaticResource PlateEyebrow}" local:Ui.Channel="{Binding SelectedItem.Channel, ElementName=SysIndex}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock x:Name="SheetEyebrow" Style="{StaticResource PlateEyebrow}" TextTrimming="CharacterEllipsis" />
                                 <TextBlock x:Name="SheetTitle" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
                                 <TextBlock x:Name="SheetSub" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,8,0,0" />
                             </StackPanel>
@@ -417,9 +411,10 @@
                         </Grid>
                     </Border>
 
-                    <!-- Os dados na largura toda, em grupos que se distribuem em colunas -->
+                    <!-- Os dados na largura toda, em grupos que se distribuem em colunas; o atalho para as leituras ao vivo vem logo
+                         depois do último grupo, no fim da ficha, em vez de solto no pé do cartão -->
                     <ScrollViewer x:Name="SpecScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" Focusable="False">
-                        <StackPanel Margin="32,18,32,16">
+                        <StackPanel Margin="32,18,32,28">
                             <!-- Armazenamento: os discos em cima, com as unidades; a ficha de cada um vem nos grupos abaixo -->
                             <ItemsControl x:Name="DiskList" ItemTemplate="{StaticResource DiskTemplate}" Margin="0,-8,0,20" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Focusable="False" />
                             <ItemsControl x:Name="SpecGroups" ItemTemplate="{StaticResource SpecGroupTemplate}" Focusable="False">
@@ -432,12 +427,11 @@
                                     </Style>
                                 </ItemsControl.ItemContainerStyle>
                             </ItemsControl>
+                            <Border x:Name="SheetFooter" Margin="0,28,0,0">
+                                <Button x:Name="SheetLink" Style="{StaticResource SheetLink}" HorizontalAlignment="Left" Click="SheetLink_Click" />
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
-                    <!-- Rodapé do card: atalho para as leituras ao vivo, no canto inferior esquerdo -->
-                    <Border x:Name="SheetFooter" Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="32,12">
-                        <Button x:Name="SheetLink" Style="{StaticResource SheetLink}" HorizontalAlignment="Left" Click="SheetLink_Click" />
-                    </Border>
                 </Grid>
             </Grid>
         </Border>

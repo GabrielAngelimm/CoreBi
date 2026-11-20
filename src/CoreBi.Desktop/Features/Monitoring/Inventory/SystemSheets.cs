@@ -34,16 +34,22 @@ public sealed record Readout(string Label, string Value, string Unit = "", strin
 
 /// <summary>
 /// Linha chave/valor. Note aparece em cinza depois do valor ("há 1 ano"); Tone é o veredito da linha (a página é só texto:
-/// ele não acende nada; o relatório leva a explicação das âmbar); Help é uma linha de explicação embaixo, para o que pede
-/// contexto. Clicar copia o valor.
+/// ele não acende nada; o relatório leva a explicação das âmbar); Help é a explicação do valor. Na tela, a explicação vai
+/// para a dica da linha, junto com Tip; só a das linhas âmbar, que diz o que fazer, fica embaixo do valor. Clicar copia o valor.
 /// </summary>
 public sealed record SpecRow(string Key, string Value, string? Note = null, string? Tip = null, Tone Tone = Tone.None, string? Help = null)
 {
     /// <summary>Uma célula por coluna do grupo (módulos de memória lado a lado); Value guarda o texto para copiar.</summary>
     public List<string>? Cells { get; init; }
+
+    /// <summary>Dica da linha: a explicação (quando não é a ação de uma linha âmbar) e o detalhe técnico.</summary>
+    public string? Hint => string.Join("\n", new[] { Action == null ? Help : null, Tip }.Where(x => !string.IsNullOrEmpty(x))) is { Length: > 0 } hint ? hint : null;
+
+    /// <summary>O que fazer, embaixo do valor: só nas linhas âmbar (o relatório leva o mesmo texto).</summary>
+    public string? Action => Tone == Tone.Warn && !string.IsNullOrEmpty(Help) ? Help : null;
 }
 
-/// <summary>Grupo de linhas com uma frase que explica o assunto. Tokens: lista em linha (instruções do processador).</summary>
+/// <summary>Grupo de linhas; Help é uma frase sobre o assunto, que vira a dica do título. Tokens: lista em linha (instruções do processador).</summary>
 public sealed record SpecGroup(string Title, List<SpecRow> Rows, List<SpecToken>? Tokens = null, string? Help = null)
 {
     /// <summary>Cabeçalho das colunas quando as linhas têm Cells.</summary>
@@ -184,16 +190,20 @@ public static class SystemSheets
         if (c.Microcode != null) id.Add(new("Microcódigo", c.Microcode, null, "Revisão das correções internas do processador, carregada pela BIOS ou pelo Windows."));
         if (inv.Cpus.Count > 1) id.Add(new("Processadores", inv.Cpus.Count.ToString(Br)));
 
-        // A divisão P + E tem linha própria logo abaixo: a nota no total diria o mesmo duas vezes.
-        var clocks = new List<SpecRow> { new("Núcleos", cores.ToString(Br)) };
+        // Núcleos, threads, clock base e L3 estão na placa logo acima: o grupo fica com o que a placa não diz (a divisão P + E,
+        // as threads por núcleo e o clock de referência com o multiplicador).
+        var (baseMhz, multiplier) = RatedClock(c.BaseMhz, c.RefClockMhz);
+        var clocks = new List<SpecRow>();
         if (t.Hybrid) clocks.Add(new("Desempenho + eficiência", $"{t.PerformanceCores} + {t.EfficientCores}", null, null, Tone.None,
             "Os de desempenho (P) rodam jogos e tarefas pesadas; os de eficiência (E), o que fica em segundo plano."));
-        clocks.Add(new("Threads", threads.ToString(Br), smt ? $"{(double)threads / cores:0.#} por núcleo" : "1 por núcleo"));
-        clocks.Add(new(c.Vendor == "AMD" ? "SMT" : "Hyper-Threading", smt ? "Ativado" : "Desligado", null, "Cada núcleo executa duas threads ao mesmo tempo."));
-        clocks.Add(new("Clock base", Fmt.Ghz(c.BaseMhz), Help: "A frequência garantida. Com carga ele passa disso (boost), conforme a temperatura e o consumo."));
+        clocks.Add(new(c.Vendor == "AMD" ? "SMT" : "Hyper-Threading", smt ? "Ativado" : "Desligado",
+            smt ? $"{N((double)threads / cores, "0.#")} threads por núcleo" : null, "Com ele, cada núcleo executa duas threads ao mesmo tempo."));
         if (c.RefClockMhz > 0)
-            clocks.Add(new("Clock de referência", $"{c.RefClockMhz} MHz", c.BaseMhz > 0 ? $"× {N((double)c.BaseMhz / c.RefClockMhz, "0.#")} no clock base" : null,
+            clocks.Add(new("Clock de referência", $"{c.RefClockMhz} MHz",
+                baseMhz > 0 ? $"× {(multiplier is int mul ? mul.ToString(Br) : N((double)baseMhz / c.RefClockMhz, "0.#"))} no clock base" : null,
                 "O clock base é este valor vezes o multiplicador do processador."));
+        string baseTip = "A frequência garantida. Com carga ele passa disso (boost), conforme a temperatura e o consumo."
+            + (baseMhz != c.BaseMhz ? $"\nO Windows mede {c.BaseMhz.ToString("N0", Br)} MHz; o valor vai ao múltiplo de {c.RefClockMhz} MHz mais próximo (× {multiplier}), como o fabricante especifica." : "");
 
         var cache = Fmt.CacheLines(c).Select(kv => new SpecRow(kv.Key, kv.Value, kv.Key == "L3" && l3.Count == 1 ? "compartilhado" : null)).ToList();
 
@@ -210,14 +220,14 @@ public static class SystemSheets
 
         var groups = new List<SpecGroup>
         {
-            new("Núcleos e threads", clocks, Help: "Cada núcleo é um processador completo. Threads são as tarefas que os núcleos executam ao mesmo tempo."),
             new("Identificação", id),
         };
+        if (clocks.Count > 0) groups.Insert(0, new("Núcleos e clock", clocks, Help: "Cada núcleo é um processador completo. Threads são as tarefas que os núcleos executam ao mesmo tempo."));
         if (cache.Count > 0) groups.Add(new("Cache", cache, Help: "Memória dentro do processador, bem mais rápida que a RAM. L1 e L2 são de cada núcleo."));
         if (features.Count > 0) groups.Add(new("Recursos", features));
         if (c.Instructions.Count > 0)
             groups.Add(new("Instruções", new(), c.Instructions.Select(i => new SpecToken(i.Name, i.Supported)).ToList(),
-                "Conjuntos de instruções que programas e jogos podem exigir. Em cinza, as que este processador não tem."));
+                "Conjuntos de instruções que programas e jogos podem exigir." + (c.Instructions.Any(i => !i.Supported) ? " Em cinza, as que este processador não tem." : "")));
 
         return new Sheet
         {
@@ -229,7 +239,7 @@ public static class SystemSheets
             {
                 new("Núcleos", cores.ToString(Br), "", t.Hybrid ? $"{t.PerformanceCores} de desempenho + {t.EfficientCores} de eficiência" : null),
                 new("Threads", threads.ToString(Br)),
-                new("Clock base", c.BaseMhz > 0 ? N(c.BaseMhz / 1000.0, "0.0#") : "—", c.BaseMhz > 0 ? "GHz" : ""),
+                new("Clock base", baseMhz > 0 ? N(baseMhz / 1000.0, "0.00") : "—", baseMhz > 0 ? "GHz" : "", baseMhz > 0 ? baseTip : null),
                 new("Cache L3", l3Value, l3Unit),
             },
             Groups = groups,
@@ -734,6 +744,18 @@ public static class SystemSheets
     }
 
     private static string Cap(string s) => s.Length > 0 ? char.ToUpper(s[0], Br) + s[1..] : s;
+
+    /// <summary>
+    /// Clock base como o fabricante escreve. O Windows informa uma medida (2.793 MHz numa máquina virtual, 3.701 num Ryzen);
+    /// quando ela fica a menos de 1 % de um múltiplo do clock de referência, vale o múltiplo, que é o multiplicador inteiro do
+    /// chip (2.800 MHz, × 28). Longe disso, fica a medida, sem arredondar.
+    /// </summary>
+    private static (int Mhz, int? Multiplier) RatedClock(int mhz, int refMhz)
+    {
+        if (mhz <= 0 || refMhz <= 0) return (mhz, null);
+        int m = (int)Math.Round((double)mhz / refMhz);
+        return m > 0 && Math.Abs(m * refMhz - mhz) < mhz * 0.01 ? (m * refMhz, m) : (mhz, null);
+    }
 
     private static Sheet Missing(string key, string title, string? error) => new()
     {
