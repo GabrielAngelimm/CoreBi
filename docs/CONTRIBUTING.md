@@ -1,13 +1,12 @@
 # Contribuir e manter
 
-Use Windows x64 e o SDK de `global.json`. Leia [arquitetura](ARCHITECTURE.md), [design da interface](DESIGN.md) e [contrato da interface](UI-CONTRACT.md). Preserve o layout atual até a etapa de UI/UX e mantenha créditos/licenças.
+Use Windows x64. Os scripts de `tools/` usam o SDK exato de `global.json` e baixam uma cópia se ele faltar (veja o README); para os demais comandos, use `.\tools\Dotnet.ps1` no lugar de `dotnet`. Leia [arquitetura](ARCHITECTURE.md), [design da interface](DESIGN.md) e [contrato da interface](UI-CONTRACT.md). Preserve o layout atual até a etapa de UI/UX e mantenha créditos/licenças.
 
 ## Antes de enviar uma alteração
 
 ```powershell
-dotnet restore CoreBi.slnx --locked-mode
-dotnet format whitespace CoreBi.slnx --no-restore --verify-no-changes
 .\tools\Build.ps1
+.\tools\Dotnet.ps1 format whitespace CoreBi.slnx --no-restore --verify-no-changes
 .\tools\Test.ps1
 .\tools\SecretScan.ps1
 .\tools\Publish.ps1
@@ -39,7 +38,7 @@ Execute `Bench` com outras cargas pesadas encerradas. Resultados JSON ficam em `
 
 ## Dependências
 
-Versões diretas ficam no `.csproj`; NuGet resolve transitivas nos locks. Atualize intencionalmente com `dotnet restore CoreBi.slnx --force-evaluate`, revise o diff e regenere o lock de publicação com `dotnet restore src/CoreBi.Desktop -r win-x64 -p:PublishSingleFile=true --force-evaluate`. Execute restore bloqueado e publicação novamente. Não edite hashes manualmente.
+Versões diretas ficam no `.csproj`; NuGet resolve transitivas nos locks. Atualize intencionalmente com `.\tools\Dotnet.ps1 restore CoreBi.slnx --force-evaluate`, revise o diff e regenere o lock de publicação com `.\tools\Dotnet.ps1 restore src/CoreBi.Desktop -r win-x64 -p:PublishSingleFile=true --force-evaluate` (o lock de publicação depende da versão exata do SDK). Execute restore bloqueado e publicação novamente. Não edite hashes manualmente.
 
 Após publicação/restauração, execute `python tools/collect_licenses.py` com `NUGET_PACKAGES` correto ou `--packages <pasta>`, revise `licenses/THIRD-PARTY.md` e os textos em `licenses/`. `dotnet list CoreBi.slnx package --vulnerable --include-transitive` consulta avisos conhecidos; uma resposta vazia não certifica ausência de vulnerabilidades.
 

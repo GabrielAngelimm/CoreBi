@@ -49,19 +49,20 @@ As pastas são criadas automaticamente. Consulte [privacidade](docs/PRIVACY.md) 
 
 ## Compilar a partir do código
 
-Requisitos: Windows x64, Git e SDK indicado em `global.json`. Na pasta em que deseja clonar:
+Requisitos: Windows x64 e Git. Na pasta em que deseja clonar:
 
 ```powershell
 git clone https://github.com/GabrielAngelimm/CoreBi.git
 cd CoreBi
-dotnet restore CoreBi.slnx --locked-mode
 .\tools\Build.ps1
 ```
+
+O `Build.ps1` restaura os pacotes em modo bloqueado e compila. Os scripts de `tools/` usam o SDK exato de `global.json`: o do sistema, se for essa versão, ou uma cópia baixada na primeira vez para `%LOCALAPPDATA%\CoreBiDev\<versão>` com o script oficial da Microsoft, sem instalador nem UAC. O script e o `dotnet.exe` só são aceitos com assinatura válida da Microsoft, e atualizações do .NET pelo Windows não mexem nessa cópia. Para os demais comandos, use `.\tools\Dotnet.ps1` no lugar de `dotnet`.
 
 Para executar o build, abra o PowerShell como administrador na raiz do projeto:
 
 ```powershell
-dotnet run --project src/CoreBi.Desktop -c Release --no-build
+.\tools\Dotnet.ps1 run --project src/CoreBi.Desktop -c Release --no-build
 ```
 
 Para gerar a aplicação independente do runtime instalado:
@@ -70,7 +71,7 @@ Para gerar a aplicação independente do runtime instalado:
 .\tools\Publish.ps1
 ```
 
-O pacote é gerado em `artifacts/publish/win-x64`, incluindo as licenças. Para usar SDK portátil nos scripts, defina `$env:COREBI_DOTNET` com o caminho do `dotnet.exe`.
+O pacote é gerado em `artifacts/publish/win-x64`, incluindo as licenças. Para usar outro SDK portátil nos scripts, defina `$env:COREBI_DOTNET` com o caminho do `dotnet.exe`.
 
 ## Estrutura
 
