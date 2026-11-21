@@ -17,6 +17,10 @@ public sealed record LoadSample(
     public const float CpuLimitPct = 85;
     public const float RamLimitPct = 92;
 
+    /// <summary>
+    /// Regras, na ordem: VRAM cheia → térmico → GPU no limite (normal em jogo pesado) → CPU/núcleo no limite com GPU
+    /// sobrando → RAM cheia → nada no limite (trava de FPS, V-Sync ou menu).
+    /// </summary>
     public Limiter Classify()
     {
         if (Fps is not > 0) return Limiter.Unknown;

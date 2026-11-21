@@ -95,6 +95,7 @@ public partial class BenchmarksView
             BenchRatio.Text = $"{m / s:0.0}";
             BenchRatioSub.Text = $"com {threads} threads";
         }
+        // Só compara com passadas da mesma duração: a de 10 min aquece o processador e rende menos.
         var previous = _context.Settings.BenchRuns.Where(r => r.Sustained == sustained).ToList();
         if (mt is double mv) BenchMtVs.Text = VsBest(mv, previous.Select(r => r.Multi ?? 0));
         if (st is double sv) BenchStVs.Text = VsBest(sv, previous.Select(r => r.Single ?? 0));
@@ -129,6 +130,7 @@ public partial class BenchmarksView
             double frac = _bench.BucketsTotal > 0 ? (double)_bench.BucketsDone / _bench.BucketsTotal : 0;
             BenchProgress.ScaleX = frac;
             var phaseElapsed = DateTime.Now - _benchPhaseStart;
+            // Tempo restante da passada atual, pela velocidade até agora (só depois de 3 % para não oscilar).
             string eta = frac >= 0.03 ? $", faltam cerca de {TimeSpan.FromSeconds(phaseElapsed.TotalSeconds * (1 - frac) / frac):m\\:ss}" : "";
             BenchStatus.Text = $"{_benchPhase}, {frac * 100:0} %";
             BenchElapsed.Text = (DateTime.Now - _benchStart).ToString(@"mm\:ss") + eta;

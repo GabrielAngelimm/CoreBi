@@ -22,6 +22,8 @@ internal static class WmiDiskTopology
     private static readonly Regex RefIdRegex = new("DeviceID=\"(.*)\"", RegexOptions.Compiled);
     private static readonly Regex PhysicalDriveRegex = new(@"PHYSICALDRIVE(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    // Base: Win32_DiskDrive existe em qualquer Windows (única consulta obrigatória). Sem a API de armazenamento
+    // (MSFT_*) ou sem permissão, a leitura segue só com o resto.
     public static List<WmiDiskRecord> ReadDiskDrivesOrThrow() =>
         WmiQuery.SelectOrThrow(
             "SELECT Index, DeviceID, Model, SerialNumber, FirmwareRevision, InterfaceType, Size, PNPDeviceID FROM Win32_DiskDrive",

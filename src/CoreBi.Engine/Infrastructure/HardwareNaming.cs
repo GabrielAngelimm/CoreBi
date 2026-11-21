@@ -20,9 +20,9 @@ public static class HardwareNaming
         if (string.IsNullOrWhiteSpace(name)) return "";
         string s = name.Replace("(TM)", "").Replace("(R)", "");
         foreach (string w in new[] { "NVIDIA", "GeForce", "AMD", "Intel" }) s = s.Replace(w, "");
-        if (s.Contains("Radeon RX")) s = s.Replace("Radeon", "");
+        if (s.Contains("Radeon RX")) s = s.Replace("Radeon", ""); // "Radeon RX 9070 XT" → "RX 9070 XT"
         s = string.Join(' ', s.Split(' ', StringSplitOptions.RemoveEmptyEntries));
-        if (s.StartsWith("Arc") && s.EndsWith(" Graphics")) s = s[..^9];
+        if (s.StartsWith("Arc") && s.EndsWith(" Graphics")) s = s[..^9]; // "Arc B580 Graphics" → "Arc B580"
         return s;
     }
 
@@ -33,13 +33,13 @@ public static class HardwareNaming
         int i = s.IndexOf("-Core", StringComparison.OrdinalIgnoreCase);
         if (i > 0)
         {
-            int space = s.LastIndexOf(' ', i);
+            int space = s.LastIndexOf(' ', i); // "Ryzen 7 7700X 8-Core Processor" → "Ryzen 7 7700X"
             s = space >= 0 ? s[..space] : s[..i];
         }
         s = s.Replace("Processor", "").Replace("CPU", "");
-        s = IntelGenRegex.Replace(s, "");
+        s = IntelGenRegex.Replace(s, ""); // "13th Gen Core i7-13700K"
         int at = s.IndexOf('@');
-        if (at > 0) s = s[..at];
+        if (at > 0) s = s[..at]; // "Core i5-12400F CPU @ 2.50GHz"
         return string.Join(' ', s.Split(' ', StringSplitOptions.RemoveEmptyEntries));
     }
 

@@ -29,6 +29,7 @@ public partial class StressView : UserControl, IDisposable
     private bool _gpuBurnOn;
     private double _gpuTempLimit = 85;
     private float _gpuMaxTemp;
+    /// <summary>Parada pedida enquanto as threads ou a janela da placa de vídeo ainda encerram; aplicada no próximo tique.</summary>
     private (string Reason, string Status, bool Aborted)? _pendingStop;
 
     public StressView() => InitializeComponent();
@@ -79,6 +80,7 @@ public partial class StressView : UserControl, IDisposable
     private void UpdateStressColumns()
     {
         bool cpu = ChkCpu.IsChecked == true, ram = ChkRam.IsChecked == true, gpu = ChkGpu.IsChecked == true;
+        // O corte de temperatura do processador vale também para o teste só de RAM, que esquenta o processador.
         bool cpuSide = cpu || ram || !gpu;
         static Visibility Show(bool on) => on ? Visibility.Visible : Visibility.Collapsed;
         CpuColumn.Visibility = Show(cpuSide);
@@ -295,6 +297,7 @@ public partial class StressView : UserControl, IDisposable
         }
 
         StTemp.Text = temp == null ? "—" : $"{temp:0.#}";
+        // A leitura principal fica âmbar a 5 °C do corte.
         StTemp.SetResourceReference(TextBlock.ForegroundProperty, _stress.Running && temp >= _tempLimit - 5 ? "Warn" : "Fg");
         StTempMax.Text = _stressMaxTemp > 0 ? $"{_stressMaxTemp:0.#} °C" : "";
         StClock.Text = _context.ReadCpuLive().AvgClockMHz is float clock ? $"{clock:0} MHz" : "";

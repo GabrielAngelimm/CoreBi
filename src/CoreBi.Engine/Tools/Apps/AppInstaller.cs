@@ -13,6 +13,7 @@ public sealed class InstallableApp : INotifyPropertyChanged
     public string Name { get; init; } = "";
     public string Description { get; init; } = "";
     public string WingetId { get; init; } = "";
+    /// <summary>Começo do nome em "Aplicativos instalados" (Painel de Controle), para saber se já está instalado.</summary>
     public string DisplayPrefix { get; init; } = "";
     public bool PreSelect { get; init; } = true;
 
@@ -40,6 +41,7 @@ public sealed class InstallableApp : INotifyPropertyChanged
 
 /// <summary>
 /// Catálogo de apps essenciais e instalação via winget (Gerenciador de Pacotes do Windows).
+/// O winget baixa sempre a versão oficial mais recente do site do fabricante e confere o hash do instalador.
 /// </summary>
 public static partial class AppInstaller
 {
@@ -143,6 +145,7 @@ public static partial class AppInstaller
         return args.ToArray();
     }
 
+    /// <summary>Última linha útil da saída do winget (sem as barras de progresso).</summary>
     private static string LastLine(string output) =>
         output.Split('\n', '\r').Select(l => l.Trim())
               .LastOrDefault(l => l.Length > 3 && !l.All(c => "-\\|/█▒ ".Contains(c)) && !l.Contains("KB /") && !l.Contains("MB /")) ?? "";

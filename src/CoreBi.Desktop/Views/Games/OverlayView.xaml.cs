@@ -77,6 +77,7 @@ public partial class OverlayView : UserControl
             rb.IsChecked = (string)rb.Tag == settings.OverlayCorner;
 
         var scales = OvScalePanel.Children.OfType<RadioButton>().ToList();
+        // O tamanho salvo vai para a opção mais próxima (os três tamanhos já mudaram de valor uma vez).
         var nearest = scales.MinBy(rb => Math.Abs(double.Parse((string)rb.Tag, CultureInfo.InvariantCulture) - settings.OverlayScale));
         foreach (var rb in scales) rb.IsChecked = rb == nearest;
 
@@ -337,7 +338,7 @@ public partial class OverlayView : UserControl
         if (show.Contains("cpu_temp")) cpu.Add(Temp(cpuLive.TempC));
         if (show.Contains("cpu_clock")) cpu.Add(cpuLive.AvgClockMHz is float ca ? $"{ca / 1000:0.00} GHz" : "— GHz");
         if (show.Contains("cpu_clockmax")) cpu.Add(cpuLive.MaxClockMHz is float cm ? $"pico {cm / 1000:0.00} GHz" : "pico —");
-        if (show.Contains("cpu_power")) cpu.Add(cpuLive.PowerW is float cw && cw > 0 ? $"{cw:0} W" : "— W");
+        if (show.Contains("cpu_power")) cpu.Add(cpuLive.PowerW is float cw && cw > 0 ? $"{cw:0} W" : "— W"); // 0 = sem leitura (precisa de administrador)
         Line("CPU", cpu, ShortOverlayName(HardwareNaming.ShortCpuName(_context.CpuName)));
 
         var ram = new List<string>();

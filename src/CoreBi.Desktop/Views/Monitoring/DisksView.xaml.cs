@@ -491,6 +491,7 @@ public partial class DisksView : UserControl
     private static void Readout(TextBlock target, string value, string unit, bool balanced = false) =>
         ReadoutFormat.Set(target, value, unit, unitRatio: 0.4, balanced: balanced);
 
+    /// <summary>GB (decimais, como o S.M.A.R.T. informa) → valor e unidade; TB a partir de 1000 GB.</summary>
     private static (string Value, string Unit) SplitData(double gb, bool decimals = true) =>
         gb >= 1000 ? (decimals ? $"{gb / 1000:N1}" : $"{gb / 1000:N0}", "TB") : ($"{gb:N0}", "GB");
 

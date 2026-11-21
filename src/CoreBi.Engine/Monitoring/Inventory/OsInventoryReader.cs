@@ -161,6 +161,7 @@ internal static class OsInventoryReader
         return new WindowsSecurity(av, realTime, tamper, signatures, uac);
     }
 
+    /// <summary>BitLocker por letra de unidade. A consulta precisa de administrador; sem ele o mapa volta vazio.</summary>
     public static Dictionary<string, bool> ReadBitLocker()
     {
         var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);

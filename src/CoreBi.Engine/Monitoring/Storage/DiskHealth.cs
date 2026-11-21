@@ -20,6 +20,7 @@ public sealed class DiskHealthCard
 
 public sealed class DiskDetail
 {
+    /// <summary>Desgaste (%) a partir do qual o veredito vira atenção e crítico.</summary>
     public const double WearWarnAt = 80, WearCritAt = 95;
     public const ulong UnsafeShutdownWarnAt = 50;
 
@@ -49,6 +50,7 @@ public sealed class DiskDetail
     public bool? PredictFailure { get; init; }
     /// <summary>HealthStatus do Windows: 0 saudável, 1 atenção, 2 não saudável, 5 desconhecido.</summary>
     public int WindowsHealth { get; init; } = 5;
+    /// <summary>Nome do disco no LibreHardwareMonitor, para a leitura ao vivo; null quando não há par único.</summary>
     public string? SensorHardware { get; init; }
     public NvmeLog? Nvme { get; init; }
 }

@@ -39,6 +39,7 @@ public static class PdfPrinter
         try
         {
             await File.WriteAllTextAsync(source, html, new UTF8Encoding(true), cancel).ConfigureAwait(false);
+            // Perfil próprio e temporário (--user-data-dir): não mexe no Edge aberto nem no perfil de quem usa o PC.
             var psi = new ProcessStartInfo(edge)
             {
                 UseShellExecute = false,
@@ -63,6 +64,7 @@ public static class PdfPrinter
                 if (cancel.IsCancellationRequested) throw;
             }
             // Com o app elevado o Edge se relança sem elevação e o processo filho sai na hora: o PDF surge logo depois.
+            // Espera o arquivo existir e parar de crescer antes de copiar e apagar a pasta de trabalho.
             long lastSize = -1;
             int maxEmptyWaits = ProcessElevation.IsElevated ? 24 : 8;
             for (int waited = 0; waited < 240; waited++)

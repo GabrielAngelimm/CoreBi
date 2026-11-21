@@ -36,6 +36,7 @@ internal static class ReportExportService
 
         string path = dlg.FileName;
         string ext = Path.GetExtension(path).ToLowerInvariant();
+        // A extensão digitada manda; sem uma conhecida, vale o tipo escolhido na lista.
         if (ext is not (".html" or ".htm" or ".pdf" or ".json"))
         {
             ext = dlg.FilterIndex switch { 2 => ".pdf", 3 => ".json", _ => ".html" };
@@ -44,12 +45,14 @@ internal static class ReportExportService
 
         onStatus(ext == ".pdf" ? "Gerando PDF…" : "Gerando relatório…");
 
+        // Dados que vivem na interface são copiados aqui (thread da tela); a leitura dos discos roda em segundo plano.
         var sensorsSnapshot = context.Sensors.Snapshot();
         var data = new ReportData
         {
             Date = DateTime.Now,
             Machine = Environment.MachineName,
             AppVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "",
+            // logo-dark.png é o logo para fundo claro (traço escuro); logo.png, para fundo escuro.
             LogoBase64 = LoadLogoBase64("logo-dark.png"),
             LogoOnDarkBase64 = LoadLogoBase64("logo.png"),
             Dark = !ThemeManager.IsLight,

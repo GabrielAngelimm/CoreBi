@@ -328,7 +328,7 @@ public partial class MainWindow : Window, ILiveMotionHost
 
     private void UpdateCpuSensorWarning()
     {
-        if (!_monitor.IsOpen) return;
+        if (!_monitor.IsOpen) return; // ainda detectando: não acusar falta de sensor antes da hora
         var problem = _monitor.DiagnoseCpuSensors();
         CpuSensorWarn.Visibility = problem == SensorMonitor.CpuSensorProblem.None ? Visibility.Collapsed : Visibility.Visible;
         CpuSensorWarnText.Text = CpuSensorMessages.Sidebar(problem);
@@ -431,7 +431,7 @@ public partial class MainWindow : Window, ILiveMotionHost
 
     private async void Nav_Checked(object sender, RoutedEventArgs e)
     {
-        if (PageSystem == null) return;
+        if (PageSystem == null) return; // disparado durante InitializeComponent
         KeepActiveNavVisible();
         string page = (string)((FrameworkElement)sender).Tag;
         int version = ++_navVersion;
@@ -441,7 +441,7 @@ public partial class MainWindow : Window, ILiveMotionHost
         {
             LoadingText.Text = what;
             ShowPage(page, deferred: true);
-            await Dispatcher.Yield(DispatcherPriority.Background);
+            await Dispatcher.Yield(DispatcherPriority.Background); // deixa o esqueleto ser desenhado antes do trabalho pesado
             if (version != _navVersion || _context.IsClosing) return;
             RevealPage(page);
         }
@@ -465,6 +465,7 @@ public partial class MainWindow : Window, ILiveMotionHost
             return;
         }
 
+        // Com os dados já em mãos basta esperar a página montar; senão, no máximo 2,5 s de espera.
         if (work != null) await Task.WhenAny(work, Task.Delay(2500));
         else await Dispatcher.Yield(DispatcherPriority.Background);
         _warmPages.Add(page);
@@ -493,7 +494,7 @@ public partial class MainWindow : Window, ILiveMotionHost
             p.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         }
         SetLoadingVeil(deferred);
-        SideMonitor.Visibility = name == "PageDash" ? Visibility.Hidden : Visibility.Visible;
+        SideMonitor.Visibility = name == "PageDash" ? Visibility.Hidden : Visibility.Visible; // Hidden (não Collapsed): o rodapé não pula
         SyncFrameMonitoring();
     }
 
@@ -546,6 +547,7 @@ public partial class MainWindow : Window, ILiveMotionHost
         else if (_frames.Running) _frames.Stop();
     }
 
+    // Sensores e overlay também consultam o driver (GPU e disco): cada consulta gera engasgo no frametime do benchmark.
     private void SetBenchmarkIsolation(bool pauseSensors, bool suspendOverlay)
     {
         _gpuBenchActive = pauseSensors;

@@ -19,9 +19,9 @@ public sealed class BenchRenderer
     public const int Spp = 1024;
     private const int MaxDepth = 6;
 
-    public int[] Pixels { get; } = new int[Width * Height];
+    public int[] Pixels { get; } = new int[Width * Height]; // BGRA32, lido pela interface
     public IReadOnlyList<(int X, int Y, int W, int H)> Buckets { get; }
-    public int[] Active { get; private set; } = Array.Empty<int>();
+    public int[] Active { get; private set; } = Array.Empty<int>(); // bloco de cada thread (-1 = livre)
     public long SamplesDone => Interlocked.Read(ref _samples);
     public int BucketsDone => Volatile.Read(ref _bucketsDone);
     public int BucketsTotal { get; private set; }
@@ -239,6 +239,7 @@ public sealed class BenchRenderer
                     }
             }
 
+            // Roleta russa depois de alguns rebotes.
             if (depth >= 3)
             {
                 float q = MathF.Max(0.05f, 1 - throughput);
@@ -264,7 +265,7 @@ public sealed class BenchRenderer
         float cosN = Vector3.Dot(dir, n);
         if (cosN <= 0) return 0;
         if (!Intersect(p + n * 1e-3f, dir, out _, out _, out bool hitLamp) || !hitLamp) return 0;
-        return LampPower * cosN * 2 * (1 - cosMax);
+        return LampPower * cosN * 2 * (1 - cosMax); // Lambert (1/π) × radiância × cos × ângulo sólido do cone
     }
 
     private static bool Intersect(Vector3 o, Vector3 d, out float tMin, out int idx, out bool lamp)

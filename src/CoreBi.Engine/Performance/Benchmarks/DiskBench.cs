@@ -7,6 +7,7 @@ public sealed record DiskBenchResult(string Drive, long FileMb, double SeqReadMB
                                      double ReadIopsQ1, double WriteIopsQ1, double ReadLatencyUs, double WriteLatencyUs,
                                      double ReadIopsQ8)
 {
+    /// <summary>Nota só para a barra do histórico: sequencial pesa em cópia/carregamento, 4K em abrir programas e sistema.</summary>
     public double Score => (SeqReadMBs + SeqWriteMBs) / 2 + (ReadIopsQ1 + WriteIopsQ1) / 200.0 + ReadIopsQ8 / 2000.0;
 }
 
@@ -47,6 +48,7 @@ public static class DiskBench
         if (di.TotalFreeSpace < checked(fileBytes + (512L << 20)))
             throw new IOException($"Pouco espaço livre em {driveRoot} (precisa de {fileMb + 512} MB).");
 
+        // O arquivo de teste é criado numa pasta própria da unidade e apagado no final.
         string dir = Path.Combine(driveRoot, "CoreBiBench-" + Guid.NewGuid().ToString("N"));
         string path = Path.Combine(dir, "bench.tmp");
         Directory.CreateDirectory(dir);
@@ -105,6 +107,7 @@ public static class DiskBench
         var sw = Stopwatch.StartNew();
         while (sw.Elapsed.TotalSeconds < RandomSeconds)
         {
+            // Checa o cancelamento a cada 64 operações (barato) e atualiza a barra.
             for (int i = 0; i < 64; i++)
             {
                 long off = rng.NextInt64(slots) * Small;

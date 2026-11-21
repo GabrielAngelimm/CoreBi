@@ -11,7 +11,7 @@ public sealed class StartupEntry
     public string Name { get; init; } = "";
     public string Command { get; init; } = "";
     public string Source { get; init; } = "";
-    public bool Machine { get; init; }
+    public bool Machine { get; init; } // HKLM / pasta comum (todos os usuários): alterar precisa de administrador
     public bool Enabled { get; set; }
     public string Detail { get; init; } = "";
     public bool FileMissing { get; init; }
@@ -249,6 +249,7 @@ public static class StartupManager
             path = exe > 0 ? cmd[..(exe + 4)] : sp > 0 ? cmd[..sp] : cmd;
         }
         if (Path.IsPathRooted(path)) return path;
+        // "rundll32.exe ..." e afins: procura no System32; se não achar, não dá para saber onde está.
         string sys = Path.Combine(Environment.SystemDirectory, path);
         return File.Exists(sys) ? sys : null;
     }

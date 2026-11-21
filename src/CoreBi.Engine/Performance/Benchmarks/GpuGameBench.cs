@@ -165,6 +165,7 @@ public sealed class GpuGameBench
                     // Espera ativa (sem ceder o núcleo): ceder a vez pode custar um tick de 15,6 ms do Windows
                     // e registraria uma travada que a GPU não teve.
                     host.WaitFence(frame, ShouldStop, spinWait: true);
+                    // Momento em que a GPU terminou um frame: o intervalo entre dois é o tempo de frame real da GPU.
                     double done = clock.Elapsed.TotalMilliseconds;
                     if (lastDone >= 0) frameTimes.Add(done - lastDone);
                     lastDone = done;
@@ -172,6 +173,7 @@ public sealed class GpuGameBench
                     titleFrames++;
                 }
 
+                // Câmera pelo tempo (não pelos frames): a mesma cena aparece no mesmo segundo em qualquer PC.
                 float t = (float)(clock.Elapsed.TotalSeconds / Duration.TotalSeconds);
                 var (eye, target) = GameScene.CameraAt(t);
                 var vp = Matrix4x4.CreateLookAt(eye, target, Vector3.UnitY) * proj;

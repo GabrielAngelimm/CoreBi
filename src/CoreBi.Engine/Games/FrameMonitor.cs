@@ -153,6 +153,12 @@ public sealed class FrameMonitor : IDisposable
     public FrameStats? GetForegroundStats() =>
         ForegroundWindow.TryGetForeignForeground(out _, out int pid) ? GetStats(pid) : null;
 
+    /// <summary>
+    /// Nome do programa medido. O jogo é identificado só pelo PID (eventos ETW e janela em primeiro plano), de propósito:
+    /// o CoreBi roda ao lado de jogos online, e abrir um handle do jogo para ler descrição, ícone, módulos ou memória
+    /// (MainModule, FileVersionInfo, ReadProcessMemory) pode chamar a atenção de anticheats. A única consulta é esta,
+    /// de nome, que o .NET faz com o acesso mínimo (PROCESS_QUERY_LIMITED_INFORMATION) e que fica 5 s em cache.
+    /// </summary>
     private string ResolveProcessName(int pid)
     {
         long now = Stopwatch.GetTimestamp();

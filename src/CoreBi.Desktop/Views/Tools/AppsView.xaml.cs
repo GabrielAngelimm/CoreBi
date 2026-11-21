@@ -128,6 +128,7 @@ public partial class AppsView : UserControl
 
     private void BtnAppsStore_Click(object sender, RoutedEventArgs e)
     {
+        // Página do "Instalador de Aplicativo" (App Installer), que traz o winget.
         try { Process.Start(new ProcessStartInfo("ms-windows-store://pdp/?productid=9NBLGGH4NNS1") { UseShellExecute = true }); }
         catch (Exception ex) { Say("Não foi possível abrir a Microsoft Store", ex.Message); }
     }

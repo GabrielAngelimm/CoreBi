@@ -31,6 +31,7 @@ public sealed class SensorMonitor : IDisposable
         GpuAccessGate.SetSuspended(true);
     }
 
+    /// <summary>Volta a ler depois que os dispositivos assentaram. A placa de vídeo continua de fora se o driver dela mudou.</summary>
     public void Resume()
     {
         _paused = false;
@@ -174,6 +175,7 @@ public sealed class SensorMonitor : IDisposable
             foreach (var row in Rows) row.ResetStats();
     }
 
+    /// <summary>Temperatura principal da CPU: Package (Intel) / Tctl-Tdie (AMD), senão a maior entre os núcleos.</summary>
     public float? CpuTemperature
     {
         get
@@ -239,6 +241,7 @@ public sealed class SensorMonitor : IDisposable
 
     public enum CpuSensorProblem { None, NotElevated, PawnIOMissing, ReadFailed }
 
+    /// <summary>Por que a temperatura/consumo da CPU não aparecem (o motivo mais provável primeiro).</summary>
     public CpuSensorProblem DiagnoseCpuSensors()
     {
         if (CpuTemperature != null) return CpuSensorProblem.None;

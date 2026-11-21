@@ -24,6 +24,7 @@ internal static class ReportHtmlRenderer
         sb.Append($"<!doctype html><html lang=\"pt-BR\" data-theme=\"{(d.Dark ? "dark" : "light")}\"><head><meta charset=\"utf-8\">");
         sb.Append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"color-scheme\" content=\"light dark\">");
         sb.Append($"<title>{E(d.Machine)} · Relatório do sistema</title><style>{ReportAssets.Css}");
+        // Cabeçalho e rodapé de cada folha impressa (navegadores Chromium; os outros só ignoram).
         sb.Append($"@page{{@top-left{{content:\"CoreBi · Relatório do sistema\"}}@top-right{{content:\"{CssText(d.Machine)}\"}}");
         sb.Append($"@bottom-left{{content:\"Gerado em {CssText(date)}\"}}@bottom-right{{content:\"Página \" counter(page) \" de \" counter(pages)}}}}");
         sb.Append("</style></head><body>");

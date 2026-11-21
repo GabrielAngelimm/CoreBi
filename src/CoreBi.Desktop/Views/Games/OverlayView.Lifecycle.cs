@@ -85,6 +85,7 @@ public partial class OverlayView : IDisposable
         if (!_ready || _context == null) return;
         _context.Settings.OverlayOpacity = opacity;
         if (_overlay != null) _overlay.Opacity = opacity;
+        // Arrastar dispara dezenas de mudanças por segundo: o overlay acompanha na hora, mas o disco só é gravado quando o movimento para.
         _opacitySave ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
         _opacitySave.Tick -= OpacitySave_Tick;
         _opacitySave.Tick += OpacitySave_Tick;

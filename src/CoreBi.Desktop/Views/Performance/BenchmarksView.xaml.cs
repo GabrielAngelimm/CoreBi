@@ -103,6 +103,7 @@ namespace CoreBi.Desktop.Views
             UpdateDiskPlate();
         }
 
+        /// <summary>Partes do resumo salvo ("valor · detalhe · detalhe"), o mesmo formato que a Visão geral lê (OverviewView.BenchEvent).</summary>
         private static string[] SummaryParts(string summary) =>
             summary.Split('·', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
@@ -134,6 +135,8 @@ namespace CoreBi.Desktop.Views
         {
             if (_context == null) return;
             IEnumerable<BenchRecord> Of(Func<BenchRecord, bool> test) => _context.Settings.BenchRecords.Where(test);
+            // A barra só compara o que é comparável: a cena de jogo na mesma resolução, o ray tracing no mesmo preset e
+            // resolução, o disco na mesma unidade.
             GbHistory.ItemsSource = History(Of(r => r.Test == "gpu"), r => SummaryParts(r.Summary).LastOrDefault() ?? "");
             RtHistory.ItemsSource = History(Of(r => r.Test.StartsWith("rt:", StringComparison.Ordinal)), r => r.Test);
             SimHistory.ItemsSource = History(Of(r => r.Test == "sim"), _ => "");

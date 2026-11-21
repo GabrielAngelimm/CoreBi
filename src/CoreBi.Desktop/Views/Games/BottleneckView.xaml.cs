@@ -106,6 +106,7 @@ namespace CoreBi.Desktop.Views
 
         internal void Tick()
         {
+            // Sem a página à vista e sem sessão, nada é lido (o CoreBi fica aberto durante os jogos).
             if (_context == null || (!IsVisible && _session == null)) return;
 
             var frames = _context.Frames.GetForegroundStats();
@@ -117,6 +118,7 @@ namespace CoreBi.Desktop.Views
                 bool game = frames != null;
                 bool verdict = game && limiter != Limiter.Unknown;
                 BnGameLine.Visibility = game ? Visibility.Visible : Visibility.Collapsed;
+                // Só o nome do processo, de propósito (anticheats): ver FrameMonitor.ResolveProcessName.
                 BnLiveGame.Text = game ? $"Medindo {frames!.ProcessName}" : "";
                 string tone = verdict ? VerdictTone(limiter) : "";
                 if (verdict)
@@ -280,6 +282,7 @@ namespace CoreBi.Desktop.Views
             return ($"Falta {missing}", "O FPS chega, mas sem essa leitura não dá para dizer o que limita.");
         }
 
+        // Só o que pede ação ganha cor; GPU no limite é o esperado num jogo e fica em tinta.
         private static string VerdictTone(Limiter l) => l switch
         {
             Limiter.Thermal => "Danger",
