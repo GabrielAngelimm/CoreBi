@@ -22,6 +22,7 @@ jobs:
       - run: ./tools/SecretScan.ps1
       - run: python -B tools/sync_theme.py --check
       - run: python -B tools/check_resources.py
+      - run: python -B tools/collect_licenses.py --check
       - run: dotnet restore CoreBi.slnx --locked-mode
       - run: dotnet format whitespace CoreBi.slnx --no-restore --verify-no-changes
       - run: dotnet build CoreBi.slnx -c Release --no-restore
@@ -63,7 +64,7 @@ jobs:
           git push -q -f "https://x-access-token:$env:TOKEN@github.com/$env:GITHUB_REPOSITORY.git" "capturas:refs/heads/capturas/$env:BRANCH"
           Pop-Location
       - run: ./tools/Publish.ps1
-      - run: choco install innosetup --no-progress -y
+      - run: choco install innosetup --version 6.7.1 --allow-downgrade --no-progress -y
       - run: ./tools/Installer.ps1 -SkipPublish
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
