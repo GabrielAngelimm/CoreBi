@@ -563,7 +563,7 @@ public static class SystemInfoCollector
                 var buffer = new byte[size];
                 if (PowerReadFriendlyName(IntPtr.Zero, scheme, IntPtr.Zero, IntPtr.Zero, buffer, ref size) != 0) return null;
                 string name = System.Text.Encoding.Unicode.GetString(buffer).TrimEnd('\0').Trim();
-                return name.Length > 0 ? name : null;
+                return name.Length > 0 ? CoreBi.Engine.Monitoring.Power.PowerPlans.DisplayName(Marshal.PtrToStructure<Guid>(scheme), name) : null;
             }
             finally { LocalFree(scheme); }
         }

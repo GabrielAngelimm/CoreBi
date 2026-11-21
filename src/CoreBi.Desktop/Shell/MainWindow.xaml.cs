@@ -50,6 +50,7 @@ public partial class MainWindow : Window
 
         InitBench();
         SnapshotUsb();
+        SnapshotDisplay();
         RefreshDrives();
         UpdateDashboard();
 
@@ -108,7 +109,6 @@ public partial class MainWindow : Window
             _toast?.Close();
             _frames.Dispose();
             _windowsGpuUsage.Dispose();
-            _gameFetch?.Cancel();
             UnregisterHotKey(new System.Windows.Interop.WindowInteropHelper(this).Handle, HotkeyId);
             _monitor.Dispose();
         };
@@ -142,15 +142,16 @@ public partial class MainWindow : Window
             for (int i = 0; i < _gpus.Count && _gpus.Count > 1; i++)
             {
                 var g = _gpus[i];
-                var chip = new RadioButton { Content = GameCatalogShort(g.Name), ToolTip = g.Name, GroupName = "Gpu", Style = (Style)FindResource("Chip"), IsChecked = i == 0 };
+                var chip = new RadioButton { Content = CoreBi.Engine.Games.HardwareCatalog.ShortGpuName(g.Name), ToolTip = g.Name, GroupName = "Gpu", Style = (Style)FindResource("Chip"), IsChecked = i == 0 };
                 chip.Checked += (_, _) => ShowGpu(g);
                 GpuChips.Children.Add(chip);
             }
             if (_gpus.Count > 0) ShowGpu(_gpus[0]);
+            else ShowNoGpu();
             PageSystem.GpusReady();
 
             // Dependem do nome da GPU/CPU
-            InitGames();
+            ReadCpuName();
             InitBottleneckAndOverlay();
             UpdateDashboard();
         }
@@ -158,7 +159,18 @@ public partial class MainWindow : Window
         await Task.WhenAll(LoadInfo(), LoadSensors(), LoadGpu());
     }
 
-    private static string GameCatalogShort(string gpu) => CoreBi.Engine.Games.GameCatalog.ShortGpuName(gpu);
+    /// <summary>Nome do processador pelo WMI, usado na Visão geral, no Gargalo, no overlay e no benchmark; vazio se a consulta falhar.</summary>
+    internal string _cpuName = "";
+
+    private void ReadCpuName()
+    {
+        try
+        {
+            using var s = new System.Management.ManagementObjectSearcher("SELECT Name FROM Win32_Processor");
+            foreach (System.Management.ManagementObject mo in s.Get()) { _cpuName = mo["Name"]?.ToString()?.Trim() ?? ""; break; }
+        }
+        catch { }
+    }
 
     // ---------------- Janela / navegação ----------------
 
@@ -196,6 +208,7 @@ public partial class MainWindow : Window
     internal async void Nav_Checked(object sender, RoutedEventArgs e)
     {
         if (PageSystem == null) return; // disparado durante InitializeComponent
+        KeepActiveNavVisible();
         string page = (string)((FrameworkElement)sender).Tag;
         int version = ++_navVersion;
         bool cold = ColdPages.TryGetValue(page, out string? what) && !_warmPages.Contains(page);
@@ -237,7 +250,17 @@ public partial class MainWindow : Window
         if (work != null) await work;
     }
 
-    private FrameworkElement[] Pages => new FrameworkElement[] { PageDash, PageSystem, PageSensors, PageGpu, PageGames, PageBottleneck, PageOverlay, PageBench, PageDriver, PageStartup, PageApps, PageDisks, PageEnergy, PageNet, PageStress };
+    /// <summary>
+    /// Em janelas baixas o menu rola: o item da página aberta continua à vista (ao navegar, ao aparecer o aviso de sensores e quando a
+    /// central de monitoramento some ou volta).
+    /// </summary>
+    private void KeepActiveNavVisible() =>
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            NavPanel.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.BringIntoView());
+
+    private void NavScroll_SizeChanged(object sender, SizeChangedEventArgs e) => KeepActiveNavVisible();
+
+    private FrameworkElement[] Pages => new FrameworkElement[] { PageDash, PageSystem, PageSensors, PageGpu, PageBottleneck, PageOverlay, PageBench, PageDriver, PageStartup, PageApps, PageDisks, PageEnergy, PageNet, PageStress };
 
     /// <summary>Com deferred, nenhuma página fica visível: só o esqueleto, até RevealPage.</summary>
     internal void ShowPage(string name, bool deferred = false)
@@ -249,7 +272,7 @@ public partial class MainWindow : Window
             p.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         }
         SetLoadingVeil(deferred);
-        SideMonitor.Visibility = name == "PageDash" ? Visibility.Collapsed : Visibility.Visible;
+        SideMonitor.Visibility = name == "PageDash" ? Visibility.Hidden : Visibility.Visible; // Hidden: o rodapé não pula
         UpdateFrameMonitoring();
     }
 
@@ -297,10 +320,11 @@ public partial class MainWindow : Window
             var c = new System.IO.DriveInfo(System.IO.Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\");
             if (!c.IsReady || c.TotalSize <= 0) return;
             double used = (double)(c.TotalSize - c.TotalFreeSpace) / c.TotalSize;
-            SideDisk.Text = CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalFreeSpace) + " livres";
+            // Como a RAM: leitura, porcentagem e medidor dizem a mesma coisa (o que está em uso); o espaço livre fica na dica.
+            SideDisk.Text = CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize - c.TotalFreeSpace);
             SideDiskLoad.Text = $"{used * 100:0} %";
             Ui.Glide(SideDiskBar, used, LiveMotion);
-            SideDiskRow.ToolTip = $"Disco {c.Name.TrimEnd('\\')}: {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize - c.TotalFreeSpace)} usados de {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize)}";
+            SideDiskRow.ToolTip = $"Disco {c.Name.TrimEnd('\\')}: {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize - c.TotalFreeSpace)} em uso de {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize)}, {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalFreeSpace)} livres";
         }
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { }
     }

@@ -1,9 +1,4 @@
-using System.ComponentModel;
-using System.Globalization;
-using System.Runtime.InteropServices;
-using System.Windows.Data;
 using System.Windows.Threading;
-using LibreHardwareMonitor.Hardware;
 using CoreBi.Engine.Games;
 using CoreBi.Engine.Performance.Benchmarks;
 using CoreBi.Engine.Persistence;
@@ -34,7 +29,9 @@ public partial class MainWindow
         _benchBitmap = new System.Windows.Media.Imaging.WriteableBitmap(BenchRenderer.Width, BenchRenderer.Height, 96, 96,
                                                                        PixelFormats.Bgra32, null);
         BenchImage.Source = _benchBitmap;
+        ResetBenchStages();
         UpdateBenchHistory();
+        UpdateGameBenchHistory();
         UpdateBenchLive();
     }
 
@@ -43,7 +40,7 @@ public partial class MainWindow
     internal async void BtnBench_Click(object sender, RoutedEventArgs e)
     {
         if (BenchRunning) { _benchCts!.Cancel(); return; }
-        if (TestRunning || _gameBenchRunning) { BenchHint.Text = "Pare o outro teste antes de rodar o benchmark."; return; }
+        if (TestRunning || _gameBenchRunning) { BenchHint.Text = "Termine o outro teste antes."; return; }
         using var workload = _workloads.TryBegin("CPU render");
         if (workload == null) { BenchHint.Text = "Termine o outro teste antes."; return; }
 
@@ -54,12 +51,12 @@ public partial class MainWindow
 
         _benchCts = CancellationTokenSource.CreateLinkedTokenSource(_features.Lifetime);
         var ct = _benchCts.Token;
-        Ui.SetRunning(BtnBench, true, "Iniciar");
-        BenchModePanel.IsEnabled = BenchDurationPanel.IsEnabled = BenchTestPanel.IsEnabled = false;
+        Ui.SetRunning(BtnBench, true, "Iniciar teste", "Cancelar");
+        PageBench.BenchOptions.IsEnabled = BenchTestPanel.IsEnabled = false;
         BenchHint.Text = "";
         BenchIdle.Visibility = Visibility.Collapsed;
-        BenchMt.Text = BenchSt.Text = "—";
-        BenchRatio.Text = "";
+        BenchMt.Text = BenchSt.Text = BenchRatio.Text = "—";
+        BenchMtVs.Text = BenchStVs.Text = BenchRatioSub.Text = "";
         _benchStart = DateTime.Now;
         _benchTimer ??= new DispatcherTimer(TimeSpan.FromMilliseconds(100), DispatcherPriority.Render, (_, _) => UpdateBenchView(), Dispatcher);
         _benchTimer.Start();
@@ -69,29 +66,30 @@ public partial class MainWindow
         {
             if (mode is "mt" or "both")
             {
-                _benchPhase = $"Multi-core · {threads} threads";
+                _benchPhase = "Multi-core";
                 _benchPhaseStart = DateTime.Now;
                 var r = await Task.Run(() => _bench.Run(threads, minDuration, ct), ct);
                 if (!ct.IsCancellationRequested) { mt = r.Score; BenchMt.Text = $"{r.Score:N0}"; }
             }
             if (!ct.IsCancellationRequested && mode is "st" or "both")
             {
-                _benchPhase = "Single-core · 1 thread";
+                _benchPhase = "Single-core";
                 _benchPhaseStart = DateTime.Now;
                 var r = await Task.Run(() => _bench.Run(1, minDuration, ct), ct);
                 if (!ct.IsCancellationRequested) { st = r.Score; BenchSt.Text = $"{r.Score:N0}"; }
             }
         }
         catch (OperationCanceledException) { }
-        catch (Exception ex) { BenchHint.Text = "Falha no teste: " + ex.Message; _benchCts?.Cancel(); }
+        catch (Exception ex) { BenchHint.Text = "Falhou: " + ex.Message; _benchCts?.Cancel(); }
 
         _benchTimer.Stop();
         UpdateBenchView();
         bool cancelled = ct.IsCancellationRequested;
         _benchCts = null;
-        Ui.SetRunning(BtnBench, false, "Iniciar");
-        BenchModePanel.IsEnabled = BenchDurationPanel.IsEnabled = BenchTestPanel.IsEnabled = true;
+        Ui.SetRunning(BtnBench, false, "Iniciar teste", "Cancelar");
+        PageBench.BenchOptions.IsEnabled = BenchTestPanel.IsEnabled = true;
         BenchBuckets.Children.Clear();
+        BenchElapsed.Text = "";
 
         var total = DateTime.Now - _benchStart;
         if (cancelled)
@@ -101,10 +99,16 @@ public partial class MainWindow
         }
         BenchStatus.Text = $"Concluído em {total:m\\:ss}";
         if (mt is double m && st is double s)
-            BenchRatio.Text = $"Multi ÷ single: {m / s:0.0}x com {threads} threads " +
-                              $"({Environment.ProcessorCount / 2} núcleos com SMT costumam render 8–12x).";
+        {
+            BenchRatio.Text = $"{m / s:0.0}";
+            BenchRatioSub.Text = $"com {threads} threads";
+        }
+        // Só compara com passadas da mesma duração: a de 10 min aquece o processador e rende menos.
+        var previous = _settings.BenchRuns.Where(r => r.Sustained == sustained).ToList();
+        if (mt is double mv) BenchMtVs.Text = VsBest(mv, previous.Select(r => r.Multi ?? 0));
+        if (st is double sv) BenchStVs.Text = VsBest(sv, previous.Select(r => r.Single ?? 0));
 
-        _settings.BenchRuns.Insert(0, new BenchRun(DateTime.Now, mt, st, sustained, GameCatalog.ShortCpuName(_cpuName)));
+        _settings.BenchRuns.Insert(0, new BenchRun(DateTime.Now, mt, st, sustained, HardwareCatalog.ShortCpuName(_cpuName)));
         AddEvent("cpu", "Benchmark", "Render de CPU", mt is double mte ? $"{mte:N0} pts" : st is double ste ? $"{ste:N0} pts" : "", "Cpu");
         if (_settings.BenchRuns.Count > 10) _settings.BenchRuns.RemoveRange(10, _settings.BenchRuns.Count - 10);
         SaveSettings();
@@ -134,40 +138,41 @@ public partial class MainWindow
             BenchProgress.ScaleX = frac;
             // Tempo restante da passada atual, pela velocidade até agora (só depois de 3% para não oscilar).
             var phaseElapsed = DateTime.Now - _benchPhaseStart;
-            string eta = frac >= 0.03 ? $" · faltam ~{TimeSpan.FromSeconds(phaseElapsed.TotalSeconds * (1 - frac) / frac):m\\:ss}" : "";
-            BenchStatus.Text = $"{_benchPhase} · {frac:P0}{eta}";
-            BenchElapsed.Text = (DateTime.Now - _benchStart).ToString(@"mm\:ss");
+            string eta = frac >= 0.03 ? $", faltam cerca de {TimeSpan.FromSeconds(phaseElapsed.TotalSeconds * (1 - frac) / frac):m\\:ss}" : "";
+            BenchStatus.Text = $"{_benchPhase}, {frac * 100:0} %";
+            BenchElapsed.Text = (DateTime.Now - _benchStart).ToString(@"mm\:ss") + eta;
         }
         else BenchProgress.ScaleX = 0;
     }
 
-    /// <summary>Temperatura, clock médio dos núcleos e consumo da CPU (atualizado junto com os sensores).</summary>
+    /// <summary>Temperatura, clock médio dos núcleos, consumo e carga do processador (atualizado junto com os sensores).
+    /// Leitura que o sensor não dá não aparece.</summary>
     internal void UpdateBenchLive()
     {
-        var clocks = _monitor.Rows.Where(r => r.HardwareType == HardwareType.Cpu && r.Type == SensorType.Clock &&
-                                              r.Name.StartsWith("Core #") && r.RawValue > 0).Select(r => r.RawValue!.Value).ToList();
-        BenchLive.ItemsSource = new[]
-        {
-            new KeyValuePair<string, string>("CPU", GameCatalog.ShortCpuName(_cpuName)),
-            new KeyValuePair<string, string>("Threads", $"{Environment.ProcessorCount}"),
-            new KeyValuePair<string, string>("Temperatura", _monitor.CpuTemperature is float t ? $"{t:0.#} °C" : "—"),
-            new KeyValuePair<string, string>("Clock médio", clocks.Count > 0 ? $"{clocks.Average():0} MHz" : "—"),
-            new KeyValuePair<string, string>("Consumo", _monitor.CpuPower is float p ? $"{p:0.#} W" : "—"),
-            new KeyValuePair<string, string>("Carga", _monitor.CpuLoad is float l ? $"{l:0} %" : "—"),
-        };
+        var cells = new List<BenchStat>();
+        if (_monitor.CpuTemperature is float t) cells.Add(new("Temperatura", $"{t:0.#}", "°C"));
+        if (CpuCoreClock() is double clock) cells.Add(new("Clock médio", $"{clock:0}", "MHz", Tip: "Média dos núcleos"));
+        if (_monitor.CpuPower is float p) cells.Add(new("Consumo", $"{p:0.#}", "W"));
+        if (_monitor.CpuLoad is float l) cells.Add(new("Carga", $"{l:0}", "%"));
+        BenchLive.ItemsSource = cells;
+        UpdateBenchPlates();
     }
 
     internal void UpdateBenchHistory()
     {
         var runs = _settings.BenchRuns;
-        BenchHistoryEmpty.Visibility = runs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        double bestMt = runs.Max(r => r.Multi) ?? 1, bestSt = runs.Max(r => r.Single) ?? 1;
+        // A barra compara com o melhor resultado da mesma duração (uma passada ou 10 min).
+        double Best(bool sustained, bool multi) => runs.Where(x => x.Sustained == sustained).Max(x => multi ? x.Multi : x.Single) ?? 0;
         BenchHistory.ItemsSource = runs.Select(r =>
         {
-            string label = $"{r.Date:dd/MM HH:mm}{(r.Sustained ? " · 10 min" : "")}";
-            string value = $"{(r.Multi is double m ? $"{m:N0}" : "—")} / {(r.Single is double s ? $"{s:N0}" : "—")}";
-            double frac = r.Multi is double mm ? mm / bestMt : r.Single is double ss ? ss / bestSt : 0;
-            return new MeterItem(label, value, frac);
+            var detail = new List<string>();
+            if (r.Multi != null) detail.Add(r.Single is double s ? $"single-core {s:N0}" : "só multi-core");
+            else detail.Add("só single-core");
+            if (r.Sustained) detail.Add("10 min");
+            string value = r.Multi is double m ? $"{m:N0} pts" : r.Single is double ss ? $"{ss:N0} pts" : "—";
+            double best = Best(r.Sustained, r.Multi != null);
+            double frac = best <= 0 ? 0 : r.Multi is double mm ? mm / best : r.Single is double s1 ? s1 / best : 0;
+            return new BenchHistoryRow($"{r.Date:dd/MM HH:mm}", value, string.Join(", ", detail), frac);
         }).ToList();
     }
 

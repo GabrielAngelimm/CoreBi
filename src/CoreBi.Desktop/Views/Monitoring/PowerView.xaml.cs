@@ -20,7 +20,7 @@ namespace CoreBi.Desktop.Views;
 /// </summary>
 public partial class PowerView : UserControl
 {
-    private const string ProcBaseTip = "Quanto da velocidade do processador o Windows pode usar: o mínimo vale em repouso e o máximo, com carga.";
+    private const string ProcBaseTip = "Quanto da velocidade do processador o Windows pode usar: o mínimo vale mesmo em repouso (o trecho cheio da barra) e o máximo, com carga (até onde a barra vai).";
 
     public sealed record SettingItem(string Title, string Value, string? Tip, string BeforeText = "", bool Changed = false);
     public sealed record PlanItem(Guid Id, string Name, bool IsActive, bool IsPending);
@@ -77,6 +77,8 @@ public partial class PowerView : UserControl
     private Func<GpuInfo?> _mainGpu = () => null;
     private Func<float?> _gpuPower = () => null;
     private bool _refreshing, _applyingPlan, _stacked, _dirty;
+    private bool _voltsShown = true;   // sem nenhuma tensão lida, o cartão sai e o histórico ocupa a largura toda
+    private double _heroSize = 88;     // leitura grande do consumo: 88 com largura, 72 em janelas menores
     private PowerPlan? _pendingPlan;
 
     // Sessão: consumo desde que o CoreBi abriu (1 amostra/s)
@@ -114,7 +116,7 @@ public partial class PowerView : UserControl
         _refreshing = true;
         _dirty = false;
         BtnEnergyRefresh.IsEnabled = false;
-        EnergyStatus.Text = "Lendo bateria e energia…";
+        EnergyStatus.Text = "Lendo fonte e plano de energia…";
         try
         {
             var power = Task.Run(PowerStatus.Read);
@@ -130,9 +132,9 @@ public partial class PowerView : UserControl
             ShowPlan(Plan);
             ShowHistory(History);
             ShowLive();
-            EnergyStatus.Text = $"Atualizado às {DateTime.Now:HH:mm:ss}";
+            EnergyStatus.Text = $"Lido às {DateTime.Now:HH:mm}";
         }
-        catch (Exception ex) { if (!_context.IsClosing) EnergyStatus.Text = "Falhou: " + ex.Message; }
+        catch (Exception ex) { if (!_context.IsClosing) EnergyStatus.Text = "Não foi possível ler a energia: " + ex.Message; }
         finally
         {
             _refreshing = false;
@@ -191,7 +193,7 @@ public partial class PowerView : UserControl
             if (value == null) return;
             var box = new StackPanel();
             box.Children.Add(new TextBlock { Text = label, Style = (Style)FindResource("StatLabel") });
-            var t = new TextBlock { Style = (Style)FindResource("ReadoutText"), FontSize = 21, Margin = new Thickness(0, 3, 0, 0) };
+            var t = new TextBlock { Style = (Style)FindResource("ReadoutText"), FontSize = 21, Margin = new Thickness(0, 4, 0, 0) };
             Readout(t, value, unit);
             box.Children.Add(t);
             BatteryStats.Children.Add(box);
@@ -213,7 +215,8 @@ public partial class PowerView : UserControl
     {
         if (_pendingPlan is { } pending && (p.Plans.All(x => x.Id != pending.Id) || p.Active?.Id == pending.Id)) _pendingPlan = null;
         var preview = _pendingPlan is { } pp ? PowerPlans.ReadValues(pp.Id) : null;
-        PlanList.ItemsSource = p.Plans.Select(x => new PlanItem(x.Id, x.Name, x.IsActive, x.Id == _pendingPlan?.Id)).ToList();
+        // Planos de fábrica num Windows em inglês ("Balanced") aparecem com o nome em português; o personalizado fica como está
+        PlanList.ItemsSource = p.Plans.Select(x => new PlanItem(x.Id, PowerPlans.DisplayName(x.Id, x.Name), x.IsActive, x.Id == _pendingPlan?.Id)).ToList();
 
         bool battery = Snapshot?.Batteries.Any(b => !b.IsUps) == true;
         bool previewing = preview != null;
@@ -308,7 +311,7 @@ public partial class PowerView : UserControl
             Plan = await Task.Run(PowerPlans.Read);
             if (_context.IsClosing) return;
             ShowPlan(Plan);
-            EnergyStatus.Text = error == 0 ? $"Plano {plan.Name} ativado às {DateTime.Now:HH:mm:ss}" : $"O Windows recusou a troca de plano (erro {error}).";
+            EnergyStatus.Text = error == 0 ? $"Plano {PowerPlans.DisplayName(plan.Id, plan.Name)} ativado às {DateTime.Now:HH:mm}" : $"O Windows recusou a troca de plano (erro {error}).";
         }
         finally { _applyingPlan = false; }
     }
@@ -321,7 +324,14 @@ public partial class PowerView : UserControl
         Uptime.Visibility = failed ? Visibility.Collapsed : Visibility.Visible;
         DaysEmpty.Visibility = failed ? Visibility.Visible : Visibility.Collapsed;
         DaysEmpty.Text = h.Error != null ? "Não foi possível ler o registro de eventos do Windows: " + h.Error : "O registro de eventos do Windows está vazio.";
-        if (failed) { DaysToday.Text = DaysAverage.Text = DaysCrashes.Text = "—"; return; }
+        if (failed)
+        {
+            foreach (var cell in new[] { DaysToday, DaysAverage, DaysWeek, DaysLongest, DaysTurnOns, DaysCrashes }) Readout(cell, "—", "");
+            CrashBox.Visibility = Visibility.Collapsed;
+            DaysCells.Columns = 5;
+            DaysCaption.Visibility = Visibility.Collapsed;
+            return;
+        }
 
         var days = new List<UptimeChart.Day>();
         var culture = System.Globalization.CultureInfo.CurrentCulture;
@@ -346,17 +356,17 @@ public partial class PowerView : UserControl
         Readout(DaysToday, h.OnTime(DateTime.Today));
         var past = Enumerable.Range(0, 6).Select(i => h.Since.AddDays(i)).Where(h.Covers).ToList();
         if (past.Count > 0) Readout(DaysAverage, TimeSpan.FromTicks((long)past.Average(d => h.OnTime(d).Ticks)));
-        else DaysAverage.Text = "—";
+        else Readout(DaysAverage, "—", "");
         var known = Enumerable.Range(0, 7).Select(i => h.Since.AddDays(i)).Where(d => d.Date == DateTime.Today || h.Covers(d)).ToList();
         if (known.Count > 0) Readout(DaysWeek, TimeSpan.FromTicks(known.Sum(d => h.OnTime(d).Ticks)));
-        else DaysWeek.Text = "—";
+        else Readout(DaysWeek, "—", "");
         var longest = h.Spans.Where(sp => sp.To > h.Since).Select(sp => sp.To - (sp.From < h.Since ? h.Since : sp.From)).DefaultIfEmpty(TimeSpan.Zero).Max();
         if (longest > TimeSpan.Zero) Readout(DaysLongest, longest);
-        else DaysLongest.Text = "—";
+        else Readout(DaysLongest, "—", "");
         int turnOns = h.Spans.Count(sp => sp.To > h.Since);
-        DaysTurnOns.Text = turnOns.ToString();
+        Readout(DaysTurnOns, turnOns.ToString(), "");
         int crashCount = h.Unexpected.Count;
-        DaysCrashes.Text = crashCount.ToString();
+        Readout(DaysCrashes, crashCount.ToString(), "");
         DaysCrashes.SetResourceReference(TextBlock.ForegroundProperty, crashCount >= 3 ? "Danger" : "Warn");
         CrashBox.Visibility = crashCount > 0 ? Visibility.Visible : Visibility.Collapsed;
         DaysCells.Columns = crashCount > 0 ? 6 : 5;
@@ -400,45 +410,72 @@ public partial class PowerView : UserControl
         var (cpu, gpu) = _trace.Count > 0 ? _trace[^1] : (null, null);
         bool any = cpu != null || gpu != null;
         LiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, any ? "Signal" : "Faint");
-        LiveText.Text = any ? "Ao vivo" : _monitor.IsOpen ? "Sem leitura de consumo" : "Aguardando os sensores";
-        Readout(TotalNow, any ? $"{(cpu ?? 0) + (gpu ?? 0):0}" : "—", any ? "W" : "");
-        TotalCaption.Text = cpu != null && gpu != null ? "Agora · processador + placa de vídeo"
-            : gpu != null ? "Agora · só a placa de vídeo"
-            : cpu != null ? "Agora · só o processador"
-            : "Sem leitura de consumo";
+        LiveText.Text = any ? "Ao vivo" : _monitor.IsOpen ? "Sem leitura" : "Aguardando os sensores";
+        ShowTotal();
+        // Sem leitura nenhuma, o "Sem leitura" do canto e o aviso do gráfico já dizem: o rótulo continua dizendo o que a leitura soma
+        TotalCaption.Text = gpu != null && cpu == null ? "Agora · só a placa de vídeo"
+            : cpu != null && gpu == null ? "Agora · só o processador"
+            : "Agora · processador + placa de vídeo";
         Split.First = cpu ?? 0;
         Split.Second = gpu ?? 0;
         Readout(CpuNow, cpu is float c ? $"{c:0.0}" : "—", cpu != null ? "W" : "");
         Readout(GpuNow, gpu is float g ? $"{g:0.0}" : "—", gpu != null ? "W" : "");
-        ShowCpuProblem(cpu);
-        GpuCaption.Visibility = gpu == null && _mainGpu() != null ? Visibility.Visible : Visibility.Collapsed;
-        GpuCaption.Text = "sem leitura do sensor de consumo";
+        GpuNow.ToolTip = gpu == null && _mainGpu() != null ? "A placa de vídeo não informou o consumo." : null;
         Trace.EmptyText = _monitor.IsOpen ? "Nenhum sensor de consumo do processador ou da placa de vídeo respondeu." : "Coletando as primeiras amostras…";
         if (any || _trace.Count > 0) Trace.Samples = _trace.ToList();
         ShowSession();
         ShowVoltages();
+        ShowCpuProblem(cpu);
     }
 
-    /// <summary>Sem leitura do processador: diz por quê (administrador, PawnIO) em vez de deixar só o traço.</summary>
+    /// <summary>
+    /// Leitura grande do consumo. Sem leitura, o travessão da letra Light a 88 px viraria uma barra larga: encolhe e fica um
+    /// tom abaixo, na mesma altura de linha, para a placa não mudar de altura quando o sensor responde (como o ReadoutHero).
+    /// </summary>
+    private void ShowTotal()
+    {
+        var (cpu, gpu) = _trace.Count > 0 ? _trace[^1] : (null, null);
+        if (cpu != null || gpu != null)
+        {
+            TotalNow.FontSize = _heroSize;
+            TotalNow.ClearValue(TextBlock.LineHeightProperty);
+            TotalNow.ClearValue(TextBlock.LineStackingStrategyProperty);
+            Readout(TotalNow, $"{(cpu ?? 0) + (gpu ?? 0):0}", "W");
+            return;
+        }
+        TotalNow.FontSize = 28;
+        TotalNow.LineHeight = Math.Round(_heroSize * 1.26);
+        TotalNow.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
+        Readout(TotalNow, "—", "");
+    }
+
+    /// <summary>
+    /// Sem leitura do processador: um aviso só, e só quando diz o porquê (administrador, PawnIO). Sem o cartão de tensões, que
+    /// sai quando nenhuma é lida pelo mesmo motivo, o aviso diz que elas também faltam. Sem causa conhecida, o travessão basta e
+    /// a dica do valor explica.
+    /// </summary>
     private void ShowCpuProblem(float? cpu)
     {
-        CpuCaption.Visibility = cpu == null && _monitor.IsOpen ? Visibility.Visible : Visibility.Collapsed;
-        if (cpu != null || !_monitor.IsOpen) return;
-        var problem = _monitor.DiagnoseCpuSensors();
-        CpuCaption.Text = problem switch
+        var problem = cpu == null && _monitor.IsOpen ? _monitor.DiagnoseCpuSensors() : SensorMonitor.CpuSensorProblem.None;
+        string what = _voltsShown ? "Sem leitura" : "Sem consumo nem tensões";
+        string? text = problem switch
         {
-            SensorMonitor.CpuSensorProblem.NotElevated => "sem leitura: abra como administrador",
-            SensorMonitor.CpuSensorProblem.PawnIOMissing => "sem leitura: falta o driver PawnIO",
-            _ => "sem leitura do sensor de consumo",
+            SensorMonitor.CpuSensorProblem.NotElevated => $"{what}: abra como administrador",
+            SensorMonitor.CpuSensorProblem.PawnIOMissing => $"{what}: falta o driver PawnIO",
+            SensorMonitor.CpuSensorProblem.ReadFailed => $"{what}: o driver não respondeu",
+            _ => null,
         };
+        CpuCaption.Visibility = text != null ? Visibility.Visible : Visibility.Collapsed;
+        CpuCaption.Text = text ?? "";
         CpuCaption.ToolTip = SensorMonitor.Explain(problem) is { Length: > 0 } why ? why : null;
+        CpuNow.ToolTip = cpu == null && _monitor.IsOpen && text == null ? "O processador não informou o consumo." : null;
     }
 
     private void ShowSession()
     {
         if (_sessionStart is not DateTime start || _countW == 0)
         {
-            SessionEnergy.Text = SessionAverage.Text = SessionPeak.Text = "—";
+            foreach (var cell in new[] { SessionEnergy, SessionAverage, SessionPeak }) Readout(cell, "—", "");
             AverageCell.ToolTip = PeakCell.ToolTip = EnergyCell.ToolTip = null;
             SessionAge.Text = "";
             return;
@@ -503,13 +540,24 @@ public partial class PowerView : UserControl
         VoltDivider.Visibility = rails && comps ? Visibility.Visible : Visibility.Collapsed;
         VoltComponentsTitle.Visibility = rails && comps ? Visibility.Visible : Visibility.Collapsed;
         VoltRows.Visibility = comps ? Visibility.Visible : Visibility.Collapsed;
-        VoltRows.Margin = new Thickness(0, rails ? 0 : 12, 0, 0);
+        VoltRows.Margin = new Thickness(0, rails ? 0 : 16, 0, 0);
         VoltEmpty.Visibility = rails || comps ? Visibility.Collapsed : Visibility.Visible;
-        VoltEmpty.Text = !_monitor.IsOpen ? "Aguardando os sensores…"
-            : _monitor.DiagnoseCpuSensors() is var p && p != SensorMonitor.CpuSensorProblem.None ? "Os sensores da placa-mãe e do processador não responderam. " + SensorMonitor.Explain(p)
-            : "A placa-mãe não expõe as tensões para a biblioteca de sensores.";
+        // Uma frase curta com o que fazer; o motivo completo fica na dica, como no aviso do consumo
+        var problem = _monitor.IsOpen ? _monitor.DiagnoseCpuSensors() : SensorMonitor.CpuSensorProblem.None;
+        VoltEmpty.Text = !_monitor.IsOpen ? "Aguardando os sensores…" : problem switch
+        {
+            SensorMonitor.CpuSensorProblem.NotElevated => "Sem leitura: abra o CoreBi como administrador.",
+            SensorMonitor.CpuSensorProblem.PawnIOMissing => "Sem leitura: falta o driver PawnIO.",
+            SensorMonitor.CpuSensorProblem.None => "A biblioteca de sensores não lê as tensões desta placa-mãe.",
+            _ => "Os sensores da placa-mãe e do processador não responderam.",
+        };
+        VoltEmpty.ToolTip = SensorMonitor.Explain(problem) is { Length: > 0 } why ? why : null;
         VoltAll.Visibility = map.Total > 0 ? Visibility.Visible : Visibility.Collapsed;
         VoltAllText.Text = map.Total == 1 ? "A tensão em Sensores" : $"Todas as {map.Total} tensões em Sensores";
+
+        // Nenhuma tensão lida (com os sensores já abertos): o cartão sairia alto com uma frase só; dá a largura ao histórico
+        bool shown = !_monitor.IsOpen || rails || comps;
+        if (shown != _voltsShown) { _voltsShown = shown; Arrange(); }
     }
 
     private void VoltAll_Click(object sender, RoutedEventArgs e)
@@ -531,33 +579,58 @@ public partial class PowerView : UserControl
         if (stacked != _stacked || e.PreviousSize.Width == 0)
         {
             _stacked = stacked;
-            var rows = EnergyBody.RowDefinitions;
-            var cards = stacked ? new FrameworkElement[] { PowerCard, FeedCard, VoltCard, DaysCard } : new FrameworkElement[] { FeedCard, PowerCard, VoltCard, DaysCard };
-            // Larga: (0,0) (0,2) (2,0) (2,2). Estreita: uma coluna, linhas 0, 2, 4, 6.
-            for (int k = 0; k < cards.Length; k++)
-            {
-                Grid.SetRow(cards[k], stacked ? k * 2 : k / 2 * 2);
-                Grid.SetColumn(cards[k], stacked ? 0 : k % 2 * 2);
-                Grid.SetColumnSpan(cards[k], stacked ? 3 : 1);
-            }
-            for (int r = 0; r < rows.Count; r++)
-                rows[r].Height = stacked ? (r % 2 == 1 ? new GridLength(16) : GridLength.Auto)
-                    : r == 0 ? GridLength.Auto : r == 1 ? new GridLength(16) : r == 2 ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+            Arrange();
         }
         FeedColumn.Width = stacked ? new GridLength(0) : new GridLength(width < 1360 ? 372 : 420);
         FeedGap.Width = new GridLength(stacked ? 0 : 16);
 
         double right = stacked ? width : width - FeedColumn.Width.Value - 16;
         ReadoutColumn.Width = new GridLength(right < 760 ? 270 : 320);
-        TotalNow.FontSize = right < 760 ? 72 : 88;
+        _heroSize = right < 760 ? 72 : 88;
+        ShowTotal();
+    }
+
+    /// <summary>
+    /// Posição dos quatro cartões. Larga: (0,0) (0,2) (2,0) (2,2); sem tensões, o histórico ocupa a linha de baixo inteira.
+    /// Estreita: uma coluna, linhas 0, 2, 4, 6 (sem tensões, a linha delas e o vão de baixo somem).
+    /// </summary>
+    private void Arrange()
+    {
+        var rows = EnergyBody.RowDefinitions;
+        VoltCard.Visibility = _voltsShown ? Visibility.Visible : Visibility.Collapsed;
+        void Place(FrameworkElement card, int row, int column, int span)
+        {
+            Grid.SetRow(card, row);
+            Grid.SetColumn(card, column);
+            Grid.SetColumnSpan(card, span);
+        }
+        if (_stacked)
+        {
+            var cards = new FrameworkElement[] { PowerCard, FeedCard, VoltCard, DaysCard };
+            for (int k = 0; k < cards.Length; k++) Place(cards[k], k * 2, 0, 3);
+            for (int r = 0; r < rows.Count; r++)
+                rows[r].Height = r % 2 == 0 ? GridLength.Auto : new GridLength(r == 5 && !_voltsShown ? 0 : 16);
+            return;
+        }
+        Place(FeedCard, 0, 0, 1);
+        Place(PowerCard, 0, 2, 1);
+        Place(VoltCard, 2, 0, 1);
+        Place(DaysCard, 2, _voltsShown ? 2 : 0, _voltsShown ? 1 : 3);
+        for (int r = 0; r < rows.Count; r++)
+            rows[r].Height = r == 0 ? GridLength.Auto : r == 1 ? new GridLength(16) : r == 2 ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
     }
 
     // ---------------- formatação ----------------
 
-    /// <summary>Leitura com a unidade menor e em tom secundário ao lado (como nos mostradores da Visão geral).</summary>
+    /// <summary>
+    /// Leitura com a unidade menor e em tom secundário ao lado (como nos mostradores da Visão geral). Sem dado ("—"), o
+    /// travessão fica um tom abaixo (Faint), como nos mostradores do app; com dado, volta à cor do estilo.
+    /// </summary>
     private static void Readout(TextBlock target, string value, string unit)
     {
         target.Inlines.Clear();
+        if (value == "—") target.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
+        else target.ClearValue(TextBlock.ForegroundProperty);
         target.Inlines.Add(new Run(value));
         if (unit.Length == 0) return;
         var u = new Run(" " + unit) { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.3)) };
@@ -566,10 +639,11 @@ public partial class PowerView : UserControl
         target.Inlines.Add(u);
     }
 
-    /// <summary>"4 h 33 min" com as unidades menores.</summary>
+    /// <summary>"4 h 33 min" com as unidades menores; uso de menos de um minuto é "&lt; 1 min", não zero.</summary>
     private static void Readout(TextBlock target, TimeSpan span)
     {
         target.Inlines.Clear();
+        target.ClearValue(TextBlock.ForegroundProperty);
         int h = (int)span.TotalHours, m = span.Minutes;
         void Part(string value, string unit)
         {
@@ -580,13 +654,13 @@ public partial class PowerView : UserControl
             target.Inlines.Add(u);
         }
         if (h > 0) Part($"{h}", "h");
-        Part($"{m}", "min");
+        Part(h == 0 && m == 0 && span > TimeSpan.Zero ? "< 1" : $"{m}", "min");
     }
 
     private static string Hours(TimeSpan t, bool minutesWord = false)
     {
         int h = (int)t.TotalHours, m = t.Minutes;
-        return h == 0 ? $"{m} min" : minutesWord ? $"{h} h {m:00} min" : $"{h} h {m:00}";
+        return h == 0 ? (m == 0 && t > TimeSpan.Zero ? "< 1 min" : $"{m} min") : minutesWord ? $"{h} h {m:00} min" : $"{h} h {m:00}";
     }
 
     private static string Duration(int minutes) => minutes >= 60 ? $"{minutes / 60} h {minutes % 60:00} min" : $"{minutes} min";

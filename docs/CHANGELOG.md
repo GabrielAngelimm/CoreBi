@@ -1,5 +1,10 @@
 # Mudanças
 
+## 0.2.6 — 2026-11-20
+
+- FPS estimado removido do app: saem a página, o item do menu Jogos, as tabelas de FPS por jogo e a integração opcional com a API HowManyFPS, com o campo da chave. Uma chave que estivesse salva é descartada na próxima gravação das configurações, e o pacote System.Security.Cryptography.ProtectedData, que só servia para cifrá-la, saiu do projeto. O FPS medido continua igual no OverlayBi (inclusive pelo RTSS), no Gargalo e nos benchmarks.
+- Dependências: System.Management e System.Diagnostics.EventLog 11.0.0.
+
 ## 0.2.5 — 2026-10-31
 
 - Refino da identidade visual: cor chapada, sem degradês nem brilhos. A página aberta no menu tem fundo fixo em verde-água escuro. Cada peça do computador tem a sua cor em todas as telas (processador verde escuro, placa de vídeo laranja, memória violeta, memória física e virtual em violeta mais escuro, armazenamento azul, placa-mãe bege, rede amarelo), e a placa de Sistema e o cabeçalho de Sensores ganham fundo claro na cor do componente.

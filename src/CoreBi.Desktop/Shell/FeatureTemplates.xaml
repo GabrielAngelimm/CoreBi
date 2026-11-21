@@ -21,30 +21,30 @@
         </DrawingBrush.Drawing>
     </DrawingBrush>
 
-    <!-- Especificação da GPU: uma célula -->
-    <DataTemplate x:Key="GpuTile">
-        <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,10,18,10">
-            <StackPanel>
-                <TextBlock Text="{Binding Header}" Style="{StaticResource StatLabel}"/>
-                <TextBlock Text="{Binding Value}" FontSize="14" TextWrapping="Wrap" Margin="0,3,0,0" Style="{StaticResource Num}"/>
-            </StackPanel>
+    <!-- Ficha técnica da placa de vídeo: uma linha chave/valor, com o fio em cima (como as linhas da ficha de Sistema).
+         Linhas da mesma altura; a nota curta ("referência") fica ao lado do valor, num tom abaixo. -->
+    <DataTemplate x:Key="GpuSpecRow">
+        <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,8" Background="Transparent" ToolTip="{Binding Tip}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="42*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="58*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Key}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Grid.Column="2" TextWrapping="Wrap" Typography.NumeralAlignment="Tabular">
+                    <Run Text="{Binding Value, Mode=OneWay}" Foreground="{DynamicResource Fg}"/><Run Text="  "/><Run Text="{Binding Note, Mode=OneWay}" Foreground="{DynamicResource Muted}"/>
+                </TextBlock>
+            </Grid>
         </Border>
     </DataTemplate>
 
-    <!-- Especificação da GPU: uma seção -->
+    <!-- Ficha técnica da placa de vídeo: um grupo (título de grupo e as linhas) -->
     <DataTemplate x:Key="GpuSection">
-        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,14" Padding="22,18,22,8">
-            <StackPanel>
-                <TextBlock Text="{Binding Header}" Style="{StaticResource SectionTitle}" Margin="0,0,0,10"/>
-                <ItemsControl ItemsSource="{Binding Children}" ItemTemplate="{StaticResource GpuTile}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <UniformGrid Columns="3"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
-            </StackPanel>
-        </Border>
+        <StackPanel>
+            <TextBlock Text="{Binding Title}" Style="{StaticResource GroupTitle}" Margin="0,0,0,8"/>
+            <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource GpuSpecRow}" Focusable="False"/>
+        </StackPanel>
     </DataTemplate>
 
     <!-- Par chave/valor em lista compacta -->

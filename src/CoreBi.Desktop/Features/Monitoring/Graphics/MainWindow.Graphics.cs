@@ -1,17 +1,5 @@
-using System.Globalization;
-using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Shapes;
-using System.Windows.Threading;
-using LibreHardwareMonitor.Hardware;
+using CoreBi.Engine.Games;
 using CoreBi.Engine.Monitoring.Graphics;
-using CoreBi.Engine.Monitoring.Sensors;
-
-using System.ComponentModel;
-
-using System.Windows.Data;
 
 namespace CoreBi.Desktop;
 
@@ -20,28 +8,51 @@ public partial class MainWindow
     // Placa de vídeo
     internal List<GpuInfo> _gpus = new();
     internal GpuInfo? _gpu;
+    private GpuBoard? _gpuBoard;
     private readonly WindowsGpuUsage _windowsGpuUsage = new();
 
     // ---------------- Placa de vídeo ----------------
 
+    /// <summary>
+    /// Monta a página para uma placa: identificação, ficha técnica (sem linhas vazias nem dados repetidos entre grupos) e os
+    /// instrumentos, que começam vazios e só leem o driver com a página à vista (UpdateGpuLive).
+    /// </summary>
     internal void ShowGpu(GpuInfo g)
     {
         _gpu = g;
-        GpuName.Text = g.Name;
-        GpuSubtitle.Text = g.Subtitle;
+        var spec = GpuSheet.Flatten(g);
         GpuVendor.Text = g.Vendor;
-        GpuSections.ItemsSource = g.Sections;
-
-        // Sensores do LibreHardwareMonitor deste hardware, em ordem fixa (clock, temperatura, carga...).
-        var live = new ListCollectionView(_monitor.Rows)
-        {
-            Filter = o => ((SensorRow)o).Hardware == g.Name
-        };
-        live.SortDescriptions.Add(new SortDescription(nameof(SensorRow.Order), ListSortDirection.Ascending));
-        live.SortDescriptions.Add(new SortDescription(nameof(SensorRow.Name), ListSortDirection.Ascending));
-        GpuLive.ItemsSource = live;
-        GpuExtras.ItemsSource = g.LiveExtras();
+        GpuName.Text = HardwareCatalog.ShortGpuName(g.Name);
+        GpuName.ToolTip = g.Name;
+        GpuSubtitle.Text = GpuSheet.Subtitle(spec);
+        PageGpu.GpuReadouts.ItemsSource = GpuSheet.Readouts(g, spec);
+        var facts = GpuSheet.Facts(g);
+        GpuSections.ItemsSource = GpuSheet.Groups(g, spec, livePcie: facts.Any(f => f.Label == "PCIe em uso"));
+        GpuExtras.ItemsSource = facts;
+        _gpuBoard = new GpuBoard(g, spec);
+        PageGpu.GpuGauges.ItemsSource = _gpuBoard.Gauges;
+        PageGpu.ShowNoSensors(false);
+        if (PageGpu.IsVisible) SampleGpuBoard();
     }
+
+    private void SampleGpuBoard()
+    {
+        _gpuBoard!.Sample(_monitor);
+        PageGpu.ShowNoSensors(_gpuBoard.NoSensors);
+    }
+
+    /// <summary>Nenhuma placa encontrada pelo Windows: a página diz isso em vez de ficar lendo para sempre.</summary>
+    internal void ShowNoGpu()
+    {
+        GpuVendor.Text = "";
+        GpuName.Text = "Nenhuma placa de vídeo encontrada";
+        GpuSubtitle.Text = "";
+        PageGpu.GpuSensorsLink.Visibility = System.Windows.Visibility.Collapsed;
+        PageGpu.ShowNoSensors(false);
+    }
+
+    /// <summary>Sensores da placa à vista, em Sensores já filtrado nela.</summary>
+    internal void OpenGpuSensors() => GoToPage(_gpu != null ? $"PageSensors:gpu:{_gpu.Name}" : "PageSensors:gpu");
 
     internal void UpdateGpuLive()
     {
@@ -54,7 +65,11 @@ public partial class MainWindow
             SideGpuLoad.Text = load is float l ? $"{l:0} %" : "—";
             Ui.Glide(SideGpuBar, (load ?? 0) / 100.0, LiveMotion);
         }
-        if (_gpu != null && PageGpu.IsVisible) GpuExtras.ItemsSource = _gpu.LiveExtras();
+        // A página só consulta o driver quando está à vista: o CoreBi fica aberto em jogos.
+        if (_gpu != null && _gpuBoard != null && PageGpu.IsVisible)
+        {
+            SampleGpuBoard();
+            GpuExtras.ItemsSource = GpuSheet.Facts(_gpu);
+        }
     }
-
 }

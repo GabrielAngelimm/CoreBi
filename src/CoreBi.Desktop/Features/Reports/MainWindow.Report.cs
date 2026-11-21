@@ -54,11 +54,11 @@ public partial class MainWindow
                 Benchmarks = BuildBenchList(),
             };
             var disks = await Task.Run(() => DiskHealth.Read(sensorsSnapshot));
-            data.Disks.AddRange(disks.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics)));
+            data.Disks.AddRange(disks.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
             var power = await Task.Run(() => BatteryInfo.Read(sensorsSnapshot));
-            data.Power.AddRange(power.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics)));
+            data.Power.AddRange(power.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
             if (PageNet.LastResult is { } network)
-                data.Network.AddRange(network.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics)));
+                data.Network.AddRange(network.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
 
             if (ext == ".pdf") await PdfPrinter.PrintAsync(ReportBuilder.Html(data), path);
             else await File.WriteAllTextAsync(path, ext == ".json" ? ReportBuilder.Json(data) : ReportBuilder.Html(data), new UTF8Encoding(true));
@@ -76,6 +76,15 @@ public partial class MainWindow
             BtnReport.IsEnabled = true;
         }
     }
+
+    /// <summary>Veredito → tom do selo no relatório (saudável discreto; atenção e crítico em cor).</summary>
+    private static string ToneOf(DiskVerdict v) => v switch
+    {
+        DiskVerdict.Good => "ok",
+        DiskVerdict.Warning => "warn",
+        DiskVerdict.Critical => "danger",
+        _ => "",
+    };
 
     internal List<ReportBench> BuildBenchList()
     {

@@ -12,11 +12,11 @@ Desenvolvido em C#/.NET 10 e WPF. As regras, os coletores e as integrações sã
 | --- | --- |
 | Visão geral | Resumo do computador, histórico de sensores e alertas |
 | Monitoramento | Sistema, sensores, placa de vídeo, discos, energia e rede |
-| Jogos | FPS estimado, análise de gargalo e overlay com ETW e integração opcional RTSS para tela cheia |
+| Jogos | Análise de gargalo e overlay com ETW e integração opcional RTSS para tela cheia |
 | Desempenho | Benchmarks de CPU, GPU, DXR, simulação, RAM, carregamento e disco; stress de CPU, RAM e GPU |
 | Ferramentas | Inicialização, drivers e instalação de apps via winget |
 
-As ferramentas de monitoramento e benchmark usam leituras ou cargas reais. FPS estimado e classificação de gargalo são aproximações. Consulte [implementação, fontes e limites](docs/FEATURES.md).
+As ferramentas de monitoramento e benchmark usam leituras ou cargas reais. A classificação de gargalo é uma aproximação. Consulte [implementação, fontes e limites](docs/FEATURES.md).
 
 Para overlay em tela cheia exclusiva, abra o RTSS antes do jogo e ative o OverlayBi normalmente. O RTSS é instalado separadamente; compatibilidade depende do jogo e anticheat. Veja [configuração, arquitetura e custo do overlay](docs/OVERLAY.md).
 
@@ -41,9 +41,8 @@ O aplicativo solicita administrador para sensores, ETW e ferramentas administrat
 
 ## Configuração
 
-- Configurações, históricos e cache: `%AppData%\CoreBi`.
+- Configurações e históricos: `%AppData%\CoreBi`.
 - Downloads administrativos e backups de inicialização: `%ProgramData%\CoreBi\<SID>`. Preserve essa pasta para restaurar entradas removidas.
-- API opcional de FPS: credencial própria configurada na página da ferramenta e protegida por DPAPI. A integração ainda requer validação com uma chave real.
 
 As pastas são criadas automaticamente. Consulte [privacidade](docs/PRIVACY.md) e [segurança](docs/SECURITY.md) para detalhes de armazenamento, conexões e permissões.
 
