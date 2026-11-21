@@ -4,7 +4,7 @@ using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Engine.Tools.Drivers;
 
-internal static class DriverInstaller
+public static class DriverInstaller
 {
     private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false })
     { Timeout = TimeSpan.FromMinutes(30) };
@@ -13,7 +13,9 @@ internal static class DriverInstaller
     {
         Uri uri = DriverDownloadPolicy.Validate(driver.DownloadUrl, driver.Vendor);
         token.ThrowIfCancellationRequested();
-        string folder = Path.Combine(ProtectedWorkspace.GetFolder(ProtectedArea.Downloads), Guid.NewGuid().ToString("N"));
+        string root = ProtectedWorkspace.GetFolder(ProtectedArea.Downloads);
+        CleanupStaleDownloads(root);
+        string folder = Path.Combine(root, Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
         string file = Path.Combine(folder, "driver.exe");
         bool launched = false;
@@ -27,7 +29,9 @@ internal static class DriverInstaller
                 if (total > maxBytes) throw new IOException("Instalador excede o limite de 4 GiB.");
                 await using var source = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
                 await using var target = new FileStream(file, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1 << 20, useAsync: true);
-                var buffer = new byte[1 << 20]; long done = 0; int count;
+                var buffer = new byte[1 << 20];
+                long done = 0;
+                int count;
                 while ((count = await source.ReadAsync(buffer, token).ConfigureAwait(false)) != 0)
                 {
                     done += count;
@@ -57,6 +61,22 @@ internal static class DriverInstaller
                 catch (Exception ex) { DiagnosticLog.Write("driver.cleanup", ex); }
             }
         }
+    }
+
+    private static void CleanupStaleDownloads(string downloadsRoot)
+    {
+        try
+        {
+            DateTime cutoff = DateTime.UtcNow.AddHours(-24);
+            foreach (string dir in Directory.EnumerateDirectories(downloadsRoot))
+            {
+                if (Directory.GetCreationTimeUtc(dir) < cutoff)
+                {
+                    try { Directory.Delete(dir, recursive: true); } catch { }
+                }
+            }
+        }
+        catch { }
     }
 
     private static async Task<HttpResponseMessage> DownloadAsync(Uri uri, string vendor, CancellationToken token)

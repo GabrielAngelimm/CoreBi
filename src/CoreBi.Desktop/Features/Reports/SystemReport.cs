@@ -4,10 +4,18 @@ using CoreBi.Engine.Reports;
 
 namespace CoreBi.Desktop.Features.Reports;
 
-/// <summary>Leva as fichas da página Sistema para o relatório, na ordem do documento e sem números de série.</summary>
+/// <summary>Leva as fichas da página Sistema e a árvore de nós para o relatório, omitindo campos privados.</summary>
 internal static class SystemReport
 {
     private static readonly string[] Order = { SystemSheets.Os, SystemSheets.Cpu, SystemSheets.Gpu, SystemSheets.Ram, SystemSheets.Board, SystemSheets.Storage };
+
+    public static ReportNode? ToNode(InfoNode node)
+    {
+        string header = node.Header ?? "";
+        if (ReportBuilder.IsPrivate(header)) return null;
+        var children = node.Children.Select(ToNode).Where(k => k != null).Cast<ReportNode>().ToList();
+        return new ReportNode(header, string.IsNullOrEmpty(node.Value) ? null : node.Value, children.Count > 0 ? children : null);
+    }
 
     public static List<ReportSheet> From(IReadOnlyList<IndexItem> index, IReadOnlyDictionary<string, Sheet> sheets)
     {
@@ -28,7 +36,6 @@ internal static class SystemReport
         return list;
     }
 
-    // O mesmo canal do botão e da placa na página (Ui.Channel), em minúsculas para as classes do CSS do relatório.
     private static string Channel(string channel) => channel switch
     {
         "Cpu" => "cpu",
@@ -39,6 +46,5 @@ internal static class SystemReport
         _ => "steel",
     };
 
-    // A explicação só entra quando diz o que fazer (veredito âmbar); o resto é contexto da tela.
     private static ReportRow Row(SpecRow r) => new(r.Key, r.Value, r.Note, r.Cells, r.Tone == Tone.Warn ? r.Help : null);
 }

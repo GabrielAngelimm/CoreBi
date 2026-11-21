@@ -1,8 +1,7 @@
 using System.Diagnostics;
-
-using Microsoft.Win32;
 using System.Security.Cryptography;
-
+using CoreBi.Engine.Infrastructure;
+using Microsoft.Win32;
 
 namespace CoreBi.Engine.Tools.Startup;
 
@@ -11,19 +10,17 @@ public sealed class StartupEntry
 {
     public string Name { get; init; } = "";
     public string Command { get; init; } = "";
-    public string Source { get; init; } = "";          // ex.: "Registro (usuário)"
-    public bool Machine { get; init; }                 // HKLM / pasta comum: precisa de administrador
+    public string Source { get; init; } = "";
+    public bool Machine { get; init; }
     public bool Enabled { get; set; }
-    public string Detail { get; init; } = "";          // descrição, fabricante
+    public string Detail { get; init; } = "";
     public bool FileMissing { get; init; }
 
-    internal string Kind { get; init; } = "";          // Run | Run32 | Folder
-    internal string? FilePath { get; init; }           // só para Folder
-
-    public string State => FileMissing ? "ARQUIVO NÃO EXISTE" : Enabled ? "ATIVADO" : "DESATIVADO";
+    internal string Kind { get; init; } = "";     // Run | Run32 | Folder
+    internal string? FilePath { get; init; }      // só para Folder
 }
 
-/// <summary>Item removido, guardado para "Restaurar removidos".</summary>
+/// <summary>Item removido, guardado no espaço protegido para "Restaurar removidos".</summary>
 public sealed class StartupBackup
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
@@ -34,14 +31,14 @@ public sealed class StartupBackup
     public string Kind { get; set; } = "";
     public bool Machine { get; set; }
     public string Name { get; set; } = "";
-    public string? Command { get; set; }   // registro
-    public string? Backup { get; set; }    // pasta: cópia do atalho em %AppData%\CoreBi\Startup
-    public string? Original { get; set; }  // pasta: caminho original
+    public string? Command { get; set; }
+    public string? Backup { get; set; }    // cópia do atalho na pasta protegida de Startup
+    public string? Original { get; set; }
 }
 
 /// <summary>
-/// Lista, ativa/desativa e remove programas de inicialização. Desativar usa as mesmas chaves StartupApproved do
-/// Gerenciador de Tarefas (a entrada continua lá e pode ser religada); remover apaga a entrada, com cópia para desfazer.
+/// Lista, ativa/desativa e remove programas de inicialização via chaves Run, pastas Inicializar e StartupApproved
+/// (o mesmo mecanismo do Gerenciador de Tarefas).
 /// </summary>
 public static class StartupManager
 {
@@ -115,8 +112,6 @@ public static class StartupManager
         catch { }
     }
 
-    // ----- ativar / desativar (StartupApproved, como o Gerenciador de Tarefas) -----
-
     private static string ApprovedKind(StartupEntry e) => e.Kind == "Folder" ? "StartupFolder" : e.Kind;
     private static string ApprovedName(StartupEntry e) => e.Kind == "Folder" ? Path.GetFileName(e.FilePath!) : e.Name;
 
@@ -140,8 +135,6 @@ public static class StartupManager
         key.SetValue(ApprovedName(e), data, RegistryValueKind.Binary);
         e.Enabled = enabled;
     }
-
-    // ----- remover / restaurar -----
 
     internal static StartupBackup PrepareRemoval(StartupEntry entry, string folder)
     {
@@ -218,12 +211,14 @@ public static class StartupManager
     {
         if (kind is not ("Run" or "Run32" or "Folder")) throw new IOException("Origem de inicialização inválida.");
     }
+
     private static void ValidateStartupPath(string path, bool machine)
     {
         string expected = Environment.GetFolderPath(machine ? Environment.SpecialFolder.CommonStartup : Environment.SpecialFolder.Startup);
         if (!string.Equals(Path.GetDirectoryName(Path.GetFullPath(path)), Path.GetFullPath(expected), StringComparison.OrdinalIgnoreCase))
             throw new IOException("Caminho fora da pasta Inicializar.");
     }
+
     private static string Hash(string path) { using var file = File.OpenRead(path); return Convert.ToHexString(SHA256.HashData(file)); }
 
     private static void RestoreApproval(StartupBackup backup)
@@ -235,9 +230,7 @@ public static class StartupManager
         else approved.DeleteValue(ApprovedName(entry), throwOnMissingValue: false);
     }
 
-    // ----- utilidades -----
-
-    /// <summary>Extrai o executável da linha de comando ("C:\x\a.exe" -min  →  C:\x\a.exe).</summary>
+    /// <summary>Extrai o executável da linha de comando ("C:\x\a.exe" -min → C:\x\a.exe).</summary>
     public static string? ExeFromCommand(string cmd)
     {
         cmd = Environment.ExpandEnvironmentVariables(cmd.Trim());
@@ -256,7 +249,6 @@ public static class StartupManager
             path = exe > 0 ? cmd[..(exe + 4)] : sp > 0 ? cmd[..sp] : cmd;
         }
         if (Path.IsPathRooted(path)) return path;
-        // "rundll32.exe ..." e afins: procura no System32; se não achar, não dá para saber onde está
         string sys = Path.Combine(Environment.SystemDirectory, path);
         return File.Exists(sys) ? sys : null;
     }
@@ -279,8 +271,9 @@ public static class StartupManager
         {
             var type = Type.GetTypeFromProgID("WScript.Shell");
             if (type == null) return null;
-            dynamic shell = Activator.CreateInstance(type)!;
-            dynamic sc = shell.CreateShortcut(lnk);
+            using var scope = new ComScope();
+            dynamic shell = scope.Track(Activator.CreateInstance(type)!);
+            dynamic sc = scope.Track((object)shell.CreateShortcut(lnk));
             string target = sc.TargetPath;
             string args = sc.Arguments;
             if (string.IsNullOrEmpty(target)) return null;

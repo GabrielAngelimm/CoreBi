@@ -373,7 +373,7 @@ internal static partial class Program
         });
         Check("power and tools: read-only inventory", () =>
         {
-            var power = BatteryInfo.Read(); var startup = StartupManager.List(); var drivers = DriverManager.Inventory();
+            var power = BatteryInfo.Read(); var startup = StartupManager.List(); var drivers = DriverInventory.ListInstalled();
             var apps = AppInstaller.Catalog(); AppInstaller.RefreshInstalled(apps);
             Require(power.Count > 0 && drivers.Count > 0 && apps.Count > 0, "Read-only inventories missing");
             return new { powerCards = power.Count, startupEntries = startup.Count, drivers = drivers.Count, apps = apps.Select(a => new { a.Name, a.Installed }).ToArray(), AppInstaller.WingetAvailable, scope = "no startup, driver or application modifications" };
@@ -461,7 +461,7 @@ internal static partial class Program
         {
             AppVersion = typeof(CoreBi.Desktop.MainWindow).Assembly.GetName().Version?.ToString(3) ?? "",
             Sheets = CoreBi.Desktop.Features.Reports.SystemReport.From(index, sheets),
-            System = inv.ToNodes().Select(CoreBi.Engine.Reports.ReportBuilder.ToNode).Where(n => n != null).Cast<CoreBi.Engine.Reports.ReportNode>().ToList(),
+            System = inv.ToNodes().Select(CoreBi.Desktop.Features.Reports.SystemReport.ToNode).Where(n => n != null).Cast<CoreBi.Engine.Reports.ReportNode>().ToList(),
             LogoBase64 = Logo("logo-dark.png"),
             LogoOnDarkBase64 = Logo("logo.png"),
         };
@@ -469,7 +469,7 @@ internal static partial class Program
         File.WriteAllText(Path.Combine(folder, name + ".html"), html, new System.Text.UTF8Encoding(true));
         File.WriteAllText(Path.Combine(folder, name + ".json"), CoreBi.Engine.Reports.ReportBuilder.Json(data), new System.Text.UTF8Encoding(true));
         // O mesmo caminho do botão Exportar > PDF.
-        try { CoreBi.Desktop.Features.Reports.PdfPrinter.PrintAsync(html, Path.Combine(folder, name + ".pdf")).GetAwaiter().GetResult(); }
+        try { CoreBi.Engine.Reports.PdfPrinter.PrintAsync(html, Path.Combine(folder, name + ".pdf")).GetAwaiter().GetResult(); }
         catch (Exception ex) { Console.Error.WriteLine("PDF: " + ex.Message); }
         Console.WriteLine(Path.GetFullPath(Path.Combine(folder, name + ".html")));
         return 0;

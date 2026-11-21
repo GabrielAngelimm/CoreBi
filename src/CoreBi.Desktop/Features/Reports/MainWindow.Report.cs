@@ -48,9 +48,9 @@ public partial class MainWindow
                 Dark = !ThemeManager.IsLight,
                 Sheets = PageSystem.Built is { } built ? SystemReport.From(built.Index, built.Sheets) : new(),
                 System = PageSystem.Nodes
-                         .Select(ReportBuilder.ToNode).Where(n => n != null).Cast<ReportNode>().ToList(),
+                         .Select(SystemReport.ToNode).Where(n => n != null).Cast<ReportNode>().ToList(),
                 Gpus = _gpus.Select(g => new ReportGpu(g.Name, g.Subtitle,
-                         g.Sections.Select(ReportBuilder.ToNode).Where(n => n != null).Cast<ReportNode>().ToList())).ToList(),
+                         g.Sections.Select(SystemReport.ToNode).Where(n => n != null).Cast<ReportNode>().ToList())).ToList(),
                 Sensors = sensorsSnapshot.Select(s => new ReportSensor(s.Hardware, s.Category, s.Name, s.Value, s.Min, s.Max)).ToList(),
                 Benchmarks = BuildBenchList(),
             };

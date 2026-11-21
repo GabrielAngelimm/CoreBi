@@ -21,9 +21,9 @@ internal static partial class Program
         Check("GPU driver: official read-only metadata", () =>
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(40));
-            var result = DriverManager.ReadGpus().First();
-            if (result.Vendor == "NVIDIA") DriverManager.CheckNvidiaAsync(result, false, timeout.Token).GetAwaiter().GetResult();
-            if (result.Vendor == "AMD") DriverManager.CheckAmdAsync(result, timeout.Token).GetAwaiter().GetResult();
+            var result = DriverInventory.ReadGpus().First();
+            if (result.Vendor == "NVIDIA") GpuDriverLookup.CheckNvidiaAsync(result, false, timeout.Token).GetAwaiter().GetResult();
+            if (result.Vendor == "AMD") GpuDriverLookup.CheckAmdAsync(result, timeout.Token).GetAwaiter().GetResult();
             Require(result.Vendor.Length > 0, "GPU vendor missing");
             if (result.Vendor is "NVIDIA" or "AMD")
             {

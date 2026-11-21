@@ -42,7 +42,7 @@ public partial class StartupView : UserControl
         string backupError = "";
         try
         {
-            list = await Task.Run(StartupManager.List, Context.Lifetime);
+            list = await Task.Run(_startup.List, Context.Lifetime);
             if (Context.IsClosing) return;
             if (announce) ToolPage.SetProgress(StartupProgressFill, 0.5);
             try { _removed = await Task.Run(() => _startup.Backups, Context.Lifetime); }
@@ -85,7 +85,7 @@ public partial class StartupView : UserControl
         if (item.Machine && !RequireAdmin()) { box.IsChecked = item.Enabled; return; }
         try
         {
-            StartupManager.SetEnabled(item, turnOn);
+            _startup.SetEnabled(item, turnOn);
             Say($"{item.Name} {(turnOn ? "ligado" : "desligado")}", NextBoot);
         }
         catch (Exception ex) { Say($"Não foi possível mudar {item.Name}", ex.Message); }

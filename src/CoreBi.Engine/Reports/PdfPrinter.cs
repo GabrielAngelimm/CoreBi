@@ -1,16 +1,14 @@
-using Microsoft.Win32;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
+using Microsoft.Win32;
 
-namespace CoreBi.Desktop.Features.Reports;
+namespace CoreBi.Engine.Reports;
 
 /// <summary>
-/// Gera o PDF do relatório com o Microsoft Edge em modo headless (sem janela), o mesmo motor que imprime o HTML.
-/// O Edge vem com o Windows 10 e 11, então não há biblioteca nova no aplicativo: o PDF sai igual à impressão do navegador,
-/// em A4 com cabeçalho, rodapé e "Página X de Y".
+/// Gera o PDF do relatório usando o Microsoft Edge em modo headless (o mesmo motor de impressão do HTML),
+/// produzindo A4 com cabeçalho, rodapé e numeração de páginas sem dependências externas.
 /// </summary>
-internal static class PdfPrinter
+public static class PdfPrinter
 {
     public static string? FindEdge()
     {
@@ -31,7 +29,6 @@ internal static class PdfPrinter
         return null;
     }
 
-    /// <summary>Escreve o HTML num arquivo temporário e imprime em <paramref name="pdfPath"/>. Lança exceção com o motivo se falhar.</summary>
     public static async Task PrintAsync(string html, string pdfPath, CancellationToken cancel = default)
     {
         string edge = FindEdge() ?? throw new InvalidOperationException("O Microsoft Edge não foi encontrado. Exporte em HTML e use Imprimir > Salvar como PDF.");
@@ -40,8 +37,7 @@ internal static class PdfPrinter
         string source = Path.Combine(work, "relatorio.html"), output = Path.Combine(work, "relatorio.pdf");
         try
         {
-            await File.WriteAllTextAsync(source, html, new UTF8Encoding(true), cancel);
-            // Perfil próprio e temporário: não mexe no Edge aberto nem no perfil de quem usa o PC.
+            await File.WriteAllTextAsync(source, html, new UTF8Encoding(true), cancel).ConfigureAwait(false);
             var psi = new ProcessStartInfo(edge)
             {
                 UseShellExecute = false,
@@ -59,21 +55,20 @@ internal static class PdfPrinter
             using var process = Process.Start(psi) ?? throw new InvalidOperationException("Não foi possível iniciar o Microsoft Edge.");
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancel);
             timeout.CancelAfter(TimeSpan.FromSeconds(60));
-            try { await process.WaitForExitAsync(timeout.Token); }
+            try { await process.WaitForExitAsync(timeout.Token).ConfigureAwait(false); }
             catch (OperationCanceledException)
             {
                 try { process.Kill(entireProcessTree: true); } catch { }
                 if (cancel.IsCancellationRequested) throw;
             }
-            // Com o app elevado o Edge se relança sem elevação e o processo que iniciamos sai na hora: o PDF aparece um instante depois.
-            // Espera o arquivo existir e parar de crescer (e o Edge soltar o perfil) antes de copiar e apagar a pasta de trabalho.
+            // Com o app elevado o Edge se relança sem elevação e o processo filho sai na hora: o PDF surge logo depois.
             long lastSize = -1;
             for (int waited = 0; waited < 240; waited++)
             {
                 long size = File.Exists(output) ? new FileInfo(output).Length : 0;
                 if (size > 0 && size == lastSize) break;
                 lastSize = size;
-                await Task.Delay(250, cancel);
+                await Task.Delay(250, cancel).ConfigureAwait(false);
             }
             if (!File.Exists(output) || new FileInfo(output).Length == 0)
                 throw new InvalidOperationException("O Microsoft Edge não gerou o PDF. Exporte em HTML e use Imprimir > Salvar como PDF.");
@@ -81,11 +76,11 @@ internal static class PdfPrinter
         }
         finally
         {
-            // O Edge pode segurar o perfil por um instante depois de sair.
+            // O Edge pode segurar o perfil temporário por um instante depois de sair.
             for (int i = 0; i < 5; i++)
             {
                 try { Directory.Delete(work, recursive: true); break; }
-                catch { await Task.Delay(300, CancellationToken.None); }
+                catch { await Task.Delay(300, CancellationToken.None).ConfigureAwait(false); }
             }
         }
     }

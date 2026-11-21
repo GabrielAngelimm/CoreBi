@@ -2,7 +2,7 @@ using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Engine.Tools.Drivers;
 
-internal static class WindowsUpdateService
+public static class WindowsUpdateService
 {
     private const int OperationSucceeded = 2;
 

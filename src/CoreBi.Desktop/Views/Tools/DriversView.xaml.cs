@@ -1,13 +1,12 @@
+using CoreBi.Desktop.Services;
+using CoreBi.Engine.Performance;
 using CoreBi.Engine.Tools.Drivers;
 using System.ComponentModel;
 using System.Globalization;
-using System.Text.RegularExpressions;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
-using CoreBi.Desktop.Services;
-
-using System.Windows;
 
 namespace CoreBi.Desktop.Views;
 
@@ -106,11 +105,11 @@ public partial class DriversView : UserControl
         try
         {
             DrvSet("Lendo drivers instalados…", 0);
-            var inv = await Task.Run(DriverManager.Inventory);
+            var inv = await Task.Run(DriverInventory.ListInstalled);
             ShowInventory(inv);
             DrvSet("Lendo placa de vídeo e placa-mãe…", 0.2);
-            _drvGpus = await Task.Run(DriverManager.ReadGpus);
-            _drvBoardInfo = await Task.Run(DriverManager.ReadBoard);
+            _drvGpus = await Task.Run(DriverInventory.ReadGpus);
+            _drvBoardInfo = await Task.Run(DriverInventory.ReadBoard);
             ShowBoard();
             DrvSet("Lendo placa de vídeo e placa-mãe…", 0.4);
 
@@ -120,8 +119,8 @@ public partial class DriversView : UserControl
             {
                 double at = 0.4 + 0.6 * i / Math.Max(1, _drvGpus.Count);
                 if (g.Vendor is "NVIDIA" or "AMD") DrvSet($"Consultando a {g.Vendor}…", at, g.GpuName);
-                if (g.Vendor == "NVIDIA") await DriverManager.CheckNvidiaAsync(g, studio, _drvCts.Token);
-                else if (g.Vendor == "AMD") await DriverManager.CheckAmdAsync(g, _drvCts.Token);
+                if (g.Vendor == "NVIDIA") await GpuDriverLookup.CheckNvidiaAsync(g, studio, _drvCts.Token);
+                else if (g.Vendor == "AMD") await GpuDriverLookup.CheckAmdAsync(g, _drvCts.Token);
                 else if (g.Vendor == "Intel") g.Message = "A Intel não tem consulta automática. Veja a versão mais recente na página oficial.";
                 else g.Message = "Sem consulta automática para esta placa: o driver dela chega pelo Windows Update.";
                 i++;
@@ -185,11 +184,8 @@ public partial class DriversView : UserControl
         DrvBoardMaker.Text = b.Maker.Equals(b.Model, StringComparison.OrdinalIgnoreCase) ? "" : b.Maker;
         DrvBoardMaker.Visibility = DrvBoardMaker.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        // O motor entrega "versão (data)"; a versão vira a leitura e a data fica embaixo. Sem versão, o bloco some.
-        var bios = Regex.Match(b.Bios.Trim(), @"^(?<v>.*?)\s*\((?<d>[^()]*)\)$");
-        string version = bios.Success ? bios.Groups["v"].Value.Trim() : b.Bios.Trim();
-        string date = bios.Success ? bios.Groups["d"].Value.Trim() : "";
-        if (date == "—") date = "";
+        string version = b.BiosVersion.Trim();
+        string date = b.BiosDate == "—" ? "" : b.BiosDate.Trim();
         DrvBoardBios.Text = version;
         DrvBoardBiosDate.Text = date;
         DrvBoardBiosDate.Visibility = date.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -286,7 +282,7 @@ public partial class DriversView : UserControl
         try
         {
             // A fração vem dos bytes baixados: é a única etapa com porcentagem real.
-            string r = await DriverManager.DownloadAndLaunchAsync(g, (t, f) => Dispatcher.BeginInvoke(new Action(() =>
+            string r = await DriverInstaller.DownloadAndLaunchAsync(g, (t, f) => Dispatcher.BeginInvoke(new Action(() =>
                 DrvSet(t, f, f > 0 && f < 1 ? (f * 100).ToString("0", PtBr) + " %" : ""))), _drvCts.Token);
             DrvSet(r, 1);
         }
@@ -314,7 +310,7 @@ public partial class DriversView : UserControl
         DrvSet("Procurando no Windows Update…", 0, "pode levar 1 minuto");
         try
         {
-            _drvWu = await DriverManager.SearchWindowsUpdateAsync();
+            _drvWu = await WindowsUpdateService.SearchAsync();
             DrvWuList.Text = "Nenhum driver novo.";
             ShowWu();
             DrvSet(_drvWu.Count == 0 ? "Nenhum driver novo no Windows Update"
@@ -345,7 +341,7 @@ public partial class DriversView : UserControl
         DrvSet("Baixando drivers do Windows Update…", 0);
         try
         {
-            string r = await DriverManager.InstallWindowsUpdateAsync(_drvWu, t => Dispatcher.BeginInvoke(new Action(() => DrvSet(t))));
+            string r = await WindowsUpdateService.InstallAsync(_drvWu, t => Dispatcher.BeginInvoke(new Action(() => DrvSet(t))));
             DrvSet(r, 1);
             _drvWu = new();
             ShowWu();
@@ -367,7 +363,7 @@ public partial class DriversView : UserControl
         DrvSet("Exportando drivers…", 0);
         try
         {
-            string r = await DriverManager.BackupAsync(t => Dispatcher.BeginInvoke(new Action(() => DrvSet(t))), _drvCts.Token);
+            string r = await DriverBackup.ExportAsync(t => Dispatcher.BeginInvoke(new Action(() => DrvSet(t))), _drvCts.Token);
             DrvSet(r, 1);
         }
         catch (Exception ex) { DrvFail("Não foi possível fazer o backup", ex.Message); }

@@ -157,9 +157,9 @@ internal static partial class Program
         });
         Check("winget: exact package arguments reject option injection", () =>
         {
-            var args = AppInstaller.BuildArguments("7zip.7zip", false);
+            var args = AppInstaller.BuildArguments("7zip.7zip");
             Require(args.Contains("--source") && args.Contains("winget") && args.Contains("--exact"), "Source/package not constrained");
-            Expect<ArgumentException>(() => AppInstaller.BuildArguments("7zip.7zip --source evil", false)); return new { noShell = true };
+            Expect<ArgumentException>(() => AppInstaller.BuildArguments("7zip.7zip --source evil")); return new { noShell = true };
         });
         Check("processes: both pipes drain, output is bounded and quoting survives", () =>
         {

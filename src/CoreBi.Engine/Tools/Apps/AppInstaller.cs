@@ -1,11 +1,9 @@
 using System.ComponentModel;
-
-
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
-
-using Microsoft.Win32;
-using CoreBi.Engine.Infrastructure;
 using System.Text.RegularExpressions;
+using CoreBi.Engine.Infrastructure;
+using Microsoft.Win32;
 
 namespace CoreBi.Engine.Tools.Apps;
 
@@ -15,7 +13,6 @@ public sealed class InstallableApp : INotifyPropertyChanged
     public string Name { get; init; } = "";
     public string Description { get; init; } = "";
     public string WingetId { get; init; } = "";
-    /// <summary>Começo do nome em "Aplicativos instalados" (Painel de Controle), para saber se já está instalado.</summary>
     public string DisplayPrefix { get; init; } = "";
     public bool PreSelect { get; init; } = true;
 
@@ -42,11 +39,21 @@ public sealed class InstallableApp : INotifyPropertyChanged
 }
 
 /// <summary>
-/// Catálogo de apps essenciais e instalação silenciosa pelo winget (Gerenciador de Pacotes do Windows), que baixa
-/// sempre a versão oficial mais recente do site do fabricante e confere o hash do instalador.
+/// Catálogo de apps essenciais e instalação via winget (Gerenciador de Pacotes do Windows).
 /// </summary>
-public static class AppInstaller
+public static partial class AppInstaller
 {
+    public const string PawnIOPackageId = "namazso.PawnIO";
+
+    // Códigos de retorno documentados do winget (AppInstallerErrors.h)
+    private const int WingetNoApplicableUpgrade = unchecked((int)0x8A15002B);
+    private const int WingetAlreadyInstalled = unchecked((int)0x8A150061);
+    private const int WingetNotFound = unchecked((int)0x8A150014);
+    private const int WingetDownloadFailed = unchecked((int)0x8A150008);
+
+    [GeneratedRegex(@"\A[A-Za-z0-9][A-Za-z0-9._-]{0,127}\z", RegexOptions.CultureInvariant)]
+    private static partial Regex PackageIdRegex();
+
     public static List<InstallableApp> Catalog() => new()
     {
         new() { Name = "Steam", Description = "Loja e biblioteca de jogos da Valve.", WingetId = "Valve.Steam", DisplayPrefix = "Steam" },
@@ -97,31 +104,45 @@ public static class AppInstaller
         }
     }
 
-    /// <summary>Instala um app em silêncio. Retorna (ok, mensagem curta).</summary>
-    public static async Task<(bool Ok, string Message)> InstallAsync(InstallableApp app, CancellationToken ct, bool upgrade = false)
+    /// <summary>Instala um app em silêncio via winget. Retorna (ok, mensagem curta).</summary>
+    public static async Task<(bool Ok, string Message)> InstallAsync(InstallableApp app, CancellationToken ct)
     {
-        var result = await ProcessRunner.RunAsync(WingetPath, BuildArguments(app.WingetId, upgrade), ct).ConfigureAwait(false);
+        var result = await ProcessRunner.RunAsync(WingetPath, BuildArguments(app.WingetId), ct).ConfigureAwait(false);
         string output = result.Output + result.Error;
 
         return result.ExitCode switch
         {
             0 => (true, "Instalado."),
-            unchecked((int)0x8A15002B) or unchecked((int)0x8A150061) => (true, "Já estava instalado."),
-            unchecked((int)0x8A150014) => (false, "Pacote não encontrado no winget."),
-            unchecked((int)0x8A150008) => (false, "Falha no download: confira a internet e tente de novo."),
+            WingetNoApplicableUpgrade or WingetAlreadyInstalled => (true, "Já estava instalado."),
+            WingetNotFound => (false, "Pacote não encontrado no winget."),
+            WingetDownloadFailed => (false, "Falha no download: confira a internet e tente de novo."),
             _ => (false, $"Falhou (código 0x{result.ExitCode:X8}). {LastLine(output)}".Trim()),
         };
     }
 
-    internal static string[] BuildArguments(string package, bool upgrade)
+    /// <summary>Abre o winget com janela visível para pacotes que exigem confirmação interativa (ex.: driver PawnIO).</summary>
+    public static async Task<int> InstallInteractiveAsync(string packageId, CancellationToken ct)
     {
-        if (!Regex.IsMatch(package, @"\A[A-Za-z0-9][A-Za-z0-9._-]{0,127}\z", RegexOptions.CultureInvariant))
-            throw new ArgumentException("Identificador de pacote inválido.", nameof(package));
-        return new[] { upgrade ? "upgrade" : "install", "--id", package, "--exact", "--source", "winget", "--silent",
-            "--accept-package-agreements", "--accept-source-agreements", "--disable-interactivity" };
+        var start = new ProcessStartInfo(WingetPath) { UseShellExecute = false };
+        foreach (string arg in BuildArguments(packageId, silent: false))
+            start.ArgumentList.Add(arg);
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("Não foi possível iniciar o winget.");
+        await process.WaitForExitAsync(ct).ConfigureAwait(false);
+        return process.ExitCode;
     }
 
-    /// <summary>Última linha útil da saída do winget (sem as barras de progresso).</summary>
+    internal static string[] BuildArguments(string package, bool silent = true)
+    {
+        if (!PackageIdRegex().IsMatch(package))
+            throw new ArgumentException("Identificador de pacote inválido.", nameof(package));
+        var args = new List<string> { "install", "--id", package, "--exact", "--source", "winget" };
+        if (silent) args.Add("--silent");
+        args.Add("--accept-package-agreements");
+        args.Add("--accept-source-agreements");
+        if (silent) args.Add("--disable-interactivity");
+        return args.ToArray();
+    }
+
     private static string LastLine(string output) =>
         output.Split('\n', '\r').Select(l => l.Trim())
               .LastOrDefault(l => l.Length > 3 && !l.All(c => "-\\|/█▒ ".Contains(c)) && !l.Contains("KB /") && !l.Contains("MB /")) ?? "";
