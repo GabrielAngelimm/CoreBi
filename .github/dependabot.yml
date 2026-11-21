@@ -5,6 +5,13 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 3
+    groups:
+      vortice:
+        patterns:
+          - "Vortice.*"
+      system:
+        patterns:
+          - "System.*"
   - package-ecosystem: github-actions
     directory: /
     schedule:
