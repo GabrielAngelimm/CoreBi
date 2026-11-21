@@ -102,6 +102,13 @@ internal static partial class Program
                     results.Add(new { kind = "nav", page, round, blockMs = block, firstFrameMs = first, idleMs = idle, maxFrameGapMs = gap, frames = after.Count });
                 }
             }
+            // Memória depois de passar por todas as páginas, e de novo depois de Sensores ser solta (1 min escondida)
+            static (double Ws, double Managed) Mem() { var p = Process.GetCurrentProcess(); p.Refresh(); return (p.WorkingSet64 / 1048576.0, GC.GetTotalMemory(true) / 1048576.0); }
+            var afterNav = Mem();
+            Wait(65000);
+            var afterRelease = Mem();
+            Console.WriteLine($"Memória após navegar: {afterNav.Ws:0} MB (gerenciada {afterNav.Managed:0} MB); 65 s depois: {afterRelease.Ws:0} MB (gerenciada {afterRelease.Managed:0} MB)");
+            results.Add(new { kind = "memory", afterNavMb = afterNav.Ws, afterNavManagedMb = afterNav.Managed, afterReleaseMb = afterRelease.Ws, afterReleaseManagedMb = afterRelease.Managed });
             File.WriteAllText(Path.Combine(folder, "nav-timing.json"), JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
             return 0;
         }
