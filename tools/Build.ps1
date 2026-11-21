@@ -1,4 +1,4 @@
-param([ValidateSet('Debug','Release')][string]$Configuration = 'Release')
+﻿param([ValidateSet('Debug','Release')][string]$Configuration = 'Release')
 . (Join-Path $PSScriptRoot 'Common.ps1')
 Push-Location $script:RepoRoot
 try {
