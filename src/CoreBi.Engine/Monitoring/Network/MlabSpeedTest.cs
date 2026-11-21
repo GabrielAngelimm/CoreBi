@@ -11,7 +11,6 @@ internal static class MlabSpeedTest
 {
     private const string Protocol = "net.measurementlab.ndt.v7";
     private const int MaxLocateBytes = 65_536;
-    private const long DownloadBudget = 350_000_000, UploadBudget = 200_000_000;
     private static readonly Uri LocateUri = new("https://locate.measurementlab.net/v2/nearest/ndt/ndt7");
     internal sealed record Target(Uri Download, Uri Upload, string Location);
 
@@ -89,8 +88,8 @@ internal static class MlabSpeedTest
         UseCookies = false,
     });
 
-    internal static async Task<double?> Download(NetworkTest.Transfer transfer, Uri url, CancellationToken ct,
-        long byteBudget = DownloadBudget)
+    internal static async Task<double?> Download(NetworkTransfer transfer, Uri url, CancellationToken ct,
+        long byteBudget = NetworkTest.DownloadBudgetBytes)
     {
         ct.ThrowIfCancellationRequested();
         if (byteBudget <= 0) throw new ArgumentOutOfRangeException(nameof(byteBudget));
@@ -134,8 +133,8 @@ internal static class MlabSpeedTest
         return transfer.Mbps();
     }
 
-    internal static async Task<double?> Upload(NetworkTest.Transfer transfer, Uri url, CancellationToken ct,
-        long byteBudget = UploadBudget)
+    internal static async Task<double?> Upload(NetworkTransfer transfer, Uri url, CancellationToken ct,
+        long byteBudget = NetworkTest.UploadBudgetBytes)
     {
         ct.ThrowIfCancellationRequested();
         if (byteBudget <= 0) throw new ArgumentOutOfRangeException(nameof(byteBudget));
@@ -202,7 +201,7 @@ internal static class MlabSpeedTest
 
     private sealed class UploadSent { public long MaximumBytes; public int Completed; }
 
-    private static async Task<double?> ReceiveUploadMeasurements(WebSocket socket, NetworkTest.Transfer transfer,
+    private static async Task<double?> ReceiveUploadMeasurements(WebSocket socket, NetworkTransfer transfer,
         UploadSent sent, long byteBudget, CancellationToken ct)
     {
         var buffer = new byte[16_384];

@@ -1,4 +1,5 @@
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Sensors;
 using CoreBi.Engine.Monitoring.Storage;
 using LibreHardwareMonitor.Hardware;
@@ -36,7 +37,7 @@ public partial class DisksView : UserControl
         /// <summary>Letras das unidades, em destaque ao lado do nome (discos do mesmo modelo se distinguem por elas).</summary>
         public string Letters { get; }
         public string VerdictText => Sentence(Card.VerdictText);
-        public string State => Card.Verdict switch { DiskVerdict.Good => "Ok", DiskVerdict.Warning => "Warn", DiskVerdict.Critical => "Danger", _ => "" };
+        public string State => Card.Verdict switch { HealthVerdict.Good => "Ok", HealthVerdict.Warning => "Warn", HealthVerdict.Critical => "Danger", _ => "" };
         private double? _temp;
         /// <summary>Temperatura atual: a do sensor quando há, senão a lida pelo Windows.</summary>
         public double? Temperature
@@ -109,8 +110,8 @@ public partial class DisksView : UserControl
             RackCount.Text = _bays.Count.ToString();
 
             // Uma coisa por vez: o que pede atenção, quando há; senão só a hora da leitura (a contagem fica no rack)
-            int bad = cards.Count(c => c.Verdict is DiskVerdict.Warning or DiskVerdict.Critical);
-            int unknown = cards.Count(c => c.Verdict == DiskVerdict.Unknown);
+            int bad = cards.Count(c => c.Verdict is HealthVerdict.Warning or HealthVerdict.Critical);
+            int unknown = cards.Count(c => c.Verdict == HealthVerdict.Unknown);
             string read = $"Lido às {_readAt:HH:mm}.";
             DiskHealthStatus.Text = cards.Count == 0 ? "Nenhum disco encontrado."
                 : bad > 0 ? $"{(bad == 1 ? "1 disco precisa" : $"{bad} discos precisam")} de atenção. {read}"
@@ -222,11 +223,11 @@ public partial class DisksView : UserControl
         Ui.SetTone(DiskBadge, tone);
         // Saudável é silencioso: o selo já diz "Saudável" (a ressalva das leituras disponíveis fica na dica dele). Atenção,
         // crítico e "sem dados" ganham a linha com o motivo no pé da placa.
-        bool healthy = card.Verdict == DiskVerdict.Good;
+        bool healthy = card.Verdict == HealthVerdict.Good;
         DiskBadge.ToolTip = healthy ? "Nenhum problema encontrado nas leituras disponíveis." : null;
         DiskReasons.Text = healthy ? "" : card.Reasons;
         DiskReasons.Visibility = DiskReasonIcon.Visibility = healthy ? Visibility.Collapsed : Visibility.Visible;
-        DiskReasonIcon.Text = healthy ? "\uE73E" : card.Verdict == DiskVerdict.Unknown ? "\uE946" : "\uE7BA";
+        DiskReasonIcon.Text = healthy ? "\uE73E" : card.Verdict == HealthVerdict.Unknown ? "\uE946" : "\uE7BA";
         DiskReasonIcon.SetResourceReference(TextBlock.ForegroundProperty, healthy ? "Muted" : tone.Length > 0 ? tone : "Faint");
         DiskReasons.SetResourceReference(TextBlock.ForegroundProperty, healthy ? "Muted" : "Fg");
 

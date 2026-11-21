@@ -588,12 +588,12 @@ public partial class MainWindow
     {
         static string Gb(double bytes) => $"{bytes / 1073741824.0:0.0} GB";
         static string Pct(double fraction) => $"{fraction * 100:0} %"; // o "P0" do pt-BR cola o sinal no número
-        var (total, avail) = MemoryInfo.MemoryStatus();
-        double ram = total > 0 ? (double)(total - avail) / total : 0;
+        var mem = MemoryInfo.ReadPhysicalUsage();
+        double ram = mem is { Total: > 0 } u ? (double)u.Used / u.Total : 0;
         Brush memoryBrush = Palette("Memory"), gpuBrush = Palette("Gpu"), storageBrush = Palette("Storage");
 
         var rings = new List<(double Frac, string Channel, DashRingItem Item)>();
-        if (total > 0) rings.Add((ram, "Memory", new(memoryBrush, "RAM", Pct(ram), $"{Gb(total - avail)} de {total / 1073741824.0:0} GB · {Gb(avail)} livres", "PageSystem:Memória RAM")));
+        if (mem is { Total: > 0 } mu) rings.Add((ram, "Memory", new(memoryBrush, "RAM", Pct(ram), $"{Gb(mu.Used)} de {mu.Total / 1073741824.0:0} GB · {Gb(mu.Available)} livres", "PageSystem:Memória RAM")));
         if (_gpus.Count > 0 && _gpus[0].NvmlHandle != IntPtr.Zero && Nvml.MemoryInfo(_gpus[0].NvmlHandle) is Nvml.Memory m && m.Total > 0)
         {
             double vram = (double)m.Used / m.Total;

@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using CoreBi.Desktop;
 using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Performance;
+using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Sensors;
 using CoreBi.Engine.Monitoring.Storage;
@@ -152,10 +153,8 @@ internal static partial class Program
         });
         Check("disk health: temperature alone is insufficient", () =>
         {
-            var rawType = typeof(DiskHealth).GetNestedType("Raw", BindingFlags.NonPublic)!; var raw = Activator.CreateInstance(rawType)!;
-            rawType.GetField("Temp")!.SetValue(raw, 35d);
-            var card = (DiskHealthCard)typeof(DiskHealth).GetMethod("ToCard", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, new[] { raw })!;
-            Require(card.Verdict == DiskVerdict.Unknown, "Temperature-only disk considered healthy"); return new { card.VerdictText };
+            var card = DiskHealth.Evaluate(new DiskSample { Temp = 35d });
+            Require(card.Verdict == HealthVerdict.Unknown, "Temperature-only disk considered healthy"); return new { card.VerdictText };
         });
         Check("voltages: rails need a plausible reading and keep ATX order", () =>
         {
@@ -231,7 +230,7 @@ internal static partial class Program
             var demoPing = new CoreBi.Engine.Monitoring.Network.PingResult("Internet", "1.1.1.1", new double?[] { 3, 4, 3, 4, 3, 4 });
             var demo = new CoreBi.Engine.Monitoring.Network.NetworkResult
             {
-                Card = new DiskHealthCard { Meta = "Ethernet · Cloudflare", Verdict = DiskVerdict.Good, Label = "ESTÁVEL" },
+                Card = new HealthCard { Meta = "Ethernet · Cloudflare", Verdict = HealthVerdict.Good, Label = "ESTÁVEL" },
                 Adapter = demoAdapter,
                 Internet = new[] { demoPing },
                 Notes = new[] { "Latência baixa e sem perda nos alvos testados." },
@@ -258,7 +257,7 @@ internal static partial class Program
             }
             var waiting = new CoreBi.Engine.Monitoring.Network.NetworkResult
             {
-                Card = new DiskHealthCard { Verdict = DiskVerdict.Warning, Label = "ATENÇÃO" },
+                Card = new HealthCard { Verdict = HealthVerdict.Warning, Label = "ATENÇÃO" },
                 RetryAfterUtc = DateTimeOffset.UtcNow.AddMinutes(10),
             };
             window.PageNet.GetType().GetMethod("ShowResult", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window.PageNet, new object?[] { waiting });

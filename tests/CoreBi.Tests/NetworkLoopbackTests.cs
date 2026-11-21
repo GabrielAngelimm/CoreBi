@@ -18,13 +18,13 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(new NetworkRateLimitStore(Path.Combine(folder.Path, "cooldown.json")));
             var duration = TimeSpan.FromSeconds(8);
             var warmup = TimeSpan.FromMilliseconds(100);
-            var firstTransfer = new NetworkTest.Transfer();
+            var firstTransfer = new NetworkTransfer();
             var first = NetworkTest.Download(firstTransfer, client, limit, duration, warmup, 4, CancellationToken.None, byteBudget: 16_000_000)
                 .GetAwaiter().GetResult();
-            var secondTransfer = new NetworkTest.Transfer();
+            var secondTransfer = new NetworkTransfer();
             var second = NetworkTest.Download(secondTransfer, client, limit, duration, warmup, 4, CancellationToken.None, byteBudget: 16_000_000)
                 .GetAwaiter().GetResult();
-            var uploadTransfer = new NetworkTest.Transfer();
+            var uploadTransfer = new NetworkTransfer();
             var upload = NetworkTest.Upload(uploadTransfer, client, limit, duration, TimeSpan.FromSeconds(2), 3,
                 CancellationToken.None, byteBudget: 20_000_000).GetAwaiter().GetResult();
             Require(first is > 10 && second is > 10 && upload is > 10 && !limit.Limited, "Loopback transfers did not complete");

@@ -1,4 +1,5 @@
 using CoreBi.Desktop.Features.Reports;
+using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Power;
 using CoreBi.Engine.Monitoring.Storage;
 using CoreBi.Engine.Reports;
@@ -56,9 +57,9 @@ public partial class MainWindow
             var disks = await Task.Run(() => DiskHealth.Read(sensorsSnapshot));
             data.Disks.AddRange(disks.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
             var power = await Task.Run(() => BatteryInfo.Read(sensorsSnapshot));
-            data.Power.AddRange(power.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
+            data.Power.AddRange(power.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
             if (PageNet.LastResult is { } network)
-                data.Network.AddRange(network.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
+                data.Network.AddRange(network.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
 
             if (ext == ".pdf") await PdfPrinter.PrintAsync(ReportBuilder.Html(data), path);
             else await File.WriteAllTextAsync(path, ext == ".json" ? ReportBuilder.Json(data) : ReportBuilder.Html(data), new UTF8Encoding(true));
@@ -78,11 +79,11 @@ public partial class MainWindow
     }
 
     /// <summary>Veredito → tom do selo no relatório (saudável discreto; atenção e crítico em cor).</summary>
-    private static string ToneOf(DiskVerdict v) => v switch
+    private static string ToneOf(HealthVerdict v) => v switch
     {
-        DiskVerdict.Good => "ok",
-        DiskVerdict.Warning => "warn",
-        DiskVerdict.Critical => "danger",
+        HealthVerdict.Good => "ok",
+        HealthVerdict.Warning => "warn",
+        HealthVerdict.Critical => "danger",
         _ => "",
     };
 

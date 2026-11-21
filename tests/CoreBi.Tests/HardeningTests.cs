@@ -220,8 +220,8 @@ internal static partial class Program
         });
         Check("network: successful HTTP is not diagnosed as offline due to blocked ping", () =>
         {
-            Require(CoreBi.Engine.Monitoring.Network.NetworkTest.HasHttpEvidence(100, null), "HTTP evidence ignored");
-            Require(!CoreBi.Engine.Monitoring.Network.NetworkTest.HasHttpEvidence(null, null), "Missing HTTP treated as success");
+            Require(CoreBi.Engine.Monitoring.Network.NetworkDiagnostics.HasHttpEvidence(100, null), "HTTP evidence ignored");
+            Require(!CoreBi.Engine.Monitoring.Network.NetworkDiagnostics.HasHttpEvidence(null, null), "Missing HTTP treated as success");
             return new { icmpAndHttpDistinguished = true };
         });
         Check("network: lost pings count as loss and stay out of latency and jitter", () =>

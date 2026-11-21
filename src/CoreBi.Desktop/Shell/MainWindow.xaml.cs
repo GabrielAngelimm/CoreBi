@@ -307,11 +307,10 @@ public partial class MainWindow : Window
     /// <summary>Central da barra lateral: RAM em uso e ocupação do disco do sistema (CPU e GPU vêm do teste de carga e da GPU).</summary>
     internal void UpdateSideStorage()
     {
-        var (total, avail) = CoreBi.Engine.Monitoring.Memory.MemoryInfo.MemoryStatus();
-        if (total > 0)
+        if (CoreBi.Engine.Monitoring.Memory.MemoryInfo.ReadPhysicalUsage() is { Total: > 0 } mem)
         {
-            double used = (double)(total - avail) / total;
-            SideRam.Text = $"{(total - avail) / 1073741824.0:0.0} GB";
+            double used = (double)mem.Used / mem.Total;
+            SideRam.Text = $"{mem.Used / 1073741824.0:0.0} GB";
             SideRamLoad.Text = $"{used * 100:0} %";
             Ui.Glide(SideRamBar, used, LiveMotion);
         }

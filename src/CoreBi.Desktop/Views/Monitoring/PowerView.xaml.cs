@@ -1,8 +1,8 @@
 using CoreBi.Desktop.Services;
 using CoreBi.Engine.Monitoring.Graphics;
+using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Power;
 using CoreBi.Engine.Monitoring.Sensors;
-using CoreBi.Engine.Monitoring.Storage;
 using LibreHardwareMonitor.Hardware;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -178,7 +178,7 @@ public partial class PowerView : UserControl
         bool health = shown.DesignWh != null || shown.FullWh != null;
         BatteryHealth.Visibility = health ? Visibility.Visible : Visibility.Collapsed;
         if (!health) return;
-        string tone = shown.Verdict switch { DiskVerdict.Good => "Ok", DiskVerdict.Warning => "Warn", DiskVerdict.Critical => "Danger", _ => "" };
+        string tone = shown.Verdict switch { HealthVerdict.Good => "Ok", HealthVerdict.Warning => "Warn", HealthVerdict.Critical => "Danger", _ => "" };
         BatteryBadgeText.Text = shown.VerdictText;
         Ui.SetTone(BatteryBadge, tone);
         BatteryCapacity.Design = shown.DesignWh ?? double.NaN;

@@ -98,7 +98,7 @@ public partial class MainWindow
         {
             var list = await Task.Run(UsbDeviceInventory.List);
             if (_features.IsClosing) return;
-            _usbPresent = list.Where(d => d.Present).GroupBy(d => d.InstanceId).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+            _usbPresent = list.GroupBy(d => d.InstanceId).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
         }
         catch { }
     }
@@ -157,7 +157,7 @@ public partial class MainWindow
     {
         List<ConnectedDevice> list;
         try { list = await Task.Run(UsbDeviceInventory.List); } catch { return; }
-        var present = list.Where(d => d.Present).GroupBy(d => d.InstanceId)
+        var present = list.GroupBy(d => d.InstanceId)
                           .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
         var added = present.Values.Where(d => !_usbPresent.ContainsKey(d.InstanceId)).ToList();
         var removed = _usbPresent.Values.Where(d => !present.ContainsKey(d.InstanceId)).ToList();

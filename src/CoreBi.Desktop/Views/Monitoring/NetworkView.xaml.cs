@@ -1,6 +1,6 @@
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Network;
-using CoreBi.Engine.Monitoring.Storage;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,7 +15,7 @@ namespace CoreBi.Desktop.Views;
 public partial class NetworkView : UserControl
 {
     internal FeatureContext Context { private get; set; } = null!;
-    internal IReadOnlyList<DiskHealthCard>? LastResult { get; private set; }
+    internal IReadOnlyList<HealthCard>? LastResult { get; private set; }
     private NetworkResult? _result;
     private CancellationTokenSource? _cancellation;
     private bool _running;
@@ -121,7 +121,7 @@ public partial class NetworkView : UserControl
                     ShowProgress(p);
                 }));
             };
-            var result = await RunAutomatic(
+            var result = await NetworkTest.RunAutomaticAsync(
                 selected => NetworkTest.Run(Progress(attempt), cancellation.Token, selected, mlabConsent: true),
                 cancellation.Token, () =>
                 {
@@ -162,16 +162,6 @@ public partial class NetworkView : UserControl
                 ShowTrack(false); // em repouso o console fica só com o botão e o estado
             }
         }
-    }
-
-    internal static async Task<NetworkResult> RunAutomatic(Func<NetworkSpeedProvider, Task<NetworkResult>> run,
-        CancellationToken ct, Action onFallback)
-    {
-        var result = await run(NetworkSpeedProvider.Cloudflare);
-        ct.ThrowIfCancellationRequested();
-        if (result.Adapter == null || result.InterruptedPhase == null) return result;
-        onFallback();
-        return await run(NetworkSpeedProvider.Mlab);
     }
 
     private void Reset(string status, string detail)
@@ -251,11 +241,11 @@ public partial class NetworkView : UserControl
         run.SetResourceReference(TextElement.ForegroundProperty, value != null ? "Fg" : "Faint");
     }
 
-    private static string VerdictKey(DiskVerdict v) => v switch
+    private static string VerdictKey(HealthVerdict v) => v switch
     {
-        DiskVerdict.Good => "Ok",
-        DiskVerdict.Warning => "Warn",
-        DiskVerdict.Critical => "Danger",
+        HealthVerdict.Good => "Ok",
+        HealthVerdict.Warning => "Warn",
+        HealthVerdict.Critical => "Danger",
         _ => "Faint",
     };
 
@@ -286,10 +276,10 @@ public partial class NetworkView : UserControl
         else
         {
             NetMeta.Text = r.Card.Meta;
-            string key = VerdictKey(r.Card.Verdict == DiskVerdict.Unknown ? DiskVerdict.Warning : r.Card.Verdict);
+            string key = VerdictKey(r.Card.Verdict == HealthVerdict.Unknown ? HealthVerdict.Warning : r.Card.Verdict);
             // Estável: a linha do veredito ("Latência baixa e sem perda…", com o visto) já diz isso; o selo repetiria (U14).
             // Atenção e ruim mantêm o selo, que resume a gravidade dos achados listados embaixo.
-            NetBadge.Visibility = r.Card.Verdict == DiskVerdict.Good ? Visibility.Collapsed : Visibility.Visible;
+            NetBadge.Visibility = r.Card.Verdict == HealthVerdict.Good ? Visibility.Collapsed : Visibility.Visible;
             Ui.SetTone(NetBadge, key);
             NetBadgeText.Text = new SentenceCaseConverter().Convert(r.Card.VerdictText, typeof(string), null!, PtBr) as string ?? "";
             ShowNotes(r, key);
@@ -303,7 +293,7 @@ public partial class NetworkView : UserControl
     private void ShowNotes(NetworkResult r, string key)
     {
         NetNotes.Children.Clear();
-        bool good = r.Card.Verdict == DiskVerdict.Good;
+        bool good = r.Card.Verdict == HealthVerdict.Good;
         foreach (string note in r.Notes)
         {
             var row = new Grid { Margin = new Thickness(0, NetNotes.Children.Count == 0 ? 0 : 8, 0, 0) };
@@ -353,17 +343,17 @@ public partial class NetworkView : UserControl
         }
         string local = r.LocalVerdict switch
         {
-            DiskVerdict.Good => $"estável · jitter {Format(router!.Jitter)} ms",
-            DiskVerdict.Warning => $"instável · perda {router!.LossPct.ToString("0.#", PtBr)} % · jitter {Format(router.Jitter)} ms",
-            DiskVerdict.Critical => "sem conexão",
+            HealthVerdict.Good => $"estável · jitter {Format(router!.Jitter)} ms",
+            HealthVerdict.Warning => $"instável · perda {router!.LossPct.ToString("0.#", PtBr)} % · jitter {Format(router.Jitter)} ms",
+            HealthVerdict.Critical => "sem conexão",
             _ => router == null ? "não medido" : "não responde a ping",
         };
         string wanText = r.InternetVerdict switch
         {
-            DiskVerdict.Good => $"estável · perda {r.LossPct?.ToString("0.#", PtBr) ?? "0"} %",
-            DiskVerdict.Warning => r.LossPct > 1 ? $"perda de {r.LossPct?.ToString("0.#", PtBr)} %"
+            HealthVerdict.Good => $"estável · perda {r.LossPct?.ToString("0.#", PtBr) ?? "0"} %",
+            HealthVerdict.Warning => r.LossPct > 1 ? $"perda de {r.LossPct?.ToString("0.#", PtBr)} %"
                                  : r.LatencyMs > 80 ? "latência alta" : r.JitterMs > 20 ? "jitter alto" : "um alvo sem resposta",
-            DiskVerdict.Critical => r.LatencyMs == null ? "sem resposta" : r.LossPct > 5 ? $"perda de {r.LossPct?.ToString("0.#", PtBr)} %" : "latência muito alta",
+            HealthVerdict.Critical => r.LatencyMs == null ? "sem resposta" : r.LossPct > 5 ? $"perda de {r.LossPct?.ToString("0.#", PtBr)} %" : "latência muito alta",
             _ => r.Internet.Count == 0 ? "não medido" : "sem resposta a ping",
         };
         // Trecho estável fica neutro (um fio cheio, mais claro que o de "não medido"); só o trecho com problema ganha cor,

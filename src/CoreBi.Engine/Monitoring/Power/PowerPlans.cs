@@ -136,6 +136,27 @@ public static class PowerPlans
         return name;
     }
 
+    public static bool IsHighPerformance(PowerPlan plan) =>
+        plan.Id == Stock[1].Id || plan.Id == Stock[3].Id
+        || plan.Name.Contains("alto", StringComparison.OrdinalIgnoreCase)
+        || plan.Name.Contains("high", StringComparison.OrdinalIgnoreCase)
+        || plan.Name.Contains("máximo", StringComparison.OrdinalIgnoreCase)
+        || plan.Name.Contains("ultimate", StringComparison.OrdinalIgnoreCase);
+
+    public static string? ReadActiveDisplayName()
+    {
+        try
+        {
+            if (PowerGetActiveScheme(IntPtr.Zero, out IntPtr ptr) != 0) return null;
+            Guid id;
+            try { id = Marshal.PtrToStructure<Guid>(ptr); }
+            finally { LocalFree(ptr); }
+            return FriendlyName(id) is { Length: > 0 } name ? DisplayName(id, name) : null;
+        }
+        catch (DllNotFoundException) { return null; }
+        catch (EntryPointNotFoundException) { return null; }
+    }
+
     /// <summary>Troca o plano ativo (o mesmo que escolher o plano em Opções de energia). Retorna o código de erro do Windows, 0 se deu certo.</summary>
     public static uint SetActive(Guid id)
     {

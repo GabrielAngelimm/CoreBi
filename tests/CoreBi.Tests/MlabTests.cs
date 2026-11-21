@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
+using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Network;
 
 internal static partial class Program
@@ -15,13 +16,13 @@ internal static partial class Program
             var adapter = new NetworkAdapterInfo("test", "test", "Ethernet", 1000, "127.0.0.1", IPAddress.Loopback, "—", "—");
             NetworkResult Make(bool incomplete, bool connected = true) => new()
             {
-                Card = new CoreBi.Engine.Monitoring.Storage.DiskHealthCard(),
+                Card = new HealthCard(),
                 Adapter = connected ? adapter : null,
                 InterruptedPhase = incomplete ? NetworkPhase.Download : null,
             };
             var calls = new List<NetworkSpeedProvider>();
             int switches = 0;
-            var result = CoreBi.Desktop.Views.NetworkView.RunAutomatic(provider =>
+            var result = NetworkTest.RunAutomaticAsync(provider =>
             {
                 calls.Add(provider);
                 return Task.FromResult(Make(provider == NetworkSpeedProvider.Cloudflare));
@@ -29,11 +30,11 @@ internal static partial class Program
             Require(result.InterruptedPhase == null && switches == 1 && calls.SequenceEqual(new[] { NetworkSpeedProvider.Cloudflare, NetworkSpeedProvider.Mlab }),
                 "Fallback did not use the independent provider once");
             calls.Clear();
-            CoreBi.Desktop.Views.NetworkView.RunAutomatic(provider => { calls.Add(provider); return Task.FromResult(Make(false)); },
+            NetworkTest.RunAutomaticAsync(provider => { calls.Add(provider); return Task.FromResult(Make(false)); },
                 CancellationToken.None, () => switches++).GetAwaiter().GetResult();
             Require(calls.SequenceEqual(new[] { NetworkSpeedProvider.Cloudflare }) && switches == 1, "Successful test retried");
             calls.Clear();
-            CoreBi.Desktop.Views.NetworkView.RunAutomatic(provider => { calls.Add(provider); return Task.FromResult(Make(true, false)); },
+            NetworkTest.RunAutomaticAsync(provider => { calls.Add(provider); return Task.FromResult(Make(true, false)); },
                 CancellationToken.None, () => switches++).GetAwaiter().GetResult();
             Require(calls.Count == 1, "Fallback attempted without an adapter");
             return new { switchedOnce = true, successNotRepeated = true };
@@ -66,8 +67,10 @@ internal static partial class Program
             var store = new NetworkRateLimitStore(Path.Combine(folder.Path, "cooldown.json"));
             var now = DateTimeOffset.UtcNow;
             store.Record(new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromHours(1)), now);
-            Require(NetworkTest.ActiveSpeedLimit(NetworkSpeedProvider.Cloudflare, store, now) != null &&
-                NetworkTest.ActiveSpeedLimit(NetworkSpeedProvider.Mlab, store, now) == null, "Cooldown applied to the wrong provider");
+            var cloudflare = new CloudflareSpeedProvider(store);
+            var mlab = new MlabSpeedProvider();
+            Require(cloudflare.GetActiveRateLimit(now) != null &&
+                mlab.GetActiveRateLimit(now) == null, "Cooldown applied to the wrong provider");
             return new { limitsAreIndependent = true };
         });
 
@@ -118,11 +121,11 @@ internal static partial class Program
         Check("network: NDT7 loopback supports repeated download and confirmed upload", () =>
         {
             using var server = new LocalNdtServer();
-            var first = new NetworkTest.Transfer();
-            var second = new NetworkTest.Transfer();
+            var first = new NetworkTransfer();
+            var second = new NetworkTransfer();
             double? firstSpeed = MlabSpeedTest.Download(first, server.Download, CancellationToken.None, 16_000_000).GetAwaiter().GetResult();
             double? secondSpeed = MlabSpeedTest.Download(second, server.Download, CancellationToken.None, 16_000_000).GetAwaiter().GetResult();
-            var upload = new NetworkTest.Transfer();
+            var upload = new NetworkTransfer();
             double? uploadSpeed = MlabSpeedTest.Upload(upload, server.Upload, CancellationToken.None, 24_000_000).GetAwaiter().GetResult();
             Require(firstSpeed is > 1 && secondSpeed is > 1 && uploadSpeed is > 1 && upload.Bytes > 0,
                 $"NDT7 loopback failed: down={firstSpeed}/{secondSpeed}, up={uploadSpeed}, error={upload.Error}");
@@ -136,7 +139,7 @@ internal static partial class Program
         {
             using var server = new LocalNdtServer();
             using var cancel = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
-            Expect<OperationCanceledException>(() => MlabSpeedTest.Download(new NetworkTest.Transfer(), server.Download,
+            Expect<OperationCanceledException>(() => MlabSpeedTest.Download(new NetworkTransfer(), server.Download,
                 cancel.Token, 64_000_000).GetAwaiter().GetResult());
             return new { cancelled = true };
         });
@@ -144,7 +147,7 @@ internal static partial class Program
         Check("network: NDT7 upload succeeds when the server sends only TCPInfo", () =>
         {
             using var server = new LocalNdtServer(tcpOnly: true);
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             var speed = MlabSpeedTest.Upload(transfer, server.Upload, CancellationToken.None, 24_000_000).GetAwaiter().GetResult();
             Require(speed is > 1 && transfer.IncludesTcpOverhead && transfer.Bytes > 0,
                 $"TCP upload confirmation was not used: {transfer.Error}");

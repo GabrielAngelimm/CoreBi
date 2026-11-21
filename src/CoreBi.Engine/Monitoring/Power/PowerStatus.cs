@@ -1,7 +1,7 @@
-using CoreBi.Engine.Monitoring.Storage;
+using System.Management;
 using System.Runtime.InteropServices;
-
-using static CoreBi.Engine.Monitoring.Power.BatteryInfo;
+using CoreBi.Engine.Infrastructure;
+using CoreBi.Engine.Monitoring.Health;
 
 namespace CoreBi.Engine.Monitoring.Power;
 
@@ -14,13 +14,14 @@ public sealed record BatteryState(
     int? Percent, string? StatusText, bool Charging, bool Discharging,
     double? DesignWh, double? FullWh, double? RemainingWh, double? WearPct, long? Cycles,
     double? Volts, double? RateW, int? RuntimeMin, int? ToFullMin,
-    DiskVerdict Verdict, string VerdictText, string Reason, bool IsUps);
+    HealthVerdict Verdict, string VerdictText, string Reason, bool IsUps);
 
-/// <summary>Fonte de energia agora e baterias; UpsPresent quando o Windows vê um nobreak (mesmo sem os dados dele).</summary>
 public sealed record PowerSnapshot(bool? OnAc, bool BatterySaver, IReadOnlyList<BatteryState> Batteries, bool UpsPresent);
 
 public static class PowerStatus
 {
+    private const long UnknownRuntimeMinutes = 71_582_788;
+
     [StructLayout(LayoutKind.Sequential)]
     private struct SystemPowerStatus
     {
@@ -28,10 +29,16 @@ public static class PowerStatus
         public int BatteryLifeTime, BatteryFullLifeTime;
     }
 
-    [DllImport("kernel32.dll")] private static extern bool GetSystemPowerStatus(out SystemPowerStatus status);
-    [DllImport("powrprof.dll")][return: MarshalAs(UnmanagedType.U1)] private static extern bool GetPwrCapabilities([Out] byte[] capabilities);
+    // Layout fixo de SYSTEM_POWER_CAPABILITIES desde o Windows 8; UpsPresent fica no byte 12.
+    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    private struct SystemPowerCapabilities
+    {
+        [FieldOffset(12)] public byte UpsPresent;
+    }
 
-    /// <summary>Leitura instantânea (sem WMI) para acompanhar a cada segundo: na tomada, carga e economia de bateria.</summary>
+    [DllImport("kernel32.dll")] private static extern bool GetSystemPowerStatus(out SystemPowerStatus status);
+    [DllImport("powrprof.dll")][return: MarshalAs(UnmanagedType.U1)] private static extern bool GetPwrCapabilities(out SystemPowerCapabilities capabilities);
+
     public static (bool? OnAc, int? Percent, bool Saver) Line()
     {
         try
@@ -41,79 +48,150 @@ public static class PowerStatus
             int? pct = s.BatteryLifePercent <= 100 && (s.BatteryFlag & 128) == 0 ? s.BatteryLifePercent : null;
             return (ac, pct, (s.SystemStatusFlag & 1) != 0);
         }
-        catch { return (null, null, false); }
+        catch (Exception ex) { DiagnosticLog.Write("power.line", ex); return (null, null, false); }
     }
 
     public static PowerSnapshot Read()
     {
         var (ac, _, saver) = Line();
         bool ups = UpsPresent();
-        return new PowerSnapshot(ac, saver, Batteries(ups), ups);
+        return new PowerSnapshot(ac, saver, ReadBatteries(ups), ups);
     }
 
-    /// <summary>SystemBatteriesPresent/UpsPresent de SYSTEM_POWER_CAPABILITIES, lido por posição (o layout é fixo desde o Windows 8).</summary>
     private static bool UpsPresent()
     {
-        try
-        {
-            var c = new byte[128];
-            return GetPwrCapabilities(c) && c[12] != 0;
-        }
-        catch { return false; }
+        try { return GetPwrCapabilities(out var caps) && caps.UpsPresent != 0; }
+        catch (Exception ex) { DiagnosticLog.Write("power.capabilities", ex); return false; }
     }
 
-    private static List<BatteryState> Batteries(bool upsPresent)
+    private static List<Dictionary<string, object?>> QueryAll(string scope, string className) =>
+        WmiQuery.Select("SELECT * FROM " + className, item =>
+        {
+            var d = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            foreach (PropertyData p in item.Properties) d[p.Name] = p.Value;
+            return d;
+        }, scope);
+
+    private static Dictionary<string, object?>? Match(List<Dictionary<string, object?>> list, string? instanceName, int index)
+    {
+        if (!string.IsNullOrEmpty(instanceName))
+        {
+            var byName = list.FirstOrDefault(d => string.Equals(Str(d, "InstanceName"), instanceName, StringComparison.OrdinalIgnoreCase));
+            if (byName != null) return byName;
+        }
+        return index < list.Count ? list[index] : null;
+    }
+
+    private static List<BatteryState> ReadBatteries(bool upsPresent)
     {
         var list = new List<BatteryState>();
-        var win = Q(@"root\cimv2", "Win32_Battery");
-        var stat = Q(@"root\WMI", "BatteryStaticData");
-        var full = Q(@"root\WMI", "BatteryFullChargedCapacity");
-        var cyc = Q(@"root\WMI", "BatteryCycleCount");
-        var live = Q(@"root\WMI", "BatteryStatus");
+        var win = QueryAll(@"root\cimv2", "Win32_Battery");
+        var stat = QueryAll(@"root\WMI", "BatteryStaticData");
+        var full = QueryAll(@"root\WMI", "BatteryFullChargedCapacity");
+        var cyc = QueryAll(@"root\WMI", "BatteryCycleCount");
+        var live = QueryAll(@"root\WMI", "BatteryStatus");
         int count = Math.Max(win.Count, stat.Count);
         for (int i = 0; i < count; i++)
         {
-            var w = At(win, i); var st = At(stat, i); var fu = At(full, i); var cy = At(cyc, i); var lv = At(live, i);
-            // Nobreak USB aparece no Win32_Battery, mas não tem os dados de bateria ACPI do root\WMI
+            var w = i < win.Count ? win[i] : null;
+            var st = i < stat.Count ? stat[i] : null;
+            string? inst = Str(st, "InstanceName");
+            var fu = Match(full, inst, i);
+            var cy = Match(cyc, inst, i);
+            var lv = Match(live, inst, i);
+            // Nobreak USB aparece no Win32_Battery, mas não tem os dados de bateria ACPI do root\WMI.
             bool ups = upsPresent && st == null && fu == null;
-            long? design = L(st, "DesignedCapacity"), fullCap = L(fu, "FullChargedCapacity"), remaining = L(lv, "RemainingCapacity");
-            long? cycles = L(cy, "CycleCount");
+            long? design = Long(st, "DesignedCapacity");
+            long? fullCap = Long(fu, "FullChargedCapacity");
+            long? remaining = Long(lv, "RemainingCapacity");
+            long? cycles = Long(cy, "CycleCount");
             if (cycles == 0) cycles = null; // muitos fabricantes não informam (vem 0)
-            long? pct = L(w, "EstimatedChargeRemaining");
-            bool charging = B(lv, "Charging") == true, discharging = B(lv, "Discharging") == true;
-            long? cr = L(lv, "ChargeRate"), dr = L(lv, "DischargeRate"), mv = L(lv, "Voltage"), run = L(w, "EstimatedRunTime");
+            long? pct = Long(w, "EstimatedChargeRemaining");
+            bool charging = Bool(lv, "Charging") == true;
+            bool discharging = Bool(lv, "Discharging") == true;
+            long? cr = Long(lv, "ChargeRate");
+            long? dr = Long(lv, "DischargeRate");
+            long? mv = Long(lv, "Voltage");
+            long? run = Long(w, "EstimatedRunTime");
 
             double? wear = design is > 0 && fullCap is > 0 ? Math.Max(0, 100.0 * (1 - (double)fullCap.Value / design.Value)) : null;
             double? rate = charging && cr is > 0 ? cr / 1000.0 : discharging && dr is > 0 ? -dr / 1000.0 : null;
-            // Até carregar: o que falta da capacidade máxima atual dividido pela potência de carga (estimativa linear)
+            // Até carregar: o que falta da capacidade máxima atual dividido pela potência de carga (estimativa linear).
             int? toFull = charging && cr is > 0 && fullCap is > 0 && remaining is >= 0 && fullCap > remaining
                 ? (int)Math.Round((fullCap.Value - remaining.Value) * 60.0 / cr.Value) : null;
 
-            var (verdict, label, reason) = Health(wear, cycles);
-            string status = BatteryInfo.Status(L(w, "BatteryStatus"));
+            var (verdict, label, reason) = EvaluateHealth(wear, cycles);
+            string status = MapStatus(Long(w, "BatteryStatus"));
             list.Add(new BatteryState(
                 Title: ups ? "Nobreak" : count > 1 ? $"Bateria {i + 1}" : "Bateria",
-                Manufacturer: S(st, "ManufactureName"), Model: S(st, "DeviceName") ?? S(w, "Name"),
-                Chemistry: Chemistry(L(w, "Chemistry")) is var ch && ch != "—" ? ch : null,
+                Manufacturer: Str(st, "ManufactureName"),
+                Model: Str(st, "DeviceName") ?? Str(w, "Name"),
+                Chemistry: MapChemistry(Long(w, "Chemistry")) is var ch && ch != "—" ? ch : null,
                 Percent: pct is >= 0 and <= 100 ? (int)pct.Value : null,
                 StatusText: status != "—" ? status : charging ? "Carregando" : discharging ? "Descarregando" : null,
-                charging, discharging,
-                DesignWh: design is > 0 ? design / 1000.0 : null, FullWh: fullCap is > 0 ? fullCap / 1000.0 : null,
+                Charging: charging,
+                Discharging: discharging,
+                DesignWh: design is > 0 ? design / 1000.0 : null,
+                FullWh: fullCap is > 0 ? fullCap / 1000.0 : null,
                 RemainingWh: remaining is >= 0 && (fullCap is > 0 || design is > 0) ? remaining / 1000.0 : null,
-                wear, cycles, Volts: mv is > 0 ? mv / 1000.0 : null, rate,
-                RuntimeMin: discharging && run is > 0 and < 71582788 ? (int)run.Value : null, toFull,
-                verdict, label, reason, ups));
+                WearPct: wear,
+                Cycles: cycles,
+                Volts: mv is > 0 ? mv / 1000.0 : null,
+                RateW: rate,
+                RuntimeMin: discharging && run is > 0 and < UnknownRuntimeMinutes ? (int)run.Value : null,
+                ToFullMin: toFull,
+                Verdict: verdict,
+                VerdictText: label,
+                Reason: reason,
+                IsUps: ups));
         }
         return list;
     }
 
-    /// <summary>Mesmos limites do relatório: 30 % de desgaste é atenção, 50 % é desgastada; 1000 ciclos também pede atenção.</summary>
-    private static (DiskVerdict, string, string) Health(double? wear, long? cycles)
+    internal static (HealthVerdict Verdict, string Label, string Reason) EvaluateHealth(double? wear, long? cycles)
     {
-        if (wear == null) return (DiskVerdict.Unknown, "Sem dados", "O Windows não informou a capacidade original ou a atual, então o desgaste não pôde ser calculado.");
-        if (wear >= 50) return (DiskVerdict.Critical, "Desgastada", $"Perdeu {wear:0} % da capacidade original: a autonomia é metade do que era.");
-        if (wear >= 30) return (DiskVerdict.Warning, "Atenção", $"Perdeu {wear:0} % da capacidade original; a autonomia já caiu bastante.");
-        if (cycles is >= 1000) return (DiskVerdict.Warning, "Atenção", $"{cycles} ciclos de carga: perto do fim da vida útil típica (500 a 1000).");
-        return (DiskVerdict.Good, "Saudável", wear >= 15 ? $"Desgaste de {wear:0} %, normal para uma bateria com uso." : $"Desgaste de {wear:0} %: bateria em ótimo estado.");
+        if (wear == null) return (HealthVerdict.Unknown, "Sem dados", "O Windows não informou a capacidade original ou a atual, então o desgaste não pôde ser calculado.");
+        if (wear >= 50) return (HealthVerdict.Critical, "Desgastada", $"Perdeu {wear:0} % da capacidade original: a autonomia é metade do que era.");
+        if (wear >= 30) return (HealthVerdict.Warning, "Atenção", $"Perdeu {wear:0} % da capacidade original; a autonomia já caiu bastante.");
+        if (cycles is >= 1000) return (HealthVerdict.Warning, "Atenção", $"{cycles} ciclos de carga: perto do fim da vida útil típica (500 a 1000).");
+        return (HealthVerdict.Good, "Saudável", wear >= 15
+            ? $"Desgaste de {wear:0} %, normal para uma bateria com uso."
+            : $"Desgaste de {wear:0} %: bateria em ótimo estado.");
     }
+
+    private static long? Long(Dictionary<string, object?>? d, string k)
+    {
+        if (d != null && d.TryGetValue(k, out var v) && v != null)
+            try { return Convert.ToInt64(v); } catch { }
+        return null;
+    }
+
+    private static bool? Bool(Dictionary<string, object?>? d, string k) =>
+        d != null && d.TryGetValue(k, out var v) && v is bool b ? b : null;
+
+    private static string? Str(Dictionary<string, object?>? d, string k) =>
+        d != null && d.TryGetValue(k, out var v) && v is string s && s.Trim().Length > 0 ? s.Trim() : null;
+
+    private static string MapChemistry(long? c) => c switch
+    {
+        3 => "Chumbo-ácido",
+        4 => "NiCd",
+        5 => "NiMH",
+        6 => "Íon-lítio",
+        7 => "Zinco-ar",
+        8 => "Polímero de lítio",
+        _ => "—"
+    };
+
+    private static string MapStatus(long? s) => s switch
+    {
+        1 => "Descarregando",
+        2 => "Na tomada",
+        3 => "Totalmente carregada",
+        4 => "Carga baixa",
+        5 => "Carga crítica",
+        6 or 7 or 8 or 9 => "Carregando",
+        11 => "Parcialmente carregada",
+        _ => "—"
+    };
 }

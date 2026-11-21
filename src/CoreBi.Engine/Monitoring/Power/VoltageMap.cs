@@ -25,7 +25,7 @@ public sealed record VoltageMap(IReadOnlyList<Rail> Rails, IReadOnlyList<Voltage
 public static class VoltageMapper
 {
     /// <summary>Abaixo disso a pilha do CMOS (CR2032, 3 V) está fraca: a placa pode perder a hora e as configurações.</summary>
-    public const double CmosLow = 2.8;
+    internal const double CmosLow = 2.8;
 
     public static VoltageMap Map(IEnumerable<VoltageInput> inputs)
     {

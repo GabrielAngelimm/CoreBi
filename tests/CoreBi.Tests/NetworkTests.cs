@@ -11,28 +11,28 @@ internal static partial class Program
         Check("network: download excludes warmup only when data continues", () =>
         {
             double expected = 80_000_000 * 8 / 1e6 / 7;
-            Require(Math.Abs(NetworkTest.CalculateMbps(100_000_000, 8, 20_000_000, 1)!.Value - expected) < 0.001,
+            Require(Math.Abs(NetworkTransfer.CalculateMbps(100_000_000, 8, 20_000_000, 1)!.Value - expected) < 0.001,
                 "Warmup bytes and duration were not excluded together");
-            Require(NetworkTest.CalculateMbps(20_000_000, 8, 20_000_000, 1) == 20,
+            Require(NetworkTransfer.CalculateMbps(20_000_000, 8, 20_000_000, 1) == 20,
                 "A stalled transfer should retain its full elapsed time");
-            Require(NetworkTest.CalculateMbps(0, 8, 0, 0) == null, "Empty transfer produced a speed");
+            Require(NetworkTransfer.CalculateMbps(0, 8, 0, 0) == null, "Empty transfer produced a speed");
             return new { warmupAndStall = true };
         });
 
         Check("network: loaded latency compares the same target and requires a download", () =>
         {
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             Require(!transfer.HasNewBytes(), "Idle period considered active traffic");
             Interlocked.Add(ref transfer.Bytes, 100);
             Require(transfer.HasNewBytes() && !transfer.HasNewBytes(), "Download activity was not sampled by interval");
             var cloudflare = new PingResult("Cloudflare", "1.1.1.1", new double?[] { 10, 20 });
             var silent = new PingResult("Cloudflare", "1.1.1.1", new double?[] { null, null });
             var samples = new double[] { 40, 41, 42, 43, 44 };
-            Require(NetworkTest.LoadedLatency(null, samples) == null, "Pings without a download treated as loaded");
-            Require(NetworkTest.LoadedLatency(1, samples.Take(4).ToArray()) == null, "Too few pings accepted");
-            var loaded = NetworkTest.LoadedLatency(1, samples);
-            Require(loaded == 42 && NetworkTest.Bufferbloat(cloudflare, loaded) == 27, "Wrong idle baseline");
-            Require(NetworkTest.Bufferbloat(silent, loaded) == null, "A silent baseline produced a comparison");
+            Require(NetworkDiagnostics.LoadedLatency(null, samples) == null, "Pings without a download treated as loaded");
+            Require(NetworkDiagnostics.LoadedLatency(1, samples.Take(4).ToArray()) == null, "Too few pings accepted");
+            var loaded = NetworkDiagnostics.LoadedLatency(1, samples);
+            Require(loaded == 42 && NetworkDiagnostics.Bufferbloat(cloudflare, loaded) == 27, "Wrong idle baseline");
+            Require(NetworkDiagnostics.Bufferbloat(silent, loaded) == null, "A silent baseline produced a comparison");
             return new { loaded, increase = 27 };
         });
 
@@ -40,8 +40,8 @@ internal static partial class Program
         {
             var answered = new PingResult("Answered", "1.1.1.1", new double?[] { 10, null, 10, 10 });
             var silent = new PingResult("Silent", "8.8.8.8", new double?[] { null, null, null, null });
-            Require(NetworkTest.InternetLoss(new[] { answered, silent }) == 25, "Silent target distorted loss");
-            Require(NetworkTest.InternetLoss(new[] { silent }) == null, "Silent targets produced a loss estimate");
+            Require(NetworkDiagnostics.InternetLoss(new[] { answered, silent }) == 25, "Silent target distorted loss");
+            Require(NetworkDiagnostics.InternetLoss(new[] { silent }) == null, "Silent targets produced a loss estimate");
             return new { silentIsInconclusive = true };
         });
 
@@ -51,7 +51,7 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(new NetworkRateLimitStore(Path.Combine(folder.Path, "cooldown.json")));
             using var handler = new UploadFixture(TimeSpan.FromMilliseconds(500), HttpStatusCode.OK);
             using var client = new HttpClient(handler);
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             var speed = NetworkTest.Upload(transfer, client, limit, TimeSpan.FromMilliseconds(350), TimeSpan.FromMilliseconds(700), 2,
                 CancellationToken.None).GetAwaiter().GetResult();
             Require(handler.Calls == 2 && transfer.Bytes == handler.AcceptedBytes && transfer.Bytes == 128_000,
@@ -67,7 +67,7 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(new NetworkRateLimitStore(Path.Combine(folder.Path, "cooldown.json")));
             using var handler = new AdaptiveUploadFixture();
             using var client = new HttpClient(handler);
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             var speed = NetworkTest.Upload(transfer, client, limit, TimeSpan.FromMilliseconds(350), TimeSpan.FromMilliseconds(400), 1,
                 CancellationToken.None).GetAwaiter().GetResult();
             Require(speed is > 0 && handler.Largest > 5_000_000 && handler.Largest <= 25_000_000 && handler.Calls <= 8,
@@ -81,7 +81,7 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(new NetworkRateLimitStore(Path.Combine(folder.Path, "cooldown.json")));
             using var handler = new UploadFixture(TimeSpan.FromMilliseconds(200), HttpStatusCode.OK);
             using var client = new HttpClient(handler);
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             var speed = NetworkTest.Upload(transfer, client, limit, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(1), 1,
                 CancellationToken.None, byteBudget: 300_000).GetAwaiter().GetResult();
             Require(speed is > 0 && transfer.Bytes == 300_000 && handler.AcceptedBytes == 300_000 && handler.Calls == 2,
@@ -95,14 +95,14 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(new NetworkRateLimitStore(Path.Combine(folder.Path, "cooldown.json")));
             using var rejectedHandler = new UploadFixture(TimeSpan.Zero, HttpStatusCode.ServiceUnavailable);
             using var rejectedClient = new HttpClient(rejectedHandler);
-            var rejected = new NetworkTest.Transfer();
+            var rejected = new NetworkTransfer();
             var speed = NetworkTest.Upload(rejected, rejectedClient, limit, TimeSpan.FromMilliseconds(350), TimeSpan.FromMilliseconds(200), 1,
                 CancellationToken.None).GetAwaiter().GetResult();
             Require(speed == null && rejected.Bytes == 0 && rejected.Error != null, "Rejected data counted as accepted");
 
             using var incompleteHandler = new UploadFixture(TimeSpan.Zero, HttpStatusCode.OK, stallAfterFirst: true);
             using var incompleteClient = new HttpClient(incompleteHandler);
-            var incomplete = new NetworkTest.Transfer();
+            var incomplete = new NetworkTransfer();
             var partial = NetworkTest.Upload(incomplete, incompleteClient, limit, TimeSpan.FromMilliseconds(350), TimeSpan.FromMilliseconds(250), 1,
                 CancellationToken.None).GetAwaiter().GetResult();
             Require(partial is > 0 && incomplete.Incomplete && incomplete.Bytes == incompleteHandler.AcceptedBytes,
@@ -117,7 +117,7 @@ internal static partial class Program
             using var handler = new UploadFixture(TimeSpan.FromSeconds(5), HttpStatusCode.OK);
             using var client = new HttpClient(handler);
             using var cancel = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             Expect<OperationCanceledException>(() => NetworkTest.Upload(transfer, client, limit, TimeSpan.FromSeconds(3),
                 TimeSpan.FromSeconds(1), 2, cancel.Token).GetAwaiter().GetResult());
             Require(transfer.Bytes == 0, "Cancelled requests were counted");
@@ -132,7 +132,7 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(store);
             using var handler = new RateLimitFixture();
             using var client = new HttpClient(handler);
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             var speed = NetworkTest.Download(transfer, client, limit, TimeSpan.FromSeconds(2), TimeSpan.FromMilliseconds(100), 4,
                 CancellationToken.None).GetAwaiter().GetResult();
             var retry = store.Active(DateTimeOffset.UtcNow);
@@ -150,7 +150,7 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(store);
             using var handler = new RateLimitFixture();
             using var client = new HttpClient(handler);
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             var speed = NetworkTest.Upload(transfer, client, limit, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(1), 3,
                 CancellationToken.None).GetAwaiter().GetResult();
             Require(speed == null && transfer.Bytes == 0 && limit.Limited && handler.Calls is >= 1 and <= 3,
@@ -165,7 +165,7 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(new NetworkRateLimitStore(Path.Combine(folder.Path, "cooldown.json")));
             using var handler = new PartialThenRateLimitFixture();
             using var client = new HttpClient(handler);
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             var speed = NetworkTest.Download(transfer, client, limit, TimeSpan.FromSeconds(2), TimeSpan.FromMilliseconds(100), 1,
                 CancellationToken.None).GetAwaiter().GetResult();
             Require(transfer.Bytes == 1024 && speed == null && limit.Limited && handler.Calls == 2,
@@ -207,7 +207,7 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(new NetworkRateLimitStore(Path.Combine(folder.Path, "cooldown.json")));
             using var handler = new EmptyDownloadFixture();
             using var client = new HttpClient(handler);
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             var speed = NetworkTest.Download(transfer, client, limit, TimeSpan.FromSeconds(3), TimeSpan.FromMilliseconds(100), 1,
                 CancellationToken.None).GetAwaiter().GetResult();
             Require(speed == null && handler.Calls == 3 && transfer.Error != null, "Empty responses were retried without a bound");
@@ -220,7 +220,7 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(new NetworkRateLimitStore(Path.Combine(folder.Path, "cooldown.json")));
             using var handler = new ForbiddenDownloadFixture();
             using var client = new HttpClient(handler);
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             var speed = NetworkTest.Download(transfer, client, limit, TimeSpan.FromSeconds(2), TimeSpan.FromMilliseconds(100), 1,
                 CancellationToken.None).GetAwaiter().GetResult();
             Require(speed == null && handler.Calls == 1 && transfer.Error == "servidor recusou a solicitação",
@@ -234,10 +234,10 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(new NetworkRateLimitStore(Path.Combine(folder.Path, "cooldown.json")));
             using var handler = new StreamingDownloadFixture();
             using var client = new HttpClient(handler);
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             var speed = NetworkTest.Download(transfer, client, limit, TimeSpan.FromMilliseconds(800), TimeSpan.FromMilliseconds(100), 4,
                 CancellationToken.None).GetAwaiter().GetResult();
-            var again = NetworkTest.Download(new NetworkTest.Transfer(), client, limit, TimeSpan.FromMilliseconds(800),
+            var again = NetworkTest.Download(new NetworkTransfer(), client, limit, TimeSpan.FromMilliseconds(800),
                 TimeSpan.FromMilliseconds(100), 4, CancellationToken.None).GetAwaiter().GetResult();
             Require(handler.Calls == 8 && handler.RequestsCorrect && speed is > 50 and < 1000 && again is > 50 and < 1000,
                 "Repeated downloads did not use four large streams per run");
@@ -250,7 +250,7 @@ internal static partial class Program
             using var limit = new NetworkRateLimitSession(new NetworkRateLimitStore(Path.Combine(folder.Path, "cooldown.json")));
             using var handler = new StreamingDownloadFixture();
             using var client = new HttpClient(handler);
-            var transfer = new NetworkTest.Transfer();
+            var transfer = new NetworkTransfer();
             var speed = NetworkTest.Download(transfer, client, limit, TimeSpan.FromSeconds(4), TimeSpan.FromMilliseconds(100), 4,
                 CancellationToken.None, byteBudget: 16_000_000).GetAwaiter().GetResult();
             Require(speed is > 0 && transfer.Bytes is >= 16_000_000 and <= 16_327_680 && transfer.Clock.Elapsed.TotalSeconds < 4,

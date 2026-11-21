@@ -95,7 +95,7 @@ internal static partial class Program
         var router = new CoreBi.Engine.Monitoring.Network.PingResult("Roteador", "192.168.0.1", Enumerable.Range(0, 20).Select(i => (double?)(1 + i % 3 * 0.4)).ToArray());
         var sample = new CoreBi.Engine.Monitoring.Network.NetworkResult
         {
-            Card = new DiskHealthCard { Meta = "Ethernet · exemplo", Verdict = DiskVerdict.Good, Label = "ESTÁVEL" },
+            Card = new CoreBi.Engine.Monitoring.Health.HealthCard { Meta = "Ethernet · exemplo", Verdict = CoreBi.Engine.Monitoring.Health.HealthVerdict.Good, Label = "ESTÁVEL" },
             Adapter = new CoreBi.Engine.Monitoring.Network.NetworkAdapterInfo("Ethernet", "Adaptador de rede", "Ethernet (cabo)", 1000,
                 "192.168.0.12", System.Net.IPAddress.Parse("192.168.0.1"), "1.1.1.1", "00-00-00-00-00-00"),
             Router = router,
@@ -110,8 +110,8 @@ internal static partial class Program
             LoadedSamples = Enumerable.Range(0, 20).Select(i => (double?)(16 + i % 5 * 2)).ToArray(),
             LoadedLatencyMs = 20,
             BufferbloatMs = 9,
-            LocalVerdict = DiskVerdict.Good,
-            InternetVerdict = DiskVerdict.Good,
+            LocalVerdict = CoreBi.Engine.Monitoring.Health.HealthVerdict.Good,
+            InternetVerdict = CoreBi.Engine.Monitoring.Health.HealthVerdict.Good,
         };
         window.PageNet.GetType().GetMethod("ShowResult", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window.PageNet, [sample]);
         Wait(400);

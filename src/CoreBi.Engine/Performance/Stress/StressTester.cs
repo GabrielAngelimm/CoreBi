@@ -1,4 +1,5 @@
-using System.Management;
+using System.Diagnostics;
+using CoreBi.Engine.Monitoring.Memory;
 
 namespace CoreBi.Engine.Performance.Stress;
 
@@ -149,15 +150,6 @@ public sealed class StressTester
         }
     }
 
-    private static long FreePhysicalMemory()
-    {
-        try
-        {
-            using var s = new ManagementObjectSearcher("SELECT FreePhysicalMemory FROM Win32_OperatingSystem");
-            foreach (ManagementObject mo in s.Get())
-                return Convert.ToInt64(mo["FreePhysicalMemory"]) * 1024; // vem em KB
-        }
-        catch { }
-        return 1L << 30;
-    }
+    private static long FreePhysicalMemory() =>
+        MemoryInfo.ReadPhysicalUsage() is { Available: > 0 } usage ? usage.Available : 1L << 30;
 }
