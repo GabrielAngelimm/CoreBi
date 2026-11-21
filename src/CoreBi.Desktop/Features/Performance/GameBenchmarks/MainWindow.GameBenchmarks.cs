@@ -136,8 +136,8 @@ public partial class MainWindow
     internal static List<BenchStat> GpuStats(GpuGameResult? r, string vs = "") => new()
     {
         new("Nota", r is null ? "—" : $"{r.Score:N0}", "pts", vs),
-        new("FPS médio", r is null ? "—" : $"{r.AvgFps:0.0}", "FPS"),
-        new("1% low", r is null ? "—" : $"{r.Low1Fps:0.0}", "FPS", Tip: "Média do 1% de quadros mais lentos: mostra os engasgos que o FPS médio esconde."),
+        new("FPS médio", r is null ? "—" : $"{r.AvgFps:0.0}", "FPS", "Quadros por segundo"),
+        new("1% low", r is null ? "—" : $"{r.Low1Fps:0.0}", "FPS", "Quadros mais lentos", Tip: "Média do 1% de quadros mais lentos: mostra os engasgos que o FPS médio esconde."),
         new("Quadros", r is null ? "—" : $"{r.Frames:N0}"),
         new("Resolução", r is null ? "—" : $"{r.Width} × {r.Height}"),
     };
@@ -214,7 +214,7 @@ public partial class MainWindow
     internal static List<BenchStat> SimStats(GameSimResult? r, string vs = "") => new()
     {
         new("FPS médio", r is null ? "—" : $"{r.AvgFps:0}", "FPS", vs, Tip: "A nota do teste é o FPS médio."),
-        new("1% low", r is null ? "—" : $"{r.Low1Fps:0}", "FPS", Tip: "Média do 1% de quadros mais lentos."),
+        new("1% low", r is null ? "—" : $"{r.Low1Fps:0}", "FPS", "Quadros mais lentos", Tip: "Média do 1% de quadros mais lentos."),
         new("Thread principal", r is null ? "—" : $"{r.MainThreadMs:0.00}", "ms/quadro", Tip: "Grade espacial, lógica e preparo do desenho, numa thread só."),
         new("Física e IA", r is null ? "—" : $"{r.ParallelMs:0.00}", "ms/quadro", Tip: "Física, colisão e IA das unidades, em paralelo nas outras threads."),
     };

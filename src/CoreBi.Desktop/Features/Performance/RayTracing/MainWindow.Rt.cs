@@ -63,8 +63,9 @@ public partial class MainWindow
         {
             new("Nota", r is null ? "—" : $"{r.Score:N0}", "pts", vs,
                 Tip: "Referência medida: AMD Radeon RX 9070, preset Alta em 1440p, modo Padrão: 878 pts (87,8 FPS, 1% low 77), variação de 0,5 %."),
-            new("FPS, mediana", r is null ? "—" : $"{r.MedianFps:0.0}", "FPS"),
-            new("1% low, mediana", r is null ? "—" : $"{r.MedianLow1:0.0}", "FPS"),
+            new("FPS, mediana", r is null ? "—" : $"{r.MedianFps:0.0}", "FPS", "Quadros por segundo"),
+            new("1% low, mediana", r is null ? "—" : $"{r.MedianLow1:0.0}", "FPS", "Quadros mais lentos",
+                Tip: "Média do 1% de quadros mais lentos: mostra os engasgos que o FPS médio esconde."),
             new("Variação entre passadas", r is null ? "—" : $"{r.VariationPct:0.0}", "%",
                 r is null ? "" : r.Reliable ? "Confiável" : "Instável, rode de novo", r is null ? "" : r.Reliable ? "Ok" : "Warn",
                 r is null ? null : passes + reliability),

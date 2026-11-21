@@ -414,6 +414,16 @@ public partial class MainWindow
             return tb.DesiredSize.Width;
         }
         void Place(UIElement e, double x, double y) { Canvas.SetLeft(e, x); Canvas.SetTop(e, y); TempChart.Children.Add(e); }
+        // Distância do topo da caixa ao meio das maiúsculas e algarismos (base menos metade da altura das maiúsculas, 0,7 em na
+        // Segoe e na Bahnschrift): o rótulo do eixo fica centrado no fio da grade e o do fim da linha no ponto, em vez de centrar
+        // a caixa, que deixava o texto 1 a 2 px acima.
+        double pixelsPerDip = VisualTreeHelper.GetDpi(TempChart).PixelsPerDip;
+        double CapMiddle(TextBlock tb)
+        {
+            var ft = new FormattedText(tb.Text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+                new Typeface(tb.FontFamily, tb.FontStyle, tb.FontWeight, tb.FontStretch), tb.FontSize, Brushes.Black, null, TextFormattingMode.Display, pixelsPerDip);
+            return ft.Baseline - tb.FontSize * 0.7 / 2;
+        }
 
         // Séries com leitura e o rótulo do fim de cada uma (decide a margem da direita)
         var series = new List<(List<double> Data, string Channel, byte Alpha, TextBlock Label)>();
@@ -437,7 +447,7 @@ public partial class MainWindow
         foreach (var (v, label) in ticks)
         {
             TempChart.Children.Add(new Line { X1 = left, X2 = left + plotW, Y1 = Y(v), Y2 = Y(v), Stroke = grid, StrokeThickness = 1 });
-            Place(label, 0, Y(v) - 7);
+            Place(label, 0, Y(v) - CapMiddle(label));
         }
         double axisY = top + plotH + 6;
         Place(Text("−5 min", faint, font: ui), left, axisY);
@@ -506,7 +516,7 @@ public partial class MainWindow
 
         // Rótulos diretos no fim de cada linha; se os dois ficam a menos de uma linha de texto, afasta um do outro
         const double labelH = 15;
-        var placed = ends.OrderBy(e => e.Y).Select(e => (Y: e.Y - labelH / 2, e.Label)).ToList();
+        var placed = ends.OrderBy(e => e.Y).Select(e => (Y: e.Y - CapMiddle(e.Label), e.Label)).ToList();
         if (placed.Count == 2 && placed[1].Y - placed[0].Y < labelH)
         {
             double center = (placed[0].Y + placed[1].Y) / 2;

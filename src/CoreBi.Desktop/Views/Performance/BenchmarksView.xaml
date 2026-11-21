@@ -21,10 +21,19 @@
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
             <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
         </Style>
-        <!-- Coluna do estado na placa (TestStatus com o LED e o detalhe embaixo) -->
+        <!--
+            Placa alinhada pelo topo: o nome da peça, as leituras e o estado começam na mesma linha, e uma terceira linha à esquerda
+            (a leitura da placa de vídeo) não empurra o resto. O estado usa o bloco de 30 do nome (TestPlateTitle): mesma família,
+            mesma altura em bloco, mesma linha de base; o detalhe embaixo dele fica na linha da especificação (os dois são Caption
+            com 3 de margem depois de um bloco de 30).
+        -->
         <Style x:Key="PlateState" TargetType="StackPanel">
             <Setter Property="Margin" Value="24,0,0,0" />
-            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
+        <Style x:Key="PlateStatus" TargetType="TextBlock" BasedOn="{StaticResource TestStatus}">
+            <Setter Property="LineHeight" Value="30" />
+            <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
         </Style>
         <!-- LED do estado: aceso no sinal só enquanto um teste roda (as teclas dos testes ficam travadas durante o teste) -->
         <Style x:Key="RunLed" TargetType="Ellipse" BasedOn="{StaticResource TestStatusLed}">
@@ -35,10 +44,14 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
-        <!-- Leitura ao vivo na placa: some quando não há leitura (Tag recebe o texto do número) -->
+        <!--
+            Leitura ao vivo na placa: some quando não há leitura (Tag recebe o texto do número). 3 de cima: o alto das maiúsculas
+            do rótulo (12,5, cerca de 2 px abaixo do topo da caixa) cai na mesma linha do alto do nome da peça (24 num bloco de 30,
+            cerca de 5 px), medido nas capturas.
+        -->
         <Style x:Key="PlateLive" TargetType="StackPanel" BasedOn="{StaticResource TestLiveCell}">
-            <Setter Property="Margin" Value="0,0,32,0" />
-            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,3,32,0" />
+            <Setter Property="VerticalAlignment" Value="Top" />
             <Style.Triggers>
                 <Trigger Property="Tag" Value="—">
                     <Setter Property="Visibility" Value="Collapsed" />
@@ -82,12 +95,12 @@
                     <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
                     <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                         <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource TestCellValue}" />
-                        <TextBlock x:Name="unit" Text="{Binding Unit}" Style="{StaticResource Unit}" />
+                        <TextBlock x:Name="unit" Text="{Binding Unit}" Style="{StaticResource TestCellUnit}" />
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                        <Ellipse x:Name="led" Style="{StaticResource StatusLed}" Width="6" Height="6" Margin="0,1,6,0" Visibility="Collapsed" />
-                        <TextBlock x:Name="sub" Text="{Binding Sub}" Style="{StaticResource StatSub}" Margin="0" />
-                    </StackPanel>
+                    <!-- O LED vai dentro da linha de contexto: o pé dele na linha de base, o centro (3 px acima) no meio da altura-x da Segoe 11,5 -->
+                    <TextBlock x:Name="sub" Style="{StaticResource StatSub}" Margin="0,3,0,0">
+                        <InlineUIContainer><Ellipse x:Name="led" Style="{StaticResource StatusLed}" Width="6" Height="6" Margin="0,0,6,0" Visibility="Collapsed" /></InlineUIContainer><Run Text="{Binding Sub, Mode=OneWay}" />
+                    </TextBlock>
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
@@ -114,35 +127,41 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Leitura ao vivo na placa (BenchStat): rótulo em cima e número embaixo, lado a lado; o código só põe as que o sensor dá -->
+        <!--
+            Leitura ao vivo na placa (BenchStat): rótulo em cima e número embaixo, lado a lado; o código só põe as que o sensor dá.
+            Número e unidade são Runs do mesmo TextBlock, então dividem a linha de base; o espaço vai no tamanho do número (5 px).
+        -->
         <DataTemplate x:Key="LiveCell">
             <StackPanel Style="{StaticResource PlateLive}" Background="Transparent" ToolTip="{Binding Tip}">
                 <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="{Binding Value}" Style="{StaticResource TestLiveValue}" />
-                    <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" Margin="5,0,0,3" />
-                </StackPanel>
+                <TextBlock Style="{StaticResource TestLiveValue}"><Run Text="{Binding Value, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Unit, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontStretch="Normal" FontSize="12.5" Foreground="{DynamicResource Muted}" /></TextBlock>
             </StackPanel>
         </DataTemplate>
         <ItemsPanelTemplate x:Key="LivePanel">
             <StackPanel Orientation="Horizontal" />
         </ItemsPanelTemplate>
 
-        <!-- Medição de memória e disco (MemRow): nome e contexto à esquerda, leitura à direita; a explicação fica na dica -->
+        <!--
+            Medição de memória e disco (MemRow): nome e contexto à esquerda, leitura à direita; a explicação fica na dica. Nome,
+            número e unidade são Bahnschrift no mesmo bloco de 36, alinhados pelo topo: a base cai na mesma fração do bloco nos
+            três, então ficam na mesma linha de base (antes o nome era Segoe 14 centrado e ficava fora da base do número). O
+            contexto sobe 6 para colar no nome, já que o bloco deixa cerca de 10 px abaixo da base; pelo mesmo motivo o recuo é
+            12 em cima e 8 embaixo, para o ar acima das maiúsculas e abaixo da base ficar igual.
+        -->
         <DataTemplate x:Key="MeasureRow">
-            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,12" Background="Transparent" ToolTip="{Binding Hint}">
+            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,12,0,8" Background="Transparent" ToolTip="{Binding Hint}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel VerticalAlignment="Center" Margin="0,0,24,0">
-                        <TextBlock Text="{Binding Label}" FontSize="14" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="{Binding Sub}" Style="{StaticResource CellSub}" Visibility="{Binding Sub, Converter={StaticResource NotEmptyVis}}" />
+                    <StackPanel VerticalAlignment="Top" Margin="0,0,24,0">
+                        <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="14" LineHeight="36" LineStackingStrategy="BlockLineHeight" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Sub}" Style="{StaticResource CellSub}" Margin="0,-6,0,0" Visibility="{Binding Sub, Converter={StaticResource NotEmptyVis}}" />
                     </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Value}" Style="{StaticResource TestCellValue}" />
-                        <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" Width="44" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                        <TextBlock Text="{Binding Value}" Style="{StaticResource TestCellValue}" LineHeight="36" />
+                        <TextBlock Text="{Binding Unit}" Style="{StaticResource TestCellUnit}" LineHeight="36" Width="44" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -168,6 +187,17 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+        <!--
+            Linha do histórico: o resultado (mostrador 17) e o detalhe são Runs de um TextBlock só, e a data é outro TextBlock com a
+            mesma fonte de base (Segoe Small 11,5) e o mesmo bloco de 22, alinhados pelo topo. A base de um bloco vem da fonte do
+            próprio TextBlock, então as duas caixas têm a base no mesmo y e o resultado assenta nela (antes, 1 px de diferença).
+        -->
+        <Style x:Key="HistoryLine" TargetType="TextBlock" BasedOn="{StaticResource StatSub}">
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="LineHeight" Value="22" />
+            <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
         <DataTemplate x:Key="HistoryRow">
             <Grid Margin="0,0,0,14">
                 <Grid.RowDefinitions>
@@ -175,14 +205,12 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="17" VerticalAlignment="Bottom" />
-                <TextBlock Grid.Column="1" Text="{Binding Detail}" Style="{StaticResource StatSub}" Foreground="{DynamicResource Muted}" Margin="10,0,10,2" VerticalAlignment="Bottom" ToolTip="{Binding Detail}" />
-                <TextBlock Grid.Column="2" Text="{Binding Date}" Style="{StaticResource StatSub}" Margin="0,0,0,2" VerticalAlignment="Bottom" />
-                <Grid Grid.Row="1" Grid.ColumnSpan="3" Height="6" Margin="0,7,0,0" OpacityMask="{StaticResource SegmentMask}">
+                <TextBlock Style="{StaticResource HistoryLine}" Foreground="{DynamicResource Muted}" Margin="0,0,10,0" ToolTip="{Binding Detail}"><Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="17" Foreground="{DynamicResource Fg}" /><Run Text="  " FontSize="17" /><Run Text="{Binding Detail, Mode=OneWay}" /></TextBlock>
+                <TextBlock Grid.Column="1" Text="{Binding Date}" Style="{StaticResource HistoryLine}" />
+                <Grid Grid.Row="1" Grid.ColumnSpan="2" Height="6" Margin="0,7,0,0" OpacityMask="{StaticResource SegmentMask}">
                     <Border Background="{DynamicResource Line}" />
                     <Border Style="{StaticResource HistoryBar}">
                         <Border.RenderTransform>
@@ -273,15 +301,15 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel VerticalAlignment="Center">
+                                <StackPanel VerticalAlignment="Top">
                                     <TextBlock x:Name="BenchDevice" Text="Processador" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="BenchDeviceSpec" Style="{StaticResource PlateSpec}" />
                                 </StackPanel>
-                                <ItemsControl x:Name="BenchLive" Grid.Column="1" ItemTemplate="{StaticResource LiveCell}" ItemsPanel="{StaticResource LivePanel}" VerticalAlignment="Center" Margin="24,0,0,0" Focusable="False" />
+                                <ItemsControl x:Name="BenchLive" Grid.Column="1" ItemTemplate="{StaticResource LiveCell}" ItemsPanel="{StaticResource LivePanel}" VerticalAlignment="Top" Margin="24,0,0,0" Focusable="False" />
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <Ellipse Style="{StaticResource RunLed}" />
-                                        <TextBlock x:Name="BenchStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                        <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
+                                        <TextBlock x:Name="BenchStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="BenchElapsed" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
@@ -300,7 +328,7 @@
                                             <TextBlock Text="Multi-core" Style="{StaticResource StatLabel}" />
                                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                                 <TextBlock x:Name="BenchMt" Text="—" Style="{StaticResource TestResult}" />
-                                                <TextBlock Text="pts" Style="{StaticResource TestUnit}" Tag="{Binding Text, ElementName=BenchMt}" />
+                                                <TextBlock Text="pts" Style="{StaticResource TestCellUnit}" Tag="{Binding Text, ElementName=BenchMt}" />
                                             </StackPanel>
                                             <TextBlock x:Name="BenchMtVs" Style="{StaticResource CellSub}" />
                                         </StackPanel>
@@ -310,7 +338,7 @@
                                             <TextBlock Text="Single-core" Style="{StaticResource StatLabel}" />
                                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                                 <TextBlock x:Name="BenchSt" Text="—" Style="{StaticResource TestResult}" />
-                                                <TextBlock Text="pts" Style="{StaticResource TestUnit}" Tag="{Binding Text, ElementName=BenchSt}" />
+                                                <TextBlock Text="pts" Style="{StaticResource TestCellUnit}" Tag="{Binding Text, ElementName=BenchSt}" />
                                             </StackPanel>
                                             <TextBlock x:Name="BenchStVs" Style="{StaticResource CellSub}" />
                                         </StackPanel>
@@ -320,7 +348,7 @@
                                             <TextBlock Text="Ganho com todos os núcleos" Style="{StaticResource StatLabel}" />
                                             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                                                 <TextBlock x:Name="BenchRatio" Text="—" Style="{StaticResource TestCellValue}" />
-                                                <TextBlock Text="×" Style="{StaticResource TestUnit}" Tag="{Binding Text, ElementName=BenchRatio}" />
+                                                <TextBlock Text="×" Style="{StaticResource TestCellUnit}" Tag="{Binding Text, ElementName=BenchRatio}" />
                                             </StackPanel>
                                             <TextBlock x:Name="BenchRatioSub" Style="{StaticResource CellSub}" />
                                         </StackPanel>
@@ -406,7 +434,7 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel VerticalAlignment="Center">
+                                <StackPanel VerticalAlignment="Top">
                                     <TextBlock x:Name="SimDevice" Text="Processador" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="SimDeviceSpec" Style="{StaticResource PlateSpec}" />
                                 </StackPanel>
@@ -416,8 +444,8 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <Ellipse Style="{StaticResource RunLed}" />
-                                        <TextBlock x:Name="SimStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                        <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
+                                        <TextBlock x:Name="SimStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="SimDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
@@ -494,7 +522,7 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel VerticalAlignment="Center">
+                                <StackPanel VerticalAlignment="Top">
                                     <TextBlock x:Name="GbDevice" Text="Placa de vídeo" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="GbDeviceSpec" Text="Direct3D 11" Style="{StaticResource PlateSpec}" />
                                     <TextBlock x:Name="GbGpuNow" Style="{StaticResource PlateSpec}" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}"
@@ -506,8 +534,8 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <Ellipse Style="{StaticResource RunLed}" />
-                                        <TextBlock x:Name="GbStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                        <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
+                                        <TextBlock x:Name="GbStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="GbDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
@@ -585,7 +613,7 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel VerticalAlignment="Center">
+                                <StackPanel VerticalAlignment="Top">
                                     <TextBlock x:Name="RtDevice" Text="Placa de vídeo" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="RtDeviceSpec" Text="DXR 1.1, Direct3D 12" Style="{StaticResource PlateSpec}" />
                                 </StackPanel>
@@ -595,8 +623,8 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <Ellipse Style="{StaticResource RunLed}" />
-                                        <TextBlock x:Name="RtStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                        <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
+                                        <TextBlock x:Name="RtStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="RtDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
@@ -682,14 +710,14 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel VerticalAlignment="Center">
+                                <StackPanel VerticalAlignment="Top">
                                     <TextBlock x:Name="MemDevice" Text="Memória RAM" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="MemDeviceSpec" Style="{StaticResource PlateSpec}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <Ellipse Style="{StaticResource RunLed}" />
-                                        <TextBlock x:Name="MemStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                        <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
+                                        <TextBlock x:Name="MemStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="MemDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
@@ -747,14 +775,14 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel VerticalAlignment="Center">
+                                <StackPanel VerticalAlignment="Top">
                                     <TextBlock x:Name="DiskDevice" Text="Unidade" Style="{StaticResource TestPlateTitle}" />
                                     <TextBlock x:Name="DiskDeviceSpec" Style="{StaticResource PlateSpec}" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <Ellipse Style="{StaticResource RunLed}" />
-                                        <TextBlock x:Name="DiskStatus" Text="Pronto" Style="{StaticResource TestStatus}" />
+                                        <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
+                                        <TextBlock x:Name="DiskStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="DiskDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>

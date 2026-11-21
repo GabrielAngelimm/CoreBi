@@ -1593,13 +1593,20 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <!-- Placa do palco: quem está sendo medido (nome em DIN 24, como o da peça em Sensores e Discos) e o estado do teste à direita -->
+    <!--
+        Placa do palco: quem está sendo medido (nome em DIN 24, como o da peça em Sensores e Discos) e o estado do teste à direita.
+        Linha em bloco de 30: com a mesma família e a mesma altura de linha em bloco, o WPF põe a linha de base na mesma fração da
+        linha (altura × ascendente ÷ entrelinha da fonte, que não muda com o tamanho), então o estado em DIN 14 com o mesmo bloco
+        de 30 (PlateStatus no Benchmark) assenta na linha de base do nome.
+    -->
     <Style x:Key="TestPlateTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
         <Setter Property="FontSize" Value="24"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="LineHeight" Value="30"/>
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
     </Style>
     <!--
         Estado do teste, o mesmo nas duas telas: texto corrido (sem negrito, para não parecer título nem botão), alinhado à
@@ -1614,11 +1621,15 @@
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="MaxWidth" Value="460"/>
     </Style>
+    <!--
+        LED do estado: vai num InlineUIContainer dentro de um TextBlock com o mesmo estilo do estado, então o pé do ponto assenta
+        na linha de base do texto (a base de um elemento embutido é a borda de baixo). Com 7 px, o centro fica 3,5 acima da base,
+        o meio da altura-x da DIN 14 (6,5 px medidos nas capturas), em qualquer altura de linha.
+    -->
     <Style x:Key="TestStatusLed" TargetType="Ellipse" BasedOn="{StaticResource StatusLed}">
         <Setter Property="Width" Value="7"/>
         <Setter Property="Height" Value="7"/>
-        <Setter Property="VerticalAlignment" Value="Top"/>
-        <Setter Property="Margin" Value="0,7,8,0"/>
+        <Setter Property="Margin" Value="0,0,8,0"/>
         <Setter Property="Fill" Value="{DynamicResource Signal}"/>
     </Style>
     <Style x:Key="TestDetail" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
@@ -1696,6 +1707,18 @@
                 <Setter Property="Visibility" Value="Collapsed"/>
             </Trigger>
         </Style.Triggers>
+    </Style>
+    <!--
+        Unidade ao lado de um número da régua (TestCellValue e TestResult, blocos de 46): a mesma família (Bahnschrift) no mesmo
+        bloco de 46, alinhada pelo topo. A base cai a 46 × ascendente ÷ entrelinha nos dois, que é a mesma fração em qualquer
+        tamanho, então número de 30 ou 40 e unidade de 12,5 ficam na mesma linha de base. Antes, alinhada por baixo com 5 de
+        margem, ela ficava 2 px abaixo do número (medido em "00:00 de 10:00").
+    -->
+    <Style x:Key="TestCellUnit" TargetType="TextBlock" BasedOn="{StaticResource TestUnit}">
+        <Setter Property="LineHeight" Value="46"/>
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="Margin" Value="5,0,0,0"/>
     </Style>
     <!-- Grupo de configuração (rótulo e controle): desligado, o grupo inteiro baixa, para não parecer escolha disponível -->
     <Style x:Key="TestSection" TargetType="StackPanel">

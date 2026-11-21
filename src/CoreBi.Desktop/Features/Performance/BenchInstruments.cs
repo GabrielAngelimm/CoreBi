@@ -59,7 +59,8 @@ public sealed class RunTrace : EnergyInstrument
             double y = Math.Round(Y(v)) + 0.5;
             dc.DrawLine(grid, new Point(left, y), new Point(w, y));
             var t = Text($"{v:0}", 11, FaintBrush);
-            dc.DrawText(t, new Point(left - 10 - t.Width, y - t.Height / 2));
+            // Meio dos algarismos no fio (base menos metade da altura deles, 0,7 em), e não o meio da caixa, que fica abaixo
+            dc.DrawText(t, new Point(left - 10 - t.Width, y - (t.Baseline - 11 * 0.7 / 2)));
         }
         var start = Text("início", 11, FaintBrush);
         var end = Text("fim", 11, FaintBrush);
