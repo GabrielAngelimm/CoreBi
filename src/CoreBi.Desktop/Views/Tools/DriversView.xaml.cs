@@ -13,9 +13,10 @@ namespace CoreBi.Desktop.Views;
 /// <summary>Aba Drivers: inventário, NVIDIA (verifica e instala), AMD/placa-mãe (página oficial), Windows Update e backup.</summary>
 public partial class DriversView : UserControl
 {
-    internal FeatureContext Context { get; set; } = null!;
+    private FeatureContext _context = null!;
     public DriversView() => InitializeComponent();
-    private bool RequireAdmin() => PermissionGuard.RequireAdmin(Context.Owner);
+    internal void Initialize(FeatureContext context) => _context = context;
+    private bool RequireAdmin() => PermissionGuard.RequireAdmin(_context.Owner);
 
     internal bool _drvInit, _drvBusy;
     internal List<GpuDriverStatus> _drvGpus = new();
@@ -68,18 +69,16 @@ public partial class DriversView : UserControl
 
     // ------------------------------------------------------------------ console
 
-    /// <summary>Estado da tarefa no console. A barra só muda quando a tarefa informa uma fração de trabalho feito.</summary>
     internal void DrvSet(string text, double? frac = null, string detail = "")
     {
-        if (Context.IsClosing) return;
+        if (_context.IsClosing) return;
         ToolPage.Say(DrvStatus, DrvDetail, text, detail);
         if (frac.HasValue) ToolPage.SetProgress(DrvProgressFill, frac.Value);
     }
 
-    /// <summary>A tarefa parou com erro: o console diz o quê e o trilho some (parado, o console não mostra progresso).</summary>
     private void DrvFail(string text, string detail)
     {
-        if (Context.IsClosing) return;
+        if (_context.IsClosing) return;
         ToolPage.Say(DrvStatus, DrvDetail, text, detail);
         ToolPage.EndProgress(DrvProgressFill);
     }
@@ -101,7 +100,7 @@ public partial class DriversView : UserControl
     {
         if (_drvBusy) return;
         DrvBusy(true);
-        _drvCts = CancellationTokenSource.CreateLinkedTokenSource(Context.Lifetime);
+        _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
         try
         {
             DrvSet("Lendo drivers instalados…", 0);
@@ -125,12 +124,12 @@ public partial class DriversView : UserControl
                 else g.Message = "Sem consulta automática para esta placa: o driver dela chega pelo Windows Update.";
                 i++;
             }
-            if (Context.IsClosing) return;
+            if (_context.IsClosing) return;
             ShowGpus();
             DrvSet($"Lido às {DateTime.Now:HH:mm}", 1);
         }
         catch (Exception ex) { DrvFail("Não foi possível ler os drivers", ex.Message); }
-        finally { _drvCts?.Dispose(); _drvCts = null; if (!Context.IsClosing) DrvBusy(false); }
+        finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
     }
 
     private void DrvStudio_Click(object sender, RoutedEventArgs e)
@@ -264,7 +263,7 @@ public partial class DriversView : UserControl
     internal async void BtnDrvInstall_Click(object sender, RoutedEventArgs e)
     {
         if (!RequireAdmin()) return;
-        using var workload = Context.Workloads.TryBegin("Driver download");
+        using var workload = _context.Workloads.TryBegin(WorkloadOperations.DriverDownload);
         if (workload == null) { DrvSet("Termine a outra operação antes"); return; }
 
         var g = _drvGpus.FirstOrDefault(x => x.CanAutoInstall);
@@ -274,20 +273,19 @@ public partial class DriversView : UserControl
             : g.UpdateAvailable
             ? $"Instalar o driver NVIDIA {g.Latest} ({g.SizeText})?\nO CoreBi baixa e abre o instalador oficial."
             : $"Você já está com a versão {g.Installed}. Baixar e abrir o instalador {g.Latest} de novo, para reinstalar?";
-        if (MessageBox.Show(Context.Owner, msg, "Drivers", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (MessageBox.Show(_context.Owner, msg, "Drivers", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
 
         DrvBusy(true);
-        _drvCts = CancellationTokenSource.CreateLinkedTokenSource(Context.Lifetime);
+        _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
         DrvSet("Baixando o instalador…", 0);
         try
         {
-            // A fração vem dos bytes baixados: é a única etapa com porcentagem real.
             string r = await DriverInstaller.DownloadAndLaunchAsync(g, (t, f) => Dispatcher.BeginInvoke(new Action(() =>
                 DrvSet(t, f, f > 0 && f < 1 ? (f * 100).ToString("0", PtBr) + " %" : ""))), _drvCts.Token);
             DrvSet(r, 1);
         }
         catch (Exception ex) { DrvFail("Não foi possível instalar o driver", ex.Message); }
-        finally { _drvCts?.Dispose(); _drvCts = null; if (!Context.IsClosing) DrvBusy(false); }
+        finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
     }
 
     private void ShowWu()
@@ -306,7 +304,6 @@ public partial class DriversView : UserControl
     {
         if (_drvBusy) return;
         DrvBusy(true);
-        // Sem fração real durante a busca: a barra recomeça e só enche quando o Windows Update responde.
         DrvSet("Procurando no Windows Update…", 0, "pode levar 1 minuto");
         try
         {
@@ -323,19 +320,19 @@ public partial class DriversView : UserControl
             DrvWuList.Text = "Não foi possível procurar: " + ex.Message;
             DrvFail("Não foi possível procurar no Windows Update", ex.Message);
         }
-        finally { _drvCts?.Dispose(); _drvCts = null; if (!Context.IsClosing) DrvBusy(false); }
+        finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
     }
 
     internal async void BtnDrvWuInstall_Click(object sender, RoutedEventArgs e)
     {
         if (!RequireAdmin()) return;
-        using var workload = Context.Workloads.TryBegin("Windows Update");
+        using var workload = _context.Workloads.TryBegin(WorkloadOperations.WindowsUpdate);
         if (workload == null) { DrvSet("Termine a outra operação antes"); return; }
-        using var critical = Context.BeginCriticalOperation();
+        using var critical = _context.BeginCriticalOperation("Aguarde a instalação de drivers do Windows Update terminar.");
 
         if (_drvBusy || _drvWu.Count == 0) return;
         string what = _drvWu.Count == 1 ? "1 driver" : $"{_drvWu.Count} drivers";
-        if (MessageBox.Show(Context.Owner, $"Instalar {what} do Windows Update? Pode ser preciso reiniciar.", "Drivers",
+        if (MessageBox.Show(_context.Owner, $"Instalar {what} do Windows Update? Pode ser preciso reiniciar.", "Drivers",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         DrvBusy(true);
         DrvSet("Baixando drivers do Windows Update…", 0);
@@ -348,18 +345,18 @@ public partial class DriversView : UserControl
             DrvWuList.Text = r;
         }
         catch (Exception ex) { DrvFail("Não foi possível instalar pelo Windows Update", ex.Message); }
-        finally { _drvCts?.Dispose(); _drvCts = null; if (!Context.IsClosing) DrvBusy(false); }
+        finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
     }
 
     internal async void BtnDrvBackup_Click(object sender, RoutedEventArgs e)
     {
         if (!RequireAdmin()) return;
-        using var workload = Context.Workloads.TryBegin("Driver backup");
+        using var workload = _context.Workloads.TryBegin(WorkloadOperations.DriverBackup);
         if (workload == null) { DrvSet("Termine a outra operação antes"); return; }
 
         if (_drvBusy) return;
         DrvBusy(true);
-        _drvCts = CancellationTokenSource.CreateLinkedTokenSource(Context.Lifetime);
+        _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
         DrvSet("Exportando drivers…", 0);
         try
         {
@@ -367,7 +364,7 @@ public partial class DriversView : UserControl
             DrvSet(r, 1);
         }
         catch (Exception ex) { DrvFail("Não foi possível fazer o backup", ex.Message); }
-        finally { _drvCts?.Dispose(); _drvCts = null; if (!Context.IsClosing) DrvBusy(false); }
+        finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
     }
 }
 

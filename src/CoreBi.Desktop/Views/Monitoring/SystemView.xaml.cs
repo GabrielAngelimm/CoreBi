@@ -1,6 +1,7 @@
 using CoreBi.Desktop.Features.Monitoring.Inventory;
+using CoreBi.Desktop.Features.Reports;
 using CoreBi.Desktop.Services;
-using CoreBi.Engine.Monitoring.Graphics;
+using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Memory;
 using CoreBi.Engine.Monitoring.Storage;
@@ -14,17 +15,12 @@ using System.Windows.Threading;
 namespace CoreBi.Desktop.Views;
 
 /// <summary>
-/// Sistema: a ficha técnica do computador. Seis botões de categoria em cima e, embaixo, a ficha da escolhida: placa
-/// com o nome da peça e quatro leituras, e os dados em grupos de texto na largura toda. Tudo é lido uma vez ao abrir o
-/// CoreBi; discos e unidades são relidos quando algo é conectado, e as idades ("há 3 meses") a cada vez que a página aparece.
+/// Sistema: a ficha técnica do computador. Seis botões de categoria em cima e, embaixo, a ficha da escolhida.
 /// </summary>
 public partial class SystemView : UserControl
 {
-    internal MainWindow? Owner { get; set; }
-
-    private FeatureContext? _context;
-    private Func<IReadOnlyList<GpuInfo>> _gpus = () => Array.Empty<GpuInfo>();
-    private Action<string> _navigate = _ => { };
+    private FeatureContext _context = null!;
+    private Func<IReadOnlyList<HealthCard>?> _networkResult = () => null;
     private SystemInventory? _inventory;
     private List<DriveCard> _drives = new();
     private Dictionary<string, Sheet> _sheets = new();
@@ -36,15 +32,13 @@ public partial class SystemView : UserControl
     public SystemView()
     {
         InitializeComponent();
-        // "Ligado há" e as idades ("há 3 meses") são calculados na hora em que a página aparece.
         IsVisibleChanged += (_, _) => { if (IsVisible && _inventory != null) Rebuild(); };
     }
 
-    internal void Initialize(FeatureContext context, Func<IReadOnlyList<GpuInfo>> gpus, Action<string> navigate)
+    internal void Initialize(FeatureContext context, Func<IReadOnlyList<HealthCard>?> networkResult)
     {
         _context = context;
-        _gpus = gpus;
-        _navigate = navigate;
+        _networkResult = networkResult;
     }
 
     /// <summary>Árvore chave/valor das seis categorias, para o relatório.</summary>
@@ -104,7 +98,7 @@ public partial class SystemView : UserControl
     {
         if (_inventory == null) return;
         var now = DateTime.Now;
-        var (index, sheets) = SystemSheets.Build(_inventory, _gpus(), _drives, now, MemoryInfo.ReadSnapshot());
+        var (index, sheets) = SystemSheets.Build(_inventory, _context.Gpus, _drives, now, MemoryInfo.ReadSnapshot());
         _sheets = sheets;
         Built = (index, sheets);
         SysIndex.ItemsSource = index;
@@ -206,8 +200,28 @@ public partial class SystemView : UserControl
 
     private void SheetLink_Click(object sender, RoutedEventArgs e)
     {
-        if (_sheet?.Link is { } link) _navigate(link.Page);
+        if (_sheet?.Link is { } link) _context.Navigate(link.Page);
     }
 
-    private void BtnReport_Click(object sender, RoutedEventArgs e) => Owner?.BtnReport_Click(sender, e);
+    private async void BtnReport_Click(object sender, RoutedEventArgs e) => await ExportReportAsync();
+
+    internal async Task ExportReportAsync()
+    {
+        BtnReport.IsEnabled = false;
+        try
+        {
+            string? path = await ReportExportService.ExportInteractiveAsync(
+                _context, Built, Nodes, _networkResult(), status => BtnReport.Content = status);
+            if (path != null) SystemSub.Text = $"Relatório salvo em {path}";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(_context.Owner, "Não foi possível gerar o relatório:\n" + ex.Message, "CoreBi", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            BtnReport.Content = "Exportar relatório";
+            BtnReport.IsEnabled = true;
+        }
+    }
 }

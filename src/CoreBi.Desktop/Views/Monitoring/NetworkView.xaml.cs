@@ -1,6 +1,7 @@
 using CoreBi.Desktop.Services;
 using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Network;
+using CoreBi.Engine.Performance;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -14,11 +15,12 @@ namespace CoreBi.Desktop.Views;
 
 public partial class NetworkView : UserControl
 {
-    internal FeatureContext Context { private get; set; } = null!;
+    private FeatureContext _context = null!;
     internal IReadOnlyList<HealthCard>? LastResult { get; private set; }
     private NetworkResult? _result;
     private CancellationTokenSource? _cancellation;
     private bool _running;
+    private bool? _narrowHeader;
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
     public NetworkView()
@@ -27,20 +29,10 @@ public partial class NetworkView : UserControl
         DrawDial(null, null);
     }
 
-    // Largura da página abaixo da qual o console desce para baixo do título.
-    private const double NarrowHeader = 1040;
-    private bool _narrowHeader;
+    internal void Initialize(FeatureContext context) => _context = context;
 
     private void NetHeader_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        bool narrow = NetHeader.ActualWidth < NarrowHeader;
-        if (narrow == _narrowHeader) return;
-        _narrowHeader = narrow;
-        Grid.SetRow(NetConsole, narrow ? 1 : 0);
-        Grid.SetColumn(NetConsole, narrow ? 0 : 1);
-        Grid.SetColumnSpan(NetConsole, narrow ? 2 : 1);
-        NetConsole.Margin = narrow ? new Thickness(0, 16, 0, 0) : new Thickness(40, 5, 0, 0);
-    }
+        => _narrowHeader = ToolPage.PlaceConsole(NetHeader, NetConsole, _narrowHeader);
 
     // Larguras do painel de diagnóstico: abaixo de NarrowDiag a latência e as grandezas de apoio descem para uma faixa sob o
     // instrumento (a latência à esquerda e as quatro grandezas em fila); abaixo de CompactDiag a faixa não comporta cinco
@@ -97,16 +89,16 @@ public partial class NetworkView : UserControl
 
     internal async Task RunOrCancelAsync()
     {
-        if (Context.IsClosing) return;
+        if (_context.IsClosing) return;
         if (_running) { _cancellation?.Cancel(); return; }
-        using var workload = Context.Workloads.TryBegin("Network test");
+        using var workload = _context.Workloads.TryBegin(WorkloadOperations.Network);
         if (workload == null) { NetStatus.Text = "Termine o outro teste antes."; NetDetail.Text = ""; return; }
         _running = true;
-        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(Context.Lifetime);
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
         _cancellation = cancellation;
         Ui.SetRunning(BtnNetTest, true, "Testar a rede", "Cancelar");
         LastResult = null;
-        ShowResult(null);
+        DisplayResult(null);
         SetProgress(0, animate: false);
         NetMeta.Text = "Medindo agora";
         try
@@ -114,10 +106,10 @@ public partial class NetworkView : UserControl
             int attempt = 0;
             Action<NetworkProgress> Progress(int generation) => p =>
             {
-                if (Context.IsClosing) return;
+                if (_context.IsClosing) return;
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    if (Context.IsClosing || !_running || _cancellation != cancellation || attempt != generation) return;
+                    if (_context.IsClosing || !_running || _cancellation != cancellation || attempt != generation) return;
                     ShowProgress(p);
                 }));
             };
@@ -129,9 +121,9 @@ public partial class NetworkView : UserControl
                     NetStatus.Text = "Tentando outro servidor";
                     SetProgress(0, animate: false);
                 });
-            if (Context.IsClosing) return;
+            if (_context.IsClosing) return;
             LastResult = new[] { result.Card };
-            ShowResult(result);
+            DisplayResult(result);
             NetDetail.Text = "";
             if (result.InterruptedPhase != null)
             {
@@ -146,20 +138,20 @@ public partial class NetworkView : UserControl
         }
         catch (OperationCanceledException)
         {
-            if (!Context.IsClosing) Reset("Teste cancelado", "");
+            if (!_context.IsClosing) Reset("Teste cancelado", "");
         }
         catch (Exception ex)
         {
-            if (!Context.IsClosing) Reset("O teste falhou", ex.Message);
+            if (!_context.IsClosing) Reset("O teste falhou", ex.Message);
         }
         finally
         {
             _running = false;
             _cancellation = null;
-            if (!Context.IsClosing)
+            if (!_context.IsClosing)
             {
                 Ui.SetRunning(BtnNetTest, false, LastResult != null ? "Testar de novo" : "Testar a rede");
-                ShowTrack(false); // em repouso o console fica só com o botão e o estado
+                ShowTrack(false);
             }
         }
     }
@@ -169,7 +161,7 @@ public partial class NetworkView : UserControl
         NetStatus.Text = status;
         NetDetail.Text = detail;
         SetProgress(0, animate: false);
-        ShowResult(null);
+        DisplayResult(null);
         NetMeta.Text = "Sem resultado";
     }
 
@@ -249,7 +241,7 @@ public partial class NetworkView : UserControl
         _ => "Faint",
     };
 
-    private void ShowResult(NetworkResult? r)
+    internal void DisplayResult(NetworkResult? r)
     {
         _result = r;
         SetReadout(NetDown, r?.DownloadMbps);
@@ -377,9 +369,9 @@ public partial class NetworkView : UserControl
 
     private async void NetworkView_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (!IsVisible || _running || _result != null || Context == null || Context.IsClosing) return;
+        if (!IsVisible || _running || _result != null || _context == null || _context.IsClosing) return;
         var adapter = await Task.Run(NetworkTest.ReadAdapter);
-        if (Context.IsClosing || _running || _result != null) return;
+        if (_context.IsClosing || _running || _result != null) return;
         ShowAdapter(adapter);
     }
 
@@ -443,18 +435,12 @@ public partial class NetworkView : UserControl
 
     internal static double DialFraction(double? mbps) => mbps is not { } v ? 0 : Math.Clamp(Math.Log10(Math.Max(1, v)) / 3, 0, 1);
 
-    private double? _dialDown, _dialUp;
-
     private void DrawDial(double? down, double? up)
     {
-        (_dialDown, _dialUp) = (down, up);
         NetDial.Children.Clear();
         DrawSide(-1, down, "NetDown");
         DrawSide(1, up, "NetUp");
     }
-
-    /// <summary>O mostrador guarda as cores do momento do desenho (cada gomo tem a sua): refaz com a paleta nova.</summary>
-    internal void RedrawTheme() => DrawDial(_dialDown, _dialUp);
 
     private void DrawSide(int dir, double? value, string channel)
     {

@@ -1,118 +1,27 @@
-using CoreBi.Engine.Monitoring.Storage;
-using System.Globalization;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
+using CoreBi.Engine.Monitoring.Storage;
 
 namespace CoreBi.Desktop;
 
-/// <summary>
-/// Base dos instrumentos da página Discos, desenhados direto no DrawingContext. Os pincéis seguem a paleta por
-/// referência de recurso: a troca de tema muda a propriedade e o instrumento se redesenha sozinho. ChannelBrush é a cor do
-/// que o instrumento mede (o canal Storage nos discos); veredito usa Warn e Danger, e a faixa normal fica neutra.
-/// </summary>
-public abstract class DiskInstrument : FrameworkElement
+/// <summary>Base dos instrumentos da página Discos (canal padrão Storage).</summary>
+public abstract class DiskInstrument : InstrumentBase
 {
-    private static DependencyProperty Paint(string name) =>
-        DependencyProperty.Register(name, typeof(Brush), typeof(DiskInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
-
-    public static readonly DependencyProperty ChannelBrushProperty = Paint(nameof(ChannelBrush));
-    public static readonly DependencyProperty TrackBrushProperty = Paint(nameof(TrackBrush));
-    public static readonly DependencyProperty InkBrushProperty = Paint(nameof(InkBrush));
-    public static readonly DependencyProperty MutedBrushProperty = Paint(nameof(MutedBrush));
-    public static readonly DependencyProperty FaintBrushProperty = Paint(nameof(FaintBrush));
-    public static readonly DependencyProperty SurfaceBrushProperty = Paint(nameof(SurfaceBrush));
-    public static readonly DependencyProperty OkBrushProperty = Paint(nameof(OkBrush));
-    public static readonly DependencyProperty WarnBrushProperty = Paint(nameof(WarnBrush));
-    public static readonly DependencyProperty WarnSoftBrushProperty = Paint(nameof(WarnSoftBrush));
-    public static readonly DependencyProperty DangerBrushProperty = Paint(nameof(DangerBrush));
-    public static readonly DependencyProperty DangerSoftBrushProperty = Paint(nameof(DangerSoftBrush));
-    public static readonly DependencyProperty RaisedBrushProperty = Paint(nameof(RaisedBrush));
-    public static readonly DependencyProperty LineStrongBrushProperty = Paint(nameof(LineStrongBrush));
-
-    public Brush ChannelBrush { get => (Brush)GetValue(ChannelBrushProperty); set => SetValue(ChannelBrushProperty, value); }
-    public Brush TrackBrush { get => (Brush)GetValue(TrackBrushProperty); set => SetValue(TrackBrushProperty, value); }
-    public Brush InkBrush { get => (Brush)GetValue(InkBrushProperty); set => SetValue(InkBrushProperty, value); }
-    public Brush MutedBrush { get => (Brush)GetValue(MutedBrushProperty); set => SetValue(MutedBrushProperty, value); }
-    public Brush FaintBrush { get => (Brush)GetValue(FaintBrushProperty); set => SetValue(FaintBrushProperty, value); }
-    public Brush SurfaceBrush { get => (Brush)GetValue(SurfaceBrushProperty); set => SetValue(SurfaceBrushProperty, value); }
-    public Brush OkBrush { get => (Brush)GetValue(OkBrushProperty); set => SetValue(OkBrushProperty, value); }
-    public Brush WarnBrush { get => (Brush)GetValue(WarnBrushProperty); set => SetValue(WarnBrushProperty, value); }
-    public Brush WarnSoftBrush { get => (Brush)GetValue(WarnSoftBrushProperty); set => SetValue(WarnSoftBrushProperty, value); }
-    public Brush DangerBrush { get => (Brush)GetValue(DangerBrushProperty); set => SetValue(DangerBrushProperty, value); }
-    public Brush DangerSoftBrush { get => (Brush)GetValue(DangerSoftBrushProperty); set => SetValue(DangerSoftBrushProperty, value); }
-    public Brush RaisedBrush { get => (Brush)GetValue(RaisedBrushProperty); set => SetValue(RaisedBrushProperty, value); }
-    public Brush LineStrongBrush { get => (Brush)GetValue(LineStrongBrushProperty); set => SetValue(LineStrongBrushProperty, value); }
-
-    protected DiskInstrument()
-    {
-        SnapsToDevicePixels = true;
-        SetResourceReference(ChannelBrushProperty, "Storage");
-        SetResourceReference(TrackBrushProperty, "Line");
-        SetResourceReference(InkBrushProperty, "Fg");
-        SetResourceReference(MutedBrushProperty, "Muted");
-        SetResourceReference(FaintBrushProperty, "Faint");
-        SetResourceReference(SurfaceBrushProperty, "Surface");
-        SetResourceReference(OkBrushProperty, "Ok");
-        SetResourceReference(WarnBrushProperty, "Warn");
-        SetResourceReference(WarnSoftBrushProperty, "WarnSoft");
-        SetResourceReference(DangerBrushProperty, "Danger");
-        SetResourceReference(DangerSoftBrushProperty, "DangerSoft");
-        SetResourceReference(RaisedBrushProperty, "Raised");
-        SetResourceReference(LineStrongBrushProperty, "LineStrong");
-    }
-
-    protected static DependencyProperty Number(string name, Type owner, double initial = double.NaN) =>
-        DependencyProperty.Register(name, typeof(double), owner, new FrameworkPropertyMetadata(initial, FrameworkPropertyMetadataOptions.AffectsRender));
-
-    /// <summary>Texto em fonte de mostrador (Bahnschrift SemiCondensed, algarismos tabulares) ou na fonte da interface.</summary>
-    protected FormattedText Text(string text, double size, Brush brush, bool readout = true, FontWeight? weight = null)
-    {
-        var family = (TryFindResource(readout ? "Readout" : "UiFont") as FontFamily) ?? new FontFamily("Segoe UI");
-        var face = new Typeface(family, FontStyles.Normal, weight ?? FontWeights.Normal, readout ? FontStretches.SemiCondensed : FontStretches.Normal);
-        return new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, face, size, brush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
-    }
-
-    protected static Pen Stroke(Brush brush, double thickness, DashStyle? dash = null)
-    {
-        var pen = new Pen(brush, thickness) { DashStyle = dash ?? DashStyles.Solid };
-        pen.Freeze();
-        return pen;
-    }
-
-    /// <summary>
-    /// Pulso da leitura nova: um halo do canal que cresce e some em 400 ms em volta do ponto atual, desenhado com
-    /// relógios de animação (o instrumento não precisa se redesenhar para ele andar). Só quando a janela permite movimento ao
-    /// vivo (MainWindow.LiveMotion).
-    /// </summary>
-    protected void Pulse(DrawingContext dc, Color color, Point at)
-    {
-        if (Window.GetWindow(this) is not MainWindow { LiveMotion: true }) return;
-        var halo = new SolidColorBrush(Color.FromArgb(0x50, color.R, color.G, color.B));
-        halo.Freeze();
-        var span = TimeSpan.FromMilliseconds(400);
-        var grow = new System.Windows.Media.Animation.DoubleAnimation(5, 12, span) { EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut } }.CreateClock();
-        var fade = new System.Windows.Media.Animation.DoubleAnimation(1, 0, span).CreateClock();
-        dc.PushOpacity(1, fade);
-        dc.DrawEllipse(halo, null, at, null, 5, grow, 5, grow);
-        dc.Pop();
-    }
+    protected DiskInstrument() => SetResourceReference(ChannelBrushProperty, "Storage");
 }
 
-/// <summary>
-/// Vida útil: arco de 240° em gomos, como um conta-giros. Enche da esquerda para a direita com a vida restante; o trecho
-/// final (abaixo de 20 % e de 5 %) tem a faixa de atenção e a crítica marcadas por fora, como a faixa vermelha de um motor.
-/// </summary>
+/// <summary>Vida útil em arco de 240° segmentado com faixas de atenção (20%) e crítica (5%).</summary>
 public sealed class LifeGauge : DiskInstrument
 {
     public static readonly DependencyProperty ValueProperty = Number(nameof(Value), typeof(LifeGauge));
     public static readonly DependencyProperty CaptionProperty =
         DependencyProperty.Register(nameof(Caption), typeof(string), typeof(LifeGauge), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
 
-    /// <summary>Vida restante em % (0–100); NaN quando o disco não informa.</summary>
     public double Value { get => (double)GetValue(ValueProperty); set => SetValue(ValueProperty, value); }
     public string Caption { get => (string)GetValue(CaptionProperty); set => SetValue(CaptionProperty, value); }
 
-    private const int Segments = 44;
+    private const int SegmentsCount = 44;
     private const double Sweep = 240, Start = -120;
     private static readonly (double At, string Text)[] Marks = { (0, "0"), (0.2, "20"), (0.5, "50"), (1, "100") };
 
@@ -139,17 +48,15 @@ public sealed class LifeGauge : DiskInstrument
             dc.DrawGeometry(null, pen, new PathGeometry(new[] { fig }));
         }
 
-        // Faixas de veredito por fora do arco
         double rz = r2 + 8;
         Arc(0, critAt, rz, Stroke(DangerBrush, 2.5));
         Arc(critAt + 0.004, warnAt, rz, Stroke(WarnBrush, 2.5));
         Arc(warnAt + 0.004, 1, rz, Stroke(TrackBrush, 1));
 
-        // Saudável, o arco acende na cor do canal; em atenção ou crítico, todo na cor do veredito
         Brush fill = rem <= critAt ? DangerBrush : rem <= warnAt ? WarnBrush : ChannelBrush;
-        for (int i = 0; i < Segments; i++)
+        for (int i = 0; i < SegmentsCount; i++)
         {
-            double f0 = (double)i / Segments, f1 = (i + 0.72) / Segments, mid = (i + 0.5) / Segments;
+            double f0 = (double)i / SegmentsCount, f1 = (i + 0.72) / SegmentsCount, mid = (i + 0.5) / SegmentsCount;
             bool on = known && mid <= rem;
             Brush brush = on ? fill : mid < critAt ? DangerSoftBrush : mid < warnAt ? WarnSoftBrush : TrackBrush;
             var fig = new PathFigure { StartPoint = At(f0, r1), IsClosed = true };
@@ -167,7 +74,6 @@ public sealed class LifeGauge : DiskInstrument
             dc.DrawText(t, new Point(p.X - t.Width / 2, p.Y - t.Height / 2));
         }
 
-        // Leitura central
         var value = Text(known ? $"{Value:0}" : "—", Math.Round(r2 * 0.48), InkBrush, weight: FontWeights.Light);
         var unit = Text(known ? "%" : "", Math.Round(r2 * 0.17), MutedBrush);
         double vw = value.Width + (known ? 4 + unit.Width : 0), baseY = cy + r2 * 0.12;
@@ -178,10 +84,7 @@ public sealed class LifeGauge : DiskInstrument
     }
 }
 
-/// <summary>
-/// Régua térmica: medidor segmentado de 20 °C até 10 °C além do limite crítico, com a faixa ideal (neutra), a de atenção e
-/// a crítica sublinhadas e o ponteiro da leitura atual.
-/// </summary>
+/// <summary>Régua térmica segmentada de 20 °C até 10 °C além do limite crítico.</summary>
 public sealed class ThermalScale : DiskInstrument
 {
     public static readonly DependencyProperty ValueProperty = Number(nameof(Value), typeof(ThermalScale));
@@ -198,33 +101,26 @@ public sealed class ThermalScale : DiskInstrument
     {
         double w = ActualWidth;
         if (w < 80) return;
-        const double lo = 20, period = 5, gap = 1.5, barTop = 4, barH = 16;
+        const double lo = 20, barTop = 4, barH = 16;
         double hi = CritAt + 10;
         double X(double v) => (Math.Clamp(v, lo, hi) - lo) / (hi - lo) * w;
         bool known = !double.IsNaN(Value);
         Brush fill = !known ? TrackBrush : Value >= CritAt ? DangerBrush : Value >= WarnAt ? WarnBrush : ChannelBrush;
 
-        int n = (int)Math.Floor((w + gap) / period);
-        for (int i = 0; i < n; i++)
-        {
-            double v = lo + (i + 0.5) / n * (hi - lo);
-            dc.DrawRectangle(known && v <= Value ? fill : TrackBrush, null, new Rect(i * period, barTop, period - gap, barH));
-        }
+        Segments(dc, new Rect(0, barTop, w, barH), f => known && lo + f * (hi - lo) <= Value ? fill : TrackBrush);
 
-        // Faixas: a ideal fica neutra (como a escala de um conta-giros), só atenção e crítica ganham cor
         double zoneY = barTop + barH + 4;
         dc.DrawRectangle(LineStrongBrush, null, new Rect(0, zoneY, Math.Max(0, X(WarnAt) - 1), 3));
         dc.DrawRectangle(WarnBrush, null, new Rect(X(WarnAt) + 1, zoneY, Math.Max(0, X(CritAt) - X(WarnAt) - 2), 3));
         dc.DrawRectangle(DangerBrush, null, new Rect(X(CritAt) + 1, zoneY, Math.Max(0, w - X(CritAt) - 1), 3));
 
-        // Escala de 10 em 10 e, na cor de cada faixa, o ponto exato em que a atenção e a crítica começam (o mesmo limiar da
-        // linha tracejada do gráfico); um número da escala que cairia em cima de um limiar dá lugar a ele.
-        var marks = new[] { (At: WarnAt, Brush: WarnBrush), (At: CritAt, Brush: DangerBrush) }.Where(m => !double.IsNaN(m.At) && m.At > lo && m.At < hi).ToList();
+        var marks = new[] { (At: WarnAt, Brush: WarnBrush), (At: CritAt, Brush: DangerBrush) }
+            .Where(m => !double.IsNaN(m.At) && m.At > lo && m.At < hi).ToList();
         double last = lo + Math.Floor((hi - lo) / 10 + 0.01) * 10;
         for (double v = lo; v <= hi + 0.1; v += 10)
         {
             if (marks.Any(m => Math.Abs(X(m.At) - X(v)) < 26)) continue;
-            var t = Text(v >= last - 0.1 ? $"{v:0} °C" : $"{v:0}", 11, FaintBrush); // a unidade uma vez, no fim da régua
+            var t = Text(v >= last - 0.1 ? $"{v:0} °C" : $"{v:0}", 11, FaintBrush);
             double x = v <= lo ? 0 : v >= hi ? w - t.Width : X(v) - t.Width / 2;
             dc.DrawText(t, new Point(x, zoneY + 8));
         }
@@ -238,7 +134,7 @@ public sealed class ThermalScale : DiskInstrument
     }
 }
 
-/// <summary>Histórico da temperatura (1 amostra/s) com retícula de osciloscópio e a linha tracejada do limite de atenção.</summary>
+/// <summary>Histórico da temperatura (1 amostra/s) com retícula, limite de atenção e pausa sob o mouse.</summary>
 public sealed class TraceChart : DiskInstrument
 {
     public static readonly DependencyProperty WarnAtProperty = Number(nameof(WarnAt), typeof(TraceChart));
@@ -246,20 +142,14 @@ public sealed class TraceChart : DiskInstrument
         DependencyProperty.Register(nameof(EmptyText), typeof(string), typeof(TraceChart), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
 
     public double WarnAt { get => (double)GetValue(WarnAtProperty); set => SetValue(WarnAtProperty, value); }
-    /// <summary>Mensagem no lugar da curva quando não há amostras.</summary>
     public string EmptyText { get => (string)GetValue(EmptyTextProperty); set => SetValue(EmptyTextProperty, value); }
 
-    /// <summary>Janela do gráfico, em amostras (uma por segundo).</summary>
     public const int Capacity = 300;
     private IReadOnlyList<float?> _samples = Array.Empty<float?>();
     private IReadOnlyList<float?>? _pending;
     private double? _hoverX;
-    private bool _fresh; // o próximo desenho traz uma amostra nova (o ponto atual pulsa)
+    private bool _fresh;
 
-    /// <summary>
-    /// Amostras do último 5 min. Enquanto o mouse está sobre o gráfico ele pausa (a leitura sob o cursor não escapa com a
-    /// atualização de 1 em 1 segundo) e retoma com o que chegou nesse tempo, como o gráfico da Visão geral.
-    /// </summary>
     public IReadOnlyList<float?> Samples
     {
         get => _samples;
@@ -272,14 +162,14 @@ public sealed class TraceChart : DiskInstrument
         }
     }
 
-    protected override void OnMouseMove(System.Windows.Input.MouseEventArgs e)
+    protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
         _hoverX = e.GetPosition(this).X;
         InvalidateVisual();
     }
 
-    protected override void OnMouseLeave(System.Windows.Input.MouseEventArgs e)
+    protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
         _hoverX = null;
@@ -291,7 +181,7 @@ public sealed class TraceChart : DiskInstrument
     {
         double w = ActualWidth, h = ActualHeight;
         if (w < 80 || h < 50) return;
-        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, h)); // área clicável para o cursor
+        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, h));
         const double left = 44, bottom = 20, top = 6, lo = 20;
         double plotW = w - left, plotH = h - top - bottom;
         var values = _samples.Where(v => v != null).Select(v => (double)v!.Value).ToList();
@@ -340,34 +230,17 @@ public sealed class TraceChart : DiskInstrument
             return;
         }
 
-        var color = ChannelBrush is SolidColorBrush s ? s.Color : Colors.SteelBlue;
-        var area = new StreamGeometry();
-        using (var g = area.Open())
-        {
-            g.BeginFigure(new Point(points[0].X, top + plotH), true, true);
-            g.PolyLineTo(points, true, false);
-            g.LineTo(new Point(points[^1].X, top + plotH), false, false);
-        }
-        area.Freeze();
-        // Área chapada no tom do canal, com o traço por cima
-        var fill = new SolidColorBrush(Color.FromArgb(0x24, color.R, color.G, color.B));
-        fill.Freeze();
-        dc.DrawGeometry(fill, null, area);
-        var line = new StreamGeometry();
-        using (var g = line.Open())
-        {
-            g.BeginFigure(points[0], false, false);
-            g.PolyLineTo(points.Skip(1).ToList(), true, true);
-        }
-        line.Freeze();
-        dc.DrawGeometry(null, new Pen(ChannelBrush, 2) { LineJoin = PenLineJoin.Round }, line);
+        var color = ColorOf(ChannelBrush, Colors.SteelBlue);
+        dc.DrawGeometry(Alpha(ChannelBrush, 0x24), null, CreateAreaGeometry(points, top + plotH));
+        var pen = new Pen(ChannelBrush, 2) { LineJoin = PenLineJoin.Round };
+        pen.Freeze();
+        dc.DrawGeometry(null, pen, CreatePolylineGeometry(points));
         if (_fresh && _hoverX == null) Pulse(dc, color, points[^1]);
         _fresh = false;
         dc.DrawEllipse(SurfaceBrush, Stroke(ChannelBrush, 2), points[^1], 4.5, 4.5);
         DrawHover(dc, w, left, top, plotW, plotH, X, Y);
     }
 
-    /// <summary>Cursor: linha tracejada na amostra mais próxima, um ponto na curva e um quadro com a hora e a temperatura exata.</summary>
     private void DrawHover(DrawingContext dc, double w, double left, double top, double plotW, double plotH, Func<int, double> x, Func<double, double> y)
     {
         if (_hoverX is not double mx || mx < left) return;
@@ -385,8 +258,7 @@ public sealed class TraceChart : DiskInstrument
         dc.DrawLine(Stroke(FaintBrush, 1, new DashStyle(new double[] { 3, 3 }, 0)), new Point(lx, top), new Point(lx, top + plotH));
         dc.DrawEllipse(SurfaceBrush, Stroke(ChannelBrush, 2.5), new Point(px, py), 5.5, 5.5);
 
-        int ago = _samples.Count - 1 - nearest;
-        string when = ago <= 0 ? "agora" : ago >= 60 ? $"há {ago / 60} min {ago % 60:00} s" : $"há {ago} s";
+        string when = ChartScale.RelativeAgo(_samples.Count - 1 - nearest);
         var time = Text(when, 11.5, FaintBrush, readout: false);
         var value = Text($"{_samples[nearest]!.Value:0.#} °C", 16, InkBrush);
         double bw = Math.Max(time.Width, value.Width) + 24, bh = time.Height + value.Height + 16;
@@ -398,26 +270,14 @@ public sealed class TraceChart : DiskInstrument
     }
 }
 
-/// <summary>
-/// Espaço do disco por unidade: um trecho por letra, proporcional ao tamanho, com o ocupado em medidor segmentado.
-/// O que não tem letra (EFI, recuperação, espaço livre) fica como trilho vazado no fim.
-/// </summary>
+/// <summary>Espaço do disco por unidade: um trecho segmentado por letra mais trilho vazado para partições sem letra.</summary>
 public sealed class CapacityBar : DiskInstrument
 {
-    public static readonly DependencyProperty FillBrushProperty =
-        DependencyProperty.Register(nameof(FillBrush), typeof(Brush), typeof(CapacityBar), new FrameworkPropertyMetadata(Brushes.Gray, FrameworkPropertyMetadataOptions.AffectsRender));
-    public Brush FillBrush { get => (Brush)GetValue(FillBrushProperty); set => SetValue(FillBrushProperty, value); }
-
     private IReadOnlyList<(double Size, double Used)> _volumes = Array.Empty<(double, double)>();
     private double _rest;
 
-    public CapacityBar()
-    {
-        Height = 16;
-        SetResourceReference(FillBrushProperty, "Storage");
-    }
+    public CapacityBar() => Height = 16;
 
-    /// <summary>Tamanho e ocupado de cada unidade (mesma escala), mais o que sobra no disco sem letra.</summary>
     public void SetVolumes(IReadOnlyList<(double Size, double Used)> volumes, double rest)
     {
         _volumes = volumes;
@@ -430,14 +290,15 @@ public sealed class CapacityBar : DiskInstrument
         double w = ActualWidth, h = ActualHeight;
         double total = _volumes.Sum(v => v.Size) + _rest;
         if (w < 20 || total <= 0) return;
-        const double period = 5, gap = 1.5, between = 4;
+        const double between = 4;
         int parts = _volumes.Count + (_rest > 0 ? 1 : 0);
         double usable = w - between * (parts - 1), x = 0;
         foreach (var (size, used) in _volumes)
         {
             double width = usable * size / total, filled = width * Math.Clamp(used / size, 0, 1);
-            for (double sx = 0; sx + period - gap <= width + 0.01; sx += period)
-                dc.DrawRectangle(sx + (period - gap) / 2 <= filled ? FillBrush : TrackBrush, null, new Rect(x + sx, 0, period - gap, h));
+            for (double sx = 0; sx + SegmentPeriod - SegmentGap <= width + 0.01; sx += SegmentPeriod)
+                dc.DrawRectangle(sx + (SegmentPeriod - SegmentGap) / 2 <= filled ? ChannelBrush : TrackBrush, null,
+                    new Rect(x + sx, 0, SegmentPeriod - SegmentGap, h));
             x += width + between;
         }
         if (_rest > 0)

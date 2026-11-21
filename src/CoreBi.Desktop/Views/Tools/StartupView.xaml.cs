@@ -9,9 +9,10 @@ namespace CoreBi.Desktop.Views;
 /// <summary>Aba Ferramentas · Inicialização: programas que abrem junto com o Windows.</summary>
 public partial class StartupView : UserControl
 {
-    internal FeatureContext Context { get; set; } = null!;
+    private FeatureContext _context = null!;
     public StartupView() => InitializeComponent();
-    private bool RequireAdmin() => PermissionGuard.RequireAdmin(Context.Owner);
+    internal void Initialize(FeatureContext context) => _context = context;
+    private bool RequireAdmin() => PermissionGuard.RequireAdmin(_context.Owner);
 
     private const string NextBoot = "Vale na próxima vez que o Windows iniciar.";
     private static readonly Thickness HeadMargin = new(8, 10, 8, 0);
@@ -35,23 +36,23 @@ public partial class StartupView : UserControl
     /// <summary>Lê a lista e os removidos. Depois de uma ação (announce = false) o console continua mostrando o resultado dela.</summary>
     private async Task ScanAsync(bool announce)
     {
-        if (_scanning || Context.IsClosing) return;
+        if (_scanning || _context.IsClosing) return;
         _scanning = true;
         if (announce) { Say("Lendo programas…"); ToolPage.SetProgress(StartupProgressFill, 0); }
         List<StartupEntry> list;
         string backupError = "";
         try
         {
-            list = await Task.Run(_startup.List, Context.Lifetime);
-            if (Context.IsClosing) return;
+            list = await Task.Run(_startup.List, _context.Lifetime);
+            if (_context.IsClosing) return;
             if (announce) ToolPage.SetProgress(StartupProgressFill, 0.5);
-            try { _removed = await Task.Run(() => _startup.Backups, Context.Lifetime); }
+            try { _removed = await Task.Run(() => _startup.Backups, _context.Lifetime); }
             catch (UnauthorizedAccessException) { _removed = Array.Empty<StartupBackup>(); backupError = "Os removidos só aparecem com o CoreBi aberto como administrador."; }
             catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); backupError = "Não foi possível ler os removidos: " + ex.Message; }
         }
         catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); ToolPage.EndProgress(StartupProgressFill); return; }
         finally { _scanning = false; }
-        if (Context.IsClosing) return;
+        if (_context.IsClosing) return;
 
         StartupList.ItemsSource = list;
         StartupEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -103,7 +104,7 @@ public partial class StartupView : UserControl
         if (r != MessageBoxResult.Yes) return;
         try
         {
-            using var critical = Context.BeginCriticalOperation();
+            using var critical = _context.BeginCriticalOperation("Aguarde a alteração da inicialização do Windows terminar.");
             await Task.Run(() => _startup.Remove(item));
             Say($"{item.Name} removido", "Dá para desfazer em Restaurar removidos.");
         }
@@ -129,7 +130,7 @@ public partial class StartupView : UserControl
         ToolPage.SetProgress(StartupProgressFill, 0);
         foreach (var b in removed.ToList())
         {
-            try { using var critical = Context.BeginCriticalOperation(); await Task.Run(() => _startup.Restore(b)); }
+            try { using var critical = _context.BeginCriticalOperation("Aguarde a restauração dos programas de inicialização terminar."); await Task.Run(() => _startup.Restore(b)); }
             catch (Exception ex) { failed.Add($"{b.Name} ({ex.Message})"); }
             ToolPage.SetProgress(StartupProgressFill, (double)++done / removed.Count);
         }

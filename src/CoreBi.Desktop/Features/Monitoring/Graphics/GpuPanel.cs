@@ -1,31 +1,20 @@
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
 using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Sensors;
-using LibreHardwareMonitor.Hardware;
 
 namespace CoreBi.Desktop;
 
-/// <summary>Leitura da placa de identificação: rótulo, número grande e unidade; a primeira não tem fio à esquerda.</summary>
 public sealed record GpuReadout(string Label, string Value, string Unit, string? Tip, bool First);
-
-/// <summary>Linha chave/valor da ficha técnica; Note é o complemento curto ao lado do valor ("referência").</summary>
 public sealed record GpuSpecRow(string Key, string Value, string? Note = null, string? Tip = null);
-
 public sealed record GpuSpecGroup(string Title, IReadOnlyList<GpuSpecRow> Rows);
-
-/// <summary>Leitura do driver na faixa sob os instrumentos (estado de desempenho, limitador do clock, encoder...).</summary>
 public sealed record GpuFact(string Label, string Value, bool Warn, string? Tip);
 
-/// <summary>Um instrumento ao vivo da placa: leitura grande, complemento e o histórico curto no canal Gpu.</summary>
-public sealed class GpuGauge : INotifyPropertyChanged
+/// <summary>Um instrumento ao vivo da placa: leitura grande, complemento e histórico curto no canal Gpu.</summary>
+public sealed class GpuGauge : ObservableObject
 {
-    public event PropertyChangedEventHandler? PropertyChanged;
-
     public GpuGauge(string key, string label, string? tip = null) { Key = key; Label = label; Tip = tip; }
 
     public string Key { get; }
@@ -40,19 +29,10 @@ public sealed class GpuGauge : INotifyPropertyChanged
     public string Value { get => _value; set => Set(ref _value, value); }
     public string Unit { get => _unit; set => Set(ref _unit, value); }
     public string Sub { get => _sub; set => Set(ref _sub, value); }
-    /// <summary>"" normal; "Danger" quando a leitura passa do limite crítico.</summary>
     public string Tone { get => _tone; set => Set(ref _tone, value); }
     public bool First { get => _first; set => Set(ref _first, value); }
-    /// <summary>Topo da escala do histórico (a base é zero).</summary>
     public double Max { get => _max; set => Set(ref _max, value); }
-    public IReadOnlyList<float?> Samples { get => _samples; set { _samples = value; PropertyChanged?.Invoke(this, new(nameof(Samples))); } }
-
-    private void Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return;
-        field = value;
-        PropertyChanged?.Invoke(this, new(name));
-    }
+    public IReadOnlyList<float?> Samples { get => _samples; set { _samples = value; OnPropertyChanged(); } }
 }
 
 /// <summary>
@@ -387,7 +367,7 @@ internal sealed class GpuBoard
 /// Amostras nulas (sem leitura ou página escondida) interrompem o traço. Sem pulso: são sete instrumentos lado a lado e o app fica
 /// aberto em jogos, então nada se mexe além do próprio valor.
 /// </summary>
-public sealed class GpuTrace : DiskInstrument
+public sealed class GpuTrace : InstrumentBase
 {
     public static readonly DependencyProperty SamplesProperty = DependencyProperty.Register(nameof(Samples), typeof(IReadOnlyList<float?>), typeof(GpuTrace),
         new FrameworkPropertyMetadata(Array.Empty<float?>(), FrameworkPropertyMetadataOptions.AffectsRender));
@@ -406,44 +386,26 @@ public sealed class GpuTrace : DiskInstrument
     {
         double w = ActualWidth, h = ActualHeight;
         if (w < 20 || h < 10) return;
-        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, h)); // área da dica
+        dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, h));
         double baseY = Math.Round(h) - 0.5;
         dc.DrawLine(Stroke(TrackBrush, 1), new Point(0, baseY), new Point(w, baseY));
 
         var samples = Samples ?? Array.Empty<float?>();
         double max = double.IsNaN(Max) || Max <= 0 ? 1 : Max;
-        double X(int i) => (w - 3) * (i + GpuBoard.Window - samples.Count) / (GpuBoard.Window - 1); // 3 px para o ponto atual caber inteiro
+        double X(int i) => (w - 3) * (i + GpuBoard.Window - samples.Count) / (GpuBoard.Window - 1);
         double Y(double v) => 2 + (baseY - 3) * (1 - Math.Clamp(v / max, 0, 1));
 
-        var color = ChannelBrush is SolidColorBrush s ? s.Color : Colors.Orange;
-        var fill = new SolidColorBrush(Color.FromArgb(0x24, color.R, color.G, color.B));
-        fill.Freeze();
+        var fill = Alpha(ChannelBrush, 0x24);
         var pen = new Pen(ChannelBrush, 1.5) { LineJoin = PenLineJoin.Round };
         pen.Freeze();
 
-        // Um trecho por sequência sem vãos
         var run = new List<Point>();
         void Flush()
         {
             if (run.Count >= 2)
             {
-                var area = new StreamGeometry();
-                using (var g = area.Open())
-                {
-                    g.BeginFigure(new Point(run[0].X, baseY), true, true);
-                    g.PolyLineTo(run, true, false);
-                    g.LineTo(new Point(run[^1].X, baseY), false, false);
-                }
-                area.Freeze();
-                dc.DrawGeometry(fill, null, area);
-                var line = new StreamGeometry();
-                using (var g = line.Open())
-                {
-                    g.BeginFigure(run[0], false, false);
-                    g.PolyLineTo(run.Skip(1).ToList(), true, true);
-                }
-                line.Freeze();
-                dc.DrawGeometry(null, pen, line);
+                dc.DrawGeometry(fill, null, CreateAreaGeometry(run, baseY));
+                dc.DrawGeometry(null, pen, CreatePolylineGeometry(run));
             }
             run.Clear();
         }

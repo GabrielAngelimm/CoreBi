@@ -1,194 +1,32 @@
-using System.Runtime.InteropServices;
-using System.Windows.Threading;
-using CoreBi.Engine.Monitoring.Graphics;
-using CoreBi.Engine.Monitoring.Inventory;
-using CoreBi.Engine.Monitoring.Sensors;
-using CoreBi.Engine.Performance;
-
-using CoreBi.Engine.Persistence;
-
+using System.IO;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-
+using System.Windows.Threading;
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Games;
+using CoreBi.Engine.Infrastructure;
+using CoreBi.Engine.Monitoring.Graphics;
+using CoreBi.Engine.Monitoring.Inventory;
+using CoreBi.Engine.Monitoring.Memory;
+using CoreBi.Engine.Monitoring.Sensors;
+using CoreBi.Engine.Monitoring.Storage;
+using CoreBi.Engine.Performance;
+using CoreBi.Engine.Persistence;
+using CoreBi.Engine.Tools.Apps;
 
 namespace CoreBi.Desktop;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, ILiveMotionHost
 {
-    internal readonly WorkloadCoordinator _workloads = new();
-    internal IDisposable? _stressLease;
-    internal readonly DispatcherTimer _timer;
-    private readonly CancellationTokenSource _lifetime = new();
-    private readonly FeatureContext _features;
+    /// <summary>Altura de uma linha da atividade recente na Visão geral (usada pelo binding XAML em OverviewView).</summary>
+    public const double DashEventHeight = 56;
 
-    internal readonly AppSettings _settings = AppSettings.Load();
+    private const int HotkeyId = 0x5245; // "RE"
 
-    /// <summary>
-    /// Pincel atual da paleta, para o que é desenhado em código (gráficos), refeito na troca de tema.
-    /// Estados de controles usam SetResourceReference, que acompanha o tema sozinho.
-    /// </summary>
-    internal static SolidColorBrush Palette(string key) => ThemeManager.Brush(key);
-
-    public MainWindow()
-    {
-        InitializeComponent();
-        _monitor = new SensorMonitor();
-        _features = new FeatureContext(this, _workloads, _lifetime.Token);
-        ConnectViews();
-        ThemeManager.Apply(_settings.LightTheme);
-        UpdateThemeButton();
-        BuildPalette();
-        ShowPage("PageDash");
-
-        // Sensores: a página começa vazia e é montada quando a detecção do hardware termina (LoadHardwareAsync).
-        StatusText.Text = "Detectando o hardware…";
-        SideVersion.Text = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1";
-
-        InitBench();
-        SnapshotUsb();
-        SnapshotDisplay();
-        RefreshDrives();
-        UpdateDashboard();
-
-        // A janela aparece já; as coletas pesadas (WMI, sensores, GPU) rodam em paralelo fora da thread da janela.
-        Loaded += async (_, _) => await LoadHardwareAsync();
-        SourceInitialized += (_, _) =>
-        {
-            RoundCorners();
-            System.Windows.Interop.HwndSource.FromHwnd(new System.Windows.Interop.WindowInteropHelper(this).Handle)?.AddHook(MaximizeHook);
-        };
-
-        _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _timer.Tick += (_, _) =>
-        {
-            // Durante a cena de GPU as leituras de sensores (NVML/driver) ficam pausadas: cada consulta trava o driver
-            // por um instante e aparecia como engasgo no 1% low do benchmark.
-            if (_gpuBenchActive) { UpdateStressPanel(); return; }
-            _monitor.Refresh();
-            PageSensors.Tick();
-            UpdateStressPanel();
-            UpdateGpuLive();
-            UpdateSideStorage();
-            UpdateCpuSensorWarning();
-            CollectDashSample();
-            PageDisks.Sample();
-            PageEnergy.Sample();
-            UpdateFrameMonitoring();
-            UpdateBottleneck();
-            if (PageBench.IsVisible) UpdateBenchLive();
-            UpdateOverlayPreview();
-        };
-        _timer.Start();
-
-        // Abre maximizada; Restaurar volta ao tamanho padrão (1360 × 860), centralizada.
-        StateChanged += (_, _) => UpdateMaximizeChrome();
-        WindowState = WindowState.Maximized;
-        UpdateMaximizeChrome();
-        Closing += (_, e) =>
-        {
-            if (_features.HasCriticalOperation)
-            {
-                e.Cancel = true;
-                MessageBox.Show(this, "Aguarde a instalação terminar. Em Instalar apps, Parar encerra a fila depois do app atual.", "CoreBi", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-            _lifetime.Cancel();
-        };
-        Closed += (_, _) =>
-        {
-            _timer.Stop(); _overlayTimer?.Stop(); _usbDebounce?.Stop();
-            if (_opacitySave?.IsEnabled == true) SaveSettings();
-            _stress.Stop(); _burn.Stop(); _benchCts?.Cancel();
-            _gameBenchCts?.Cancel(); _gpuBench?.Cancel(); _rtBench?.Cancel(); _stressLease?.Dispose();
-            _overlay?.Close();
-            _rtssOverlay.Dispose();
-            _toast?.Close();
-            _frames.Dispose();
-            _gpuMonitor.Dispose();
-            UnregisterHotKey(new System.Windows.Interop.WindowInteropHelper(this).Handle, HotkeyId);
-            _monitor.Dispose();
-        };
-    }
-
-    /// <summary>Coletas lentas da abertura, em paralelo e fora da thread da janela; cada parte preenche a tela quando fica pronta.</summary>
-    internal async Task LoadHardwareAsync()
-    {
-        Task LoadInfo() => PageSystem.RefreshAsync();
-
-        async Task LoadSensors()
-        {
-            try { await _monitor.OpenAsync(); }
-            catch (Exception ex)
-            {
-                StatusText.Text = $"Sensores indisponíveis: {ex.Message}";
-                return;
-            }
-            if (_features.IsClosing) return;
-            _monitor.Refresh();
-            UpdateCpuSensorWarning();
-            PageSensors.Populate();
-            UpdateDashboard();
-        }
-
-        async Task LoadGpu()
-        {
-            try { _gpus = await Task.Run(GpuInfoCollector.Collect); }
-            catch { _gpus = new(); }
-            if (_features.IsClosing) return;
-            for (int i = 0; i < _gpus.Count && _gpus.Count > 1; i++)
-            {
-                var g = _gpus[i];
-                var chip = new RadioButton { Content = CoreBi.Engine.Infrastructure.HardwareNaming.ShortGpuName(g.Name), ToolTip = g.Name, GroupName = "Gpu", Style = (Style)FindResource("Chip"), IsChecked = i == 0 };
-                chip.Checked += (_, _) => ShowGpu(g);
-                GpuChips.Children.Add(chip);
-            }
-            if (_gpus.Count > 0) ShowGpu(_gpus[0]);
-            else ShowNoGpu();
-            PageSystem.GpusReady();
-
-            // Dependem do nome da GPU/CPU
-            ReadCpuName();
-            InitBottleneckAndOverlay();
-            UpdateDashboard();
-        }
-
-        await Task.WhenAll(LoadInfo(), LoadSensors(), LoadGpu());
-    }
-
-    /// <summary>Nome do processador pelo WMI, usado na Visão geral, no Gargalo, no overlay e no benchmark; vazio se a consulta falhar.</summary>
-    internal string _cpuName = "";
-
-    private void ReadCpuName()
-    {
-        try
-        {
-            using var s = new System.Management.ManagementObjectSearcher("SELECT Name FROM Win32_Processor");
-            foreach (System.Management.ManagementObject mo in s.Get()) { _cpuName = mo["Name"]?.ToString()?.Trim() ?? ""; break; }
-        }
-        catch { }
-    }
-
-    // ---------------- Janela / navegação ----------------
-
-    internal void Min_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
-    internal void Max_Click(object sender, RoutedEventArgs e)
-        => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-    internal void Close_Click(object sender, RoutedEventArgs e) => Close();
-
-    /// <summary>Maximizada, a janela ocupa exatamente o espaço de trabalho (MaximizeHook) e dispensa o contorno.</summary>
-    private void UpdateMaximizeChrome()
-    {
-        bool max = WindowState == WindowState.Maximized;
-        Root.BorderThickness = max ? new Thickness(0) : new Thickness(1);
-        BtnMax.Content = max ? "" : "";
-        BtnMax.ToolTip = max ? "Restaurar" : "Maximizar";
-    }
-
-    /// <summary>Páginas pesadas: na primeira visita mostram o esqueleto enquanto montam e leem os dados.</summary>
     private static readonly Dictionary<string, string> ColdPages = new()
     {
         ["PageSensors"] = "Lendo os sensores…",
@@ -198,16 +36,405 @@ public partial class MainWindow : Window
         ["PageStartup"] = "Listando os programas de inicialização…",
         ["PageApps"] = "Montando o catálogo de apps…",
     };
+
+    internal readonly WorkloadCoordinator _workloads = new();
+    internal readonly AppSettings _settings = AppSettings.Load();
+    internal readonly SensorMonitor _monitor = new();
+    internal readonly FeatureContext _context;
+
+    private readonly CancellationTokenSource _lifetime = new();
+    private readonly FrameMonitor _frames = new();
+    private readonly GpuMonitor _gpuMonitor = new();
+    private readonly HardwareDeviceWatcher _deviceWatcher;
+    private readonly DispatcherTimer _timer;
     private readonly HashSet<string> _warmPages = new();
+    private ToastWindow? _toast;
     private int _navVersion;
+    private int _sideDiskTicks;
+    private bool _sideDiskReading;
+    private bool _gpuBenchActive;
+
+    public MainWindow()
+    {
+        InitializeComponent();
+        _context = new FeatureContext(
+            owner: this,
+            workloads: _workloads,
+            lifetime: _lifetime.Token,
+            settings: _settings,
+            sensors: _monitor,
+            frames: _frames,
+            gpuTelemetry: _gpuMonitor,
+            navigate: GoToPage,
+            recordEvent: (icon, title, detail, value, channel) => PageDash.AddEvent(icon, title, detail, value, channel),
+            notify: ShowToast,
+            saveSettings: SaveSettings,
+            syncFrameMonitoring: SyncFrameMonitoring,
+            setBenchmarkIsolation: SetBenchmarkIsolation,
+            isLiveMotion: () => LiveMotion);
+
+        _deviceWatcher = new HardwareDeviceWatcher(_context, Dispatcher, OnStorageChangedAsync);
+
+        ConnectViews();
+        ThemeManager.Apply(_settings.LightTheme);
+        UpdateThemeButton();
+        BuildPalette();
+        ShowPage("PageDash");
+
+        PageSensors.StatusText.Text = "Detectando o hardware…";
+        SideVersion.Text = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1";
+
+        _deviceWatcher.StartInitialSnapshots();
+        RefreshSideStorageAsync();
+
+        Loaded += async (_, _) => await LoadHardwareAsync();
+
+        _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _timer.Tick += OnTelemetryTick;
+        _timer.Start();
+
+        StateChanged += (_, _) => UpdateMaximizeChrome();
+        WindowState = WindowState.Maximized;
+        UpdateMaximizeChrome();
+
+        Closing += (_, e) =>
+        {
+            if (_context.HasCriticalOperation)
+            {
+                e.Cancel = true;
+                MessageBox.Show(this, _context.CriticalOperationMessage, "CoreBi", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            _lifetime.Cancel();
+        };
+
+        Closed += (_, _) =>
+        {
+            _timer.Stop();
+            PageOverlay.Dispose();
+            PageBench.Dispose();
+            PageStress.Dispose();
+            _deviceWatcher.Dispose();
+            _toast?.Close();
+            _frames.Dispose();
+            _gpuMonitor.Dispose();
+            var hwnd = new WindowInteropHelper(this).Handle;
+            if (hwnd != IntPtr.Zero) Win32Window.UnregisterHotKey(hwnd, HotkeyId);
+            _monitor.Dispose();
+            _lifetime.Dispose();
+        };
+    }
+
+    bool ILiveMotionHost.LiveMotion => LiveMotion;
 
     /// <summary>
-    /// A troca de página é imediata: o item do menu e o esqueleto aparecem no primeiro quadro; só depois a página pesada
-    /// é montada (por baixo do esqueleto) e os dados são lidos em segundo plano. Nas visitas seguintes não há esqueleto.
+    /// Movimento que acompanha as leituras só roda com a janela ativa e sem benchmark ou teste de carga:
+    /// o CoreBi fica aberto durante jogos e testes e não pode pesar na medição. Respeita animações do Windows.
     /// </summary>
-    internal async void Nav_Checked(object sender, RoutedEventArgs e)
+    internal bool LiveMotion => SystemParameters.ClientAreaAnimation && IsActive && !_workloads.IsBusy && !PageBench.IsRunning && !PageStress.IsRunning;
+
+    private void ConnectViews()
     {
-        if (PageSystem == null) return; // disparado durante InitializeComponent
+        PageDash.Initialize(_context);
+        PageSystem.Initialize(_context, () => PageNet.LastResult);
+        PageSensors.Initialize(_context);
+        PageGpu.Initialize(_context);
+        PageDisks.Initialize(_context);
+        PageEnergy.Initialize(_context);
+        PageNet.Initialize(_context);
+        PageOverlay.Initialize(_context);
+        PageBottleneck.Initialize(_context);
+        PageBench.Initialize(_context);
+        PageStress.Initialize(_context);
+        PageStartup.Initialize(_context);
+        PageApps.Initialize(_context);
+        PageDriver.Initialize(_context);
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        var hwnd = new WindowInteropHelper(this).Handle;
+        Win32Window.TryRoundCorners(hwnd);
+        HwndSource.FromHwnd(hwnd)?.AddHook(WndProc);
+        // Ctrl + Shift + O, sem repetição ao segurar (MOD_CONTROL | MOD_SHIFT | MOD_NOREPEAT)
+        Win32Window.RegisterHotKey(hwnd, HotkeyId, 0x0002 | 0x0004 | 0x4000, 0x4F);
+    }
+
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (msg == Win32Window.WmGetMinMaxInfo)
+            return Win32Window.HandleMaximizeMinMax(hwnd, msg, lParam);
+        if (msg == Win32Window.WmHotKey && wParam.ToInt32() == HotkeyId)
+        {
+            PageOverlay.ToggleOverlay();
+            handled = true;
+        }
+        else if (msg == Win32Window.WmDeviceChange)
+        {
+            _deviceWatcher.HandleDeviceChange(wParam.ToInt32(), lParam);
+        }
+        return IntPtr.Zero;
+    }
+
+    private void OnTelemetryTick(object? sender, EventArgs e)
+    {
+        // Durante benchmarks de GPU/disco as leituras de sensores (NVML/driver) ficam pausadas para não gerar engasgos no 1% low.
+        if (_gpuBenchActive)
+        {
+            UpdateSidebarCpu();
+            PageStress.Tick();
+            return;
+        }
+
+        _monitor.Refresh();
+        _gpuMonitor.UpdateLoads(_context.Gpus);
+        PageSensors.Tick();
+        UpdateSidebarTelemetry();
+        PageStress.Tick();
+        PageGpu.TickLive();
+        UpdateCpuSensorWarning();
+        PageDash.CollectSample();
+        PageDisks.Sample();
+        PageEnergy.Sample();
+        SyncFrameMonitoring();
+        PageBottleneck.Tick();
+        if (PageBench.IsVisible) PageBench.TickLive();
+        PageOverlay.UpdatePreview();
+    }
+
+    internal async Task LoadHardwareAsync()
+    {
+        Task LoadInfo() => PageSystem.RefreshAsync();
+
+        async Task LoadSensors()
+        {
+            try { await _monitor.OpenAsync(); }
+            catch (Exception ex)
+            {
+                PageSensors.StatusText.Text = $"Sensores indisponíveis: {ex.Message}";
+                return;
+            }
+            if (_context.IsClosing) return;
+            _monitor.Refresh();
+            UpdateCpuSensorWarning();
+            PageSensors.Populate();
+            PageDash.UpdateDashboard();
+        }
+
+        async Task LoadGpuAndCpu()
+        {
+            List<GpuInfo> gpus;
+            string cpuName;
+            try
+            {
+                var gpuTask = Task.Run(GpuInfoCollector.Collect);
+                var cpuTask = Task.Run(SystemInfoCollector.ReadCpuName);
+                gpus = await gpuTask;
+                cpuName = await cpuTask;
+            }
+            catch
+            {
+                gpus = new();
+                cpuName = "";
+            }
+            if (_context.IsClosing) return;
+
+            _context.Gpus = gpus;
+            _context.CpuName = cpuName;
+            PageGpu.PopulateGpus(gpus);
+            PageSystem.GpusReady();
+            PageBottleneck.RefreshHardware();
+            PageOverlay.RefreshHardware();
+            PageBench.RefreshHardware();
+            PageDash.UpdateDashboard();
+        }
+
+        await Task.WhenAll(LoadInfo(), LoadSensors(), LoadGpuAndCpu());
+    }
+
+    private async Task OnStorageChangedAsync()
+    {
+        RefreshSideStorageAsync();
+        await PageSystem.RefreshStorageAsync();
+        if (PageDisks.IsVisible) await PageDisks.RefreshAsync();
+        if (PageBench.IsVisible) PageBench.RefreshHardware();
+        if (PageDash.IsVisible) PageDash.UpdateDashboard(full: false);
+    }
+
+    // ---------------- Barra lateral (telemetria + PawnIO + tema) ----------------
+
+    private void UpdateSidebarTelemetry()
+    {
+        UpdateSidebarCpu();
+        if (_context.PrimaryGpu != null)
+        {
+            float? load = _context.PrimaryGpuLoad();
+            SideGpuTemp.Text = _context.PrimaryGpuTemp() is float t ? $"{t:0.#} °C" : "—";
+            SideGpuLoad.Text = load is float l ? $"{l:0} %" : "—";
+            Ui.Glide(SideGpuBar, (load ?? 0) / 100.0, LiveMotion);
+        }
+
+        if (MemoryInfo.ReadPhysicalUsage() is { Total: > 0 } mem)
+        {
+            double used = (double)mem.Used / mem.Total;
+            SideRam.Text = $"{mem.Used / 1073741824.0:0.0} GB";
+            SideRamLoad.Text = $"{used * 100:0} %";
+            Ui.Glide(SideRamBar, used, LiveMotion);
+        }
+
+        if (++_sideDiskTicks >= 5)
+        {
+            _sideDiskTicks = 0;
+            RefreshSideStorageAsync();
+        }
+    }
+
+    private void UpdateSidebarCpu()
+    {
+        float? temp = _monitor.CpuTemperature;
+        float? load = _monitor.CpuLoad;
+        SideTemp.Text = temp == null ? "—" : $"{temp:0.#} °C";
+        SideLoad.Text = load == null ? "—" : $"{load:0} %";
+        Ui.Glide(SideCpuBar, (load ?? 0) / 100.0, LiveMotion);
+    }
+
+    private async void RefreshSideStorageAsync()
+    {
+        if (_sideDiskReading || _context.IsClosing) return;
+        _sideDiskReading = true;
+        try
+        {
+            var stats = await Task.Run(ReadSystemDriveUsage);
+            if (_context.IsClosing || stats is not { } s) return;
+            double used = (double)s.Used / s.Total;
+            SideDisk.Text = DriveCard.Fmt(s.Used);
+            SideDiskLoad.Text = $"{used * 100:0} %";
+            Ui.Glide(SideDiskBar, used, LiveMotion);
+            SideDiskRow.ToolTip = $"Disco {s.Letter}: {DriveCard.Fmt(s.Used)} em uso de {DriveCard.Fmt(s.Total)}, {DriveCard.Fmt(s.Free)} livres";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        finally { _sideDiskReading = false; }
+    }
+
+    private static (string Letter, long Used, long Free, long Total)? ReadSystemDriveUsage()
+    {
+        try
+        {
+            var drive = new DriveInfo(Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\");
+            if (!drive.IsReady || drive.TotalSize <= 0) return null;
+            return (drive.Name.TrimEnd('\\'), drive.TotalSize - drive.TotalFreeSpace, drive.TotalFreeSpace, drive.TotalSize);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
+    }
+
+    private void UpdateCpuSensorWarning()
+    {
+        if (!_monitor.IsOpen) return;
+        var problem = _monitor.DiagnoseCpuSensors();
+        CpuSensorWarn.Visibility = problem == SensorMonitor.CpuSensorProblem.None ? Visibility.Collapsed : Visibility.Visible;
+        CpuSensorWarnText.Text = CpuSensorMessages.Sidebar(problem);
+    }
+
+    private async void BtnFixCpuSensors_Click(object sender, RoutedEventArgs e)
+    {
+        var problem = _monitor.DiagnoseCpuSensors();
+        string why = SensorMonitor.Explain(problem);
+        if (problem != SensorMonitor.CpuSensorProblem.PawnIOMissing)
+        {
+            MessageBox.Show(this, why, "CoreBi", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (!AppInstaller.WingetAvailable)
+        {
+            MessageBox.Show(this, why + "\n\nO instalador de pacotes do Windows (winget) não foi encontrado neste PC. " +
+                "Atualize o \"Instalador de Aplicativo\" pela Microsoft Store e use o botão de novo, " +
+                "ou instale o PawnIO (autor: namazso) manualmente.",
+                "CoreBi", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var confirm = MessageBox.Show(this, why + "\n\nInstalar o PawnIO agora? Vai abrir uma janela com o instalador do Windows (winget). " +
+            "Quando terminar, feche o CoreBi e abra de novo.",
+            "CoreBi", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (confirm != MessageBoxResult.Yes) return;
+
+        using var workload = _workloads.TryBegin("Install PawnIO");
+        if (workload == null) { MessageBox.Show(this, "Termine a outra operação antes.", "CoreBi"); return; }
+        using var critical = _context.BeginCriticalOperation("Aguarde a instalação do PawnIO terminar antes de fechar o CoreBi.");
+        try
+        {
+            int exitCode = await AppInstaller.InstallInteractiveAsync(AppInstaller.PawnIOPackageId, _context.Lifetime);
+            SensorMonitor.RefreshPawnIOStatus();
+            MessageBox.Show(this, exitCode == 0
+                ? "Instalador concluído. Feche e abra o CoreBi para detectar os sensores novamente."
+                : $"O winget encerrou com código 0x{exitCode:X8}. Verifique o instalador antes de tentar novamente.", "CoreBi");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, "Não foi possível instalar o PawnIO: " + ex.Message, "CoreBi", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    internal void Theme_Click(object sender, RoutedEventArgs e)
+    {
+        ApplyTheme(!ThemeManager.IsLight);
+        _settings.LightTheme = ThemeManager.IsLight;
+        SaveSettings();
+    }
+
+    internal void ApplyTheme(bool light)
+    {
+        ThemeManager.Apply(light);
+        UpdateThemeButton();
+        RedrawThemedVisuals();
+    }
+
+    private void UpdateThemeButton() => ThemeSwitch.IsChecked = !ThemeManager.IsLight;
+
+    private void RedrawThemedVisuals()
+    {
+        PageDash.RedrawTheme();
+        PageStress.DrawChart();
+        UpdateCpuSensorWarning();
+    }
+
+    // ---------------- Janela / navegação ----------------
+
+    private void Min_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void Max_Click(object sender, RoutedEventArgs e)
+        => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void UpdateMaximizeChrome()
+    {
+        bool max = WindowState == WindowState.Maximized;
+        Root.BorderThickness = max ? new Thickness(0) : new Thickness(1);
+        BtnMax.Content = max ? "\uE923" : "\uE922";
+        BtnMax.ToolTip = max ? "Restaurar" : "Maximizar";
+    }
+
+    internal void GoToPage(string target)
+    {
+        if (string.IsNullOrWhiteSpace(target)) return;
+        var parts = target.Split(':', 2);
+        string pageName = parts[0];
+        var nav = NavPanel.Children.OfType<RadioButton>().FirstOrDefault(rb => (string)rb.Tag == pageName);
+        if (nav != null) nav.IsChecked = true;
+
+        if (parts.Length < 2) return;
+        switch (pageName)
+        {
+            case "PageSensors": PageSensors.ShowComponent(parts[1]); break;
+            case "PageSystem": PageSystem.Select(parts[1]); break;
+            case "PageBench": PageBench.SelectTest(parts[1]); break;
+        }
+    }
+
+    private async void Nav_Checked(object sender, RoutedEventArgs e)
+    {
+        if (PageSystem == null) return;
         KeepActiveNavVisible();
         string page = (string)((FrameworkElement)sender).Tag;
         int version = ++_navVersion;
@@ -217,18 +444,17 @@ public partial class MainWindow : Window
         {
             LoadingText.Text = what;
             ShowPage(page, deferred: true);
-            await Dispatcher.Yield(DispatcherPriority.Background); // deixa o esqueleto ser desenhado antes do trabalho pesado
-            if (version != _navVersion || _features.IsClosing) return;
+            await Dispatcher.Yield(DispatcherPriority.Background);
+            if (version != _navVersion || _context.IsClosing) return;
             RevealPage(page);
         }
         else ShowPage(page);
 
-        // Algumas páginas carregam dados só quando abertas.
         Task? work = null;
         switch (page)
         {
-            case "PageDash": UpdateDashboard(); RevealDashRings(); break;
-            case "PageOverlay": UpdateOverlayPreview(); break;
+            case "PageDash": PageDash.UpdateDashboard(); PageDash.RevealRings(); break;
+            case "PageOverlay": PageOverlay.UpdatePreview(); break;
             case "PageDisks": work = PageDisks.RefreshAsync(); break;
             case "PageEnergy": work = PageEnergy.RefreshAsync(); break;
             case "PageDriver": PageDriver.InitDriver(); break;
@@ -242,7 +468,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Com os dados já em mãos (Sensores, Sistema) basta esperar a página montar; senão, no máximo 2,5 s de espera.
         if (work != null) await Task.WhenAny(work, Task.Delay(2500));
         else await Dispatcher.Yield(DispatcherPriority.Background);
         _warmPages.Add(page);
@@ -250,19 +475,18 @@ public partial class MainWindow : Window
         if (work != null) await work;
     }
 
-    /// <summary>
-    /// Em janelas baixas o menu rola: o item da página aberta continua à vista (ao navegar, ao aparecer o aviso de sensores e quando a
-    /// central de monitoramento some ou volta).
-    /// </summary>
     private void KeepActiveNavVisible() =>
         Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
             NavPanel.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.BringIntoView());
 
     private void NavScroll_SizeChanged(object sender, SizeChangedEventArgs e) => KeepActiveNavVisible();
 
-    private FrameworkElement[] Pages => new FrameworkElement[] { PageDash, PageSystem, PageSensors, PageGpu, PageBottleneck, PageOverlay, PageBench, PageDriver, PageStartup, PageApps, PageDisks, PageEnergy, PageNet, PageStress };
+    private FrameworkElement[] Pages => new FrameworkElement[]
+    {
+        PageDash, PageSystem, PageSensors, PageGpu, PageBottleneck, PageOverlay,
+        PageBench, PageDriver, PageStartup, PageApps, PageDisks, PageEnergy, PageNet, PageStress,
+    };
 
-    /// <summary>Com deferred, nenhuma página fica visível: só o esqueleto, até RevealPage.</summary>
     internal void ShowPage(string name, bool deferred = false)
     {
         foreach (var p in Pages)
@@ -272,11 +496,10 @@ public partial class MainWindow : Window
             p.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         }
         SetLoadingVeil(deferred);
-        SideMonitor.Visibility = name == "PageDash" ? Visibility.Hidden : Visibility.Visible; // Hidden: o rodapé não pula
-        UpdateFrameMonitoring();
+        SideMonitor.Visibility = name == "PageDash" ? Visibility.Hidden : Visibility.Visible;
+        SyncFrameMonitoring();
     }
 
-    /// <summary>Monta a página por baixo do esqueleto (o custo da primeira exibição fica coberto por ele).</summary>
     private void RevealPage(string name)
     {
         foreach (var p in Pages)
@@ -289,10 +512,15 @@ public partial class MainWindow : Window
         LoadingBars.BeginAnimation(OpacityProperty, null);
         LoadingVeil.Opacity = 1;
         LoadingVeil.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
-        // Pulso leve só enquanto o esqueleto está na tela (nada roda depois que a página abre).
         if (on && SystemParameters.ClientAreaAnimation)
+        {
             LoadingBars.BeginAnimation(OpacityProperty, new DoubleAnimation(0.5, 1, TimeSpan.FromMilliseconds(900))
-            { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } });
+            {
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+            });
+        }
     }
 
     private void HideLoadingVeil(int version)
@@ -304,38 +532,6 @@ public partial class MainWindow : Window
         LoadingVeil.BeginAnimation(OpacityProperty, fade);
     }
 
-    /// <summary>Central da barra lateral: RAM em uso e ocupação do disco do sistema (CPU e GPU vêm do teste de carga e da GPU).</summary>
-    internal void UpdateSideStorage()
-    {
-        if (CoreBi.Engine.Monitoring.Memory.MemoryInfo.ReadPhysicalUsage() is { Total: > 0 } mem)
-        {
-            double used = (double)mem.Used / mem.Total;
-            SideRam.Text = $"{mem.Used / 1073741824.0:0.0} GB";
-            SideRamLoad.Text = $"{used * 100:0} %";
-            Ui.Glide(SideRamBar, used, LiveMotion);
-        }
-        try
-        {
-            var c = new System.IO.DriveInfo(System.IO.Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\");
-            if (!c.IsReady || c.TotalSize <= 0) return;
-            double used = (double)(c.TotalSize - c.TotalFreeSpace) / c.TotalSize;
-            // Como a RAM: leitura, porcentagem e medidor dizem a mesma coisa (o que está em uso); o espaço livre fica na dica.
-            SideDisk.Text = CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize - c.TotalFreeSpace);
-            SideDiskLoad.Text = $"{used * 100:0} %";
-            Ui.Glide(SideDiskBar, used, LiveMotion);
-            SideDiskRow.ToolTip = $"Disco {c.Name.TrimEnd('\\')}: {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize - c.TotalFreeSpace)} em uso de {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize)}, {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalFreeSpace)} livres";
-        }
-        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { }
-    }
-
-    /// <summary>
-    /// Movimento que acompanha as leituras (o pulso do ponto ao vivo, os medidores que deslizam) só roda com a janela em primeiro
-    /// plano e sem benchmark ou teste de carga em andamento: o CoreBi fica aberto durante jogos e testes, e nada dele pode pesar
-    /// na medição. Respeita "mostrar animações" do Windows.
-    /// </summary>
-    internal bool LiveMotion => SystemParameters.ClientAreaAnimation && IsActive && !AnyBenchRunning && !TestRunning;
-
-    /// <summary>Entrada da página: resposta curta à navegação (respeita "mostrar animações" do Windows).</summary>
     private static void AnimateIn(FrameworkElement page)
     {
         if (!SystemParameters.ClientAreaAnimation) return;
@@ -345,54 +541,34 @@ public partial class MainWindow : Window
         shift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(230)) { EasingFunction = ease });
     }
 
-    internal bool SaveSettings()
+    private void SyncFrameMonitoring()
+    {
+        if (_context.IsClosing) return;
+        bool needed = PageBottleneck.IsVisible || PageOverlay.IsOverlayEnabled || PageBottleneck.HasActiveSession;
+        if (needed) _frames.Start();
+        else if (_frames.Running) _frames.Stop();
+    }
+
+    private void SetBenchmarkIsolation(bool pauseSensors, bool suspendOverlay)
+    {
+        _gpuBenchActive = pauseSensors;
+        PageOverlay.SuspendForBenchmark(suspendOverlay);
+    }
+
+    private void ShowToast(string title, string detail, string icon = "\uE946")
+    {
+        _toast ??= new ToastWindow();
+        _toast.Notify(title, detail, icon);
+    }
+
+    private bool SaveSettings()
     {
         try { _settings.Save(); return true; }
         catch (Exception ex)
         {
-            CoreBi.Engine.Infrastructure.DiagnosticLog.Write("settings.save", ex);
-            Toast("Não foi possível salvar", "A configuração atual não foi gravada. Confira o espaço e as permissões da pasta de dados.", "");
+            DiagnosticLog.Write("settings.save", ex);
+            ShowToast("Não foi possível salvar", "A configuração atual não foi gravada. Confira o espaço e as permissões da pasta de dados.", "\uE783");
             return false;
         }
     }
-
-    /// <summary>Cantos arredondados do Windows 11 para a janela sem moldura nativa (ignorado no Windows 10).</summary>
-    private void RoundCorners()
-    {
-        try
-        {
-            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
-            int round = 2; // DWMWCP_ROUND
-            _ = DwmSetWindowAttribute(hwnd, 33, ref round, sizeof(int)); // DWMWA_WINDOW_CORNER_PREFERENCE
-        }
-        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException) { }
-    }
-
-    [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
-
-    /// <summary>
-    /// Sem moldura nativa, o Windows maximiza a janela no tamanho do monitor inteiro (mais a borda de redimensionar),
-    /// e o rodapé de todas as páginas ficava atrás da barra de tarefas. WM_GETMINMAXINFO limita ao espaço de trabalho
-    /// do monitor em que a janela está.
-    /// </summary>
-    private static IntPtr MaximizeHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        const int WM_GETMINMAXINFO = 0x0024;
-        if (msg != WM_GETMINMAXINFO) return IntPtr.Zero;
-        IntPtr monitor = MonitorFromWindow(hwnd, 2); // MONITOR_DEFAULTTONEAREST
-        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
-        if (monitor == IntPtr.Zero || !GetMonitorInfo(monitor, ref info)) return IntPtr.Zero;
-        var mmi = Marshal.PtrToStructure<MinMaxInfo>(lParam);
-        mmi.MaxPosition = new NativePoint(info.Work.Left - info.Monitor.Left, info.Work.Top - info.Monitor.Top);
-        mmi.MaxSize = new NativePoint(info.Work.Right - info.Work.Left, info.Work.Bottom - info.Work.Top);
-        Marshal.StructureToPtr(mmi, lParam, false);
-        return IntPtr.Zero;
-    }
-
-    [StructLayout(LayoutKind.Sequential)] private record struct NativePoint(int X, int Y);
-    [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left, Top, Right, Bottom; }
-    [StructLayout(LayoutKind.Sequential)] private struct MinMaxInfo { public NativePoint Reserved, MaxSize, MaxPosition, MinTrackSize, MaxTrackSize; }
-    [StructLayout(LayoutKind.Sequential)] private struct MonitorInfo { public int Size; public NativeRect Monitor, Work; public uint Flags; }
-    [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
-    [DllImport("user32.dll")] private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
 }

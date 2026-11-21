@@ -32,42 +32,29 @@ public sealed record SensorFilter(string Key, string Title, int Count);
 public sealed record SensorLayout(IReadOnlyList<IndexEntry> Index, IReadOnlyList<SensorComponent> Cards, IReadOnlyList<SensorFilter> Filters, string? SelectedId, int Total);
 
 /// <summary>Um componente (processador, placa de vídeo, cada disco...) com os sensores agrupados por tipo.</summary>
-public sealed class SensorComponent : INotifyPropertyChanged
+public sealed class SensorComponent : ObservableObject
 {
     public required string Id { get; init; }
     public required string Name { get; init; }
     public required string Kind { get; init; }
     public required string Glyph { get; init; }
-    public required int Channel { get; init; }
-    /// <summary>Canal do componente na paleta (Cpu, Gpu, Memory, Virtual, Storage, Board, Net ou Steel).</summary>
     public string Tone { get; init; } = "Steel";
     public string? Note { get; init; }
     public required IReadOnlyList<SensorSection> Sections { get; init; }
-    /// <summary>Com um componente só na tela não há o que recolher: o botão some.</summary>
     public bool CanCollapse { get; init; } = true;
     public int Count => Sections.Sum(s => s.Rows.Count);
     public string CountText => Count == 1 ? "1 sensor" : $"{Count} sensores";
 
     private bool _expanded = true;
-    public bool Expanded
-    {
-        get => _expanded;
-        set { if (_expanded == value) return; _expanded = value; PropertyChanged?.Invoke(this, new(nameof(Expanded))); }
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
+    public bool Expanded { get => _expanded; set => Set(ref _expanded, value); }
 }
 
-/// <summary>
-/// Monta a página Sensores a partir das linhas do monitor. Os componentes saem na ordem do uso: processador, placa de vídeo,
-/// armazenamento, placa-mãe, cada módulo de RAM, rede, e por último a memória física e a virtual (poucas informações).
-/// </summary>
 public static class SensorBoard
 {
     private const string Module = "ram", PhysicalGlyph = "ram", VirtualGlyph = "ramv", OverviewGlyph = "\uE71D";
     private const int PhysicalOrder = 90, VirtualOrder = 91, DimmOrder = 40;
 
-    private sealed record Part(string Key, string Name, string Kind, string Glyph, int Channel, int Order, string? Note, List<SensorRow> Rows, string Tone = "Steel");
+    private sealed record Part(string Key, string Name, string Kind, string Glyph, int Order, string? Note, List<SensorRow> Rows, string Tone = "Steel");
 
     private static (string Kind, string Glyph, int Order) Describe(HardwareType t) => t switch
     {
@@ -118,17 +105,17 @@ public static class SensorBoard
             if (type == HardwareType.Memory)
             {
                 if (IsVirtualMemory(first))
-                    parts.Add(new(group.Key, "Memória virtual", "Uso do Windows", VirtualGlyph, 2, VirtualOrder,
+                    parts.Add(new(group.Key, "Memória virtual", "Uso do Windows", VirtualGlyph, VirtualOrder,
                         "Memória física somada ao arquivo de paginação, no disco. É o limite que o Windows pode prometer aos programas.", all, "Virtual"));
                 else if (all.Any(r => r.Name is "Memory" or "Memory Used"))
-                    parts.Add(new(group.Key, "Memória física", "Uso do Windows", PhysicalGlyph, 2, PhysicalOrder,
+                    parts.Add(new(group.Key, "Memória física", "Uso do Windows", PhysicalGlyph, PhysicalOrder,
                         "A RAM instalada vista pelo Windows: quanto está em uso e quanto está livre agora.", all, "Virtual"));
                 else
-                    dimms.Add(new(group.Key, PrettyName(first.Component), "Memória RAM", Module, 2, DimmOrder, null, all, "Memory"));
+                    dimms.Add(new(group.Key, PrettyName(first.Component), "Memória RAM", Module, DimmOrder, null, all, "Memory"));
                 continue;
             }
             var (kind, glyph, order) = Describe(type);
-            parts.Add(new(group.Key, PrettyName(first.Component), kind, glyph, first.Channel, order, null, all, ToneOf(type)));
+            parts.Add(new(group.Key, PrettyName(first.Component), kind, glyph, order, null, all, ToneOf(type)));
         }
         dimms = dimms.OrderBy(d => d.Key, StringComparer.Ordinal).ToList();
         for (int i = 0; i < dimms.Count; i++)
@@ -188,7 +175,6 @@ public static class SensorBoard
                 Name = p.Name,
                 Kind = p.Kind,
                 Glyph = p.Glyph,
-                Channel = p.Channel,
                 Tone = p.Tone,
                 Note = p.Note,
                 Sections = Sections(shown, p.Tone, columns),

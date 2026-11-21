@@ -32,6 +32,9 @@ public static class SystemInfoCollector
 
     public static List<PhysicalDiskInfo> ReadDisks() => HardwareInventoryReader.ReadDisks();
 
+    public static string ReadCpuName() =>
+        WmiQuery.FirstOrDefault("SELECT Name FROM Win32_Processor", mo => WmiQuery.GetString(mo, "Name")) ?? "";
+
     internal static string NvidiaVersion(string windows) => HardwareNaming.NvidiaDriverVersion(windows) ?? windows;
 
     private static void Safe(SystemInventory inv, string title, Action read)

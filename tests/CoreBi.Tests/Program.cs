@@ -243,7 +243,7 @@ internal static partial class Program
                 LoadedSamples = new double?[] { 5, 6, 5, 6, 5, 6 },
                 LoadedLatencyMs = 5,
             };
-            window.PageNet.GetType().GetMethod("ShowResult", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window.PageNet, new object?[] { demo });
+            window.PageNet.DisplayResult(demo);
             SaveNetworkPreview(window.PageNet, 1120, 800, "network-providers.png");
             Require(window.PageNet.NetScroll.ScrollableHeight <= 1, $"Network result overflows: {window.PageNet.NetScroll.ScrollableHeight:0.0}px");
             ThemeManager.Apply(true);
@@ -251,7 +251,7 @@ internal static partial class Program
             ThemeManager.Apply(false);
             using (var held = window._workloads.TryBegin("test"))
             {
-                window.StartStress(); Require(window.StressHint.Text.Contains("benchmark"), "Stress ignored coordinator");
+                window.PageStress.StartStress(); Require(window.PageStress.StressHint.Text.Contains("benchmark"), "Stress ignored coordinator");
                 window.PageNet.RunOrCancelAsync().GetAwaiter().GetResult();
                 Require(window.PageNet.NetStatus.Text.Contains("Termine") && window.PageNet.LastResult == null, "Network ignored coordinator");
             }
@@ -260,11 +260,10 @@ internal static partial class Program
                 Card = new HealthCard { Verdict = HealthVerdict.Warning, Label = "ATENÇÃO" },
                 RetryAfterUtc = DateTimeOffset.UtcNow.AddMinutes(10),
             };
-            window.PageNet.GetType().GetMethod("ShowResult", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window.PageNet, new object?[] { waiting });
+            window.PageNet.DisplayResult(waiting);
             Require(window.PageNet.NetLinkLocalText.Text == "não medido" && window.PageNet.NetLinkWanText.Text == "não medido",
                 "A skipped ping was presented as a failed ping");
             window.NavBench.IsChecked = true; Require(window.PageBench.Visibility == Visibility.Visible, "Sidebar event did not navigate");
-            Require(window.PageBench.Owner == window, "Page not connected to shell");
             Require(window.Title == "CoreBi", "Original title remained");
             ThemeManager.Apply(true); ThemeManager.Apply(false);
             var overlay = new OverlayWindow(); overlay.Close();
@@ -315,18 +314,18 @@ internal static partial class Program
                 sampleTimer.Tick += (_, _) => sampleFrame.Continue = false;
                 sampleTimer.Start(); Dispatcher.PushFrame(sampleFrame); sampleTimer.Stop();
                 Require(window._monitor.IsOpen && window._monitor.Rows.Count > 0, "Sensor collector not ready");
-                Require(window._gpus.Count > 0 && window.PageSystem.CategoryCount == 6, "Startup did not bind inventory");
+                Require(window._context.Gpus.Count > 0 && window.PageSystem.CategoryCount == 6, "Startup did not bind inventory");
                 return new
                 {
                     sensorRows = window._monitor.Rows.Count,
-                    gpus = window._gpus.Count,
+                    gpus = window._context.Gpus.Count,
                     diskCards = window.PageDisks.DiskCards.Items.Count,
                     powerPlans = window.PageEnergy.Plan?.Plans.Count ?? 0,
                     powerDays = window.PageEnergy.History?.Spans.Count ?? 0,
-                    window.StatusText.Text,
+                    window.PageSensors.StatusText.Text,
                     elevated = SensorMonitor.IsElevated,
                     pawnIO = SensorMonitor.IsPawnIOInstalled,
-                    etwIdle = !window._frames.Running,
+                    etwIdle = !window._context.Frames.Running,
                     scope = "real WPF dispatcher and hardware load; no foreground window or installation"
                 };
             }

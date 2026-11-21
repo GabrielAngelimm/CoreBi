@@ -4,23 +4,18 @@ using System.Windows.Media;
 namespace CoreBi.Desktop;
 
 /// <summary>
-/// Leitura ao longo de um teste (FPS da cena de jogo e do ray tracing): o eixo horizontal é o progresso informado pelo motor
-/// (0 a 1), então o traço cresce junto com a barra do palco e fica como o perfil do teste depois que ele termina. Área chapada
-/// e traço no canal do componente (ChannelBrush), grade em fio fino, a média dos pontos desenhados numa linha tracejada com
-/// rótulo direto. Sem pulso nem animação: o traço é redesenhado só quando chega uma leitura, a cada 250 ms do teste.
+/// Traço de FPS ao longo de um benchmark (eixo X = progresso 0..1 informado pelo motor), com linha tracejada da média.
 /// </summary>
-public sealed class RunTrace : EnergyInstrument
+public sealed class RunTrace : InstrumentBase
 {
-    private readonly List<Point> _samples = new(); // X = progresso (0–1), Y = leitura
+    private readonly List<Point> _samples = new();
 
     public static readonly DependencyProperty EmptyTextProperty =
         DependencyProperty.Register(nameof(EmptyText), typeof(string), typeof(RunTrace), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty UnitProperty =
         DependencyProperty.Register(nameof(Unit), typeof(string), typeof(RunTrace), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
 
-    /// <summary>Texto do traço vazio (o que acontece ao iniciar).</summary>
     public string EmptyText { get => (string)GetValue(EmptyTextProperty); set => SetValue(EmptyTextProperty, value); }
-    /// <summary>Unidade do rótulo da média (FPS).</summary>
     public string Unit { get => (string)GetValue(UnitProperty); set => SetValue(UnitProperty, value); }
 
     public void Clear()
@@ -29,12 +24,11 @@ public sealed class RunTrace : EnergyInstrument
         InvalidateVisual();
     }
 
-    /// <summary>Acrescenta uma leitura; zero e valores inválidos são "sem leitura" (o motor ainda não mediu um quadro).</summary>
     public void Add(double progress, double value)
     {
         if (!double.IsFinite(value) || value <= 0 || !double.IsFinite(progress)) return;
         progress = Math.Clamp(progress, 0, 1);
-        if (_samples.Count > 0 && progress < _samples[^1].X) return; // nova etapa reiniciou o progresso: mantém a ordem
+        if (_samples.Count > 0 && progress < _samples[^1].X) return;
         _samples.Add(new Point(progress, value));
         InvalidateVisual();
     }
@@ -59,7 +53,7 @@ public sealed class RunTrace : EnergyInstrument
             double y = Math.Round(Y(v)) + 0.5;
             dc.DrawLine(grid, new Point(left, y), new Point(w, y));
             var t = Text($"{v:0}", 11, FaintBrush);
-            // Meio dos algarismos no fio (base menos metade da altura deles, 0,7 em), e não o meio da caixa, que fica abaixo
+            // Meio dos algarismos no fio (base menos metade da altura das maiúsculas, 0,7 em).
             dc.DrawText(t, new Point(left - 10 - t.Width, y - (t.Baseline - 11 * 0.7 / 2)));
         }
         var start = Text("início", 11, FaintBrush);
@@ -77,26 +71,11 @@ public sealed class RunTrace : EnergyInstrument
         }
 
         var points = _samples.Select(s => new Point(X(s.X), Y(s.Y))).ToList();
-        double floor = top + plotH;
-        var area = new StreamGeometry();
-        using (var ctx = area.Open())
-        {
-            ctx.BeginFigure(new Point(points[0].X, floor), true, true);
-            ctx.PolyLineTo(points, true, false);
-            ctx.LineTo(new Point(points[^1].X, floor), true, false);
-        }
-        area.Freeze();
-        dc.DrawGeometry(Alpha(ChannelBrush, 0x30), null, area);
-        var line = new StreamGeometry();
-        using (var ctx = line.Open())
-        {
-            ctx.BeginFigure(points[0], false, false);
-            ctx.PolyLineTo(points.Skip(1).ToList(), true, true);
-        }
-        line.Freeze();
-        dc.DrawGeometry(null, new Pen(ChannelBrush, 1.8) { LineJoin = PenLineJoin.Round }, line);
+        dc.DrawGeometry(Alpha(ChannelBrush, 0x30), null, CreateAreaGeometry(points, top + plotH));
+        var pen = new Pen(ChannelBrush, 1.8) { LineJoin = PenLineJoin.Round };
+        pen.Freeze();
+        dc.DrawGeometry(null, pen, CreatePolylineGeometry(points));
 
-        // Média dos pontos à vista, rotulada na própria linha (a média exata do teste fica na régua do resultado)
         double mean = _samples.Average(s => s.Y);
         double my = Math.Round(Y(mean)) + 0.5;
         dc.DrawLine(Stroke(MutedBrush, 1, new DashStyle(new double[] { 4, 3 }, 0)), new Point(left, my), new Point(points[^1].X, my));

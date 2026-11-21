@@ -1,18 +1,19 @@
-using CoreBi.Engine.Tools.Apps;
-using System.ComponentModel;
-using System.Windows.Controls;
 using CoreBi.Desktop.Services;
 using CoreBi.Engine.Infrastructure;
+using CoreBi.Engine.Performance;
+using CoreBi.Engine.Tools.Apps;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace CoreBi.Desktop.Views;
 
 /// <summary>Aba Ferramentas · Instalar apps: essenciais pós-formatação pelo winget.</summary>
 public partial class AppsView : UserControl
 {
-    internal FeatureContext Context { get; set; } = null!;
+    private FeatureContext _context = null!;
     public AppsView() => InitializeComponent();
+    internal void Initialize(FeatureContext context) => _context = context;
 
     internal List<InstallableApp>? _installApps;
     internal bool _appsBusy, _appsStop;
@@ -74,7 +75,7 @@ public partial class AppsView : UserControl
     private bool _appsRefreshing;
     internal async Task InitAppsAsync()
     {
-        if (_appsBusy || _appsRefreshing || Context.IsClosing) return;
+        if (_appsBusy || _appsRefreshing || _context.IsClosing) return;
         _appsRefreshing = true;
         AppsList.IsEnabled = false;
         BtnAppsInstall.IsEnabled = false;
@@ -93,8 +94,8 @@ public partial class AppsView : UserControl
                 AppsCount.Text = _installApps.Count.ToString();
                 UpdateColumns();
             }
-            var names = await Task.Run(AppInstaller.InstalledNames, Context.Lifetime);
-            if (Context.IsClosing) return;
+            var names = await Task.Run(AppInstaller.InstalledNames, _context.Lifetime);
+            if (_context.IsClosing) return;
             foreach (var app in _installApps)
             {
                 app.Installed = names.Any(name => name.StartsWith(app.DisplayPrefix, StringComparison.OrdinalIgnoreCase));
@@ -113,43 +114,30 @@ public partial class AppsView : UserControl
         finally
         {
             _appsRefreshing = false;
-            if (!Context.IsClosing) { AppsList.IsEnabled = true; UpdateInstallButton(); }
+            if (!_context.IsClosing) { AppsList.IsEnabled = true; UpdateInstallButton(); }
         }
     }
 
-    internal void BtnAppsToggleAll_Click(object sender, RoutedEventArgs e)
+    private void BtnAppsToggleAll_Click(object sender, RoutedEventArgs e)
     {
         if (_installApps == null || _appsBusy) return;
         var open = _installApps.Where(a => !a.Installed).ToList();
-        if (open.Count > 0 && open.All(a => a.Selected)) BtnAppsNone_Click(sender, e);
-        else BtnAppsAll_Click(sender, e);
+        bool selectAll = !(open.Count > 0 && open.All(a => a.Selected));
+        foreach (var a in _installApps) a.Selected = selectAll && !a.Installed;
     }
 
-    internal void BtnAppsAll_Click(object sender, RoutedEventArgs e)
+    private void BtnAppsStore_Click(object sender, RoutedEventArgs e)
     {
-        if (_installApps == null || _appsBusy) return;
-        foreach (var a in _installApps) a.Selected = !a.Installed;
-    }
-
-    internal void BtnAppsNone_Click(object sender, RoutedEventArgs e)
-    {
-        if (_installApps == null || _appsBusy) return;
-        foreach (var a in _installApps) a.Selected = false;
-    }
-
-    internal void BtnAppsStore_Click(object sender, RoutedEventArgs e)
-    {
-        // Página do "Instalador de Aplicativo" (App Installer), que traz o winget.
         try { Process.Start(new ProcessStartInfo("ms-windows-store://pdp/?productid=9NBLGGH4NNS1") { UseShellExecute = true }); }
         catch (Exception ex) { Say("Não foi possível abrir a Microsoft Store", ex.Message); }
     }
 
-    internal async void BtnAppsInstall_Click(object sender, RoutedEventArgs e)
+    private async void BtnAppsInstall_Click(object sender, RoutedEventArgs e)
     {
         if (_appsBusy) { _appsStop = true; BtnAppsInstall.IsEnabled = false; Say("Parando depois do app atual…"); return; }
-        using var workload = Context.Workloads.TryBegin("Install apps");
+        using var workload = _context.Workloads.TryBegin(WorkloadOperations.InstallApps);
         if (workload == null) { Say("Termine a outra operação antes"); return; }
-        using var critical = Context.BeginCriticalOperation();
+        using var critical = _context.BeginCriticalOperation("Aguarde a instalação terminar. Em Instalar apps, Parar encerra a fila depois do app atual.");
         if (_installApps == null) return;
 
         var sel = _tiles.Where(t => t.App.Selected && !t.App.Installed).ToList();
@@ -179,7 +167,7 @@ public partial class AppsView : UserControl
                 tile.Phase = AppPhase.Installing;
                 try
                 {
-                    var (success, msg) = await AppInstaller.InstallAsync(app, Context.Lifetime);
+                    var (success, msg) = await AppInstaller.InstallAsync(app, _context.Lifetime);
                     app.Status = msg;
                     tile.Phase = success ? AppPhase.Done : AppPhase.Failed;
                     if (success) { ok++; app.Selected = false; }
@@ -195,7 +183,6 @@ public partial class AppsView : UserControl
         finally
         {
             _appsBusy = false;
-            // Parado no meio: a barra não fica parada pela metade depois que a tarefa acabou.
             if (done < sel.Count) ToolPage.EndProgress(AppsProgressFill);
             Ui.SetRunning(BtnAppsInstall, false, "Instalar apps", idleIcon: "");
             UpdateInstallButton();
@@ -209,8 +196,7 @@ public partial class AppsView : UserControl
 
 public enum AppPhase { Idle, Queued, Installing, Done, Failed, Skipped }
 
-/// <summary>Cartão de um app: o item do catálogo e a etapa desta instalação, que dá o estado mostrado embaixo do cartão.</summary>
-public sealed class AppTile : INotifyPropertyChanged
+public sealed class AppTile : ObservableObject
 {
     internal AppTile(InstallableApp app)
     {
@@ -222,16 +208,11 @@ public sealed class AppTile : INotifyPropertyChanged
     }
 
     public InstallableApp App { get; }
-    /// <summary>Dica do cartão: o pacote e, se a instalação falhou, o motivo inteiro (o canto só diz "Falhou").</summary>
     public string Tip => Phase == AppPhase.Failed && App.Status.Length > 0 ? $"{App.Status}\nPacote winget: {App.WingetId}" : $"Pacote winget: {App.WingetId}";
 
     private AppPhase _phase;
     public AppPhase Phase { get => _phase; set { if (_phase == value) return; _phase = value; Changed(); } }
 
-    /// <summary>
-    /// O que o canto do cartão mostra no lugar do marcador, em texto curto: o resultado desta instalação vale mais que o
-    /// inventário; sem nada a dizer, fica vazio e o marcador volta.
-    /// </summary>
     public string StateText => Phase switch
     {
         AppPhase.Queued => "Na fila",
@@ -242,7 +223,6 @@ public sealed class AppTile : INotifyPropertyChanged
         _ => App.Installed ? "Instalado" : "",
     };
 
-    /// <summary>Tom do estado: Signal (instalando), Danger (falhou), Faint (na fila ou parado); instalado fica no tom calmo.</summary>
     public string Tone => Phase switch
     {
         AppPhase.Queued or AppPhase.Skipped => "Faint",
@@ -251,11 +231,10 @@ public sealed class AppTile : INotifyPropertyChanged
         _ => "",
     };
 
-    public event PropertyChangedEventHandler? PropertyChanged;
     private void Changed()
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StateText)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Tone)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Tip)));
+        OnPropertyChanged(nameof(StateText));
+        OnPropertyChanged(nameof(Tone));
+        OnPropertyChanged(nameof(Tip));
     }
 }

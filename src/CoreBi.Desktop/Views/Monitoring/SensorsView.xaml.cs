@@ -65,7 +65,7 @@ public partial class SensorsView : UserControl
         return false;
     }
 
-    internal void Initialize(SensorMonitor monitor) => _monitor = monitor;
+    internal void Initialize(Services.FeatureContext context) => _monitor = context.Sensors;
 
     /// <summary>Atalho de outra página (Sistema): abre já filtrado no componente ("cpu", "ram" ou "board"), sem filtro de tipo nem busca.</summary>
     internal void ShowComponent(string target)

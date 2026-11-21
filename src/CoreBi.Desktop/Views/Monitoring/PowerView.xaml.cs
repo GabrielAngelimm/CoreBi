@@ -25,19 +25,7 @@ public partial class PowerView : UserControl
     public sealed record SettingItem(string Title, string Value, string? Tip, string BeforeText = "", bool Changed = false);
     public sealed record PlanItem(Guid Id, string Name, bool IsActive, bool IsPending);
 
-    /// <summary>Base das linhas que mudam a cada segundo: avisa a interface só do que mudou.</summary>
-    public abstract class LiveItem : INotifyPropertyChanged
-    {
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void Set<T>(ref T field, T value, [CallerMemberName] string name = "")
-        {
-            if (EqualityComparer<T>.Default.Equals(field, value)) return;
-            field = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
-    }
-
-    public sealed class RailItem : LiveItem
+    public sealed class RailItem : ObservableObject
     {
         private double _value = double.NaN, _min = double.NaN, _max = double.NaN;
         private string _valueText = "", _deviationText = "";
@@ -55,7 +43,7 @@ public partial class PowerView : UserControl
         public bool Off { get => _off; set => Set(ref _off, value); }
     }
 
-    public sealed class VoltItem : LiveItem
+    public sealed class VoltItem : ObservableObject
     {
         private double _value = double.NaN, _min = double.NaN, _max = double.NaN;
         private string _valueText = "";
@@ -73,15 +61,12 @@ public partial class PowerView : UserControl
     }
 
     private FeatureContext _context = null!;
-    private SensorMonitor _monitor = null!;
-    private Func<GpuInfo?> _mainGpu = () => null;
-    private Func<float?> _gpuPower = () => null;
+    private SensorMonitor _monitor => _context.Sensors;
     private bool _refreshing, _applyingPlan, _stacked, _dirty;
-    private bool _voltsShown = true;   // sem nenhuma tensão lida, o cartão sai e o histórico ocupa a largura toda
-    private double _heroSize = 88;     // leitura grande do consumo: 88 com largura, 72 em janelas menores
+    private bool _voltsShown = true;
+    private double _heroSize = 88;
     private PowerPlan? _pendingPlan;
 
-    // Sessão: consumo desde que o CoreBi abriu (1 amostra/s)
     private readonly List<(float? Cpu, float? Gpu)> _trace = new();
     private DateTime? _sessionStart, _lastSample, _peakAt;
     private double _energyWh, _sumW, _peakW;
@@ -91,19 +76,15 @@ public partial class PowerView : UserControl
     private readonly List<RailItem> _rails = new();
     private readonly List<VoltItem> _volts = new();
 
-    /// <summary>Última leitura completa (fonte e baterias); nula até a primeira.</summary>
     internal PowerSnapshot? Snapshot { get; private set; }
     internal PlanDetail? Plan { get; private set; }
     internal PowerHistory? History { get; private set; }
 
     public PowerView() => InitializeComponent();
 
-    internal void Initialize(FeatureContext context, SensorMonitor monitor, Func<GpuInfo?> mainGpu, Func<float?> gpuPower)
+    internal void Initialize(FeatureContext context)
     {
         _context = context;
-        _monitor = monitor;
-        _mainGpu = mainGpu;
-        _gpuPower = gpuPower;
         RailRows.ItemsSource = _rails;
         VoltRows.ItemsSource = _volts;
     }
@@ -383,7 +364,7 @@ public partial class PowerView : UserControl
     {
         if (_monitor == null || !_monitor.IsOpen) return;
         DateTime now = DateTime.Now;
-        float? cpu = _monitor.CpuPower, gpu = _gpuPower();
+        float? cpu = _monitor.CpuPower, gpu = _context.PrimaryGpuPower();
         _trace.Add((cpu, gpu));
         if (_trace.Count > PowerTrace.Capacity) _trace.RemoveAt(0);
         if (cpu != null || gpu != null)
@@ -420,7 +401,7 @@ public partial class PowerView : UserControl
         Split.Second = gpu ?? 0;
         Readout(CpuNow, cpu is float c ? $"{c:0.0}" : "—", cpu != null ? "W" : "");
         Readout(GpuNow, gpu is float g ? $"{g:0.0}" : "—", gpu != null ? "W" : "");
-        GpuNow.ToolTip = gpu == null && _mainGpu() != null ? "A placa de vídeo não informou o consumo." : null;
+        GpuNow.ToolTip = gpu == null && _context.PrimaryGpu != null ? "A placa de vídeo não informou o consumo." : null;
         Trace.EmptyText = _monitor.IsOpen ? "Nenhum sensor de consumo do processador ou da placa de vídeo respondeu." : "Coletando as primeiras amostras…";
         if (any || _trace.Count > 0) Trace.Samples = _trace.ToList();
         ShowSession();
@@ -458,13 +439,7 @@ public partial class PowerView : UserControl
     {
         var problem = cpu == null && _monitor.IsOpen ? _monitor.DiagnoseCpuSensors() : SensorMonitor.CpuSensorProblem.None;
         string what = _voltsShown ? "Sem leitura" : "Sem consumo nem tensões";
-        string? text = problem switch
-        {
-            SensorMonitor.CpuSensorProblem.NotElevated => $"{what}: abra como administrador",
-            SensorMonitor.CpuSensorProblem.PawnIOMissing => $"{what}: falta o driver PawnIO",
-            SensorMonitor.CpuSensorProblem.ReadFailed => $"{what}: o driver não respondeu",
-            _ => null,
-        };
+        string? text = CpuSensorMessages.Inline(problem, what);
         CpuCaption.Visibility = text != null ? Visibility.Visible : Visibility.Collapsed;
         CpuCaption.Text = text ?? "";
         CpuCaption.ToolTip = SensorMonitor.Explain(problem) is { Length: > 0 } why ? why : null;
@@ -542,28 +517,17 @@ public partial class PowerView : UserControl
         VoltRows.Visibility = comps ? Visibility.Visible : Visibility.Collapsed;
         VoltRows.Margin = new Thickness(0, rails ? 0 : 16, 0, 0);
         VoltEmpty.Visibility = rails || comps ? Visibility.Collapsed : Visibility.Visible;
-        // Uma frase curta com o que fazer; o motivo completo fica na dica, como no aviso do consumo
         var problem = _monitor.IsOpen ? _monitor.DiagnoseCpuSensors() : SensorMonitor.CpuSensorProblem.None;
-        VoltEmpty.Text = !_monitor.IsOpen ? "Aguardando os sensores…" : problem switch
-        {
-            SensorMonitor.CpuSensorProblem.NotElevated => "Sem leitura: abra o CoreBi como administrador.",
-            SensorMonitor.CpuSensorProblem.PawnIOMissing => "Sem leitura: falta o driver PawnIO.",
-            SensorMonitor.CpuSensorProblem.None => "A biblioteca de sensores não lê as tensões desta placa-mãe.",
-            _ => "Os sensores da placa-mãe e do processador não responderam.",
-        };
+        VoltEmpty.Text = CpuSensorMessages.VoltagesEmpty(_monitor.IsOpen, problem);
         VoltEmpty.ToolTip = SensorMonitor.Explain(problem) is { Length: > 0 } why ? why : null;
         VoltAll.Visibility = map.Total > 0 ? Visibility.Visible : Visibility.Collapsed;
         VoltAllText.Text = map.Total == 1 ? "A tensão em Sensores" : $"Todas as {map.Total} tensões em Sensores";
 
-        // Nenhuma tensão lida (com os sensores já abertos): o cartão sairia alto com uma frase só; dá a largura ao histórico
         bool shown = !_monitor.IsOpen || rails || comps;
         if (shown != _voltsShown) { _voltsShown = shown; Arrange(); }
     }
 
-    private void VoltAll_Click(object sender, RoutedEventArgs e)
-    {
-        if (Window.GetWindow(this) is MainWindow main) main.NavSensors.IsChecked = true;
-    }
+    private void VoltAll_Click(object sender, RoutedEventArgs e) => _context.Navigate("PageSensors");
 
     // ---------------- layout ----------------
 
@@ -622,22 +586,8 @@ public partial class PowerView : UserControl
 
     // ---------------- formatação ----------------
 
-    /// <summary>
-    /// Leitura com a unidade menor e em tom secundário ao lado (como nos mostradores da Visão geral). Sem dado ("—"), o
-    /// travessão fica um tom abaixo (Faint), como nos mostradores do app; com dado, volta à cor do estilo.
-    /// </summary>
-    private static void Readout(TextBlock target, string value, string unit)
-    {
-        target.Inlines.Clear();
-        if (value == "—") target.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
-        else target.ClearValue(TextBlock.ForegroundProperty);
-        target.Inlines.Add(new Run(value));
-        if (unit.Length == 0) return;
-        var u = new Run(" " + unit) { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.3)) };
-        u.SetResourceReference(TextElement.ForegroundProperty, "Muted");
-        u.SetResourceReference(TextElement.FontFamilyProperty, "UiFont");
-        target.Inlines.Add(u);
-    }
+    private static void Readout(TextBlock target, string value, string unit) =>
+        ReadoutFormat.Set(target, value, unit, unitRatio: 0.3, dimWhenDash: true);
 
     /// <summary>"4 h 33 min" com as unidades menores; uso de menos de um minuto é "&lt; 1 min", não zero.</summary>
     private static void Readout(TextBlock target, TimeSpan span)

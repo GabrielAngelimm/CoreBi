@@ -118,6 +118,12 @@ public static class Ui
     /// <summary>Raio dos pain\u00E9is (RadiusPanel), para recortar cantos desenhados em c\u00F3digo.</summary>
     public static double PanelRadius(FrameworkElement element) =>
         element.TryFindResource("RadiusPanel") is CornerRadius r ? r.TopLeft : 10;
+
+    public static string? CheckedTag(System.Windows.Controls.Panel panel) =>
+        panel.Children.OfType<System.Windows.Controls.RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
+
+    public static string CheckedText(System.Windows.Controls.Panel panel) =>
+        panel.Children.OfType<System.Windows.Controls.RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Content?.ToString() ?? "";
 }
 
 /// <summary>Texto vazio some do layout (rótulos opcionais em templates).</summary>

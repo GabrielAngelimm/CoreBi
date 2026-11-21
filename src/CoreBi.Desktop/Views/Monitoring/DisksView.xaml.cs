@@ -1,4 +1,5 @@
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Sensors;
 using CoreBi.Engine.Monitoring.Storage;
@@ -10,14 +11,8 @@ using System.Windows.Media;
 
 namespace CoreBi.Desktop.Views;
 
-/// <summary>
-/// Discos: rack com uma baia por disco físico e, para o disco escolhido, placa de identificação, vida útil, temperatura
-/// ao vivo com histórico, integridade (S.M.A.R.T.) e odômetro. A leitura completa vem do Windows ao abrir a página;
-/// temperatura e atividade seguem os sensores a cada segundo.
-/// </summary>
 public partial class DisksView : UserControl
 {
-    /// <summary>Baia do rack: o cartão lido e a temperatura ao vivo (quando o disco tem sensor).</summary>
     public sealed class DiskBay
     {
         public DiskBay(DiskHealthCard card)
@@ -27,48 +22,33 @@ public partial class DisksView : UserControl
             Meta = d == null ? card.Meta
                 : string.Join(" · ", new[] { d.Kind, d.Bus, FmtSize(d.SizeBytes) }.Where(s => s.Length > 0));
             Letters = d == null ? "" : string.Join(" ", d.Letters);
-            _temp = d?.Temperature;
+            Temperature = d?.Temperature;
         }
 
         public DiskHealthCard Card { get; }
         public DiskDetail? Disk => Card.Disk;
         public string Title => Card.Title;
         public string Meta { get; }
-        /// <summary>Letras das unidades, em destaque ao lado do nome (discos do mesmo modelo se distinguem por elas).</summary>
         public string Letters { get; }
-        public string VerdictText => Sentence(Card.VerdictText);
+        public string VerdictText => HardwareNaming.Sentence(Card.VerdictText);
         public string State => Card.Verdict switch { HealthVerdict.Good => "Ok", HealthVerdict.Warning => "Warn", HealthVerdict.Critical => "Danger", _ => "" };
-        private double? _temp;
-        /// <summary>Temperatura atual: a do sensor quando há, senão a lida pelo Windows.</summary>
-        public double? Temperature
-        {
-            get => _temp;
-            set
-            {
-                if (_temp == value) return;
-                _temp = value;
-            }
-        }
+        public double? Temperature { get; set; }
     }
 
     public sealed record DiskCheck(string Title, string Value, string State, string? Tip = null);
-    /// <summary>Selo da placa: rótulo, valor e dica opcional (o tamanho explica a base de contagem).</summary>
     public sealed record SpecItem(string Key, string Value, string? Tip = null);
-    /// <summary>Unidade no espaço por unidade: Percent é a fração livre em destaque; Line, "usados de total".</summary>
-    public sealed record VolumeRow(string Letter, string Label, string Line, string Percent, string PercentLabel, bool IsRest);
+    public sealed record VolumeRow(string Letter, string Label, string Line);
 
-    /// <summary>Últimos 5 min de um disco no LibreHardwareMonitor: temperatura (1/s) e taxas atuais.</summary>
     private sealed class DiskTrace
     {
         public readonly List<float?> Temps = new();
         public float? Read, Write;
-        /// <summary>Maior temperatura vista desde que o CoreBi abriu (inclui o que já saiu da janela de 5 min do gráfico).</summary>
         public float? Peak;
         public float? Last => Temps.Count > 0 ? Temps[^1] : null;
     }
 
     private FeatureContext _context = null!;
-    private SensorMonitor _monitor = null!;
+    private SensorMonitor _monitor => _context.Sensors;
     private bool _refreshing;
     private List<DiskBay> _bays = new();
     private List<DriveCard> _drives = new();
@@ -78,11 +58,7 @@ public partial class DisksView : UserControl
 
     public DisksView() => InitializeComponent();
 
-    internal void Initialize(FeatureContext context, SensorMonitor monitor)
-    {
-        _context = context;
-        _monitor = monitor;
-    }
+    internal void Initialize(FeatureContext context) => _context = context;
 
     private async void BtnDiskRefresh_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
 
@@ -248,7 +224,7 @@ public partial class DisksView : UserControl
 
         ShowSpace(d);
         ShowLife(d);
-        ShowTemperature(bay, d);
+        ShowTemperature(d);
         ShowChecks(d);
         ShowOdometer(d);
         ShowLive();
@@ -296,10 +272,9 @@ public partial class DisksView : UserControl
         Gb(SpaceUsed, used, 100 - freeShare);
         Gb(SpaceFree, free, freeShare);
 
-        // Mais de uma unidade no disco: uma linha por letra com quanto ainda está livre
         DiskVolumes.ItemsSource = mine.Count > 1
             ? mine.Select(v => new VolumeRow(v.Letter, string.IsNullOrWhiteSpace(v.Label) ? v.FileSystem : v.Label,
-                $"{DriveCard.Fmt(v.Free)} livres de {DriveCard.Fmt(v.Total)}", "", "", false)).ToList()
+                $"{DriveCard.Fmt(v.Free)} livres de {DriveCard.Fmt(v.Total)}")).ToList()
             : null;
     }
 
@@ -325,7 +300,7 @@ public partial class DisksView : UserControl
         }
     }
 
-    private void ShowTemperature(DiskBay bay, DiskDetail d)
+    private void ShowTemperature(DiskDetail d)
     {
         TempScale.WarnAt = d.TempWarnAt;
         TempScale.CritAt = d.TempCritAt;
@@ -516,22 +491,9 @@ public partial class DisksView : UserControl
 
     // ---------------- formatação ----------------
 
-    /// <summary>Leitura com a unidade menor e em tom secundário ao lado (como nos mostradores da Visão geral).</summary>
-    private static void Readout(TextBlock target, string value, string unit, bool balanced = false)
-    {
-        target.Inlines.Clear();
-        // balanced: uma cópia invisível da unidade à esquerda, para o número (e não número + unidade) ficar no centro
-        if (balanced && unit.Length > 0)
-            target.Inlines.Add(new Run(unit + " ") { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.4)), Foreground = Brushes.Transparent, FontFamily = (FontFamily)Application.Current.FindResource("UiFont") });
-        target.Inlines.Add(new Run(value));
-        if (unit.Length == 0) return;
-        var u = new Run(" " + unit) { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.4)) };
-        u.SetResourceReference(TextElement.ForegroundProperty, "Muted");
-        u.SetResourceReference(TextElement.FontFamilyProperty, "UiFont");
-        target.Inlines.Add(u);
-    }
+    private static void Readout(TextBlock target, string value, string unit, bool balanced = false) =>
+        ReadoutFormat.Set(target, value, unit, unitRatio: 0.4, balanced: balanced);
 
-    /// <summary>GB (decimais, como o S.M.A.R.T. informa) → valor e unidade; TB a partir de 1000 GB.</summary>
     private static (string Value, string Unit) SplitData(double gb, bool decimals = true) =>
         gb >= 1000 ? (decimals ? $"{gb / 1000:N1}" : $"{gb / 1000:N0}", "TB") : ($"{gb:N0}", "GB");
 
@@ -543,16 +505,12 @@ public partial class DisksView : UserControl
         _ => $"{bytesPerSecond / 1024f:0} KB/s",
     };
 
-    /// <summary>Tamanho do disco na base do Windows (1024), a mesma do painel Espaço e das unidades.</summary>
     private static string FmtSize(long bytes) => bytes > 0 ? DriveCard.Fmt(bytes) : "";
 
-    /// <summary>Tamanho anunciado pelo fabricante (base 1000), como na caixa do disco; vai na dica do selo.</summary>
     private static string FmtDecimal(long bytes)
     {
         double v = bytes; string[] u = { "B", "KB", "MB", "GB", "TB" }; int i = 0;
         while (v >= 1000 && i < u.Length - 1) { v /= 1000; i++; }
         return bytes > 0 ? $"{v:0.#} {u[i]}" : "";
     }
-
-    private static string Sentence(string text) => text.Length == 0 ? text : text[..1].ToUpper() + text[1..].ToLower();
 }

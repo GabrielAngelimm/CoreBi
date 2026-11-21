@@ -4,60 +4,9 @@ using System.Windows.Media;
 
 namespace CoreBi.Desktop;
 
-/// <summary>
-/// Base dos instrumentos da página Energia: a mesma dos instrumentos de Discos (pincéis por referência de recurso, que
-/// acompanham o tema sozinhos) com os canais do processador e da placa de vídeo e o neutro técnico (aço). O que não é de
-/// um componente (carga da bateria) é desenhado em tinta ou em aço; a sessão atual do PC, que está "ao vivo", no sinal.
-/// </summary>
-public abstract class EnergyInstrument : DiskInstrument
+/// <summary>Base dos instrumentos da página Energia.</summary>
+public abstract class EnergyInstrument : InstrumentBase
 {
-    public static readonly DependencyProperty CpuBrushProperty =
-        DependencyProperty.Register(nameof(CpuBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
-    public static readonly DependencyProperty GpuBrushProperty =
-        DependencyProperty.Register(nameof(GpuBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
-    public static readonly DependencyProperty SteelBrushProperty =
-        DependencyProperty.Register(nameof(SteelBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
-    public static readonly DependencyProperty SignalBrushProperty =
-        DependencyProperty.Register(nameof(SignalBrush), typeof(Brush), typeof(EnergyInstrument), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.AffectsRender));
-
-    public Brush CpuBrush { get => (Brush)GetValue(CpuBrushProperty); set => SetValue(CpuBrushProperty, value); }
-    public Brush GpuBrush { get => (Brush)GetValue(GpuBrushProperty); set => SetValue(GpuBrushProperty, value); }
-    public Brush SteelBrush { get => (Brush)GetValue(SteelBrushProperty); set => SetValue(SteelBrushProperty, value); }
-    public Brush SignalBrush { get => (Brush)GetValue(SignalBrushProperty); set => SetValue(SignalBrushProperty, value); }
-
-    protected EnergyInstrument()
-    {
-        SetResourceReference(CpuBrushProperty, "Cpu");
-        SetResourceReference(GpuBrushProperty, "Gpu");
-        SetResourceReference(SteelBrushProperty, "Steel");
-        SetResourceReference(SignalBrushProperty, "Signal");
-    }
-
-    protected const double Period = 5, Gap = 1.5;
-
-    /// <summary>Medidor segmentado (como um VU): um gomo a cada 5 px; color decide a cor de cada gomo pela posição (0–1).</summary>
-    protected void Segments(DrawingContext dc, Rect area, Func<double, Brush> color)
-    {
-        int n = (int)Math.Floor((area.Width + Gap) / Period);
-        for (int i = 0; i < n; i++)
-            dc.DrawRectangle(color((i + 0.5) / n), null, new Rect(area.X + i * Period, area.Y, Period - Gap, area.Height));
-    }
-
-    /// <summary>Altura-x da letra de mostrador (ou da interface) no tamanho dado: para centrar um traço ou ponto no meio dela.</summary>
-    protected double XHeight(double size, bool readout = true)
-    {
-        var family = (TryFindResource(readout ? "Readout" : "UiFont") as FontFamily) ?? new FontFamily("Segoe UI");
-        return new Typeface(family, FontStyles.Normal, FontWeights.Normal, readout ? FontStretches.SemiCondensed : FontStretches.Normal).XHeight * size;
-    }
-
-    protected static Color ColorOf(Brush brush, Color fallback) => brush is SolidColorBrush s ? s.Color : fallback;
-    protected static Brush Alpha(Brush brush, byte alpha)
-    {
-        var c = ColorOf(brush, Colors.Gray);
-        var b = new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B));
-        b.Freeze();
-        return b;
-    }
 }
 
 /// <summary>
@@ -114,7 +63,7 @@ public sealed class PowerTrace : EnergyInstrument
         const double left = 44, bottom = 20, top = 10;
         double plotW = w - left, plotH = h - top - bottom;
         double peak = _samples.Where(Known).Select(Total).DefaultIfEmpty(0).Max();
-        double step = peak <= 80 ? 20 : peak <= 200 ? 50 : peak <= 400 ? 100 : 200;
+        double step = ChartScale.PowerStep(peak);
         double hi = Math.Max(step * 4, Math.Ceiling(peak * 1.15 / step) * step);
         double X(int i) => left + plotW * (i + Capacity - _samples.Count) / (Capacity - 1);
         double Y(double v) => top + plotH * (1 - Math.Clamp(v, 0, hi) / hi);
@@ -169,8 +118,8 @@ public sealed class PowerTrace : EnergyInstrument
             bool hasCpu = run.Any(i => _samples[i].Cpu != null), hasGpu = run.Any(i => _samples[i].Gpu != null);
             if (hasGpu) dc.DrawGeometry(gpuFill, null, Band(upper, lower));
             if (hasCpu) dc.DrawGeometry(cpuFill, null, Band(lower, lower.Select(p => new Point(p.X, floor)).ToList()));
-            if (hasCpu) dc.DrawGeometry(null, cpuPen, Polyline(lower));
-            if (hasGpu) dc.DrawGeometry(null, gpuPen, Polyline(upper));
+            if (hasCpu) dc.DrawGeometry(null, cpuPen, CreatePolylineGeometry(lower));
+            if (hasGpu) dc.DrawGeometry(null, gpuPen, CreatePolylineGeometry(upper));
         }
 
         // Pico da janela, marcado sobre a curva
@@ -218,18 +167,6 @@ public sealed class PowerTrace : EnergyInstrument
         return g;
     }
 
-    private static Geometry Polyline(IList<Point> points)
-    {
-        var g = new StreamGeometry();
-        using (var ctx = g.Open())
-        {
-            ctx.BeginFigure(points[0], false, false);
-            ctx.PolyLineTo(points.Skip(1).ToList(), true, true);
-        }
-        g.Freeze();
-        return g;
-    }
-
     private void DrawHover(DrawingContext dc, double w, double left, double top, double plotW, double plotH, Func<int, double> x, Func<double, double> y)
     {
         if (_hoverX is not double mx || mx < left) return;
@@ -247,8 +184,7 @@ public sealed class PowerTrace : EnergyInstrument
         if (s.Cpu is float c) dc.DrawEllipse(SurfaceBrush, Stroke(CpuBrush, 2.5), new Point(px, y(c)), 5, 5);
         if (s.Gpu != null) dc.DrawEllipse(SurfaceBrush, Stroke(GpuBrush, 2.5), new Point(px, y(Total(s))), 5.5, 5.5);
 
-        int ago = _samples.Count - 1 - nearest;
-        string when = ago <= 0 ? "agora" : ago >= 60 ? $"há {ago / 60} min {ago % 60:00} s" : $"há {ago} s";
+        string when = ChartScale.RelativeAgo(_samples.Count - 1 - nearest);
         var time = Text(when, 11.5, FaintBrush, readout: false);
         var total = Text($"{Total(s):0.#} W", 16, InkBrush);
         var rows = new List<(Brush Dot, FormattedText Label, FormattedText Value)>();

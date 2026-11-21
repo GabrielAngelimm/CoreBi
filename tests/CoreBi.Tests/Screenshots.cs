@@ -55,15 +55,12 @@ internal static partial class Program
             Wait(seconds * 1000);
             foreach (string theme in themes)
             {
-                ThemeManager.Apply(theme == "light");
-                window.UpdateThemeButton();
-                window.RedrawThemedVisuals();
+                window.ApplyTheme(theme == "light");
                 Wait(1500);
                 foreach (string page in pages)
                 {
                     string[] parts = page.Split(':', 2);
-                    if (typeof(MainWindow).GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-                            .Select(f => f.GetValue(window)).OfType<RadioButton>().FirstOrDefault(n => n.Tag as string == parts[0]) is not { } nav)
+                    if (window.NavPanel.Children.OfType<RadioButton>().FirstOrDefault(n => n.Tag as string == parts[0]) is not { } nav)
                     {
                         Console.WriteLine("Página sem item no menu: " + parts[0]);
                         continue;
@@ -113,7 +110,7 @@ internal static partial class Program
             LocalVerdict = CoreBi.Engine.Monitoring.Health.HealthVerdict.Good,
             InternetVerdict = CoreBi.Engine.Monitoring.Health.HealthVerdict.Good,
         };
-        window.PageNet.GetType().GetMethod("ShowResult", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window.PageNet, [sample]);
+        window.PageNet.DisplayResult(sample);
         Wait(400);
     }
 

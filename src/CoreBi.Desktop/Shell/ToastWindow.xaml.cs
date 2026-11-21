@@ -1,8 +1,7 @@
-using System.Windows.Threading;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 
 namespace CoreBi.Desktop;
 
@@ -15,15 +14,11 @@ public partial class ToastWindow : Window
     {
         InitializeComponent();
         SourceInitialized += (_, _) =>
-        {
-            var h = new WindowInteropHelper(this).Handle;
-            SetWindowLong(h, -20, GetWindowLong(h, -20) | 0x80 | 0x8000000); // WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE
-        };
+            Win32Window.AddExtendedStyles(new WindowInteropHelper(this).Handle, Win32Window.WsExToolWindow | Win32Window.WsExNoActivate);
         SizeChanged += (_, _) => Place();
         _hide.Tick += (_, _) => { _hide.Stop(); Fade(0, () => Hide()); };
     }
 
-    /// <summary>Mostra (ou atualiza, se já visível) o aviso por 5 s. icon: glifo Segoe MDL2.</summary>
     public void Notify(string title, string text, string icon)
     {
         TTitle.Text = title;
@@ -49,7 +44,4 @@ public partial class ToastWindow : Window
         if (done != null) anim.Completed += (_, _) => done();
         BeginAnimation(OpacityProperty, anim);
     }
-
-    [DllImport("user32.dll")] private static extern int GetWindowLong(IntPtr h, int index);
-    [DllImport("user32.dll")] private static extern int SetWindowLong(IntPtr h, int index, int value);
 }
