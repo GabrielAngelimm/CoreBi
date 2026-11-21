@@ -8,12 +8,11 @@ CoreBi não possui conta própria, servidor próprio de coleta ou envio automát
 | Windows Update | Serviço e políticas do Windows, via API COM; busca e instalação solicitadas na interface |
 | Instalar apps / PawnIO | winget e suas fontes/instaladores; identificador do pacote escolhido |
 | Teste de rede | Cloudflare e, se necessário, M-Lab: tráfego de teste de download/upload; DNS/ICMP aos destinos definidos no código e gateway |
-| API opcional de FPS | HowManyFPS: chave do usuário e parâmetros de hardware/jogo/preset; contrato externo ainda não validado com chave real |
 | Links de ajuda | Navegador padrão abre o endereço selecionado |
 
 Conexões expõem IP e metadados normais de HTTP ao provedor. Provedores externos seguem suas próprias políticas e disponibilidade. O teste de rede consome banda; execute-o de forma consciente em conexões limitadas.
 
-Configurações, históricos e cache ficam em `%AppData%\CoreBi`. A chave usa DPAPI; o cache não grava a chave em texto e tem expiração/limites. Diagnósticos locais ficam na subpasta `Logs`, com dois arquivos de aproximadamente 1 MiB. O override `COREBI_DATA_DIR` existe para testes/desenvolvimento.
+Configurações e históricos ficam em `%AppData%\CoreBi`. Diagnósticos locais ficam na subpasta `Logs`, com dois arquivos de aproximadamente 1 MiB. O override `COREBI_DATA_DIR` existe para testes/desenvolvimento.
 
 Quando a Cloudflare pede uma pausa no teste de rede, `network-speed-cooldown.json` guarda somente o horário até o qual aguardar. Ele não registra IP, velocidade ou histórico; o prazo é observado mesmo após reiniciar o aplicativo.
 

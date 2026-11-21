@@ -104,7 +104,7 @@ public partial class MainWindow
             BenchRatio.Text = $"Multi ÷ single: {m / s:0.0}x com {threads} threads " +
                               $"({Environment.ProcessorCount / 2} núcleos com SMT costumam render 8–12x).";
 
-        _settings.BenchRuns.Insert(0, new BenchRun(DateTime.Now, mt, st, sustained, GameCatalog.ShortCpuName(_cpuName)));
+        _settings.BenchRuns.Insert(0, new BenchRun(DateTime.Now, mt, st, sustained, HardwareCatalog.ShortCpuName(_cpuName)));
         AddEvent("cpu", "Benchmark", "Render de CPU", mt is double mte ? $"{mte:N0} pts" : st is double ste ? $"{ste:N0} pts" : "", "Cpu");
         if (_settings.BenchRuns.Count > 10) _settings.BenchRuns.RemoveRange(10, _settings.BenchRuns.Count - 10);
         SaveSettings();
@@ -148,7 +148,7 @@ public partial class MainWindow
                                               r.Name.StartsWith("Core #") && r.RawValue > 0).Select(r => r.RawValue!.Value).ToList();
         BenchLive.ItemsSource = new[]
         {
-            new KeyValuePair<string, string>("CPU", GameCatalog.ShortCpuName(_cpuName)),
+            new KeyValuePair<string, string>("CPU", HardwareCatalog.ShortCpuName(_cpuName)),
             new KeyValuePair<string, string>("Threads", $"{Environment.ProcessorCount}"),
             new KeyValuePair<string, string>("Temperatura", _monitor.CpuTemperature is float t ? $"{t:0.#} °C" : "—"),
             new KeyValuePair<string, string>("Clock médio", clocks.Count > 0 ? $"{clocks.Average():0} MHz" : "—"),

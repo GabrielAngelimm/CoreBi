@@ -1,10 +1,7 @@
 using System.Diagnostics;
-using System.Net;
-using System.Net.Http;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Games;
 using CoreBi.Engine.Monitoring.Sensors;
@@ -28,6 +25,7 @@ internal static partial class Program
     {
         Check("settings: null collections and invalid scale recover safely", () =>
         {
+            Directory.CreateDirectory(AppSettings.Folder);
             string file = Path.Combine(AppSettings.Folder, "settings.json");
             File.WriteAllText(file, "{\"BenchRuns\":null,\"BenchRecords\":null,\"StartupRemoved\":null,\"OverlayScale\":999,\"OverlayCorner\":\"bad\"}");
             var settings = AppSettings.Load();
@@ -58,6 +56,23 @@ internal static partial class Program
             row.Update(42, 40, 45); monitor.Rows.Add(row); var snapshot = monitor.Snapshot(); row.Update(99, 40, 99);
             Require(snapshot[0].RawValue == 42, "Snapshot shared mutable sensor state"); row.Update(float.NaN, float.PositiveInfinity, null);
             Require(row.RawValue == null && row.Value == "—", "Invalid float displayed as measurement"); return new { snapshotStable = true, invalidUnknown = true };
+        });
+        Check("sensors: device change pauses reads and a driver swap retires only the GPU", () =>
+        {
+            using var monitor = new SensorMonitor();
+            var gpu = new SensorRow { Id = "g", Name = "GPU Core", Hardware = "gpu", HardwareType = HardwareType.GpuNvidia, Type = SensorType.Temperature };
+            var cpu = new SensorRow { Id = "c", Name = "Core Max", Hardware = "cpu", HardwareType = HardwareType.Cpu, Type = SensorType.Temperature };
+            gpu.Update(60, 50, 70); cpu.Update(55, 40, 80); monitor.Rows.Add(gpu); monitor.Rows.Add(cpu);
+            try
+            {
+                monitor.Pause(); Require(monitor.IsPaused && CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended, "Reads kept running during a device change");
+                monitor.Resume(); Require(!monitor.IsPaused && !CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended, "Plain device change left reads paused");
+                monitor.Pause(); monitor.RetireGpu(); monitor.Resume();
+                Require(monitor.GpuRetired && CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended, "GPU came back after a driver swap");
+                Require(gpu.RawValue == null && cpu.RawValue == 55, "Retiring the GPU touched other hardware or kept a stale reading");
+            }
+            finally { CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended = false; } // os testes seguintes ainda leem a placa
+            return new { gpuRetired = true, cpuKept = true };
         });
         Check("sensors: session statistics, reset and clear names", () =>
         {
@@ -183,21 +198,6 @@ internal static partial class Program
             Require(File.ReadAllText(original) == "original" && service.Backups.Count == 0, "Untrusted UI data used for restore");
             Expect<InvalidOperationException>(() => store.Read("../outside")); return new { canonicalDataOnly = true, retryable = true };
         });
-        Check("FPS API: invalid data rejected, valid cache reused and key changes isolated", () =>
-        {
-            using var test = new CaseFolder();
-            var handler = new HttpFixture(() => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"avgFps\":120,\"min1Fps\":80}", Encoding.UTF8, "application/json") });
-            using var http = new HttpClient(handler);
-            var client = new HowManyFpsClient(http, Path.Combine(test.Path, "cache.json")) { ApiKey = "unit-test-value" };
-            CoreBi.Engine.Games.HowManyFpsClient.Result Get() => client.GetAsync("cpu", "gpu", "game", "1080p", "native").GetAwaiter().GetResult();
-            Require(Get().AvgFps == 120 && Get().Min1Fps == 80 && handler.Calls == 1, "Valid cache missed");
-            Require(!File.ReadAllText(Path.Combine(test.Path, "cache.json")).Contains("unit-test-value"), "Credential stored in cache");
-            client.ApiKey = "another-test-value"; Get(); Require(handler.Calls == 2, "Changed key reused another account cache");
-            handler.Response = () => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"avgFps\":-1}", Encoding.UTF8, "application/json") };
-            client.ApiKey = "invalid-response-test"; Expect<HttpRequestException>(() => Get());
-            handler.Response = () => new HttpResponseMessage(HttpStatusCode.Found) { Headers = { Location = new Uri("https://example.invalid/") } };
-            Expect<HttpRequestException>(() => Get()); return new { invalidRejected = true, cacheScoped = true, redirectRejected = true, scope = "controlled HTTP fixture; external API not certified" };
-        });
         Check("benchmarks: invalid sizes and pre-cancelled work do not create files", () =>
         {
             using var test = new CaseFolder(); using var cancel = new CancellationTokenSource(); cancel.Cancel();
@@ -208,12 +208,10 @@ internal static partial class Program
             Expect<OperationCanceledException>(() => MemoryBench.MeasureLoading((_, _) => { }, cancel.Token));
             Require(!Directory.EnumerateFileSystemEntries(test.Path).Any(), "Pre-cancelled workload created files"); return new { noPartialMeasurements = true };
         });
-        Check("game references: unknown models produce no invented FPS or balance", () =>
+        Check("hardware references: unknown models produce no invented balance", () =>
         {
-            Require(GameCatalog.GpuPerf("RTX 4060 Laptop GPU") == null, "Desktop index used for mobile GPU");
-            Require(GameCatalog.CpuPerf("Ryzen 7 15700X") == null, "Partial model match");
-            var estimate = GameCatalog.Estimate(GameCatalog.Games[0], 0, 80, "1920x1080", "Alto", "Native");
-            Require(estimate.Avg == 0 && estimate.Limiter == Bottleneck.Unknown, "Unknown model produced numeric FPS");
+            Require(HardwareCatalog.GpuPerf("RTX 4060 Laptop GPU") == null, "Desktop index used for mobile GPU");
+            Require(HardwareCatalog.CpuPerf("Ryzen 7 15700X") == null, "Partial model match");
             Require(BottleneckAnalyzer.Balance(0, 0).Text.Contains("indisponível"), "Unknown balance presented as balanced");
             return new { unknownPreserved = true };
         });
@@ -254,12 +252,6 @@ internal static partial class Program
         public StartupBackup Prepare(StartupEntry entry, string folder) => new() { Command = File.ReadAllText(file) };
         public void Remove(StartupEntry entry, StartupBackup snapshot) { Removals++; File.Delete(file); }
         public void Restore(StartupBackup backup) { if (FailRestore) throw new IOException("Injected restore failure"); File.WriteAllText(file, backup.Command); }
-    }
-    private sealed class HttpFixture(Func<HttpResponseMessage> response) : HttpMessageHandler
-    {
-        public Func<HttpResponseMessage> Response = response; public int Calls;
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
-        { Interlocked.Increment(ref Calls); return Task.FromResult(Response()); }
     }
     private static Task<ProcessResult> RunFixture(string[] arguments, CancellationToken token)
     {

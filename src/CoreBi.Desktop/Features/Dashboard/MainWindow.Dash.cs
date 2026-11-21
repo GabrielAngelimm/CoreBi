@@ -183,7 +183,7 @@ public partial class MainWindow
         var cpuLoad = _monitor.CpuLoad;
         var rows = new List<DashComponent>
         {
-            new("cpu", "Cpu", "Processador", GameCatalog.ShortCpuName(_cpuName), "PageSystem:Processador", Palette("Cpu"),
+            new("cpu", "Cpu", "Processador", HardwareCatalog.ShortCpuName(_cpuName), "PageSystem:Processador", Palette("Cpu"),
                 F(cpuLoad, "0", " %"), "em uso", (cpuLoad ?? 0) / 100.0,
                 new[] { Stat("Temp.", F(_monitor.CpuTemperature, "0", " °C")), Stat("Clock", F(CpuClockAvg(), "0", " MHz")),
                         Stat("Consumo", F(_monitor.CpuPower, "0", " W")) }),
@@ -193,7 +193,7 @@ public partial class MainWindow
             var gpu = _gpus[0];
             uint? clk = gpu.NvmlHandle != IntPtr.Zero ? Nvml.Clock(gpu.NvmlHandle, Nvml.ClockGraphics) : null;
             var gpuLoad = MainGpuLoad();
-            rows.Add(new("gpu", "Gpu", "Placa de vídeo", GameCatalog.ShortGpuName(gpu.Name), "PageGpu", Palette("Gpu"),
+            rows.Add(new("gpu", "Gpu", "Placa de vídeo", HardwareCatalog.ShortGpuName(gpu.Name), "PageGpu", Palette("Gpu"),
                          F(gpuLoad, "0", " %"), "em uso", (gpuLoad ?? 0) / 100.0,
                          new[] { Stat("Temp.", F(MainGpuTemp(), "0", " °C")), Stat("Clock", clk is uint c ? $"{c} MHz" : "—"),
                                  Stat("Consumo", F(MainGpuPower(), "0", " W")) }));
@@ -227,7 +227,7 @@ public partial class MainWindow
             new KeyValuePair<string, string>("Simulação de jogo", Last("sim")),
         };
         if (_cpuName.Length > 0 && _gpus.Count > 0)
-            DashMachine.Text = $"Leituras ao vivo de {Environment.MachineName}: {GameCatalog.ShortCpuName(_cpuName)} e {GameCatalog.ShortGpuName(_gpus[0].Name)}.";
+            DashMachine.Text = $"Leituras ao vivo de {Environment.MachineName}: {HardwareCatalog.ShortCpuName(_cpuName)} e {HardwareCatalog.ShortGpuName(_gpus[0].Name)}.";
     }
 
     // ---------------- osciloscópio (CPU × GPU) ----------------

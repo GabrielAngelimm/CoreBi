@@ -258,7 +258,7 @@ O que acompanha as leituras (o ponto atual dos gráficos pulsa uma vez a cada am
 
 ## Dados e honestidade
 
-Gráficos e indicadores refletem só dados reais e ficam vazios ou com travessão quando não há amostra. Falta de sensor nunca aparece como zero. FPS estimado, resposta da API e FPS medido por ETW são identificados por texto. Sucesso parcial não usa mensagem de sucesso total.
+Gráficos e indicadores refletem só dados reais e ficam vazios ou com travessão quando não há amostra. Falta de sensor nunca aparece como zero. Estimativas (como o equilíbrio teórico do Gargalo) e o FPS medido por ETW são identificados por texto. Sucesso parcial não usa mensagem de sucesso total.
 
 ## Como trocar a paleta
 
