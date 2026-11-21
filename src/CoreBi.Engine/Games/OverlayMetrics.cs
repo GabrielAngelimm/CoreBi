@@ -1,17 +1,19 @@
 namespace CoreBi.Engine.Games;
 
-/// <summary>Item que pode aparecer no overlay. Group: "FPS", "GPU", "VRAM", "CPU", "RAM" ou "Outros".</summary>
 public sealed record OverlayMetric(string Key, string Group, string Label, bool Default);
 
-/// <summary>Linha do overlay já pronta para mostrar (ex.: "GPU" · "98%", "65 °C", "2790 MHz"); a interface separa as partes.</summary>
-public sealed record OverlayLine(string Label, IReadOnlyList<string> Parts, string? Detail = null)
-{
-    public string Value => string.Join("  ", Parts);
-}
+public sealed record OverlayLine(string Label, IReadOnlyList<string> Parts, string? Detail = null);
 
-/// <summary>Catálogo do que o overlay pode mostrar, na ordem em que aparece.</summary>
 public static class OverlayMetrics
 {
+    public const string DefaultCorner = "TL";
+    public const double DefaultScale = 1.0;
+    public const double MinScale = 0.5;
+    public const double MaxScale = 3.0;
+    public const double DefaultOpacity = 1.0;
+    public const double MinOpacity = 0.3;
+    public const double MaxOpacity = 1.0;
+
     public static readonly OverlayMetric[] All =
     {
         new("fps", "FPS", "FPS", true),
@@ -47,4 +49,20 @@ public static class OverlayMetrics
     };
 
     public static HashSet<string> Defaults() => All.Where(m => m.Default).Select(m => m.Key).ToHashSet();
+
+    public static string NormalizeCorner(string? corner) =>
+        corner is "TL" or "TR" or "BL" or "BR" ? corner : DefaultCorner;
+
+    public static double NormalizeScale(double scale) =>
+        double.IsFinite(scale) && scale is >= MinScale and <= MaxScale ? scale : DefaultScale;
+
+    public static double NormalizeOpacity(double opacity) =>
+        double.IsFinite(opacity) && opacity is >= MinOpacity and <= MaxOpacity ? opacity : DefaultOpacity;
+
+    // O diagnóstico PerfCap e a temperatura da VRAM (sem sensor confiável) saíram do overlay; seleções antigas mantêm os demais itens.
+    public static List<string>? NormalizeItems(IEnumerable<string>? items) =>
+        items?.Where(x => !string.IsNullOrWhiteSpace(x) && x is not ("gpu_perfcap" or "vram_temp"))
+            .Distinct()
+            .Take(100)
+            .ToList();
 }

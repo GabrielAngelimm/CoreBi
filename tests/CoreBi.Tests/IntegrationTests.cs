@@ -38,10 +38,10 @@ internal static partial class Program
             Require(result.All(x => Guid.TryParse(x.UpdateId, out _) && x.Revision >= 0), "Invalid update identity");
             return new { available = result.Count, scope = "no download, EULA acceptance or installation" };
         });
-        if (SensorMonitor.IsElevated)
+        if (ProcessElevation.IsElevated)
             Check("privileged workspace: protected ACL and owned-file roundtrip", () =>
             {
-                string folder = ProtectedWorkspace.GetFolder("Startup");
+                string folder = ProtectedWorkspace.GetFolder(ProtectedArea.Startup);
                 var acl = new DirectoryInfo(folder).GetAccessControl();
                 var allowed = acl.GetAccessRules(true, true, typeof(SecurityIdentifier)).Cast<FileSystemAccessRule>().ToArray();
                 Require(acl.AreAccessRulesProtected && allowed.Length == 2, "Unexpected ACL inheritance or entries");

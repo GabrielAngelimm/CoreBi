@@ -23,7 +23,7 @@ public partial class OverlayView : UserControl
     {
         InitializeComponent();
         // A nota só vale sem administrador: com ele, temperatura, clock e consumo da CPU têm leitura
-        OvAdminNote.Visibility = CoreBi.Engine.Monitoring.Sensors.SensorMonitor.IsElevated ? Visibility.Collapsed : Visibility.Visible;
+        OvAdminNote.Visibility = CoreBi.Engine.Infrastructure.ProcessElevation.IsElevated ? Visibility.Collapsed : Visibility.Visible;
     }
     private void ChkOverlay_Changed(object sender, RoutedEventArgs e) => Owner?.ChkOverlay_Changed(sender, e);
     private void OvOption_Changed(object sender, RoutedEventArgs e) => Owner?.OvOption_Changed(sender, e);

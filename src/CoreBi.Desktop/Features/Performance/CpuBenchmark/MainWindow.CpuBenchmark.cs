@@ -1,5 +1,5 @@
 using System.Windows.Threading;
-using CoreBi.Engine.Games;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Performance.Benchmarks;
 using CoreBi.Engine.Persistence;
 
@@ -108,7 +108,7 @@ public partial class MainWindow
         if (mt is double mv) BenchMtVs.Text = VsBest(mv, previous.Select(r => r.Multi ?? 0));
         if (st is double sv) BenchStVs.Text = VsBest(sv, previous.Select(r => r.Single ?? 0));
 
-        _settings.BenchRuns.Insert(0, new BenchRun(DateTime.Now, mt, st, sustained, HardwareCatalog.ShortCpuName(_cpuName)));
+        _settings.BenchRuns.Insert(0, new BenchRun(DateTime.Now, mt, st, sustained, HardwareNaming.ShortCpuName(_cpuName)));
         AddEvent("cpu", "Benchmark", "Render de CPU", mt is double mte ? $"{mte:N0} pts" : st is double ste ? $"{ste:N0} pts" : "", "Cpu");
         if (_settings.BenchRuns.Count > 10) _settings.BenchRuns.RemoveRange(10, _settings.BenchRuns.Count - 10);
         SaveSettings();

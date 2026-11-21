@@ -212,9 +212,7 @@ public sealed class SensorMonitor : IDisposable
         }
     }
 
-    public static bool IsElevated =>
-        new System.Security.Principal.WindowsPrincipal(System.Security.Principal.WindowsIdentity.GetCurrent())
-            .IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+    public static bool IsElevated => ProcessElevation.IsElevated;
 
     public enum CpuSensorProblem { None, NotElevated, PawnIOMissing, ReadFailed }
 

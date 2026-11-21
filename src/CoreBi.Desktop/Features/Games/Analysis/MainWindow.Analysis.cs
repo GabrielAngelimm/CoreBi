@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using CoreBi.Engine.Games;
+using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Desktop;
 
@@ -83,8 +84,8 @@ public partial class MainWindow
         // Fora da tabela não há estimativa: a régua some, para o ponto no meio não parecer "equilibrado".
         _balanceKnown = gpuPerf > 0 && cpuPerf > 0;
         PageBottleneck.BnBalanceRuler.Visibility = _balanceKnown ? Visibility.Visible : Visibility.Collapsed;
-        BnCpuName.Text = HardwareCatalog.ShortCpuName(_cpuName);
-        BnGpuName.Text = HardwareCatalog.ShortGpuName(gpuName);
+        BnCpuName.Text = HardwareNaming.ShortCpuName(_cpuName);
+        BnGpuName.Text = HardwareNaming.ShortGpuName(gpuName);
         // Fora da tabela, a frase diz qual das duas peças falta (o motor só sabe que falta uma).
         BnBalanceText.Text = _balanceKnown ? text : (cpuPerf > 0, gpuPerf > 0) switch
         {

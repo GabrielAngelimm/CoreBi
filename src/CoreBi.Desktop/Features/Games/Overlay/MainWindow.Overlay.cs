@@ -1,5 +1,6 @@
 using LibreHardwareMonitor.Hardware;
 using CoreBi.Engine.Games;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Memory;
 using CoreBi.Engine.Monitoring.Sensors;
@@ -259,7 +260,7 @@ public partial class MainWindow
         if (show.Contains("gpu_fan"))
             gpu.Add(GpuRow(SensorType.Fan, "GPU Fan", true)?.RawValue is float rpm && rpm > 0 ? $"{rpm:0} RPM"
                   : GpuRow(SensorType.Control, "GPU Fan", true)?.RawValue is float pct ? $"fan {pct:0}%" : "fan —");
-        Line("GPU", gpu, HwName(_gpus.Count > 0 ? HardwareCatalog.ShortGpuName(_gpus[0].Name) : null));
+        Line("GPU", gpu, HwName(_gpus.Count > 0 ? HardwareNaming.ShortGpuName(_gpus[0].Name) : null));
 
         var vram = new List<string>();
         var vr = MainGpuVram();
@@ -275,7 +276,7 @@ public partial class MainWindow
         if (show.Contains("cpu_clock")) cpu.Add(avg is float ca ? $"{ca / 1000:0.00} GHz" : "— GHz");
         if (show.Contains("cpu_clockmax")) cpu.Add(max is float cm ? $"pico {cm / 1000:0.00} GHz" : "pico —");
         if (show.Contains("cpu_power")) cpu.Add(_monitor.CpuPower is float cw && cw > 0 ? $"{cw:0} W" : "— W"); // 0 = sem leitura (precisa de administrador)
-        Line("CPU", cpu, HwName(HardwareCatalog.ShortCpuName(_cpuName)));
+        Line("CPU", cpu, HwName(HardwareNaming.ShortCpuName(_cpuName)));
 
         var ram = new List<string>();
         if (show.Contains("ram_used")) ram.Add(memory is { } used ? $"{used.Used / 1073741824.0:0.0} GB" : "—");

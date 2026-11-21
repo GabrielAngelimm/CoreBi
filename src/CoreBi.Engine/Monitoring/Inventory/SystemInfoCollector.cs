@@ -3,6 +3,7 @@ using System.Management;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.X86;
 using System.Text.RegularExpressions;
+using CoreBi.Engine.Infrastructure;
 using Microsoft.Win32;
 
 namespace CoreBi.Engine.Monitoring.Inventory;

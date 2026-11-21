@@ -1,7 +1,4 @@
-using LibreHardwareMonitor.Hardware;
-
 using System.Diagnostics;
-
 using System.Security.Cryptography.X509Certificates;
 using CoreBi.Engine.Infrastructure;
 
@@ -16,7 +13,7 @@ internal static class DriverInstaller
     {
         Uri uri = DriverDownloadPolicy.Validate(driver.DownloadUrl, driver.Vendor);
         token.ThrowIfCancellationRequested();
-        string folder = Path.Combine(ProtectedWorkspace.GetFolder("Downloads"), Guid.NewGuid().ToString("N"));
+        string folder = Path.Combine(ProtectedWorkspace.GetFolder(ProtectedArea.Downloads), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
         string file = Path.Combine(folder, "driver.exe");
         bool launched = false;

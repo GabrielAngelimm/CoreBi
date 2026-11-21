@@ -1,5 +1,5 @@
 using System.Globalization;
-using CoreBi.Engine.Games;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Memory;
@@ -237,7 +237,7 @@ public static class SystemSheets
         {
             Key = Cpu,
             Eyebrow = c.Vendor,
-            Title = HardwareCatalog.ShortCpuName(c.Name) is { Length: > 0 } shortName ? shortName : c.Name,
+            Title = HardwareNaming.ShortCpuName(c.Name) is { Length: > 0 } shortName ? shortName : c.Name,
             Subtitle = c.Name,
             Readouts = new()
             {

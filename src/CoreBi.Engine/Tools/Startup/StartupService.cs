@@ -47,7 +47,7 @@ internal sealed class StartupBackupStore
     private readonly string? _testFolder;
     public StartupBackupStore() { }
     internal StartupBackupStore(string folder) => _testFolder = folder;
-    public string Folder => _testFolder ?? ProtectedWorkspace.GetFolder("Startup");
+    public string Folder => _testFolder ?? ProtectedWorkspace.GetFolder(ProtectedArea.Startup);
     private string PathFor(string id)
     {
         if (!Guid.TryParseExact(id, "N", out _)) throw new InvalidOperationException("Identificador de backup inválido ou legado.");

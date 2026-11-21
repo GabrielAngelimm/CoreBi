@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using CoreBi.Desktop;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Performance;
 using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Sensors;

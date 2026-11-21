@@ -142,7 +142,7 @@ public partial class MainWindow : Window
             for (int i = 0; i < _gpus.Count && _gpus.Count > 1; i++)
             {
                 var g = _gpus[i];
-                var chip = new RadioButton { Content = CoreBi.Engine.Games.HardwareCatalog.ShortGpuName(g.Name), ToolTip = g.Name, GroupName = "Gpu", Style = (Style)FindResource("Chip"), IsChecked = i == 0 };
+                var chip = new RadioButton { Content = CoreBi.Engine.Infrastructure.HardwareNaming.ShortGpuName(g.Name), ToolTip = g.Name, GroupName = "Gpu", Style = (Style)FindResource("Chip"), IsChecked = i == 0 };
                 chip.Checked += (_, _) => ShowGpu(g);
                 GpuChips.Children.Add(chip);
             }

@@ -1,4 +1,4 @@
-using CoreBi.Engine.Games;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring.Graphics;
 
 namespace CoreBi.Desktop;
@@ -22,7 +22,7 @@ public partial class MainWindow
         _gpu = g;
         var spec = GpuSheet.Flatten(g);
         GpuVendor.Text = g.Vendor;
-        GpuName.Text = HardwareCatalog.ShortGpuName(g.Name);
+        GpuName.Text = HardwareNaming.ShortGpuName(g.Name);
         GpuName.ToolTip = g.Name;
         GpuSubtitle.Text = GpuSheet.Subtitle(spec);
         PageGpu.GpuReadouts.ItemsSource = GpuSheet.Readouts(g, spec);

@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
-using CoreBi.Engine.Games;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring.Memory;
 using CoreBi.Engine.Performance.Benchmarks;
 using CoreBi.Engine.Persistence;
@@ -59,7 +59,7 @@ public partial class MainWindow
     /// <summary>Placa de cada palco: a peça que o teste mede e o que a identifica.</summary>
     internal void UpdateBenchPlates()
     {
-        string cpu = HardwareCatalog.ShortCpuName(_cpuName);
+        string cpu = HardwareNaming.ShortCpuName(_cpuName);
         if (cpu.Length == 0) cpu = _cpuName.Length > 0 ? _cpuName : "Processador";
         BenchDevice.Text = SimDevice.Text = cpu;
         BenchDeviceSpec.Text = SimDeviceSpec.Text = $"{Environment.ProcessorCount} threads";

@@ -3,16 +3,23 @@ using System.Security.Principal;
 
 namespace CoreBi.Engine.Infrastructure;
 
+internal enum ProtectedArea { Downloads, Startup }
+
 internal static class ProtectedWorkspace
 {
     /// <summary>Privileged artifacts must not be writable by a medium-integrity process of the same user.</summary>
-    public static string GetFolder(string area)
+    public static string GetFolder(ProtectedArea area)
     {
-        if (area is not ("Downloads" or "Startup")) throw new ArgumentException("Área inválida.", nameof(area));
+        string areaName = area switch
+        {
+            ProtectedArea.Downloads => "Downloads",
+            ProtectedArea.Startup => "Startup",
+            _ => throw new ArgumentOutOfRangeException(nameof(area), area, "Área inválida.")
+        };
         string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CoreBi");
         Ensure(root);
         string user = WindowsIdentity.GetCurrent().User?.Value ?? throw new InvalidOperationException("Usuário indisponível.");
-        string folder = Path.Combine(root, user, area);
+        string folder = Path.Combine(root, user, areaName);
         Ensure(Path.Combine(root, user));
         Ensure(folder);
         return folder;

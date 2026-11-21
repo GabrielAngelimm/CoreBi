@@ -1,11 +1,10 @@
-using CoreBi.Engine.Persistence;
 namespace CoreBi.Engine.Infrastructure;
 
 /// <summary>Local, bounded diagnostics. Never uploads logs or records API request headers.</summary>
 public static class DiagnosticLog
 {
     private static readonly object Sync = new();
-    public static string Folder => Path.Combine(AppSettings.Folder, "Logs");
+    public static string Folder => Path.Combine(AppPaths.DataFolder, "Logs");
 
     public static void Write(string operation, Exception error)
     {

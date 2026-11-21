@@ -1,11 +1,5 @@
 using CoreBi.Engine.Infrastructure;
-using CoreBi.Engine.Monitoring.Inventory;
-
-
-
 using System.Management;
-
-
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;

@@ -1,44 +1,35 @@
-using CoreBi.Engine.Tools.Startup;
-
 using System.Text.Json;
+using CoreBi.Engine.Games;
 using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Engine.Persistence;
 
 public sealed record BenchRun(DateTime Date, double? Multi, double? Single, bool Sustained, string Cpu);
 
-/// <summary>Resultado dos benchmarks de jogo (Test = "gpu", "sim" ou "mem"). Score é usado para a barra do histórico.</summary>
+/// <summary>Resultado dos benchmarks (Test = "gpu", "sim", "mem", "disk" ou "rt:&lt;qualidade&gt;:&lt;altura&gt;").</summary>
 public sealed record BenchRecord(DateTime Date, string Test, double Score, string Summary);
 
 /// <summary>
-/// Configurações em %AppData%\CoreBi. Campos que saíram do app (como a chave cifrada da antiga API de FPS estimado,
-/// HowManyFpsKeyProtected) são ignorados ao carregar e somem na próxima gravação.
+/// Configurações em %AppData%\CoreBi. Campos removidos do app (como a antiga chave HowManyFpsKeyProtected) são
+/// ignorados ao carregar e descartados na próxima gravação. Backups antigos de inicialização em StartupRemoved são
+/// preservados como JSON opaco, sem conversão automática em comandos elevados.
 /// </summary>
 public sealed class AppSettings
 {
-    public static string Folder { get; } =
-        Environment.GetEnvironmentVariable("COREBI_DATA_DIR") is { Length: > 0 } custom
-            ? Path.GetFullPath(custom) : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CoreBi");
+    public static string Folder => AppPaths.DataFolder;
     private static string FilePath => Path.Combine(Folder, "settings.json");
 
-    // Benchmark: últimos resultados (mais recente primeiro)
     public List<BenchRun> BenchRuns { get; set; } = new();
     public List<BenchRecord> BenchRecords { get; set; } = new();
+    public List<JsonElement> StartupRemoved { get; set; } = new();
 
-    /// <summary>Programas de inicialização removidos, para "Restaurar removidos".</summary>
-    public List<StartupBackup> StartupRemoved { get; set; } = new();
-
-    // Aparência
     public bool LightTheme { get; set; }
 
-    // Overlay
-    public string OverlayCorner { get; set; } = "TL";
-    public double OverlayScale { get; set; } = 1.0;
-    /// <summary>Opacidade do overlay (0,3 a 1).</summary>
-    public double OverlayOpacity { get; set; } = 1.0;
-    /// <summary>Itens escolhidos para o overlay (chaves de OverlayMetrics); null = padrão.</summary>
+    public string OverlayCorner { get; set; } = OverlayMetrics.DefaultCorner;
+    public double OverlayScale { get; set; } = OverlayMetrics.DefaultScale;
+    public double OverlayOpacity { get; set; } = OverlayMetrics.DefaultOpacity;
     public List<string>? OverlayItems { get; set; }
-    /// <summary>Já oferecemos "Nome do hardware" a quem tinha uma seleção salva (entra ligado uma única vez).</summary>
+    /// <summary>Controla a oferta única de "Nome do hardware" para seleções salvas anteriores.</summary>
     public bool OverlayNamesOffered { get; set; }
 
     public static AppSettings Load()
@@ -58,7 +49,8 @@ public sealed class AppSettings
             DiagnosticLog.Write("settings.load", ex);
             try
             {
-                if (File.Exists(FilePath)) File.Copy(FilePath, FilePath + ".invalid-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N"), overwrite: false);
+                if (File.Exists(FilePath))
+                    File.Copy(FilePath, FilePath + ".invalid-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N"), overwrite: false);
             }
             catch (Exception backupError) { DiagnosticLog.Write("settings.recovery-copy", backupError); }
         }
@@ -73,14 +65,12 @@ public sealed class AppSettings
 
     private void Normalize()
     {
-        BenchRuns ??= new(); BenchRecords ??= new(); StartupRemoved ??= new();
-        BenchRuns = BenchRuns.Where(x => x != null).Take(100).ToList();
-        BenchRecords = BenchRecords.Where(x => x != null).Take(1000).ToList();
-        StartupRemoved = StartupRemoved.Where(x => x != null).ToList();
-        if (OverlayCorner is not ("TL" or "TR" or "BL" or "BR")) OverlayCorner = "TL";
-        if (!double.IsFinite(OverlayScale) || OverlayScale is < 0.5 or > 3) OverlayScale = 1;
-        if (!double.IsFinite(OverlayOpacity) || OverlayOpacity is < 0.3 or > 1) OverlayOpacity = 1;
-        // O diagnóstico PerfCap e a temperatura da VRAM (sem sensor confiável) saíram do overlay; seleções antigas mantêm os demais itens.
-        OverlayItems = OverlayItems?.Where(x => !string.IsNullOrWhiteSpace(x) && x is not ("gpu_perfcap" or "vram_temp")).Distinct().Take(100).ToList();
+        BenchRuns = (BenchRuns ?? new()).Where(x => x != null).Take(100).ToList();
+        BenchRecords = (BenchRecords ?? new()).Where(x => x != null).Take(1000).ToList();
+        StartupRemoved = (StartupRemoved ?? new()).Where(x => x.ValueKind != JsonValueKind.Null && x.ValueKind != JsonValueKind.Undefined).ToList();
+        OverlayCorner = OverlayMetrics.NormalizeCorner(OverlayCorner);
+        OverlayScale = OverlayMetrics.NormalizeScale(OverlayScale);
+        OverlayOpacity = OverlayMetrics.NormalizeOpacity(OverlayOpacity);
+        OverlayItems = OverlayMetrics.NormalizeItems(OverlayItems);
     }
 }
