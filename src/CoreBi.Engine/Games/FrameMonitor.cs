@@ -1,8 +1,8 @@
 using System.Diagnostics;
-using System.Runtime.InteropServices;
+using CoreBi.Engine.Infrastructure;
+using CoreBi.Engine.Performance.Benchmarks;
 using Microsoft.Diagnostics.Tracing;
 using Microsoft.Diagnostics.Tracing.Session;
-using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Engine.Games;
 
@@ -10,9 +10,8 @@ public sealed record FrameStats(int ProcessId, string ProcessName, double Fps, d
                                 IReadOnlyList<double> RecentFrameTimes);
 
 /// <summary>
-/// Mede o FPS de qualquer processo sem injetar código, por eventos de apresentação: escuta via ETW os eventos
-/// "Present" que o Windows emite a cada frame entregue por DXGI (DirectX 10/11/12) e Direct3D 9.
-/// Jogos Vulkan/OpenGL só aparecem se apresentarem via DXGI (comum em drivers recentes, não garantido).
+/// Mede o FPS de qualquer processo sem injetar código, escutando via ETW os eventos Present de DXGI (DirectX 10/11/12)
+/// e Direct3D 9. Jogos Vulkan/OpenGL aparecem quando apresentam via DXGI.
 /// </summary>
 public sealed class FrameMonitor : IDisposable
 {
@@ -20,20 +19,23 @@ public sealed class FrameMonitor : IDisposable
     private static readonly Guid DxgiProvider = new("CA11C036-0102-4A2D-A6AD-F03CFED5D3C9");
     private static readonly Guid D3D9Provider = new("783ACA0A-790E-4D7F-8451-AA850511C6B9");
     private const int DxgiPresentStart = 42, D3D9PresentStart = 1;
-    private const double HistoryMs = 10_000; // janela para o 1% low
+    private const double HistoryMs = 10_000;
 
     private TraceEventSession? _session;
     private readonly object _sessionLock = new();
     private bool _disposed;
     private Thread? _thread;
     private readonly object _lock = new();
+
     private sealed class PresentStream
     {
         public Queue<double> Times { get; } = new();
         public double Last { get; set; } = double.NegativeInfinity;
     }
+
     private readonly Dictionary<int, Dictionary<ulong, PresentStream>> _presents = new();
-    private readonly Dictionary<int, long> _lastSeen = new();           // pid → Stopwatch do último evento recebido
+    private readonly Dictionary<int, long> _lastSeen = new();
+    private readonly Dictionary<int, (string Name, long CheckedAt)> _nameCache = new();
     private long _lastCleanup;
 
     public bool Running => _thread?.IsAlive == true;
@@ -112,6 +114,7 @@ public sealed class FrameMonitor : IDisposable
                 {
                     _lastSeen.Remove(old);
                     _presents.Remove(old);
+                    _nameCache.Remove(old);
                 }
                 _lastCleanup = Stopwatch.GetTimestamp();
             }
@@ -136,34 +139,33 @@ public sealed class FrameMonitor : IDisposable
         var frameTimes = new List<double>(ts.Length);
         for (int i = 1; i < ts.Length; i++) frameTimes.Add(ts[i] - ts[i - 1]);
 
-        // FPS do último segundo (pelo relógio dos eventos, imune ao atraso de entrega do ETW).
+        // FPS do último segundo pelo relógio dos eventos (imune ao atraso de entrega do ETW).
         int first = Array.FindIndex(ts, x => x >= last - 1000);
         double span = last - ts[first];
         int frames = ts.Length - 1 - first;
         double fps = span > 0 ? frames * 1000 / span : 0;
 
-        // 1% low: FPS equivalente ao percentil 99 do frametime nos últimos 10 s.
-        var sorted = frameTimes.OrderBy(x => x).ToArray();
-        double p99 = sorted[(int)Math.Min(sorted.Length - 1, Math.Floor(sorted.Length * 0.99))];
-        double low1 = p99 > 0 ? 1000 / p99 : 0;
-
+        double low1 = FrameTimeStats.Low1Fps(frameTimes);
         var recent = frameTimes.Skip(Math.Max(0, frameTimes.Count - 120)).ToList();
-        return new FrameStats(pid, ProcessName(pid), fps, fps > 0 ? 1000 / fps : 0, low1, recent);
+        return new FrameStats(pid, ResolveProcessName(pid), fps, fps > 0 ? 1000 / fps : 0, low1, recent);
     }
 
-    /// <summary>Estatísticas do programa em primeiro plano (o jogo que está na tela).</summary>
-    public FrameStats? GetForegroundStats()
-    {
-        var hwnd = GetForegroundWindow();
-        if (hwnd == IntPtr.Zero) return null;
-        GetWindowThreadProcessId(hwnd, out uint pid);
-        return pid == 0 || pid == Environment.ProcessId ? null : GetStats((int)pid);
-    }
+    public FrameStats? GetForegroundStats() =>
+        ForegroundWindow.TryGetForeignForeground(out _, out int pid) ? GetStats(pid) : null;
 
-    private static string ProcessName(int pid)
+    private string ResolveProcessName(int pid)
     {
-        try { using var process = Process.GetProcessById(pid); return process.ProcessName; }
-        catch { return $"PID {pid}"; }
+        long now = Stopwatch.GetTimestamp();
+        lock (_lock)
+        {
+            if (_nameCache.TryGetValue(pid, out var cached) && Stopwatch.GetElapsedTime(cached.CheckedAt, now).TotalSeconds < 5)
+                return cached.Name;
+        }
+        string name;
+        try { using var process = Process.GetProcessById(pid); name = process.ProcessName; }
+        catch { name = $"PID {pid}"; }
+        lock (_lock) _nameCache[pid] = (name, now);
+        return name;
     }
 
     public void Stop()
@@ -178,7 +180,7 @@ public sealed class FrameMonitor : IDisposable
             if (thread != null && thread != Thread.CurrentThread && !thread.Join(3000))
                 Error = "O coletor ETW ainda está encerrando.";
             if (thread?.IsAlive != true) _thread = null;
-            lock (_lock) { _presents.Clear(); _lastSeen.Clear(); }
+            lock (_lock) { _presents.Clear(); _lastSeen.Clear(); _nameCache.Clear(); }
         }
     }
 
@@ -187,7 +189,4 @@ public sealed class FrameMonitor : IDisposable
         lock (_sessionLock) { if (_disposed) return; _disposed = true; }
         Stop();
     }
-
-    [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
-    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
 }

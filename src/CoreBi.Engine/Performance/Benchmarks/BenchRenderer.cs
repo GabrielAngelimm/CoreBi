@@ -5,25 +5,23 @@ namespace CoreBi.Engine.Performance.Benchmarks;
 
 public sealed record BenchResult(int Threads, double Seconds, long Samples, int Passes)
 {
-    /// <summary>Pontos Benchmark: amostras de path tracing por segundo ÷ 10.000. Mesma cena e mesma
-    /// carga em todo teste, então a nota é comparável entre execuções e entre máquinas (nesta versão do app).</summary>
+    /// <summary>Amostras de path tracing por segundo ÷ 10.000; comparável entre execuções nesta versão.</summary>
     public double Score => Seconds > 0 ? Samples / Seconds / 10_000 : 0;
 }
 
 /// <summary>
-/// Renderizador de benchmark no modelo do Cinebench: path tracer de CPU, imagem dividida em blocos (buckets)
-/// distribuídos entre threads a partir do centro. Monocromático (combina com o app) e determinístico: cada
-/// pixel tem semente fixa, então a imagem e o volume de trabalho são idênticos em toda execução.
+/// Path tracer de CPU determinístico dividido em blocos (buckets) distribuídos a partir do centro.
+/// Cada pixel tem semente fixa para que a imagem e a carga sejam idênticas em toda execução.
 /// </summary>
 public sealed class BenchRenderer
 {
     public const int Width = 960, Height = 540, BucketSize = 32;
-    public const int Spp = 1024;   // amostras por pixel
+    public const int Spp = 1024;
     private const int MaxDepth = 6;
 
-    public int[] Pixels { get; } = new int[Width * Height];         // BGRA32, lido pela interface
+    public int[] Pixels { get; } = new int[Width * Height];
     public IReadOnlyList<(int X, int Y, int W, int H)> Buckets { get; }
-    public int[] Active { get; private set; } = Array.Empty<int>(); // bloco de cada thread (-1 = livre)
+    public int[] Active { get; private set; } = Array.Empty<int>();
     public long SamplesDone => Interlocked.Read(ref _samples);
     public int BucketsDone => Volatile.Read(ref _bucketsDone);
     public int BucketsTotal { get; private set; }
@@ -37,27 +35,28 @@ public sealed class BenchRenderer
         for (int y = 0; y < Height; y += BucketSize)
             for (int x = 0; x < Width; x += BucketSize)
                 list.Add((x, y, Math.Min(BucketSize, Width - x), Math.Min(BucketSize, Height - y)));
-        // Do centro para fora, como o Cinebench.
         Buckets = list.OrderBy(b => Math.Pow(b.Item1 + b.Item3 / 2.0 - Width / 2.0, 2) +
                                     Math.Pow((b.Item2 + b.Item4 / 2.0 - Height / 2.0) * 1.6, 2)).ToList();
     }
 
     /// <summary>
-    /// Renderiza a imagem inteira com N threads (multi-core e single-core fazem o mesmo trabalho, como no Cinebench).
-    /// Com minDuration, repete passadas até completar o tempo (desempenho sustentado).
+    /// Renderiza a cena inteira com N threads; com <paramref name="minDuration"/>, repete passadas até completar o tempo.
     /// </summary>
-    public BenchResult Run(int threads, TimeSpan minDuration, CancellationToken ct, Action? onPass = null)
+    public BenchResult Run(int threads, TimeSpan minDuration, CancellationToken ct)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(threads);
         if (minDuration < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(minDuration));
         int count = Buckets.Count;
-        BucketsTotal = count; _samples = 0; int passes = 0;
+        BucketsTotal = count;
+        _samples = 0;
+        int passes = 0;
         var sw = Stopwatch.StartNew();
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(ct);
         if (ct.IsCancellationRequested) return new BenchResult(threads, sw.Elapsed.TotalSeconds, 0, 0);
         do
         {
-            Array.Fill(Pixels, unchecked((int)0xFF000000)); _bucketsDone = 0;
+            Array.Fill(Pixels, unchecked((int)0xFF000000));
+            _bucketsDone = 0;
             int next = -1, started = 0;
             Exception? failure = null;
             Active = Enumerable.Repeat(-1, threads).ToArray();
@@ -72,7 +71,9 @@ public sealed class BenchRenderer
                         int b;
                         while (!stop.IsCancellationRequested && (b = Interlocked.Increment(ref next)) < count)
                         {
-                            Active[ti] = b; RenderBucket(Buckets[b], stop.Token); Interlocked.Increment(ref _bucketsDone);
+                            Active[ti] = b;
+                            RenderBucket(Buckets[b], stop.Token);
+                            Interlocked.Increment(ref _bucketsDone);
                         }
                     }
                     catch (Exception ex) { Interlocked.CompareExchange(ref failure, ex, null); stop.Cancel(); }
@@ -85,12 +86,12 @@ public sealed class BenchRenderer
             foreach (var worker in workers.Take(started)) worker.Join();
             if (failure != null) throw new AggregateException("Falha na execução do benchmark de CPU.", failure);
             if (ct.IsCancellationRequested) break;
-            passes++; onPass?.Invoke();
+            passes++;
         } while (sw.Elapsed < minDuration);
         return new BenchResult(threads, sw.Elapsed.TotalSeconds, SamplesDone, passes);
     }
 
-    private void RenderBucket((int X, int Y, int W, int H) b, CancellationToken ct)
+    internal void RenderBucket((int X, int Y, int W, int H) b, CancellationToken ct)
     {
         for (int y = b.Y; y < b.Y + b.H; y++)
         {
@@ -101,16 +102,15 @@ public sealed class BenchRenderer
                 float sum = 0;
                 for (int s = 0; s < Spp; s++)
                 {
-                    float u = (x + Rnd(ref seed)) / Width, v = (y + Rnd(ref seed)) / Height;
-                    sum += MathF.Min(Trace(Camera.Ray(u, v), ref seed), 4f); // limita "fireflies"
+                    float u = (x + Xorshift32.NextFloat(ref seed)) / Width;
+                    float v = (y + Xorshift32.NextFloat(ref seed)) / Height;
+                    sum += MathF.Min(Trace(Camera.Ray(u, v), ref seed), 4f); // limita fireflies
                 }
                 Pixels[y * Width + x] = ToPixel(sum / Spp);
             }
             Interlocked.Add(ref _samples, (long)b.W * Spp);
         }
     }
-
-    // ------------------------------------------------------------------ cena
 
     private enum Mat : byte { Diffuse, Metal, Glass, Light }
 
@@ -130,7 +130,6 @@ public sealed class BenchRenderer
             new(new Vector3(1.0f, 0.45f, -1.9f), 0.45f, Mat.Metal, 0.85f, 0.25f),
             new(new Vector3(-1.1f, 0.35f, -2.0f), 0.35f, Mat.Diffuse, 0.15f),
         };
-        // Anel de esferas pequenas alternando materiais.
         for (int i = 0; i < 14; i++)
         {
             float a = i / 14f * MathF.Tau;
@@ -144,6 +143,7 @@ public sealed class BenchRenderer
     {
         private static readonly Vector3 Origin = new(0, 2.1f, -7.2f);
         private static readonly Vector3 Lower, Horizontal, Vertical;
+
         static Camera()
         {
             var target = new Vector3(0, 0.75f, 0);
@@ -152,20 +152,19 @@ public sealed class BenchRenderer
             var w = Vector3.Normalize(Origin - target);
             var u = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, w));
             var v = Vector3.Cross(w, u);
-            Lower = Origin - hw * u + hh * v - w;   // canto superior esquerdo (y cresce para baixo na imagem)
+            Lower = Origin - hw * u + hh * v - w; // canto superior esquerdo (y cresce para baixo na imagem)
             Horizontal = 2 * hw * u;
             Vertical = -2 * hh * v;
         }
+
         public static (Vector3 O, Vector3 D) Ray(float s, float t)
             => (Origin, Vector3.Normalize(Lower + s * Horizontal + t * Vertical - Origin));
     }
 
-    // ------------------------------------------------------------------ path tracing
-
     private static float Trace((Vector3 O, Vector3 D) ray, ref uint seed)
     {
         float radiance = 0, throughput = 1;
-        bool specularBounce = true; // câmera e reflexos especulares "veem" a lâmpada diretamente
+        bool specularBounce = true; // câmera e reflexos especulares veem a lâmpada diretamente
         var (o, d) = ray;
 
         for (int depth = 0; depth < MaxDepth; depth++)
@@ -185,7 +184,6 @@ public sealed class BenchRenderer
             Vector3 n; Mat mat; float albedo, rough = 0;
             if (idx < 0)
             {
-                // Chão: xadrez suave em tons de cinza
                 n = Vector3.UnitY; mat = Mat.Diffuse;
                 bool check = ((int)MathF.Floor(p.X * 0.9f) + (int)MathF.Floor(p.Z * 0.9f) & 1) == 0;
                 albedo = check ? 0.62f : 0.38f;
@@ -199,15 +197,12 @@ public sealed class BenchRenderer
             switch (mat)
             {
                 case Mat.Diffuse:
-                    {
-                        // Luz direta da lâmpada (amostragem por cone) + rebote difuso cosseno-ponderado.
-                        radiance += throughput * albedo * DirectLight(p, n, ref seed);
-                        throughput *= albedo;
-                        d = CosineHemisphere(n, ref seed);
-                        o = p + n * 1e-3f;
-                        specularBounce = false;
-                        break;
-                    }
+                    radiance += throughput * albedo * DirectLight(p, n, ref seed);
+                    throughput *= albedo;
+                    d = CosineHemisphere(n, ref seed);
+                    o = p + n * 1e-3f;
+                    specularBounce = false;
+                    break;
                 case Mat.Metal:
                     {
                         var r = Vector3.Reflect(d, n) + rough * RandomInSphere(ref seed);
@@ -228,7 +223,7 @@ public sealed class BenchRenderer
                         float sin2 = eta * eta * (1 - cos * cos);
                         float r0 = (1 - ior) / (1 + ior); r0 *= r0;
                         float fresnel = r0 + (1 - r0) * MathF.Pow(1 - cos, 5);
-                        if (sin2 > 1 || Rnd(ref seed) < fresnel)
+                        if (sin2 > 1 || Xorshift32.NextFloat(ref seed) < fresnel)
                         {
                             d = Vector3.Reflect(d, nn);
                             o = p + nn * 1e-3f;
@@ -244,18 +239,16 @@ public sealed class BenchRenderer
                     }
             }
 
-            // Roleta russa depois de alguns rebotes.
             if (depth >= 3)
             {
                 float q = MathF.Max(0.05f, 1 - throughput);
-                if (Rnd(ref seed) < q) break;
+                if (Xorshift32.NextFloat(ref seed) < q) break;
                 throughput /= 1 - q;
             }
         }
         return radiance;
     }
 
-    /// <summary>Amostra direção dentro do cone que a lâmpada esférica ocupa e testa sombra.</summary>
     private static float DirectLight(Vector3 p, Vector3 n, ref uint seed)
     {
         var toC = Lamp.C - p;
@@ -263,7 +256,7 @@ public sealed class BenchRenderer
         float cosMax = MathF.Sqrt(MathF.Max(0, 1 - Lamp.R * Lamp.R / dist2));
         var w = toC / MathF.Sqrt(dist2);
 
-        float r1 = Rnd(ref seed), r2 = Rnd(ref seed);
+        float r1 = Xorshift32.NextFloat(ref seed), r2 = Xorshift32.NextFloat(ref seed);
         float cosT = 1 - r1 * (1 - cosMax), sinT = MathF.Sqrt(1 - cosT * cosT), phi = MathF.Tau * r2;
         Basis(w, out var a, out var b);
         var dir = Vector3.Normalize(a * (MathF.Cos(phi) * sinT) + b * (MathF.Sin(phi) * sinT) + w * cosT);
@@ -271,14 +264,12 @@ public sealed class BenchRenderer
         float cosN = Vector3.Dot(dir, n);
         if (cosN <= 0) return 0;
         if (!Intersect(p + n * 1e-3f, dir, out _, out _, out bool hitLamp) || !hitLamp) return 0;
-        // Lambert (1/π) × radiância × cos × ângulo sólido do cone
         return LampPower * cosN * 2 * (1 - cosMax);
     }
 
     private static bool Intersect(Vector3 o, Vector3 d, out float tMin, out int idx, out bool lamp)
     {
         tMin = float.MaxValue; idx = -2; lamp = false;
-        // Chão (plano y = 0)
         if (d.Y < -1e-6f)
         {
             float t = -o.Y / d.Y;
@@ -305,27 +296,18 @@ public sealed class BenchRenderer
 
     private static float Sky(Vector3 d) => 0.06f + 0.22f * MathF.Max(0, d.Y);
 
-    // ------------------------------------------------------------------ utilidades
-
-    private static float Rnd(ref uint s)
-    {
-        // xorshift32: rápido e determinístico por pixel
-        s ^= s << 13; s ^= s >> 17; s ^= s << 5;
-        return (s >> 8) * (1f / 16777216f);
-    }
-
     private static Vector3 RandomInSphere(ref uint s)
     {
         while (true)
         {
-            var v = new Vector3(Rnd(ref s) * 2 - 1, Rnd(ref s) * 2 - 1, Rnd(ref s) * 2 - 1);
+            var v = new Vector3(Xorshift32.NextFloat(ref s) * 2 - 1, Xorshift32.NextFloat(ref s) * 2 - 1, Xorshift32.NextFloat(ref s) * 2 - 1);
             if (v.LengthSquared() < 1) return v;
         }
     }
 
     private static Vector3 CosineHemisphere(Vector3 n, ref uint s)
     {
-        float r1 = Rnd(ref s), r2 = Rnd(ref s);
+        float r1 = Xorshift32.NextFloat(ref s), r2 = Xorshift32.NextFloat(ref s);
         float r = MathF.Sqrt(r1), phi = MathF.Tau * r2;
         Basis(n, out var a, out var b);
         return Vector3.Normalize(a * (r * MathF.Cos(phi)) + b * (r * MathF.Sin(phi)) + n * MathF.Sqrt(1 - r1));
@@ -337,7 +319,7 @@ public sealed class BenchRenderer
         b = Vector3.Cross(n, a);
     }
 
-    /// <summary>Tone mapping (ACES aproximado) + gama 2.2 → cinza BGRA.</summary>
+    /// <summary>Tone mapping ACES aproximado + gama 2.2 → cinza BGRA.</summary>
     private static int ToPixel(float v)
     {
         v *= 1.1f;

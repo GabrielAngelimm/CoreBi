@@ -3,7 +3,7 @@ using CoreBi.Engine.Monitoring.Memory;
 
 namespace CoreBi.Engine.Performance.Stress;
 
-/// <summary>Gera carga sintética de CPU (todos os threads) e/ou RAM (escrita + verificação).</summary>
+/// <summary>Gera carga sintética de CPU (todos os threads) e/ou RAM (escrita e verificação de padrões).</summary>
 public sealed class StressTester
 {
     private CancellationTokenSource? _cts;
@@ -17,9 +17,6 @@ public sealed class StressTester
     public long MemoryAllocatedBytes { get; private set; }
     public string? Error { get; private set; }
 
-    /// <param name="cpu">Carga em todos os processadores lógicos.</param>
-    /// <param name="ram">Aloca uma fração da RAM livre e grava/verifica padrões continuamente.</param>
-    /// <param name="ramFraction">Fração da memória livre a usar (0.1 a 0.9).</param>
     public void Start(bool cpu, bool ram, double ramFraction = 0.6)
     {
         if (Running) return;
@@ -36,11 +33,13 @@ public sealed class StressTester
         if (cpu && ram && cpuThreads > 1) cpuThreads--;
 
         if (cpu)
+        {
             for (int i = 0; i < cpuThreads; i++)
             {
                 int seed = i;
                 StartThread(() => CpuWorker(token, seed), $"Stress CPU {seed}");
             }
+        }
 
         if (ram)
         {
@@ -54,7 +53,15 @@ public sealed class StressTester
     {
         if (_cts == null) return;
         _cts.Cancel();
-        foreach (var t in _threads) t.Join(2000);
+        // Prazo único compartilhado entre todas as threads para evitar espera proporcional ao número de núcleos.
+        var deadline = Stopwatch.StartNew();
+        const int maxWaitMs = 2500;
+        foreach (var thread in _threads)
+        {
+            int remaining = maxWaitMs - (int)deadline.ElapsedMilliseconds;
+            if (remaining <= 0) break;
+            thread.Join(remaining);
+        }
         if (_threads.Any(t => t.IsAlive)) return;
         _threads.Clear();
         _cts.Dispose();
@@ -65,19 +72,19 @@ public sealed class StressTester
     private void StartThread(ThreadStart body, string name)
     {
         // BelowNormal mantém a interface responsiva sem reduzir a carga (núcleos continuam a 100%).
-        var t = new Thread(() =>
+        var thread = new Thread(() =>
         {
             try { body(); }
             catch (Exception ex) { Error = ex.Message; _cts?.Cancel(); }
         })
         { IsBackground = true, Name = name, Priority = ThreadPriority.BelowNormal };
-        t.Start();
-        _threads.Add(t);
+        thread.Start();
+        _threads.Add(thread);
     }
 
     private static void CpuWorker(CancellationToken token, int seed)
     {
-        // Mistura ponto flutuante (FMA/sqrt/sin) e inteiros sobre um buffer que cabe no cache L1/L2.
+        // Mistura ponto flutuante (FMA/sqrt/sin) e inteiros num buffer que cabe no cache L1/L2.
         var buf = new double[4096];
         for (int i = 0; i < buf.Length; i++) buf[i] = i + seed + 1;
         ulong x = (ulong)(seed + 1) * 0x9E3779B97F4A7C15UL;
@@ -97,7 +104,7 @@ public sealed class StressTester
                     x ^= x << 13; x ^= x >> 7; x ^= x << 17;
                 }
             }
-            if (x == 0) buf[0] = 0; // evita que o JIT elimine o cálculo inteiro
+            if (x == 0) buf[0] = 0; // impede que o JIT elimine o cálculo
         }
     }
 
@@ -116,10 +123,7 @@ public sealed class StressTester
                     allocated += chunkLongs * 8L;
                 }
             }
-            catch (OutOfMemoryException)
-            {
-                // Segue com o que conseguiu alocar.
-            }
+            catch (OutOfMemoryException) { }
             MemoryAllocatedBytes = allocated;
             if (chunks.Count == 0) { Error = "Não foi possível alocar memória para o teste."; return; }
 

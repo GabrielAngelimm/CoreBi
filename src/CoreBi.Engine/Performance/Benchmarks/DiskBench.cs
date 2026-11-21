@@ -1,6 +1,5 @@
 using System.Diagnostics;
-
-using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 
 namespace CoreBi.Engine.Performance.Benchmarks;
 
@@ -8,23 +7,20 @@ public sealed record DiskBenchResult(string Drive, long FileMb, double SeqReadMB
                                      double ReadIopsQ1, double WriteIopsQ1, double ReadLatencyUs, double WriteLatencyUs,
                                      double ReadIopsQ8)
 {
-    /// <summary>Nota só para a barra do histórico: sequencial pesa em cópia/carregamento, 4K em abrir programas e sistema.</summary>
     public double Score => (SeqReadMBs + SeqWriteMBs) / 2 + (ReadIopsQ1 + WriteIopsQ1) / 200.0 + ReadIopsQ8 / 2000.0;
 }
 
 /// <summary>
-/// Benchmark de armazenamento no estilo CrystalDiskMark: leitura e escrita sequenciais (blocos de 1 MB) e acesso
-/// aleatório de 4 KB (1 e 8 requisições em paralelo). Usa FILE_FLAG_NO_BUFFERING + WRITE_THROUGH para medir o disco
-/// e não o cache do Windows. O arquivo de teste é criado numa pasta própria da unidade e apagado no final.
+/// Benchmark de armazenamento: leitura e escrita sequenciais (1 MB) e acesso aleatório de 4 KB (1 e 8 requisições em paralelo).
+/// Usa FILE_FLAG_NO_BUFFERING + WRITE_THROUGH para medir o disco fora do cache do Windows.
 /// </summary>
 public static class DiskBench
 {
-    private const int FILE_FLAG_NO_BUFFERING = 0x20000000;
-    private const int Block = 1 << 20;     // 1 MB (sequencial)
-    private const int Small = 4096;        // 4 KB (aleatório)
+    private const int Block = 1 << 20;
+    private const int Small = 4096;
     private const double RandomSeconds = 4;
 
-    /// <summary>Unidades que podem ser testadas (fixas e removíveis, prontas e com pelo menos 1,5 GB livres).</summary>
+    /// <summary>Unidades fixas e removíveis prontas com pelo menos 1,5 GB livres.</summary>
     public static List<(string Root, string Text)> Drives()
     {
         var list = new List<(string, string)>();
@@ -42,7 +38,7 @@ public static class DiskBench
         return list;
     }
 
-    public static unsafe DiskBenchResult Run(string driveRoot, long fileMb, Action<string, double> progress, CancellationToken ct)
+    public static DiskBenchResult Run(string driveRoot, long fileMb, Action<string, double> progress, CancellationToken ct)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(fileMb);
         ct.ThrowIfCancellationRequested();
@@ -55,46 +51,38 @@ public static class DiskBench
         string path = Path.Combine(dir, "bench.tmp");
         Directory.CreateDirectory(dir);
 
-        void* seqMem = NativeMemory.AlignedAlloc((nuint)Block, 4096);
         try
         {
-            if (seqMem == null) throw new OutOfMemoryException();
-            var seq = new Span<byte>(seqMem, Block);
-            new Random(42).NextBytes(seq); // dados incompressíveis (não deixam o controlador "trapacear")
+            using var buffer = new AlignedBuffer(Block);
+            var seq = buffer.AsSpan();
+            new Random(42).NextBytes(seq); // dados incompressíveis (impedem compressão pelo controlador)
 
-            using var h = File.OpenHandle(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read,
-                                          FileOptions.WriteThrough | (FileOptions)FILE_FLAG_NO_BUFFERING, fileBytes);
+            using var handle = File.OpenHandle(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read,
+                FileOptions.WriteThrough | DirectIo.NoBuffering, fileBytes);
 
-            // ---------- Sequencial: escrita ----------
             var sw = Stopwatch.StartNew();
             for (long off = 0; off < fileBytes; off += Block)
             {
                 ct.ThrowIfCancellationRequested();
-                RandomAccess.Write(h, seq, off);
+                RandomAccess.Write(handle, seq, off);
                 progress("Escrita sequencial (1 MB)", 0.00 + 0.25 * off / fileBytes);
             }
             double seqWrite = fileMb / sw.Elapsed.TotalSeconds;
 
-            // ---------- Sequencial: leitura ----------
             sw.Restart();
             for (long off = 0; off < fileBytes; off += Block)
             {
                 ct.ThrowIfCancellationRequested();
-                if (RandomAccess.Read(h, seq, off) != Block) throw new EndOfStreamException("Leitura sequencial incompleta.");
+                DirectIo.ReadExact(handle, seq, off, "Leitura sequencial incompleta.");
                 progress("Leitura sequencial (1 MB)", 0.25 + 0.25 * off / fileBytes);
             }
             double seqRead = fileMb / sw.Elapsed.TotalSeconds;
 
             long slots = fileBytes / Small;
+            var small = buffer.AsSpan(Small);
+            double readIops = RandomLoop(handle, small, slots, write: false, progress, "Leitura 4 KB aleatória (1 por vez)", 0.50, 0.15, ct, out double readLat);
+            double writeIops = RandomLoop(handle, small, slots, write: true, progress, "Escrita 4 KB aleatória (1 por vez)", 0.65, 0.15, ct, out double writeLat);
 
-            // ---------- 4 KB aleatório, 1 requisição por vez: leitura ----------
-            var small = new Span<byte>(seqMem, Small);
-            double readIops = RandomLoop(h, small, slots, write: false, progress, "Leitura 4 KB aleatória (1 por vez)", 0.50, 0.15, ct, out double readLat);
-
-            // ---------- 4 KB aleatório, 1 requisição por vez: escrita ----------
-            double writeIops = RandomLoop(h, small, slots, write: true, progress, "Escrita 4 KB aleatória (1 por vez)", 0.65, 0.15, ct, out double writeLat);
-
-            // ---------- 4 KB aleatório, 8 requisições em paralelo: leitura ----------
             progress("Leitura 4 KB aleatória (8 em paralelo)", 0.80);
             double q8 = ParallelRead(path, slots, 8, ct, progress);
 
@@ -103,13 +91,12 @@ public static class DiskBench
         }
         finally
         {
-            NativeMemory.AlignedFree(seqMem);
             try { File.Delete(path); } catch { }
             try { Directory.Delete(dir); } catch { }
         }
     }
 
-    private static double RandomLoop(Microsoft.Win32.SafeHandles.SafeFileHandle h, Span<byte> buf, long slots, bool write,
+    private static double RandomLoop(SafeFileHandle handle, Span<byte> buf, long slots, bool write,
                                      Action<string, double> progress, string phase, double start, double span,
                                      CancellationToken ct, out double latencyUs)
     {
@@ -118,12 +105,11 @@ public static class DiskBench
         var sw = Stopwatch.StartNew();
         while (sw.Elapsed.TotalSeconds < RandomSeconds)
         {
-            // checa o cancelamento a cada 64 operações (barato) e atualiza a barra
             for (int i = 0; i < 64; i++)
             {
                 long off = rng.NextInt64(slots) * Small;
-                if (write) RandomAccess.Write(h, buf, off);
-                else if (RandomAccess.Read(h, buf, off) != buf.Length) throw new EndOfStreamException("Leitura aleatória incompleta.");
+                if (write) RandomAccess.Write(handle, buf, off);
+                else DirectIo.ReadExact(handle, buf, off, "Leitura aleatória incompleta.");
                 ops++;
             }
             ct.ThrowIfCancellationRequested();
@@ -134,8 +120,8 @@ public static class DiskBench
         return ops / secs;
     }
 
-    private static unsafe double ParallelRead(string path, long slots, int threads,
-                                              CancellationToken ct, Action<string, double> progress)
+    private static double ParallelRead(string path, long slots, int threads,
+                                       CancellationToken ct, Action<string, double> progress)
     {
         long total = 0;
         var sw = Stopwatch.StartNew();
@@ -145,25 +131,20 @@ public static class DiskBench
             int seed = 100 + t;
             tasks[t] = Task.Factory.StartNew(() =>
             {
-                void* mem = NativeMemory.AlignedAlloc((nuint)Small, 4096);
-                if (mem == null) throw new OutOfMemoryException();
-                try
+                using var aligned = new AlignedBuffer(Small);
+                using var workerHandle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, DirectIo.NoBuffering);
+                var buf = aligned.AsSpan();
+                var rng = new Random(seed);
+                long local = 0;
+                while (sw.Elapsed.TotalSeconds < RandomSeconds && !ct.IsCancellationRequested)
                 {
-                    using var workerHandle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, (FileOptions)FILE_FLAG_NO_BUFFERING);
-                    var buf = new Span<byte>(mem, Small);
-                    var rng = new Random(seed);
-                    long local = 0;
-                    while (sw.Elapsed.TotalSeconds < RandomSeconds && !ct.IsCancellationRequested)
+                    for (int i = 0; i < 32; i++)
                     {
-                        for (int i = 0; i < 32; i++)
-                        {
-                            if (RandomAccess.Read(workerHandle, buf, rng.NextInt64(slots) * Small) != Small) throw new EndOfStreamException("Leitura paralela incompleta.");
-                            local++;
-                        }
+                        DirectIo.ReadExact(workerHandle, buf, rng.NextInt64(slots) * Small, "Leitura paralela incompleta.");
+                        local++;
                     }
-                    Interlocked.Add(ref total, local);
                 }
-                finally { NativeMemory.AlignedFree(mem); }
+                Interlocked.Add(ref total, local);
             }, TaskCreationOptions.LongRunning);
         }
         var completion = Task.WhenAll(tasks);
