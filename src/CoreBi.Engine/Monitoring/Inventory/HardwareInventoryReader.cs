@@ -87,17 +87,20 @@ internal static class HardwareInventoryReader
         // TPM: precisa de administrador. SpecVersion = "2.0, 0, 1.59".
         string? tpm = null, tpmMaker = null, tpmFirmware = null;
         bool? ready = null;
-        bool tpmQueried = false;
-        WmiQuery.ForEach("SELECT SpecVersion, IsEnabled_InitialValue, IsActivated_InitialValue, ManufacturerIdTxt, ManufacturerVersion FROM Win32_Tpm", t =>
+        try
         {
-            tpmQueried = true;
-            tpm = WmiQuery.GetString(t, "SpecVersion")?.Split(',')[0].Trim();
-            ready = WmiQuery.GetNullableBool(t, "IsEnabled_InitialValue") == true
-                && (WmiQuery.GetNullableBool(t, "IsActivated_InitialValue") is not bool a || a);
-            tpmMaker = WmiQuery.GetString(t, "ManufacturerIdTxt") is { Length: > 0 } mk ? mk : null;
-            tpmFirmware = WmiQuery.GetString(t, "ManufacturerVersion") is { Length: > 0 } fw ? fw : null;
-        }, @"root\CIMV2\Security\MicrosoftTpm");
-        if (tpmQueried) tpm ??= "Ausente";
+            WmiQuery.ForEachOrThrow("SELECT SpecVersion, IsEnabled_InitialValue, IsActivated_InitialValue, ManufacturerIdTxt, ManufacturerVersion FROM Win32_Tpm", t =>
+            {
+                tpm = WmiQuery.GetString(t, "SpecVersion")?.Split(',')[0].Trim();
+                ready = WmiQuery.GetNullableBool(t, "IsEnabled_InitialValue") == true
+                    && (WmiQuery.GetNullableBool(t, "IsActivated_InitialValue") is not bool a || a);
+                tpmMaker = WmiQuery.GetString(t, "ManufacturerIdTxt") is { Length: > 0 } mk ? mk : null;
+                tpmFirmware = WmiQuery.GetString(t, "ManufacturerVersion") is { Length: > 0 } fw ? fw : null;
+            }, @"root\CIMV2\Security\MicrosoftTpm");
+            // A consulta respondeu sem nenhum TPM: ausente de fato (sem administrador ela falha e fica "não lido").
+            tpm ??= "Ausente";
+        }
+        catch { }
 
         return new FirmwareInfo(vendor, version, date, smbios, uefi, secure, tpm, ready, tpmMaker, tpmFirmware);
     }
@@ -109,7 +112,7 @@ internal static class HardwareInventoryReader
         var instructions = ReadInstructions();
         return WmiQuery.SelectOrThrow("SELECT * FROM Win32_Processor", c =>
         {
-            string rawVendor = WmiQuery.GetString(c, "Manufacturer") ?? "—";
+            string rawVendor = WmiQuery.GetText(c, "Manufacturer");
             string vendor = rawVendor switch
             {
                 "AuthenticAMD" => "AMD",
@@ -121,7 +124,7 @@ internal static class HardwareInventoryReader
             bool? virt = WmiQuery.GetNullableBool(c, "VirtualizationFirmwareEnabled");
             int cores = WmiQuery.GetInt32(c, "NumberOfCores");
             int threads = WmiQuery.GetInt32(c, "NumberOfLogicalProcessors");
-            string name = MultiSpace.Replace(WmiQuery.GetString(c, "Name") ?? "—", " ");
+            string name = MultiSpace.Replace(WmiQuery.GetText(c, "Name"), " ");
             return new CpuInfo(
                 name, vendor, Fmt.Clean(WmiQuery.GetString(c, "SocketDesignation")), cores, threads,
                 WmiQuery.GetInt32(c, "MaxClockSpeed"),
@@ -143,10 +146,10 @@ internal static class HardwareInventoryReader
         int partSpeed = 0;
         WmiQuery.ForEachOrThrow("SELECT * FROM Win32_PhysicalMemory", m =>
         {
-            string bank = WmiQuery.GetString(m, "BankLabel") ?? "—";
-            string loc = WmiQuery.GetString(m, "DeviceLocator") ?? "—";
+            string bank = WmiQuery.GetText(m, "BankLabel");
+            string loc = WmiQuery.GetText(m, "DeviceLocator");
             var (ch, idx) = ParseSlot(loc, bank);
-            string part = WmiQuery.GetString(m, "PartNumber") ?? "—";
+            string part = WmiQuery.GetText(m, "PartNumber");
             if (SpeedInPart.Match(part) is { Success: true } sp)
                 partSpeed = Math.Max(partSpeed, int.Parse(sp.Value, CultureInfo.InvariantCulture));
             mods.Add(new RamModule(
@@ -181,7 +184,7 @@ internal static class HardwareInventoryReader
 
         var pages = WmiQuery.Select("SELECT Name, AllocatedBaseSize, CurrentUsage, PeakUsage FROM Win32_PageFileUsage", pf =>
             new PageFile(
-                WmiQuery.GetString(pf, "Name") ?? "—",
+                WmiQuery.GetText(pf, "Name"),
                 WmiQuery.GetInt32(pf, "AllocatedBaseSize"),
                 WmiQuery.GetInt32(pf, "CurrentUsage"),
                 WmiQuery.GetInt32(pf, "PeakUsage")));
@@ -204,11 +207,12 @@ internal static class HardwareInventoryReader
         var list = new List<VideoAdapter>();
         WmiQuery.ForEachOrThrow("SELECT Name, AdapterCompatibility, DriverVersion, DriverDate, PNPDeviceID FROM Win32_VideoController", g =>
         {
-            string name = WmiQuery.GetString(g, "Name") ?? "—";
-            string win = WmiQuery.GetString(g, "DriverVersion") ?? "—";
-            string vendorRaw = WmiQuery.GetString(g, "AdapterCompatibility") ?? "—";
+            string name = WmiQuery.GetText(g, "Name");
+            string win = WmiQuery.GetText(g, "DriverVersion");
+            string vendorRaw = WmiQuery.GetText(g, "AdapterCompatibility");
             string pnp = WmiQuery.GetString(g, "PNPDeviceID") ?? "";
-            if (HardwareNaming.IsMicrosoftBasicAdapter(name, pnp)) return;
+            // Só o adaptador virtual do Windows sai da lista; uma placa real rodando no driver básico continua.
+            if (pnp.StartsWith("ROOT", StringComparison.OrdinalIgnoreCase) && name.Contains("Basic", StringComparison.OrdinalIgnoreCase)) return;
 
             string vendor = vendorRaw.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase) ? "NVIDIA" : Fmt.ShortMaker(vendorRaw);
             DateTime? date = WmiCalendarDate.TryParse(g["DriverDate"] as string, out var parsed) ? parsed : null;
@@ -250,12 +254,12 @@ internal static class HardwareInventoryReader
             bool usb = pnp.StartsWith("USBSTOR", StringComparison.OrdinalIgnoreCase);
             meta.TryGetValue(idx, out var m);
             layout.TryGetValue(idx, out var lay);
-            string bus = m?.Bus is { Length: > 0 } b ? b : usb ? "USB" : (WmiQuery.GetString(d, "InterfaceType") ?? "—");
+            string bus = m?.Bus is { Length: > 0 } b ? b : usb ? "USB" : (WmiQuery.GetText(d, "InterfaceType"));
             string mediaTypeRaw = WmiQuery.GetString(d, "MediaType") ?? "";
             bool removable = usb || bus == "USB" || mediaTypeRaw.Contains("Removable", StringComparison.OrdinalIgnoreCase);
             list.Add(new PhysicalDiskInfo(
                 idx,
-                WmiQuery.GetString(d, "Model") ?? "—",
+                WmiQuery.GetText(d, "Model"),
                 WmiQuery.GetUInt64(d, "Size"),
                 bus,
                 m?.Media ?? "",

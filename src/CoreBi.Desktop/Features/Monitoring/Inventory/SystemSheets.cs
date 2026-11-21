@@ -346,7 +346,7 @@ public static class SystemSheets
         {
             Key = Gpu,
             Eyebrow = g.Vendor,
-            Title = HardwareNaming.ShortGpuName(g.Name),
+            Title = WithoutVendor(g.Name),
             Subtitle = g.Name,
             Readouts = new()
             {
@@ -361,6 +361,14 @@ public static class SystemSheets
     }
 
     /// <summary>Primeiro valor útil com essa chave nas seções da página Placa de vídeo.</summary>
+    /// <summary>Tira só o fabricante ("NVIDIA GeForce RTX 4060 Ti" → "GeForce RTX 4060 Ti"); a família continua no título.</summary>
+    private static string WithoutVendor(string name)
+    {
+        foreach (var p in new[] { "NVIDIA ", "AMD ", "Intel(R) ", "Intel " })
+            if (name.StartsWith(p, StringComparison.OrdinalIgnoreCase)) return name[p.Length..].Replace("(TM)", "").Replace("(R)", "").Trim();
+        return name;
+    }
+
     private static string? Find(IEnumerable<InfoNode> nodes, string key)
     {
         foreach (var n in nodes)

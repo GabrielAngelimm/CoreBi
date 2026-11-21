@@ -147,7 +147,8 @@ public static class StartupManager
         {
             ValidateStartupPath(entry.FilePath!, entry.Machine);
             Directory.CreateDirectory(folder);
-            backup.Backup = Path.Combine(folder, backup.Id + Path.GetExtension(entry.FilePath));
+            // ".bak" no fim: um atalho .json na pasta Inicializar não pode colidir com o registro <Id>.json do backup.
+            backup.Backup = Path.Combine(folder, backup.Id + Path.GetExtension(entry.FilePath) + ".bak");
             File.Copy(entry.FilePath!, backup.Backup, overwrite: false);
             backup.FileHash = Hash(backup.Backup);
         }

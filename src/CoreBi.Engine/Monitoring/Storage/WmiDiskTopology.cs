@@ -85,8 +85,8 @@ internal static class WmiDiskTopology
         10 => "SAS",
         8 => "RAID",
         12 => "SD",
-        6 => "Fibre",
-        3 => "SCSI",
+        6 => "Fibre Channel",
+        3 => "ATA",
         _ => null
     };
 

@@ -66,7 +66,9 @@ public static class PdfPrinter
             // Com o app elevado o Edge se relança sem elevação e o processo filho sai na hora: o PDF surge logo depois.
             // Espera o arquivo existir e parar de crescer antes de copiar e apagar a pasta de trabalho.
             long lastSize = -1;
-            int maxEmptyWaits = ProcessElevation.IsElevated ? 24 : 8;
+            // Sem elevação o Edge já terminou aqui, então 2 s bastam. Elevado, o Edge relançado ainda precisa abrir
+            // (perfil novo, disco frio) e imprimir: espera o prazo inteiro, como antes.
+            int maxEmptyWaits = ProcessElevation.IsElevated ? 240 : 8;
             for (int waited = 0; waited < 240; waited++)
             {
                 long size = File.Exists(output) ? new FileInfo(output).Length : 0;

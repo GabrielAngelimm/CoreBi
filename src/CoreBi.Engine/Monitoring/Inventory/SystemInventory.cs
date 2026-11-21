@@ -321,8 +321,16 @@ public static class Fmt
 {
     private static readonly CultureInfo Br = ByteFormat.PtBr;
 
-    /// <summary>Capacidade binária como o Explorador do Windows mostra (acima de 100 trunca casas: 1 TB = 931 GB).</summary>
-    public static string Bytes(double b) => ByteFormat.Binary(b);
+    /// <summary>Capacidade binária como o Windows mostra: 16 GB, 931 GB, 1,8 TB.</summary>
+    public static string Bytes(double b)
+    {
+        if (b <= 0) return "—";
+        string[] u = ["B", "KB", "MB", "GB", "TB", "PB"];
+        int i = 0;
+        while (b >= 1024 && i < u.Length - 1) { b /= 1024; i++; }
+        // Como o Explorador: acima de 100 corta as casas (1 TB = 931 GB, não 932).
+        return b >= 100 ? string.Format(Br, "{0:0} {1}", Math.Floor(b), u[i]) : string.Format(Br, i < 3 ? "{0:0} {1}" : "{0:0.#} {1}", b, u[i]);
+    }
 
     public static string Vram(ulong b) => b >= 1UL << 30 ? $"{ByteFormat.CommercialVramGb(b):0} GB" : Bytes(b);
 

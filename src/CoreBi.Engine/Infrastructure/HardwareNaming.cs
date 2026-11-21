@@ -55,10 +55,16 @@ public static class HardwareNaming
         return int.TryParse(tail[..3], out int major) ? $"{major}.{tail[3..]}" : null;
     }
 
+    /// <summary>
+    /// Rótulo em caixa de frase. Os vereditos do motor vêm em caixa alta ("SAUDÁVEL", "SEM REDE") porque o relatório
+    /// antigo os usava assim; na tela e no relatório viram "Saudável", "Sem rede". O resto só ganha a inicial maiúscula.
+    /// </summary>
     public static string Sentence(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return "";
         string trimmed = text.Trim();
+        if (trimmed.Length > 1 && trimmed == trimmed.ToUpper(ByteFormat.PtBr))
+            return trimmed[..1] + trimmed[1..].ToLower(ByteFormat.PtBr);
         return char.IsLetter(trimmed[0])
             ? char.ToUpper(trimmed[0], ByteFormat.PtBr) + trimmed[1..]
             : trimmed;

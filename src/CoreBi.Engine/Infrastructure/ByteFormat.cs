@@ -4,29 +4,28 @@ namespace CoreBi.Engine.Infrastructure;
 
 public static class ByteFormat
 {
-    public const double BytesPerGiB = 1024.0 * 1024 * 1024;
-    public const double BytesPerMiB = 1024.0 * 1024;
-
     public static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
-    public static string Binary(double bytes, bool compactLarge = false)
+    /// <summary>Potências de 1024 com uma casa: 8 GB, 15,9 GB, 512 MB.</summary>
+    public static string Binary(double bytes)
     {
         if (bytes <= 0 || !double.IsFinite(bytes)) return "—";
         string[] units = ["B", "KB", "MB", "GB", "TB"];
         double value = bytes;
         int i = 0;
         while (value >= 1024 && i < units.Length - 1) { value /= 1024; i++; }
-        string fmt = compactLarge && value >= 100 ? "0" : "0.#";
-        return $"{value.ToString(fmt, PtBr)} {units[i]}";
+        return $"{value.ToString("0.#", PtBr)} {units[i]}";
     }
 
+    /// <summary>Potências de 1000 com uma casa, como o fabricante anuncia o disco: 500,1 GB, 2 TB.</summary>
     public static string Decimal(ulong bytes)
     {
         if (bytes == 0) return "";
-        double gb = bytes / 1e9;
-        return gb >= 1000
-            ? $"{(gb / 1000).ToString("0.##", PtBr)} TB"
-            : $"{gb.ToString("0", PtBr)} GB";
+        double value = bytes;
+        string[] units = ["B", "KB", "MB", "GB", "TB"];
+        int i = 0;
+        while (value >= 1000 && i < units.Length - 1) { value /= 1000; i++; }
+        return $"{value.ToString("0.#", PtBr)} {units[i]}";
     }
 
     /// <summary>
