@@ -149,6 +149,8 @@ public sealed class GpuBurn : IDisposable
             long frame = 0, lastFrames = 0;
             var clock = Stopwatch.StartNew();
             double lastT = 0, lastPresent = 0;
+            // Delegado criado uma vez: converter a função local a cada quadro alocaria dentro do laço medido.
+            Func<bool> shouldStop = ShouldStop;
 
             while (!ShouldStop())
             {
@@ -166,7 +168,7 @@ public sealed class GpuBurn : IDisposable
                     CreateTargets(cw, ch);
                 }
 
-                host.WaitFence(frame, ShouldStop, spinWait: false);
+                host.WaitFence(frame, shouldStop, spinWait: false);
 
                 float t = (float)clock.Elapsed.TotalSeconds;
                 var world = Matrix4x4.CreateRotationY(t * 0.6f) * Matrix4x4.CreateRotationX(0.55f + 0.25f * MathF.Sin(t * 0.35f));

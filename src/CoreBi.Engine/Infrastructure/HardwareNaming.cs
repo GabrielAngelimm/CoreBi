@@ -2,13 +2,16 @@ using System.Text.RegularExpressions;
 
 namespace CoreBi.Engine.Infrastructure;
 
-public static class HardwareNaming
+public static partial class HardwareNaming
 {
-    private static readonly Regex MobileGpuRegex = new(@"Laptop|Mobile|Max-Q|Notebook", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex IntelGenRegex = new(@"\d+th Gen\s*", RegexOptions.Compiled);
+    [GeneratedRegex(@"Laptop|Mobile|Max-Q|Notebook", RegexOptions.IgnoreCase)]
+    private static partial Regex MobileGpuRegex();
+
+    [GeneratedRegex(@"\d+th Gen\s*")]
+    private static partial Regex IntelGenRegex();
 
     internal static bool IsMobileGpu(string? name) =>
-        !string.IsNullOrWhiteSpace(name) && MobileGpuRegex.IsMatch(name);
+        !string.IsNullOrWhiteSpace(name) && MobileGpuRegex().IsMatch(name);
 
     internal static bool IsMicrosoftBasicAdapter(string? name, string? pnpDeviceId = null) =>
         (name?.Contains("Microsoft Basic", StringComparison.OrdinalIgnoreCase) ?? false)
@@ -37,7 +40,7 @@ public static class HardwareNaming
             s = space >= 0 ? s[..space] : s[..i];
         }
         s = s.Replace("Processor", "").Replace("CPU", "");
-        s = IntelGenRegex.Replace(s, "");
+        s = IntelGenRegex().Replace(s, "");
         int at = s.IndexOf('@');
         if (at > 0) s = s[..at];
         return string.Join(' ', s.Split(' ', StringSplitOptions.RemoveEmptyEntries));

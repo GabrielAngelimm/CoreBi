@@ -105,7 +105,9 @@ public sealed class FrameMonitor : IDisposable
             q.Enqueue(t);
             history.Last = t;
             while (q.Count > 0 && q.Peek() < t - HistoryMs) q.Dequeue();
-            foreach (var old in streams.Where(x => x.Value.Last < t - HistoryMs).Select(x => x.Key).ToArray()) streams.Remove(old);
+            // Com um único fluxo, ele é o que acabou de receber t: nada a remover, e evita alocar a cada evento ETW.
+            if (streams.Count > 1)
+                foreach (var old in streams.Where(x => x.Value.Last < t - HistoryMs).Select(x => x.Key).ToArray()) streams.Remove(old);
             _lastSeen[pid] = Stopwatch.GetTimestamp();
             if (Stopwatch.GetElapsedTime(_lastCleanup).TotalSeconds >= 10)
             {

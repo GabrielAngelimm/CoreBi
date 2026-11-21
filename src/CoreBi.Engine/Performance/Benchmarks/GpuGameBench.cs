@@ -154,6 +154,8 @@ public sealed class GpuGameBench
             double lastDone = -1, lastPresent = 0, lastTitle = 0;
             int titleFrames = 0, frames = 0;
             long frame = 0;
+            // Delegado criado uma vez: converter a função local a cada quadro alocaria dentro do laço medido.
+            Func<bool> shouldStop = ShouldStop;
 
             while (!ShouldStop() && clock.Elapsed < Duration)
             {
@@ -165,7 +167,7 @@ public sealed class GpuGameBench
                 {
                     // Espera ativa (sem ceder o núcleo): ceder a vez pode custar um tick de 15,6 ms do Windows
                     // e registraria uma travada que a GPU não teve.
-                    host.WaitFence(frame, ShouldStop, spinWait: true);
+                    host.WaitFence(frame, shouldStop, spinWait: true);
                     double done = clock.Elapsed.TotalMilliseconds;
                     if (lastDone >= 0) frameTimes.Add(done - lastDone);
                     lastDone = done;
