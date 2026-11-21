@@ -4,6 +4,14 @@
 
 - FPS estimado removido do app: saem a página, o item do menu Jogos, as tabelas de FPS por jogo e a integração opcional com a API HowManyFPS, com o campo da chave. Uma chave que estivesse salva é descartada na próxima gravação das configurações, e o pacote System.Security.Cryptography.ProtectedData, que só servia para cifrá-la, saiu do projeto. O FPS medido continua igual no OverlayBi (inclusive pelo RTSS), no Gargalo e nos benchmarks.
 - Dependências: System.Management e System.Diagnostics.EventLog 11.0.0.
+- Fechamento ao trocar o driver de vídeo com o CoreBi aberto: o app não cai mais. Enquanto o Windows troca dispositivos, as leituras pausam; se o driver de vídeo mudou, a placa sai das leituras até o CoreBi ser aberto de novo, e um aviso explica isso.
+- Ferramentas (Inicialização, Instalar apps e Drivers) com um padrão só: console de tarefa ao lado do título, textos alinhados pela linha de base e uma linha curta dizendo o que é cada lista. Listas longas rolam dentro do painel, e a página cabe na tela.
+- Benchmark e Teste de carga viraram uma bancada de teste: a peça testada, as leituras ao vivo e a régua de resultado ficam alinhados; FPS e 1% low ganham o nome por extenso ("quadros por segundo", "quadros mais lentos").
+- Placa de vídeo e Gargalo redesenhados: os instrumentos da placa têm número e unidade na mesma linha de base; o Gargalo diz o nome por extenso de cada sigla (placa de vídeo, processador, memória) e explica o que mostra quando nenhum jogo está aberto.
+- Visão geral, OverlayBi, Discos e Rede com o alinhamento revisado. O OverlayBi mostra o nome por extenso embaixo de cada grupo (quadros por segundo, placa de vídeo, memória da placa de vídeo, processador, memória), e a Rede explica cada leitura na dica.
+- Energia, Sistema e Sensores com o alinhamento revisado. Tensões ganha uma linha explicando o que é a faixa âmbar; os clocks dos núcleos dizem "velocidade em MHz".
+- Barra lateral e barra de título alinhadas: a central de monitoramento e a busca de páginas ficam na mesma linha de base dos textos vizinhos.
+- Padrão das telas: o subtítulo da página fica só para estado vivo; o cartão principal pode ter uma linha dizendo o que a página faz; siglas de grupo podem vir com o nome por extenso.
 
 ## 0.2.5 — 2026-10-31
 
