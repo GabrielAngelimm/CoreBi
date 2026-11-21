@@ -80,7 +80,7 @@ public abstract class DiskInstrument : FrameworkElement
     }
 
     /// <summary>
-    /// Pulso da leitura nova: um halo do canal que cresce e some em menos de um segundo em volta do ponto atual, desenhado com
+    /// Pulso da leitura nova: um halo do canal que cresce e some em 400 ms em volta do ponto atual, desenhado com
     /// relógios de animação (o instrumento não precisa se redesenhar para ele andar). Só quando a janela permite movimento ao
     /// vivo (MainWindow.LiveMotion).
     /// </summary>
@@ -89,7 +89,7 @@ public abstract class DiskInstrument : FrameworkElement
         if (Window.GetWindow(this) is not MainWindow { LiveMotion: true }) return;
         var halo = new SolidColorBrush(Color.FromArgb(0x50, color.R, color.G, color.B));
         halo.Freeze();
-        var span = TimeSpan.FromMilliseconds(850);
+        var span = TimeSpan.FromMilliseconds(400);
         var grow = new System.Windows.Media.Animation.DoubleAnimation(5, 12, span) { EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut } }.CreateClock();
         var fade = new System.Windows.Media.Animation.DoubleAnimation(1, 0, span).CreateClock();
         dc.PushOpacity(1, fade);
@@ -217,11 +217,21 @@ public sealed class ThermalScale : DiskInstrument
         dc.DrawRectangle(WarnBrush, null, new Rect(X(WarnAt) + 1, zoneY, Math.Max(0, X(CritAt) - X(WarnAt) - 2), 3));
         dc.DrawRectangle(DangerBrush, null, new Rect(X(CritAt) + 1, zoneY, Math.Max(0, w - X(CritAt) - 1), 3));
 
+        // Escala de 10 em 10 e, na cor de cada faixa, o ponto exato em que a atenção e a crítica começam (o mesmo limiar da
+        // linha tracejada do gráfico); um número da escala que cairia em cima de um limiar dá lugar a ele.
+        var marks = new[] { (At: WarnAt, Brush: WarnBrush), (At: CritAt, Brush: DangerBrush) }.Where(m => !double.IsNaN(m.At) && m.At > lo && m.At < hi).ToList();
+        double last = lo + Math.Floor((hi - lo) / 10 + 0.01) * 10;
         for (double v = lo; v <= hi + 0.1; v += 10)
         {
-            var t = Text($"{v:0}", 11, FaintBrush);
+            if (marks.Any(m => Math.Abs(X(m.At) - X(v)) < 26)) continue;
+            var t = Text(v >= last - 0.1 ? $"{v:0} °C" : $"{v:0}", 11, FaintBrush); // a unidade uma vez, no fim da régua
             double x = v <= lo ? 0 : v >= hi ? w - t.Width : X(v) - t.Width / 2;
             dc.DrawText(t, new Point(x, zoneY + 8));
+        }
+        foreach (var m in marks)
+        {
+            var t = Text($"{m.At:0}", 11, m.Brush);
+            dc.DrawText(t, new Point(Math.Clamp(X(m.At) - t.Width / 2, 0, w - t.Width), zoneY + 8));
         }
 
         if (known) dc.DrawRectangle(InkBrush, null, new Rect(X(Value) - 1, barTop - 4, 2, barH + 8));
@@ -282,7 +292,7 @@ public sealed class TraceChart : DiskInstrument
         double w = ActualWidth, h = ActualHeight;
         if (w < 80 || h < 50) return;
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, h)); // área clicável para o cursor
-        const double left = 34, bottom = 20, top = 6, lo = 20;
+        const double left = 44, bottom = 20, top = 6, lo = 20;
         double plotW = w - left, plotH = h - top - bottom;
         var values = _samples.Where(v => v != null).Select(v => (double)v!.Value).ToList();
         double peak = values.Count > 0 ? values.Max() : 0;
@@ -295,7 +305,7 @@ public sealed class TraceChart : DiskInstrument
         {
             double v = lo + (hi - lo) * k / 3, y = Math.Round(Y(v)) + 0.5;
             dc.DrawLine(grid, new Point(left, y), new Point(w, y));
-            var t = Text($"{v:0}°", 11, FaintBrush);
+            var t = Text($"{v:0} °C", 11, FaintBrush);
             dc.DrawText(t, new Point(0, y - t.Height / 2));
         }
         for (int k = 0; k <= 4; k++)
@@ -379,12 +389,12 @@ public sealed class TraceChart : DiskInstrument
         string when = ago <= 0 ? "agora" : ago >= 60 ? $"há {ago / 60} min {ago % 60:00} s" : $"há {ago} s";
         var time = Text(when, 11.5, FaintBrush, readout: false);
         var value = Text($"{_samples[nearest]!.Value:0.#} °C", 16, InkBrush);
-        double bw = Math.Max(time.Width, value.Width) + 22, bh = time.Height + value.Height + 14;
+        double bw = Math.Max(time.Width, value.Width) + 24, bh = time.Height + value.Height + 16;
         double bx = px + 14 + bw > w ? px - 14 - bw : px + 14;
         double by = Math.Clamp(py - bh / 2, top, Math.Max(top, top + plotH - bh));
         dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bw, bh), 8, 8);
-        dc.DrawText(time, new Point(bx + 11, by + 7));
-        dc.DrawText(value, new Point(bx + 11, by + 7 + time.Height));
+        dc.DrawText(time, new Point(bx + 12, by + 8));
+        dc.DrawText(value, new Point(bx + 12, by + 8 + time.Height));
     }
 }
 

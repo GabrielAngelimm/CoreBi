@@ -16,6 +16,11 @@ public partial class SensorsView : UserControl
         DependencyProperty.Register(nameof(SectionColumns), typeof(int), typeof(SensorsView), new PropertyMetadata(2));
     public int SectionColumns { get => (int)GetValue(SectionColumnsProperty); set => SetValue(SectionColumnsProperty, value); }
 
+    /// <summary>Dica de Mín., Média e Máx. nos cabeçalhos dos componentes: desde quando as estatísticas contam.</summary>
+    public static readonly DependencyProperty StatsNoteProperty =
+        DependencyProperty.Register(nameof(StatsNote), typeof(string), typeof(SensorsView), new PropertyMetadata(""));
+    public string StatsNote { get => (string)GetValue(StatsNoteProperty); set => SetValue(StatsNoteProperty, value); }
+
     private const double HeaderHeight = 112;  // altura do cabeçalho de componente: 80 + 32 (ComponentHeader no XAML)
 
     private SensorMonitor? _monitor;
@@ -35,6 +40,7 @@ public partial class SensorsView : UserControl
     public SensorsView()
     {
         InitializeComponent();
+        UpdateStatsNote();
         IsVisibleChanged += (_, _) => { if (IsVisible) Rebuild(); else Release(); };
         // A busca solta o foco (cursor e seleção) com um clique em qualquer lugar fora dela, como um campo de busca comum
         Focusable = true;
@@ -103,7 +109,7 @@ public partial class SensorsView : UserControl
             _pending = null;
             SensorScroll.ScrollToTop();
         }
-        var layout = SensorBoard.Build(rows, _component, _group, _search, _collapsed);
+        var layout = SensorBoard.Build(rows, _component, _group, _search, _collapsed, SectionColumns);
         _component = layout.SelectedId;
         _builtRows = _monitor.Rows.Count(r => r.HasReading);
         _syncing = true;
@@ -119,7 +125,7 @@ public partial class SensorsView : UserControl
         if (layout.Cards.Count == 0)
             ShowEmpty("Nenhum sensor encontrado", _search.Length > 0 ? $"Nada corresponde a “{_search}” neste filtro." : "Este tipo de sensor não existe neste componente.");
         else SensorEmpty.Visibility = Visibility.Collapsed;
-        UpdateFootnote();
+        UpdateStatsNote();
     }
 
     private void Release()
@@ -140,8 +146,12 @@ public partial class SensorsView : UserControl
         SensorEmpty.Visibility = Visibility.Visible;
     }
 
-    private void UpdateFootnote() => SensorFootnote.Text =
-        $"Mínimo, média e máximo contam desde as {_since:HH:mm}. Leitura a cada segundo, pausada durante o teste de placa de vídeo. Passe o mouse num sensor para ver o nome técnico.";
+    /// <summary>Desde quando contam mínimo, média e máximo: na dica de "Zerar estatísticas" e na dos nomes das colunas.</summary>
+    private void UpdateStatsNote()
+    {
+        BtnSensorsReset.ToolTip = $"Mínimo, média e máximo contam desde as {_since:HH:mm}. Zerar recomeça a contagem a partir de agora.";
+        StatsNote = $"Contam desde as {_since:HH:mm}. A leitura pausa durante o teste de placa de vídeo.";
+    }
 
     // ---------------- Cabeçalho fixo ----------------
 
@@ -176,6 +186,13 @@ public partial class SensorsView : UserControl
     }
 
     private void SensorScroll_ScrollChanged(object sender, ScrollChangedEventArgs e) => UpdateSticky();
+
+    /// <summary>"Núcleo mais exigido" e "Núcleo mais quente": a dica diz qual núcleo é, na hora em que abre.</summary>
+    private void SensorLine_ToolTipOpening(object sender, ToolTipEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: SensorRow row } host && _monitor != null && SensorBoard.PeakTip(_monitor.Rows, row) is { } tip)
+            host.ToolTip = tip;
+    }
 
     /// <summary>Cantos redondos de verdade: os cabeçalhos têm fundo e vazariam pelos cantos do cartão.</summary>
     private void SensorCard_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -249,7 +266,7 @@ public partial class SensorsView : UserControl
     {
         _monitor?.ResetStats();
         _since = DateTime.Now;
-        UpdateFootnote();
+        UpdateStatsNote();
     }
 
     private void Toggle_Click(object sender, RoutedEventArgs e)
@@ -268,6 +285,9 @@ public partial class SensorsView : UserControl
         IndexCard.Visibility = index ? Visibility.Visible : Visibility.Collapsed;
         if (!index && _component != null) { _component = null; Rebuild(); } // sem o índice não há como voltar à visão geral
         double content = e.NewSize.Width - (index ? 316 : 0);
-        SectionColumns = content >= 1060 ? 2 : 1;
+        int columns = content >= 1060 ? 2 : 1;
+        if (columns == SectionColumns) return;
+        SectionColumns = columns;
+        if (IsVisible) Rebuild(); // um grupo só se divide entre as duas colunas, e volta a uma com uma coluna
     }
 }

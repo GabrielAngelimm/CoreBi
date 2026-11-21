@@ -188,10 +188,28 @@
     <Style x:Key="ReadoutLarge" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
         <Setter Property="FontSize" Value="38"/>
         <Setter Property="FontWeight" Value="Light"/>
+        <Style.Triggers>
+            <!-- Sem leitura: o travessão da Bahnschrift Light vira uma barra larga; encolhe e fica um tom abaixo, na mesma altura de linha -->
+            <Trigger Property="Text" Value="—">
+                <Setter Property="FontSize" Value="24"/>
+                <Setter Property="LineHeight" Value="48"/>
+                <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+                <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
     <Style x:Key="ReadoutHero" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
         <Setter Property="FontSize" Value="54"/>
         <Setter Property="FontWeight" Value="Light"/>
+        <Style.Triggers>
+            <!-- Sem leitura: o travessão da Bahnschrift Light vira uma barra larga; encolhe e fica um tom abaixo, na mesma altura de linha -->
+            <Trigger Property="Text" Value="—">
+                <Setter Property="FontSize" Value="28"/>
+                <Setter Property="LineHeight" Value="68"/>
+                <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+                <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
     <Style x:Key="Unit" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
@@ -1490,6 +1508,116 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!-- rodada-unslop: visao-overlay-discos-rede início -->
+    <!--
+        Pílula de opção em que marcado leva o sinal: fio e visto verde-água sobre o fundo tingido (SignalSoft). O OptionChip usa
+        o cinza Selected, que no tema claro fica quase igual à pílula desmarcada e lembra um controle desabilitado.
+        Desmarcado: só o fio e o "+"; desabilitado: tudo esmaecido.
+    -->
+    <Style x:Key="OptionChipSignal" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,0,6,6"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Border x:Name="b" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="14"
+                            Padding="9,6,12,3" Background="Transparent" SnapsToDevicePixels="True">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="mark" Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="10"
+                                       Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,0,7,5"/>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Faint}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource SignalSoft}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}"/>
+                            <Setter TargetName="mark" Property="Text" Value="&#xE73E;"/>
+                            <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Signal}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalHover}"/>
+                        </MultiTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!-- rodada-unslop: visao-overlay-discos-rede fim -->
+
+    <!-- rodada-unslop: ferramentas início -->
+    <!--
+        Console de tarefa (Inicialização, Instalar apps, Drivers): fica ao lado do título, rente ao topo do cabeçalho, com o botão
+        da tarefa (36 px), o estado em uma linha, um detalhe curto à direita e a barra contínua no sinal, que só aparece durante
+        uma tarefa e só avança quando ela informa trabalho feito. Com 62 px de altura, o primeiro painel começa na mesma linha
+        das páginas com título e subtítulo.
+    -->
+    <Style x:Key="TaskConsole" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Padding" Value="12,12,22,12"/>
+    </Style>
+    <Style x:Key="TaskStatus" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <Style x:Key="TaskDetail" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="Margin" Value="16,0,0,0"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <!-- Cabeçalho de coluna de uma tabela feita à mão (linhas de altura fixa): DIN 12, um tom abaixo do conteúdo -->
+    <Style x:Key="TableHead" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <!-- Quantidade ao lado do título de um painel ("Drivers instalados 48") -->
+    <Style x:Key="TitleCount" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
+        <Setter Property="FontStretch" Value="SemiCondensed"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="10,1,0,0"/>
+    </Style>
+    <!-- Linha de tabela: fio em cima e fundo que acende sob o mouse (o mesmo realce das linhas de Sensores) -->
+    <Style x:Key="TableRow" TargetType="Border">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Hover}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!-- rodada-unslop: ferramentas fim -->
 
     <!-- rodada-unslop: bancada de teste início -->
     <!--

@@ -15,8 +15,8 @@ namespace CoreBi.Desktop.Views;
 
 /// <summary>
 /// Sistema: a ficha técnica do computador. Seis botões de categoria em cima e, embaixo, a ficha da escolhida: placa
-/// com o nome da peça e quatro leituras, e os dados em grupos na largura toda, com os vereditos ao lado do valor. Tudo é lido uma vez ao abrir o CoreBi; discos e unidades são relidos quando algo é conectado, e o uso da
-/// RAM a cada vez que a página aparece.
+/// com o nome da peça e quatro leituras, e os dados em grupos de texto na largura toda. Tudo é lido uma vez ao abrir o
+/// CoreBi; discos e unidades são relidos quando algo é conectado, e as idades ("há 3 meses") a cada vez que a página aparece.
 /// </summary>
 public partial class SystemView : UserControl
 {
@@ -167,7 +167,7 @@ public partial class SystemView : UserControl
         }
         if (_columns != null)
         {
-            double specs = width - 64;
+            double specs = width - 48;  // 24 de cada lado (SpecScroll)
             _columns.Columns = specs >= 1100 ? 3 : specs >= 620 ? 2 : 1;
         }
     }

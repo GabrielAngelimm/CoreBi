@@ -114,6 +114,28 @@ public static class PowerPlans
         return list;
     }
 
+    // Planos de fábrica do Windows: o nome chega no idioma do sistema; num Windows em inglês, ganham o nome em português na tela.
+    private static readonly (Guid Id, string English, string Portuguese)[] Stock =
+    {
+        (new("381b4222-f694-41f0-9685-ff5bb260df2e"), "Balanced", "Equilibrado"),
+        (new("8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"), "High performance", "Alto desempenho"),
+        (new("a1841308-3541-4fab-bc81-f71556f20b4a"), "Power saver", "Economia de energia"),
+        (new("e9a42b02-d5df-448d-aa00-03f14749eb61"), "Ultimate Performance", "Desempenho máximo"),
+    };
+
+    /// <summary>
+    /// Nome do plano para a tela: um plano de fábrica (pelo GUID) ainda com o nome em inglês vira o nome em português; o
+    /// "Ultimate Performance" também pelo nome, porque o Windows o cria como cópia, com GUID novo. Plano renomeado ou
+    /// personalizado fica como está. O dado (PowerPlan.Name) não muda.
+    /// </summary>
+    public static string DisplayName(Guid id, string name)
+    {
+        foreach (var (stockId, english, portuguese) in Stock)
+            if (string.Equals(name.Trim(), english, StringComparison.OrdinalIgnoreCase) && (id == stockId || english == "Ultimate Performance"))
+                return portuguese;
+        return name;
+    }
+
     /// <summary>Troca o plano ativo (o mesmo que escolher o plano em Opções de energia). Retorna o código de erro do Windows, 0 se deu certo.</summary>
     public static uint SetActive(Guid id)
     {

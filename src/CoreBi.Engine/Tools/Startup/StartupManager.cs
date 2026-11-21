@@ -11,10 +11,10 @@ public sealed class StartupEntry
 {
     public string Name { get; init; } = "";
     public string Command { get; init; } = "";
-    public string Source { get; init; } = "";          // ex.: "Registro · usuário"
+    public string Source { get; init; } = "";          // ex.: "Registro (usuário)"
     public bool Machine { get; init; }                 // HKLM / pasta comum: precisa de administrador
     public bool Enabled { get; set; }
-    public string Detail { get; init; } = "";          // descrição · fabricante
+    public string Detail { get; init; } = "";          // descrição, fabricante
     public bool FileMissing { get; init; }
 
     internal string Kind { get; init; } = "";          // Run | Run32 | Folder
@@ -51,11 +51,11 @@ public static class StartupManager
     public static List<StartupEntry> List()
     {
         var list = new List<StartupEntry>();
-        ReadRun(list, RegistryHive.CurrentUser, RegistryView.Default, "Run", false, "Registro · usuário");
-        ReadRun(list, RegistryHive.LocalMachine, RegistryView.Registry64, "Run", true, "Registro · todos os usuários");
-        ReadRun(list, RegistryHive.LocalMachine, RegistryView.Registry32, "Run32", true, "Registro · todos os usuários (32 bits)");
-        ReadFolder(list, Environment.GetFolderPath(Environment.SpecialFolder.Startup), false, "Pasta Inicializar · usuário");
-        ReadFolder(list, Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), true, "Pasta Inicializar · todos os usuários");
+        ReadRun(list, RegistryHive.CurrentUser, RegistryView.Default, "Run", false, "Registro (usuário)");
+        ReadRun(list, RegistryHive.LocalMachine, RegistryView.Registry64, "Run", true, "Registro (todos os usuários)");
+        ReadRun(list, RegistryHive.LocalMachine, RegistryView.Registry32, "Run32", true, "Registro 32 bits (todos os usuários)");
+        ReadFolder(list, Environment.GetFolderPath(Environment.SpecialFolder.Startup), false, "Pasta Inicializar (usuário)");
+        ReadFolder(list, Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), true, "Pasta Inicializar (todos os usuários)");
         return list.OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
@@ -267,7 +267,7 @@ public static class StartupManager
         {
             if (exe == null || !File.Exists(exe)) return "";
             var v = FileVersionInfo.GetVersionInfo(exe);
-            return string.Join(" · ", new[] { v.FileDescription, v.CompanyName }
+            return string.Join(", ", new[] { v.FileDescription, v.CompanyName }
                 .Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s!.Trim()).Distinct());
         }
         catch { return ""; }

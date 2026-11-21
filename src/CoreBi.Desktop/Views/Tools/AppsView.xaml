@@ -1,88 +1,197 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.AppsView" xmlns:local="clr-namespace:CoreBi.Desktop">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Style="{StaticResource Page}">
-            <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,18">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="Instalar apps" Style="{StaticResource PageTitle}" />
-                    <TextBlock Text="Os essenciais depois de formatar o PC, na versão oficial mais recente e com instalação silenciosa." Style="{StaticResource PageSubtitle}" />
-                </StackPanel>
-                <Button x:Name="BtnAppsInstall" Grid.Column="1" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE896;" Content="Instalar selecionados" VerticalAlignment="Top" Click="BtnAppsInstall_Click" />
-            </Grid>
-            <Border Style="{StaticResource CardBorder}" Padding="20,16" Margin="0,0,0,16">
-                <StackPanel>
-                    <TextBlock x:Name="AppsStatus" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="0,0,0,12" Text="Marque os apps e clique em Instalar selecionados." />
-                    <Grid Style="{StaticResource ProgressTrack}">
-                        <Border Style="{StaticResource ProgressFill}">
-                            <Border.RenderTransform>
-                                <ScaleTransform x:Name="AppsProgress" ScaleX="0" />
-                            </Border.RenderTransform>
+    <UserControl.Resources>
+        <!--
+            Cartão de app: o cartão inteiro marca e desmarca. Nome em DIN e descrição em até duas linhas; o canto de cima à direita
+            é sempre o do estado: o marcador redondo enquanto dá para escolher e, no lugar dele, o estado de verdade em texto
+            curto ("Na fila", "Instalando…", "Instalado", "Falhou"). Marcado leva o sinal (borda e realce); já instalado perde o
+            marcador e não reage ao mouse, para não parecer uma opção. Desmarcado e instalado têm o fundo do painel: só o
+            marcado ganha realce.
+        -->
+        <Style x:Key="AppCard" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="0,0,12,12" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="b" Background="Transparent" BorderBrush="{DynamicResource Line}" BorderThickness="1"
+                                CornerRadius="{StaticResource RadiusInset}" Padding="16,13,14,14" SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <!-- Nome numa linha só: "7-Zip" não quebra no hífen -->
+                                <TextBlock Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold"
+                                           TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                <!--
+                                    Marcador e estado sobem 1 px (margens -1 e 1, a caixa continua com 20): medido, o "Instalado" ficava com a
+                                    base 1 px abaixo da do nome e o centro do marcador 1,5 px abaixo do meio das maiúsculas do nome
+                                -->
+                                <Grid Grid.Column="1" Height="20" Margin="12,-1,0,1" VerticalAlignment="Center">
+                                    <Border x:Name="dot" Width="18" Height="18" CornerRadius="9" BorderThickness="1.5" HorizontalAlignment="Right"
+                                            BorderBrush="{DynamicResource LineStrong}" VerticalAlignment="Center">
+                                        <TextBlock x:Name="mark" Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="10"
+                                                   Foreground="{DynamicResource SignalFg}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+                                    </Border>
+                                    <!-- Estado real do app (o DataContext é o item da lista), no lugar do marcador -->
+                                    <TextBlock x:Name="state" Text="{Binding StateText}" FontSize="12" Foreground="{DynamicResource Muted}" TextWrapping="NoWrap"
+                                               VerticalAlignment="Center" HorizontalAlignment="Right" Visibility="Collapsed" />
+                                </Grid>
+                                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
+                                           Style="{StaticResource Caption}" MaxHeight="34" TextTrimming="CharacterEllipsis" Margin="0,5,0,0" />
+                            </Grid>
                         </Border>
-                    </Grid>
-                </StackPanel>
-            </Border>
-            <Border Style="{StaticResource CardBorder}" Padding="24,20">
-                <StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}" />
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource SignalSoft}" />
+                                <Setter TargetName="dot" Property="Background" Value="{DynamicResource Signal}" />
+                                <Setter TargetName="dot" Property="BorderBrush" Value="{DynamicResource Signal}" />
+                                <Setter TargetName="mark" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <!-- Com estado a mostrar, o texto ocupa o canto do marcador -->
+                            <DataTrigger Binding="{Binding StateText, Converter={StaticResource NotEmptyVis}}" Value="Visible">
+                                <Setter TargetName="dot" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="state" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Tone}" Value="Signal">
+                                <Setter TargetName="state" Property="Foreground" Value="{DynamicResource Signal}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Tone}" Value="Danger">
+                                <Setter TargetName="state" Property="Foreground" Value="{DynamicResource Danger}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Tone}" Value="Faint">
+                                <Setter TargetName="state" Property="Foreground" Value="{DynamicResource Faint}" />
+                            </DataTrigger>
+                            <!-- Já instalado: nada a marcar; sem marcador, o cartão continua legível e o canto diz "Instalado" -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Line}" />
+                                <Setter TargetName="dot" Property="Visibility" Value="Collapsed" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <!--
+        Instalar apps: o console ao lado do título instala os marcados (a contagem vai no próprio botão) e mostra o app da vez e
+        a barra, que só aparece durante a instalação e avança um app por vez. Embaixo do título do catálogo, uma linha diz como ele
+        funciona. O catálogo é uma grade de cartões da altura do
+        conteúdo, com as colunas escolhidas para fechar a grade quando a largura deixa (7 apps: uma linha de 7 ou 4 e 3).
+    -->
+    <ScrollViewer x:Name="AppsScroll" VerticalScrollBarVisibility="Auto">
+        <Grid Style="{StaticResource PageGrid}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Console ao lado do título: o topo dele fica na altura do topo das letras do título (5 abaixo da caixa) e o primeiro painel a 20 do pé dele -->
+            <Grid x:Name="AppsHeader" Style="{StaticResource PageHeader}" Margin="0,0,0,20" SizeChanged="AppsHeader_SizeChanged">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Instalar apps" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
+
+                <Border x:Name="AppsConsole" Grid.Column="1" Style="{StaticResource TaskConsole}" Margin="40,5,0,0" Height="62" VerticalAlignment="Top">
                     <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="BtnAppsInstall" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE896;" Content="Instalar apps" MinWidth="164" Height="36"
+                                VerticalAlignment="Center" IsEnabled="False" Click="BtnAppsInstall_Click" ToolTipService.ShowOnDisabled="True"
+                                ToolTip="Instala pelo winget, um app de cada vez e sem janelas: cada instalador vem do site oficial do fabricante e é conferido antes de abrir." />
+                        <!-- O estado fica no meio da altura do console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
+                        <Grid Grid.Column="1" Margin="22,0,0,0">
+                            <!--
+                                Estado (13) e detalhe (12) são a mesma Segoe: com a mesma caixa de 17 (BlockLineHeight) a base cai no mesmo y
+                                nos dois. A margem de 2 embaixo sobe a linha 1 px, para a base coincidir com a do texto do botão (medido: o
+                                estado ficava 1 px abaixo).
+                            -->
+                            <Grid VerticalAlignment="Center" Margin="0,0,0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="AppsStatus" Text="Lendo aplicativos instalados…" Style="{StaticResource TaskStatus}" LineHeight="17" LineStackingStrategy="BlockLineHeight" />
+                                <TextBlock x:Name="AppsDetail" Grid.Column="1" Style="{StaticResource TaskDetail}" LineHeight="17" LineStackingStrategy="BlockLineHeight" />
+                            </Grid>
+                            <Grid Style="{StaticResource ProgressTrack}" Visibility="Hidden" VerticalAlignment="Bottom">
+                                <Border x:Name="AppsProgressFill" Style="{StaticResource ProgressFill}">
+                                    <Border.RenderTransform>
+                                        <ScaleTransform x:Name="AppsProgress" ScaleX="0" />
+                                    </Border.RenderTransform>
+                                </Border>
+                            </Grid>
+                        </Grid>
+                        <!-- Sem o winget não há como instalar: o atalho para atualizá-lo fica no próprio console -->
+                        <Button x:Name="BtnAppsStore" Grid.Column="2" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE719;" Content="Abrir na Microsoft Store"
+                                Margin="22,0,0,0" VerticalAlignment="Center" Visibility="Collapsed" Click="BtnAppsStore_Click"
+                                ToolTip="Abre o Instalador de Aplicativo, que traz o winget." />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,20,12,8">
+                <StackPanel>
+                    <Grid Margin="0,0,12,16">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel Margin="0,0,16,0">
-                            <TextBlock Text="Aplicativos" Style="{StaticResource SectionTitle}" />
-                            <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="Usa o winget, o instalador de pacotes da Microsoft que já vem no Windows 10 e 11: baixa do site oficial de cada fabricante e confere o arquivo antes de instalar, um app de cada vez e sem janelas." />
+                        <StackPanel>
+                            <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base (antes a contagem descia 1 px) -->
+                            <TextBlock Style="{StaticResource SectionTitle}" TextWrapping="NoWrap">
+                                <Run Text="Aplicativos" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="AppsCount"
+                                    FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
+                                    Typography.NumeralAlignment="Tabular" />
+                            </TextBlock>
+                            <TextBlock Text="Marque os programas e instale todos de uma vez, baixados do site oficial de cada um." Style="{StaticResource Caption}" Margin="0,2,0,0" />
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                            <Button Style="{StaticResource GhostButton}" Content="Marcar todos" Click="BtnAppsAll_Click" />
-                            <Button Style="{StaticResource GhostButton}" Content="Desmarcar" Click="BtnAppsNone_Click" />
-                        </StackPanel>
+                        <!--
+                            Um link só (o mesmo de "Abrir benchmark" da Visão geral: glifo no sinal), que diz o que vai fazer: marca os
+                            que faltam ou, com todos marcados, desmarca. Como lá, o botão de 32 sobe 4 para o centro dele cair no da linha
+                            do título (24); a margem negativa à direita alinha o texto com a borda dos cartões.
+                        -->
+                        <Button x:Name="BtnAppsToggleAll" Grid.Column="1" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE8B3;" Content="Marcar todos"
+                                VerticalAlignment="Top" Margin="0,-4,-10,0"
+                                Click="BtnAppsToggleAll_Click" ToolTip="Marca os que ainda não estão instalados." />
                     </Grid>
-                    <ItemsControl x:Name="AppsList" Margin="0,16,-12,0">
+                    <ItemsControl x:Name="AppsList" Focusable="False" SizeChanged="AppsList_SizeChanged">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <UniformGrid Columns="2" />
+                                <UniformGrid Columns="{Binding AppColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border x:Name="tile" Style="{StaticResource InsetBorder}" Padding="14,12" Margin="0,0,12,12">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <CheckBox IsChecked="{Binding Selected}" IsEnabled="{Binding CanSelect}" VerticalAlignment="Top" Margin="0,1,12,0" />
-                                        <StackPanel Grid.Column="1">
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
-                                            <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}" Margin="0,2,0,0" />
-                                            <TextBlock Text="{Binding Status}" FontSize="12" Foreground="{DynamicResource Signal}" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="{Binding Status, Converter={StaticResource NotEmptyVis}}" />
-                                        </StackPanel>
-                                        <Border x:Name="badge" Grid.Column="2" Style="{StaticResource Badge}" Margin="10,0,0,0" Visibility="Collapsed" Background="{DynamicResource OkSoft}" BorderBrush="{DynamicResource Ok}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource Ok}" VerticalAlignment="Center" Margin="0,1,5,0" />
-                                                <TextBlock Text="Instalado" Style="{StaticResource BadgeText}" Foreground="{DynamicResource Ok}" />
-                                            </StackPanel>
-                                        </Border>
-                                    </Grid>
-                                </Border>
-                                <DataTemplate.Triggers>
-                                    <DataTrigger Binding="{Binding Installed}" Value="True">
-                                        <Setter TargetName="badge" Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding Selected}" Value="True">
-                                        <Setter TargetName="tile" Property="BorderBrush" Value="{DynamicResource Muted}" />
-                                    </DataTrigger>
-                                </DataTemplate.Triggers>
+                                <CheckBox Style="{StaticResource AppCard}" Content="{Binding App.Name}" local:Ui.Caption="{Binding App.Description}"
+                                          IsChecked="{Binding App.Selected}" IsEnabled="{Binding App.CanSelect}" ToolTip="{Binding Tip}" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <Button x:Name="BtnAppsStore" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE719;" Content="Atualizar o Instalador de Aplicativo (Microsoft Store)" Margin="0,4,0,0" HorizontalAlignment="Left" Visibility="Collapsed" Click="BtnAppsStore_Click" />
                 </StackPanel>
             </Border>
-        </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>

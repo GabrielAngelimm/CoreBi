@@ -57,6 +57,23 @@ internal static partial class Program
             Require(snapshot[0].RawValue == 42, "Snapshot shared mutable sensor state"); row.Update(float.NaN, float.PositiveInfinity, null);
             Require(row.RawValue == null && row.Value == "—", "Invalid float displayed as measurement"); return new { snapshotStable = true, invalidUnknown = true };
         });
+        Check("sensors: device change pauses reads and a driver swap retires only the GPU", () =>
+        {
+            using var monitor = new SensorMonitor();
+            var gpu = new SensorRow { Id = "g", Name = "GPU Core", Hardware = "gpu", HardwareType = HardwareType.GpuNvidia, Type = SensorType.Temperature };
+            var cpu = new SensorRow { Id = "c", Name = "Core Max", Hardware = "cpu", HardwareType = HardwareType.Cpu, Type = SensorType.Temperature };
+            gpu.Update(60, 50, 70); cpu.Update(55, 40, 80); monitor.Rows.Add(gpu); monitor.Rows.Add(cpu);
+            try
+            {
+                monitor.Pause(); Require(monitor.IsPaused && CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended, "Reads kept running during a device change");
+                monitor.Resume(); Require(!monitor.IsPaused && !CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended, "Plain device change left reads paused");
+                monitor.Pause(); monitor.RetireGpu(); monitor.Resume();
+                Require(monitor.GpuRetired && CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended, "GPU came back after a driver swap");
+                Require(gpu.RawValue == null && cpu.RawValue == 55, "Retiring the GPU touched other hardware or kept a stale reading");
+            }
+            finally { CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended = false; } // os testes seguintes ainda leem a placa
+            return new { gpuRetired = true, cpuKept = true };
+        });
         Check("sensors: session statistics, reset and clear names", () =>
         {
             var row = new SensorRow { Id = "t", Name = "Core #3", Hardware = "cpu", HardwareType = HardwareType.Cpu, Type = SensorType.Clock };
@@ -65,6 +82,9 @@ internal static partial class Program
             Require(row.Label == "Núcleo 3" && row.Tip == "Core #3" && row.Unit == "MHz" && row.Value == "3000 MHz", "Clock row label or format");
             row.ResetStats();
             Require(row.RawMin == 3000 && row.RawMax == 3000 && row.AvgValue == 3000, "Reset did not restart statistics");
+            var ssd = new SensorRow { Id = "s", Name = "Temperature", Hardware = "ssd", Type = SensorType.Temperature };
+            ssd.Update(72, 0, 72);
+            Require(ssd.RawMin == 72, "Zero minimum from the first library read shown for a temperature");
             Require(SensorNaming.Label(HardwareType.GpuNvidia, SensorType.Temperature, "GPU Hot Spot") == "Ponto mais quente", "GPU name");
             Require(SensorNaming.Label(HardwareType.Cpu, SensorType.Load, "CPU Core #2 Thread #1") == "Núcleo 2 · thread 1", "Thread name");
             Require(SensorNaming.Label(HardwareType.Cpu, SensorType.Power, "Package") == "Total do processador", "Typed name");
