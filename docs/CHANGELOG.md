@@ -2,6 +2,8 @@
 
 ## Não lançado
 
+- Navegação mais fluida: toda página troca no instante do clique, com a mesma entrada suave, e os painéis acendem em sequência. Painéis que ainda estão lendo dados mostram um esqueleto de carregamento no lugar do conteúdo (Sensores, Sistema, Placa de vídeo, Discos, Energia, Rede, Gargalo, Inicialização, Instalar apps, Drivers e a saúde do PC na Visão geral), que dá lugar ao conteúdo quando ele chega.
+- A interface deixou de congelar por ~75 ms a cada segundo: a leitura dos sensores roda fora da thread da janela. A Visão geral lê o registro de eventos em segundo plano (travava ~110 ms a cada visita), e Sensores monta os cartões aos poucos e guarda a página por um minuto depois de sair dela.
 - Arquitetura revisada, sem mudança de tela nem de função: o Engine passa a guardar as regras que a interface repetia (limiares de rede, pontuação de memória, desligamentos inesperados do disco, busca de driver), arquivos grandes viram partes por assunto, o que só o Engine usa fica interno e o Desktop ganha a pasta Controls para os blocos visuais reutilizáveis. As páginas seguem um contrato só (Tick, RefreshAsync, RefreshHardware, RedrawTheme). Detalhes em docs/ARCHITECTURE.md.
 - Corrigidas regressões da organização anterior: capacidades de disco voltam a sair como no Explorador (1 TB = 931 GB), vereditos em maiúsculas voltam a "Saudável", o overlay volta a ser pausado durante os benchmarks de GPU, a leitura de sensores por segundo deixou de copiar a lista inteira várias vezes, o TPM ausente volta a aparecer como "Ausente" e a limpeza do teste de carga da GPU libera os alvos mesmo quando a renderização falha.
 - Comentários que explicavam decisões (anticheat, compatibilidade com o Explorador, limites de hardware) voltaram ao código.

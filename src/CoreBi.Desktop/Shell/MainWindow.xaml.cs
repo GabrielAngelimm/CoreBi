@@ -205,7 +205,8 @@ public partial class MainWindow : Window, ILiveMotionHost
                 return;
             }
             if (_context.IsClosing) return;
-            _monitor.Refresh();
+            if (await _monitor.PollAsync() is { } poll && !_context.IsClosing) _monitor.Apply(poll); // primeira leitura também fora da janela
+            if (_context.IsClosing) return;
             UpdateCpuSensorWarning();
             PageSensors.Populate();
             PageDash.UpdateDashboard();

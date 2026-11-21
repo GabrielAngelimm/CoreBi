@@ -22,7 +22,8 @@ CoreBi/
       Shell/                     Janela principal (MainWindow + partes Sidebar, Navigation e Palette),
                                  tema (ThemeManager, Theme.xaml), toast e Win32Window
       Controls/                  Blocos visuais reutilizáveis: InstrumentBase, ObservableObject,
-                                 painéis de layout, conversores, HwIcon e propriedades anexadas (Ui)
+                                 painéis de layout, conversores, HwIcon, propriedades anexadas (Ui),
+                                 entrada de página (PageMotion) e esqueleto de carregamento (Skeleton)
       Views/<Área>/              14 páginas autocontidas com handlers e estado próprios
       Features/<Área>/           Apresentação por domínio (fichas, instrumentos, overlay, exportação)
       Services/                  FeatureContext, HardwareDeviceWatcher, permissões e links
@@ -67,7 +68,7 @@ O shell chama as páginas por um contrato de nomes fixos (nem toda página imple
 | Método | Quando o shell chama |
 |---|---|
 | `Tick()` | A cada segundo, no timer de telemetria (a página decide se está visível) |
-| `RefreshAsync()` | Ao abrir a página (páginas "frias" mostram o véu de carregamento na primeira vez) |
+| `RefreshAsync()` | Ao abrir a página, depois do primeiro quadro dela (os painéis que esperam a leitura mostram o esqueleto) |
 | `RefreshHardware()` | Quando placas de vídeo, processador ou discos terminam de ser lidos ou mudam |
 | `RedrawTheme()` | Na troca de tema claro/escuro, para desenhos feitos em código |
 
@@ -92,6 +93,8 @@ O OverlayBi possui dois caminhos: a janela WPF original e a publicação opciona
 A interface segue o design system em [DESIGN.md](DESIGN.md) mantendo WPF direto sem framework MVVM externo: cada view gerencia seu próprio estado, usando `ObservableObject` para notificações de leitura ao vivo e `InstrumentBase` para gráficos e medidores customizados sensíveis ao tema.
 
 O shell (`MainWindow.xaml.cs` e as partes `Sidebar`, `Navigation` e `Palette`) concentra apenas o que é transversal: janela sem moldura (`Win32Window`), navegação, tema (`ThemeManager`, `Theme.xaml`), paleta de comandos, telemetria da barra lateral e orquestração do ciclo de vida. Propriedades anexadas do design system ficam em `Controls/Ui.cs`. Cores de estados definidos em código usam `SetResourceReference`; desenhos em código (gráficos, anéis) usam `ThemeManager.Brush(chave)` e são refeitos na troca de tema pelo `RedrawTheme()` de cada página. `tools/check_resources.py` confere as chaves de recurso, que o compilador de XAML não valida.
+
+O tique de 1 s lê os sensores em duas metades: `SensorMonitor.PollAsync()` faz a parte lenta (a biblioteca de hardware, dezenas de ms) fora da thread da janela, com trava própria do hardware, e `Apply()` passa os valores às linhas na thread da interface. `Pause`, o isolamento de benchmark (`WaitForPoll`) e o fechamento esperam a leitura em andamento.
 
 Novas regras entram no Engine. Templates e tema continuam compartilhados em `Shell`; controles reutilizáveis entram em `Controls`.
 

@@ -153,7 +153,7 @@ public sealed partial class SensorMonitor : IDisposable
         lock (_hardware)
         {
             if (!_open || _disposed || _paused) return null;
-            var readings = new List<PolledSensor>(_index.Count + 8);
+            var readings = new List<PolledSensor>(256); // _index é da thread da interface: não é lido aqui
             var failed = new List<(string RootId, string Name)>();
             foreach (var hw in _source.Hardware)
             {
