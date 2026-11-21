@@ -379,7 +379,7 @@
                     </Border>
 
                     <!-- Tempo ligado nos últimos 7 dias -->
-                    <Border x:Name="DaysCard" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
+                    <Border x:Name="DaysCard" local:Skeleton.Shape="Block" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />

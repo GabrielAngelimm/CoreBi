@@ -105,7 +105,7 @@
                         </Grid.RowDefinitions>
 
                         <!-- Placa de vídeo: uma ficha por placa; a ação vale para a primeira que tem download automático -->
-                        <Border Style="{StaticResource CardBorder}">
+                        <Border x:Name="DrvGpuCard" Style="{StaticResource CardBorder}" local:Skeleton.Top="44" local:Skeleton.Shape="Text">
                             <StackPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -185,7 +185,7 @@
                         </Border>
 
                         <!-- Placa-mãe: modelo e BIOS; os drivers dela (chipset, áudio, rede) vêm do suporte do fabricante -->
-                        <Border Grid.Row="2" Style="{StaticResource CardBorder}">
+                        <Border x:Name="DrvBoardCard" Grid.Row="2" Style="{StaticResource CardBorder}" local:Skeleton.Top="44" local:Skeleton.Shape="Text">
                             <StackPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -272,7 +272,7 @@
                     </Grid>
 
                     <!-- Drivers instalados: tabela agrupada por classe, com busca e filtro; o cabeçalho de colunas tem a geometria das linhas -->
-                    <Border x:Name="DrvTableCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="16,20,16,8">
+                    <Border x:Name="DrvTableCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="16,20,16,8" local:Skeleton.Top="60" local:Skeleton.RowHeight="36">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />

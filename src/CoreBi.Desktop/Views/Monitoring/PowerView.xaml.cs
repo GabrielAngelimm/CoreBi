@@ -94,6 +94,8 @@ public partial class PowerView : UserControl
         _dirty = false;
         BtnEnergyRefresh.IsEnabled = false;
         EnergyStatus.Text = "Lendo fonte e plano de energia…";
+        bool first = Plan == null;
+        if (first) Skeleton.Set(true, FeedCard, VoltCard, DaysCard); // primeira leitura: fonte, plano e histórico ainda vazios
         try
         {
             var power = Task.Run(PowerStatus.Read);
@@ -115,6 +117,7 @@ public partial class PowerView : UserControl
         finally
         {
             _refreshing = false;
+            if (first) Skeleton.Set(false, FeedCard, VoltCard, DaysCard);
             if (!_context.IsClosing) BtnEnergyRefresh.IsEnabled = true;
         }
     }

@@ -37,6 +37,8 @@ public partial class DriversView : UserControl
     {
         if (_drvInit) return;
         _drvInit = true;
+        // Primeira leitura: esqueleto nos três painéis, cada um sai quando a parte dele chega
+        Skeleton.Set(true, DrvGpuCard, DrvBoardCard, DrvTableCard);
         BtnDrvScan_Click(this, new RoutedEventArgs());
     }
 
@@ -103,10 +105,12 @@ public partial class DriversView : UserControl
             DrvSet("Lendo drivers instalados…", 0);
             var inv = await Task.Run(DriverInventory.ListInstalled);
             ShowInventory(inv);
+            Skeleton.SetActive(DrvTableCard, false);
             DrvSet("Lendo placa de vídeo e placa-mãe…", 0.2);
             _drvGpus = await Task.Run(DriverInventory.ReadGpus);
             _drvBoardInfo = await Task.Run(DriverInventory.ReadBoard);
             ShowBoard();
+            Skeleton.SetActive(DrvBoardCard, false);
             DrvSet("Lendo placa de vídeo e placa-mãe…", 0.4);
 
             bool studio = DrvStudio.IsChecked == true;
@@ -123,7 +127,13 @@ public partial class DriversView : UserControl
             DrvSet($"Lido às {DateTime.Now:HH:mm}", 1);
         }
         catch (Exception ex) { DrvFail("Não foi possível ler os drivers", ex.Message); }
-        finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
+        finally
+        {
+            _drvCts?.Dispose();
+            _drvCts = null;
+            if (!_context.IsClosing) DrvBusy(false);
+            Skeleton.Set(false, DrvGpuCard, DrvBoardCard, DrvTableCard);
+        }
     }
 
     private void DrvStudio_Click(object sender, RoutedEventArgs e)

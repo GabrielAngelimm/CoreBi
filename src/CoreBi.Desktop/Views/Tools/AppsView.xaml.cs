@@ -84,6 +84,7 @@ public partial class AppsView : UserControl
         try
         {
             bool first = _installApps == null;
+            if (first) Skeleton.SetActive(AppsCard, true); // até saber o que já está instalado, as marcas dos cartões não valem
             if (_installApps == null)
             {
                 _installApps = AppInstaller.Catalog();
@@ -114,6 +115,7 @@ public partial class AppsView : UserControl
         finally
         {
             _appsRefreshing = false;
+            Skeleton.SetActive(AppsCard, false);
             if (!_context.IsClosing) { AppsList.IsEnabled = true; UpdateInstallButton(); }
         }
     }

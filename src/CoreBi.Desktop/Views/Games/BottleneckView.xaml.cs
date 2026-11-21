@@ -77,11 +77,13 @@ namespace CoreBi.Desktop.Views
         {
             _context = context;
             BnMeters.ItemsSource = new[] { _gpu, _cpu, _vram, _ram, _gpuTemp, _cpuTemp };
+            Skeleton.SetActive(BnSideCard, true); // o equilíbrio do hardware espera os nomes da CPU e da placa de vídeo
         }
 
         internal void RefreshHardware()
         {
             if (_context == null) return;
+            Skeleton.SetActive(BnSideCard, false);
             string gpuName = _context.PrimaryGpu?.Name ?? "";
             double? gpuPerf = HardwareCatalog.GpuPerf(gpuName);
             double? cpuPerf = HardwareCatalog.CpuPerf(_context.CpuName);

@@ -39,6 +39,7 @@ public partial class StartupView : UserControl
         if (_scanning || _context == null || _context.IsClosing) return;
         _scanning = true;
         if (announce) { Say("Lendo programas…"); ToolPage.SetProgress(StartupProgressFill, 0); }
+        if (StartupList.ItemsSource == null) Skeleton.SetActive(StartupCard, true); // primeira leitura: a tabela ainda não tem o que mostrar
         List<StartupEntry> list;
         string backupError = "";
         try
@@ -51,7 +52,7 @@ public partial class StartupView : UserControl
             catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); backupError = "Não foi possível ler os removidos: " + ex.Message; }
         }
         catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); ToolPage.EndProgress(StartupProgressFill); return; }
-        finally { _scanning = false; }
+        finally { _scanning = false; Skeleton.SetActive(StartupCard, false); }
         if (_context.IsClosing) return;
 
         StartupList.ItemsSource = list;

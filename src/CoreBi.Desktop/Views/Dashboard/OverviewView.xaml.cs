@@ -48,6 +48,9 @@ namespace CoreBi.Desktop.Views
         private readonly List<DashSample> _samples = new();
         private readonly List<DashEvent> _events = new();
         private DateTime _healthAt = DateTime.MinValue;
+        private HardwareErrors? _errors;   // erros de hardware dos últimos 7 dias, lidos do registro de eventos fora da janela
+        private DateTime _errorsAt = DateTime.MinValue;
+        private bool _errorsBusy;
         private bool _metricChosen, _metricAuto;
 
         public OverviewView() => InitializeComponent();
@@ -244,6 +247,11 @@ namespace CoreBi.Desktop.Views
             _healthAt = DateTime.Now;
             static DashCheck Item(bool ok, string title, string okText, string badText) => new(title, ok ? okText : badText, ok);
 
+            // O registro de eventos do Windows leva ~100 ms para responder: é lido fora da janela, no máximo a cada minuto
+            if ((_healthAt - _errorsAt).TotalSeconds > 60) ReadErrorsAsync();
+            Skeleton.SetActive(DashHealthCard, _errors == null);
+            if (_errors is not { } errs) return;
+
             var list = new List<DashCheck>();
             if (_context.Sensors.IsOpen) // enquanto detecta o hardware, ainda não dá para saber
             {
@@ -252,7 +260,6 @@ namespace CoreBi.Desktop.Views
                     "Temperatura e consumo disponíveis.", SensorMonitor.Explain(sensors).Split('.')[0] + "."));
             }
 
-            var errs = HardwareEventReader.ErrorsSince(DateTime.Now.AddDays(-7));
             static string Count(int n, string one, string many) => n == 1 ? $"1 {one}" : $"{n} {many}";
             list.Add(Item(errs.Error == null && errs.Total == 0, "Erros de hardware",
                 "Sem WHEA nem reinício da GPU em 7 dias.",
@@ -265,6 +272,16 @@ namespace CoreBi.Desktop.Views
             DashHealthBadge.Visibility = list.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             DashHealthBadgeText.Text = alerts == 0 ? "Tudo certo" : alerts == 1 ? "1 alerta" : $"{alerts} alertas";
             Ui.SetTone(DashHealthBadge, alerts == 0 ? "Ok" : "Warn");
+        }
+
+        private async void ReadErrorsAsync()
+        {
+            if (_errorsBusy) return;
+            _errorsBusy = true;
+            try { _errors = await Task.Run(() => HardwareEventReader.ErrorsSince(DateTime.Now.AddDays(-7))); }
+            finally { _errorsBusy = false; }
+            _errorsAt = DateTime.Now;
+            if (_context is { IsClosing: false }) UpdateHealth();
         }
 
         private void DashBench_Click(object sender, RoutedEventArgs e) => _context?.Navigate("PageBench");

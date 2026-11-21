@@ -33,7 +33,10 @@ public partial class SystemView : UserControl
     public SystemView()
     {
         InitializeComponent();
-        IsVisibleChanged += (_, _) => { if (IsVisible && _inventory != null) Rebuild(); };
+        // Ao abrir, as fichas são refeitas (espaço livre, memória em uso) depois da entrada da página, sem engasgar o movimento;
+        // antes da primeira leitura do sistema, o esqueleto ocupa o painel
+        Skeleton.SetActive(SheetCard, true);
+        IsVisibleChanged += (_, _) => { if (IsVisible && _inventory != null) PageMotion.AfterEntrance(this, Rebuild); };
     }
 
     internal void Initialize(FeatureContext context, Func<IReadOnlyList<HealthCard>?> networkResult)
@@ -63,7 +66,11 @@ public partial class SystemView : UserControl
             _context.Drives = _drives;
             Rebuild();
         }
-        catch (Exception ex) { SystemSub.Text = $"Não foi possível ler as informações do sistema: {ex.Message}"; }
+        catch (Exception ex)
+        {
+            SystemSub.Text = $"Não foi possível ler as informações do sistema: {ex.Message}";
+            Skeleton.SetActive(SheetCard, false);
+        }
     }
 
     /// <summary>Discos e unidades mudaram (pendrive, HD externo): relê só o armazenamento.</summary>
@@ -107,6 +114,7 @@ public partial class SystemView : UserControl
         SysIndex.ItemsSource = index;
         SysIndex.SelectedItem = index.FirstOrDefault(i => i.Key == _selected) ?? index.FirstOrDefault();
         SystemSub.Text = $"{Environment.MachineName} · lido às {now:HH:mm}";
+        Skeleton.SetActive(SheetCard, false);
     }
 
     private void SysIndex_Changed(object sender, SelectionChangedEventArgs e)

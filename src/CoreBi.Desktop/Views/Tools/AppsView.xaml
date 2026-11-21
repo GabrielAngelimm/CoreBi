@@ -152,7 +152,7 @@
                 </Border>
             </Grid>
 
-            <Border Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,20,12,8">
+            <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,20,12,8" local:Skeleton.Top="40" local:Skeleton.RowHeight="44">
                 <StackPanel>
                     <Grid Margin="0,0,12,16">
                         <Grid.ColumnDefinitions>
