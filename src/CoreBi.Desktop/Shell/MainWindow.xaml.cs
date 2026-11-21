@@ -147,6 +147,7 @@ public partial class MainWindow : Window
                 GpuChips.Children.Add(chip);
             }
             if (_gpus.Count > 0) ShowGpu(_gpus[0]);
+            else ShowNoGpu();
             PageSystem.GpusReady();
 
             // Dependem do nome da GPU/CPU
@@ -207,6 +208,7 @@ public partial class MainWindow : Window
     internal async void Nav_Checked(object sender, RoutedEventArgs e)
     {
         if (PageSystem == null) return; // disparado durante InitializeComponent
+        KeepActiveNavVisible();
         string page = (string)((FrameworkElement)sender).Tag;
         int version = ++_navVersion;
         bool cold = ColdPages.TryGetValue(page, out string? what) && !_warmPages.Contains(page);
@@ -248,6 +250,16 @@ public partial class MainWindow : Window
         if (work != null) await work;
     }
 
+    /// <summary>
+    /// Em janelas baixas o menu rola: o item da página aberta continua à vista (ao navegar, ao aparecer o aviso de sensores e quando a
+    /// central de monitoramento some ou volta).
+    /// </summary>
+    private void KeepActiveNavVisible() =>
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            NavPanel.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.BringIntoView());
+
+    private void NavScroll_SizeChanged(object sender, SizeChangedEventArgs e) => KeepActiveNavVisible();
+
     private FrameworkElement[] Pages => new FrameworkElement[] { PageDash, PageSystem, PageSensors, PageGpu, PageBottleneck, PageOverlay, PageBench, PageDriver, PageStartup, PageApps, PageDisks, PageEnergy, PageNet, PageStress };
 
     /// <summary>Com deferred, nenhuma página fica visível: só o esqueleto, até RevealPage.</summary>
@@ -260,7 +272,7 @@ public partial class MainWindow : Window
             p.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         }
         SetLoadingVeil(deferred);
-        SideMonitor.Visibility = name == "PageDash" ? Visibility.Collapsed : Visibility.Visible;
+        SideMonitor.Visibility = name == "PageDash" ? Visibility.Hidden : Visibility.Visible; // Hidden: o rodapé não pula
         UpdateFrameMonitoring();
     }
 
@@ -308,10 +320,11 @@ public partial class MainWindow : Window
             var c = new System.IO.DriveInfo(System.IO.Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\");
             if (!c.IsReady || c.TotalSize <= 0) return;
             double used = (double)(c.TotalSize - c.TotalFreeSpace) / c.TotalSize;
-            SideDisk.Text = CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalFreeSpace) + " livres";
+            // Como a RAM: leitura, porcentagem e medidor dizem a mesma coisa (o que está em uso); o espaço livre fica na dica.
+            SideDisk.Text = CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize - c.TotalFreeSpace);
             SideDiskLoad.Text = $"{used * 100:0} %";
             Ui.Glide(SideDiskBar, used, LiveMotion);
-            SideDiskRow.ToolTip = $"Disco {c.Name.TrimEnd('\\')}: {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize - c.TotalFreeSpace)} usados de {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize)}";
+            SideDiskRow.ToolTip = $"Disco {c.Name.TrimEnd('\\')}: {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize - c.TotalFreeSpace)} em uso de {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalSize)}, {CoreBi.Engine.Monitoring.Storage.DriveCard.Fmt(c.TotalFreeSpace)} livres";
         }
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { }
     }

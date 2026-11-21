@@ -261,11 +261,16 @@
     <Style x:Key="Page" TargetType="StackPanel">
         <Setter Property="Margin" Value="36,10,36,36"/>
     </Style>
+    <!--
+        Ritmo do topo: 20 da borda da janela à busca, 20 da busca ao topo das letras do título e 20 da última linha do cabeçalho
+        (pé do subtítulo, ou do título quando não há subtítulo) ao primeiro painel. O 13 de cima e o 14 de baixo descontam o respiro
+        que a própria fonte deixa acima e abaixo das letras.
+    -->
     <Style x:Key="PageGrid" TargetType="Grid">
-        <Setter Property="Margin" Value="36,10,36,28"/>
+        <Setter Property="Margin" Value="36,13,36,28"/>
     </Style>
     <Style x:Key="PageHeader" TargetType="Grid">
-        <Setter Property="Margin" Value="0,0,0,18"/>
+        <Setter Property="Margin" Value="0,0,0,14"/>
     </Style>
     <!--
         Painel: agrupa um instrumento. Sem sombra nem degradê: a profundidade vem do tom (bancada → painel → elevado) e do fio
@@ -646,7 +651,9 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock x:Name="glass" Text="&#xE721;" FontFamily="{StaticResource Icons}" FontSize="12" VerticalAlignment="Center" Margin="0,0,9,0"/>
-                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center"/>
+                            <!-- 4 embaixo sobe o texto 2 px: a Segoe 13 centrada assentava 2 px abaixo do "Ctrl K" e da lupa; assim a base
+                                 coincide com a das teclas e o meio das maiúsculas com o da lupa -->
+                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="0,0,0,4"/>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Border Style="{StaticResource KeyCap}"><TextBlock Text="Ctrl" Style="{StaticResource KeyCapText}"/></Border>
                                 <Border Style="{StaticResource KeyCap}" Margin="0"><TextBlock Text="K" Style="{StaticResource KeyCapText}"/></Border>
