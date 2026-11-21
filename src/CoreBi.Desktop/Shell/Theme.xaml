@@ -633,7 +633,9 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock x:Name="glass" Text="&#xE721;" FontFamily="{StaticResource Icons}" FontSize="12" VerticalAlignment="Center" Margin="0,0,9,0"/>
-                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center"/>
+                            <!-- 4 embaixo sobe o texto 2 px: a Segoe 13 centrada assentava 2 px abaixo do "Ctrl K" e da lupa; assim a base
+                                 coincide com a das teclas e o meio das maiúsculas com o da lupa -->
+                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="0,0,0,4"/>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Border Style="{StaticResource KeyCap}"><TextBlock Text="Ctrl" Style="{StaticResource KeyCapText}"/></Border>
                                 <Border Style="{StaticResource KeyCap}" Margin="0"><TextBlock Text="K" Style="{StaticResource KeyCapText}"/></Border>

@@ -9,15 +9,16 @@ namespace CoreBi.Desktop;
 
 /// <summary>
 /// Medidor do Gargalo: leitura, fração 0–1 na cor do componente (Channel: Cpu, Gpu, Memory, Danger; vazio = aço) e a marca do
-/// limite que a classificação usa (Mark, 0–1; NaN = sem marca). Atualizado no lugar a cada leitura.
+/// limite que a classificação usa (Mark, 0–1; NaN = sem marca). Hint é o nome por extenso da sigla do rótulo ("placa de vídeo"),
+/// mostrado ao lado dele. Atualizado no lugar a cada leitura.
 /// </summary>
 public sealed class LimitReading : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public LimitReading(string label, string channel, double mark = double.NaN, string? tip = null)
+    public LimitReading(string label, string channel, double mark = double.NaN, string? tip = null, string? hint = null)
     {
-        _label = label; Channel = channel; Mark = mark; Tip = tip;
+        _label = label; Channel = channel; Mark = mark; Tip = tip; Hint = hint is null ? "" : "  " + hint;
     }
 
     private string _label, _value = "—", _sub = "", _tone = "";
@@ -26,6 +27,8 @@ public sealed class LimitReading : INotifyPropertyChanged
     public string Channel { get; }
     public double Mark { get; }
     public string? Tip { get; }
+    /// <summary>O nome por extenso, já com o respiro que o separa do rótulo; vazio sem sigla.</summary>
+    public string Hint { get; }
     public bool HasMark => !double.IsNaN(Mark);
     public GridLength MarkLeft => new(HasMark ? Mark : 0, GridUnitType.Star);
     public GridLength MarkRight => new(HasMark ? 1 - Mark : 1, GridUnitType.Star);
@@ -45,8 +48,12 @@ public sealed class LimitReading : INotifyPropertyChanged
     }
 }
 
-/// <summary>Leitura em régua (FPS, médias da sessão): rótulo, número, unidade e dica; a primeira sem fio.</summary>
-public sealed record RulerStat(string Label, string Value, string Unit, bool First, string? Tip = null);
+/// <summary>Leitura em régua (FPS, médias da sessão): rótulo, número, unidade e dica; a primeira sem fio. HintText (o que o termo
+/// quer dizer) aparece ao lado do rótulo.</summary>
+public sealed record RulerStat(string Label, string Value, string Unit, bool First, string? Tip = null, string? HintText = null)
+{
+    public string Hint => HintText is null ? "" : "  " + HintText;
+}
 
 public partial class MainWindow
 {
@@ -58,10 +65,10 @@ public partial class MainWindow
     private bool _balanceKnown;
 
     // Os limites são os de LoadSample.Classify: a marca mostra onde cada leitura passa a ser "no limite".
-    private readonly LimitReading _bnGpu = new("Uso da GPU", "Gpu", 0.90, "A partir de 90 % a placa de vídeo é o limite (o normal em jogos pesados).");
-    private readonly LimitReading _bnCpu = new("Núcleo mais ocupado da CPU", "Cpu", 0.85, "A partir de 85 % num núcleo (ou no total) a CPU passa a limitar o FPS.");
-    private readonly LimitReading _bnVram = new("VRAM em uso", "Gpu", 0.97, "A partir de 97 % a memória de vídeo está cheia.");
-    private readonly LimitReading _bnRam = new("RAM em uso", "Memory", 0.92, "A partir de 92 % a memória RAM está cheia.");
+    private readonly LimitReading _bnGpu = new("Uso da GPU", "Gpu", 0.90, "A partir de 90 % a placa de vídeo é o limite (o normal em jogos pesados).", "placa de vídeo");
+    private readonly LimitReading _bnCpu = new("Núcleo mais ocupado da CPU", "Cpu", 0.85, "A partir de 85 % num núcleo (ou no total) a CPU passa a limitar o FPS.", "processador");
+    private readonly LimitReading _bnVram = new("VRAM em uso", "Gpu", 0.97, "A partir de 97 % a memória de vídeo está cheia.", "memória da placa de vídeo");
+    private readonly LimitReading _bnRam = new("RAM em uso", "Memory", 0.92, "A partir de 92 % a memória RAM está cheia.", "memória do PC");
     private readonly LimitReading _bnGpuTemp = new("Temperatura da GPU", "Gpu", 0.95, "A partir de 95 °C, ou quando o driver reduz o clock pela temperatura, o limite é térmico.");
     private readonly LimitReading _bnCpuTemp = new("Temperatura da CPU", "Cpu", 0.95, "A partir de 95 °C o limite é térmico.");
 
@@ -133,13 +140,13 @@ public partial class MainWindow
 
     /// <summary>
     /// Título do cartão ao vivo. Com veredito (tone não nulo), manchete em DIN 44, na cor do veredito ("" = tinta); sem veredito,
-    /// DIN 18 seminegrito no tom secundário (a família do título de painel), abaixo do título da página.
+    /// DIN 17 seminegrito no tom secundário (o título de painel, na mesma linha que "Leituras"), abaixo do título da página.
     /// </summary>
     private void SetLiveTitle(string text, string? tone)
     {
         bool verdict = tone != null;
         BnLiveTitle.Text = text;
-        BnLiveTitle.FontSize = verdict ? 44 : 18;
+        BnLiveTitle.FontSize = verdict ? 44 : 17;
         BnLiveTitle.SetResourceReference(TextBlock.ForegroundProperty, !verdict ? "Muted" : tone == "" ? "Fg" : tone!);
     }
 
@@ -193,7 +200,7 @@ public partial class MainWindow
             else
             {
                 var (title, advice) = game ? Unclassified(s, frames!)
-                    : ("Nenhum jogo em primeiro plano", "Abra um jogo e deixe-o em primeiro plano. O veredito aparece quando houver FPS.");
+                    : ("Nenhum jogo em primeiro plano", "Abra um jogo e deixe-o em primeiro plano: o CoreBi mostra qual peça limita o FPS.");
                 SetLiveTitle(title, null);
                 BnLiveAdvice.Text = advice;
             }
@@ -201,8 +208,8 @@ public partial class MainWindow
             if (game)
                 PageBottleneck.BnFrameStats.ItemsSource = new[]
                 {
-                    new RulerStat("Agora", $"{frames!.Fps:0}", "FPS", true, "Quadros entregues no último segundo."),
-                    new RulerStat("1% low", $"{frames.Low1Fps:0}", "FPS", false, "O FPS dos quadros mais lentos (o pior 1 % dos últimos 10 s). Mostra as travadas."),
+                    new RulerStat("Agora", $"{frames!.Fps:0}", "FPS", true, "Quadros entregues no último segundo.", "quadros por segundo"),
+                    new RulerStat("1% low", $"{frames.Low1Fps:0}", "FPS", false, "O FPS dos quadros mais lentos (o pior 1 % dos últimos 10 s). Mostra as travadas.", "os quadros mais lentos"),
                 };
 
             BnLiveCard.SetResourceReference(Border.BackgroundProperty, tone == "Danger" ? "DangerSoft" : tone == "Warn" ? "WarnSoft" : "Surface");

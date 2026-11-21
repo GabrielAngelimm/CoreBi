@@ -1,17 +1,21 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.GraphicsView" xmlns:local="clr-namespace:CoreBi.Desktop" xmlns:inv="clr-namespace:CoreBi.Desktop.Features.Monitoring.Inventory">
     <UserControl.Resources>
-        <!-- Leitura da placa: rótulo e número grande, como na placa de Sistema; a primeira não tem fio à esquerda -->
+        <!-- Leitura da placa: rótulo e número grande, como na placa de Sistema; a primeira não tem fio à esquerda. Número e unidade
+             são Runs de um TextBlock só, então dividem a mesma linha de base (em dois TextBlocks alinhados embaixo, a unidade ficava
+             1 px abaixo do número). O espaço entre eles é um Run de espaço em 20 px (uns 5 px), que some sem unidade. -->
         <DataTemplate x:Key="PlateReadout">
             <Border x:Name="cell" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1,0,0,0" Padding="28,0,0,0" Margin="28,0,0,0" ToolTip="{Binding Tip}" Background="Transparent">
                 <StackPanel>
                     <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <TextBlock Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="38" FontWeight="Light" />
-                        <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" FontSize="13" Margin="5,0,0,6" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" />
-                    </StackPanel>
+                    <TextBlock Margin="0,6,0,0" Typography.NumeralAlignment="Tabular">
+                        <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="38" FontWeight="Light" Foreground="{DynamicResource Fg}" /><Run x:Name="gap" Text=" " FontFamily="{StaticResource LabelFont}" FontSize="20" /><Run Text="{Binding Unit, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" />
+                    </TextBlock>
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Unit}" Value="">
+                    <Setter TargetName="gap" Property="Text" Value="" />
+                </DataTrigger>
                 <DataTrigger Binding="{Binding First}" Value="True">
                     <Setter TargetName="cell" Property="BorderThickness" Value="0" />
                     <Setter TargetName="cell" Property="Padding" Value="0" />
@@ -26,10 +30,10 @@
             <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="20" ToolTip="{Binding Tip}" Background="Transparent">
                 <StackPanel>
                     <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                        <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="34" FontWeight="Light" />
-                        <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" FontSize="13" Margin="5,0,0,5" />
-                    </StackPanel>
+                    <!-- Número e unidade no mesmo TextBlock: a mesma linha de base (como na placa acima) -->
+                    <TextBlock x:Name="value" Margin="0,4,0,0" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular">
+                        <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="34" FontWeight="Light" /><Run x:Name="gap" Text=" " FontFamily="{StaticResource LabelFont}" FontSize="20" /><Run Text="{Binding Unit, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" />
+                    </TextBlock>
                     <TextBlock Text="{Binding Sub}" Style="{StaticResource StatSub}" Height="16" />
                     <local:GpuTrace Samples="{Binding Samples}" Max="{Binding Max}" Margin="0,12,0,0" ToolTip="Último minuto" />
                 </StackPanel>
@@ -39,18 +43,21 @@
                     <Setter TargetName="cell" Property="BorderThickness" Value="0" />
                     <Setter TargetName="cell" Property="Padding" Value="24,20,20,20" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding Unit}" Value="">
+                    <Setter TargetName="gap" Property="Text" Value="" />
+                </DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Danger">
                     <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Danger}" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Leitura do driver na faixa de baixo: rótulo e valor na mesma linha -->
+        <!-- Leitura do driver na faixa de baixo: rótulo (DIN 12,5) e valor (Segoe 13) como Runs de um TextBlock só, para dividirem a
+             linha de base (em dois TextBlocks centrados, o valor ficava 3 px abaixo do rótulo); três espaços de 13 px ≈ 10 px entre eles -->
         <DataTemplate x:Key="FactCell">
-            <StackPanel Orientation="Horizontal" Margin="0,0,32,0" ToolTip="{Binding Tip}" Background="Transparent">
-                <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" VerticalAlignment="Center" />
-                <TextBlock x:Name="value" Text="{Binding Value}" FontSize="13" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" Margin="10,0,0,0" />
-            </StackPanel>
+            <TextBlock Margin="0,0,32,0" FontSize="13" Typography.NumeralAlignment="Tabular" ToolTip="{Binding Tip}" Background="Transparent">
+                <Run Text="{Binding Label, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" /><Run Text="   " /><Run x:Name="value" Text="{Binding Value, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
+            </TextBlock>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding Warn}" Value="True">
                     <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Warn}" />

@@ -2,7 +2,10 @@
     <UserControl.Resources>
         <!-- Medidor do Gargalo: rótulo e leitura, medidor segmentado na cor do componente (trilho em LineStrong, que não some no
              tema claro) e a marca do ponto em que o CoreBi considera a peça no limite (a mesma regra que dá o veredito; legenda sob
-             "Leituras" e o número na dica). A linha de complemento fica reservada, para todos terem a mesma altura. -->
+             "Leituras" e o número na dica). A linha de complemento fica reservada, para todos terem a mesma altura.
+             Rótulo (DIN 12,5) e leitura (DIN semicondensada 20) em colunas, os dois no topo: o rótulo termina num espaço na fonte e no
+             tamanho da leitura, então as duas linhas têm a mesma subida e a mesma linha de base (alinhados embaixo, o rótulo ficava
+             1 px acima). A sigla ganha o nome por extenso ao lado, em Segoe 11,5 (Hint). -->
         <DataTemplate x:Key="LimitMeter">
             <Grid Margin="0,6" ToolTip="{Binding Tip}" Background="Transparent">
                 <Grid.RowDefinitions>
@@ -10,8 +13,10 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" VerticalAlignment="Bottom" Margin="0,0,12,2" />
-                <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="20" HorizontalAlignment="Right" />
+                <TextBlock Style="{StaticResource StatLabel}" VerticalAlignment="Top" Margin="0,0,12,0">
+                    <Run Text="{Binding Label, Mode=OneWay}" /><Run Text="{Binding Hint, Mode=OneWay}" FontFamily="{StaticResource SmallFont}" FontSize="11.5" /><Run Text=" " FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="20" />
+                </TextBlock>
+                <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="20" HorizontalAlignment="Right" VerticalAlignment="Top" />
                 <Grid Grid.Row="1" Height="8" Margin="0,8,0,0">
                     <Grid OpacityMask="{StaticResource SegmentMask}">
                         <Border Background="{DynamicResource LineStrong}" />
@@ -52,18 +57,24 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Leitura em régua: rótulo e número, separadas por fios; a primeira sem fio -->
+        <!-- Leitura em régua: rótulo e número, separadas por fios; a primeira sem fio. Número e unidade são Runs de um TextBlock só
+             (mesma linha de base; um espaço em 20 px, uns 5 px, entre eles, que some sem unidade). O que a sigla quer dizer vai ao lado
+             do rótulo, em Segoe 11,5 (Hint). -->
         <DataTemplate x:Key="RulerCell">
             <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="24,0,0,0" Margin="24,0,0,0" ToolTip="{Binding Tip}" Background="Transparent">
                 <StackPanel>
-                    <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                        <TextBlock Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="28" FontWeight="Light" />
-                        <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" FontSize="13" Margin="5,0,0,4" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" />
-                    </StackPanel>
+                    <TextBlock Style="{StaticResource StatLabel}">
+                        <Run Text="{Binding Label, Mode=OneWay}" /><Run Text="{Binding Hint, Mode=OneWay}" FontFamily="{StaticResource SmallFont}" FontSize="11.5" />
+                    </TextBlock>
+                    <TextBlock Margin="0,4,0,0" Typography.NumeralAlignment="Tabular">
+                        <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="28" FontWeight="Light" Foreground="{DynamicResource Fg}" /><Run x:Name="gap" Text=" " FontFamily="{StaticResource LabelFont}" FontSize="20" /><Run Text="{Binding Unit, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" />
+                    </TextBlock>
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Unit}" Value="">
+                    <Setter TargetName="gap" Property="Text" Value="" />
+                </DataTrigger>
                 <DataTrigger Binding="{Binding First}" Value="True">
                     <Setter TargetName="cell" Property="BorderThickness" Value="0" />
                     <Setter TargetName="cell" Property="Padding" Value="0" />
@@ -114,9 +125,9 @@
                                     <Ellipse x:Name="BnLiveDot" Style="{StaticResource StatusLed}" Fill="{DynamicResource Signal}" Margin="0,1,8,0" ToolTip="Medindo o FPS do programa em primeiro plano" />
                                     <TextBlock x:Name="BnLiveGame" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
-                                <!-- Manchete (DIN 44) só para veredito; sem veredito, DIN 18 seminegrito no tom secundário, da família do título de painel
-                                     (MainWindow.SetLiveTitle) -->
-                                <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" FontFamily="{StaticResource DisplayFont}" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" />
+                                <!-- Manchete (DIN 44) só para veredito; sem veredito, DIN 17 seminegrito no tom secundário, o tamanho do título de painel,
+                                     para começar e assentar na mesma linha que "Leituras", no painel vizinho (MainWindow.SetLiveTitle) -->
+                                <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" FontFamily="{StaticResource DisplayFont}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" />
                                 <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,8,0,0" />
                                 <ItemsControl x:Name="BnFrameStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,24,0,0" Focusable="False" Visibility="Collapsed">
                                     <ItemsControl.ItemsPanel>

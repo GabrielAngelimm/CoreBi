@@ -265,7 +265,7 @@ internal sealed class GpuBoard
     private readonly GpuGauge _mem;
     private readonly GpuGauge _temp = new("temp", "Temperatura");
     private readonly GpuGauge _power = new("power", "Consumo");
-    private readonly GpuGauge _vram = new("vram", "VRAM em uso");
+    private readonly GpuGauge _vram = new("vram", "VRAM em uso", "Memória da placa de vídeo ocupada agora.");
     private readonly GpuGauge _fan = new("fan", "Ventoinha");
     private GpuGauge[] All => new[] { _load, _core, _mem, _temp, _power, _vram, _fan };
 
