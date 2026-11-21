@@ -8,7 +8,8 @@
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="VerticalAlignment" Value="Bottom" />
         </Style>
-        <!-- Mínimo, média e máximo: mesmos algarismos tabulares da leitura, menores e em tom secundário -->
+        <!-- Mínimo, média e máximo: mesmos algarismos tabulares da leitura, menores e em tom secundário. Centrados na linha de 32,
+             os números em Bahnschrift assentavam 2 px acima do nome em Segoe 13; descem 2 (2 em cima, −2 embaixo), como a leitura. -->
         <Style x:Key="StatCell" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource Readout}" />
             <Setter Property="FontStretch" Value="SemiCondensed" />
@@ -17,9 +18,10 @@
             <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,2,0,-2" />
         </Style>
 
-        <!-- Item do índice: fundo elevado na seleção; o ícone fica no ladrilho do canal do componente (o mesmo do filete dos grupos) -->
+        <!-- Item do índice: fundo elevado na seleção; o ícone, sem fundo, na cor do canal do componente (a mesma do filete dos grupos) -->
         <Style x:Key="IndexItem" TargetType="ListBoxItem">
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -47,10 +49,11 @@
             </Setter>
         </Style>
 
-        <!-- Linha de sensor: nome claro, leitura atual com a unidade e as três estatísticas sem unidade.
-             O fio fica em cima de cada linha; o mouse acende o fundo, que avança 8 px para os lados. -->
+        <!-- Linha de sensor: nome claro, leitura atual com a unidade e as três estatísticas sem unidade (a unidade está ao lado do
+             título do grupo). O fio fica em cima de cada linha; o mouse acende o fundo, que avança 8 px para os lados. A dica do
+             "Núcleo mais exigido" diz qual núcleo é, na hora (SensorLine_ToolTipOpening). -->
         <DataTemplate x:Key="SensorLine">
-            <Grid x:Name="host" Margin="-8,0" Background="Transparent" ToolTip="{Binding Tip}">
+            <Grid x:Name="host" Margin="-8,0" Background="Transparent" ToolTip="{Binding Tip}" ToolTipOpening="SensorLine_ToolTipOpening">
                 <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="6" Opacity="0" />
                 <Border Height="1" VerticalAlignment="Top" Margin="8,0" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
                 <Grid Margin="8,0" Height="32">
@@ -62,7 +65,7 @@
                         <ColumnDefinition Width="74" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{Binding Label}" FontSize="13" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,0,8,0" />
-                    <TextBlock x:Name="value" Grid.Column="1" Style="{StaticResource ReadoutText}" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="value" Grid.Column="1" Style="{StaticResource ReadoutText}" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,2,0,-2">
                         <Run Text="{Binding Number, Mode=OneWay}" /><Run Text=" " FontSize="11" /><Run x:Name="unit" Text="{Binding Unit, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource UiFont}" />
                     </TextBlock>
                     <TextBlock Grid.Column="2" Text="{Binding MinNumber}" Style="{StaticResource StatCell}" />
@@ -86,7 +89,8 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Nomes das colunas: uma vez por cartão (no topo do corpo), com a mesma geometria das linhas -->
+        <!-- Nomes das colunas: uma vez por cartão (no topo do corpo), com a mesma geometria das linhas. A dica das estatísticas diz
+             desde quando elas contam (SensorsView.StatsNote). -->
         <DataTemplate x:Key="ColumnHeads">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -97,24 +101,28 @@
                     <ColumnDefinition Width="74" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="1" Text="Atual" Style="{StaticResource ColHead}" />
-                <TextBlock Grid.Column="2" Text="Mín." Style="{StaticResource ColHead}" />
-                <TextBlock Grid.Column="3" Text="Média" Style="{StaticResource ColHead}" />
-                <TextBlock Grid.Column="4" Text="Máx." Style="{StaticResource ColHead}" />
+                <TextBlock Grid.Column="2" Text="Mín." Style="{StaticResource ColHead}" ToolTip="{Binding StatsNote, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                <TextBlock Grid.Column="3" Text="Média" Style="{StaticResource ColHead}" ToolTip="{Binding StatsNote, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                <TextBlock Grid.Column="4" Text="Máx." Style="{StaticResource ColHead}" ToolTip="{Binding StatsNote, RelativeSource={RelativeSource AncestorType=UserControl}}" />
             </Grid>
         </DataTemplate>
 
         <!-- Grupo de um tipo: o título é o maior e mais forte do bloco, com um filete na cor do canal do componente (o mesmo da
-             Visão geral e da barra lateral); os sensores entram recuados embaixo -->
+             Visão geral e da barra lateral) e a unidade do grupo ao lado ("em °C"), que vale para mínimo, média e máximo; sem
+             contagem, que o cabeçalho do componente já dá. Os sensores entram recuados embaixo. A segunda metade de um grupo
+             longo (coluna da direita) não repete o título, mas guarda a altura dele para as linhas das duas colunas alinharem. -->
         <DataTemplate x:Key="SectionTemplate">
             <StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <Border x:Name="mark" Width="3" Height="15" CornerRadius="1.5" Background="{DynamicResource Steel}" Margin="0,1,9,0" VerticalAlignment="Center" />
+                <StackPanel x:Name="head" Orientation="Horizontal" Margin="0,0,0,8">
+                    <!-- Filete centrado na caixa do título: o meio dele cai no meio das maiúsculas (com 1 px a mais em cima ficava 1 abaixo) -->
+                    <Border x:Name="mark" Width="3" Height="15" CornerRadius="1.5" Background="{DynamicResource Steel}" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Title, Mode=OneWay}" Style="{StaticResource GroupTitle}" FontSize="16" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding Rows.Count, Mode=OneWay}" FontSize="11.5" Foreground="{DynamicResource Faint}" Margin="10,2,0,0" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular" />
+                    <TextBlock Text="{Binding UnitText, Mode=OneWay}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="8,2,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource SensorLine}" Focusable="False" />
             </StackPanel>
             <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Continued}" Value="True"><Setter TargetName="head" Property="Visibility" Value="Hidden" /></DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Cpu"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Cpu}" /></DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Gpu"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Gpu}" /></DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Memory"><Setter TargetName="mark" Property="Background" Value="{DynamicResource Memory}" /></DataTrigger>
@@ -187,11 +195,11 @@
         <DataTemplate x:Key="ComponentBlock">
             <StackPanel>
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ComponentHeader}" />
-                <Border x:Name="body" Padding="24,18,24,26">
+                <Border x:Name="body" Padding="24,18,24,24">
                     <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource SectionTemplate}" Focusable="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <inv:ColumnsPanel Columns="{Binding SectionColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" ColumnGap="44" RowGap="30" />
+                                <inv:ColumnsPanel Columns="{Binding SectionColumns, RelativeSource={RelativeSource AncestorType=UserControl}}" ColumnGap="44" RowGap="32" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
@@ -223,11 +231,14 @@
             </Grid.ColumnDefinitions>
             <StackPanel>
                 <TextBlock Text="Sensores" Style="{StaticResource PageTitle}" />
-                <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
+                <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" HorizontalAlignment="Left"
+                           ToolTip="A leitura é a cada segundo e pausa durante o teste de placa de vídeo." />
             </StackPanel>
+            <!-- Busca e botão em 36 px, a altura dos botões de cabeçalho de todas as páginas. A dica do botão diz desde quando as
+                 estatísticas contam (SensorsView.UpdateStatsNote). -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                <TextBox x:Name="SensorSearch" Width="280" local:Ui.Icon="&#xE721;" local:Ui.Placeholder="Buscar sensor ou componente" TextChanged="SensorSearch_Changed" />
-                <Button x:Name="BtnSensorsReset" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE777;" Content="Zerar estatísticas" Margin="10,0,0,0" Click="BtnSensorsReset_Click" ToolTip="Recomeça o mínimo, a média e o máximo de todos os sensores a partir de agora." />
+                <TextBox x:Name="SensorSearch" Width="280" MinHeight="36" local:Ui.Icon="&#xE721;" local:Ui.Placeholder="Buscar sensor ou componente" TextChanged="SensorSearch_Changed" />
+                <Button x:Name="BtnSensorsReset" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE777;" Content="Zerar estatísticas" MinHeight="36" Margin="10,0,0,0" Click="BtnSensorsReset_Click" />
             </StackPanel>
         </Grid>
 
@@ -235,7 +246,6 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="IndexColumn" Width="300" />
@@ -243,8 +253,9 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Índice: um item por componente, na altura toda da página (a base alinha com a do cartão ao lado); escolher um mostra só ele -->
-            <Border x:Name="IndexCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="10,14,10,10">
+            <!-- Índice: um item por componente, na altura toda da página (a base alinha com a do cartão ao lado); escolher um mostra só ele.
+                 14 do cartão + 10 do item = 24, o recuo dos outros painéis; o fundo da seleção avança 10 para os lados. -->
+            <Border x:Name="IndexCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="14,20,14,12">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Componentes" Style="{StaticResource Label}" Margin="10,0,10,8" />
                     <ListBox x:Name="SensorIndex" ItemContainerStyle="{StaticResource IndexItem}" SelectionChanged="SensorIndex_Changed" HorizontalContentAlignment="Stretch">
@@ -272,8 +283,14 @@
                  fundo próprio, para ler como um controle só; o índice e o cartão continuam começando na mesma linha. -->
             <Border Grid.Column="2" HorizontalAlignment="Left" Margin="0,0,0,12" Padding="14,5,5,5" CornerRadius="18" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" SnapsToDevicePixels="True">
                 <DockPanel>
-                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,5,12,0">
-                        <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Signal}" Margin="0,1,7,0" />
+                    <!-- O rótulo assenta na linha de base do texto das pílulas (7 em cima; com 5 ficava 2 px acima) e o funil sobe 2, para
+                         o meio dele cair no meio das maiúsculas do rótulo -->
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,7,12,0">
+                        <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Signal}" Margin="0,1,8,0">
+                            <TextBlock.RenderTransform>
+                                <TranslateTransform Y="-2" />
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
                         <TextBlock Text="Filtrar por tipo de sensor" FontFamily="{StaticResource LabelFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
                     </StackPanel>
                     <WrapPanel x:Name="CategoryChips" Margin="0,0,0,-6" />
@@ -285,7 +302,9 @@
             <Border x:Name="SensorCard" Grid.Row="1" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SensorCard_SizeChanged">
                 <Grid>
                     <ScrollViewer x:Name="SensorScroll" VerticalScrollBarVisibility="Auto" ScrollChanged="SensorScroll_ScrollChanged">
-                        <!-- A barra de rolagem começa abaixo do cabeçalho fixo (112 = 80 + 32) para o cabeçalho nunca cobrir a barra -->
+                        <!-- A barra de rolagem começa abaixo do cabeçalho fixo (112 = 80 + 32) para o cabeçalho nunca cobrir a barra. O
+                             conteúdo ocupa a largura toda e a barra passa por cima da margem direita (24 px): assim os cabeçalhos
+                             de cada bloco terminam na mesma borda do cabeçalho fixo, com ou sem barra. -->
                         <ScrollViewer.Template>
                             <ControlTemplate TargetType="ScrollViewer">
                                 <Grid>
@@ -293,13 +312,13 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" CanContentScroll="{TemplateBinding CanContentScroll}" />
+                                    <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" Grid.ColumnSpan="2" CanContentScroll="{TemplateBinding CanContentScroll}" />
                                     <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Margin="0,116,2,4" Orientation="Vertical" Value="{TemplateBinding VerticalOffset}" Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
                                 </Grid>
                             </ControlTemplate>
                         </ScrollViewer.Template>
                         <StackPanel x:Name="SensorStack">
-                            <StackPanel x:Name="SensorEmpty" Margin="24,22" Visibility="Collapsed">
+                            <StackPanel x:Name="SensorEmpty" Margin="24,20" Visibility="Collapsed">
                                 <TextBlock x:Name="SensorEmptyTitle" Text="Detectando o hardware…" Style="{StaticResource SectionTitle}" />
                                 <TextBlock x:Name="SensorEmptyText" Style="{StaticResource Caption}" Margin="0,4,0,0" />
                             </StackPanel>
@@ -319,7 +338,6 @@
                     </Grid>
                 </Grid>
             </Border>
-            <TextBlock x:Name="SensorFootnote" Grid.Row="2" Grid.ColumnSpan="3" Style="{StaticResource Footnote}" MaxWidth="1400" Margin="2,8,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
         </Grid>
     </Grid>
 </UserControl>

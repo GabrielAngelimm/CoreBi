@@ -82,6 +82,9 @@ internal static partial class Program
             Require(row.Label == "Núcleo 3" && row.Tip == "Core #3" && row.Unit == "MHz" && row.Value == "3000 MHz", "Clock row label or format");
             row.ResetStats();
             Require(row.RawMin == 3000 && row.RawMax == 3000 && row.AvgValue == 3000, "Reset did not restart statistics");
+            var ssd = new SensorRow { Id = "s", Name = "Temperature", Hardware = "ssd", Type = SensorType.Temperature };
+            ssd.Update(72, 0, 72);
+            Require(ssd.RawMin == 72, "Zero minimum from the first library read shown for a temperature");
             Require(SensorNaming.Label(HardwareType.GpuNvidia, SensorType.Temperature, "GPU Hot Spot") == "Ponto mais quente", "GPU name");
             Require(SensorNaming.Label(HardwareType.Cpu, SensorType.Load, "CPU Core #2 Thread #1") == "Núcleo 2 · thread 1", "Thread name");
             Require(SensorNaming.Label(HardwareType.Cpu, SensorType.Power, "Package") == "Total do processador", "Typed name");

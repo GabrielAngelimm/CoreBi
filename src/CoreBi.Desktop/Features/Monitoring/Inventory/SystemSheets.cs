@@ -30,19 +30,28 @@ public sealed record IndexItem(string Key, string Glyph, string Category, string
 public sealed record Readout(string Label, string Value, string Unit = "", string? Tip = null)
 {
     public bool First { get; init; }
+    /// <summary>A unidade com o espaço antes dela, para ir no mesmo texto do número; vazia sem unidade.</summary>
+    public string UnitSuffix => Unit.Length > 0 ? " " + Unit : "";
 }
 
 /// <summary>
-/// Linha chave/valor. Note aparece em cinza depois do valor ("há 1 ano"); Tone acende um LED antes dele (verde: está
-/// certo, âmbar: vale ajustar); Help é uma linha de explicação embaixo, para o que pede contexto. Clicar copia o valor.
+/// Linha chave/valor. Note aparece em cinza depois do valor ("há 1 ano"); Tone é o veredito da linha (a página é só texto:
+/// ele não acende nada; o relatório leva a explicação das âmbar); Help é a explicação do valor. Na tela, a explicação vai
+/// para a dica da linha, junto com Tip; só a das linhas âmbar, que diz o que fazer, fica embaixo do valor. Clicar copia o valor.
 /// </summary>
 public sealed record SpecRow(string Key, string Value, string? Note = null, string? Tip = null, Tone Tone = Tone.None, string? Help = null)
 {
     /// <summary>Uma célula por coluna do grupo (módulos de memória lado a lado); Value guarda o texto para copiar.</summary>
     public List<string>? Cells { get; init; }
+
+    /// <summary>Dica da linha: a explicação (quando não é a ação de uma linha âmbar) e o detalhe técnico.</summary>
+    public string? Hint => string.Join("\n", new[] { Action == null ? Help : null, Tip }.Where(x => !string.IsNullOrEmpty(x))) is { Length: > 0 } hint ? hint : null;
+
+    /// <summary>O que fazer, embaixo do valor: só nas linhas âmbar (o relatório leva o mesmo texto).</summary>
+    public string? Action => Tone == Tone.Warn && !string.IsNullOrEmpty(Help) ? Help : null;
 }
 
-/// <summary>Grupo de linhas com uma frase que explica o assunto. Tokens: lista em linha (instruções do processador).</summary>
+/// <summary>Grupo de linhas; Help é uma frase sobre o assunto, que vira a dica do título. Tokens: lista em linha (instruções do processador).</summary>
 public sealed record SpecGroup(string Title, List<SpecRow> Rows, List<SpecToken>? Tokens = null, string? Help = null)
 {
     /// <summary>Cabeçalho das colunas quando as linhas têm Cells.</summary>
@@ -75,6 +84,8 @@ public sealed record DiskView(string Title, string Meta, string Size, string Uni
     string Health = "", Tone Tone = Tone.None)
 {
     public bool First { get; init; }
+    /// <summary>A unidade com o espaço antes dela, para ir no mesmo texto do tamanho; vazia sem unidade.</summary>
+    public string UnitSuffix => Unit.Length > 0 ? " " + Unit : "";
 }
 
 /// <summary>Monta as seis fichas da página Sistema a partir do inventário (e das placas de vídeo e unidades já lidas).</summary>
@@ -153,7 +164,7 @@ public static class SystemSheets
         };
     }
 
-    /// <summary>Linha de veredito: o valor ganha o LED do tom; o texto do veredito vira a explicação embaixo.</summary>
+    /// <summary>Linha de veredito: o tom fica no modelo (o relatório usa); o texto do veredito vira a explicação embaixo.</summary>
     private static SpecRow Verdict(string key, string value, Tone tone, string? note = null, string? help = null, string? tip = null) =>
         new(key, value, note, tip, tone, help);
 
@@ -183,39 +194,44 @@ public static class SystemSheets
         if (c.Microcode != null) id.Add(new("Microcódigo", c.Microcode, null, "Revisão das correções internas do processador, carregada pela BIOS ou pelo Windows."));
         if (inv.Cpus.Count > 1) id.Add(new("Processadores", inv.Cpus.Count.ToString(Br)));
 
-        var clocks = new List<SpecRow> { new("Núcleos", cores.ToString(Br), t.Hybrid ? $"{t.PerformanceCores} P + {t.EfficientCores} E" : null) };
+        // Núcleos, threads, clock base e L3 estão na placa logo acima: o grupo fica com o que a placa não diz (a divisão P + E,
+        // as threads por núcleo e o clock de referência com o multiplicador).
+        var (baseMhz, multiplier) = RatedClock(c.BaseMhz, c.RefClockMhz);
+        var clocks = new List<SpecRow>();
         if (t.Hybrid) clocks.Add(new("Desempenho + eficiência", $"{t.PerformanceCores} + {t.EfficientCores}", null, null, Tone.None,
-            "Os de desempenho (P) tocam jogos e tarefas pesadas; os de eficiência (E) cuidam do que roda em segundo plano."));
-        clocks.Add(new("Threads", threads.ToString(Br), smt ? $"{(double)threads / cores:0.#} por núcleo" : "1 por núcleo"));
-        clocks.Add(new(c.Vendor == "AMD" ? "SMT" : "Hyper-Threading", smt ? "Ativado" : "Desligado", null, "Cada núcleo toca duas threads ao mesmo tempo."));
-        clocks.Add(new("Clock base", Fmt.Ghz(c.BaseMhz), Help: "A frequência garantida. Em uso ele sobe acima disso (boost) conforme temperatura e consumo."));
+            "Os de desempenho (P) rodam jogos e tarefas pesadas; os de eficiência (E), o que fica em segundo plano."));
+        clocks.Add(new(c.Vendor == "AMD" ? "SMT" : "Hyper-Threading", smt ? "Ativado" : "Desligado",
+            smt ? $"{N((double)threads / cores, "0.#")} threads por núcleo" : null, "Com ele, cada núcleo executa duas threads ao mesmo tempo."));
         if (c.RefClockMhz > 0)
-            clocks.Add(new("Clock de referência", $"{c.RefClockMhz} MHz", c.BaseMhz > 0 ? $"× {N((double)c.BaseMhz / c.RefClockMhz, "0.#")} no clock base" : null,
+            clocks.Add(new("Clock de referência", $"{c.RefClockMhz} MHz",
+                baseMhz > 0 ? $"× {(multiplier is int mul ? mul.ToString(Br) : N((double)baseMhz / c.RefClockMhz, "0.#"))} no clock base" : null,
                 "O clock base é este valor vezes o multiplicador do processador."));
+        string baseTip = "A frequência garantida. Com carga ele passa disso (boost), conforme a temperatura e o consumo."
+            + (baseMhz != c.BaseMhz ? $"\nO Windows mede {c.BaseMhz.ToString("N0", Br)} MHz; o valor vai ao múltiplo de {c.RefClockMhz} MHz mais próximo (× {multiplier}), como o fabricante especifica." : "");
 
         var cache = Fmt.CacheLines(c).Select(kv => new SpecRow(kv.Key, kv.Value, kv.Key == "L3" && l3.Count == 1 ? "compartilhado" : null)).ToList();
 
         var features = new List<SpecRow>();
         if (c.Hypervisor)
         {
-            features.Add(Verdict($"Virtualização ({amd})", "Ativada", Tone.Ok, null, "Máquinas virtuais, WSL 2 e o Subsistema para Android funcionam."));
+            features.Add(Verdict($"Virtualização ({amd})", "Ativada", Tone.Ok, null, "Máquinas virtuais e o WSL 2 funcionam."));
             features.Add(new("Hyper-V / VBS", "Em uso", null, null, Tone.None, "O próprio Windows usa a virtualização para isolar partes sensíveis do sistema."));
         }
         else if (c.Virtualization is bool on)
             features.Add(on
-                ? Verdict($"Virtualização ({amd})", "Ativada", Tone.Ok, null, "Máquinas virtuais, WSL 2 e o Subsistema para Android funcionam.")
+                ? Verdict($"Virtualização ({amd})", "Ativada", Tone.Ok, null, "Máquinas virtuais e o WSL 2 funcionam.")
                 : Verdict($"Virtualização ({amd})", "Desligada", Tone.Warn, null, $"Para usar máquinas virtuais ou WSL 2, ative {amd} na BIOS."));
 
         var groups = new List<SpecGroup>
         {
-            new("Núcleos e threads", clocks, Help: "Núcleos são processadores completos dentro do chip; threads são as tarefas que eles tocam ao mesmo tempo."),
             new("Identificação", id),
         };
-        if (cache.Count > 0) groups.Add(new("Cache", cache, Help: "Memória ultrarrápida dentro do processador. L1 e L2 são de cada núcleo; o L3 é dividido entre todos. Quanto mais cache, menos ele espera pela RAM."));
+        if (clocks.Count > 0) groups.Insert(0, new("Núcleos e clock", clocks, Help: "Cada núcleo é um processador completo. Threads são as tarefas que os núcleos executam ao mesmo tempo."));
+        if (cache.Count > 0) groups.Add(new("Cache", cache, Help: "Memória dentro do processador, bem mais rápida que a RAM. L1 e L2 são de cada núcleo."));
         if (features.Count > 0) groups.Add(new("Recursos", features));
         if (c.Instructions.Count > 0)
             groups.Add(new("Instruções", new(), c.Instructions.Select(i => new SpecToken(i.Name, i.Supported)).ToList(),
-                "Conjuntos de instruções que programas e jogos podem exigir. Os apagados este processador não tem."));
+                "Conjuntos de instruções que programas e jogos podem exigir." + (c.Instructions.Any(i => !i.Supported) ? " Em cinza, as que este processador não tem." : "")));
 
         return new Sheet
         {
@@ -226,9 +242,9 @@ public static class SystemSheets
             Readouts = new()
             {
                 new("Núcleos", cores.ToString(Br), "", t.Hybrid ? $"{t.PerformanceCores} de desempenho + {t.EfficientCores} de eficiência" : null),
-                new("Threads", threads.ToString(Br)),
-                new("Clock base", c.BaseMhz > 0 ? N(c.BaseMhz / 1000.0, "0.0#") : "—", c.BaseMhz > 0 ? "GHz" : ""),
-                new("Cache L3", l3Value, l3Unit),
+                new("Threads", threads.ToString(Br), "", "Tarefas que os núcleos executam ao mesmo tempo."),
+                new("Clock base", baseMhz > 0 ? N(baseMhz / 1000.0, "0.00") : "—", baseMhz > 0 ? "GHz" : "", baseMhz > 0 ? baseTip : null),
+                new("Cache L3", l3Value, l3Unit, "Memória dentro do processador, bem mais rápida que a RAM."),
             },
             Groups = groups,
             Link = new("Clocks, temperatura e consumo ao vivo em Sensores", "PageSensors:cpu"),
@@ -301,7 +317,7 @@ public static class SystemSheets
         {
             var hz = d.BelowMax
                 ? Verdict("Atualização", $"{d.Hz} Hz", Tone.Warn, $"aceita {d.MaxHz} Hz",
-                    "Abaixo do máximo da tela. Ajuste em Configurações › Sistema › Tela › Tela avançada.")
+                    "Ajuste em Configurações › Sistema › Tela › Tela avançada.")
                 : d.MaxHz > 0 && d.Hz >= d.MaxHz - 1
                     ? Verdict("Atualização", $"{d.Hz} Hz", Tone.Ok, "máximo da tela")
                     : new SpecRow("Atualização", $"{d.Hz} Hz");
@@ -343,7 +359,7 @@ public static class SystemSheets
                 new("Atualização", primary != null ? primary.Hz.ToString(Br) : "—", primary != null ? "Hz" : ""),
             },
             Groups = groups,
-            Link = new("Especificações completas, clocks e leituras ao vivo em Placa de vídeo", "PageGpu"),
+            Link = new("Clocks, temperatura e consumo ao vivo em Placa de vídeo", "PageGpu"),
         };
     }
 
@@ -420,11 +436,11 @@ public static class SystemSheets
         if (buffer != null) capacity.Add(new("Buffer", Cap(buffer), null, "Sem buffer é o módulo comum de PC; registrada é a de servidor."));
         capacity.Add(new("ECC", r.Ecc ? "Sim" : "Não", null, "Correção de erros por hardware, comum em servidores e estações de trabalho."));
 
-        // Slots da placa, ocupados e vazios, com o canal de cada um.
+        // Slots da placa, ocupados e vazios, com o canal de cada um. Só o tamanho: tipo e velocidade já estão nos outros grupos.
         var map = r.SlotMap();
         string SlotName(RamSlot sl, int i) => sl.Name.Length > 0 ? sl.Name : $"Slot {i + 1}";
         var slotRows = map.Select((sl, i) => sl.Module is { } m
-            ? new SpecRow(SlotName(sl, i), $"{Fmt.Bytes(m.Capacity)} {m.Type}" + (m.Configured > 0 ? $" · {m.Configured} MT/s" : ""), sl.Channel != null ? $"canal {sl.Channel}" : null,
+            ? new SpecRow(SlotName(sl, i), Fmt.Bytes(m.Capacity), sl.Channel != null ? $"canal {sl.Channel}" : null,
                 $"{m.Bank} · {m.Locator}")
             : new SpecRow(SlotName(sl, i), "Vazio", sl.Channel != null ? $"canal {sl.Channel}" : null)).ToList();
 
@@ -453,6 +469,8 @@ public static class SystemSheets
         if (mods.Any(x => x.Module.TotalWidth > x.Module.DataWidth && x.Module.DataWidth > 0))
             moduleRows.Insert(5, Cells("Largura", m => m.DataWidth > 0 ? $"{m.DataWidth} / {m.TotalWidth} bits" : "—", "Dados / total; os bits a mais são do ECC."));
         moduleRows.RemoveAll(row => row.Cells!.All(c => c == "—"));
+        // Módulos na mesma velocidade repetiriam o "Em uso" de Velocidade e canais: a linha só fica quando eles diferem.
+        if (r.Configured > 0) moduleRows.RemoveAll(row => row.Key == "Velocidade" && row.Cells!.All(c => c == $"{r.Configured} MT/s"));
 
         var groups = new List<SpecGroup>
         {
@@ -485,7 +503,7 @@ public static class SystemSheets
                 new("Tensão", volts.Count == 1 ? N(volts[0]!.Value, "0.00#") : "—", volts.Count == 1 ? "V" : ""),
             },
             Groups = groups,
-            Link = new("Temperatura dos módulos e memória em uso ao vivo em Sensores", "PageSensors:ram"),
+            Link = new("Temperatura e uso da memória ao vivo em Sensores", "PageSensors:ram"),
         };
     }
 
@@ -620,7 +638,7 @@ public static class SystemSheets
             new("Interface", d.Bus, null, d.Bus switch
             {
                 "NVMe" => "Ligado direto nas linhas PCIe do processador ou do chipset: o tipo mais rápido.",
-                "SATA" => "Conexão SATA: até uns 550 MB/s, o limite dos SSDs SATA.",
+                "SATA" => "Até cerca de 550 MB/s, o limite dos SSDs SATA.",
                 "USB" => "Disco externo pela USB.",
                 _ => null
             }),
@@ -661,26 +679,27 @@ public static class SystemSheets
         {
             new("Edição", o.Name),
             new("Versão", o.Version, null, "A atualização anual de recursos (23H2 = segundo semestre de 2023)."),
-            new("Build", o.Build, null, null, Tone.None, "O número depois do ponto sobe a cada atualização mensal. Bom para conferir se o Windows está em dia."),
+            new("Build", o.Build, null, null, Tone.None, "O número depois do ponto sobe a cada atualização mensal."),
             new("Arquitetura", o.Architecture),
             new("Idioma", Cap(o.Language)),
         };
         var computer = new List<SpecRow> { new("Nome", o.Machine, null, "Como o PC aparece na rede."), new("Usuário", o.User), new(o.Domain ? "Domínio" : "Grupo de trabalho", o.Workgroup) };
-        var session = new List<SpecRow> { new("Instalado em", Fmt.Date(o.Installed), Fmt.Ago(o.Installed, now)), new("Último boot", Fmt.Stamp(o.LastBoot)), new("Ligado há", up) };
+        // "Ligado há" fica na placa: ao lado do último boot, que já diz o mesmo, seria o mesmo dado duas vezes.
+        var session = new List<SpecRow> { new("Instalado em", Fmt.Date(o.Installed), Fmt.Ago(o.Installed, now)), new("Último boot", Fmt.Stamp(o.LastBoot)) };
         if (o.LastUpdate != null) session.Insert(1, new("Última atualização", Fmt.Date(o.LastUpdate), o.LastUpdateId, "A atualização mais recente instalada pelo Windows Update."));
         var groups = new List<SpecGroup> { new("Windows", windows), new("Computador", computer), new("Sessão", session) };
         if (inv.Settings is { } st)
         {
             computer.Add(new("Fuso horário", st.TimeZone));
             if (st.Activated != null) windows.Add(Verdict("Ativação", st.Activated == true ? "Ativado" : "Não ativado", st.Activated == true ? Tone.Ok : Tone.Warn, null,
-                st.Activated == true ? null : "Ative em Configurações > Sistema > Ativação."));
+                st.Activated == true ? null : "Ative em Configurações › Sistema › Ativação."));
             groups.Add(new("Ajustes para jogos", new()
             {
                 Verdict("Modo de jogo", st.GameMode ? "Ativado" : "Desativado", st.GameMode ? Tone.Ok : Tone.Warn, null,
-                    st.GameMode ? null : "Ative em Configurações > Jogos > Modo de jogo.",
+                    st.GameMode ? null : "Ative em Configurações › Jogos › Modo de jogo.",
                     "Dá prioridade ao jogo e segura atualizações e notificações enquanto ele roda."),
                 new("Agendamento de GPU por hardware", Fmt.OnOff(st.GpuScheduling), null,
-                    "A placa de vídeo organiza a própria fila de trabalho. É exigido pela geração de quadros do DLSS. Fica em Configurações > Sistema > Tela > Elementos gráficos."),
+                    "A placa de vídeo organiza a própria fila de trabalho. É exigido pela geração de quadros do DLSS. Fica em Configurações › Sistema › Tela › Elementos gráficos."),
                 new("Integridade da memória", st.MemoryIntegrity ? "Ativada" : "Desativada", null,
                     "Proteção do Windows contra drivers maliciosos (isolamento de núcleo). Pode custar um pouco de desempenho em jogos."),
                 new("Inicialização rápida", Fmt.OnOff(st.FastStartup), null,
@@ -690,7 +709,7 @@ public static class SystemSheets
                     "Grava os últimos segundos de jogo o tempo todo, para salvar um clipe depois. Custa um pouco de desempenho."),
                 new("Aceleração do mouse", st.MouseAcceleration switch { true => "Ativada", false => "Desativada", _ => "—" }, null,
                     "\"Aumentar a precisão do ponteiro\": o cursor anda mais quando o mouse se move rápido. Em jogos de tiro, muitos preferem desligada."),
-            }, Help: "Opções do Windows que mudam como os jogos rodam. Passe o mouse em cada uma para saber o que faz.")
+            }, Help: "Opções do Windows que mudam como os jogos rodam.")
             { Column = 2 });
         }
         if (inv.Security is { } sec)
@@ -729,6 +748,18 @@ public static class SystemSheets
     }
 
     private static string Cap(string s) => s.Length > 0 ? char.ToUpper(s[0], Br) + s[1..] : s;
+
+    /// <summary>
+    /// Clock base como o fabricante escreve. O Windows informa uma medida (2.793 MHz numa máquina virtual, 3.701 num Ryzen);
+    /// quando ela fica a menos de 1 % de um múltiplo do clock de referência, vale o múltiplo, que é o multiplicador inteiro do
+    /// chip (2.800 MHz, × 28). Longe disso, fica a medida, sem arredondar.
+    /// </summary>
+    private static (int Mhz, int? Multiplier) RatedClock(int mhz, int refMhz)
+    {
+        if (mhz <= 0 || refMhz <= 0) return (mhz, null);
+        int m = (int)Math.Round((double)mhz / refMhz);
+        return m > 0 && Math.Abs(m * refMhz - mhz) < mhz * 0.01 ? (m * refMhz, m) : (mhz, null);
+    }
 
     private static Sheet Missing(string key, string title, string? error) => new()
     {

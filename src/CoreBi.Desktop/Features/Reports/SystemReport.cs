@@ -23,10 +23,21 @@ internal static class SystemReport
             var drives = s.Disks?.Select(d => new ReportDrive(d.Title, d.Meta, $"{d.Size} {d.Unit}".Trim(), d.Health,
                 d.Volumes.Select(v => new ReportVolume(v.Letter, v.Name, v.Line, v.Used)).ToList())).ToList();
             list.Add(new ReportSheet(item.Category, s.Eyebrow, s.Title, s.Subtitle, item.Spec,
-                s.Readouts.Select(r => new ReportReadout(r.Label, r.Value, r.Unit)).ToList(), groups, drives));
+                s.Readouts.Select(r => new ReportReadout(r.Label, r.Value, r.Unit)).ToList(), groups, drives, Channel(item.Channel)));
         }
         return list;
     }
+
+    // O mesmo canal do botão e da placa na página (Ui.Channel), em minúsculas para as classes do CSS do relatório.
+    private static string Channel(string channel) => channel switch
+    {
+        "Cpu" => "cpu",
+        "Gpu" => "gpu",
+        "Memory" => "memory",
+        "Storage" => "storage",
+        "Board" => "board",
+        _ => "steel",
+    };
 
     // A explicação só entra quando diz o que fazer (veredito âmbar); o resto é contexto da tela.
     private static ReportRow Row(SpecRow r) => new(r.Key, r.Value, r.Note, r.Cells, r.Tone == Tone.Warn ? r.Help : null);
