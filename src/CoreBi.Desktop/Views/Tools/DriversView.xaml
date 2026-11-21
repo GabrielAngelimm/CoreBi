@@ -25,7 +25,7 @@
         a placa de vídeo (instalado e mais recente como leituras de mostrador, a ação de instalar), a placa-mãe (modelo, BIOS e o
         suporte oficial) e o Windows Update, que ocupa a sobra e rola por dentro; antes de procurar, ele mostra o que faz e o
         botão no meio da área. À direita, os drivers instalados numa tabela agrupada por classe, com busca, filtro e o backup no
-        título; ela ocupa a altura toda e rola por dentro. Em janelas estreitas a tabela desce para baixo da coluna e a página rola.
+        título e uma linha que diz o que é um driver; ela ocupa a altura toda e rola por dentro. Em janelas estreitas a tabela desce para baixo da coluna e a página rola.
     -->
     <ScrollViewer x:Name="DrvScroll" VerticalScrollBarVisibility="Auto">
         <!-- Altura da janela (e não mínima): a tabela longa rola dentro do painel; em janelas estreitas ou abaixo de 700 px a página rola (DrvBody_SizeChanged) -->
@@ -59,13 +59,18 @@
                                     ToolTip="Lê de novo os drivers instalados, a placa de vídeo e a placa-mãe e consulta a versão mais recente na NVIDIA ou na AMD. Para atualizações do Windows, use Procurar atualizações." />
                             <!-- O estado fica no meio da altura do console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
                             <Grid Grid.Column="1" Margin="22,0,0,0">
-                                <Grid VerticalAlignment="Center">
+                                <!--
+                                    Estado (13) e detalhe (12) são a mesma Segoe: com a mesma caixa de 17 (BlockLineHeight) a base cai no
+                                    mesmo y nos dois. A margem de 2 embaixo sobe a linha 1 px, para a base coincidir com a do texto do botão
+                                    (medido: o estado ficava 1 px abaixo).
+                                -->
+                                <Grid VerticalAlignment="Center" Margin="0,0,0,2">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource TaskStatus}" />
-                                    <TextBlock x:Name="DrvDetail" Grid.Column="1" Style="{StaticResource TaskDetail}" />
+                                    <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource TaskStatus}" LineHeight="17" LineStackingStrategy="BlockLineHeight" />
+                                    <TextBlock x:Name="DrvDetail" Grid.Column="1" Style="{StaticResource TaskDetail}" LineHeight="17" LineStackingStrategy="BlockLineHeight" />
                                 </Grid>
                                 <Grid Style="{StaticResource ProgressTrack}" Visibility="Hidden" VerticalAlignment="Bottom">
                                     <Border x:Name="DrvProgressFill" Style="{StaticResource ProgressFill}">
@@ -108,9 +113,15 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Gpu" Kind="gpu" Width="36" Height="36" VerticalAlignment="Center" />
+                                    <!--
+                                        Medido: o meio das maiúsculas do título fica 2,5 px acima do centro da linha de 36. O desenho da placa
+                                        sobe 4 (o desenho fica 1 px abaixo do meio da caixa) e o interruptor sobe 2: os dois centros caem no meio
+                                        das maiúsculas e "Studio" fica na base do título. As margens se compensam (-4 em cima, 4 embaixo), para a
+                                        linha continuar com 36.
+                                    -->
+                                    <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Gpu" Kind="gpu" Width="36" Height="36" VerticalAlignment="Center" Margin="0,-4,0,4" />
                                     <TextBlock Grid.Column="1" Text="Placa de vídeo" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="14,0,0,0" />
-                                    <CheckBox x:Name="DrvStudio" Grid.Column="2" Style="{StaticResource Switch}" Content="Studio" VerticalAlignment="Center" Visibility="Collapsed"
+                                    <CheckBox x:Name="DrvStudio" Grid.Column="2" Style="{StaticResource Switch}" Content="Studio" VerticalAlignment="Center" Margin="0,-2,0,2" Visibility="Collapsed"
                                               Click="DrvStudio_Click" ToolTip="Driver Studio da NVIDIA, para criação de conteúdo, em vez do Game Ready." />
                                 </Grid>
                                 <ItemsControl x:Name="DrvGpus" Focusable="False">
@@ -181,7 +192,8 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Board" Kind="board" Width="36" Height="36" VerticalAlignment="Center" />
+                                    <!-- O desenho da placa-mãe sobe 2 (margens -2 e 2, a linha continua com 36): o centro dele cai no meio das maiúsculas do título (medido) -->
+                                    <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Board" Kind="board" Width="36" Height="36" VerticalAlignment="Center" Margin="0,-2,0,2" />
                                     <TextBlock Grid.Column="1" Text="Placa-mãe" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="14,0,0,0" />
                                 </Grid>
                                 <!-- O modelo é o que identifica a placa; a BIOS vem embaixo, como uma linha de ficha, no tom do conteúdo -->
@@ -193,9 +205,16 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="BIOS" Style="{StaticResource StatLabel}" VerticalAlignment="Center" />
-                                    <TextBlock x:Name="DrvBoardBios" Grid.Column="1" Style="{StaticResource Num}" FontSize="13" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                    <TextBlock x:Name="DrvBoardBiosDate" Grid.Column="2" Style="{StaticResource Num}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="12,0,0,0" VerticalAlignment="Center" />
+                                    <!--
+                                        Rótulo e versão num TextBlock só (Runs: mesma base, antes a versão ficava 3 px abaixo de "BIOS"); a data,
+                                        Segoe como a versão, tem a mesma caixa de 18 (BlockLineHeight), e por isso a mesma base (antes, 2 px abaixo).
+                                    -->
+                                    <TextBlock Grid.ColumnSpan="2" Style="{StaticResource Num}" FontSize="13" LineHeight="18" LineStackingStrategy="BlockLineHeight"
+                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center">
+                                        <Run Text="BIOS" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" /><InlineUIContainer><Border Width="12" /></InlineUIContainer><Run x:Name="DrvBoardBios" />
+                                    </TextBlock>
+                                    <TextBlock x:Name="DrvBoardBiosDate" Grid.Column="2" Style="{StaticResource Num}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="12,0,0,0"
+                                               LineHeight="18" LineStackingStrategy="BlockLineHeight" VerticalAlignment="Center" />
                                 </Grid>
                                 <Button x:Name="BtnDrvBoardPage" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE8A7;" Content="Suporte do fabricante" Margin="0,16,0,0"
                                         HorizontalAlignment="Left" Click="BtnDrvBoardPage_Click" Visibility="Collapsed"
@@ -215,10 +234,12 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="Windows Update" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                                    <TextBlock x:Name="DrvWuCount" Style="{StaticResource TitleCount}" />
-                                </StackPanel>
+                                <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base -->
+                                <TextBlock Style="{StaticResource SectionTitle}" TextWrapping="NoWrap">
+                                    <Run Text="Windows Update" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="DrvWuCount"
+                                        FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
+                                        Typography.NumeralAlignment="Tabular" />
+                                </TextBlock>
                                 <StackPanel x:Name="DrvWuEmpty" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="380" Margin="0,16,0,8">
                                     <TextBlock x:Name="DrvWuList" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextAlignment="Center"
                                                Text="Procura drivers certificados pela Microsoft para este PC." />
@@ -251,7 +272,7 @@
                     </Grid>
 
                     <!-- Drivers instalados: tabela agrupada por classe, com busca e filtro; o cabeçalho de colunas tem a geometria das linhas -->
-                    <Border x:Name="DrvTableCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="16,16,16,8">
+                    <Border x:Name="DrvTableCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="16,20,16,8">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -259,19 +280,30 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
+                            <!--
+                                O título fica na mesma linha de base do de "Placa de vídeo", ao lado: lá a linha de 36 começa a 20 da borda e o
+                                título (caixa de 24) fica centrado nela, 6 abaixo; aqui o padding é 20 e o título desce 6. Busca e backup (34)
+                                ficam centrados na linha do título (1 abaixo) e a frase de explicação fica embaixo do título.
+                            -->
                             <Grid Margin="8,0,8,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="Drivers instalados" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                                    <TextBlock x:Name="DrvCount" Style="{StaticResource TitleCount}" />
+                                <StackPanel Margin="0,6,0,0">
+                                    <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base (antes a contagem descia 1 px) -->
+                                    <TextBlock Style="{StaticResource SectionTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis">
+                                        <Run Text="Drivers instalados" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="DrvCount"
+                                            FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
+                                            Typography.NumeralAlignment="Tabular" />
+                                    </TextBlock>
+                                    <TextBlock Text="Programas que deixam o Windows usar cada peça do computador." Style="{StaticResource Caption}" Margin="0,2,0,0"
+                                               TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
                                 </StackPanel>
                                 <TextBox x:Name="DrvSearch" Grid.Column="1" Width="260" local:Ui.Icon="&#xE721;" local:Ui.Placeholder="Buscar dispositivo ou fabricante"
-                                         Margin="16,0,0,0" TextChanged="DrvSearch_TextChanged" />
-                                <Button x:Name="BtnDrvBackup" Grid.Column="2" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE74E;" Content="Fazer backup" Margin="10,0,0,0"
+                                         Margin="16,1,0,0" VerticalAlignment="Top" TextChanged="DrvSearch_TextChanged" />
+                                <Button x:Name="BtnDrvBackup" Grid.Column="2" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE74E;" Content="Fazer backup" Margin="10,1,0,0" VerticalAlignment="Top"
                                         Click="BtnDrvBackup_Click" ToolTip="Exporta os drivers de terceiros para Documentos\CoreBi-Drivers, para reinstalar depois de formatar." />
                             </Grid>
                             <WrapPanel x:Name="DrvChips" Grid.Row="1" Margin="8,14,8,0" />
