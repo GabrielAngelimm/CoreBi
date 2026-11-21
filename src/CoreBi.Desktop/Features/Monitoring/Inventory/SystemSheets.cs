@@ -30,6 +30,8 @@ public sealed record IndexItem(string Key, string Glyph, string Category, string
 public sealed record Readout(string Label, string Value, string Unit = "", string? Tip = null)
 {
     public bool First { get; init; }
+    /// <summary>A unidade com o espaço antes dela, para ir no mesmo texto do número; vazia sem unidade.</summary>
+    public string UnitSuffix => Unit.Length > 0 ? " " + Unit : "";
 }
 
 /// <summary>
@@ -82,6 +84,8 @@ public sealed record DiskView(string Title, string Meta, string Size, string Uni
     string Health = "", Tone Tone = Tone.None)
 {
     public bool First { get; init; }
+    /// <summary>A unidade com o espaço antes dela, para ir no mesmo texto do tamanho; vazia sem unidade.</summary>
+    public string UnitSuffix => Unit.Length > 0 ? " " + Unit : "";
 }
 
 /// <summary>Monta as seis fichas da página Sistema a partir do inventário (e das placas de vídeo e unidades já lidas).</summary>
@@ -238,9 +242,9 @@ public static class SystemSheets
             Readouts = new()
             {
                 new("Núcleos", cores.ToString(Br), "", t.Hybrid ? $"{t.PerformanceCores} de desempenho + {t.EfficientCores} de eficiência" : null),
-                new("Threads", threads.ToString(Br)),
+                new("Threads", threads.ToString(Br), "", "Tarefas que os núcleos executam ao mesmo tempo."),
                 new("Clock base", baseMhz > 0 ? N(baseMhz / 1000.0, "0.00") : "—", baseMhz > 0 ? "GHz" : "", baseMhz > 0 ? baseTip : null),
-                new("Cache L3", l3Value, l3Unit),
+                new("Cache L3", l3Value, l3Unit, "Memória dentro do processador, bem mais rápida que a RAM."),
             },
             Groups = groups,
             Link = new("Clocks, temperatura e consumo ao vivo em Sensores", "PageSensors:cpu"),

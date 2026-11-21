@@ -8,7 +8,8 @@
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="VerticalAlignment" Value="Bottom" />
         </Style>
-        <!-- Mínimo, média e máximo: mesmos algarismos tabulares da leitura, menores e em tom secundário -->
+        <!-- Mínimo, média e máximo: mesmos algarismos tabulares da leitura, menores e em tom secundário. Centrados na linha de 32,
+             os números em Bahnschrift assentavam 2 px acima do nome em Segoe 13; descem 2 (2 em cima, −2 embaixo), como a leitura. -->
         <Style x:Key="StatCell" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource Readout}" />
             <Setter Property="FontStretch" Value="SemiCondensed" />
@@ -17,6 +18,7 @@
             <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,2,0,-2" />
         </Style>
 
         <!-- Item do índice: fundo elevado na seleção; o ícone, sem fundo, na cor do canal do componente (a mesma do filete dos grupos) -->
@@ -63,7 +65,7 @@
                         <ColumnDefinition Width="74" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{Binding Label}" FontSize="13" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,0,8,0" />
-                    <TextBlock x:Name="value" Grid.Column="1" Style="{StaticResource ReadoutText}" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="value" Grid.Column="1" Style="{StaticResource ReadoutText}" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,2,0,-2">
                         <Run Text="{Binding Number, Mode=OneWay}" /><Run Text=" " FontSize="11" /><Run x:Name="unit" Text="{Binding Unit, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource UiFont}" />
                     </TextBlock>
                     <TextBlock Grid.Column="2" Text="{Binding MinNumber}" Style="{StaticResource StatCell}" />
@@ -112,7 +114,8 @@
         <DataTemplate x:Key="SectionTemplate">
             <StackPanel>
                 <StackPanel x:Name="head" Orientation="Horizontal" Margin="0,0,0,8">
-                    <Border x:Name="mark" Width="3" Height="15" CornerRadius="1.5" Background="{DynamicResource Steel}" Margin="0,1,8,0" VerticalAlignment="Center" />
+                    <!-- Filete centrado na caixa do título: o meio dele cai no meio das maiúsculas (com 1 px a mais em cima ficava 1 abaixo) -->
+                    <Border x:Name="mark" Width="3" Height="15" CornerRadius="1.5" Background="{DynamicResource Steel}" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Title, Mode=OneWay}" Style="{StaticResource GroupTitle}" FontSize="16" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding UnitText, Mode=OneWay}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="8,2,0,0" VerticalAlignment="Center" />
                 </StackPanel>
@@ -280,8 +283,14 @@
                  fundo próprio, para ler como um controle só; o índice e o cartão continuam começando na mesma linha. -->
             <Border Grid.Column="2" HorizontalAlignment="Left" Margin="0,0,0,12" Padding="14,5,5,5" CornerRadius="18" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" SnapsToDevicePixels="True">
                 <DockPanel>
-                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,5,12,0">
-                        <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Signal}" Margin="0,1,8,0" />
+                    <!-- O rótulo assenta na linha de base do texto das pílulas (7 em cima; com 5 ficava 2 px acima) e o funil sobe 2, para
+                         o meio dele cair no meio das maiúsculas do rótulo -->
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,7,12,0">
+                        <TextBlock Text="&#xE71C;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{DynamicResource Signal}" Margin="0,1,8,0">
+                            <TextBlock.RenderTransform>
+                                <TranslateTransform Y="-2" />
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
                         <TextBlock Text="Filtrar por tipo de sensor" FontFamily="{StaticResource LabelFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
                     </StackPanel>
                     <WrapPanel x:Name="CategoryChips" Margin="0,0,0,-6" />

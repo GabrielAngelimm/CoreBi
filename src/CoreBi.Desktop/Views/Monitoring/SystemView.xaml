@@ -65,10 +65,11 @@
             <Border x:Name="cell" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1,0,0,0" Padding="28,0,0,0" Margin="28,0,0,0" ToolTip="{Binding Tip}" Background="Transparent">
                 <StackPanel>
                     <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <TextBlock x:Name="num" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="38" FontWeight="Light" />
-                        <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" FontSize="13" Margin="4,0,0,6" Visibility="{Binding Unit, Converter={StaticResource NotEmptyVis}}" />
-                    </StackPanel>
+                    <!-- Número e unidade num texto só, para a unidade assentar na linha de base do número (em dois blocos ela ficava 1 px abaixo).
+                         UnitSuffix já traz o espaço antes da unidade e fica vazio sem ela. -->
+                    <TextBlock x:Name="num" Style="{StaticResource ReadoutText}" FontSize="38" FontWeight="Light" Margin="0,6,0,0">
+                        <Run Text="{Binding Value, Mode=OneWay}" /><Run Text="{Binding UnitSuffix, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="13" FontWeight="Normal" FontStretch="Normal" Foreground="{DynamicResource Muted}" />
+                    </TextBlock>
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
@@ -255,10 +256,10 @@
                         </ItemsControl>
                     </StackPanel>
                     <StackPanel Grid.Column="4" HorizontalAlignment="Right">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <TextBlock Text="{Binding Size}" Style="{StaticResource ReadoutText}" FontSize="26" FontWeight="Light" />
-                            <TextBlock Text="{Binding Unit}" Style="{StaticResource Unit}" FontSize="12.5" Margin="4,0,0,3" />
-                        </StackPanel>
+                        <!-- Tamanho e unidade num texto só: a unidade assenta na linha de base do número -->
+                        <TextBlock Style="{StaticResource ReadoutText}" FontSize="26" FontWeight="Light" HorizontalAlignment="Right">
+                            <Run Text="{Binding Size, Mode=OneWay}" /><Run Text="{Binding UnitSuffix, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="Normal" FontStretch="Normal" Foreground="{DynamicResource Muted}" />
+                        </TextBlock>
                         <TextBlock Text="{Binding Free}" FontSize="12.5" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" Margin="0,6,0,0"
                                    Visibility="{Binding Free, Converter={StaticResource NotEmptyVis}}" />
                         <!-- Saúde que o Windows informa para o disco -->

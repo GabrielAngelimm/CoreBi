@@ -43,6 +43,13 @@ public abstract class EnergyInstrument : DiskInstrument
             dc.DrawRectangle(color((i + 0.5) / n), null, new Rect(area.X + i * Period, area.Y, Period - Gap, area.Height));
     }
 
+    /// <summary>Altura-x da letra de mostrador (ou da interface) no tamanho dado: para centrar um traço ou ponto no meio dela.</summary>
+    protected double XHeight(double size, bool readout = true)
+    {
+        var family = (TryFindResource(readout ? "Readout" : "UiFont") as FontFamily) ?? new FontFamily("Segoe UI");
+        return new Typeface(family, FontStyles.Normal, FontWeights.Normal, readout ? FontStretches.SemiCondensed : FontStretches.Normal).XHeight * size;
+    }
+
     protected static Color ColorOf(Brush brush, Color fallback) => brush is SolidColorBrush s ? s.Color : fallback;
     protected static Brush Alpha(Brush brush, byte alpha)
     {
@@ -256,11 +263,14 @@ public sealed class PowerTrace : EnergyInstrument
         dc.DrawText(time, new Point(bx + 12, by + 8));
         dc.DrawText(total, new Point(bx + 12, by + 8 + time.Height));
         double ry = by + 12 + time.Height + total.Height;
+        // Rótulo (Segoe 12) e valor (mostrador 12,5) na mesma linha de base; o traço do canal no meio da altura-x do rótulo
+        double xh = XHeight(12, readout: false);
         foreach (var (dot, label, value) in rows)
         {
-            dc.DrawRoundedRectangle(dot, null, new Rect(bx + 12, ry + rowH / 2 - 2, 9, 3), 1.5, 1.5);
-            dc.DrawText(label, new Point(bx + 26, ry + (rowH - label.Height) / 2));
-            dc.DrawText(value, new Point(bx + bw - 12 - value.Width, ry + (rowH - value.Height) / 2));
+            double baseline = ry + (rowH - label.Height) / 2 + label.Baseline;
+            dc.DrawRoundedRectangle(dot, null, new Rect(bx + 12, Math.Round(baseline - xh / 2 - 1.5), 9, 3), 1.5, 1.5);
+            dc.DrawText(label, new Point(bx + 26, baseline - label.Baseline));
+            dc.DrawText(value, new Point(bx + bw - 12 - value.Width, baseline - value.Baseline));
             ry += rowH;
         }
     }
@@ -510,13 +520,16 @@ public sealed class UptimeChart : EnergyInstrument
             double cy = r * rowH + rowH / 2, by = cy - barH / 2;
             if (r == _hover) dc.DrawRoundedRectangle(Alpha(InkBrush, 0x0C), null, new Rect(-6, r * rowH + 1, w + 6, rowH - 2), 6, 6);
             var label = Text(d.Label, 12, d.Today ? InkBrush : MutedBrush, readout: false, d.Today ? FontWeights.SemiBold : null);
-            dc.DrawText(label, new Point(0, cy - label.Height / 2));
+            // Dia, total e "sem registro" assentam na mesma linha de base: a do dia, centrado na barra (letras diferentes centradas
+            // pela caixa ficavam 1 a 2 px desencontradas)
+            double baseline = cy - label.Height / 2 + label.Baseline;
+            dc.DrawText(label, new Point(0, baseline - label.Baseline));
 
             if (!d.Covered)
             {
                 dc.DrawLine(dash, new Point(x0, cy + 0.5), new Point(x0 + bw, cy + 0.5));
                 var none = Text("sem registro", 12, FaintBrush, readout: false);
-                dc.DrawText(none, new Point(w - none.Width, cy - none.Height / 2));
+                dc.DrawText(none, new Point(w - none.Width, baseline - none.Baseline));
                 continue;
             }
             dc.DrawRoundedRectangle(Alpha(TrackBrush, 0xC0), null, new Rect(x0, by, bw, barH), 2, 2);
@@ -541,7 +554,7 @@ public sealed class UptimeChart : EnergyInstrument
                 dc.DrawGeometry(DangerBrush, null, tri);
             }
             var total = Text(d.Total, 12.5, InkBrush);
-            dc.DrawText(total, new Point(w - total.Width, cy - total.Height / 2));
+            dc.DrawText(total, new Point(w - total.Width, baseline - total.Baseline));
 
         }
 

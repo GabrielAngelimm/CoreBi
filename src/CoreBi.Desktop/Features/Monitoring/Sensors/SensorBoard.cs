@@ -15,8 +15,11 @@ public sealed record SensorSection(string Key, string Title, IReadOnlyList<Senso
 {
     public string Unit { get; init; } = "";
     public bool Continued { get; init; }
-    /// <summary>"em °C", "em %"; vazio sem unidade e no multiplicador (×), que o próprio número já diz.</summary>
-    public string UnitText => Unit is "" or "×" ? "" : "em " + Unit;
+    /// <summary>
+    /// "em °C", "em %"; vazio sem unidade e no multiplicador (×), que o próprio número já diz. Clock é termo técnico: o grupo
+    /// diz o que ele é ("velocidade em MHz").
+    /// </summary>
+    public string UnitText => Unit is "" or "×" ? "" : (Key == "clock" ? "velocidade em " : "em ") + Unit;
 }
 
 /// <summary>Item do índice: um componente, ou a visão geral (Id nulo).</summary>

@@ -7,8 +7,10 @@
             <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
             <Setter Property="BorderThickness" Value="0,1,0,0" />
         </Style>
+        <!-- Traço do canal ao lado do rótulo: centrado na caixa da linha, o meio dele cai no meio da altura-x do rótulo (sem o
+             1 px a mais em cima, que o deixava 1 px abaixo) -->
         <Style x:Key="Dash" TargetType="Border" BasedOn="{StaticResource ChannelMark}">
-            <Setter Property="Margin" Value="0,1,8,0" />
+            <Setter Property="Margin" Value="0,0,8,0" />
         </Style>
         <Style x:Key="ChannelValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
             <Setter Property="FontSize" Value="26" />
@@ -37,12 +39,14 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Border x:Name="sel" Grid.ColumnSpan="3" Margin="-8,-5" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Selected}" Visibility="Collapsed" />
-                    <Grid Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <!-- Anel e textos centrados na linha de 22; o anel desce 1 (2 em cima) para o meio dele cair no meio da altura das
+                         maiúsculas do nome, e "em uso" (Segoe 12 ao lado de Segoe 13,5) desce 1 para assentar na mesma linha de base -->
+                    <Grid Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,2,0,0">
                         <Ellipse x:Name="ring" Stroke="{DynamicResource LineStrong}" StrokeThickness="1.5" />
                         <Ellipse x:Name="dot" Width="6" Height="6" Fill="{DynamicResource Signal}" Visibility="Collapsed" />
                     </Grid>
                     <TextBlock x:Name="name" Grid.Column="1" Text="{Binding Name}" FontSize="13.5" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                    <TextBlock x:Name="used" Grid.Column="2" Text="em uso" FontSize="12" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Visibility="Collapsed" />
+                    <TextBlock x:Name="used" Grid.Column="2" Text="em uso" FontSize="12" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="0,1,0,-1" Visibility="Collapsed" />
                 </Grid>
             </Button>
             <DataTemplate.Triggers>
@@ -99,10 +103,12 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Top" Margin="0,1,0,0" />
                 <local:RailGauge Grid.Column="1" Nominal="{Binding Nominal}" Value="{Binding Value}" Min="{Binding Min}" Max="{Binding Max}" ShowScale="{Binding First}" VerticalAlignment="Top" Margin="0,2,0,0" ToolTip="{Binding Tip}" />
-                <TextBlock x:Name="value" Grid.Column="2" Style="{StaticResource ReadoutText}" FontSize="17" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,0,0">
+                <!-- Nome, leitura e desvio na mesma linha de base (15 px abaixo do topo, o meio das maiúsculas no meio da régua): a
+                     base fica a 14 do topo no Segoe 13, a 13 no Bahnschrift 17 e no Segoe 12, daí 1, 2 e 2 de margem em cima -->
+                <TextBlock x:Name="value" Grid.Column="2" Style="{StaticResource ReadoutText}" FontSize="17" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0">
                     <Run Text="{Binding ValueText, Mode=OneWay}" /><Run Text=" V" FontSize="12" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource UiFont}" />
                 </TextBlock>
-                <TextBlock x:Name="dev" Grid.Column="3" Text="{Binding DeviationText}" FontSize="12" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,0,0" Typography.NumeralAlignment="Tabular" />
+                <TextBlock x:Name="dev" Grid.Column="3" Text="{Binding DeviationText}" FontSize="12" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0" Typography.NumeralAlignment="Tabular" />
             </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding Off}" Value="True">
@@ -122,7 +128,8 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding Title}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 <local:RangeStrip Grid.Column="1" Value="{Binding Value}" Min="{Binding Min}" Max="{Binding Max}" Lo="{Binding Lo}" Hi="{Binding Hi}" Low="{Binding Low}" VerticalAlignment="Center" ToolTip="{Binding Tip}" />
-                <TextBlock x:Name="value" Grid.Column="2" Style="{StaticResource ReadoutText}" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <!-- Centrada na linha, a leitura em Bahnschrift 16 assentava 2 px acima do nome em Segoe 13: desce 2 (2 em cima, −2 embaixo) -->
+                <TextBlock x:Name="value" Grid.Column="2" Style="{StaticResource ReadoutText}" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,2,0,-2">
                     <Run Text="{Binding ValueText, Mode=OneWay}" /><Run Text=" V" FontSize="12" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource UiFont}" />
                 </TextBlock>
             </Grid>
@@ -211,7 +218,8 @@
                                         <local:BatteryMeter x:Name="BatteryGauge" Margin="0,10,0,0" />
                                         <StackPanel x:Name="BatteryHealth" Margin="0,16,0,0">
                                             <Grid>
-                                                <TextBlock Text="Saúde da bateria" Style="{StaticResource StatLabel}" VerticalAlignment="Center" />
+                                                <!-- O rótulo começa onde começa o texto do selo (1 de contorno + 2 de recuo), para os dois assentarem na mesma linha de base -->
+                                                <TextBlock Text="Saúde da bateria" Style="{StaticResource StatLabel}" VerticalAlignment="Top" Margin="0,3,0,0" />
                                                 <Border x:Name="BatteryBadge" Style="{StaticResource Badge}" HorizontalAlignment="Right">
                                                     <StackPanel Orientation="Horizontal">
                                                         <Ellipse Style="{StaticResource BadgeLed}" />
@@ -240,16 +248,20 @@
                             <Border x:Name="RegSection" Style="{StaticResource FeedSection}" Padding="24,16,24,20">
                                 <StackPanel>
                                     <Grid MinHeight="28">
-                                        <TextBlock x:Name="RegTitle" Text="Ajustes do plano" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,0,160,0" />
-                                        <TextBlock x:Name="RegCaption" Text="na tomada · na bateria" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed" />
+                                        <!-- Título e legenda na mesma linha de base, a 17 do topo: no Bahnschrift 17 a base fica a 13 do topo da caixa, na legenda
+                                             (Segoe 12) a 12, daí 4 e 5 de margem em cima -->
+                                        <TextBlock x:Name="RegTitle" Text="Ajustes do plano" Style="{StaticResource SectionTitle}" VerticalAlignment="Top" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,4,160,0" />
+                                        <TextBlock x:Name="RegCaption" Text="na tomada · na bateria" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,0,0" Visibility="Collapsed" />
                                         <StackPanel x:Name="PlanConfirm" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed">
                                             <Button x:Name="PlanCancel" Content="Cancelar" Style="{StaticResource GhostButton}" MinHeight="26" Padding="10,3" FontSize="12.5" Click="PlanCancel_Click" />
                                             <Button x:Name="PlanApply" Content="Aplicar" Style="{StaticResource PrimaryButton}" MinHeight="26" Padding="14,3" FontSize="12.5" Margin="6,0,0,0" Click="PlanApply_Click" />
                                         </StackPanel>
                                     </Grid>
                                     <StackPanel x:Name="ProcBox" Margin="0,10,0,8" ToolTip="Quanto da velocidade do processador o Windows pode usar: o mínimo vale mesmo em repouso (o trecho cheio da barra) e o máximo, com carga (até onde a barra vai).">
+                                        <!-- Rótulo na mesma letra e tamanho das linhas de ajuste logo abaixo (Segoe 13, tom secundário), e portanto na
+                                             mesma linha de base do valor: em DIN 12,5 ele assentava 3 px acima -->
                                         <Grid>
-                                            <TextBlock Text="Faixa de desempenho" Style="{StaticResource StatLabel}" />
+                                            <TextBlock Text="Faixa de desempenho" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
                                             <TextBlock x:Name="ProcText" FontWeight="SemiBold" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
                                         </Grid>
                                         <local:SpanMeter x:Name="ProcMeter" Margin="0,8,0,0" />
@@ -269,13 +281,14 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid Margin="24,20,24,0">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top">
-                                    <TextBlock Text="Consumo" Style="{StaticResource SectionTitle}"
-                                               ToolTip="Processador e placa de vídeo, pelos sensores deles. O resto do PC (placa-mãe, memória, discos, ventoinhas) e a perda da fonte não são medidos." />
-                                    <TextBlock x:Name="SessionAge" Style="{StaticResource Caption}" Margin="12,3,0,0" VerticalAlignment="Center" />
-                                </StackPanel>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0">
-                                    <Ellipse x:Name="LiveDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
+                                <!-- Título e duração da sessão num texto só: a legenda assenta na linha de base do título por construção -->
+                                <TextBlock Style="{StaticResource SectionTitle}" TextWrapping="NoWrap" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <Run Text="Consumo" ToolTip="Processador e placa de vídeo, pelos sensores deles. O resto do PC (placa-mãe, memória, discos, ventoinhas) e a perda da fonte não são medidos." /><Run Text="   " /><Run x:Name="SessionAge" FontFamily="{StaticResource SmallFont}" FontSize="12" FontWeight="Normal" Foreground="{DynamicResource Muted}" />
+                                </TextBlock>
+                                <!-- "Ao vivo" na linha de base do título: a base do Bahnschrift 17 fica a 13 do topo e a da legenda a 12, daí 1 de
+                                     margem. O LED (centrado na caixa da legenda) desce 1, para o meio dele cair no meio da altura-x. -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,0,0">
+                                    <Ellipse x:Name="LiveDot" Style="{StaticResource StatusLed}" Margin="0,3,8,0" />
                                     <TextBlock x:Name="LiveText" Text="Aguardando os sensores" Style="{StaticResource Caption}" />
                                 </StackPanel>
                             </Grid>
@@ -350,6 +363,7 @@
                     <Border x:Name="VoltCard" Grid.Row="2" Style="{StaticResource CardBorder}">
                         <StackPanel>
                             <TextBlock Text="Tensões" Style="{StaticResource SectionTitle}" />
+                            <TextBlock Text="Voltagem que chega a cada peça; fora da faixa usual, o valor fica âmbar." Style="{StaticResource Caption}" Margin="0,4,0,0" />
                             <ItemsControl x:Name="RailRows" ItemTemplate="{StaticResource RailRow}" Margin="0,16,0,0" Focusable="False" />
                             <Border x:Name="VoltDivider" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Margin="0,4,0,8" />
                             <TextBlock x:Name="VoltComponentsTitle" Text="Componentes" Style="{StaticResource Label}" Foreground="{DynamicResource Faint}" Margin="0,0,0,2" ToolTip="Tensões dos chips: variam com a carga, então a faixa clara mostra o mínimo e o máximo desde que o CoreBi abriu." />
