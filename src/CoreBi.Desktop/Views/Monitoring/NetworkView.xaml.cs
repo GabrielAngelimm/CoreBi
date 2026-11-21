@@ -21,7 +21,6 @@ public partial class NetworkView : UserControl
     private NetworkResult? _result;
     private CancellationTokenSource? _cancellation;
     private bool _running;
-    private bool? _narrowHeader;
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
     public NetworkView()
@@ -31,9 +30,6 @@ public partial class NetworkView : UserControl
     }
 
     internal void Initialize(FeatureContext context) => _context = context;
-
-    private void NetHeader_SizeChanged(object sender, SizeChangedEventArgs e)
-        => _narrowHeader = ToolPage.PlaceConsole(NetHeader, NetConsole, _narrowHeader);
 
     // Larguras do painel de diagnóstico: abaixo de NarrowDiag a latência e as grandezas de apoio descem para uma faixa sob o
     // instrumento (a latência à esquerda e as quatro grandezas em fila); abaixo de CompactDiag a faixa não comporta cinco
@@ -166,7 +162,6 @@ public partial class NetworkView : UserControl
         NetMeta.Text = "Sem resultado";
     }
 
-
     private void ShowProgress(NetworkProgress p)
     {
         NetStatus.Text = p.Text;
@@ -215,7 +210,6 @@ public partial class NetworkView : UserControl
         NetworkPhase.Upload => "3 de 3 · Upload",
         _ => "",
     };
-
 
     private static string Format(double v) => v.ToString(v >= 100 ? "0" : "0.#", PtBr);
 
@@ -364,7 +358,6 @@ public partial class NetworkView : UserControl
         caption.Text = text;
     }
 
-
     private async void NetworkView_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (!IsVisible || _running || _result != null || _context == null || _context.IsClosing) return;
@@ -420,7 +413,6 @@ public partial class NetworkView : UserControl
             || kind.StartsWith(value, StringComparison.OrdinalIgnoreCase);
     }
 
-
     // Dois arcos de 136° espelhados (esquerda = download, direita = upload), de baixo (1 Mbps) para cima (1 Gbps), em escala
     // logarítmica: cada década ocupa um terço do arco. Segmentos na proporção 70/30 dos medidores do app.
     private const double DialCx = 160, DialCy = 130, DialR1 = 121, DialR2 = 138, DialGap = 22;
@@ -474,7 +466,6 @@ public partial class NetworkView : UserControl
         onPath.SetResourceReference(Shape.FillProperty, channel);
         NetDial.Children.Add(onPath);
     }
-
 
     private void NetTrace_SizeChanged(object sender, SizeChangedEventArgs e) => DrawTrace();
 

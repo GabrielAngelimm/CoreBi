@@ -155,17 +155,13 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <Grid Style="{StaticResource PageHeader}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="Energia" Style="{StaticResource PageTitle}" />
-                        <TextBlock x:Name="EnergyStatus" Text="Lendo fonte e plano de energia…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
+                    <TextBlock Text="Energia" Style="{StaticResource PageTitle}" />
+                    <StackPanel Style="{StaticResource PageActions}">
+                        <Button x:Name="BtnEnergyRefresh" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Height="36" Click="BtnEnergyRefresh_Click" />
                     </StackPanel>
-                    <Button x:Name="BtnEnergyRefresh" Grid.Column="1" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" MinHeight="36" VerticalAlignment="Top" Click="BtnEnergyRefresh_Click" />
-                </Grid>
+                    <TextBlock x:Name="EnergyStatus" Text="Lendo fonte e plano de energia…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" local:PageHeaderPanel.Subtitle="True" />
+                </local:PageHeaderPanel>
 
                 <Grid x:Name="EnergyBody" Grid.Row="1" SizeChanged="EnergyBody_SizeChanged">
                     <Grid.ColumnDefinitions>

@@ -73,15 +73,11 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <!-- Sem subtítulo: 9 embaixo (e não 14), para o primeiro painel ficar a 20 do pé do título, o mesmo respiro da busca ao título -->
-        <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,9">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
             <TextBlock Text="Placa de vídeo" Style="{StaticResource PageTitle}" />
             <!-- Uma pílula por placa, só quando há mais de uma (MainWindow.LoadGpu) -->
-            <WrapPanel x:Name="GpuChips" Grid.Column="1" VerticalAlignment="Top" Margin="0,6,0,0" />
-        </Grid>
+            <WrapPanel x:Name="GpuChips" VerticalAlignment="Center" />
+        </local:PageHeaderPanel>
 
         <!-- O painel da placa: a identificação em cima e as leituras vivas embaixo -->
         <Border x:Name="GpuPlateCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16" local:Skeleton.Shape="Text">

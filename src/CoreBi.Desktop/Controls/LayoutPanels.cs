@@ -115,3 +115,79 @@ public sealed class FitHost : System.Windows.Controls.Grid
         return new Size(double.IsInfinity(constraint.Width) ? 0 : constraint.Width, 0);
     }
 }
+
+/// <summary>
+/// Cabeçalho de página, o mesmo em todas as telas. O primeiro filho é o título, o segundo (opcional) a barra de ações, e o filho
+/// marcado com <see cref="SubtitleProperty"/> (opcional, em qualquer posição) o subtítulo, só com o estado vivo. A barra fica à direita, centrada na linha do título, e nunca muda a altura do cabeçalho: o pé dele
+/// é sempre o subtítulo (ou o título), então o primeiro painel começa na mesma linha em todas as páginas. Quando a barra não cabe
+/// ao lado do título, desce para baixo do subtítulo, encostada à esquerda.
+/// </summary>
+public sealed class PageHeaderPanel : System.Windows.Controls.Panel
+{
+    /// <summary>Menor vão entre o título e a barra de ações; abaixo dele a barra desce.</summary>
+    public double Gap { get; set; } = 40;
+
+    /// <summary>Vão acima da barra quando ela desce para baixo do cabeçalho.</summary>
+    public double WrapGap { get; set; } = 16;
+
+    public static readonly DependencyProperty SubtitleProperty = DependencyProperty.RegisterAttached("Subtitle", typeof(bool), typeof(PageHeaderPanel),
+        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsParentMeasure));
+    public static bool GetSubtitle(UIElement e) => (bool)e.GetValue(SubtitleProperty);
+    public static void SetSubtitle(UIElement e, bool value) => e.SetValue(SubtitleProperty, value);
+
+    private bool _wide = true;
+
+    private (UIElement? Title, UIElement? Bar, UIElement? Sub) Parts()
+    {
+        UIElement? title = null, bar = null, sub = null;
+        foreach (UIElement child in InternalChildren)
+        {
+            if (GetSubtitle(child)) sub ??= child;
+            else if (title == null) title = child;
+            else bar ??= child;
+        }
+        return (title, bar, sub);
+    }
+
+    protected override Size MeasureOverride(Size available)
+    {
+        var (title, bar, sub) = Parts();
+        var free = new Size(double.PositiveInfinity, double.PositiveInfinity);
+        bar?.Measure(free);
+        title?.Measure(free);
+        double barW = bar?.DesiredSize.Width ?? 0, barH = bar?.DesiredSize.Height ?? 0;
+        double titleW = title?.DesiredSize.Width ?? 0;
+        _wide = barW <= 0 || double.IsInfinity(available.Width) || titleW + Gap + barW <= available.Width;
+        if (_wide && barW > 0 && !double.IsInfinity(available.Width))
+            title?.Measure(new Size(Math.Max(0, available.Width - barW - Gap), double.PositiveInfinity));
+        sub?.Measure(new Size(available.Width, double.PositiveInfinity));
+
+        double titleH = title?.DesiredSize.Height ?? 0, subW = sub?.DesiredSize.Width ?? 0, subH = sub?.DesiredSize.Height ?? 0;
+        double width = _wide ? Math.Max(titleW + (barW > 0 ? Gap + barW : 0), subW) : Math.Max(Math.Max(titleW, barW), subW);
+        // Descida: a barra não tem a folga que a fonte deixa embaixo das letras, então ganha 6 para o primeiro painel ficar a 20 dela
+        double height = _wide ? Math.Max(titleH, barH) + subH : titleH + subH + (barH > 0 ? WrapGap + barH + 6 : 0);
+        return new Size(double.IsInfinity(available.Width) ? width : Math.Min(width, available.Width), height);
+    }
+
+    protected override Size ArrangeOverride(Size final)
+    {
+        var (title, bar, sub) = Parts();
+        double titleH = title?.DesiredSize.Height ?? 0, subH = sub?.DesiredSize.Height ?? 0;
+        double barW = bar?.DesiredSize.Width ?? 0, barH = bar?.DesiredSize.Height ?? 0;
+        if (_wide)
+        {
+            double row = Math.Max(titleH, barH);
+            double titleW = barW > 0 ? Math.Max(0, final.Width - barW - Gap) : final.Width;
+            title?.Arrange(new Rect(0, (row - titleH) / 2, Math.Min(titleW, title.DesiredSize.Width), titleH));
+            bar?.Arrange(new Rect(Math.Max(0, final.Width - barW), (row - barH) / 2, barW, barH));
+            sub?.Arrange(new Rect(0, row, final.Width, subH));
+        }
+        else
+        {
+            title?.Arrange(new Rect(0, 0, Math.Min(final.Width, title.DesiredSize.Width), titleH));
+            sub?.Arrange(new Rect(0, titleH, final.Width, subH));
+            bar?.Arrange(new Rect(0, titleH + subH + WrapGap, Math.Min(final.Width, barW), barH));
+        }
+        return final;
+    }
+}

@@ -30,7 +30,6 @@ public partial class DriversView : UserControl
     private ICollectionView? _view;
     private string? _group;      // classe escolhida no filtro (null = todas)
     private string _query = "";
-    private bool? _narrowHeader;
     private bool? _narrowBody;
 
     internal void InitDriver()
@@ -42,9 +41,6 @@ public partial class DriversView : UserControl
         BtnDrvScan_Click(this, new RoutedEventArgs());
     }
 
-
-    private void DrvHeader_SizeChanged(object sender, SizeChangedEventArgs e)
-        => _narrowHeader = ToolPage.PlaceConsole(DrvHeader, DrvConsole, _narrowHeader);
 
     /// <summary>Abaixo de 1180 px a tabela desce para baixo da coluna da esquerda (com altura própria) e a página rola.</summary>
     private void DrvBody_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -67,7 +63,6 @@ public partial class DriversView : UserControl
 
     private void DrvListScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
         => ToolPage.AlignHead(DrvListScroll, DrvHead, HeadMargin);
-
 
     internal void DrvSet(string text, double? frac = null, string detail = "")
     {
@@ -93,7 +88,6 @@ public partial class DriversView : UserControl
         BtnDrvInstall.IsEnabled = !busy && _drvGpus.Any(g => g.CanAutoInstall);
         BtnDrvWuInstall.IsEnabled = !busy && _drvWu.Count > 0;
     }
-
 
     internal async void BtnDrvScan_Click(object sender, RoutedEventArgs e)
     {
@@ -201,7 +195,6 @@ public partial class DriversView : UserControl
         DrvBoardNote.Visibility = known || b.Model.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
-
     private void ShowInventory(List<DriverRow> inventory)
     {
         _lines = inventory.Select(DriverLine.From).OrderBy(l => l.Order).ThenBy(l => l.Device, StringComparer.CurrentCultureIgnoreCase).ToList();
@@ -253,7 +246,6 @@ public partial class DriversView : UserControl
         DrvEmpty.Visibility = shown == 0 && _view != null ? Visibility.Visible : Visibility.Collapsed;
     }
 
-
     internal void BtnDrvGpuPage_Click(object sender, RoutedEventArgs e)
     {
         var g = _drvGpus.FirstOrDefault(x => x.OfficialPage.Length > 0 && x.Vendor != "Intel") ?? _drvGpus.FirstOrDefault(x => x.OfficialPage.Length > 0);
@@ -283,7 +275,7 @@ public partial class DriversView : UserControl
         try
         {
             string r = await DriverInstaller.DownloadAndLaunchAsync(g, (t, f) => Dispatcher.BeginInvoke(new Action(() =>
-                DrvSet(t, f, f > 0 && f < 1 ? (f * 100).ToString("0", PtBr) + " %" : ""))), _drvCts.Token);
+                DrvSet(t, f))), _drvCts.Token);
             DrvSet(r, 1);
         }
         catch (Exception ex) { DrvFail("Não foi possível instalar o driver", ex.Message); }

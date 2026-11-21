@@ -6,38 +6,24 @@ using System.Windows.Media.Animation;
 namespace CoreBi.Desktop.Views;
 
 /// <summary>
-/// Peças comuns das páginas de Ferramentas (Inicialização, Instalar apps, Drivers): o console de tarefa (estilo TaskConsole),
-/// que fica ao lado do título (rente ao topo do cabeçalho) em janelas largas e embaixo dele nas estreitas, e as tabelas feitas à mão, cujo
-/// cabeçalho de colunas acompanha a largura útil da lista quando a barra de rolagem aparece.
+/// Peças comuns das páginas de Ferramentas (Inicialização, Instalar apps, Drivers): o medidor de progresso (TaskMeter) da barra de
+/// ações do cabeçalho, o estado no subtítulo e as tabelas feitas à mão, cujo cabeçalho de colunas acompanha a largura útil da lista
+/// quando a barra de rolagem aparece.
 /// </summary>
 internal static class ToolPage
 {
-    /// <summary>Largura do cabeçalho abaixo da qual o console desce para baixo do título.</summary>
-    private const double NarrowHeader = 1040;
-
-    /// <summary>Põe o console ao lado do título ou embaixo dele; devolve o novo estado (estreito ou não).</summary>
-    public static bool PlaceConsole(Grid header, FrameworkElement console, bool? wasNarrow)
-    {
-        bool narrow = header.ActualWidth < NarrowHeader;
-        if (narrow == wasNarrow) return narrow;
-        Grid.SetRow(console, narrow ? 1 : 0);
-        Grid.SetColumn(console, narrow ? 0 : 1);
-        Grid.SetColumnSpan(console, narrow ? 2 : 1);
-        console.Margin = narrow ? new Thickness(0, 16, 0, 0) : new Thickness(40, 5, 0, 0);
-        return narrow;
-    }
-
     /// <summary>
-    /// Leva a barra até a fração nova e mostra o trilho, que só existe durante uma tarefa: parado, o console não tem linha
-    /// nenhuma (o espaço fica reservado, para a altura não mudar). Ao avançar desliza 400 ms com desaceleração; ao recomeçar
+    /// Leva a barra até a fração nova e mostra o medidor, que só existe durante uma tarefa: parado, a barra de ações não tem
+    /// linha nenhuma (o espaço fica reservado, para os botões não andarem). A porcentagem aparece quando há trabalho feito. Ao avançar desliza 400 ms com desaceleração; ao recomeçar
     /// (ou com "Mostrar animações no Windows" desligado) vai direto ao valor. Quando a tarefa termina, o trilho cheio apaga
     /// em 300 ms e some. Nada de animação contínua.
     /// </summary>
     public static void SetProgress(Border fill, double fraction)
     {
         var scale = (ScaleTransform)fill.RenderTransform;
-        var track = (FrameworkElement)fill.Parent;
+        var track = Meter(fill);
         fraction = Math.Clamp(double.IsFinite(fraction) ? fraction : 0, 0, 1);
+        if (Percent(track) is { } percent) percent.Text = fraction > 0 ? Math.Round(fraction * 100).ToString("0", System.Globalization.CultureInfo.InvariantCulture) + "\u2009%" : "";
         track.BeginAnimation(UIElement.OpacityProperty, null);
         track.Opacity = 1;
         track.Visibility = Visibility.Visible;
@@ -66,7 +52,8 @@ internal static class ToolPage
     public static void EndProgress(Border fill)
     {
         var scale = (ScaleTransform)fill.RenderTransform;
-        var track = (FrameworkElement)fill.Parent;
+        var track = Meter(fill);
+        if (Percent(track) is { } percent) percent.Text = "";
         scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
         scale.ScaleX = 0;
         track.BeginAnimation(UIElement.OpacityProperty, null);
@@ -74,10 +61,19 @@ internal static class ToolPage
         track.Visibility = Visibility.Hidden;
     }
 
-    /// <summary>Estado e detalhe do console; o texto inteiro fica na dica, porque a linha corta o que não cabe.</summary>
+    /// <summary>O medidor inteiro (trilho e porcentagem): o pai do trilho quando ele está num TaskMeter, senão o próprio trilho.</summary>
+    private static FrameworkElement Meter(Border fill)
+    {
+        var track = (FrameworkElement)fill.Parent;
+        return track.Parent is Grid meter && meter.Children.OfType<TextBlock>().Any() ? meter : track;
+    }
+
+    private static TextBlock? Percent(FrameworkElement meter) => (meter as Grid)?.Children.OfType<TextBlock>().FirstOrDefault();
+
+    /// <summary>Estado e detalhe do subtítulo; o texto inteiro fica na dica, porque a linha corta o que não cabe.</summary>
     public static void Say(TextBlock status, TextBlock detail, string text, string more = "")
     {
-        // Só a primeira linha cabe no console; o resto (lista de falhas do Windows Update, por exemplo) fica na dica.
+        // Só a primeira linha cabe no subtítulo; o resto (lista de falhas do Windows Update, por exemplo) fica na dica.
         string first = text.Split('\n')[0].Trim();
         status.Text = first;
         status.ToolTip = text.Contains('\n') || first.Length > 90 ? text : null;

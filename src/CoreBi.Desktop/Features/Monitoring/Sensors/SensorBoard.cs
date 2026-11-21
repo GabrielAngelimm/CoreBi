@@ -50,8 +50,8 @@ public sealed class SensorComponent : ObservableObject
 
 public static class SensorBoard
 {
-    private const string Module = "ram", PhysicalGlyph = "ram", VirtualGlyph = "ramv", OverviewGlyph = "\uE71D";
-    private const int PhysicalOrder = 90, VirtualOrder = 91, DimmOrder = 40;
+    private const string Module = "ram", OverviewGlyph = "\uE71D";
+    private const int DimmOrder = 40;
 
     private sealed record Part(string Key, string Name, string Kind, string Glyph, int Order, string? Note, List<SensorRow> Rows, string Tone = "Steel");
 
@@ -69,7 +69,7 @@ public static class SensorBoard
         _ => ("Outro", "", 70)
     };
 
-    /// <summary>Canal de cor do componente: o mesmo da Visão geral, da barra lateral e do Sistema (memória física e virtual do Windows usam o violeta escuro, "Virtual").</summary>
+    /// <summary>Canal de cor do componente: o mesmo da Visão geral, da barra lateral e do Sistema.</summary>
     private static string ToneOf(HardwareType t) => t switch
     {
         HardwareType.Cpu => "Cpu",
@@ -85,7 +85,8 @@ public static class SensorBoard
 
     /// <summary>
     /// A biblioteca mede a memória física e a virtual ou no mesmo bloco (sensores "Virtual Memory...") ou em dois
-    /// ("Total Memory" e "Virtual Memory"); nos dois casos viram dois componentes.
+    /// ("Total Memory" e "Virtual Memory"). Nenhuma das duas entra em Sensores (Gabriel, 2026-11-21): são o uso que o Windows
+    /// faz da memória, não uma peça com sensor, e o uso da RAM já está na Visão geral e na barra lateral. Os módulos de RAM ficam.
     /// </summary>
     private static bool IsVirtualMemory(SensorRow r) => TypeOf(r) == HardwareType.Memory
         && (r.Name.StartsWith("Virtual Memory", StringComparison.Ordinal) || r.Component.StartsWith("Virtual Memory", StringComparison.Ordinal));
@@ -103,14 +104,8 @@ public static class SensorBoard
             var type = TypeOf(first);
             if (type == HardwareType.Memory)
             {
-                if (IsVirtualMemory(first))
-                    parts.Add(new(group.Key, "Memória virtual", "Uso do Windows", VirtualGlyph, VirtualOrder,
-                        "Memória física somada ao arquivo de paginação, no disco. É o limite que o Windows pode prometer aos programas.", all, "Virtual"));
-                else if (all.Any(r => r.Name is "Memory" or "Memory Used"))
-                    parts.Add(new(group.Key, "Memória física", "Uso do Windows", PhysicalGlyph, PhysicalOrder,
-                        "A RAM instalada vista pelo Windows: quanto está em uso e quanto está livre agora.", all, "Virtual"));
-                else
-                    dimms.Add(new(group.Key, PrettyName(first.Component), "Memória RAM", Module, DimmOrder, null, all, "Memory"));
+                if (IsVirtualMemory(first) || all.Any(r => r.Name is "Memory" or "Memory Used")) continue;
+                dimms.Add(new(group.Key, PrettyName(first.Component), "Memória RAM", Module, DimmOrder, null, all, "Memory"));
                 continue;
             }
             var (kind, glyph, order) = Describe(type);
@@ -123,8 +118,8 @@ public static class SensorBoard
     }
 
     /// <summary>
-    /// Componente que um atalho de outra página quer abrir: "cpu" (processador), "ram" (primeiro módulo de RAM, ou a memória
-    /// física se os módulos não têm sensor), "board" (placa-mãe) ou "gpu" / "gpu:&lt;nome&gt;" (placa de vídeo). Null se o PC não tem
+    /// Componente que um atalho de outra página quer abrir: "cpu" (processador), "ram" (primeiro módulo de RAM; null se os módulos
+    /// não têm sensor), "board" (placa-mãe) ou "gpu" / "gpu:&lt;nome&gt;" (placa de vídeo). Null se o PC não tem
     /// esse componente.
     /// </summary>
     public static string? Find(IEnumerable<SensorRow> rows, string target)
@@ -133,7 +128,7 @@ public static class SensorBoard
         Part? hit = target switch
         {
             "cpu" => parts.FirstOrDefault(p => p.Order == 0),
-            "ram" => parts.FirstOrDefault(p => p.Order >= DimmOrder && p.Order < 50) ?? parts.FirstOrDefault(p => p.Order == PhysicalOrder),
+            "ram" => parts.FirstOrDefault(p => p.Order >= DimmOrder && p.Order < 50),
             "board" => parts.FirstOrDefault(p => p.Order == 30),
             // "gpu" abre a primeira placa de vídeo; "gpu:<nome>" abre a placa com esse nome (página Placa de vídeo)
             "gpu" => parts.FirstOrDefault(p => p.Order == 10),

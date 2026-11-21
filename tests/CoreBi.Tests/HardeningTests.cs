@@ -103,7 +103,7 @@ internal static partial class Program
                 && PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211, "Intel(R) Wi-Fi 6 AX200 160MHz", "Wi-Fi"), "Physical network filter");
             return new { label = row.Label, avg = row.AvgNumber, diskLevel = hot.Level };
         });
-        Check("sensors: component order, memory split and component filter", () =>
+        Check("sensors: component order, Windows memory left out and component filter", () =>
         {
             SensorRow R(string id, HardwareType hw, string hwName, SensorType type, string name, float value)
             {
@@ -121,12 +121,11 @@ internal static partial class Program
             };
             var all = SensorBoard.Build(rows, null, null, "", new HashSet<string>());
             string[] order = all.Cards.Select(c => c.Name).ToArray();
-            Require(string.Join("|", order) == "Ryzen 7|RTX 4060 Ti|Netac NV7000|TUF B550|Asgard A|Asgard B|Ethernet|Memória física|Memória virtual", "Component order: " + string.Join("|", order));
-            Require(all.Cards[4].Kind == "Memória RAM · módulo 1 de 2" && all.Index[0].Id == null && all.Index.Count == 10, "Index or module label");
-            Require(all.Cards[8].Sections.SelectMany(s => s.Rows).All(r => r.Name.StartsWith("Virtual")) && all.Cards[7].Sections.SelectMany(s => s.Rows).All(r => !r.Name.StartsWith("Virtual")), "Memory not split");
+            Require(string.Join("|", order) == "Ryzen 7|RTX 4060 Ti|Netac NV7000|TUF B550|Asgard A|Asgard B|Ethernet", "Component order: " + string.Join("|", order));
+            Require(all.Cards[4].Kind == "Memória RAM · módulo 1 de 2" && all.Index[0].Id == null && all.Index.Count == 8, "Index or module label");
             Require(SensorBoard.Find(rows, "cpu") == "/cpu" && SensorBoard.Find(rows, "ram") == "/ram/dimm/0" && SensorBoard.Find(rows, "board") == "/mb" && SensorBoard.Find(rows, "x") == null, "Shortcut targets");
             var one = SensorBoard.Build(rows, "/ssd", null, "", new HashSet<string>());
-            Require(one.Cards.Count == 1 && one.Cards[0].Name == "Netac NV7000" && !one.Cards[0].CanCollapse && one.Filters.Count == 1 && one.Index.Count == 10, "Component filter");
+            Require(one.Cards.Count == 1 && one.Cards[0].Name == "Netac NV7000" && !one.Cards[0].CanCollapse && one.Filters.Count == 1 && one.Index.Count == 8, "Component filter");
             var fans = SensorBoard.Build(rows, null, "fan", "", new HashSet<string>());
             Require(fans.Cards.Count == 1 && fans.Cards[0].Name == "Ryzen 7", "Type filter");
             var stale = SensorBoard.Build(rows, "/gone", "fan", "", new HashSet<string>());
@@ -136,7 +135,7 @@ internal static partial class Program
                 R("/ram", HardwareType.Memory, "Total Memory", SensorType.Load, "Memory", 48), R("/ram", HardwareType.Memory, "Total Memory", SensorType.Data, "Memory Used", 15),
                 R("/vram", HardwareType.Memory, "Virtual Memory", SensorType.Load, "Memory", 41), R("/vram", HardwareType.Memory, "Virtual Memory", SensorType.Data, "Memory Used", 19),
             };
-            Require(string.Join("|", SensorBoard.Build(split, null, null, "", new HashSet<string>()).Cards.Select(c => c.Name)) == "Memória física|Memória virtual", "Memory in two hardware blocks");
+            Require(string.Join("|", SensorBoard.Build(split, null, null, "", new HashSet<string>()).Cards.Select(c => c.Name)) == "", "Windows memory in two hardware blocks still shown");
             return new { order, filters = all.Filters.Count };
         });
         Check("driver downloads: official HTTPS and exact publisher only", () =>

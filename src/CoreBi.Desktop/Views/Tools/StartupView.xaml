@@ -51,53 +51,32 @@
                     <RowDefinition Height="*" MinHeight="320" />
                 </Grid.RowDefinitions>
 
-                <!-- Console ao lado do título: o topo dele fica na altura do topo das letras do título (5 abaixo da caixa) e o primeiro painel a 20 do pé dele -->
-                <Grid x:Name="StartupHeader" Style="{StaticResource PageHeader}" Margin="0,0,0,20" SizeChanged="StartupHeader_SizeChanged">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Inicialização" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
-
-                    <Border x:Name="StartupConsole" Grid.Column="1" Style="{StaticResource TaskConsole}" Margin="40,5,0,0" Height="62" VerticalAlignment="Top">
-                        <Grid>
+                <!-- Cabeçalho padrão (PageHeaderPanel): título, estado vivo embaixo e a barra de ações à direita, na linha do título -->
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
+                    <TextBlock Text="Inicialização" Style="{StaticResource PageTitle}" />
+                    <StackPanel Style="{StaticResource PageActions}">
+                        <Grid x:Name="StartupMeter" Style="{StaticResource TaskMeter}">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Button Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" MinWidth="164" Height="36"
-                                    VerticalAlignment="Center" Click="BtnStartupScan_Click"
-                                    ToolTip="Lê de novo as chaves Run do registro e as pastas Inicializar do usuário e de todos os usuários." />
-                            <!-- O estado fica no meio da altura do console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
-                            <Grid Grid.Column="1" Margin="22,0,0,0">
-                                <!--
-                                    Estado (13) e detalhe (12) são a mesma Segoe: com a mesma caixa de 17 (BlockLineHeight) a base cai no
-                                    mesmo y nos dois. A margem de 2 embaixo sobe a linha 1 px, para a base coincidir com a do texto do botão
-                                    (medido: o estado ficava 1 px abaixo).
-                                -->
-                                <Grid VerticalAlignment="Center" Margin="0,0,0,2">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource TaskStatus}" LineHeight="17" LineStackingStrategy="BlockLineHeight" />
-                                    <TextBlock x:Name="StartupResult" Grid.Column="1" Style="{StaticResource TaskDetail}" LineHeight="17" LineStackingStrategy="BlockLineHeight" />
-                                </Grid>
-                                <Grid Style="{StaticResource ProgressTrack}" Visibility="Hidden" VerticalAlignment="Bottom">
-                                    <Border x:Name="StartupProgressFill" Style="{StaticResource ProgressFill}">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="StartupProgress" ScaleX="0" />
-                                        </Border.RenderTransform>
-                                    </Border>
-                                </Grid>
+                            <Grid Style="{StaticResource ProgressTrack}" VerticalAlignment="Center">
+                                <Border x:Name="StartupProgressFill" Style="{StaticResource ProgressFill}">
+                                    <Border.RenderTransform>
+                                        <ScaleTransform x:Name="StartupProgress" ScaleX="0" />
+                                    </Border.RenderTransform>
+                                </Border>
                             </Grid>
+                            <TextBlock x:Name="StartupPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" />
                         </Grid>
-                    </Border>
-                </Grid>
+                        <Button Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Height="36" Click="BtnStartupScan_Click"
+                                ToolTip="Lê de novo as chaves Run do registro e as pastas Inicializar do usuário e de todos os usuários." />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" local:PageHeaderPanel.Subtitle="True">
+                        <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
+                        <TextBlock x:Name="StartupResult" Style="{StaticResource PageDetail}" />
+                    </StackPanel>
+                </local:PageHeaderPanel>
 
                 <!-- Tabela: as larguras das colunas são as mesmas no cabeçalho e nas linhas -->
                 <Border x:Name="StartupCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="34" local:Skeleton.RowHeight="44">

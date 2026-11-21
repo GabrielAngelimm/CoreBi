@@ -49,12 +49,10 @@
                     <ColumnDefinition Width="364" />
                 </Grid.ColumnDefinitions>
 
-                <Grid Grid.ColumnSpan="3" Style="{StaticResource PageHeader}">
-                    <StackPanel>
-                        <TextBlock Text="Visão geral" Style="{StaticResource PageTitle}" />
-                        <TextBlock x:Name="DashMachine" Text="Leituras ao vivo do processador, da placa de vídeo, da memória e do disco do sistema." Style="{StaticResource PageSubtitle}" />
-                    </StackPanel>
-                </Grid>
+                <local:PageHeaderPanel Grid.ColumnSpan="3" Style="{StaticResource PageHead}">
+                    <TextBlock Text="Visão geral" Style="{StaticResource PageTitle}" />
+                    <TextBlock x:Name="DashMachine" Text="Leituras ao vivo do processador, da placa de vídeo, da memória e do disco do sistema." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                </local:PageHeaderPanel>
 
                 <!-- Coluna da esquerda: o gráfico ocupa a sobra, os componentes ficam embaixo -->
                 <Grid Grid.Row="1">

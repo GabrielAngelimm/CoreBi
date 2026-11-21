@@ -21,7 +21,8 @@
             <Setter Property="Margin" Value="0,2,0,-2" />
         </Style>
 
-        <!-- Item do índice: fundo elevado na seleção; o ícone, sem fundo, na cor do canal do componente (a mesma do filete dos grupos) -->
+        <!-- Item do índice (11 em cima e embaixo, 6 entre um e outro: sem a memória física e a virtual sobra altura, e o respiro
+             deixa a lista mais legível): fundo elevado na seleção; o ícone, sem fundo, na cor do canal do componente (a mesma do filete dos grupos) -->
         <Style x:Key="IndexItem" TargetType="ListBoxItem">
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -29,10 +30,10 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Grid Background="Transparent" Margin="0,0,0,2">
+                        <Grid Background="Transparent" Margin="0,0,0,6">
                             <Border x:Name="hover" CornerRadius="{StaticResource RadiusInset}" Background="{DynamicResource Hover}" Opacity="0" />
                             <Border x:Name="sel" CornerRadius="{StaticResource RadiusInset}" Background="{DynamicResource Selected}" Opacity="0" />
-                            <ContentPresenter Margin="10,8" />
+                            <ContentPresenter Margin="10,11" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -195,7 +196,7 @@
         <DataTemplate x:Key="ComponentBlock">
             <StackPanel>
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ComponentHeader}" />
-                <Border x:Name="body" Padding="24,18,24,24">
+                <Border x:Name="body" Padding="24,18,24,32">
                     <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource SectionTemplate}" Focusable="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -224,23 +225,17 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid Style="{StaticResource PageHeader}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <StackPanel>
-                <TextBlock Text="Sensores" Style="{StaticResource PageTitle}" />
-                <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" HorizontalAlignment="Left"
-                           ToolTip="A leitura é a cada segundo e pausa durante o teste de placa de vídeo." />
+        <!-- Cabeçalho padrão: busca e "Zerar estatísticas" na barra de ações. A dica do botão diz desde quando as estatísticas contam
+             (SensorsView.UpdateStatsNote). -->
+        <local:PageHeaderPanel Style="{StaticResource PageHead}">
+            <TextBlock Text="Sensores" Style="{StaticResource PageTitle}" />
+            <StackPanel Style="{StaticResource PageActions}">
+                <TextBox x:Name="SensorSearch" Style="{StaticResource SearchField}" local:Ui.Placeholder="Buscar sensor ou componente" Margin="0,0,10,0" TextChanged="SensorSearch_Changed" />
+                <Button x:Name="BtnSensorsReset" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE777;" Content="Zerar estatísticas" Height="36" Click="BtnSensorsReset_Click" />
             </StackPanel>
-            <!-- Busca e botão em 36 px, a altura dos botões de cabeçalho de todas as páginas. A dica do botão diz desde quando as
-                 estatísticas contam (SensorsView.UpdateStatsNote). -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                <TextBox x:Name="SensorSearch" Width="280" MinHeight="36" local:Ui.Icon="&#xE721;" local:Ui.Placeholder="Buscar sensor ou componente" TextChanged="SensorSearch_Changed" />
-                <Button x:Name="BtnSensorsReset" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE777;" Content="Zerar estatísticas" MinHeight="36" Margin="10,0,0,0" Click="BtnSensorsReset_Click" />
-            </StackPanel>
-        </Grid>
+            <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" local:PageHeaderPanel.Subtitle="True"
+                       ToolTip="A leitura é a cada segundo e pausa durante o teste de placa de vídeo." />
+        </local:PageHeaderPanel>
 
         <Grid x:Name="SensorBody" Grid.Row="1" SizeChanged="SensorBody_SizeChanged">
             <Grid.RowDefinitions>

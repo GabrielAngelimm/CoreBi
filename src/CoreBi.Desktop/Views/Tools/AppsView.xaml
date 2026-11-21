@@ -99,58 +99,37 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- Console ao lado do título: o topo dele fica na altura do topo das letras do título (5 abaixo da caixa) e o primeiro painel a 20 do pé dele -->
-            <Grid x:Name="AppsHeader" Style="{StaticResource PageHeader}" Margin="0,0,0,20" SizeChanged="AppsHeader_SizeChanged">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="Instalar apps" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
-
-                <Border x:Name="AppsConsole" Grid.Column="1" Style="{StaticResource TaskConsole}" Margin="40,5,0,0" Height="62" VerticalAlignment="Top">
-                    <Grid>
+            <!-- Cabeçalho padrão (PageHeaderPanel): título, estado vivo embaixo e a barra de ações à direita, na linha do título -->
+            <local:PageHeaderPanel Style="{StaticResource PageHead}">
+                <TextBlock Text="Instalar apps" Style="{StaticResource PageTitle}" />
+                <StackPanel Style="{StaticResource PageActions}">
+                    <Grid x:Name="AppsMeter" Style="{StaticResource TaskMeter}">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Button x:Name="BtnAppsInstall" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE896;" Content="Instalar apps" MinWidth="164" Height="36"
-                                VerticalAlignment="Center" IsEnabled="False" Click="BtnAppsInstall_Click" ToolTipService.ShowOnDisabled="True"
-                                ToolTip="Instala pelo winget, um app de cada vez e sem janelas: cada instalador vem do site oficial do fabricante e é conferido antes de abrir." />
-                        <!-- O estado fica no meio da altura do console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
-                        <Grid Grid.Column="1" Margin="22,0,0,0">
-                            <!--
-                                Estado (13) e detalhe (12) são a mesma Segoe: com a mesma caixa de 17 (BlockLineHeight) a base cai no mesmo y
-                                nos dois. A margem de 2 embaixo sobe a linha 1 px, para a base coincidir com a do texto do botão (medido: o
-                                estado ficava 1 px abaixo).
-                            -->
-                            <Grid VerticalAlignment="Center" Margin="0,0,0,2">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock x:Name="AppsStatus" Text="Lendo aplicativos instalados…" Style="{StaticResource TaskStatus}" LineHeight="17" LineStackingStrategy="BlockLineHeight" />
-                                <TextBlock x:Name="AppsDetail" Grid.Column="1" Style="{StaticResource TaskDetail}" LineHeight="17" LineStackingStrategy="BlockLineHeight" />
-                            </Grid>
-                            <Grid Style="{StaticResource ProgressTrack}" Visibility="Hidden" VerticalAlignment="Bottom">
-                                <Border x:Name="AppsProgressFill" Style="{StaticResource ProgressFill}">
-                                    <Border.RenderTransform>
-                                        <ScaleTransform x:Name="AppsProgress" ScaleX="0" />
-                                    </Border.RenderTransform>
-                                </Border>
-                            </Grid>
+                        <Grid Style="{StaticResource ProgressTrack}" VerticalAlignment="Center">
+                            <Border x:Name="AppsProgressFill" Style="{StaticResource ProgressFill}">
+                                <Border.RenderTransform>
+                                    <ScaleTransform x:Name="AppsProgress" ScaleX="0" />
+                                </Border.RenderTransform>
+                            </Border>
                         </Grid>
-                        <!-- Sem o winget não há como instalar: o atalho para atualizá-lo fica no próprio console -->
-                        <Button x:Name="BtnAppsStore" Grid.Column="2" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE719;" Content="Abrir na Microsoft Store"
-                                Margin="22,0,0,0" VerticalAlignment="Center" Visibility="Collapsed" Click="BtnAppsStore_Click"
-                                ToolTip="Abre o Instalador de Aplicativo, que traz o winget." />
+                        <TextBlock x:Name="AppsPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" />
                     </Grid>
-                </Border>
-            </Grid>
+                    <!-- Sem o winget não há como instalar: o atalho para atualizá-lo fica ao lado da ação principal -->
+                    <Button x:Name="BtnAppsStore" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE719;" Content="Abrir na Microsoft Store" Height="36"
+                            Margin="0,0,10,0" Visibility="Collapsed" Click="BtnAppsStore_Click"
+                            ToolTip="Abre o Instalador de Aplicativo, que traz o winget." />
+                    <Button x:Name="BtnAppsInstall" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE896;" Content="Instalar apps" MinWidth="164" Height="36"
+                            IsEnabled="False" Click="BtnAppsInstall_Click" ToolTipService.ShowOnDisabled="True"
+                            ToolTip="Instala pelo winget, um app de cada vez e sem janelas: cada instalador vem do site oficial do fabricante e é conferido antes de abrir." />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" local:PageHeaderPanel.Subtitle="True">
+                    <TextBlock x:Name="AppsStatus" Text="Lendo aplicativos instalados…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
+                    <TextBlock x:Name="AppsDetail" Style="{StaticResource PageDetail}" />
+                </StackPanel>
+            </local:PageHeaderPanel>
 
             <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,20,12,8" local:Skeleton.Top="40" local:Skeleton.RowHeight="44">
                 <StackPanel>

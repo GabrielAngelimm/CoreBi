@@ -19,21 +19,17 @@ public partial class StartupView : UserControl
 
     private readonly StartupService _startup = new();
     private IReadOnlyList<StartupBackup> _removed = Array.Empty<StartupBackup>();
-    private bool? _narrowHeader;
-
-    private void StartupHeader_SizeChanged(object sender, SizeChangedEventArgs e)
-        => _narrowHeader = ToolPage.PlaceConsole(StartupHeader, StartupConsole, _narrowHeader);
 
     private void StartupListScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
         => ToolPage.AlignHead(StartupListScroll, StartupHead, HeadMargin);
 
     private void Say(string status, string detail = "") => ToolPage.Say(StartupSummary, StartupResult, status, detail);
 
-    /// <summary>Leitura pedida (abrir a página, "Ler novamente"): o console mostra a hora da leitura.</summary>
+    /// <summary>Leitura pedida (abrir a página, "Ler novamente"): o subtítulo mostra a hora da leitura.</summary>
     internal Task RefreshAsync() => ScanAsync(announce: true);
 
     private bool _scanning;
-    /// <summary>Lê a lista e os removidos. Depois de uma ação (announce = false) o console continua mostrando o resultado dela.</summary>
+    /// <summary>Lê a lista e os removidos. Depois de uma ação (announce = false) o subtítulo continua mostrando o resultado dela.</summary>
     private async Task ScanAsync(bool announce)
     {
         if (_scanning || _context == null || _context.IsClosing) return;

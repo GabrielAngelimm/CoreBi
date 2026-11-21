@@ -94,9 +94,9 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <!-- Sem subtítulo: 9 embaixo (e não 14), para o primeiro painel ficar a 20 do pé do título, o mesmo respiro da busca ao título -->
-                <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,9">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
                     <TextBlock Text="Gargalo" Style="{StaticResource PageTitle}" />
-                </Grid>
+                </local:PageHeaderPanel>
 
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>

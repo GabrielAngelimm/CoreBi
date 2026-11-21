@@ -19,10 +19,6 @@ public partial class AppsView : UserControl
     internal bool _appsBusy, _appsStop;
     private List<AppTile> _tiles = new();
     private bool _wingetAvailable;
-    private bool? _narrowHeader;
-
-    private void AppsHeader_SizeChanged(object sender, SizeChangedEventArgs e)
-        => _narrowHeader = ToolPage.PlaceConsole(AppsHeader, AppsConsole, _narrowHeader);
 
     /// <summary>Largura mínima de uma célula da grade (cartão e o vão de 12 px): o nome e o estado cabem na mesma linha.</summary>
     private const double MinCell = 220;

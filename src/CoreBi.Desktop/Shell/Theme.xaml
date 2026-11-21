@@ -273,6 +273,28 @@
         <Setter Property="Margin" Value="0,0,0,14"/>
     </Style>
     <!--
+        Cabeçalho de página, o mesmo em todas as telas (PageHeaderPanel): título à esquerda, subtítulo embaixo dele só com o estado
+        vivo ("Lido às 20:31") e, à direita, centrada na linha do título, a barra de ações (PageActions). Na barra, da esquerda
+        para a direita: o medidor de progresso da tarefa (TaskMeter, só durante ela, com o espaço reservado), a busca (SearchField)
+        e os botões, todos com 36 px e 10 entre si, a ação principal por último, na ponta. Nada de cartão em volta: o vão entre o
+        título e a barra é livre, e a barra nunca muda a altura do cabeçalho.
+    -->
+    <Style x:Key="PageHead" TargetType="local:PageHeaderPanel">
+        <Setter Property="Margin" Value="0,0,0,14"/>
+    </Style>
+    <Style x:Key="PageActions" TargetType="StackPanel">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <!-- Segunda parte do subtítulo: o detalhe curto do que acabou de acontecer, um tom abaixo do estado -->
+    <Style x:Key="PageDetail" TargetType="TextBlock" BasedOn="{StaticResource PageSubtitle}">
+        <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="Margin" Value="14,3,0,0"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <!--
         Painel: agrupa um instrumento. Sem sombra nem degradê: a profundidade vem do tom (bancada → painel → elevado) e do fio
         de cima é mais claro que o de baixo, como um módulo de alumínio).
     -->
@@ -1564,28 +1586,44 @@
 
     <!-- rodada-unslop: ferramentas início -->
     <!--
-        Console de tarefa (Inicialização, Instalar apps, Drivers): fica ao lado do título, rente ao topo do cabeçalho, com o botão
-        da tarefa (36 px), o estado em uma linha, um detalhe curto à direita e a barra contínua no sinal, que só aparece durante
-        uma tarefa e só avança quando ela informa trabalho feito. Com 62 px de altura, o primeiro painel começa na mesma linha
-        das páginas com título e subtítulo.
+        Medidor de progresso de uma tarefa, na barra de ações do cabeçalho (Inicialização, Instalar apps, Drivers, Rede): o trilho
+        contínuo no sinal e a porcentagem à direita. Só aparece durante a tarefa (o espaço fica reservado, para os botões não
+        andarem), avança quando ela informa trabalho feito e, ao terminar, apaga em 300 ms (ToolPage.SetProgress).
     -->
-    <Style x:Key="TaskConsole" TargetType="Border" BasedOn="{StaticResource CardBorder}">
-        <Setter Property="Padding" Value="12,12,22,12"/>
+    <Style x:Key="TaskMeter" TargetType="Grid">
+        <Setter Property="Width" Value="220"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Visibility" Value="Hidden"/>
+        <Setter Property="Margin" Value="0,0,18,0"/>
     </Style>
-    <Style x:Key="TaskStatus" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
+    <Style x:Key="TaskPercent" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-        <Setter Property="TextWrapping" Value="NoWrap"/>
-        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="MinWidth" Value="44"/>
+        <Setter Property="TextAlignment" Value="Right"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="10,0,0,1"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
     </Style>
-    <Style x:Key="TaskDetail" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
-        <Setter Property="TextWrapping" Value="NoWrap"/>
-        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-        <Setter Property="HorizontalAlignment" Value="Right"/>
-        <Setter Property="Margin" Value="16,0,0,0"/>
-        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    <!-- Busca: o mesmo desenho em toda página (e o da paleta Ctrl + K no alto): fundo do painel, fio fino, lupa e 36 px -->
+    <Style x:Key="SearchField" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="Width" Value="280"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="local:Ui.Icon" Value="&#xE721;"/>
+    </Style>
+    <!-- Grupo de controles que não são botões (interruptor e atalho do OverlayBi) na barra de ações: 36 px, o fio dos campos -->
+    <Style x:Key="ActionGroup" TargetType="Border">
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}"/>
+        <Setter Property="Padding" Value="14,0"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
     <!-- Cabeçalho de coluna de uma tabela feita à mão (linhas de altura fixa): DIN 12, um tom abaixo do conteúdo -->
     <Style x:Key="TableHead" TargetType="TextBlock">
