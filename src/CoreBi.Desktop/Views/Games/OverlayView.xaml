@@ -151,10 +151,14 @@
                             <Border Width="1" Height="22" Background="{DynamicResource Line}" Margin="16,0" />
                             <!-- A tecla é a letra O: na fonte da interface ela é redonda e não se confunde com o zero da DIN -->
                             <StackPanel Orientation="Horizontal" Background="Transparent" ToolTip="Ctrl + Shift + O (a letra O) liga e desliga o overlay de qualquer lugar, inclusive dentro do jogo.">
-                                <TextBlock Text="Atalho global" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                <Border Style="{StaticResource KeyCap}"><TextBlock Text="Ctrl" Style="{StaticResource KeyCapText}" /></Border>
-                                <Border Style="{StaticResource KeyCap}"><TextBlock Text="Shift" Style="{StaticResource KeyCapText}" /></Border>
-                                <Border Style="{StaticResource KeyCap}" Margin="0"><TextBlock Text="O" Style="{StaticResource KeyCapText}" FontFamily="{StaticResource UiFont}" /></Border>
+                                <!--
+                                    Tudo na base de "Mostrar overlay" (medido): centrado, o rótulo ficava 2 px acima e as teclas 1 px;
+                                    4 px de margem em cima descem o rótulo 2 e 2 px descem as teclas 1.
+                                -->
+                                <TextBlock Text="Atalho global" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,4,8,0" />
+                                <Border Style="{StaticResource KeyCap}" Margin="0,2,4,0"><TextBlock Text="Ctrl" Style="{StaticResource KeyCapText}" /></Border>
+                                <Border Style="{StaticResource KeyCap}" Margin="0,2,4,0"><TextBlock Text="Shift" Style="{StaticResource KeyCapText}" /></Border>
+                                <Border Style="{StaticResource KeyCap}" Margin="0,2,0,0"><TextBlock Text="O" Style="{StaticResource KeyCapText}" FontFamily="{StaticResource UiFont}" /></Border>
                             </StackPanel>
                         </StackPanel>
                     </Border>
@@ -272,10 +276,11 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="Posição" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                        <TextBlock x:Name="OvCornerName" Text="Canto superior esquerdo" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
+                                    <!-- Rótulo e valor como Runs do mesmo TextBlock: a mesma linha de base por construção (em dois TextBlocks
+                                         centrados o rótulo ficava 1 px acima). O espaço (um médio e um fino, a 12 px) dá ≈ 8 px. -->
+                                    <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                        <Run Text="Posição" FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Muted}" /><Run Text="&#x2002;&#x2009;" FontSize="12" /><Run x:Name="OvCornerName" Text="Canto superior esquerdo" FontWeight="SemiBold" />
+                                    </TextBlock>
                                     <Border Grid.Column="1" Width="1" Height="22" Background="{DynamicResource Line}" Margin="16,0" />
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="Opacidade" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />

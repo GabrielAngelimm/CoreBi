@@ -32,8 +32,13 @@
                 <!-- O disco no ícone do canal de armazenamento, o mesmo de Sistema e da Visão geral -->
                 <local:HwIcon Grid.RowSpan="2" Style="{StaticResource ChannelIcon}" local:Ui.Channel="Storage" Kind="storage" Width="30" Height="30" HorizontalAlignment="Left" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="2" Text="{Binding Letters}" Style="{StaticResource ReadoutText}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,0,0,0" />
-                <Ellipse Grid.Column="3" Style="{StaticResource DiskLed}" Margin="10,0,0,0" ToolTip="{Binding VerdictText}" />
+                <!--
+                    Nome (Segoe 13,5) e letra (Bahnschrift 16) centrados na linha deixavam a base da letra 2 px acima da do nome
+                    (medido na captura de 1920 × 1032): 4 px de margem em cima descem a letra 2 px. O LED desce 1,5 px para o
+                    centro da altura das maiúsculas do nome.
+                -->
+                <TextBlock Grid.Column="2" Text="{Binding Letters}" Style="{StaticResource ReadoutText}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,4,0,0" />
+                <Ellipse Grid.Column="3" Style="{StaticResource DiskLed}" Margin="10,3,0,0" ToolTip="{Binding VerdictText}" />
                 <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Meta}" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
             </Grid>
         </DataTemplate>
@@ -62,7 +67,10 @@
         </DataTemplate>
 
         <!-- Linha da integridade: LED, o que é verificado e o valor lido. Saudável fica em tinta (o LED já diz que está bem);
-             atenção e crítico viram um selo na cor, para saltar aos olhos. Sem valor (a frase única de "não informa"), sem selo. -->
+             atenção e crítico viram um selo na cor, para saltar aos olhos. Sem valor (a frase única de "não informa"), sem selo.
+             Rótulo e valor na mesma letra e tamanho (Bahnschrift 12,5) e o texto do selo exatamente no centro da caixa: as duas
+             bases coincidem. Antes o rótulo era Segoe 12,5 e o valor Bahnschrift 12, com a base do valor 2 px acima.
+             Selo: 1 de margem + 1 de fio + 1 de respiro em cima, 1 de fio + 2 de respiro embaixo, o texto fica no meio. -->
         <DataTemplate x:Key="CheckRow">
             <Grid Margin="0,4" VerticalAlignment="Center" Background="Transparent" ToolTip="{Binding Tip}">
                 <Grid.ColumnDefinitions>
@@ -71,9 +79,9 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Ellipse Style="{StaticResource DiskLed}" HorizontalAlignment="Left" />
-                <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="0,0,8,0" VerticalAlignment="Center" />
-                <Border x:Name="pill" Grid.Column="2" Style="{StaticResource Badge}" VerticalAlignment="Center" Padding="8,1,8,2">
-                    <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource BadgeText}" Typography.NumeralAlignment="Tabular" />
+                <TextBlock Grid.Column="1" Text="{Binding Title}" Style="{StaticResource StatLabel}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                <Border x:Name="pill" Grid.Column="2" Style="{StaticResource Badge}" VerticalAlignment="Center" Padding="8,1,8,2" Margin="0,1,0,0">
+                    <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource BadgeText}" FontSize="12.5" Typography.NumeralAlignment="Tabular" />
                 </Border>
             </Grid>
             <DataTemplate.Triggers>
@@ -166,8 +174,9 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Grid Margin="2,0,2,8">
+                            <!-- A contagem na mesma letra e tamanho do rótulo: as bases coincidem (em Segoe 12 ela ficava 2 px abaixo) -->
                             <TextBlock Text="Instalados" Style="{StaticResource Label}" Margin="0" />
-                            <TextBlock x:Name="RackCount" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
+                            <TextBlock x:Name="RackCount" Style="{StaticResource Label}" FontWeight="Normal" Margin="0" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
                         </Grid>
                         <!-- Sem o 1 px de recuo padrão da ListBox: a baia vai até a borda do rack e fica a 16 px do painel -->
                         <ListBox x:Name="DiskCards" Grid.Row="1" Padding="0" ItemTemplate="{StaticResource DiskBay}" ItemContainerStyle="{StaticResource ListNavItem}"
@@ -210,7 +219,8 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock x:Name="DiskModel" FontFamily="{StaticResource DisplayFont}" FontSize="23" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                        <Border x:Name="DiskBadge" Style="{StaticResource Badge}" Margin="12,3,0,0" VerticalAlignment="Center">
+                                        <!-- Texto do selo na base do modelo, como em Saúde do PC: com 3 px em cima ficava 2 px acima; 7 o descem 2 -->
+                                        <Border x:Name="DiskBadge" Style="{StaticResource Badge}" Margin="12,7,0,0" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal">
                                                 <Ellipse Style="{StaticResource BadgeLed}" />
                                                 <TextBlock x:Name="DiskBadgeText" Style="{StaticResource BadgeText}" />
@@ -303,7 +313,8 @@
                                 </Grid.RowDefinitions>
                                 <Grid>
                                     <TextBlock Text="Temperatura" Style="{StaticResource SectionTitle}" />
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0">
+                                    <!-- Estado ao lado do título na mesma base dele (com 2 px em cima ficava 1 px abaixo) -->
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,0,0">
                                         <Ellipse x:Name="TempLiveDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
                                         <TextBlock x:Name="TempLiveText" Style="{StaticResource Caption}" Typography.NumeralAlignment="Tabular" />
                                     </StackPanel>
@@ -332,9 +343,10 @@
                                 <local:ThermalScale x:Name="TempScale" Grid.Row="2" Margin="0,16,0,0" />
                                 <local:TraceChart x:Name="TempTrace" Grid.Row="3" MinHeight="150" Margin="0,12,0,0" />
                                 <Border Grid.Row="4" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,12,0,0">
+                                    <!-- Rótulo e leitura na mesma letra e tamanho: as bases coincidem (a leitura em Segoe 13 ficava 3 px abaixo) -->
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Atividade agora" Style="{StaticResource StatLabel}" VerticalAlignment="Center" Margin="0,0,20,0" />
-                                        <TextBlock x:Name="DiskActivity" Style="{StaticResource Num}" />
+                                        <TextBlock Text="Atividade agora" Style="{StaticResource StatLabel}" Margin="0,0,20,0" />
+                                        <TextBlock x:Name="DiskActivity" Style="{StaticResource StatLabel}" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" />
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -380,7 +392,8 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Integridade" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="0,0,16,0" />
+                                <!-- Título (17) e linhas (12,5) centrados: a base do título cairia 1 px abaixo; 2 px embaixo o sobem 1 -->
+                                <TextBlock Text="Integridade" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="0,0,16,2" />
                                 <ItemsControl x:Name="DiskChecks" Grid.Column="1" ItemTemplate="{StaticResource CheckRow}" Focusable="False" VerticalAlignment="Center">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>

@@ -73,9 +73,9 @@ public partial class NetworkView : UserControl
         NetMetricsPanel.Margin = narrow ? new Thickness(0) : new Thickness(0, 8, 0, 16);
         NetMetricsPanel.Padding = !narrow ? new Thickness(32, 0, 24, 0) : inRow ? new Thickness(24, 8, 24, 8) : new Thickness(24, 12, 24, 12);
 
-        NetLatency.FontSize = inRow ? 44 : 64;
-        NetLatencyCaption.Margin = inRow ? new Thickness(8, 0, 0, 7) : new Thickness(8, 0, 0, 11);
-        NetHero.Children.OfType<StackPanel>().First().Margin = inRow ? new Thickness(0, 4, 0, 0) : new Thickness(0, 4, 0, 16);
+        // A unidade é um Run do mesmo TextBlock, com tamanho próprio: só o número muda de tamanho e a base continua comum
+        NetLatencyLine.FontSize = inRow ? 44 : 64;
+        NetLatencyLine.Margin = inRow ? new Thickness(0, 4, 0, 0) : new Thickness(0, 4, 0, 16);
         Grid.SetColumnSpan(NetHero, inRow ? 1 : 2);
         NetHero.VerticalAlignment = inRow ? VerticalAlignment.Center : VerticalAlignment.Top;
         Grid.SetRow(NetCells, inRow ? 0 : 1);
@@ -194,7 +194,7 @@ public partial class NetworkView : UserControl
         SetReadout(NetLatency, p.LatencyMs);
         SetReadout(NetDown, p.DownloadMbps);
         SetReadout(NetUp, p.UploadMbps);
-        NetLatencyCaption.Text = p.LatencyMs != null ? "ms até a internet" : "ms";
+        NetLatencyCaption.Text = p.LatencyMs != null ? "\u2002ms até a internet" : "\u2002ms";
         DrawDial(p.DownloadMbps, p.UploadMbps);
     }
 
@@ -244,6 +244,13 @@ public partial class NetworkView : UserControl
         block.SetResourceReference(TextBlock.ForegroundProperty, value != null ? "Fg" : "Faint");
     }
 
+    /// <summary>O mesmo, para uma leitura que é um Run (a latência, que divide o TextBlock com a unidade).</summary>
+    private static void SetReadout(Run run, double? value)
+    {
+        run.Text = value is { } v ? Format(v) : "—";
+        run.SetResourceReference(TextElement.ForegroundProperty, value != null ? "Fg" : "Faint");
+    }
+
     private static string VerdictKey(DiskVerdict v) => v switch
     {
         DiskVerdict.Good => "Ok",
@@ -259,7 +266,7 @@ public partial class NetworkView : UserControl
         SetReadout(NetUp, r?.UploadMbps);
         NetUp.ToolTip = r?.UploadIncludesProtocol == true ? "Upload medido pelo contador TCP do servidor; inclui a sobrecarga do protocolo." : null;
         SetReadout(NetLatency, r?.LatencyMs);
-        NetLatencyCaption.Text = r?.LatencyMs != null ? "ms até a internet" : "ms";
+        NetLatencyCaption.Text = r?.LatencyMs != null ? "\u2002ms até a internet" : "\u2002ms";
         DrawDial(r?.DownloadMbps, r?.UploadMbps);
 
         SetReadout(NetJitter, r?.JitterMs);
@@ -517,7 +524,8 @@ public partial class NetworkView : UserControl
 
         AddTraceLine(0, w, top, "Line", dashed: true);
         AddTraceLine(0, w, bottom, "Line", dashed: false);
-        AddTraceText($"{max:0} ms", w - 40, 0, "Faint", null, readout: true, align: TextAlignment.Right, width: 40);
+        // 3 px abaixo: a escala (Bahnschrift 10,5) fica na mesma base do rótulo "Pings até 1.1.1.1" (Segoe 11,5) à esquerda (medido)
+        AddTraceText($"{max:0} ms", w - 40, 3, "Faint", null, readout: true, align: TextAlignment.Right, width: 40);
 
         var idleGeo = new StreamGeometry();
         var loadGeo = new StreamGeometry();

@@ -147,7 +147,8 @@
                                                     <TextBlock Text="{Binding Name}" Style="{StaticResource SectionTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
                                                     <TextBlock Text="{Binding Model}" Style="{StaticResource StatSub}" ToolTip="{Binding Model}" />
                                                 </StackPanel>
-                                                <Button Grid.Column="2" Style="{StaticResource IconButton}" Width="28" Height="28" FontSize="11" Content="&#xE76C;" Tag="{Binding Target}" Click="DashGo_Click" ToolTip="Abrir detalhes" VerticalAlignment="Top" />
+                                                <!-- Seta centrada na altura das maiúsculas do nome: rente ao topo ela ficava 5,5 px abaixo (medido) -->
+                                                <Button Grid.Column="2" Style="{StaticResource IconButton}" Width="28" Height="28" FontSize="11" Content="&#xE76C;" Tag="{Binding Target}" Click="DashGo_Click" ToolTip="Abrir detalhes" VerticalAlignment="Top" Margin="0,-5,0,0" />
                                             </Grid>
                                             <!-- Uso ao vivo: leitura grande, medidor segmentado e grandezas do componente -->
                                             <StackPanel Margin="0,16,0,0" VerticalAlignment="Bottom">
@@ -242,13 +243,12 @@
                                     <TextBlock Text="Desempenho" Style="{StaticResource SectionTitle}" />
                                     <TextBlock Text="Render de CPU, multi-core" Style="{StaticResource Caption}" Margin="0,4,0,0" />
                                 </StackPanel>
-                                <Button Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE768;" Content="Abrir benchmark" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-10,0" Click="DashBench_Click" />
+                                <!-- Ação centrada na altura das maiúsculas do título (com −4 ficava 2 px abaixo) -->
+                                <Button Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE768;" Content="Abrir benchmark" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-10,0" Click="DashBench_Click" />
                             </Grid>
                             <Grid Margin="0,12,0,0">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock x:Name="DashScore" Text="—" Style="{StaticResource ReadoutHero}" />
-                                    <TextBlock x:Name="DashScoreUnit" Text="pts" Style="{StaticResource Unit}" Margin="6,0,0,9" Visibility="Collapsed" />
-                                </StackPanel>
+                                <!-- A nota e o "pts" são Runs do mesmo TextBlock (montados no código): a mesma linha de base por construção -->
+                                <TextBlock x:Name="DashScore" Text="—" Style="{StaticResource ReadoutHero}" />
                                 <TextBlock x:Name="DashScoreDelta" Style="{StaticResource Caption}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,10" />
                             </Grid>
                             <TextBlock x:Name="DashScoreSub" Text="Nenhum teste ainda" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" />
@@ -300,7 +300,8 @@
                         <DockPanel>
                             <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
                                 <TextBlock Text="Atividade recente" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                                <Button x:Name="DashEventsMore" Style="{StaticResource GhostButton}" Content="Ver histórico" HorizontalAlignment="Right" Margin="0,-6,-10,-6" Visibility="Collapsed" Click="DashEventsMore_Click" />
+                                <!-- Ação centrada na altura das maiúsculas do título: −8 em cima e −4 embaixo a sobem 2 px -->
+                                <Button x:Name="DashEventsMore" Style="{StaticResource GhostButton}" Content="Ver histórico" HorizontalAlignment="Right" Margin="0,-8,-10,-4" Visibility="Collapsed" Click="DashEventsMore_Click" />
                             </Grid>
                             <!-- O host não pede altura: a lista mostra só as linhas que cabem, sem esticar a página -->
                             <local:FitHost SizeChanged="DashEvents_SizeChanged">

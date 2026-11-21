@@ -246,7 +246,13 @@ public partial class MainWindow
         var runs = _settings.BenchRuns.Where(r => r.Multi != null).ToList();
         if (runs.Count > 0)
         {
-            DashScore.Text = $"{runs[0].Multi:N0}";
+            // Nota e "pts" no mesmo TextBlock: a unidade menor assenta na mesma linha de base do número
+            DashScore.Text = "";
+            DashScore.Inlines.Add(new System.Windows.Documents.Run($"{runs[0].Multi:N0}"));
+            var pts = new System.Windows.Documents.Run("\u2002pts") { FontSize = 12.5, FontStretch = FontStretches.Normal, FontWeight = FontWeights.Normal };
+            pts.SetResourceReference(System.Windows.Documents.TextElement.FontFamilyProperty, "LabelFont");
+            pts.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Muted");
+            DashScore.Inlines.Add(pts);
             DashScoreSub.Text = $"Medido em {runs[0].Date:dd/MM 'às' HH:mm}";
             if (runs.Count > 1)
             {
@@ -257,7 +263,6 @@ public partial class MainWindow
             else DashScoreDelta.Text = "";
         }
         else { DashScore.Text = "—"; DashScoreDelta.Text = ""; DashScoreSub.Text = "Nenhum teste ainda"; }
-        PageDash.DashScoreUnit.Visibility = runs.Count > 0 ? Visibility.Visible : Visibility.Collapsed; // sem nota, sem "pts" ao lado do travessão
 
         string Last(string test) => _settings.BenchRecords.FirstOrDefault(r => r.Test == test)?.Summary.Split('·')[0].Trim() ?? "—";
         var single = _settings.BenchRuns.FirstOrDefault(r => r.Single != null)?.Single;
