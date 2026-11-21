@@ -1,7 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Games;
 using CoreBi.Engine.Monitoring.Sensors;
@@ -274,8 +272,13 @@ internal static partial class Program
     }
     private static Task<ProcessResult> RunFixture(string[] arguments, CancellationToken token)
     {
-        string host = System.IO.Path.GetFullPath(System.IO.Path.Combine(RuntimeEnvironment.GetRuntimeDirectory(), "..", "..", "..", "dotnet.exe"));
-        return ProcessRunner.RunAsync(host, new[] { Assembly.GetExecutingAssembly().Location, "--process-fixture" }.Concat(arguments), token);
+        string processPath = Environment.ProcessPath!;
+        if (processPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            && !Path.GetFileName(processPath).Equals("dotnet.exe", StringComparison.OrdinalIgnoreCase))
+        {
+            return ProcessRunner.RunAsync(processPath, new[] { "--process-fixture" }.Concat(arguments), token);
+        }
+        return ProcessRunner.RunAsync(processPath, new[] { Path.Combine(AppContext.BaseDirectory, "CoreBi.Tests.dll"), "--process-fixture" }.Concat(arguments), token);
     }
     private static int ProcessFixture(string[] args)
     {

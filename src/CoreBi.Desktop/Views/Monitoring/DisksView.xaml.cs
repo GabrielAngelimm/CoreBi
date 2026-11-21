@@ -64,7 +64,7 @@ public partial class DisksView : UserControl
 
     internal async Task RefreshAsync()
     {
-        if (_refreshing || _context.IsClosing) return;
+        if (_refreshing || _context == null || _context.IsClosing) return;
         _refreshing = true;
         BtnDiskRefresh.IsEnabled = false;
         DiskHealthStatus.Text = "Lendo os discos…";
@@ -79,6 +79,7 @@ public partial class DisksView : UserControl
             if (_context.IsClosing) return;
             _readAt = DateTime.Now;
             _drives = drives;
+            _context.Drives = drives;
             int keep = (DiskCards.SelectedItem as DiskBay)?.Card.Index ?? -1;
             _bays = cards.Select(c => new DiskBay(c)).ToList();
             DiskCards.ItemsSource = _bays;

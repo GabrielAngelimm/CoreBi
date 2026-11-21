@@ -1,4 +1,5 @@
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Network;
 using CoreBi.Engine.Performance;
@@ -89,7 +90,7 @@ public partial class NetworkView : UserControl
 
     internal async Task RunOrCancelAsync()
     {
-        if (_context.IsClosing) return;
+        if (_context == null || _context.IsClosing) return;
         if (_running) { _cancellation?.Cancel(); return; }
         using var workload = _context.Workloads.TryBegin(WorkloadOperations.Network);
         if (workload == null) { NetStatus.Text = "Termine o outro teste antes."; NetDetail.Text = ""; return; }
@@ -271,7 +272,7 @@ public partial class NetworkView : UserControl
             // Atenção e ruim mantêm o selo, que resume a gravidade dos achados listados embaixo.
             NetBadge.Visibility = r.Card.Verdict == HealthVerdict.Good ? Visibility.Collapsed : Visibility.Visible;
             Ui.SetTone(NetBadge, key);
-            NetBadgeText.Text = new SentenceCaseConverter().Convert(r.Card.VerdictText, typeof(string), null!, PtBr) as string ?? "";
+            NetBadgeText.Text = HardwareNaming.Sentence(r.Card.VerdictText);
             ShowNotes(r, key);
         }
 

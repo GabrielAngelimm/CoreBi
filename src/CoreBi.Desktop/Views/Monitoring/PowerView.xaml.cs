@@ -4,8 +4,6 @@ using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Power;
 using CoreBi.Engine.Monitoring.Sensors;
 using LibreHardwareMonitor.Hardware;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -93,7 +91,7 @@ public partial class PowerView : UserControl
 
     internal async Task RefreshAsync()
     {
-        if (_refreshing || _context.IsClosing) return;
+        if (_refreshing || _context == null || _context.IsClosing) return;
         _refreshing = true;
         _dirty = false;
         BtnEnergyRefresh.IsEnabled = false;

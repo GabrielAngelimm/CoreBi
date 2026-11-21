@@ -12,13 +12,7 @@ public sealed class DiskHealthCard
     public string Meta { get; init; } = "";
     public HealthVerdict Verdict { get; init; } = HealthVerdict.Unknown;
     public string? Label { get; init; }
-    public string VerdictText => Label ?? Verdict switch
-    {
-        HealthVerdict.Good => "SAUDÁVEL",
-        HealthVerdict.Warning => "ATENÇÃO",
-        HealthVerdict.Critical => "CRÍTICO",
-        _ => "SEM DADOS"
-    };
+    public string VerdictText => Verdict.ToVerdictText(Label);
     public string Reasons { get; init; } = "";
     public List<KeyValuePair<string, string>> Metrics { get; init; } = new();
     public DiskDetail? Disk { get; init; }

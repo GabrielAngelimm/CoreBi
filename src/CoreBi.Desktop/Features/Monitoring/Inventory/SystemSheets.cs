@@ -346,7 +346,7 @@ public static class SystemSheets
         {
             Key = Gpu,
             Eyebrow = g.Vendor,
-            Title = ShortGpu(g.Name),
+            Title = HardwareNaming.ShortGpuName(g.Name),
             Subtitle = g.Name,
             Readouts = new()
             {
@@ -370,14 +370,6 @@ public static class SystemSheets
         }
         return null;
     }
-
-    private static string ShortGpu(string name)
-    {
-        foreach (var p in new[] { "NVIDIA ", "AMD ", "Intel(R) ", "Intel " })
-            if (name.StartsWith(p, StringComparison.OrdinalIgnoreCase)) return name[p.Length..].Replace("(TM)", "").Replace("(R)", "").Trim();
-        return name;
-    }
-
 
     private static Sheet RamSheet(SystemInventory inv, MemoryInfo.Snapshot? memory, DateTime now)
     {
@@ -667,7 +659,7 @@ public static class SystemSheets
     {
         if (inv.Os is not { } o) return Missing(Os, "Sistema operacional", inv.Errors.GetValueOrDefault(SystemInventory.OsTitle));
         string up = o.LastBoot is DateTime boot ? Fmt.Span(now - boot) : "—";
-        var (upValue, upUnit) = SplitSpan(up);
+        var (upValue, upUnit) = Split(up);
         var windows = new List<SpecRow>
         {
             new("Edição", o.Name),
@@ -767,7 +759,4 @@ public static class SystemSheets
         int i = s.LastIndexOf(' ');
         return i > 0 ? (s[..i], s[(i + 1)..]) : (s, "");
     }
-
-    /// <summary>"4 h 32 min" → ("4 h 32", "min"); "2 d 5 h" → ("2 d 5", "h").</summary>
-    private static (string, string) SplitSpan(string s) => Split(s);
 }

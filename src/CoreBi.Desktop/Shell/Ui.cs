@@ -353,6 +353,7 @@ public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
         double opacity = (double)GetValue(SpotOpacityProperty) * (IsEnabled ? 1 : 0.45);
         if (spot.IsEmpty || opacity <= 0) return;
         Pen? pen = HighlightBorder is { } line ? new Pen(line, 1) : null;
+        pen?.Freeze();
         if (pen is not null) spot.Inflate(-0.5, -0.5); // o fio cai inteiro dentro do pixel
         if (spot.Width <= 0 || spot.Height <= 0) return;
         dc.PushOpacity(opacity);

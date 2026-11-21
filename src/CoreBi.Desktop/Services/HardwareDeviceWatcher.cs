@@ -32,6 +32,7 @@ internal sealed class HardwareDeviceWatcher : IDisposable
     private bool _displayChanged;
     private string? _displayLast;
     private int _displayGeneration, _displayChecks;
+    private bool _sensorsPaused;
 
     public HardwareDeviceWatcher(FeatureContext context, Dispatcher dispatcher, Func<Task> onStorageChanged)
     {
@@ -93,6 +94,7 @@ internal sealed class HardwareDeviceWatcher : IDisposable
     private void HoldSensorsForDeviceChange()
     {
         _context.Sensors.Pause();
+        _sensorsPaused = true;
         _displayGeneration++;
         _displayChecks = 0;
         _displayLast = null;
@@ -106,7 +108,17 @@ internal sealed class HardwareDeviceWatcher : IDisposable
     {
         _displaySettle?.Stop();
         int generation = _displayGeneration;
-        var now = await Task.Run(DisplayAdapters.Read);
+        (string Signature, bool Healthy)? now;
+        try
+        {
+            now = await Task.Run(DisplayAdapters.Read);
+        }
+        catch (Exception ex)
+        {
+            DiagnosticLog.Write("devices.display.read", ex);
+            ResumeSensors();
+            return;
+        }
         if (_context.IsClosing || generation != _displayGeneration) return;
         _displayChecks++;
         bool settled = now == null || _displayChecks >= 30 || (now.Value.Healthy && now.Value.Signature == _displayLast);
@@ -123,6 +135,13 @@ internal sealed class HardwareDeviceWatcher : IDisposable
             _context.Notify("Driver de vídeo atualizado", "Abra o CoreBi de novo para voltar a ler a placa de vídeo.", "\uE7F4");
         }
         if (now is { Healthy: true } && !_displayChanged) _displayBefore = now.Value.Signature;
+        ResumeSensors();
+    }
+
+    private void ResumeSensors()
+    {
+        if (!_sensorsPaused) return;
+        _sensorsPaused = false;
         _context.Sensors.Resume();
     }
 
@@ -187,5 +206,6 @@ internal sealed class HardwareDeviceWatcher : IDisposable
     {
         _usbDebounce?.Stop();
         _displaySettle?.Stop();
+        ResumeSensors();
     }
 }

@@ -19,7 +19,7 @@ public sealed class PowerTrace : EnergyInstrument
     private IReadOnlyList<(float? Cpu, float? Gpu)> _samples = Array.Empty<(float?, float?)>();
     private IReadOnlyList<(float? Cpu, float? Gpu)>? _pending;
     private double? _hoverX;
-    private bool _fresh; // o próximo desenho traz uma amostra nova (o ponto atual pulsa)
+    private bool _fresh;
 
     public static readonly DependencyProperty EmptyTextProperty =
         DependencyProperty.Register(nameof(EmptyText), typeof(string), typeof(PowerTrace), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
@@ -108,8 +108,8 @@ public sealed class PowerTrace : EnergyInstrument
 
         // Faixas chapadas no tom de cada traço: a do processador embaixo, a da placa de vídeo por cima
         Brush cpuFill = Alpha(CpuBrush, 0x30), gpuFill = Alpha(GpuBrush, 0x26);
-        var cpuPen = new Pen(CpuBrush, 1.6) { LineJoin = PenLineJoin.Round };
-        var gpuPen = new Pen(GpuBrush, 2) { LineJoin = PenLineJoin.Round };
+        var cpuPen = Stroke(CpuBrush, 1.6);
+        var gpuPen = Stroke(GpuBrush, 2);
         double floor = top + plotH;
         foreach (var run in runs.Where(r => r.Count >= 2))
         {

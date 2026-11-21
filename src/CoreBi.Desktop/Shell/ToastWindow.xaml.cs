@@ -16,6 +16,7 @@ public partial class ToastWindow : Window
         SourceInitialized += (_, _) =>
             Win32Window.AddExtendedStyles(new WindowInteropHelper(this).Handle, Win32Window.WsExToolWindow | Win32Window.WsExNoActivate);
         SizeChanged += (_, _) => Place();
+        Closed += (_, _) => _hide.Stop();
         _hide.Tick += (_, _) => { _hide.Stop(); Fade(0, () => Hide()); };
     }
 

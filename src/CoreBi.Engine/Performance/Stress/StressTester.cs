@@ -4,14 +4,15 @@ using CoreBi.Engine.Monitoring.Memory;
 namespace CoreBi.Engine.Performance.Stress;
 
 /// <summary>Gera carga sintética de CPU (todos os threads) e/ou RAM (escrita e verificação de padrões).</summary>
-public sealed class StressTester
+public sealed class StressTester : IDisposable
 {
+    private readonly object _sync = new();
     private CancellationTokenSource? _cts;
     private readonly List<Thread> _threads = new();
     private long _memErrors;
     private long _memPasses;
 
-    public bool Running => _cts != null;
+    public bool Running { get { lock (_sync) return _cts != null; } }
     public long MemoryErrors => Interlocked.Read(ref _memErrors);
     public long MemoryPasses => Interlocked.Read(ref _memPasses);
     public long MemoryAllocatedBytes { get; private set; }
@@ -19,63 +20,88 @@ public sealed class StressTester
 
     public void Start(bool cpu, bool ram, double ramFraction = 0.6)
     {
-        if (Running) return;
         if (!cpu && !ram) throw new ArgumentException("Selecione CPU ou RAM.");
-        Error = null;
-        _cts = new CancellationTokenSource();
-        var token = _cts.Token;
-        Interlocked.Exchange(ref _memErrors, 0);
-        Interlocked.Exchange(ref _memPasses, 0);
-        MemoryAllocatedBytes = 0;
-
-        int cpuThreads = Environment.ProcessorCount;
-        // Com RAM ativa, reserva um thread para o worker de memória.
-        if (cpu && ram && cpuThreads > 1) cpuThreads--;
-
-        if (cpu)
+        lock (_sync)
         {
-            for (int i = 0; i < cpuThreads; i++)
+            if (_cts != null) return;
+            Error = null;
+            var cts = new CancellationTokenSource();
+            _cts = cts;
+            var token = cts.Token;
+            Interlocked.Exchange(ref _memErrors, 0);
+            Interlocked.Exchange(ref _memPasses, 0);
+            MemoryAllocatedBytes = 0;
+
+            int cpuThreads = Environment.ProcessorCount;
+            // Com RAM ativa, reserva um thread para o worker de memória.
+            if (cpu && ram && cpuThreads > 1) cpuThreads--;
+
+            if (cpu)
             {
-                int seed = i;
-                StartThread(() => CpuWorker(token, seed), $"Stress CPU {seed}");
+                for (int i = 0; i < cpuThreads; i++)
+                {
+                    int seed = i;
+                    StartThread(cts, () => CpuWorker(token, seed), $"Stress CPU {seed}");
+                }
             }
-        }
 
-        if (ram)
-        {
-            long bytes = (long)(FreePhysicalMemory() * Math.Clamp(ramFraction, 0.1, 0.9));
-            MemoryAllocatedBytes = bytes;
-            StartThread(() => RamWorker(token, bytes), "Stress RAM");
+            if (ram)
+            {
+                long bytes = (long)(FreePhysicalMemory() * Math.Clamp(ramFraction, 0.1, 0.9));
+                MemoryAllocatedBytes = bytes;
+                StartThread(cts, () => RamWorker(token, bytes), "Stress RAM");
+            }
         }
     }
 
     public void Stop()
     {
-        if (_cts == null) return;
-        _cts.Cancel();
+        CancellationTokenSource? cts;
+        Thread[] threads;
+        lock (_sync)
+        {
+            if (_cts == null) return;
+            cts = _cts;
+            threads = _threads.ToArray();
+        }
+
+        try { cts.Cancel(); } catch (ObjectDisposedException) { }
         // Prazo único compartilhado entre todas as threads para evitar espera proporcional ao número de núcleos.
         var deadline = Stopwatch.StartNew();
         const int maxWaitMs = 2500;
-        foreach (var thread in _threads)
+        foreach (var thread in threads)
         {
             int remaining = maxWaitMs - (int)deadline.ElapsedMilliseconds;
             if (remaining <= 0) break;
             thread.Join(remaining);
         }
-        if (_threads.Any(t => t.IsAlive)) return;
-        _threads.Clear();
-        _cts.Dispose();
-        _cts = null;
+        if (threads.Any(t => t.IsAlive)) return;
+
+        lock (_sync)
+        {
+            _threads.Clear();
+            if (ReferenceEquals(_cts, cts))
+            {
+                _cts = null;
+                cts.Dispose();
+            }
+        }
         if (MemoryAllocatedBytes > 0) GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, blocking: false, compacting: false);
     }
 
-    private void StartThread(ThreadStart body, string name)
+    public void Dispose() => Stop();
+
+    private void StartThread(CancellationTokenSource cts, ThreadStart body, string name)
     {
         // BelowNormal mantém a interface responsiva sem reduzir a carga (núcleos continuam a 100%).
         var thread = new Thread(() =>
         {
             try { body(); }
-            catch (Exception ex) { Error = ex.Message; _cts?.Cancel(); }
+            catch (Exception ex)
+            {
+                Error = ex.Message;
+                try { cts.Cancel(); } catch (ObjectDisposedException) { }
+            }
         })
         { IsBackground = true, Name = name, Priority = ThreadPriority.BelowNormal };
         thread.Start();

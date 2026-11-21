@@ -57,7 +57,9 @@ public sealed class HwIcon : Control
             dc.PushTransform(new TranslateTransform((ActualWidth - size) / 2, (ActualHeight - size) / 2));
             dc.PushTransform(new ScaleTransform(scale, scale));
             var solid = new Pen(brush, Weight) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round };
+            solid.Freeze();
             var dashed = new Pen(brush, Weight) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, DashCap = PenLineCap.Round, LineJoin = PenLineJoin.Round, DashStyle = new DashStyle(new[] { 0.1, 1.9 }, 0) };
+            dashed.Freeze();
             foreach (var part in parts)
             {
                 if (part.Filled) dc.DrawGeometry(brush, null, part.Geometry);

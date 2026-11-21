@@ -36,6 +36,7 @@ public partial class SensorsView : UserControl
     private IReadOnlyList<SensorComponent> _cards = Array.Empty<SensorComponent>();
     private bool _syncing;
     private string? _pending;         // componente pedido por um atalho de outra página, aplicado quando houver leitura
+    private Window? _hostWindow;
 
     public SensorsView()
     {
@@ -45,8 +46,17 @@ public partial class SensorsView : UserControl
         // A busca solta o foco (cursor e seleção) com um clique em qualquer lugar fora dela, como um campo de busca comum
         Focusable = true;
         FocusVisualStyle = null;
-        Loaded += (_, _) => { if (Window.GetWindow(this) is { } w) w.PreviewMouseDown += Window_PreviewMouseDown; };
-        Unloaded += (_, _) => { if (Window.GetWindow(this) is { } w) w.PreviewMouseDown -= Window_PreviewMouseDown; };
+        Loaded += (_, _) =>
+        {
+            if (_hostWindow != null) _hostWindow.PreviewMouseDown -= Window_PreviewMouseDown;
+            _hostWindow = Window.GetWindow(this);
+            if (_hostWindow != null) _hostWindow.PreviewMouseDown += Window_PreviewMouseDown;
+        };
+        Unloaded += (_, _) =>
+        {
+            if (_hostWindow != null) _hostWindow.PreviewMouseDown -= Window_PreviewMouseDown;
+            _hostWindow = null;
+        };
     }
 
     private void Window_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -65,7 +75,13 @@ public partial class SensorsView : UserControl
         return false;
     }
 
-    internal void Initialize(Services.FeatureContext context) => _monitor = context.Sensors;
+    internal void Initialize(Services.FeatureContext context)
+    {
+        _monitor = context.Sensors;
+        StatusText.Text = "Detectando o hardware…";
+    }
+
+    internal void SetStatus(string text) => StatusText.Text = text;
 
     /// <summary>Atalho de outra página (Sistema): abre já filtrado no componente ("cpu", "ram" ou "board"), sem filtro de tipo nem busca.</summary>
     internal void ShowComponent(string target)

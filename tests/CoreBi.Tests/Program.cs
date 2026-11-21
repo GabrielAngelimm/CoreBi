@@ -103,7 +103,7 @@ internal static partial class Program
             Require(off.Profile!.Tone == Tone.Warn && off.ChannelFinding!.Tone == Tone.Warn, "XMP off and single channel must warn");
             var odd = new RamInfo { Modules = { Module("XMM1", null, null, 3200) }, Slots = 2 };
             Require(odd.SlotMap().Count == 2 && odd.SlotMap()[1].Module == null, "Unknown slot names keep empty slots");
-            Require(SystemInfoCollector.NvidiaVersion("32.0.15.6636") == "566.36" && SystemInfoCollector.NvidiaVersion("31.0.15.5222") == "552.22", "NVIDIA version");
+            Require(HardwareNaming.NvidiaDriverVersion("32.0.15.6636") == "566.36" && HardwareNaming.NvidiaDriverVersion("31.0.15.5222") == "552.22", "NVIDIA version");
             Require(Fmt.IsPlaceholder("Default string") && Fmt.ShortMaker("ASUSTeK COMPUTER INC.") == "ASUS" && Fmt.Bytes(16UL << 30) == "16 GB", "Readable values");
             Require(Fmt.Ago(new DateTime(2024, 3, 15), new DateTime(2025, 10, 20)) == "há 1 ano e 7 meses", "Age");
 

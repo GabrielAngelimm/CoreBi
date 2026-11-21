@@ -7,13 +7,19 @@ namespace CoreBi.Engine.Monitoring.Graphics;
 
 public sealed class GpuInfo
 {
+    private float _windowsLoad = float.NaN;
+
     public string Name { get; init; } = "";
     public string Subtitle { get; set; } = "";
     public string Vendor { get; init; } = "";
     public List<InfoNode> Sections { get; } = new();
     public ulong DedicatedVramBytes { get; internal set; }
     public bool HasVendorTelemetry => NvmlHandle != IntPtr.Zero;
-    public float? WindowsLoad { get; internal set; }
+    public float? WindowsLoad
+    {
+        get => Volatile.Read(ref _windowsLoad) is var v && !float.IsNaN(v) ? v : null;
+        internal set => Volatile.Write(ref _windowsLoad, value ?? float.NaN);
+    }
 
     internal IntPtr NvmlHandle { get; set; }
     internal ulong? AdapterLuid { get; set; }

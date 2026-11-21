@@ -105,7 +105,8 @@ public static class DriverInstaller
         int trust = AuthenticodeVerifier.WinVerifyTrustFile(file);
         if (trust != 0) throw new InvalidOperationException($"Assinatura digital inválida (0x{trust:X8}).");
 #pragma warning disable SYSLIB0057
-        using var certificate = new X509Certificate2(X509Certificate.CreateFromSignedFile(file));
+        using var rawCert = X509Certificate.CreateFromSignedFile(file);
+        using var certificate = new X509Certificate2(rawCert);
 #pragma warning restore SYSLIB0057
         if (!DriverDownloadPolicy.IsPublisher(certificate.GetNameInfo(X509NameType.SimpleName, forIssuer: false), vendor))
             throw new InvalidOperationException("O assinante não corresponde ao fabricante esperado.");

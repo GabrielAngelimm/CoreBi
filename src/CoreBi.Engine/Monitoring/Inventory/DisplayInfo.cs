@@ -12,7 +12,7 @@ public sealed record DisplayInfo(
     public bool BelowMax => MaxHz > Hz + 1 && Hz > 0;
 }
 
-public static class DisplayReader
+internal static class DisplayReader
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct DISPLAY_DEVICE

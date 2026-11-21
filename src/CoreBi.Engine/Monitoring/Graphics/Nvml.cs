@@ -10,7 +10,7 @@ internal static class Nvml
     private const string Dll = "nvml.dll";
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-    public struct PciInfo
+    internal struct PciInfo
     {
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 16)] public string BusIdLegacy;
         public uint Domain, Bus, Device;
@@ -19,8 +19,8 @@ internal static class Nvml
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string BusId;
     }
 
-    public struct Memory { public ulong Total, Free, Used; } // mesmo layout de nvmlBAR1Memory_t
-    public struct Utilization { public uint Gpu, Memory; }
+    internal struct Memory { public ulong Total, Free, Used; } // mesmo layout de nvmlBAR1Memory_t
+    internal struct Utilization { public uint Gpu, Memory; }
 
     public const int ClockGraphics = 0, ClockMem = 2, ClockVideo = 3;
     public const ulong ThermalSlowdownMask = 0x60UL; // SW + HW thermal slowdown bits
@@ -53,6 +53,7 @@ internal static class Nvml
     [DllImport(Dll)] private static extern int nvmlDeviceGetDecoderUtilization(IntPtr device, out uint util, out uint periodUs);
     [DllImport(Dll)] private static extern int nvmlDeviceGetUtilizationRates(IntPtr device, out Utilization util);
 
+    private static readonly object _initSync = new();
     private static bool? _ok;
 
     /// <summary>
@@ -71,8 +72,11 @@ internal static class Nvml
         get
         {
             if (Suspended) return false;
-            _ok ??= Call(() => nvmlInit());
-            return _ok.Value;
+            lock (_initSync)
+            {
+                _ok ??= Call(() => nvmlInit());
+                return _ok.Value;
+            }
         }
     }
 

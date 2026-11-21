@@ -15,7 +15,7 @@ public sealed class GpuBurnSettings
     public int Width { get; init; } = 1280;
     public int Height { get; init; } = 720;
     public bool Fullscreen { get; init; }
-    public int Msaa { get; init; } = 1;    // 1 = sem MSAA
+    public int Msaa { get; init; } = 1;
     public int Shells { get; init; } = 96; // camadas de pelo (overdraw)
     public int Iterations { get; init; }   // carga extra de ALU no pixel shader
     public string AdapterName { get; init; } = "";
@@ -25,14 +25,15 @@ public sealed class GpuBurnSettings
 /// Stress de GPU no estilo FurMark: um torus com pelos renderizado por shells instanciados, gerando overdraw massivo
 /// e carga de shader sem limite de FPS numa janela Win32 própria.
 /// </summary>
-public sealed class GpuBurn
+public sealed class GpuBurn : IDisposable
 {
+    private readonly object _sync = new();
     private Thread? _thread;
     private volatile bool _stop;
     private long _frames;
     private double _seconds;
 
-    public bool Running => _thread?.IsAlive == true;
+    public bool Running { get { lock (_sync) return _thread?.IsAlive == true; } }
     public double Fps { get; private set; }
     public long Frames => Interlocked.Read(ref _frames);
     public double AverageFps => _seconds > 0 ? Frames / _seconds : 0;
@@ -41,21 +42,31 @@ public sealed class GpuBurn
 
     public void Start(GpuBurnSettings s)
     {
-        if (Running) return;
-        _stop = false;
-        _frames = 0;
-        _seconds = 0;
-        Fps = 0;
-        Error = null;
-        _thread = new Thread(() => Run(s)) { IsBackground = true, Name = "GPU burn" };
-        _thread.Start();
+        lock (_sync)
+        {
+            if (_thread?.IsAlive == true) return;
+            _stop = false;
+            _frames = 0;
+            _seconds = 0;
+            Fps = 0;
+            Error = null;
+            _thread = new Thread(() => Run(s)) { IsBackground = true, Name = "GPU burn" };
+            _thread.Start();
+        }
     }
 
     public void Stop()
     {
-        _stop = true;
-        _thread?.Join(3000);
+        Thread? thread;
+        lock (_sync)
+        {
+            _stop = true;
+            thread = _thread;
+        }
+        thread?.Join(3000);
     }
+
+    public void Dispose() => Stop();
 
     [StructLayout(LayoutKind.Sequential)]
     private struct Vertex { public Vector3 Pos; public Vector3 Normal; public Vector2 Uv; }

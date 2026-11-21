@@ -9,7 +9,7 @@ namespace CoreBi.Engine.Monitoring.Sensors;
 /// filtro dos drivers (WFP, QoS), Wi-Fi Direct ("Conexão Local* 8"), switches virtuais do Hyper-V/WSL, minipontas WAN,
 /// o adaptador do depurador de kernel. A biblioteca de sensores lista todas; a página só quer as físicas e conectadas.
 /// </summary>
-public static class PhysicalNetwork
+internal static class PhysicalNetwork
 {
     private static readonly string[] VirtualMarks =
     {

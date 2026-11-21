@@ -18,7 +18,8 @@ internal static class ProtectedWorkspace
         };
         string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "CoreBi");
         Ensure(root);
-        string user = WindowsIdentity.GetCurrent().User?.Value ?? throw new InvalidOperationException("Usuário indisponível.");
+        using var identity = WindowsIdentity.GetCurrent();
+        string user = identity.User?.Value ?? throw new InvalidOperationException("Usuário indisponível.");
         string folder = Path.Combine(root, user, areaName);
         Ensure(Path.Combine(root, user));
         Ensure(folder);

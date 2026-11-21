@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using CoreBi.Engine.Infrastructure;
 using Microsoft.Win32;
 
 namespace CoreBi.Engine.Reports;
@@ -63,10 +64,12 @@ public static class PdfPrinter
             }
             // Com o app elevado o Edge se relança sem elevação e o processo filho sai na hora: o PDF surge logo depois.
             long lastSize = -1;
+            int maxEmptyWaits = ProcessElevation.IsElevated ? 24 : 8;
             for (int waited = 0; waited < 240; waited++)
             {
                 long size = File.Exists(output) ? new FileInfo(output).Length : 0;
                 if (size > 0 && size == lastSize) break;
+                if (size == 0 && waited >= maxEmptyWaits) break;
                 lastSize = size;
                 await Task.Delay(250, cancel).ConfigureAwait(false);
             }

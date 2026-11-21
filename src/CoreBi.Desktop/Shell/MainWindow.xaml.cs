@@ -23,7 +23,7 @@ namespace CoreBi.Desktop;
 public partial class MainWindow : Window, ILiveMotionHost
 {
     /// <summary>Altura de uma linha da atividade recente na Visão geral (usada pelo binding XAML em OverviewView).</summary>
-    public const double DashEventHeight = 56;
+    public const double DashEventHeight = Views.OverviewView.EventRowHeight;
 
     private const int HotkeyId = 0x5245; // "RE"
 
@@ -81,7 +81,6 @@ public partial class MainWindow : Window, ILiveMotionHost
         BuildPalette();
         ShowPage("PageDash");
 
-        PageSensors.StatusText.Text = "Detectando o hardware…";
         SideVersion.Text = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1";
 
         _deviceWatcher.StartInitialSnapshots();
@@ -212,7 +211,7 @@ public partial class MainWindow : Window, ILiveMotionHost
             try { await _monitor.OpenAsync(); }
             catch (Exception ex)
             {
-                PageSensors.StatusText.Text = $"Sensores indisponíveis: {ex.Message}";
+                PageSensors.SetStatus($"Sensores indisponíveis: {ex.Message}");
                 return;
             }
             if (_context.IsClosing) return;

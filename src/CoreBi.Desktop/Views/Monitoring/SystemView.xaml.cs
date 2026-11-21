@@ -58,7 +58,8 @@ public partial class SystemView : UserControl
             var drives = Task.Run(DriveMap.Read);
             _inventory = await inventory;
             _drives = await drives;
-            if (_context?.IsClosing == true) return;
+            if (_context == null || _context.IsClosing) return;
+            _context.Drives = _drives;
             Rebuild();
         }
         catch (Exception ex) { SystemSub.Text = $"Não foi possível ler as informações do sistema: {ex.Message}"; }
@@ -76,7 +77,8 @@ public partial class SystemView : UserControl
             _inventory.Disks = await disks;
             _inventory.BitLocker = await bitLocker;
             _drives = await drives;
-            if (_context?.IsClosing == true) return;
+            if (_context == null || _context.IsClosing) return;
+            _context.Drives = _drives;
             Rebuild();
         }
         catch { }
@@ -166,6 +168,9 @@ public partial class SystemView : UserControl
     }
 
 
+    private DispatcherTimer? _copyTimer;
+    private TextBlock? _copiedIcon;
+
     /// <summary>Clique numa linha copia o valor; o ícone vira um visto por um instante.</summary>
     private void SpecRow_Click(object sender, MouseButtonEventArgs e)
     {
@@ -173,16 +178,28 @@ public partial class SystemView : UserControl
         try { Clipboard.SetText(row.Value); }
         catch { return; }
         if (FindTagged(host, "copy") is not TextBlock icon) return;
-        icon.Text = "";
-        icon.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
-        var reset = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.2) };
-        reset.Tick += (_, _) =>
+        if (_copiedIcon != null && _copiedIcon != icon)
         {
-            reset.Stop();
-            icon.Text = "";
-            icon.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
-        };
-        reset.Start();
+            _copiedIcon.Text = "\uE8C8";
+            _copiedIcon.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
+        }
+        _copyTimer?.Stop();
+        _copiedIcon = icon;
+        icon.Text = "\uE73E";
+        icon.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
+        _copyTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.2) };
+        _copyTimer.Tick -= CopyTimer_Tick;
+        _copyTimer.Tick += CopyTimer_Tick;
+        _copyTimer.Start();
+    }
+
+    private void CopyTimer_Tick(object? sender, EventArgs e)
+    {
+        _copyTimer?.Stop();
+        if (_copiedIcon == null) return;
+        _copiedIcon.Text = "\uE8C8";
+        _copiedIcon.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
+        _copiedIcon = null;
     }
 
     private static DependencyObject? FindTagged(DependencyObject root, string tag)

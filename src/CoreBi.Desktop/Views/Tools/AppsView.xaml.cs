@@ -75,7 +75,7 @@ public partial class AppsView : UserControl
     private bool _appsRefreshing;
     internal async Task InitAppsAsync()
     {
-        if (_appsBusy || _appsRefreshing || _context.IsClosing) return;
+        if (_appsBusy || _appsRefreshing || _context == null || _context.IsClosing) return;
         _appsRefreshing = true;
         AppsList.IsEnabled = false;
         BtnAppsInstall.IsEnabled = false;

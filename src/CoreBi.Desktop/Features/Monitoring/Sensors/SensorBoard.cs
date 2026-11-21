@@ -1,6 +1,5 @@
 using CoreBi.Engine.Monitoring.Sensors;
 using LibreHardwareMonitor.Hardware;
-using System.ComponentModel;
 
 namespace CoreBi.Desktop.Features.Monitoring.Sensors;
 

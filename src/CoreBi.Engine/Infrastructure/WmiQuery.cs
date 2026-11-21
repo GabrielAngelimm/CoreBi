@@ -90,12 +90,6 @@ internal static class WmiQuery
         catch { return null; }
     }
 
-    public static ulong? GetNullableUInt64(ManagementBaseObject item, string property)
-    {
-        try { return item[property] is { } v ? Convert.ToUInt64(v) : null; }
-        catch { return null; }
-    }
-
     public static bool? GetNullableBool(ManagementBaseObject item, string property)
     {
         try { return item[property] is { } v ? Convert.ToBoolean(v) : null; }

@@ -192,7 +192,7 @@ internal static partial class Program
                     _listener = candidate;
                     break;
                 }
-                catch (HttpListenerException) when (attempt < 5)
+                catch (Exception ex) when (ex is HttpListenerException or SocketException or UnauthorizedAccessException && attempt < 5)
                 {
                     candidate.Close();
                 }

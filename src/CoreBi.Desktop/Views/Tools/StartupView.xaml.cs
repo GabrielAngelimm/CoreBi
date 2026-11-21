@@ -36,7 +36,7 @@ public partial class StartupView : UserControl
     /// <summary>Lê a lista e os removidos. Depois de uma ação (announce = false) o console continua mostrando o resultado dela.</summary>
     private async Task ScanAsync(bool announce)
     {
-        if (_scanning || _context.IsClosing) return;
+        if (_scanning || _context == null || _context.IsClosing) return;
         _scanning = true;
         if (announce) { Say("Lendo programas…"); ToolPage.SetProgress(StartupProgressFill, 0); }
         List<StartupEntry> list;

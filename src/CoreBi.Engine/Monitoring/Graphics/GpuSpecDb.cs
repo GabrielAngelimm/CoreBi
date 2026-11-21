@@ -1,16 +1,15 @@
 namespace CoreBi.Engine.Monitoring.Graphics;
 
-public record GpuSpec(
+internal record GpuSpec(
     string Chip, string Arch, string Process, int DieMm2, double TransistorsBi,
     int Shaders, int Rops, int Tmus, string MemType, int BaseMHz, int BoostMHz, int TdpW,
     string Release, string? NameMatch = null, bool IsIntegrated = false);
 
-public static class GpuSpecDb
+internal static class GpuSpecDb
 {
     /// <summary>Chave: "VVVV:DDDD" (vendor:device PCI). Mesma ID com variantes → NameMatch desempata.</summary>
     private static readonly Dictionary<string, GpuSpec[]> Db = new(StringComparer.OrdinalIgnoreCase)
     {
-        // ---- NVIDIA Blackwell (RTX 50) ----
         ["10DE:2B85"] = new[] { new GpuSpec("GB202", "Blackwell", "TSMC 4N (5 nm)", 750, 92.2, 21760, 176, 680, "GDDR7", 2017, 2407, 575, "30/01/2025") },
         ["10DE:2C02"] = new[] { new GpuSpec("GB203", "Blackwell", "TSMC 4N (5 nm)", 378, 45.6, 10752, 112, 336, "GDDR7", 2295, 2617, 360, "30/01/2025") },
         ["10DE:2C05"] = new[] { new GpuSpec("GB203", "Blackwell", "TSMC 4N (5 nm)", 378, 45.6, 8960, 96, 280, "GDDR7", 2295, 2452, 300, "20/02/2025") },
@@ -18,7 +17,6 @@ public static class GpuSpecDb
         ["10DE:2D04"] = new[] { new GpuSpec("GB206", "Blackwell", "TSMC 4N (5 nm)", 181, 21.9, 4608, 48, 144, "GDDR7", 2407, 2572, 180, "16/04/2025") },
         ["10DE:2D05"] = new[] { new GpuSpec("GB206", "Blackwell", "TSMC 4N (5 nm)", 181, 21.9, 3840, 48, 120, "GDDR7", 2280, 2497, 145, "19/05/2025") },
 
-        // ---- NVIDIA Ada Lovelace (RTX 40) ----
         ["10DE:2684"] = new[] { new GpuSpec("AD102", "Ada Lovelace", "TSMC 4N (5 nm)", 609, 76.3, 16384, 176, 512, "GDDR6X", 2235, 2520, 450, "12/10/2022") },
         ["10DE:2702"] = new[] { new GpuSpec("AD103", "Ada Lovelace", "TSMC 4N (5 nm)", 379, 45.9, 10240, 112, 320, "GDDR6X", 2295, 2550, 320, "31/01/2024") },
         ["10DE:2704"] = new[] { new GpuSpec("AD103", "Ada Lovelace", "TSMC 4N (5 nm)", 379, 45.9, 9728, 112, 304, "GDDR6X", 2205, 2505, 320, "16/11/2022") },
@@ -30,7 +28,6 @@ public static class GpuSpecDb
         ["10DE:2805"] = new[] { new GpuSpec("AD106", "Ada Lovelace", "TSMC 4N (5 nm)", 188, 22.9, 4352, 48, 136, "GDDR6", 2310, 2535, 165, "18/07/2023") },
         ["10DE:2882"] = new[] { new GpuSpec("AD107", "Ada Lovelace", "TSMC 4N (5 nm)", 159, 18.9, 3072, 48, 96, "GDDR6", 1830, 2460, 115, "29/06/2023") },
 
-        // ---- NVIDIA Ampere (RTX 30) ----
         ["10DE:2204"] = new[] { new GpuSpec("GA102", "Ampere", "Samsung 8 nm", 628, 28.3, 10496, 112, 328, "GDDR6X", 1395, 1695, 350, "24/09/2020") },
         ["10DE:2206"] = new[] { new GpuSpec("GA102", "Ampere", "Samsung 8 nm", 628, 28.3, 8704, 96, 272, "GDDR6X", 1440, 1710, 320, "17/09/2020") },
         ["10DE:2484"] = new[] { new GpuSpec("GA104", "Ampere", "Samsung 8 nm", 392, 17.4, 5888, 96, 184, "GDDR6", 1500, 1725, 220, "29/10/2020") },
@@ -38,7 +35,6 @@ public static class GpuSpecDb
         ["10DE:2503"] = new[] { new GpuSpec("GA106", "Ampere", "Samsung 8 nm", 276, 12.0, 3584, 48, 112, "GDDR6", 1320, 1777, 170, "25/02/2021") },
         ["10DE:2504"] = new[] { new GpuSpec("GA106", "Ampere", "Samsung 8 nm", 276, 12.0, 3584, 48, 112, "GDDR6", 1320, 1777, 170, "25/02/2021") },
 
-        // ---- AMD RDNA 4 / 3 / 2 ----
         ["1002:7550"] = new[]
         {
             new GpuSpec("Navi 48", "RDNA 4", "TSMC N4P (4 nm)", 357, 53.9, 4096, 128, 256, "GDDR6", 2400, 2970, 304, "06/03/2025", "9070 XT"),

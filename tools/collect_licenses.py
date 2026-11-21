@@ -36,7 +36,10 @@ expressions = set()
 for package in sorted(packages, key=str.lower):
     package_id, version = package.split('/')
     folder = args.packages/package_id.lower()/version.lower()
-    nuspec = next(folder.glob('*.nuspec'))
+    nuspecs = list(folder.glob('*.nuspec'))
+    if not nuspecs:
+        raise FileNotFoundError(f'Missing .nuspec for {package} in {folder}')
+    nuspec = nuspecs[0]
     tree = ET.parse(nuspec).getroot()
     ns = tree.tag.partition('}')[0]+'}' if '}' in tree.tag else ''
     meta = tree.find(ns+'metadata')

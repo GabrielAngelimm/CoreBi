@@ -61,7 +61,8 @@ internal static class ReportExportService
             Benchmarks = BuildBenchList(context.Settings),
         };
 
-        var disks = await Task.Run(() => DiskHealth.Read(sensorsSnapshot));
+        var nvme = context.Sensors.NvmeLogs();
+        var disks = await Task.Run(() => DiskHealth.Read(sensorsSnapshot, nvme));
         data.Disks.AddRange(disks.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
         var power = await Task.Run(() => BatteryInfo.Read(sensorsSnapshot));
         data.Power.AddRange(power.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));

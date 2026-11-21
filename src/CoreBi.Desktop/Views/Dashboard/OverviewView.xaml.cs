@@ -37,6 +37,7 @@ namespace CoreBi.Desktop.Views
 {
     public partial class OverviewView : UserControl
     {
+        internal const double EventRowHeight = 56;
         private const int MaxSamples = 900; // 15 min a 1 amostra/s
         private const int EventsVisibleMax = 5;
         private const int EventsHistoryKept = 50;
@@ -143,7 +144,7 @@ namespace CoreBi.Desktop.Views
         private void ShowEvents()
         {
             double room = ((FrameworkElement)DashEvents.Parent).ActualHeight;
-            int slots = room > 0 ? Math.Clamp((int)(room / MainWindow.DashEventHeight), 1, EventsVisibleMax) : 3;
+            int slots = room > 0 ? Math.Clamp((int)(room / EventRowHeight), 1, EventsVisibleMax) : 3;
             var all = _events.Concat(SavedEvents()).OrderByDescending(e => e.At).ToList();
             var list = all.Take(slots).ToList();
             if (DashEvents.ItemsSource is IList<DashEvent> shown && shown.SequenceEqual(list)) return;
@@ -290,7 +291,7 @@ namespace CoreBi.Desktop.Views
         private void DashEvents_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             // O host não pede altura, então o histórico precisa de uma altura própria (em linhas inteiras) para saber que não cabe e rolar.
-            DashEventsAll.Height = Math.Max(MainWindow.DashEventHeight, Math.Floor(e.NewSize.Height / MainWindow.DashEventHeight) * MainWindow.DashEventHeight);
+            DashEventsAll.Height = Math.Max(EventRowHeight, Math.Floor(e.NewSize.Height / EventRowHeight) * EventRowHeight);
             if (e.HeightChanged) ShowEvents();
         }
 
