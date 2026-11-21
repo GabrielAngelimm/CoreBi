@@ -10,14 +10,14 @@ CoreBi/
       Monitoring/                Inventory, Sensors, Graphics, Storage, Power,
                                  Network, Memory, Devices e Diagnostics
       Performance/               Benchmarks, Stress, Graphics, Shaders e coordenador
-      Games/                     ETW, métricas, gargalo, catálogo e API opcional
+      Games/                     ETW, métricas, gargalo e catálogo de hardware
       Tools/                     Startup, Drivers e Apps
       Infrastructure/            JSON atômico, processos, ACL e diagnóstico local
-      Persistence/               Configurações, normalização e proteção DPAPI
+      Persistence/               Configurações e normalização
       Reports/                   Relatórios a partir de leituras coletadas
     CoreBi.Desktop/              WPF: apresentação e composição
       Shell/                     Janela, navegação, tema, recursos e adaptador
-      Views/                     15 páginas; 6 já possuem handlers/estado próprios
+      Views/                     14 páginas; 6 já possuem handlers/estado próprios
       Features/                  Apresentação por domínio e exportação de relatórios
       Services/                  Contexto mínimo de vida útil, permissões e links
       Assets/                    Marca e ícone
@@ -71,7 +71,7 @@ Novas regras entram no Engine. Ao evoluir uma página, mova seu estado/handlers 
 
 ## Persistência e erro
 
-`AtomicJsonFile` serializa em temporário exclusivo no mesmo diretório, sincroniza e substitui o destino. Falha de serialização preserva o arquivo anterior. Configurações são normalizadas; arquivo inválido é preservado para diagnóstico. Cache da API tem prazo, tamanho e quantidade limitados, valida valores e usa hash dos parâmetros/credencial na chave.
+`AtomicJsonFile` serializa em temporário exclusivo no mesmo diretório, sincroniza e substitui o destino. Falha de serialização preserva o arquivo anterior. Configurações são normalizadas; arquivo inválido é preservado para diagnóstico.
 
 Logs locais limitados conservam operação, tipo e stack da exceção; omitem mensagens que possam carregar credenciais. Erros de gravação são informados na interface. Logs não são enviados automaticamente.
 

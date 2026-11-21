@@ -1,56 +1,12 @@
 namespace CoreBi.Engine.Games;
 
 /// <summary>
-/// Jogo do catálogo. Valores de referência APROXIMADOS (compilados de benchmarks públicos) usados só
-/// pela estimativa local, quando a API da HowManyFPS não está configurada:
-/// GpuRef = FPS médio em 1080p/Alto numa RTX 4070 (índice 100); CpuCap = teto de FPS limitado pela CPU
-/// num Ryzen 7 7700X (índice 100); EngineCap = trava de FPS do próprio jogo (0 = sem trava).
+/// Referências APROXIMADAS (compiladas de benchmarks públicos) de desempenho relativo em jogos, usadas só no
+/// equilíbrio teórico do Gargalo, e nomes curtos de CPU/GPU para exibição. Modelo fora das tabelas fica sem
+/// referência (null): nenhum desempenho é presumido.
 /// </summary>
-public record GameInfo(string Name, string Genre, double GpuRef, double CpuCap, double EngineCap = 0);
-
-public enum Bottleneck { None, Gpu, Cpu, Engine, Unknown }
-
-public record FpsEstimate(double Avg, double Low1, Bottleneck Limiter);
-
-public static class GameCatalog
+public static class HardwareCatalog
 {
-    // O nome é enviado à API como está, então segue a grafia usada pela HowManyFPS.
-    public static readonly GameInfo[] Games =
-    {
-        new("Counter-Strike 2", "FPS competitivo", 340, 420),
-        new("Valorant", "FPS competitivo", 600, 650),
-        new("Fortnite", "Battle royale", 160, 250),
-        new("League of Legends", "MOBA", 420, 480),
-        new("Dota 2", "MOBA", 260, 280),
-        new("Apex Legends", "Battle royale", 220, 300),
-        new("PUBG: Battlegrounds", "Battle royale", 180, 220),
-        new("Call of Duty: Black Ops 6", "FPS", 140, 220),
-        new("Call of Duty: Warzone", "Battle royale", 130, 200),
-        new("Battlefield 6", "FPS", 120, 170),
-        new("Rainbow Six Siege", "FPS tático", 350, 430),
-        new("Overwatch 2", "FPS heroico", 280, 380),
-        new("Marvel Rivals", "FPS heroico", 110, 160),
-        new("Rocket League", "Esporte", 400, 450),
-        new("EA Sports FC 25", "Esporte", 220, 260),
-        new("Minecraft", "Sandbox", 300, 340),
-        new("GTA V", "Mundo aberto", 160, 190),
-        new("Red Dead Redemption 2", "Mundo aberto", 95, 160),
-        new("Cyberpunk 2077", "RPG mundo aberto", 95, 150),
-        new("The Witcher 3: Wild Hunt", "RPG", 120, 160),
-        new("Elden Ring", "RPG de ação", 110, 140, 60),
-        new("Baldur's Gate 3", "RPG", 110, 120),
-        new("Hogwarts Legacy", "RPG de ação", 90, 120),
-        new("Starfield", "RPG espacial", 65, 90),
-        new("Black Myth: Wukong", "Ação", 70, 140),
-        new("Alan Wake 2", "Terror / ação", 60, 140),
-        new("God of War Ragnarök", "Ação", 110, 170),
-        new("Forza Horizon 5", "Corrida", 140, 200),
-        new("Helldivers 2", "Cooperativo", 90, 110),
-        new("Monster Hunter Wilds", "Ação", 60, 85),
-        new("Assassin's Creed Shadows", "Ação mundo aberto", 65, 110),
-        new("Borderlands 4", "Looter shooter", 55, 110),
-    };
-
     // Desempenho relativo em jogos (raster), RTX 4070 = 100. Aproximado.
     private static readonly (string Key, double Index)[] GpuIndex =
     {
@@ -92,44 +48,7 @@ public static class GameCatalog
         return hit.Key == null ? null : hit.Index;
     }
 
-    public static double ResolutionFactor(string res) => res switch
-    {
-        "2560x1440" => 0.72,
-        "3840x2160" => 0.42,
-        _ => 1.0
-    };
-
-    public static double PresetFactor(string preset) => preset switch
-    {
-        "Baixo" => 1.6,
-        "Médio" => 1.3,
-        "Ultra" => 0.82,
-        _ => 1.0
-    };
-
-    /// <summary>Upscaling (DLSS/FSR) só alivia a GPU; o ganho cresce com a resolução.</summary>
-    public static double UpscalingFactor(string upscaling, string res) => upscaling switch
-    {
-        "Quality" => res == "1920x1080" ? 1.25 : 1.4,
-        "Performance" => res == "1920x1080" ? 1.45 : 1.75,
-        _ => 1.0
-    };
-
-    /// <summary>FPS = menor entre o teto da GPU, o teto da CPU e a trava do jogo.</summary>
-    public static FpsEstimate Estimate(GameInfo g, double gpuIdx, double cpuIdx, string res, string preset, string upscaling)
-    {
-        if (!double.IsFinite(gpuIdx) || !double.IsFinite(cpuIdx) || gpuIdx <= 0 || cpuIdx <= 0)
-            return new FpsEstimate(0, 0, Bottleneck.Unknown);
-        double gpuFps = g.GpuRef * gpuIdx / 100 * ResolutionFactor(res) * PresetFactor(preset) * UpscalingFactor(upscaling, res);
-        double cpuFps = g.CpuCap * cpuIdx / 100 * (preset == "Baixo" ? 1.1 : preset == "Ultra" ? 0.95 : 1.0);
-
-        double fps = Math.Min(gpuFps, cpuFps);
-        var limiter = gpuFps <= cpuFps ? Bottleneck.Gpu : Bottleneck.Cpu;
-        if (g.EngineCap > 0 && g.EngineCap < fps) { fps = g.EngineCap; limiter = Bottleneck.Engine; }
-        return new FpsEstimate(Math.Round(fps), Math.Round(fps * 0.75), limiter);
-    }
-
-    /// <summary>Nomes curtos como a API espera: "RTX 5070", "Ryzen 7 7700X".</summary>
+    /// <summary>Nomes curtos para exibição: "RTX 5070", "Ryzen 7 7700X".</summary>
     public static string ShortGpuName(string name)
     {
         string s = name.Replace("(TM)", "").Replace("(R)", "");

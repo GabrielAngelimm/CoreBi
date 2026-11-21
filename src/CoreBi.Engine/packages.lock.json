@@ -42,12 +42,6 @@
           "System.CodeDom": "11.0.0"
         }
       },
-      "System.Security.Cryptography.ProtectedData": {
-        "type": "Direct",
-        "requested": "[11.0.0, )",
-        "resolved": "11.0.0",
-        "contentHash": "iS9iyAMwLDPFBzTdcREDkzRBYmwy7aENYl7EXxAvnNJNCbl7+UVRgJfWaVLtVjSeDmT3JIItgGODmuAPljXFww=="
-      },
       "Vortice.D3DCompiler": {
         "type": "Direct",
         "requested": "[3.8.3, )",

@@ -108,7 +108,6 @@ public partial class MainWindow : Window
             _toast?.Close();
             _frames.Dispose();
             _windowsGpuUsage.Dispose();
-            _gameFetch?.Cancel();
             UnregisterHotKey(new System.Windows.Interop.WindowInteropHelper(this).Handle, HotkeyId);
             _monitor.Dispose();
         };
@@ -142,7 +141,7 @@ public partial class MainWindow : Window
             for (int i = 0; i < _gpus.Count && _gpus.Count > 1; i++)
             {
                 var g = _gpus[i];
-                var chip = new RadioButton { Content = GameCatalogShort(g.Name), ToolTip = g.Name, GroupName = "Gpu", Style = (Style)FindResource("Chip"), IsChecked = i == 0 };
+                var chip = new RadioButton { Content = CoreBi.Engine.Games.HardwareCatalog.ShortGpuName(g.Name), ToolTip = g.Name, GroupName = "Gpu", Style = (Style)FindResource("Chip"), IsChecked = i == 0 };
                 chip.Checked += (_, _) => ShowGpu(g);
                 GpuChips.Children.Add(chip);
             }
@@ -150,7 +149,7 @@ public partial class MainWindow : Window
             PageSystem.GpusReady();
 
             // Dependem do nome da GPU/CPU
-            InitGames();
+            ReadCpuName();
             InitBottleneckAndOverlay();
             UpdateDashboard();
         }
@@ -158,7 +157,18 @@ public partial class MainWindow : Window
         await Task.WhenAll(LoadInfo(), LoadSensors(), LoadGpu());
     }
 
-    private static string GameCatalogShort(string gpu) => CoreBi.Engine.Games.GameCatalog.ShortGpuName(gpu);
+    /// <summary>Nome do processador pelo WMI, usado na Visão geral, no Gargalo, no overlay e no benchmark; vazio se a consulta falhar.</summary>
+    internal string _cpuName = "";
+
+    private void ReadCpuName()
+    {
+        try
+        {
+            using var s = new System.Management.ManagementObjectSearcher("SELECT Name FROM Win32_Processor");
+            foreach (System.Management.ManagementObject mo in s.Get()) { _cpuName = mo["Name"]?.ToString()?.Trim() ?? ""; break; }
+        }
+        catch { }
+    }
 
     // ---------------- Janela / navegação ----------------
 
@@ -237,7 +247,7 @@ public partial class MainWindow : Window
         if (work != null) await work;
     }
 
-    private FrameworkElement[] Pages => new FrameworkElement[] { PageDash, PageSystem, PageSensors, PageGpu, PageGames, PageBottleneck, PageOverlay, PageBench, PageDriver, PageStartup, PageApps, PageDisks, PageEnergy, PageNet, PageStress };
+    private FrameworkElement[] Pages => new FrameworkElement[] { PageDash, PageSystem, PageSensors, PageGpu, PageBottleneck, PageOverlay, PageBench, PageDriver, PageStartup, PageApps, PageDisks, PageEnergy, PageNet, PageStress };
 
     /// <summary>Com deferred, nenhuma página fica visível: só o esqueleto, até RevealPage.</summary>
     internal void ShowPage(string name, bool deferred = false)

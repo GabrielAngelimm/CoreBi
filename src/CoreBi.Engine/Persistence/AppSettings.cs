@@ -1,7 +1,5 @@
 using CoreBi.Engine.Tools.Startup;
 
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using CoreBi.Engine.Infrastructure;
 
@@ -12,15 +10,16 @@ public sealed record BenchRun(DateTime Date, double? Multi, double? Single, bool
 /// <summary>Resultado dos benchmarks de jogo (Test = "gpu", "sim" ou "mem"). Score é usado para a barra do histórico.</summary>
 public sealed record BenchRecord(DateTime Date, string Test, double Score, string Summary);
 
-/// <summary>Configurações em %AppData%\CoreBi. A chave da API é cifrada com DPAPI (só este usuário do Windows a lê).</summary>
+/// <summary>
+/// Configurações em %AppData%\CoreBi. Campos que saíram do app (como a chave cifrada da antiga API de FPS estimado,
+/// HowManyFpsKeyProtected) são ignorados ao carregar e somem na próxima gravação.
+/// </summary>
 public sealed class AppSettings
 {
     public static string Folder { get; } =
         Environment.GetEnvironmentVariable("COREBI_DATA_DIR") is { Length: > 0 } custom
             ? Path.GetFullPath(custom) : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CoreBi");
     private static string FilePath => Path.Combine(Folder, "settings.json");
-
-    public string? HowManyFpsKeyProtected { get; set; }
 
     // Benchmark: últimos resultados (mais recente primeiro)
     public List<BenchRun> BenchRuns { get; set; } = new();
@@ -41,27 +40,6 @@ public sealed class AppSettings
     public List<string>? OverlayItems { get; set; }
     /// <summary>Já oferecemos "Nome do hardware" a quem tinha uma seleção salva (entra ligado uma única vez).</summary>
     public bool OverlayNamesOffered { get; set; }
-
-    [System.Text.Json.Serialization.JsonIgnore] // nunca gravar a chave em texto puro
-    public string? HowManyFpsKey
-    {
-        get
-        {
-            if (string.IsNullOrEmpty(HowManyFpsKeyProtected)) return null;
-            try
-            {
-                var bytes = ProtectedData.Unprotect(Convert.FromBase64String(HowManyFpsKeyProtected), null, DataProtectionScope.CurrentUser);
-                return Encoding.UTF8.GetString(bytes);
-            }
-            catch { return null; }
-        }
-        set
-        {
-            HowManyFpsKeyProtected = string.IsNullOrWhiteSpace(value)
-                ? null
-                : Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(value.Trim()), null, DataProtectionScope.CurrentUser));
-        }
-    }
 
     public static AppSettings Load()
     {

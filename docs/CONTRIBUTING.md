@@ -47,4 +47,4 @@ Ações da CI são fixadas por SHA. Gitleaks é baixado em versão fixada com SH
 
 ## Dados e publicação
 
-Não inclua `artifacts`, relatórios locais, credenciais, dumps, `.env`, chaves ou executáveis pessoais. Testes usam configurações separadas dos dados pessoais e chaves artificiais. Nunca inclua a chave real da API ou um dump de configuração em issue. Use o canal de [segurança](SECURITY.md) para material sensível. Releases devem conter binário completo, licenças, código correspondente e SHA256, identificados pela mesma versão/commit validado na CI.
+Não inclua `artifacts`, relatórios locais, credenciais, dumps, `.env`, chaves ou executáveis pessoais. Testes usam configurações separadas dos dados pessoais. Nunca inclua um dump de configuração em issue. Use o canal de [segurança](SECURITY.md) para material sensível. Releases devem conter binário completo, licenças, código correspondente e SHA256, identificados pela mesma versão/commit validado na CI.

@@ -221,7 +221,7 @@ public static class SystemSheets
         {
             Key = Cpu,
             Eyebrow = c.Vendor,
-            Title = GameCatalog.ShortCpuName(c.Name) is { Length: > 0 } shortName ? shortName : c.Name,
+            Title = HardwareCatalog.ShortCpuName(c.Name) is { Length: > 0 } shortName ? shortName : c.Name,
             Subtitle = c.Name,
             Readouts = new()
             {
