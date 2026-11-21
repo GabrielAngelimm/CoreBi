@@ -1,4 +1,3 @@
-using System.Windows.Input;
 using CoreBi.Engine.Tools.Startup;
 using System.Windows.Controls;
 using CoreBi.Desktop.Services;
@@ -14,40 +13,70 @@ public partial class StartupView : UserControl
     public StartupView() => InitializeComponent();
     private bool RequireAdmin() => PermissionGuard.RequireAdmin(Context.Owner);
 
+    private const string NextBoot = "Vale na próxima vez que o Windows iniciar.";
+    private static readonly Thickness HeadMargin = new(8, 10, 8, 0);
+
     private readonly StartupService _startup = new();
     private IReadOnlyList<StartupBackup> _removed = Array.Empty<StartupBackup>();
+    private bool? _narrowHeader;
+
+    private void StartupHeader_SizeChanged(object sender, SizeChangedEventArgs e)
+        => _narrowHeader = ToolPage.PlaceConsole(StartupHeader, StartupConsole, _narrowHeader);
+
+    private void StartupListScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        => ToolPage.AlignHead(StartupListScroll, StartupHead, HeadMargin);
+
+    private void Say(string status, string detail = "") => ToolPage.Say(StartupSummary, StartupResult, status, detail);
+
+    /// <summary>Leitura pedida (abrir a página, "Ler novamente"): o console mostra a hora da leitura.</summary>
+    internal Task ScanStartupAsync() => ScanAsync(announce: true);
 
     private bool _scanning;
-    internal async Task ScanStartupAsync()
+    /// <summary>Lê a lista e os removidos. Depois de uma ação (announce = false) o console continua mostrando o resultado dela.</summary>
+    private async Task ScanAsync(bool announce)
     {
         if (_scanning || Context.IsClosing) return;
         _scanning = true;
+        if (announce) { Say("Lendo programas…"); ToolPage.SetProgress(StartupProgressFill, 0); }
         List<StartupEntry> list;
+        string backupError = "";
         try
         {
             list = await Task.Run(StartupManager.List, Context.Lifetime);
             if (Context.IsClosing) return;
+            if (announce) ToolPage.SetProgress(StartupProgressFill, 0.5);
             try { _removed = await Task.Run(() => _startup.Backups, Context.Lifetime); }
-            catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); StartupResult.Text = "Backups indisponíveis: " + ex.Message; }
+            catch (UnauthorizedAccessException) { _removed = Array.Empty<StartupBackup>(); backupError = "Os removidos só aparecem com o CoreBi aberto como administrador."; }
+            catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); backupError = "Não foi possível ler os removidos: " + ex.Message; }
         }
-        catch (Exception ex) { StartupResult.Text = $"Não foi possível listar: {ex.Message}"; return; }
+        catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); ToolPage.EndProgress(StartupProgressFill); return; }
         finally { _scanning = false; }
         if (Context.IsClosing) return;
 
         StartupList.ItemsSource = list;
-        int on = list.Count(e => e.Enabled);
-        StartupSummary.Text = list.Count == 0 ? "Nenhum programa abre com o Windows"
-                            : $"{list.Count} programas, {on} ligados e {list.Count - on} desligados";
-        BtnStartupRestore.IsEnabled = _removed.Count > 0;
-        BtnStartupRestore.Content = _removed.Count > 0
-            ? $"Restaurar removidos ({_removed.Count})" : "Restaurar removidos";
+        StartupEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        StartupCount.Text = list.Count > 0 ? list.Count.ToString() : "";
+        StartupOff.Text = OffText(list.Count, list.Count(e => !e.Enabled));
+        if (announce)
+        {
+            ToolPage.SetProgress(StartupProgressFill, 1);
+            Say($"Lido às {DateTime.Now:HH:mm}", backupError);
+        }
+        else if (backupError.Length > 0) StartupResult.Text = backupError;
+        // Sem nada removido por aqui, não há o que restaurar: o botão só aparece quando há.
+        BtnStartupRestore.Visibility = _removed.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        BtnStartupRestore.Content = $"Restaurar removidos ({_removed.Count})";
     }
 
-    internal async void BtnStartupScan_Click(object sender, RoutedEventArgs e)
+    /// <summary>O que acompanha a contagem no título da tabela: quantos estão desligados.</summary>
+    private static string OffText(int total, int off) => total switch
     {
-        StartupResult.Text = "";
-        await ScanStartupAsync();
-    }
+        0 => "",
+        1 => off == 0 ? "ligado" : "desligado",
+        _ => off == 0 ? "todos ligados" : off == total ? "todos desligados" : off == 1 ? "1 desligado" : $"{off} desligados",
+    };
+
+    internal async void BtnStartupScan_Click(object sender, RoutedEventArgs e) => await ScanStartupAsync();
 
     internal async void StartupToggle_Click(object sender, RoutedEventArgs e)
     {
@@ -57,10 +86,10 @@ public partial class StartupView : UserControl
         try
         {
             StartupManager.SetEnabled(item, turnOn);
-            StartupResult.Text = $"{item.Name}: {(turnOn ? "ativado" : "desativado")}. Vale na próxima inicialização do Windows.";
+            Say($"{item.Name} {(turnOn ? "ligado" : "desligado")}", NextBoot);
         }
-        catch (Exception ex) { StartupResult.Text = $"{item.Name}: falhou ({ex.Message})."; }
-        await ScanStartupAsync();
+        catch (Exception ex) { Say($"Não foi possível mudar {item.Name}", ex.Message); }
+        await ScanAsync(announce: false);
     }
 
     internal async void StartupRemove_Click(object sender, RoutedEventArgs e)
@@ -68,19 +97,18 @@ public partial class StartupView : UserControl
         if (sender is not FrameworkElement { Tag: StartupEntry item }) return;
         if (item.Machine && !RequireAdmin()) return;
         var r = MessageBox.Show($"Remover \"{item.Name}\" da inicialização do Windows?\n\n{item.Command}\n\n" +
-                                "O programa continua instalado, só deixa de abrir sozinho. " +
-                                "Dá para desfazer em \"Restaurar removidos\".\n\n" +
-                                "Se só quiser testar, prefira desligar o interruptor.",
+                                "O programa continua instalado e dá para desfazer em Restaurar removidos. " +
+                                "Para só testar, desligue o interruptor.",
                                 "Inicialização", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (r != MessageBoxResult.Yes) return;
         try
         {
             using var critical = Context.BeginCriticalOperation();
             await Task.Run(() => _startup.Remove(item));
-            StartupResult.Text = $"{item.Name} removido da inicialização.";
+            Say($"{item.Name} removido", "Dá para desfazer em Restaurar removidos.");
         }
-        catch (Exception ex) { StartupResult.Text = $"{item.Name}: não foi possível remover ({ex.Message})."; }
-        await ScanStartupAsync();
+        catch (Exception ex) { Say($"Não foi possível remover {item.Name}", ex.Message); }
+        await ScanAsync(announce: false);
     }
 
     internal async void BtnStartupRestore_Click(object sender, RoutedEventArgs e)
@@ -90,17 +118,24 @@ public partial class StartupView : UserControl
         if (removed.Any(b => b.Machine) && !RequireAdmin()) return;
         string names = string.Join("\n", removed.Take(12).Select(b => $"  • {b.Name}"))
                        + (removed.Count > 12 ? $"\n  … e mais {removed.Count - 12}" : "");
-        var r = MessageBox.Show($"Devolver {removed.Count} programas à inicialização do Windows?\n\n{names}",
+        string what = removed.Count == 1 ? "1 programa" : $"{removed.Count} programas";
+        var r = MessageBox.Show($"Devolver {what} à inicialização do Windows?\n\n{names}",
                                 "Inicialização", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (r != MessageBoxResult.Yes) return;
 
         var failed = new List<string>();
+        int done = 0;
+        Say(removed.Count == 1 ? "Restaurando 1 programa…" : $"Restaurando {removed.Count} programas…");
+        ToolPage.SetProgress(StartupProgressFill, 0);
         foreach (var b in removed.ToList())
         {
             try { using var critical = Context.BeginCriticalOperation(); await Task.Run(() => _startup.Restore(b)); }
             catch (Exception ex) { failed.Add($"{b.Name} ({ex.Message})"); }
+            ToolPage.SetProgress(StartupProgressFill, (double)++done / removed.Count);
         }
-        StartupResult.Text = failed.Count == 0 ? "Programas restaurados." : $"Não restaurados: {string.Join("; ", failed)}";
-        await ScanStartupAsync();
+        int ok = removed.Count - failed.Count;
+        if (failed.Count == 0) Say(ok == 1 ? "1 programa restaurado" : $"{ok} programas restaurados", NextBoot);
+        else Say($"{ok} de {removed.Count} restaurados", "Não restaurados: " + string.Join("; ", failed));
+        await ScanAsync(announce: false);
     }
 }

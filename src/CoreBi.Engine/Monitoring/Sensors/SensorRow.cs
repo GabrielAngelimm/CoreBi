@@ -99,7 +99,9 @@ public class SensorRow : INotifyPropertyChanged
         value = Finite(value); min = Finite(min); max = Finite(max);
         if (value is { } v)
         {
-            if (_count == 0) { _min = min is { } m && m < v ? m : v; _max = max is { } x && x > v ? x : v; }
+            // O mínimo da biblioteca às vezes guarda o 0 da primeira leitura, antes de o sensor responder (SSD a 72 °C com
+            // mínimo 0). Temperatura, clock e tensão nunca são 0 de verdade, então esse zero não entra.
+            if (_count == 0) { _min = min is { } m && m < v && !(m <= 0 && NeverZero) ? m : v; _max = max is { } x && x > v ? x : v; }
             else { if (_min is not { } lo || v < lo) _min = v; if (_max is not { } hi || v > hi) _max = v; }
             _sum += v; _count++;
         }
@@ -116,6 +118,8 @@ public class SensorRow : INotifyPropertyChanged
         _count = _value != null ? 1 : 0;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
     }
+
+    private bool NeverZero => Type is SensorType.Temperature or SensorType.Clock or SensorType.Voltage;
 
     private static float? Finite(float? value) => value.HasValue && float.IsFinite(value.Value) ? value : null;
 
