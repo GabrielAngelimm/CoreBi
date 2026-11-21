@@ -56,7 +56,14 @@ internal static partial class Program
         if (args.FirstOrDefault() == "--process-fixture") return ProcessFixture(args);
         if (args.FirstOrDefault() == "--report") return RealReport(args.Length > 1 ? args[1] : "report");
         if (args.FirstOrDefault() == "--shots") return Shots(args);
-        Output = Path.GetFullPath(args.Length > 0 ? args[0] : "TestResults");
+        string[] modes = { "--overlay-telemetry", "--bench", "--hardware", "--startup", "--integrations" };
+        if (args.FirstOrDefault(a => a.StartsWith("--", StringComparison.Ordinal) && !modes.Contains(a)) is { } unknown)
+        {
+            Console.Error.WriteLine($"Opção desconhecida: {unknown}");
+            return 2;
+        }
+        // A pasta de saída é o primeiro argumento que não é modo: "--hardware out" e "out --hardware" valem igual.
+        Output = Path.GetFullPath(args.FirstOrDefault(a => !a.StartsWith("--", StringComparison.Ordinal)) ?? "TestResults");
         Directory.CreateDirectory(Output);
         Environment.SetEnvironmentVariable("COREBI_DATA_DIR", Path.Combine(Output, "settings"));
         CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("pt-BR");

@@ -1,5 +1,12 @@
 # Mudanças
 
+## Não lançado
+
+- Arquitetura revisada, sem mudança de tela nem de função: o Engine passa a guardar as regras que a interface repetia (limiares de rede, pontuação de memória, desligamentos inesperados do disco, busca de driver), arquivos grandes viram partes por assunto, o que só o Engine usa fica interno e o Desktop ganha a pasta Controls para os blocos visuais reutilizáveis. As páginas seguem um contrato só (Tick, RefreshAsync, RefreshHardware, RedrawTheme). Detalhes em docs/ARCHITECTURE.md.
+- Corrigidas regressões da organização anterior: capacidades de disco voltam a sair como no Explorador (1 TB = 931 GB), vereditos em maiúsculas voltam a "Saudável", o overlay volta a ser pausado durante os benchmarks de GPU, a leitura de sensores por segundo deixou de copiar a lista inteira várias vezes, o TPM ausente volta a aparecer como "Ausente" e a limpeza do teste de carga da GPU libera os alvos mesmo quando a renderização falha.
+- Comentários que explicavam decisões (anticheat, compatibilidade com o Explorador, limites de hardware) voltaram ao código.
+- Ferramentas: CI confere licenses/ com o lock de pacotes e fixa a versão do Inno Setup; Test.ps1 restaura em modo travado e ganhou o modo OverlayTelemetry; Publish.ps1 limpa a pasta padrão antes de publicar.
+
 ## 0.2.6 — 2026-11-20
 
 - FPS estimado removido do app: saem a página, o item do menu Jogos, as tabelas de FPS por jogo e a integração opcional com a API HowManyFPS, com o campo da chave. Uma chave que estivesse salva é descartada na próxima gravação das configurações, e o pacote System.Security.Cryptography.ProtectedData, que só servia para cifrá-la, saiu do projeto. O FPS medido continua igual no OverlayBi (inclusive pelo RTSS), no Gargalo e nos benchmarks.
