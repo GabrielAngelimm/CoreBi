@@ -1484,4 +1484,61 @@
         </Setter>
     </Style>
 
+    <!-- rodada-unslop: ferramentas início -->
+    <!--
+        Console de tarefa (Inicialização, Instalar apps, Drivers): fica ao lado do título, rente ao topo do cabeçalho, com o botão
+        da tarefa (36 px), o estado em uma linha, um detalhe curto à direita e a barra contínua no sinal, que só aparece durante
+        uma tarefa e só avança quando ela informa trabalho feito. Com 62 px de altura, o primeiro painel começa na mesma linha
+        das páginas com título e subtítulo.
+    -->
+    <Style x:Key="TaskConsole" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Padding" Value="12,12,22,12"/>
+    </Style>
+    <Style x:Key="TaskStatus" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <Style x:Key="TaskDetail" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="Margin" Value="16,0,0,0"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <!-- Cabeçalho de coluna de uma tabela feita à mão (linhas de altura fixa): DIN 12, um tom abaixo do conteúdo -->
+    <Style x:Key="TableHead" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <!-- Quantidade ao lado do título de um painel ("Drivers instalados 48") -->
+    <Style x:Key="TitleCount" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
+        <Setter Property="FontStretch" Value="SemiCondensed"/>
+        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="10,1,0,0"/>
+    </Style>
+    <!-- Linha de tabela: fio em cima e fundo que acende sob o mouse (o mesmo realce das linhas de Sensores) -->
+    <Style x:Key="TableRow" TargetType="Border">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource Hover}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!-- rodada-unslop: ferramentas fim -->
+
 </ResourceDictionary>

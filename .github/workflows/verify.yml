@@ -9,6 +9,8 @@ jobs:
   windows:
     runs-on: windows-latest
     timeout-minutes: 20
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -22,6 +24,42 @@ jobs:
       - run: dotnet format whitespace CoreBi.slnx --no-restore --verify-no-changes
       - run: dotnet build CoreBi.slnx -c Release --no-restore
       - run: dotnet run --project tests/CoreBi.Tests -c Release --no-build -- artifacts/tests
+      - name: Tela de 1920 × 1080 para as capturas
+        continue-on-error: true
+        shell: pwsh
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+      - name: Capturas das páginas (claro e escuro)
+        continue-on-error: true
+        timeout-minutes: 6
+        run: dotnet run --project tests/CoreBi.Tests -c Release --no-build -- --shots artifacts/shots 6 "PageDash,PageSystem,PageSensors,PageGpu,PageDisks,PageEnergy,PageNet,PageOverlay,PageBottleneck,PageBench,PageStress,PageStartup,PageApps,PageDriver" dark,light
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        continue-on-error: true
+        with:
+          name: capturas
+          path: artifacts/shots/*.png
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Publicar capturas no branch capturas/<branch>
+        if: github.event_name == 'push' && startsWith(github.ref_name, 'feature/')
+        continue-on-error: true
+        shell: pwsh
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          if (-not (Test-Path artifacts/shots/*.png)) { exit 0 }
+          $dir = Join-Path $env:RUNNER_TEMP 'capturas'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          Copy-Item artifacts/shots/*.png $dir
+          Push-Location $dir
+          git init -q -b capturas
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -q -m "Capturas de $env:BRANCH ($env:GITHUB_SHA)"
+          git push -q -f "https://x-access-token:$env:TOKEN@github.com/$env:GITHUB_REPOSITORY.git" "capturas:refs/heads/capturas/$env:BRANCH"
+          Pop-Location
       - run: ./tools/Publish.ps1
       - run: choco install innosetup --no-progress -y
       - run: ./tools/Installer.ps1 -SkipPublish
