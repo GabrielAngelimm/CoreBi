@@ -53,11 +53,18 @@ internal static class Nvml
 
     private static bool? _ok;
 
+    /// <summary>
+    /// Com o driver de vídeo sendo trocado, nenhuma chamada sai: os handles guardados apontam para o driver antigo e uma
+    /// leitura neles é falha nativa, que derruba o processo sem passar por catch nenhum (SensorMonitor.Pause e RetireGpu).
+    /// </summary>
+    internal static volatile bool Suspended;
+
     /// <summary>Inicializa uma única vez; false se não houver driver NVIDIA.</summary>
     public static bool Available
     {
         get
         {
+            if (Suspended) return false;
             _ok ??= Call(() => nvmlInit());
             return _ok.Value;
         }
@@ -66,6 +73,7 @@ internal static class Nvml
     /// <summary>Executa uma chamada NVML tolerando DLL/função ausentes (drivers antigos).</summary>
     private static bool Call(Func<int> f)
     {
+        if (Suspended) return false;
         try { return f() == 0; }
         catch (DllNotFoundException) { return false; }
         catch (EntryPointNotFoundException) { return false; }

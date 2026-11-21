@@ -63,11 +63,11 @@ A [CI daquela versão](https://github.com/GabrielAngelimm/CoreBi/actions/runs/39
 
 ## Falhas cobertas e limites
 
-As regressões verificam falha de gravação/serialização, backup antes da remoção, restauração canônica e conflitos, cancelamento e saída de processos, vida útil dos sensores, dados não finitos, política de domínio/publicador, parcialidade do Windows Update, cache/API e hardware sem referência. Operações de inicialização usam backend isolado e persistência real de teste; a ACL foi testada com administrador e arquivo próprio temporário.
+As regressões verificam falha de gravação/serialização, backup antes da remoção, restauração canônica e conflitos, cancelamento e saída de processos, vida útil dos sensores, dados não finitos, política de domínio/publicador, parcialidade do Windows Update, configurações de versões anteriores e hardware sem referência. Operações de inicialização usam backend isolado e persistência real de teste; a ACL foi testada com administrador e arquivo próprio temporário.
 
 | Área | Validação ainda necessária |
 | --- | --- |
-| Overlay e estimativas | Comparação de FPS em jogos, APIs/modos de tela e calibração das tabelas; HowManyFPS com contrato/chave reais |
+| Overlay e gargalo | Comparação de FPS em jogos, APIs/modos de tela e calibração da tabela de desempenho relativo de CPU/GPU |
 | Stress e benchmarks | Sessões longas, presets completos, repetibilidade e outros equipamentos |
 | Inicialização | Remover/restaurar entradas de teste controladas, falhas parciais e reboot em ambiente dedicado |
 | Drivers/apps/PawnIO | Instalações reais NVIDIA/AMD/WU/winget, backup pnputil, cancelamento, falhas e reboot |

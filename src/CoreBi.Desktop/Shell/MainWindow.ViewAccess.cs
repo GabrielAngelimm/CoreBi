@@ -41,18 +41,6 @@ public partial class MainWindow
     internal ItemsControl GpuSections => PageGpu.GpuSections;
     internal ItemsControl GpuExtras => PageGpu.GpuExtras;
     internal ItemsControl GpuLive => PageGpu.GpuLive;
-    internal TextBlock GamesSub => PageGames.GamesSub;
-    internal TextBox GameSearch => PageGames.GameSearch;
-    internal StackPanel GameResPanel => PageGames.GameResPanel;
-    internal StackPanel GamePresetBox => PageGames.GamePresetBox;
-    internal StackPanel GamePresetPanel => PageGames.GamePresetPanel;
-    internal StackPanel GameUpscalePanel => PageGames.GameUpscalePanel;
-    internal TextBlock GameSourceTitle => PageGames.GameSourceTitle;
-    internal TextBlock GameSourceText => PageGames.GameSourceText;
-    internal PasswordBox ApiKeyBox => PageGames.ApiKeyBox;
-    internal TextBlock ApiKeyHint => PageGames.ApiKeyHint;
-    internal Button BtnApiKey => PageGames.BtnApiKey;
-    internal ItemsControl GameList => PageGames.GameList;
     internal TextBlock BnCpuName => PageBottleneck.BnCpuName;
     internal TextBlock BnGpuName => PageBottleneck.BnGpuName;
     internal Canvas BnBalanceCanvas => PageBottleneck.BnBalanceCanvas;
@@ -199,7 +187,6 @@ public partial class MainWindow
         PageDriver.Context = _features;
         PageSensors.Initialize(_monitor);
         PageGpu.Owner = this;
-        PageGames.Owner = this;
         PageBottleneck.Owner = this;
         PageOverlay.Owner = this;
         PageBench.Owner = this;

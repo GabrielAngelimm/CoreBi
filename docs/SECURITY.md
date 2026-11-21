@@ -1,6 +1,6 @@
 # Segurança
 
-CoreBi 0.2.5 é uma prévia técnica. Correções se concentram na versão mais recente; não há promessa de suporte a versões antigas.
+CoreBi 0.2.6 é uma prévia técnica. Correções se concentram na versão mais recente; não há promessa de suporte a versões antigas.
 
 ## Reportar
 
@@ -14,6 +14,6 @@ Downloads de drivers validam domínio HTTPS, redirecionamentos, assinatura Authe
 
 Processos são criados com argumentos separados. Cancelar uma instalação iniciada pelo winget pode interromper o processo sem desfazer mudanças já feitas pelo instalador; o app informa o término disponível, não garante rollback de terceiros. Windows Update também pode exigir reinicialização.
 
-DPAPI protege a chave da API para o usuário atual, mas não protege contra comprometimento desse usuário ou de um administrador. Assinatura confiável confirma origem/integridade do arquivo, não ausência de falhas do fornecedor. O CoreBi não substitui backup do sistema.
+Assinatura confiável confirma origem/integridade do arquivo, não ausência de falhas do fornecedor. O CoreBi não substitui backup do sistema.
 
 Logs locais têm rotação e omitem mensagens de exceção/headers; contêm tipos, operações e stacks. Ainda assim, revise qualquer material antes de compartilhá-lo. Testes de política e falhas não equivalem a um teste de invasão nem certificam instalações reais.
