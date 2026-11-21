@@ -22,8 +22,18 @@ function Assert-MicrosoftSignature([string]$Path) {
     }
 }
 
+# O dotnet-install.ps1 vem de dot.net por HTTPS. Hoje ele não tem assinatura; se vier assinado, a assinatura
+# precisa ser válida e da Microsoft. Nesse caso a confiança na origem é a do próprio HTTPS.
+function Assert-InstallerScript([string]$Path) {
+    $signature = Get-AuthenticodeSignature -LiteralPath $Path
+    if ($signature.Status -eq 'NotSigned') { return }
+    if ($signature.Status -ne 'Valid' -or "$($signature.SignerCertificate.Subject)" -notmatch 'O=Microsoft Corporation') {
+        throw "$Path tem assinatura inválida ou de outro publicador."
+    }
+}
+
 # Instala o SDK numa pasta do usuário com o script oficial da Microsoft (sem instalador nem UAC).
-# O script e o dotnet.exe instalado só são aceitos com assinatura válida da Microsoft.
+# O dotnet.exe instalado precisa ter assinatura válida da Microsoft.
 function Install-CoreBiSdk([string]$Version, [string]$Root) {
     Write-Host "O SDK $Version não está instalado no sistema. Baixando uma cópia só para o CoreBi em $Root..."
     $installer = Join-Path ([IO.Path]::GetTempPath()) ('dotnet-install-' + [guid]::NewGuid().ToString('N') + '.ps1')
@@ -32,7 +42,7 @@ function Install-CoreBiSdk([string]$Version, [string]$Root) {
         # Windows PowerShell 5.1 em sistemas antigos ainda pode negociar TLS 1.0 por padrão.
         if ($PSVersionTable.PSEdition -eq 'Desktop') { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 }
         Invoke-WebRequest -Uri 'https://dot.net/v1/dotnet-install.ps1' -OutFile $installer -UseBasicParsing
-        Assert-MicrosoftSignature $installer
+        Assert-InstallerScript $installer
         & $installer -Version $Version -InstallDir $Root -Architecture x64 -NoPath
         Assert-MicrosoftSignature (Join-Path $Root 'dotnet.exe')
     }

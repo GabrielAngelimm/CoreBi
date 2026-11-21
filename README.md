@@ -56,7 +56,7 @@ cd CoreBi
 .\tools\Build.ps1
 ```
 
-O `Build.ps1` restaura os pacotes em modo bloqueado e compila. Os scripts de `tools/` usam o SDK exato de `global.json`: o do sistema, se for essa versão, ou uma cópia baixada na primeira vez para `%LOCALAPPDATA%\CoreBiDev\<versão>` com o script oficial da Microsoft, sem instalador nem UAC. O script e o `dotnet.exe` só são aceitos com assinatura válida da Microsoft, e atualizações do .NET pelo Windows não mexem nessa cópia. Para os demais comandos, use `.\tools\Dotnet.ps1` no lugar de `dotnet`.
+O `Build.ps1` restaura os pacotes em modo bloqueado e compila. Os scripts de `tools/` usam o SDK exato de `global.json`: o do sistema, se for essa versão, ou uma cópia baixada na primeira vez para `%LOCALAPPDATA%\CoreBiDev\<versão>` com o script oficial da Microsoft, sem instalador nem UAC. O `dotnet.exe` instalado precisa ter assinatura válida da Microsoft, e atualizações do .NET pelo Windows não mexem nessa cópia. Para os demais comandos, use `.\tools\Dotnet.ps1` no lugar de `dotnet`.
 
 Para executar o build, abra o PowerShell como administrador na raiz do projeto:
 
