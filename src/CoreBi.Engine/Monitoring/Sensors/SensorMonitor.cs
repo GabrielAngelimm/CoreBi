@@ -9,6 +9,9 @@ public sealed partial class SensorMonitor : IDisposable
 {
     private readonly IHardwareSource _source;
     private readonly object _lifecycle = new();
+    // Acesso à biblioteca (abrir, ler, fechar, NVMe): separado das linhas para a leitura lenta rodar fora da janela sem travar
+    // quem só consulta as linhas (CpuTemperature, Snapshot...) a cada tique.
+    private readonly object _hardware = new();
     private readonly HashSet<string> _failedHardware = new();
     private Task? _openTask;
     private bool _disposed;
@@ -29,6 +32,7 @@ public sealed partial class SensorMonitor : IDisposable
     {
         _paused = true;
         GpuAccessGate.SetSuspended(true);
+        WaitForPoll(); // a leitura em andamento termina antes de o Windows seguir com a troca
     }
 
     /// <summary>Volta a ler depois que os dispositivos assentaram. A placa de vídeo continua de fora se o driver dela mudou.</summary>
@@ -39,6 +43,12 @@ public sealed partial class SensorMonitor : IDisposable
     }
 
     public bool IsPaused => _paused;
+
+    /// <summary>Espera a leitura em andamento (fora da janela), se houver, terminar.</summary>
+    public void WaitForPoll()
+    {
+        lock (_hardware) { }
+    }
 
     /// <summary>
     /// O driver de vídeo mudou com o CoreBi aberto: a placa sai das leituras até o app abrir de novo.
@@ -74,7 +84,7 @@ public sealed partial class SensorMonitor : IDisposable
     public IReadOnlyDictionary<string, NvmeLog> NvmeLogs()
     {
         var logs = new Dictionary<string, NvmeLog>(StringComparer.Ordinal);
-        lock (_lifecycle)
+        lock (_hardware)
         {
             if (!_open || _disposed || _paused) return logs;
             foreach (var hw in _source.Hardware)
@@ -125,58 +135,94 @@ public sealed partial class SensorMonitor : IDisposable
         }
     }
 
+    /// <summary>Lê o hardware e aplica nas linhas, tudo na thread de quem chama (testes e a primeira leitura).</summary>
     public void Refresh()
     {
-        lock (_lifecycle)
+        if (Poll() is { } poll) Apply(poll);
+    }
+
+    /// <summary>
+    /// Leitura de 1 s em duas metades: <see cref="Poll"/> (a parte lenta, dezenas de ms nos chips da placa-mãe, SMART e NVML)
+    /// roda fora da thread da janela; <see cref="Apply"/> passa os valores para as linhas, que a interface observa, na thread dela.
+    /// </summary>
+    public Task<SensorPoll?> PollAsync() => Task.Run(Poll);
+
+    /// <summary>Lê todos os sensores da biblioteca. Pode rodar em qualquer thread; não toca nas linhas.</summary>
+    public SensorPoll? Poll()
+    {
+        lock (_hardware)
         {
-            if (!_open || _disposed || _paused) return;
+            if (!_open || _disposed || _paused) return null;
+            var readings = new List<PolledSensor>(_index.Count + 8);
+            var failed = new List<(string RootId, string Name)>();
             foreach (var hw in _source.Hardware)
             {
+                if (_paused) return null; // o Windows começou a trocar dispositivos no meio da leitura
                 if (_gpuRetired && SensorTypeMeta.IsGpu(hw.HardwareType)) continue;
                 if (hw.HardwareType == HardwareType.Network && _networks != null && !_networks.Contains(hw.Name)) continue;
                 string rootId = hw.Identifier.ToString();
-                try { Walk(hw, hw); _failedHardware.Remove(rootId); }
+                int mark = readings.Count;
+                try { Walk(hw, hw, readings); _failedHardware.Remove(rootId); }
                 catch (Exception ex)
                 {
                     if (_failedHardware.Add(rootId)) DiagnosticLog.Write("sensors.refresh", ex);
-                    foreach (var row in Rows.Where(r => r.RootId == rootId || r.Hardware == hw.Name))
-                        row.Update(null, null, null);
+                    readings.RemoveRange(mark, readings.Count - mark);
+                    failed.Add((rootId, hw.Name));
                 }
             }
+            return new SensorPoll(readings, failed);
+        }
+    }
+
+    /// <summary>Passa uma leitura para as linhas (e cria as de sensores novos). Na thread da interface, que observa as linhas.</summary>
+    public void Apply(SensorPoll poll)
+    {
+        lock (_lifecycle)
+        {
+            if (_disposed) return;
+            foreach (var r in poll.Readings)
+            {
+                if (_gpuRetired && SensorTypeMeta.IsGpu(r.HardwareType)) continue; // a placa saiu enquanto a leitura corria
+                if (!_index.TryGetValue(r.Id, out var row))
+                {
+                    row = new SensorRow
+                    {
+                        Id = r.Id,
+                        Hardware = r.Hardware,
+                        RootId = r.RootId,
+                        RootName = r.RootName,
+                        RootType = r.RootType,
+                        Category = SensorRow.CategoryName(r.Type),
+                        Name = r.Name,
+                        Type = r.Type,
+                        HardwareType = r.HardwareType
+                    };
+                    _index[r.Id] = row;
+                    Rows.Add(row);
+                }
+                row.Update(r.Value, r.Min, r.Max);
+            }
+            foreach (var (rootId, name) in poll.Failed)
+                foreach (var row in Rows.Where(r => r.RootId == rootId || r.Hardware == name))
+                    row.Update(null, null, null);
             _snapshot = null;
         }
     }
 
-    private void Walk(IHardware hw, IHardware root)
+    private void Walk(IHardware hw, IHardware root, List<PolledSensor> readings)
     {
         hw.Update();
         bool inaccessibleCpu = hw.HardwareType == HardwareType.Cpu && !IsPawnIOInstalled
             && !hw.Sensors.Any(x => x.SensorType == SensorType.Temperature && x.Value is > 0);
+        string rootId = root.Identifier.ToString();
         foreach (var s in hw.Sensors)
         {
-            string id = s.Identifier.ToString();
-            if (!_index.TryGetValue(id, out var row))
-            {
-                row = new SensorRow
-                {
-                    Id = id,
-                    Hardware = hw.Name,
-                    RootId = root.Identifier.ToString(),
-                    RootName = root.Name,
-                    RootType = root.HardwareType,
-                    Category = SensorRow.CategoryName(s.SensorType),
-                    Name = s.Name,
-                    Type = s.SensorType,
-                    HardwareType = hw.HardwareType
-                };
-                _index[id] = row;
-                Rows.Add(row);
-            }
             bool unavailable = inaccessibleCpu && s.SensorType is SensorType.Temperature or SensorType.Power or SensorType.Voltage or SensorType.Clock;
-            row.Update(unavailable ? null : s.Value, unavailable ? null : s.Min, unavailable ? null : s.Max);
+            readings.Add(new PolledSensor(s.Identifier.ToString(), hw.Name, rootId, root.Name, root.HardwareType, s.Name, s.SensorType, hw.HardwareType,
+                unavailable ? null : s.Value, unavailable ? null : s.Min, unavailable ? null : s.Max));
         }
         foreach (var sub in hw.SubHardware)
-            Walk(sub, root);
+            Walk(sub, root, readings);
     }
 
     public void ResetStats()
@@ -241,9 +287,20 @@ public sealed partial class SensorMonitor : IDisposable
 
     private void CloseSource()
     {
-        try { _source.Close(); }
-        catch (Exception ex) { DiagnosticLog.Write("sensors.close", ex); }
+        // Espera uma leitura em andamento: fechar a biblioteca no meio dela derruba o processo
+        lock (_hardware)
+        {
+            try { _source.Close(); }
+            catch (Exception ex) { DiagnosticLog.Write("sensors.close", ex); }
+        }
     }
 }
+
+/// <summary>Uma leitura completa da biblioteca, pronta para <see cref="SensorMonitor.Apply"/>.</summary>
+public sealed record SensorPoll(IReadOnlyList<PolledSensor> Readings, IReadOnlyList<(string RootId, string Name)> Failed);
+
+/// <summary>Um sensor lido: identificação (para criar a linha na primeira vez) e os valores.</summary>
+public readonly record struct PolledSensor(string Id, string Hardware, string RootId, string RootName, HardwareType RootType, string Name,
+    SensorType Type, HardwareType HardwareType, float? Value, float? Min, float? Max);
 
 public sealed record NvmeLog(ulong? CriticalWarning, ulong? MediaErrors, ulong? UnsafeShutdowns);

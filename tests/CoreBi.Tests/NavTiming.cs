@@ -13,7 +13,7 @@ internal static partial class Program
     /// <summary>
     /// Mede a navegação com dados reais, sem nada aparecer na tela (mesma janela invisível dos prints): para cada página, quanto
     /// tempo a troca segura a interface, quando sai o primeiro quadro e o maior intervalo entre quadros no primeiro segundo
-    /// (um intervalo grande é a animação engasgando). Mede também quanto custa a leitura de 1 s dos sensores na interface.
+    /// (um intervalo grande é a animação engasgando). Mede também quanto custa a leitura de 1 s dos sensores e o quanto o tique de 1 s congela a interface.
     /// Uso: --nav-timing pasta [segundos de amostra] [voltas]
     /// </summary>
     private static int NavTiming(string[] args)
@@ -61,24 +61,21 @@ internal static partial class Program
             for (int i = 0; i < 10; i++)
             {
                 var w = Stopwatch.StartNew();
-                window._monitor.Refresh();
+                window._monitor.Poll();
                 refresh.Add(w.Elapsed.TotalMilliseconds);
                 Wait(200);
             }
-            var tick = typeof(MainWindow).GetMethod("OnTelemetryTick", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-            var ticks = new List<double>();
-            for (int i = 0; i < 10; i++)
-            {
-                var w = Stopwatch.StartNew();
-                tick.Invoke(window, [null, EventArgs.Empty]);
-                Drain();
-                ticks.Add(w.Elapsed.TotalMilliseconds);
-                Wait(200);
-            }
+            // Congelamento da interface pelo tique de 1 s: maior intervalo entre quadros em 4 s parados na Visão geral
+            frames.Clear();
+            long idleStart = clock.ElapsedTicks;
+            Wait(4000);
+            double tickGap = 0;
+            long last = idleStart;
+            foreach (long f in frames.ToList()) { tickGap = Math.Max(tickGap, Ms(f - last)); last = f; }
             Console.WriteLine($"Carga do hardware: {loadMs:0} ms");
-            Console.WriteLine($"Leitura dos sensores (UI): média {refresh.Average():0.0} ms, máx. {refresh.Max():0.0} ms");
-            Console.WriteLine($"Tique de 1 s inteiro (UI): média {ticks.Average():0.0} ms, máx. {ticks.Max():0.0} ms");
-            results.Add(new { kind = "tick", loadMs, refreshAvg = refresh.Average(), refreshMax = refresh.Max(), tickAvg = ticks.Average(), tickMax = ticks.Max() });
+            Console.WriteLine($"Leitura dos sensores (Poll, fora da janela): média {refresh.Average():0.0} ms, máx. {refresh.Max():0.0} ms");
+            Console.WriteLine($"Maior intervalo entre quadros em 4 s parado (tique de 1 s): {tickGap:0} ms");
+            results.Add(new { kind = "tick", loadMs, refreshAvg = refresh.Average(), refreshMax = refresh.Max(), idleMaxFrameGapMs = tickGap });
 
             var navs = window.NavPanel.Children.OfType<RadioButton>().ToList();
             Console.WriteLine();
