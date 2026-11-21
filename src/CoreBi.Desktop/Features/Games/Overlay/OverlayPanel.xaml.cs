@@ -36,7 +36,7 @@ public partial class OverlayPanel : UserControl
         InitializeComponent();
         OFps.MinWidth = TextWidth("9999", OFps.FontSize, OFps.FontWeight);
         OFrameTime.MinWidth = TextWidth("999,9 ms", OFrameTime.FontSize, OFrameTime.FontWeight);
-        OLow.MinWidth = Math.Max(TextWidth("1% low 9999"), TextWidth("aguardando jogo"));
+        OLow.MinWidth = Math.Max(TextWidth("1% low 9999"), TextWidth("Aguardando jogo"));
         // Paleta fixa do overlay (Theme.xaml, Hud*): o traço no sinal e a linha de base num cinza translúcido
         _graphLine.Stroke = (Brush)FindResource("HudSignal");
         var muted = ((SolidColorBrush)FindResource("HudMuted")).Color;
@@ -75,7 +75,7 @@ public partial class OverlayPanel : UserControl
         {
             OFps.Text = "—";
             OFrameTime.Text = fps ? "" : "— ms";
-            OLow.Text = "aguardando jogo";
+            OLow.Text = "Aguardando jogo";
         }
         // Rodapé: nome do jogo e/ou hora.
         var foot = new List<string>();

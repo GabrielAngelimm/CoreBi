@@ -276,7 +276,7 @@ public static class DiskHealth
         bool anyData = r.Health != 5 || r.PredictFail != null || r.Wear != null || r.Nvme != null;
 
         if (r.PredictFail == true) crit.Add("O próprio disco avisa (S.M.A.R.T.) que deve falhar em breve. Faça backup agora.");
-        if (r.Health == 2) crit.Add("O Windows classifica o disco como NÃO saudável.");
+        if (r.Health == 2) crit.Add("O Windows classifica o disco como não saudável.");
         else if (r.Health == 1) warn.Add("O Windows classifica a saúde do disco como \"atenção\".");
 
         if (r.Wear is double w)
@@ -291,7 +291,7 @@ public static class DiskHealth
             else if (t >= okMax) warn.Add($"Temperatura de {t:0} °C está alta. Melhore a ventilação.");
         }
         if (r.Nvme?.CriticalWarning is > 0) crit.Add("O SSD acusa um aviso crítico no próprio relatório de saúde NVMe. Faça backup agora.");
-        if (r.Nvme?.MediaErrors is > 0) warn.Add($"O SSD registrou {r.Nvme.MediaErrors:N0} erro(s) de mídia e integridade dos dados.");
+        if (r.Nvme?.MediaErrors is > 0) warn.Add($"O SSD registrou {(r.Nvme.MediaErrors == 1 ? "1 erro" : $"{r.Nvme.MediaErrors:N0} erros")} de mídia e integridade dos dados.");
         if (r.Spare is double sp && r.SpareThreshold is double st && st > 0 && sp < st)
             crit.Add($"Os blocos de reserva do SSD estão em {sp:0}%, abaixo do mínimo de {st:0}% definido pelo fabricante. Faça backup.");
         if (r.ReadErrUncorrected > 0 || r.WriteErrUncorrected > 0)
@@ -325,7 +325,7 @@ public static class DiskHealth
         M("Aviso crítico (NVMe)", r.Nvme?.CriticalWarning is ulong cw ? (cw == 0 ? "Nenhum" : $"0x{cw:X2}") : null);
         M("Erros de mídia (NVMe)", r.Nvme?.MediaErrors is ulong me ? $"{me:N0}" : null);
         M("Desligamentos inesperados", r.Nvme?.UnsafeShutdowns is ulong us ? $"{us:N0}" : null);
-        M("Falha prevista (S.M.A.R.T.)", r.PredictFail is bool pf ? (pf ? "SIM" : "Não") : null);
+        M("Falha prevista (S.M.A.R.T.)", r.PredictFail is bool pf ? (pf ? "Sim" : "Não") : null);
         M("Saúde segundo o Windows", r.Health switch { 0 => "Saudável", 1 => "Atenção", 2 => "Não saudável", _ => null });
         M("Firmware", r.Firmware.Length > 0 ? r.Firmware : null);
 
