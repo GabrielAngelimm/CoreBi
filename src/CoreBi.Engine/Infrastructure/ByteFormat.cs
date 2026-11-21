@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace CoreBi.Engine.Infrastructure;
 
-public static class ByteFormat
+internal static class ByteFormat
 {
     public const double BytesPerGiB = 1024.0 * 1024 * 1024;
     public const double BytesPerMiB = 1024.0 * 1024;

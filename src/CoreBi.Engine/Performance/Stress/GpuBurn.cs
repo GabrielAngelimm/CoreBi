@@ -38,7 +38,7 @@ public sealed class GpuBurn : IDisposable
     public long Frames => Interlocked.Read(ref _frames);
     public double AverageFps => _seconds > 0 ? Frames / _seconds : 0;
     public string? Error { get; private set; }
-    public string AdapterUsed { get; private set; } = "";
+    private string AdapterUsed { get; set; } = "";
 
     public void Start(GpuBurnSettings s)
     {

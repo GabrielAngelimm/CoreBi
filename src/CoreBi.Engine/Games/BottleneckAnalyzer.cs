@@ -34,7 +34,7 @@ public static class BottleneckAnalyzer
     public static LoadSample Sample(SensorMonitor monitor, GpuInfo? gpu, FrameStats? frames) =>
         Sample(monitor, gpu, frames, MemoryInfo.ReadPhysicalUsage());
 
-    public static LoadSample Sample(SensorMonitor monitor, GpuInfo? gpu, FrameStats? frames, MemoryInfo.PhysicalUsage? memory)
+    internal static LoadSample Sample(SensorMonitor monitor, GpuInfo? gpu, FrameStats? frames, MemoryInfo.PhysicalUsage? memory)
     {
         var snapshot = monitor.Snapshot();
         var gpuLive = gpu != null ? GpuMonitor.ReadLive(gpu, snapshot) : null;

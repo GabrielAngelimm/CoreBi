@@ -4,7 +4,7 @@ namespace CoreBi.Engine.Monitoring.Inventory;
 
 public static class SystemInfoCollector
 {
-    public static List<InfoNode> Collect() => Read().ToNodes();
+    internal static List<InfoNode> Collect() => Read().ToNodes();
 
     public static SystemInventory Read()
     {

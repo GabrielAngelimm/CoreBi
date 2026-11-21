@@ -27,7 +27,7 @@ public sealed class GpuDriverStatus
     public bool UpdateAvailable =>
         Vendor == "NVIDIA" && Latest.Length > 0 && Installed.Length > 0 && CompareVersions(Latest, Installed) > 0;
 
-    public static int CompareVersions(string a, string b) =>
+    internal static int CompareVersions(string a, string b) =>
         Version.TryParse(a, out var left) && Version.TryParse(b, out var right) ? left.CompareTo(right) : 0;
 }
 

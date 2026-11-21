@@ -7,7 +7,7 @@ internal sealed record ProcessResult(int ExitCode, string Output, string Error);
 
 internal static class ProcessRunner
 {
-    internal static ProcessStartInfo Create(string executable, IEnumerable<string> arguments)
+    private static ProcessStartInfo Create(string executable, IEnumerable<string> arguments)
     {
         var start = new ProcessStartInfo(executable)
         {

@@ -40,7 +40,7 @@ public sealed class StartupBackup
 /// Lista, ativa/desativa e remove programas de inicialização via chaves Run, pastas Inicializar e StartupApproved
 /// (o mesmo mecanismo do Gerenciador de Tarefas).
 /// </summary>
-public static class StartupManager
+internal static class StartupManager
 {
     private const string RunPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string ApprovedPath = @"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\";
@@ -231,7 +231,7 @@ public static class StartupManager
     }
 
     /// <summary>Extrai o executável da linha de comando ("C:\x\a.exe" -min → C:\x\a.exe).</summary>
-    public static string? ExeFromCommand(string cmd)
+    private static string? ExeFromCommand(string cmd)
     {
         cmd = Environment.ExpandEnvironmentVariables(cmd.Trim());
         if (cmd.Length == 0) return null;

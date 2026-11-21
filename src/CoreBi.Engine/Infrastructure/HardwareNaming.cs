@@ -7,10 +7,10 @@ public static class HardwareNaming
     private static readonly Regex MobileGpuRegex = new(@"Laptop|Mobile|Max-Q|Notebook", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     private static readonly Regex IntelGenRegex = new(@"\d+th Gen\s*", RegexOptions.Compiled);
 
-    public static bool IsMobileGpu(string? name) =>
+    internal static bool IsMobileGpu(string? name) =>
         !string.IsNullOrWhiteSpace(name) && MobileGpuRegex.IsMatch(name);
 
-    public static bool IsMicrosoftBasicAdapter(string? name, string? pnpDeviceId = null) =>
+    internal static bool IsMicrosoftBasicAdapter(string? name, string? pnpDeviceId = null) =>
         (name?.Contains("Microsoft Basic", StringComparison.OrdinalIgnoreCase) ?? false)
         || (pnpDeviceId?.StartsWith("ROOT", StringComparison.OrdinalIgnoreCase) == true
             && (name?.Contains("Basic", StringComparison.OrdinalIgnoreCase) ?? false));
@@ -44,7 +44,7 @@ public static class HardwareNaming
     }
 
     /// <summary>Converte versão WMI da NVIDIA (ex.: "32.0.15.9597") para o formato de pacote ("595.97").</summary>
-    public static string? NvidiaDriverVersion(string? wmiVersion)
+    internal static string? NvidiaDriverVersion(string? wmiVersion)
     {
         if (string.IsNullOrWhiteSpace(wmiVersion)) return null;
         string[] parts = wmiVersion.Split('.');

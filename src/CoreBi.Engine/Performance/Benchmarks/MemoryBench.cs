@@ -10,9 +10,9 @@ public sealed record LoadResult(double SeqReadMBs, double SmallFilesMBs, double 
 /// </summary>
 public static class MemoryBench
 {
-    public const long PackBytes = 512L << 20;
-    public const int AssetCount = 1000;
-    public const int AssetBytes = 64 << 10;
+    private const long PackBytes = 512L << 20;
+    private const int AssetCount = 1000;
+    private const int AssetBytes = 64 << 10;
 
     private const long LatencyBytes = 256L << 20;  // 256 MB: bem maior que qualquer cache L3
     private const long BandwidthBytes = 1L << 30;  // 1 GB

@@ -65,7 +65,7 @@ public static partial class AppInstaller
         new() { Name = "VLC", Description = "Player de vídeo e música que abre qualquer formato.", WingetId = "VideoLAN.VLC", DisplayPrefix = "VLC media player" },
     };
 
-    public static string WingetPath =>
+    internal static string WingetPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\WindowsApps\winget.exe");
 
     public static bool WingetAvailable => File.Exists(WingetPath);

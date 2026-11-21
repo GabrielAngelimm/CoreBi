@@ -65,13 +65,13 @@ internal static partial class Program
             gpu.Update(60, 50, 70); cpu.Update(55, 40, 80); monitor.Rows.Add(gpu); monitor.Rows.Add(cpu);
             try
             {
-                monitor.Pause(); Require(monitor.IsPaused && CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended, "Reads kept running during a device change");
-                monitor.Resume(); Require(!monitor.IsPaused && !CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended, "Plain device change left reads paused");
+                monitor.Pause(); Require(monitor.IsPaused && GpuAccessGate.IsSuspended, "Reads kept running during a device change");
+                monitor.Resume(); Require(!monitor.IsPaused && !GpuAccessGate.IsSuspended, "Plain device change left reads paused");
                 monitor.Pause(); monitor.RetireGpu(); monitor.Resume();
-                Require(monitor.GpuRetired && CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended, "GPU came back after a driver swap");
+                Require(monitor.GpuRetired && GpuAccessGate.IsSuspended, "GPU came back after a driver swap");
                 Require(gpu.RawValue == null && cpu.RawValue == 55, "Retiring the GPU touched other hardware or kept a stale reading");
             }
-            finally { CoreBi.Engine.Monitoring.Graphics.Nvml.Suspended = false; } // os testes seguintes ainda leem a placa
+            finally { GpuAccessGate.SetSuspended(false); } // os testes seguintes ainda leem a placa
             return new { gpuRetired = true, cpuKept = true };
         });
         Check("sensors: session statistics, reset and clear names", () =>

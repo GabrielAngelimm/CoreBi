@@ -60,11 +60,7 @@ internal static class Nvml
     /// Com o driver de vídeo sendo trocado, nenhuma chamada sai: os handles guardados apontam para o driver antigo e uma
     /// leitura neles é falha nativa, que derruba o processo sem passar por catch nenhum.
     /// </summary>
-    internal static bool Suspended
-    {
-        get => GpuAccessGate.IsSuspended;
-        set => GpuAccessGate.SetSuspended(value);
-    }
+    private static bool Suspended => GpuAccessGate.IsSuspended;
 
     /// <summary>Inicializa uma única vez; false se não houver driver NVIDIA.</summary>
     public static bool Available

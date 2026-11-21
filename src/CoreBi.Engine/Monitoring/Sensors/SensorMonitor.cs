@@ -235,7 +235,7 @@ public sealed class SensorMonitor : IDisposable
         }
     }
 
-    public static bool IsElevated => ProcessElevation.IsElevated;
+    internal static bool IsElevated => ProcessElevation.IsElevated;
 
     public enum CpuSensorProblem { None, NotElevated, PawnIOMissing, ReadFailed }
 
