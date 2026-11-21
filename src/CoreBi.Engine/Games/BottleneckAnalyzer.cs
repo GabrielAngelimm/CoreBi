@@ -1,73 +1,55 @@
-using LibreHardwareMonitor.Hardware;
+using System.Diagnostics;
 using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Memory;
-
 using CoreBi.Engine.Monitoring.Sensors;
-
-
 
 namespace CoreBi.Engine.Games;
 
 public enum Limiter { Gpu, Cpu, Vram, Ram, Thermal, Capped, Unknown }
 
-/// <summary>Uma leitura (1/s) de tudo que pode limitar o FPS.</summary>
 public sealed record LoadSample(
     float? GpuLoad, float? CpuTotal, float? CpuMaxCore, string? BusiestCore,
     double? VramPct, float? RamPct, float? GpuTemp, float? CpuTemp, bool GpuThermalCap, double? Fps)
 {
-    /// <summary>
-    /// Regras (na ordem): VRAM cheia → térmico → GPU ≥ 90% (normal em jogo pesado) → CPU/núcleo ≥ 85% com GPU sobrando →
-    /// RAM cheia → nada no limite (trava de FPS, V-Sync ou menu).
-    /// </summary>
+    public const double VramLimitPct = 97;
+    public const float ThermalLimitC = 95;
+    public const float GpuLimitPct = 90;
+    public const float CpuLimitPct = 85;
+    public const float RamLimitPct = 92;
+
     public Limiter Classify()
     {
         if (Fps is not > 0) return Limiter.Unknown;
-        if (VramPct >= 97) return Limiter.Vram;
-        if (GpuThermalCap || CpuTemp >= 95 || GpuTemp >= 95) return Limiter.Thermal;
-        if (GpuLoad >= 90) return Limiter.Gpu;
-        if (CpuMaxCore >= 85 || CpuTotal >= 85) return Limiter.Cpu;
-        if (RamPct >= 92) return Limiter.Ram;
+        if (VramPct >= VramLimitPct) return Limiter.Vram;
+        if (GpuThermalCap || CpuTemp >= ThermalLimitC || GpuTemp >= ThermalLimitC) return Limiter.Thermal;
+        if (GpuLoad >= GpuLimitPct) return Limiter.Gpu;
+        if (CpuMaxCore >= CpuLimitPct || CpuTotal >= CpuLimitPct) return Limiter.Cpu;
+        if (RamPct >= RamLimitPct) return Limiter.Ram;
         return GpuLoad != null && CpuTotal != null ? Limiter.Capped : Limiter.Unknown;
     }
 }
 
 public static class BottleneckAnalyzer
 {
-    /// <summary>Sensores atuais de CPU/GPU, carga WDDM da GPU e RAM física do Windows.</summary>
-    public static LoadSample Sample(SensorMonitor m, GpuInfo? gpu, FrameStats? frames)
-        => Sample(m, gpu, frames, MemoryInfo.ReadPhysicalUsage());
+    public static LoadSample Sample(SensorMonitor monitor, GpuInfo? gpu, FrameStats? frames) =>
+        Sample(monitor, gpu, frames, MemoryInfo.ReadPhysicalUsage());
 
-    internal static LoadSample Sample(SensorMonitor m, GpuInfo? gpu, FrameStats? frames, MemoryInfo.PhysicalUsage? memory)
+    public static LoadSample Sample(SensorMonitor monitor, GpuInfo? gpu, FrameStats? frames, MemoryInfo.PhysicalUsage? memory)
     {
-        var rows = m.Rows;
-        float? gpuLoad = null, gpuTemp = null;
-        double? vramPct = null;
-        bool thermal = false;
-        if (gpu != null)
-        {
-            gpuLoad = gpu.WindowsLoad;
-            var temps = rows.Where(r => r.Hardware == gpu.Name && r.Type == SensorType.Temperature).ToList();
-            gpuTemp = (temps.FirstOrDefault(r => r.Name == "GPU Core") ?? temps.FirstOrDefault())?.RawValue;
-
-            if (gpu.NvmlHandle != IntPtr.Zero && Nvml.MemoryInfo(gpu.NvmlHandle) is Nvml.Memory mem && mem.Total > 0)
-                vramPct = 100.0 * mem.Used / mem.Total;
-            else
-            {
-                var used = rows.FirstOrDefault(r => r.Hardware == gpu.Name && r.Name == "GPU Memory Used")?.RawValue;
-                var total = rows.FirstOrDefault(r => r.Hardware == gpu.Name && r.Name == "GPU Memory Total")?.RawValue;
-                if (used != null && total > 0) vramPct = 100.0 * used.Value / total.Value;
-            }
-            if (gpu.NvmlHandle != IntPtr.Zero && Nvml.ThrottleReasons(gpu.NvmlHandle) is ulong r)
-                thermal = (r & 0x60) != 0; // SW/HW thermal slowdown
-        }
-
-        var cores = rows.Where(r => r.HardwareType == HardwareType.Cpu && r.Type == SensorType.Load &&
-                                    r.Name.StartsWith("CPU Core #") && !r.Name.Contains("Thread") && r.RawValue != null).ToList();
-        var busiest = cores.OrderByDescending(r => r.RawValue).FirstOrDefault();
-        float? ram = memory?.UsedPercent;
-
-        return new LoadSample(gpuLoad, m.CpuLoad, busiest?.RawValue, busiest?.Name.Replace("CPU Core #", "núcleo "),
-                              vramPct, ram, gpuTemp, m.CpuTemperature, thermal, frames?.Fps);
+        var snapshot = monitor.Snapshot();
+        var gpuLive = gpu != null ? GpuMonitor.ReadLive(gpu, snapshot) : null;
+        var cpuLive = GpuMonitor.ReadCpu(monitor, snapshot);
+        return new LoadSample(
+            gpuLive?.LoadPct,
+            cpuLive.LoadPct,
+            cpuLive.BusiestCoreLoadPct,
+            cpuLive.BusiestCoreLabel,
+            gpuLive?.VramPct,
+            memory?.UsedPercent,
+            gpuLive?.TempC,
+            cpuLive.TempC,
+            gpuLive?.ThermalThrottled == true,
+            frames?.Fps);
     }
 
     public static string Title(Limiter l) => l switch
@@ -114,18 +96,20 @@ public static class BottleneckAnalyzer
     }
 }
 
-/// <summary>Acumula amostras durante uma sessão de jogo e produz o relatório.</summary>
 public sealed class BottleneckSession
 {
     private readonly List<(LoadSample Sample, Limiter Limiter)> _samples = new();
-    public DateTime Start { get; } = DateTime.Now;
+    private readonly Stopwatch _clock = Stopwatch.StartNew();
     public TimeSpan Duration { get; init; }
     public int Count => _samples.Count;
-    public bool Done => DateTime.Now - Start >= Duration;
+    public bool Done => _clock.Elapsed >= Duration;
+    public TimeSpan Elapsed => _clock.Elapsed;
 
     public void Add(LoadSample s)
     {
-        if (s.Fps > 0 && s.Classify() != Limiter.Unknown) _samples.Add((s, s.Classify()));
+        if (s.Fps is not > 0) return;
+        var limiter = s.Classify();
+        if (limiter != Limiter.Unknown) _samples.Add((s, limiter));
     }
 
     public IReadOnlyList<(Limiter Limiter, double Pct)> Distribution() =>

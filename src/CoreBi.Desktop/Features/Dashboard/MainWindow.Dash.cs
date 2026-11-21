@@ -53,12 +53,7 @@ public partial class MainWindow
 
     internal float? MainGpuLoad() => _gpus.FirstOrDefault()?.WindowsLoad;
 
-    internal float? CpuClockAvg()
-    {
-        var c = _monitor.Rows.Where(r => r.HardwareType == HardwareType.Cpu && r.Type == SensorType.Clock &&
-                                         r.Name.StartsWith("Core #") && r.RawValue > 0).Select(r => r.RawValue!.Value).ToList();
-        return c.Count > 0 ? c.Average() : null;
-    }
+    internal float? CpuClockAvg() => GpuMonitor.ReadCpu(_monitor, _monitor.Snapshot()).AvgClockMHz;
 
     internal void CollectDashSample()
     {
@@ -231,12 +226,11 @@ public partial class MainWindow
         if (_gpus.Count > 0)
         {
             var gpu = _gpus[0];
-            uint? clk = gpu.NvmlHandle != IntPtr.Zero ? Nvml.Clock(gpu.NvmlHandle, Nvml.ClockGraphics) : null;
-            var gpuLoad = MainGpuLoad();
+            var live = GpuMonitor.ReadLive(gpu, _monitor.Snapshot());
             rows.Add(new("gpu", "Gpu", "Placa de vídeo", HardwareNaming.ShortGpuName(gpu.Name), "PageGpu", Palette("Gpu"),
-                         F(gpuLoad, "0", " %"), "em uso", (gpuLoad ?? 0) / 100.0,
-                         new[] { Stat("Temp.", F(MainGpuTemp(), "0", " °C")), Stat("Clock", clk is uint c ? $"{c} MHz" : "—"),
-                                 Stat("Consumo", F(MainGpuPower(), "0", " W")) }));
+                         F(live.LoadPct, "0", " %"), "em uso", (live.LoadPct ?? 0) / 100.0,
+                         new[] { Stat("Temp.", F(live.TempC, "0", " °C")), Stat("Clock", live.CoreClockMHz is float c ? $"{c:0} MHz" : "—"),
+                                 Stat("Consumo", F(live.PowerW, "0", " W")) }));
         }
         DashComponents.ItemsSource = rows;
     }
@@ -594,10 +588,10 @@ public partial class MainWindow
 
         var rings = new List<(double Frac, string Channel, DashRingItem Item)>();
         if (mem is { Total: > 0 } mu) rings.Add((ram, "Memory", new(memoryBrush, "RAM", Pct(ram), $"{Gb(mu.Used)} de {mu.Total / 1073741824.0:0} GB · {Gb(mu.Available)} livres", "PageSystem:Memória RAM")));
-        if (_gpus.Count > 0 && _gpus[0].NvmlHandle != IntPtr.Zero && Nvml.MemoryInfo(_gpus[0].NvmlHandle) is Nvml.Memory m && m.Total > 0)
+        if (_gpus.Count > 0 && GpuMonitor.ReadLive(_gpus[0], _monitor.Snapshot()) is { VramUsedGb: double vu, VramTotalGb: > 0 and double vt })
         {
-            double vram = (double)m.Used / m.Total;
-            rings.Add((vram, "Gpu", new(gpuBrush, "VRAM", Pct(vram), $"{Gb(m.Used)} de {m.Total / 1073741824.0:0} GB · {Gb(m.Total - m.Used)} livres", "PageGpu")));
+            double vram = vu / vt;
+            rings.Add((vram, "Gpu", new(gpuBrush, "VRAM", Pct(vram), $"{vu:0.0} GB de {vt:0} GB · {Math.Max(0, vt - vu):0.0} GB livres", "PageGpu")));
         }
         if (_drives.FirstOrDefault(d => d.Letter.StartsWith("C", StringComparison.OrdinalIgnoreCase)) is { } c0)
             rings.Add((c0.UsedFraction, "Storage", new(storageBrush, $"Disco {c0.Letter}", Pct(c0.UsedFraction), $"{DriveCard.Fmt(c0.Total - c0.Free)} de {DriveCard.Fmt(c0.Total)} · {DriveCard.Fmt(c0.Free)} livres", "PageDisks")));

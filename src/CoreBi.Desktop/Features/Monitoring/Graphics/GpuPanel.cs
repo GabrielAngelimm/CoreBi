@@ -95,9 +95,9 @@ internal static class GpuSheet
     public static List<GpuReadout> Readouts(GpuInfo g, Dictionary<string, string> d)
     {
         var list = new List<(string Label, string Value, string Unit, string? Tip)>();
-        if (g.VramBytes > 0)
+        if (g.DedicatedVramBytes > 0)
         {
-            var (v, u) = Split(Fmt.Vram(g.VramBytes));
+            var (v, u) = Split(Fmt.Vram(g.DedicatedVramBytes));
             string? type = V(d, "Tipo");
             bool system = type?.StartsWith("Memória do sistema") == true;
             string label = system ? "Memória dedicada" : type is { } t && (t.StartsWith("GDDR") || t.StartsWith("HBM")) ? $"Memória {t}" : "Memória";
@@ -272,8 +272,7 @@ internal sealed class GpuBoard
     public GpuBoard(GpuInfo gpu, Dictionary<string, string> spec)
     {
         _gpu = gpu;
-        bool nvml = gpu.NvmlHandle != IntPtr.Zero;
-        _mem = new("mem", "Clock da memória", nvml ? "Como o driver informa. Em GDDR6 e GDDR6X a taxa efetiva é o dobro." : null);
+        _mem = new("mem", "Clock da memória", gpu.HasVendorTelemetry ? "Como o driver informa. Em GDDR6 e GDDR6X a taxa efetiva é o dobro." : null);
         static double Mhz(string? s) => s != null && double.TryParse(s.Split(' ')[0], out double v) ? v : 0;
         _coreCeiling = Math.Max(Mhz(spec.GetValueOrDefault("Máximo (curva V/F)")), Mhz(spec.GetValueOrDefault("Boost (referência)")));
         _memCeiling = Mhz(spec.GetValueOrDefault("Clock da memória"));
@@ -281,36 +280,25 @@ internal sealed class GpuBoard
 
     private List<float?> History(string key) => _history.TryGetValue(key, out var h) ? h : _history[key] = new List<float?>();
 
-    private SensorRow? Row(SensorMonitor m, SensorType type, string name, bool startsWith = false) =>
-        m.Rows.FirstOrDefault(r => r.Hardware == _gpu.Name && r.Type == type && r.RawValue != null &&
-                                   (startsWith ? r.Name.StartsWith(name, StringComparison.Ordinal) : r.Name == name));
-
-    /// <summary>Uma leitura (1 s). Chamada só com a página à vista.</summary>
     public void Sample(SensorMonitor m)
     {
         var now = DateTime.Now;
         // Segundos em que a página ficou escondida: viram vão no histórico.
         int gap = _last == DateTime.MinValue ? 0 : Math.Clamp((int)Math.Round((now - _last).TotalSeconds) - 1, 0, Window);
         _last = now;
-        var h = _gpu.NvmlHandle;
-        bool nvml = h != IntPtr.Zero;
         if (m.IsOpen) _sampledWithSensors = true;
 
-        float? load = _gpu.WindowsLoad;
-        float? core = nvml && Nvml.Clock(h, Nvml.ClockGraphics) is uint c ? c : Row(m, SensorType.Clock, "GPU Core")?.RawValue;
-        float? mem = nvml && Nvml.Clock(h, Nvml.ClockMem) is uint mc ? mc : Row(m, SensorType.Clock, "GPU Memory")?.RawValue;
-        var temps = m.Rows.Where(r => r.Hardware == _gpu.Name && r.Type == SensorType.Temperature && r.RawValue != null).ToList();
-        float? temp = (temps.FirstOrDefault(r => r.Name == "GPU Core") ?? temps.FirstOrDefault())?.RawValue;
-        float? hot = Row(m, SensorType.Temperature, "GPU Hot Spot")?.RawValue;
-        float? power = nvml && Nvml.PowerUsageMw(h) is uint mw ? mw / 1000f
-            : m.Rows.FirstOrDefault(r => r.Hardware == _gpu.Name && r.Type == SensorType.Power && r.RawValue != null)?.RawValue;
-        float? limit = nvml && Nvml.PowerLimitMw(h) is uint lim && lim > 0 ? lim / 1000f : null;
-        (double Used, double Total)? vram = null;
-        if (nvml && Nvml.MemoryInfo(h) is Nvml.Memory nm && nm.Total > 0) vram = (nm.Used / 1073741824.0, nm.Total / 1073741824.0);
-        else if (Row(m, SensorType.SmallData, "GPU Memory Used")?.RawValue is float u && Row(m, SensorType.SmallData, "GPU Memory Total")?.RawValue is float t && t > 0)
-            vram = (u / 1024.0, t / 1024.0);
-        float? rpm = Row(m, SensorType.Fan, "GPU Fan", true)?.RawValue;
-        float? fanPct = Row(m, SensorType.Control, "GPU Fan", true)?.RawValue;
+        var live = GpuMonitor.ReadLive(_gpu, m.Snapshot());
+        float? load = live.LoadPct;
+        float? core = live.CoreClockMHz;
+        float? mem = live.MemoryClockMHz;
+        float? temp = live.TempC;
+        float? hot = live.HotspotTempC;
+        float? power = live.PowerW;
+        float? limit = live.PowerLimitW;
+        (double Used, double Total)? vram = live.VramUsedGb is double vu && live.VramTotalGb is double vt2 ? (vu, vt2) : null;
+        float? rpm = live.FanRpm;
+        float? fanPct = live.FanPct;
 
         Push("load", load, gap);
         _load.Value = load is float l ? $"{l:0}" : "—";

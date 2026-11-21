@@ -1,24 +1,23 @@
-using CoreBi.Engine.Infrastructure;
-using CoreBi.Engine.Monitoring.Inventory;
 using System.Management;
 using System.Text.RegularExpressions;
-using Microsoft.Win32;
+using CoreBi.Engine.Infrastructure;
+using CoreBi.Engine.Monitoring.Inventory;
 
 namespace CoreBi.Engine.Monitoring.Graphics;
 
-/// <summary>Uma placa de vídeo com os dados no estilo da aba "Graphics Card" do GPU-Z.</summary>
 public sealed class GpuInfo
 {
     public string Name { get; init; } = "";
     public string Subtitle { get; set; } = "";
     public string Vendor { get; init; } = "";
     public List<InfoNode> Sections { get; } = new();
-    internal IntPtr NvmlHandle { get; set; }
-    internal ulong VramBytes { get; set; }
-    internal ulong? AdapterLuid { get; set; }
+    public ulong DedicatedVramBytes { get; internal set; }
+    public bool HasVendorTelemetry => NvmlHandle != IntPtr.Zero;
     public float? WindowsLoad { get; internal set; }
 
-    /// <summary>Leituras dinâmicas que o LibreHardwareMonitor não traz (P-state, PerfCap...).</summary>
+    internal IntPtr NvmlHandle { get; set; }
+    internal ulong? AdapterLuid { get; set; }
+
     public List<KeyValuePair<string, string>> LiveExtras()
     {
         var list = new List<KeyValuePair<string, string>>();
@@ -40,7 +39,7 @@ public sealed class GpuInfo
     {
         var parts = new List<string>();
         if ((r & 0x4) != 0) parts.Add("Energia");
-        if ((r & 0x60) != 0) parts.Add("Térmico");
+        if ((r & Nvml.ThermalSlowdownMask) != 0) parts.Add("Térmico");
         if ((r & 0x8) != 0) parts.Add("HW slowdown");
         if ((r & 0x80) != 0) parts.Add("Power brake");
         if (parts.Count == 0) return (r & 0x1) != 0 ? "Ociosa" : "Nenhum";
@@ -61,62 +60,68 @@ public sealed class GpuInfo
 
 public static class GpuInfoCollector
 {
+    private static readonly Regex PciIdRegex = new(
+        @"VEN_([0-9A-F]{4})&DEV_([0-9A-F]{4})(?:&SUBSYS_([0-9A-F]{4})([0-9A-F]{4}))?(?:&REV_([0-9A-F]{2}))?",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     public static List<GpuInfo> Collect()
     {
         var result = new List<GpuInfo>();
         var adapters = Dxgi.Enumerate();
         var nvDevices = Nvml.Devices();
 
-        using var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController");
-        foreach (ManagementObject vc in searcher.Get())
+        WmiQuery.ForEach("SELECT * FROM Win32_VideoController", vc =>
         {
             try { result.Add(Build(vc, adapters, nvDevices)); }
             catch (Exception ex)
             {
-                var g = new GpuInfo { Name = vc["Name"]?.ToString() ?? "GPU" };
-                g.Sections.Add(new InfoNode { Header = "ERRO" }.Also(n => n.Add("Falha ao ler", ex.Message)));
+                DiagnosticLog.Write("gpu.collect", ex);
+                var g = new GpuInfo { Name = WmiQuery.GetString(vc, "Name") ?? "GPU" };
+                var err = new InfoNode { Header = "ERRO" };
+                err.Add("Falha ao ler", ex.Message);
+                g.Sections.Add(err);
                 result.Add(g);
             }
-        }
+        }, diagnosticOp: "gpu.wmi");
+
         // Placa dedicada primeiro (mais VRAM).
-        return result.OrderByDescending(g => g.VramBytes).ToList();
+        return result.OrderByDescending(g => g.DedicatedVramBytes).ToList();
     }
 
-    private static InfoNode Also(this InfoNode n, Action<InfoNode> a) { a(n); return n; }
-
-    private static GpuInfo Build(ManagementObject vc, List<Dxgi.Adapter> adapters, List<(IntPtr Handle, Nvml.PciInfo Pci)> nvDevices)
+    private static GpuInfo Build(ManagementBaseObject vc, List<Dxgi.Adapter> adapters, List<(IntPtr Handle, Nvml.PciInfo Pci)> nvDevices)
     {
-        string name = vc["Name"]?.ToString()?.Trim() ?? "GPU";
-        string pnp = vc["PNPDeviceID"]?.ToString() ?? "";
-        var m = Regex.Match(pnp, @"VEN_([0-9A-F]{4})&DEV_([0-9A-F]{4})(?:&SUBSYS_([0-9A-F]{4})([0-9A-F]{4}))?(?:&REV_([0-9A-F]{2}))?",
-                            RegexOptions.IgnoreCase);
+        string name = WmiQuery.GetString(vc, "Name") ?? "GPU";
+        string pnp = WmiQuery.GetString(vc, "PNPDeviceID") ?? "";
+        var m = PciIdRegex.Match(pnp);
         string ven = m.Groups[1].Value.ToUpperInvariant(), dev = m.Groups[2].Value.ToUpperInvariant();
         string subDev = m.Groups[3].Value.ToUpperInvariant(), subVen = m.Groups[4].Value.ToUpperInvariant();
         string rev = m.Groups[5].Value.ToUpperInvariant();
 
         string vendor = ven switch { "10DE" => "NVIDIA", "1002" => "AMD", "8086" => "Intel", _ => ven };
         var spec = GpuSpecDb.Find(ven, dev, name);
-        var dx = adapters.FirstOrDefault(a => a.VendorId.ToString("X4") == ven && a.DeviceId.ToString("X4") == dev);
+        var matchingDxgi = adapters.Where(a => a.VendorId.ToString("X4") == ven && a.DeviceId.ToString("X4") == dev).ToList();
+        var dx = matchingDxgi.FirstOrDefault();
 
         IntPtr h = IntPtr.Zero;
-        if (ven == "10DE")
+        if (ven == "10DE" && uint.TryParse(dev, System.Globalization.NumberStyles.HexNumber, null, out uint devNum))
         {
-            uint pciId = (Convert.ToUInt32(dev, 16) << 16) | 0x10DE;
-            h = nvDevices.FirstOrDefault(d => d.Pci.PciDeviceId == pciId).Handle;
+            uint pciId = (devNum << 16) | 0x10DE;
+            var matchingNv = nvDevices.Where(d => d.Pci.PciDeviceId == pciId).ToList();
+            if (matchingNv.Count == 1) h = matchingNv[0].Handle;
+            else if (matchingNv.Count > 1 && dx != null) h = matchingNv[0].Handle;
         }
 
         var pnpProps = PnpProperties(pnp);
-        var reg = DriverRegistry(pnpProps.GetValueOrDefault("DEVPKEY_Device_Driver") as string);
+        var reg = GpuRegistryReader.ReadDriverHardwareInfo(pnpProps.GetValueOrDefault("DEVPKEY_Device_Driver") as string);
 
         var gpu = new GpuInfo
         {
             Name = name,
             Vendor = vendor,
             NvmlHandle = h,
-            AdapterLuid = adapters.Count(a => a.VendorId.ToString("X4") == ven && a.DeviceId.ToString("X4") == dev) == 1 ? dx?.Luid : null
+            AdapterLuid = matchingDxgi.Count == 1 ? dx?.Luid : null
         };
 
-        // ---------- Identificação ----------
         var id = Section(gpu, "IDENTIFICAÇÃO");
         id.Add("Nome", name);
         id.Add("Chip", spec?.Chip ?? "—");
@@ -129,23 +134,34 @@ public static class GpuInfoCollector
         id.Add("Transistores", spec != null ? $"{spec.TransistorsBi:0.#} bilhões" : "—");
         id.Add("Lançamento", spec?.Release ?? "—");
 
-        // ---------- Unidades e desempenho teórico ----------
         uint? cores = h != IntPtr.Zero ? Nvml.Cores(h) : null;
         int shaders = (int)(cores ?? (uint)(spec?.Shaders ?? 0));
         var units = Section(gpu, "UNIDADES DE PROCESSAMENTO");
         if (shaders > 0)
         {
-            bool nv = ven == "10DE";
-            int perUnit = nv ? 128 : 64;
-            units.Add(nv ? "CUDA cores" : "Stream processors", $"{shaders:N0}");
-            units.Add(nv ? "SMs" : "Compute units", $"{shaders / perUnit}");
-            if (nv && spec != null && spec.Arch is "Blackwell" or "Ada Lovelace" or "Ampere")
+            if (ven == "10DE")
             {
-                units.Add("Tensor cores", $"{shaders / perUnit * 4}");
-                units.Add("RT cores", $"{shaders / perUnit}");
+                const int perSm = 128;
+                units.Add("CUDA cores", $"{shaders:N0}");
+                units.Add("SMs", $"{shaders / perSm}");
+                if (spec != null && spec.Arch is "Blackwell" or "Ada Lovelace" or "Ampere")
+                {
+                    units.Add("Tensor cores", $"{shaders / perSm * 4}");
+                    units.Add("RT cores", $"{shaders / perSm}");
+                }
             }
-            else if (!nv && spec != null && spec.Arch.StartsWith("RDNA"))
-                units.Add("Ray accelerators", $"{shaders / perUnit}");
+            else if (ven == "1002")
+            {
+                const int perCu = 64;
+                units.Add("Stream processors", $"{shaders:N0}");
+                units.Add("Compute units", $"{shaders / perCu}");
+                if (spec != null && spec.Arch.StartsWith("RDNA", StringComparison.Ordinal))
+                    units.Add("Ray accelerators", $"{shaders / perCu}");
+            }
+            else
+            {
+                units.Add("Shaders", $"{shaders:N0}");
+            }
         }
         if (spec != null)
         {
@@ -156,22 +172,17 @@ public static class GpuInfoCollector
         }
         if (units.Children.Count == 0) units.Add("Sem dados", "GPU fora do banco de especificações");
 
-        // ---------- Memória ----------
         var mem = Section(gpu, "MEMÓRIA");
         ulong vram = 0;
         if (h != IntPtr.Zero && Nvml.MemoryInfo(h) is Nvml.Memory nm) vram = nm.Total;
         if (vram == 0 && dx != null) vram = dx.DedicatedVideo;
-        if (vram == 0 && reg.TryGetValue("HardwareInformation.qwMemorySize", out var q)) vram = Convert.ToUInt64(q);
-        gpu.VramBytes = vram;
-        bool igpu = spec?.MemType.StartsWith("Memória do sistema") == true;
-        if (igpu || vram < 1UL << 30) mem.Add(igpu ? "Reservada (dedicada)" : "Tamanho", Bytes(vram));
-        else
-        {
-            // Driver reserva parte da VRAM: 12227 MiB reportados = placa de 12 GB (como mostra o GPU-Z).
-            double gib = vram / (double)(1UL << 30);
-            mem.Add("Tamanho", $"{Math.Ceiling(gib - 0.15):0} GB ({vram >> 20:N0} MB utilizáveis)");
-        }
-        if (dx != null && dx.SharedSystem > 0) mem.Add("Compartilhada do sistema", Bytes(dx.SharedSystem));
+        if (vram == 0) vram = GpuRegistryReader.ReadMemorySizeBytes(reg);
+        gpu.DedicatedVramBytes = vram;
+
+        bool igpu = spec?.IsIntegrated == true;
+        if (igpu || vram < 1UL << 30) mem.Add(igpu ? "Reservada (dedicada)" : "Tamanho", ByteFormat.Binary(vram));
+        else mem.Add("Tamanho", $"{ByteFormat.CommercialVramGb(vram):0} GB ({vram >> 20:N0} MB utilizáveis)");
+        if (dx != null && dx.SharedSystem > 0) mem.Add("Compartilhada do sistema", ByteFormat.Binary(dx.SharedSystem));
         mem.Add("Tipo", spec?.MemType ?? "—");
 
         uint? bus = h != IntPtr.Zero ? Nvml.BusWidth(h) : null;
@@ -185,9 +196,8 @@ public static class GpuInfoCollector
             if (bus is uint bw) mem.Add("Largura de banda", $"{gbps * bw / 8:0.0} GB/s");
         }
         if (h != IntPtr.Zero && Nvml.Bar1(h) is Nvml.Memory bar)
-            mem.Add("Resizable BAR", bar.Total > 256UL * 1024 * 1024 ? $"Ativado (BAR1 {Bytes(bar.Total)})" : "Desativado");
+            mem.Add("Resizable BAR", bar.Total > 256UL * 1024 * 1024 ? $"Ativado (BAR1 {ByteFormat.Binary(bar.Total)})" : "Desativado");
 
-        // ---------- Clocks ----------
         var clk = Section(gpu, "CLOCKS");
         if (spec != null)
         {
@@ -201,7 +211,6 @@ public static class GpuInfoCollector
         }
         if (clk.Children.Count == 0) clk.Add("Sem dados", "—");
 
-        // ---------- Barramento ----------
         var pcie = Section(gpu, "BARRAMENTO");
         uint? maxGen = h != IntPtr.Zero ? Nvml.MaxPcieGen(h) : null;
         uint? maxW = h != IntPtr.Zero ? Nvml.MaxPcieWidth(h) : null;
@@ -214,7 +223,6 @@ public static class GpuInfoCollector
             pcie.Add("Em uso agora", $"{GpuInfo.PcieName(cg)} x{cw}" + (maxGen > curGen ? " (economia de energia em repouso)" : ""));
         if (pnpProps.GetValueOrDefault("DEVPKEY_Device_LocationInfo") is string loc) pcie.Add("Localização", loc);
 
-        // ---------- Energia (NVIDIA) ----------
         if (h != IntPtr.Zero || spec?.TdpW > 0)
         {
             var pwr = Section(gpu, "ENERGIA");
@@ -227,12 +235,10 @@ public static class GpuInfoCollector
             }
         }
 
-        // ---------- Driver e BIOS ----------
         var drv = Section(gpu, "DRIVER E BIOS");
-        string? vbios = h != IntPtr.Zero ? Nvml.Vbios(h) : null;
-        vbios ??= RegString(reg, "HardwareInformation.BiosString");
+        string? vbios = (h != IntPtr.Zero ? Nvml.Vbios(h) : null) ?? GpuRegistryReader.ReadString(reg, "HardwareInformation.BiosString");
         drv.Add("BIOS (VBIOS)", vbios ?? "—");
-        string wmiVer = vc["DriverVersion"]?.ToString() ?? "—";
+        string wmiVer = WmiQuery.GetString(vc, "DriverVersion") ?? "—";
         string? nvVer = h != IntPtr.Zero ? Nvml.DriverVersion() : null;
         drv.Add("Versão do driver", nvVer != null ? $"{nvVer} ({wmiVer})" : wmiVer);
         if (vc["DriverDate"] is string dd && dd.Length >= 8)
@@ -244,7 +250,6 @@ public static class GpuInfoCollector
             if (Nvml.ComputeCapability(h) is string cc) drv.Add("Compute capability", cc);
         }
 
-        // ---------- Tecnologias ----------
         var tech = Section(gpu, "TECNOLOGIAS");
         string? fl = dx?.FeatureLevel;
         tech.Add("DirectX", fl switch
@@ -262,11 +267,11 @@ public static class GpuInfoCollector
         tech.Add("APIs", apis.Count > 0 ? string.Join(" · ", apis) : "—");
         if (spec != null && GpuSpecDb.ArchFeatures.TryGetValue(spec.Arch, out var feats)) tech.Add("Recursos da arquitetura", feats);
 
-        string memLabel = spec?.MemType.StartsWith("GDDR") == true ? spec.MemType : "";
+        string memLabel = spec?.MemType.StartsWith("GDDR", StringComparison.Ordinal) == true ? spec.MemType : "";
         gpu.Subtitle = string.Join("  ·  ", new[]
         {
             spec?.Chip, spec?.Arch, spec?.Process,
-            vram >= 1UL << 30 && !igpu ? $"{Math.Ceiling(vram / (double)(1UL << 30) - 0.15):0} GB {memLabel}".Trim() : null,
+            vram >= 1UL << 30 && !igpu ? $"{ByteFormat.CommercialVramGb(vram):0} GB {memLabel}".Trim() : null,
             subVen.Length > 0 ? GpuSpecDb.SubvendorName(subVen) : null
         }.Where(s => !string.IsNullOrEmpty(s)));
         return gpu;
@@ -279,86 +284,50 @@ public static class GpuInfoCollector
         return n;
     }
 
-    /// <summary>Propriedades de dispositivo (link PCIe, chave do driver...) via Win32_PnPEntity.GetDeviceProperties.</summary>
     private static Dictionary<string, object?> PnpProperties(string pnpId)
     {
         var dict = new Dictionary<string, object?>();
         if (pnpId.Length == 0) return dict;
-        try
+        // Instanciar pelo caminho do objeto falha ("Não encontrado"); via consulta WQL funciona.
+        WmiQuery.ForEach($"SELECT * FROM Win32_PnPEntity WHERE DeviceID='{pnpId.Replace("\\", "\\\\")}'", item =>
         {
-            // Instanciar pelo caminho do objeto falha ("Não encontrado"); via consulta funciona.
-            using var s = new ManagementObjectSearcher($"SELECT * FROM Win32_PnPEntity WHERE DeviceID='{pnpId.Replace("\\", "\\\\")}'");
-            var mo = s.Get().Cast<ManagementObject>().FirstOrDefault();
-            if (mo == null) return dict;
-            var input = mo.GetMethodParameters("GetDeviceProperties");
+            if (dict.Count > 0 || item is not ManagementObject mo) return;
+            using var input = mo.GetMethodParameters("GetDeviceProperties");
             input["devicePropertyKeys"] = new[]
             {
                 "DEVPKEY_PciDevice_CurrentLinkSpeed", "DEVPKEY_PciDevice_CurrentLinkWidth",
                 "DEVPKEY_PciDevice_MaxLinkSpeed", "DEVPKEY_PciDevice_MaxLinkWidth",
                 "DEVPKEY_Device_Driver", "DEVPKEY_Device_LocationInfo"
             };
-            var output = mo.InvokeMethod("GetDeviceProperties", input, null);
+            using var output = mo.InvokeMethod("GetDeviceProperties", input, null);
             if (output?["deviceProperties"] is ManagementBaseObject[] props)
                 foreach (var p in props)
-                    if (p["KeyName"] is string k) dict[k] = p["Data"];
-        }
-        catch { }
+                    using (p)
+                        if (p["KeyName"] is string k) dict[k] = p["Data"];
+        });
         return dict;
-    }
-
-    /// <summary>Valores "HardwareInformation.*" da chave de classe do driver de vídeo.</summary>
-    private static Dictionary<string, object> DriverRegistry(string? driverKey)
-    {
-        var dict = new Dictionary<string, object>();
-        if (string.IsNullOrEmpty(driverKey)) return dict;
-        try
-        {
-            using var key = Registry.LocalMachine.OpenSubKey($@"SYSTEM\CurrentControlSet\Control\Class\{driverKey}");
-            if (key == null) return dict;
-            foreach (var n in key.GetValueNames())
-                if (n.StartsWith("HardwareInformation.") && key.GetValue(n) is object v) dict[n] = v;
-        }
-        catch { }
-        return dict;
-    }
-
-    /// <summary>Alguns drivers gravam strings como REG_BINARY UTF-16.</summary>
-    private static string? RegString(Dictionary<string, object> reg, string name)
-    {
-        if (!reg.TryGetValue(name, out var v)) return null;
-        string s = v is byte[] bytes ? System.Text.Encoding.Unicode.GetString(bytes) : v.ToString() ?? "";
-        s = s.TrimEnd('\0').Trim();
-        return s.Length > 0 ? s : null;
     }
 
     private static string DriverSigner(string pnpId)
     {
-        try
-        {
-            using var s = new ManagementObjectSearcher(
-                $"SELECT IsSigned, Signer FROM Win32_PnPSignedDriver WHERE DeviceID='{pnpId.Replace("\\", "\\\\")}'");
-            foreach (ManagementObject d in s.Get())
+        if (pnpId.Length == 0) return "—";
+        string? result = WmiQuery.FirstOrDefault(
+            $"SELECT IsSigned, Signer FROM Win32_PnPSignedDriver WHERE DeviceID='{pnpId.Replace("\\", "\\\\")}'",
+            d =>
             {
-                bool signed = d["IsSigned"] is bool b && b;
-                string signer = d["Signer"]?.ToString() ?? "";
+                bool signed = WmiQuery.GetNullableBool(d, "IsSigned") == true;
+                string signer = WmiQuery.GetString(d, "Signer") ?? "";
                 if (!signed) return "Não assinado";
                 return signer.Contains("Windows Hardware Compatibility", StringComparison.OrdinalIgnoreCase)
                     ? "WHQL (Microsoft)" : $"Assinado · {signer}";
-            }
-        }
-        catch { }
-        return "—";
+            });
+        return result ?? "—";
     }
 
-    private static uint? AsUInt(object? v) => v == null ? null : Convert.ToUInt32(v);
-
-    private static string Bytes(ulong b)
+    private static uint? AsUInt(object? v)
     {
-        if (b == 0) return "—";
-        double v = b;
-        string[] u = { "B", "KB", "MB", "GB", "TB" };
-        int i = 0;
-        while (v >= 1024 && i < u.Length - 1) { v /= 1024; i++; }
-        return $"{v:0.#} {u[i]}";
+        if (v == null) return null;
+        try { return Convert.ToUInt32(v); }
+        catch { return null; }
     }
 }

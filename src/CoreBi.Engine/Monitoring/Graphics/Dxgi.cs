@@ -11,21 +11,25 @@ internal static class Dxgi
     public static List<Adapter> Enumerate()
     {
         var list = new List<Adapter>();
+        IDXGIFactory1? factory = null;
         try
         {
             var iid = typeof(IDXGIFactory1).GUID;
-            if (CreateDXGIFactory1(ref iid, out var factory) < 0) return list;
+            if (CreateDXGIFactory1(ref iid, out factory) < 0 || factory == null) return list;
             for (uint i = 0; factory.EnumAdapters1(i, out var a) == 0; i++)
             {
-                if (a.GetDesc1(out var d) == 0 && (d.Flags & 2) == 0) // ignora o adaptador de software (WARP)
-                    list.Add(new Adapter(d.Description, d.VendorId, d.DeviceId,
-                                         d.DedicatedVideoMemory, d.DedicatedSystemMemory, d.SharedSystemMemory,
-                                         FeatureLevel(a), ((ulong)(uint)d.LuidHigh << 32) | d.LuidLow));
-                Marshal.ReleaseComObject(a);
+                try
+                {
+                    if (a.GetDesc1(out var d) == 0 && (d.Flags & 2) == 0) // ignora o adaptador de software (WARP)
+                        list.Add(new Adapter(d.Description, d.VendorId, d.DeviceId,
+                                             d.DedicatedVideoMemory, d.DedicatedSystemMemory, d.SharedSystemMemory,
+                                             FeatureLevel(a), ((ulong)(uint)d.LuidHigh << 32) | d.LuidLow));
+                }
+                finally { Marshal.ReleaseComObject(a); }
             }
-            Marshal.ReleaseComObject(factory);
         }
         catch { }
+        finally { if (factory != null) Marshal.ReleaseComObject(factory); }
         return list;
     }
 
@@ -68,17 +72,17 @@ internal static class Dxgi
     [ComImport, Guid("770aae78-f26f-4dba-a829-253c83d1b387"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IDXGIFactory1
     {
-        void SetPrivateData(); void SetPrivateDataInterface(); void GetPrivateData(); void GetParent();          // IDXGIObject
+        void SetPrivateData(); void SetPrivateDataInterface(); void GetPrivateData(); void GetParent();
         void EnumAdapters(); void MakeWindowAssociation(); void GetWindowAssociation(); void CreateSwapChain();
-        void CreateSoftwareAdapter();                                                                            // IDXGIFactory
-        [PreserveSig] int EnumAdapters1(uint index, out IDXGIAdapter1 adapter);                                  // IDXGIFactory1
+        void CreateSoftwareAdapter();
+        [PreserveSig] int EnumAdapters1(uint index, out IDXGIAdapter1 adapter);
     }
 
     [ComImport, Guid("29038f61-3839-4626-91fd-086879011a05"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IDXGIAdapter1
     {
-        void SetPrivateData(); void SetPrivateDataInterface(); void GetPrivateData(); void GetParent();          // IDXGIObject
-        void EnumOutputs(); void GetDesc(); void CheckInterfaceSupport();                                        // IDXGIAdapter
-        [PreserveSig] int GetDesc1(out AdapterDesc1 desc);                                                       // IDXGIAdapter1
+        void SetPrivateData(); void SetPrivateDataInterface(); void GetPrivateData(); void GetParent();
+        void EnumOutputs(); void GetDesc(); void CheckInterfaceSupport();
+        [PreserveSig] int GetDesc1(out AdapterDesc1 desc);
     }
 }

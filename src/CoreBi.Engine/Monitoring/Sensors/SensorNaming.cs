@@ -1,6 +1,5 @@
-using LibreHardwareMonitor.Hardware;
-
 using System.Text.RegularExpressions;
+using LibreHardwareMonitor.Hardware;
 
 namespace CoreBi.Engine.Monitoring.Sensors;
 
@@ -10,20 +9,7 @@ namespace CoreBi.Engine.Monitoring.Sensors;
 /// </summary>
 public static class SensorNaming
 {
-    private enum Part { Cpu, Gpu, Memory, Board, Storage, Network, Other }
-
-    private static Part PartOf(HardwareType t) => t switch
-    {
-        HardwareType.Cpu => Part.Cpu,
-        HardwareType.GpuNvidia or HardwareType.GpuAmd or HardwareType.GpuIntel => Part.Gpu,
-        HardwareType.Memory => Part.Memory,
-        HardwareType.Motherboard or HardwareType.SuperIO or HardwareType.EmbeddedController => Part.Board,
-        HardwareType.Storage => Part.Storage,
-        HardwareType.Network => Part.Network,
-        _ => Part.Other
-    };
-
-    // Nomes exatos que dependem do tipo do sensor (o mesmo "GPU Core" é temperatura, clock e uso)
+    // Nomes exatos que dependem do tipo do sensor (o mesmo "GPU Core" é temperatura, clock e uso).
     private static readonly Dictionary<(SensorType, string), string> ByType = new()
     {
         [(SensorType.Temperature, "Package")] = "Encapsulamento",
@@ -46,7 +32,6 @@ public static class SensorNaming
 
     private static readonly Dictionary<string, string> Exact = new(StringComparer.Ordinal)
     {
-        // Processador
         ["CPU Total"] = "Total",
         ["CPU Core Max"] = "Núcleo mais exigido",
         ["Core (Tctl/Tdie)"] = "Processador (Tctl/Tdie)",
@@ -70,7 +55,6 @@ public static class SensorNaming
         ["Cores (Max)"] = "Núcleos · máximo",
         ["Core Max"] = "Núcleo mais alto",
         ["Core Average"] = "Média dos núcleos",
-        // Placa de vídeo
         ["GPU Core"] = "Núcleo",
         ["GPU Hot Spot"] = "Ponto mais quente",
         ["GPU Memory Junction"] = "Memória (junção)",
@@ -94,12 +78,10 @@ public static class SensorNaming
         ["GPU PCIe Rx"] = "PCIe recebendo",
         ["GPU PCIe Tx"] = "PCIe enviando",
         ["GPU Fan"] = "Ventoinha",
-        // Memória
         ["Memory Used"] = "Em uso",
         ["Memory Available"] = "Disponível",
         ["Virtual Memory Used"] = "Em uso",
         ["Virtual Memory Available"] = "Disponível",
-        // Placa-mãe
         ["System"] = "Sistema",
         ["Motherboard"] = "Placa-mãe",
         ["VRM MOS"] = "VRM",
@@ -126,7 +108,6 @@ public static class SensorNaming
         ["CPU VDDP"] = "Processador · VDDP",
         ["CPU SoC"] = "Processador · SoC",
         ["CPU VCORE"] = "Núcleo do processador",
-        // Armazenamento
         ["Used Space"] = "Espaço usado",
         ["Read Activity"] = "Atividade de leitura",
         ["Write Activity"] = "Atividade de escrita",
@@ -147,7 +128,6 @@ public static class SensorNaming
         ["Free Space"] = "Espaço livre",
         ["Total Space"] = "Espaço total",
         ["Life"] = "Vida útil",
-        // Rede
         ["Network Utilization"] = "Utilização",
         ["Data Uploaded"] = "Total enviado",
         ["Data Downloaded"] = "Total recebido",
@@ -157,18 +137,17 @@ public static class SensorNaming
 
     private static readonly (Regex Pattern, string Replacement)[] Patterns =
     {
-        (new Regex(@"^(?:CPU )?Core #(\d+) Thread #(\d+)$"), "Núcleo $1 · thread $2"),
-        (new Regex(@"^(?:CPU )?Core #(\d+) Distance to TjMax$"), "Núcleo $1 · margem até o limite"),
-        (new Regex(@"^(?:CPU )?Core #(\d+) VID$"), "Núcleo $1 · VID"),
-        (new Regex(@"^(?:CPU )?Core #(\d+) \(SMU\)$"), "Núcleo $1"),
-        (new Regex(@"^(?:CPU )?Core #(\d+) \(Effective\)$"), "Núcleo $1 · efetivo"),
-        (new Regex(@"^(?:CPU )?Core #(\d+)$"), "Núcleo $1"),
-        (new Regex(@"^CCD ?(\d+) \(Tdie\)$"), "Chiplet $1"),
-        (new Regex(@"^GPU Fan (\d+)$"), "Ventoinha $1"),
-        (new Regex(@"^(?:Chassis|System) Fan #?(\d+)$"), "Gabinete $1"),
-        (new Regex(@"^Fan #?(\d+)$"), "Ventoinha $1"),
-        (new Regex(@"^Temperature #?(\d+)$"), "Sensor $1"),
-        (new Regex(@"^D3D (.+)$"), "$1"),
+        (new Regex(@"^(?:CPU )?Core #(\d+) Thread #(\d+)$", RegexOptions.Compiled), "Núcleo $1 · thread $2"),
+        (new Regex(@"^(?:CPU )?Core #(\d+) Distance to TjMax$", RegexOptions.Compiled), "Núcleo $1 · margem até o limite"),
+        (new Regex(@"^(?:CPU )?Core #(\d+) VID$", RegexOptions.Compiled), "Núcleo $1 · VID"),
+        (new Regex(@"^(?:CPU )?Core #(\d+) \(SMU\)$", RegexOptions.Compiled), "Núcleo $1"),
+        (new Regex(@"^(?:CPU )?Core #(\d+) \(Effective\)$", RegexOptions.Compiled), "Núcleo $1 · efetivo"),
+        (new Regex(@"^(?:CPU )?Core #(\d+)$", RegexOptions.Compiled), "Núcleo $1"),
+        (new Regex(@"^CCD ?(\d+) \(Tdie\)$", RegexOptions.Compiled), "Chiplet $1"),
+        (new Regex(@"^GPU Fan (\d+)$", RegexOptions.Compiled), "Ventoinha $1"),
+        (new Regex(@"^(?:Chassis|System) Fan #?(\d+)$", RegexOptions.Compiled), "Gabinete $1"),
+        (new Regex(@"^Fan #?(\d+)$", RegexOptions.Compiled), "Ventoinha $1"),
+        (new Regex(@"^Temperature #?(\d+)$", RegexOptions.Compiled), "Sensor $1"),
     };
 
     private static readonly Dictionary<string, string> D3D = new(StringComparer.Ordinal)
@@ -189,56 +168,35 @@ public static class SensorNaming
         if (string.IsNullOrWhiteSpace(name)) return name;
         if (ByType.TryGetValue((type, name), out string? typed)) return typed;
         if (Exact.TryGetValue(name, out string? exact)) return exact;
+        if (name.StartsWith("D3D ", StringComparison.Ordinal))
+        {
+            string rest = name[4..];
+            return D3D.TryGetValue(rest, out string? d) ? d : rest;
+        }
         foreach (var (pattern, replacement) in Patterns)
         {
             var m = pattern.Match(name);
-            if (!m.Success) continue;
-            if (name.StartsWith("D3D ", StringComparison.Ordinal))
-                return D3D.TryGetValue(m.Groups[1].Value, out string? d) ? d : m.Groups[1].Value;
-            return m.Result(replacement);
+            if (m.Success) return m.Result(replacement);
         }
-        // Prefixo repetido do componente: dentro do cartão da placa de vídeo, "GPU Memory Used" já é da GPU
-        var part = PartOf(hardware);
-        if (part == Part.Gpu && name.StartsWith("GPU ", StringComparison.Ordinal)) return name[4..];
-        if (part == Part.Cpu && name.StartsWith("CPU ", StringComparison.Ordinal)) return name[4..];
+        // Prefixo repetido do componente: dentro do cartão da placa de vídeo, "GPU Memory Used" já é da GPU.
+        if (SensorTypeMeta.IsGpu(hardware) && name.StartsWith("GPU ", StringComparison.Ordinal)) return name[4..];
+        if (hardware == HardwareType.Cpu && name.StartsWith("CPU ", StringComparison.Ordinal)) return name[4..];
         return name;
     }
 
-    /// <summary>Grupo de tipo dentro de um componente: título no plural e ordem (temperatura primeiro, o que mais se procura).</summary>
-    public static (string Key, string Title, int Order) Group(SensorType t) => t switch
+    public static (string Key, string Title, int Order) Group(SensorType t)
     {
-        SensorType.Temperature => ("temp", "Temperaturas", 0),
-        SensorType.Load => ("load", "Uso", 1),
-        SensorType.Clock => ("clock", "Clocks", 2),
-        SensorType.Power => ("power", "Consumo", 3),
-        SensorType.Fan => ("fan", "Ventoinhas", 4),
-        SensorType.Control => ("control", "Controle das ventoinhas", 5),
-        SensorType.Voltage => ("volt", "Tensões", 6),
-        SensorType.Current => ("current", "Correntes", 7),
-        SensorType.Throughput => ("rate", "Transferência", 8),
-        SensorType.Data or SensorType.SmallData => ("data", "Dados", 9),
-        SensorType.Level => ("level", "Níveis", 10),
-        SensorType.Frequency => ("freq", "Frequências", 11),
-        SensorType.Energy => ("energy", "Energia", 12),
-        SensorType.Flow => ("flow", "Fluxo", 13),
-        SensorType.Humidity => ("humidity", "Umidade", 14),
-        SensorType.Factor => ("factor", "Multiplicadores", 15),
-        _ => ("other", "Outros", 16)
-    };
+        var d = SensorTypeMeta.Describe(t);
+        return (d.GroupKey, d.GroupTitle, d.GroupOrder);
+    }
 
     /// <summary>
     /// Filtro da página, mais largo que o grupo: ventoinhas e o controle delas andam juntos, tensão e corrente também,
     /// e o que é volume de dados (memória, transferência, níveis do disco) fica num filtro só.
     /// </summary>
-    public static (string Key, string Title, int Order) Filter(SensorType t) => t switch
+    public static (string Key, string Title, int Order) Filter(SensorType t)
     {
-        SensorType.Temperature => ("temp", "Temperaturas", 0),
-        SensorType.Load => ("load", "Uso", 1),
-        SensorType.Clock => ("clock", "Clocks", 2),
-        SensorType.Power or SensorType.Energy => ("power", "Consumo", 3),
-        SensorType.Fan or SensorType.Control => ("fan", "Ventoinhas", 4),
-        SensorType.Voltage or SensorType.Current => ("volt", "Tensões e correntes", 5),
-        SensorType.Throughput or SensorType.Data or SensorType.SmallData or SensorType.Level => ("data", "Dados", 6),
-        _ => ("other", "Outros", 7)
-    };
+        var d = SensorTypeMeta.Describe(t);
+        return (d.FilterKey, d.FilterTitle, d.FilterOrder);
+    }
 }

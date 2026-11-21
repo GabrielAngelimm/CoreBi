@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Engine.Monitoring.Graphics;
 
@@ -21,7 +22,8 @@ internal static class Nvml
     public struct Memory { public ulong Total, Free, Used; } // mesmo layout de nvmlBAR1Memory_t
     public struct Utilization { public uint Gpu, Memory; }
 
-    public const int ClockGraphics = 0, ClockSm = 1, ClockMem = 2, ClockVideo = 3;
+    public const int ClockGraphics = 0, ClockMem = 2, ClockVideo = 3;
+    public const ulong ThermalSlowdownMask = 0x60UL; // SW + HW thermal slowdown bits
 
     [DllImport(Dll, EntryPoint = "nvmlInit_v2")] private static extern int nvmlInit();
     [DllImport(Dll, EntryPoint = "nvmlDeviceGetCount_v2")] private static extern int nvmlDeviceGetCount(out uint count);
@@ -55,9 +57,13 @@ internal static class Nvml
 
     /// <summary>
     /// Com o driver de vídeo sendo trocado, nenhuma chamada sai: os handles guardados apontam para o driver antigo e uma
-    /// leitura neles é falha nativa, que derruba o processo sem passar por catch nenhum (SensorMonitor.Pause e RetireGpu).
+    /// leitura neles é falha nativa, que derruba o processo sem passar por catch nenhum.
     /// </summary>
-    internal static volatile bool Suspended;
+    internal static bool Suspended
+    {
+        get => GpuAccessGate.IsSuspended;
+        set => GpuAccessGate.SetSuspended(value);
+    }
 
     /// <summary>Inicializa uma única vez; false se não houver driver NVIDIA.</summary>
     public static bool Available

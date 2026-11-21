@@ -258,7 +258,7 @@ public static class SystemSheets
         var adapters = inv.Gpus;
         if (adapters.FirstOrDefault() is not { } g) return Missing(Gpu, "Placa de vídeo", inv.Errors.GetValueOrDefault(SystemInventory.GpuTitle));
         var spec = gpus.FirstOrDefault(x => x.Name == g.Name);
-        ulong vram = spec?.VramBytes > 0 ? spec.VramBytes : g.Vram ?? 0;
+        ulong vram = spec?.DedicatedVramBytes > 0 ? spec.DedicatedVramBytes : g.Vram ?? 0;
         var (vValue, vUnit) = vram > 0 ? Split(Fmt.Vram(vram)) : ("—", "");
         var primary = inv.Displays.FirstOrDefault(d => d.Primary) ?? inv.Displays.FirstOrDefault();
 

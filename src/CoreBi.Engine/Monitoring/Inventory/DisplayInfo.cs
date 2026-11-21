@@ -1,15 +1,14 @@
-using System.Management;
 using System.Runtime.InteropServices;
+using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Engine.Monitoring.Inventory;
 
-/// <summary>Uma tela ligada à área de trabalho: modo atual, a maior taxa que ela aceita nessa resolução e o monitor.</summary>
 public sealed record DisplayInfo(
     int Number, string Adapter, string Monitor, string? Maker, double? Inches,
     int Width, int Height, int Hz, int MaxHz, int Bits, int X, int Y, bool Primary,
     string? Connection = null, int? Year = null, int? Week = null)
 {
-    /// <summary>Roda abaixo do que o monitor aceita na mesma resolução (o caso típico: 144 Hz ligado a 60 Hz).</summary>
+    /// <summary>Roda abaixo do que o monitor aceita na mesma resolução (ex.: 144 Hz operando a 60 Hz).</summary>
     public bool BelowMax => MaxHz > Hz + 1 && Hz > 0;
 }
 
@@ -52,7 +51,7 @@ public static class DisplayReader
 
     public static List<DisplayInfo> Read()
     {
-        var names = MonitorNames();
+        var names = ReadEdidMonitors();
         var list = new List<DisplayInfo>();
         var dd = new DISPLAY_DEVICE { cb = Marshal.SizeOf<DISPLAY_DEVICE>() };
         for (uint i = 0; EnumDisplayDevices(null, i, ref dd, 0); i++, dd.cb = Marshal.SizeOf<DISPLAY_DEVICE>())
@@ -63,14 +62,13 @@ public static class DisplayReader
             var dm = new DEVMODE { dmSize = (short)Marshal.SizeOf<DEVMODE>() };
             if (!EnumDisplaySettings(device, CurrentSettings, ref dm)) continue;
 
-            // Maior taxa que o driver oferece na resolução atual.
             int max = dm.dmDisplayFrequency;
             var mode = new DEVMODE { dmSize = (short)Marshal.SizeOf<DEVMODE>() };
             for (int m = 0; EnumDisplaySettings(device, m, ref mode); m++)
                 if (mode.dmPelsWidth == dm.dmPelsWidth && mode.dmPelsHeight == dm.dmPelsHeight && mode.dmBitsPerPel == dm.dmBitsPerPel)
                     max = Math.Max(max, mode.dmDisplayFrequency);
 
-            // Monitor: o caminho da interface (\\?\DISPLAY#GSM5B7F#5&...#{guid}) casa com a instância do WMI.
+            // O caminho da interface (\\?\DISPLAY#GSM5B7F#5&...#{guid}) casa com a instância do WMI.
             string monitor = "Monitor", key = "";
             var mon = new DISPLAY_DEVICE { cb = Marshal.SizeOf<DISPLAY_DEVICE>() };
             if (EnumDisplayDevices(device, 0, ref mon, GetDeviceInterfaceName))
@@ -88,48 +86,47 @@ public static class DisplayReader
         return list.OrderByDescending(d => d.Primary).ThenBy(d => d.Number).ToList();
     }
 
-    /// <summary>Nome comercial (EDID), tamanho da tela, cabo e data de fabricação, por instância do monitor.</summary>
-    private static List<(string Instance, string? Name, string? Maker, double? Inches, string? Connection, int? Year, int? Week)> MonitorNames()
+    private static List<(string Instance, string? Name, string? Maker, double? Inches, string? Connection, int? Year, int? Week)> ReadEdidMonitors()
     {
-        var list = new List<(string, string?, string?, double?, string?, int?, int?)>();
-        try
+        var links = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        WmiQuery.ForEach("SELECT InstanceName, VideoOutputTechnology FROM WmiMonitorConnectionParams", m =>
         {
-            var links = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            try
+            long tech = WmiQuery.GetNullableInt64(m, "VideoOutputTechnology") ?? -2L;
+            string? link = tech switch
             {
-                using var c = new ManagementObjectSearcher(@"root\wmi", "SELECT InstanceName, VideoOutputTechnology FROM WmiMonitorConnectionParams");
-                foreach (ManagementObject m in c.Get())
-                    if (Convert.ToInt64(m["VideoOutputTechnology"] ?? -2L) switch
-                    {
-                        0 => "VGA",
-                        4 => "DVI",
-                        5 => "HDMI",
-                        10 => "DisplayPort",
-                        11 => "DisplayPort interna",
-                        15 => "Miracast (sem fio)",
-                        0x80000000 => "Tela interna",
-                        _ => null
-                    } is string link)
-                        links[m["InstanceName"]?.ToString() ?? ""] = link;
-            }
-            catch { }
-            var sizes = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
-            using (var s = new ManagementObjectSearcher(@"root\wmi", "SELECT InstanceName, MaxHorizontalImageSize, MaxVerticalImageSize FROM WmiMonitorBasicDisplayParams"))
-                foreach (ManagementObject m in s.Get())
-                {
-                    double w = Convert.ToDouble(m["MaxHorizontalImageSize"] ?? 0), h = Convert.ToDouble(m["MaxVerticalImageSize"] ?? 0);
-                    if (w > 0 && h > 0) sizes[m["InstanceName"]?.ToString() ?? ""] = Math.Sqrt(w * w + h * h) / 2.54;
-                }
-            using (var s = new ManagementObjectSearcher(@"root\wmi", "SELECT InstanceName, UserFriendlyName, ManufacturerName, YearOfManufacture, WeekOfManufacture FROM WmiMonitorID"))
-                foreach (ManagementObject m in s.Get())
-                {
-                    string inst = m["InstanceName"]?.ToString() ?? "";
-                    int year = Convert.ToInt32(m["YearOfManufacture"] ?? 0), week = Convert.ToInt32(m["WeekOfManufacture"] ?? 0);
-                    list.Add((inst, Edid(m["UserFriendlyName"]), Edid(m["ManufacturerName"]), sizes.TryGetValue(inst, out var d) ? Math.Round(d) : null,
-                        links.GetValueOrDefault(inst), year >= 1990 ? year : null, week is >= 1 and <= 53 ? week : null));
-                }
-        }
-        catch { }
+                0 => "VGA",
+                4 => "DVI",
+                5 => "HDMI",
+                10 => "DisplayPort",
+                11 => "DisplayPort interna",
+                15 => "Miracast (sem fio)",
+                0x80000000 => "Tela interna",
+                _ => null
+            };
+            if (link != null && WmiQuery.GetString(m, "InstanceName") is { Length: > 0 } inst)
+                links[inst] = link;
+        }, @"root\wmi");
+
+        var sizes = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+        WmiQuery.ForEach("SELECT InstanceName, MaxHorizontalImageSize, MaxVerticalImageSize FROM WmiMonitorBasicDisplayParams", m =>
+        {
+            double w = WmiQuery.GetInt32(m, "MaxHorizontalImageSize");
+            double h = WmiQuery.GetInt32(m, "MaxVerticalImageSize");
+            if (w > 0 && h > 0 && WmiQuery.GetString(m, "InstanceName") is { Length: > 0 } inst)
+                sizes[inst] = Math.Sqrt(w * w + h * h) / 2.54;
+        }, @"root\wmi");
+
+        var list = new List<(string, string?, string?, double?, string?, int?, int?)>();
+        WmiQuery.ForEach("SELECT InstanceName, UserFriendlyName, ManufacturerName, YearOfManufacture, WeekOfManufacture FROM WmiMonitorID", m =>
+        {
+            string inst = WmiQuery.GetString(m, "InstanceName") ?? "";
+            int year = WmiQuery.GetInt32(m, "YearOfManufacture");
+            int week = WmiQuery.GetInt32(m, "WeekOfManufacture");
+            list.Add((inst, Edid(m["UserFriendlyName"]), Edid(m["ManufacturerName"]),
+                sizes.TryGetValue(inst, out var d) ? Math.Round(d) : null,
+                links.GetValueOrDefault(inst), year >= 1990 ? year : null, week is >= 1 and <= 53 ? week : null));
+        }, @"root\wmi");
+
         return list;
     }
 

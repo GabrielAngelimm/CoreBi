@@ -1,10 +1,9 @@
 namespace CoreBi.Engine.Monitoring.Graphics;
 
-/// <summary>Especificações de referência que o hardware não reporta (como o banco de dados do GPU-Z).</summary>
 public record GpuSpec(
     string Chip, string Arch, string Process, int DieMm2, double TransistorsBi,
     int Shaders, int Rops, int Tmus, string MemType, int BaseMHz, int BoostMHz, int TdpW,
-    string Release, string? NameMatch = null);
+    string Release, string? NameMatch = null, bool IsIntegrated = false);
 
 public static class GpuSpecDb
 {
@@ -56,11 +55,10 @@ public static class GpuSpecDb
             new GpuSpec("Navi 32", "RDNA 3", "TSMC 5 nm + 6 nm", 346, 28.1, 3456, 96, 216, "GDDR6", 1435, 2544, 245, "06/09/2023", "7700"),
         },
         ["1002:7480"] = new[] { new GpuSpec("Navi 33", "RDNA 3", "TSMC 6 nm", 204, 13.3, 2048, 64, 128, "GDDR6", 1720, 2655, 165, "25/05/2023") },
-        ["1002:164E"] = new[] { new GpuSpec("Raphael (iGPU)", "RDNA 2", "TSMC 6 nm", 122, 3.4, 128, 4, 8, "Memória do sistema (DDR5)", 400, 2200, 0, "27/09/2022") },
+        ["1002:164E"] = new[] { new GpuSpec("Raphael (iGPU)", "RDNA 2", "TSMC 6 nm", 122, 3.4, 128, 4, 8, "Memória do sistema (DDR5)", 400, 2200, 0, "27/09/2022", IsIntegrated: true) },
     };
 
-    /// <summary>Recursos por arquitetura, para a linha "Tecnologias".</summary>
-    public static readonly Dictionary<string, string> ArchFeatures = new()
+    public static readonly IReadOnlyDictionary<string, string> ArchFeatures = new Dictionary<string, string>
     {
         ["Blackwell"] = "DLSS 4 (Multi Frame Generation) · Ray Tracing 4ª ger. · Tensor 5ª ger. · Reflex 2 · NVENC 9ª ger.",
         ["Ada Lovelace"] = "DLSS 3 (Frame Generation) · Ray Tracing 3ª ger. · Tensor 4ª ger. · Reflex · NVENC AV1",

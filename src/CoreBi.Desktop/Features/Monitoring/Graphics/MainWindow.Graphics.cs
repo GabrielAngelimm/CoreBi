@@ -5,11 +5,10 @@ namespace CoreBi.Desktop;
 
 public partial class MainWindow
 {
-    // Placa de vídeo
     internal List<GpuInfo> _gpus = new();
     internal GpuInfo? _gpu;
     private GpuBoard? _gpuBoard;
-    private readonly WindowsGpuUsage _windowsGpuUsage = new();
+    private readonly GpuMonitor _gpuMonitor = new();
 
     // ---------------- Placa de vídeo ----------------
 
@@ -56,7 +55,7 @@ public partial class MainWindow
 
     internal void UpdateGpuLive()
     {
-        foreach (var gpu in _gpus) gpu.WindowsLoad = _windowsGpuUsage.GetLoad(gpu.AdapterLuid);
+        _gpuMonitor.UpdateLoads(_gpus);
         // Barra lateral: GPU principal (dedicada = primeira da lista).
         if (_gpus.Count > 0)
         {

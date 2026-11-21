@@ -234,7 +234,7 @@ public partial class MainWindow
         if (_bnSession != null)
         {
             _bnSession.Add(s);
-            var el = DateTime.Now - _bnSession.Start;
+            var el = _bnSession.Elapsed;
             BnSessionStatus.Text = frames != null
                 ? $"Medindo {AppName(frames)}: {el:m\\:ss} de {_bnSession.Duration:m\\:ss}, {_bnSession.Count} amostras"
                 : $"Aguardando um jogo em primeiro plano: {el:m\\:ss} de {_bnSession.Duration:m\\:ss}";

@@ -1,4 +1,4 @@
-using System.Management;
+using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Engine.Monitoring.Graphics;
 
@@ -13,16 +13,14 @@ public static class DisplayAdapters
     {
         try
         {
-            using var s = new ManagementObjectSearcher("SELECT PNPDeviceID, DriverVersion, ConfigManagerErrorCode FROM Win32_VideoController");
             var parts = new List<string>();
             bool healthy = true;
-            foreach (ManagementObject vc in s.Get())
-                using (vc)
-                {
-                    uint code = vc["ConfigManagerErrorCode"] is uint c ? c : 0;
-                    if (code != 0) healthy = false;
-                    parts.Add($"{vc["PNPDeviceID"]}|{vc["DriverVersion"]}|{code}");
-                }
+            WmiQuery.ForEachOrThrow("SELECT PNPDeviceID, DriverVersion, ConfigManagerErrorCode FROM Win32_VideoController", vc =>
+            {
+                uint code = WmiQuery.GetUInt32(vc, "ConfigManagerErrorCode");
+                if (code != 0) healthy = false;
+                parts.Add($"{vc["PNPDeviceID"]}|{vc["DriverVersion"]}|{code}");
+            });
             parts.Sort(StringComparer.Ordinal);
             return (string.Join(";", parts), healthy);
         }

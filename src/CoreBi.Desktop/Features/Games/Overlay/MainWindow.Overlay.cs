@@ -198,38 +198,6 @@ public partial class MainWindow
         UpdateOverlayStatus(live);
     }
 
-    // ------------------------------------------------------------------ leitura dos sensores
-
-    internal SensorRow? GpuRow(SensorType type, string name, bool startsWith = false) =>
-        _gpus.Count == 0 ? null : _monitor.Rows.FirstOrDefault(r => r.Hardware == _gpus[0].Name && r.Type == type &&
-                                                                   (startsWith ? r.Name.StartsWith(name) : r.Name == name) && r.RawValue != null);
-
-    internal uint? MainGpuClock(int nvmlType, string lhmName)
-    {
-        if (_gpus.Count > 0 && _gpus[0].NvmlHandle != IntPtr.Zero && Nvml.Clock(_gpus[0].NvmlHandle, nvmlType) is uint c) return c;
-        return GpuRow(SensorType.Clock, lhmName)?.RawValue is float v && v > 0 ? (uint)v : null;
-    }
-
-    /// <summary>VRAM usada e total em GB: NVML quando disponível, senão LibreHardwareMonitor (MB).</summary>
-    internal (double Used, double Total)? MainGpuVram()
-    {
-        if (_gpus.Count == 0) return null;
-        if (_gpus[0].NvmlHandle != IntPtr.Zero && Nvml.MemoryInfo(_gpus[0].NvmlHandle) is Nvml.Memory m && m.Total > 0)
-            return (m.Used / 1073741824.0, m.Total / 1073741824.0);
-        if (GpuRow(SensorType.SmallData, "GPU Memory Used")?.RawValue is float u && GpuRow(SensorType.SmallData, "GPU Memory Total")?.RawValue is float t && t > 0)
-            return (u / 1024.0, t / 1024.0);
-        return null;
-    }
-
-    internal (float? Avg, float? Max) CpuClocks()
-    {
-        var cores = _monitor.Rows.Where(r => r.HardwareType == HardwareType.Cpu && r.Type == SensorType.Clock &&
-                                             r.Name.StartsWith("Core #") && !r.Name.Contains("Effective") && r.RawValue > 0)
-                                 .Select(r => r.RawValue!.Value).ToList();
-        return cores.Count > 0 ? (cores.Average(), cores.Max()) : (null, null);
-    }
-
-    /// <summary>Nome do hardware para o rótulo: vazio vira nada (a linha volta a mostrar só "CPU"/"GPU") e nome longo é cortado.</summary>
     internal static string? HwName(string? name)
     {
         name = name?.Trim();
@@ -237,12 +205,14 @@ public partial class MainWindow
         return name.Length <= 20 ? name : name[..19].TrimEnd() + "…";
     }
 
-    /// <summary>Monta as linhas GPU / VRAM / CPU / RAM só com o que foi escolhido; linha vazia não aparece.</summary>
     internal List<OverlayLine> BuildOverlayLines(FrameStats? f)
     {
         var show = OvShow;
         var memory = MemoryInfo.ReadPhysicalUsage();
-        var s = BottleneckAnalyzer.Sample(_monitor, _gpus.FirstOrDefault(), f, memory);
+        var sensors = _monitor.Snapshot();
+        var gpuInfo = _gpus.FirstOrDefault();
+        var gpuLive = gpuInfo != null ? GpuMonitor.ReadLive(gpuInfo, sensors) : null;
+        var cpuLive = GpuMonitor.ReadCpu(_monitor, sensors);
         var lines = new List<OverlayLine>();
         string T(float? v) => v is float x ? $"{x:0} °C" : "—";
         string P(double? v) => v is double x ? $"{x:0}%" : "—";
@@ -250,32 +220,30 @@ public partial class MainWindow
         void Line(string label, List<string> parts, string? detail = null) { if (parts.Count > 0) lines.Add(new OverlayLine(label, parts, names ? detail : null)); }
 
         var gpu = new List<string>();
-        if (show.Contains("gpu_load")) gpu.Add(P(s.GpuLoad));
-        if (show.Contains("gpu_temp")) gpu.Add(T(s.GpuTemp));
-        if (show.Contains("gpu_hotspot")) gpu.Add("HS " + T(GpuRow(SensorType.Temperature, "GPU Hot Spot")?.RawValue));
-        if (show.Contains("gpu_clock")) gpu.Add(MainGpuClock(Nvml.ClockGraphics, "GPU Core") is uint c ? $"{c} MHz" : "— MHz");
-        if (show.Contains("gpu_memclock")) gpu.Add(MainGpuClock(Nvml.ClockMem, "GPU Memory") is uint mc ? $"mem {mc} MHz" : "mem —");
-        if (show.Contains("gpu_power")) gpu.Add(MainGpuPower() is float w ? $"{w:0} W" : "— W");
-        if (show.Contains("gpu_volt")) gpu.Add(GpuRow(SensorType.Voltage, "GPU Core Voltage")?.RawValue is float v ? $"{v:0.000} V" : "— V");
+        if (show.Contains("gpu_load")) gpu.Add(P(gpuLive?.LoadPct));
+        if (show.Contains("gpu_temp")) gpu.Add(T(gpuLive?.TempC));
+        if (show.Contains("gpu_hotspot")) gpu.Add("HS " + T(gpuLive?.HotspotTempC));
+        if (show.Contains("gpu_clock")) gpu.Add(gpuLive?.CoreClockMHz is float c ? $"{c:0} MHz" : "— MHz");
+        if (show.Contains("gpu_memclock")) gpu.Add(gpuLive?.MemoryClockMHz is float mc ? $"mem {mc:0} MHz" : "mem —");
+        if (show.Contains("gpu_power")) gpu.Add(gpuLive?.PowerW is float w ? $"{w:0} W" : "— W");
+        if (show.Contains("gpu_volt")) gpu.Add(gpuLive?.VoltageV is float v ? $"{v:0.000} V" : "— V");
         if (show.Contains("gpu_fan"))
-            gpu.Add(GpuRow(SensorType.Fan, "GPU Fan", true)?.RawValue is float rpm && rpm > 0 ? $"{rpm:0} RPM"
-                  : GpuRow(SensorType.Control, "GPU Fan", true)?.RawValue is float pct ? $"fan {pct:0}%" : "fan —");
-        Line("GPU", gpu, HwName(_gpus.Count > 0 ? HardwareNaming.ShortGpuName(_gpus[0].Name) : null));
+            gpu.Add(gpuLive?.FanRpm is float rpm && rpm > 0 ? $"{rpm:0} RPM"
+                  : gpuLive?.FanPct is float pct ? $"fan {pct:0}%" : "fan —");
+        Line("GPU", gpu, HwName(gpuInfo != null ? HardwareNaming.ShortGpuName(gpuInfo.Name) : null));
 
         var vram = new List<string>();
-        var vr = MainGpuVram();
-        if (show.Contains("vram_used")) vram.Add(vr is { } a ? $"{a.Used:0.0} GB" : "—");
-        if (show.Contains("vram_pct")) vram.Add(P(s.VramPct));
+        if (show.Contains("vram_used")) vram.Add(gpuLive?.VramUsedGb is double vu ? $"{vu:0.0} GB" : "—");
+        if (show.Contains("vram_pct")) vram.Add(P(gpuLive?.VramPct));
         Line("VRAM", vram);
 
         var cpu = new List<string>();
-        var (avg, max) = CpuClocks();
-        if (show.Contains("cpu_load")) cpu.Add(P(s.CpuTotal));
-        if (show.Contains("cpu_maxcore")) cpu.Add(s.CpuMaxCore is float mx ? $"núcleo {mx:0}%" : "núcleo —");
-        if (show.Contains("cpu_temp")) cpu.Add(T(s.CpuTemp));
-        if (show.Contains("cpu_clock")) cpu.Add(avg is float ca ? $"{ca / 1000:0.00} GHz" : "— GHz");
-        if (show.Contains("cpu_clockmax")) cpu.Add(max is float cm ? $"pico {cm / 1000:0.00} GHz" : "pico —");
-        if (show.Contains("cpu_power")) cpu.Add(_monitor.CpuPower is float cw && cw > 0 ? $"{cw:0} W" : "— W"); // 0 = sem leitura (precisa de administrador)
+        if (show.Contains("cpu_load")) cpu.Add(P(cpuLive.LoadPct));
+        if (show.Contains("cpu_maxcore")) cpu.Add(cpuLive.BusiestCoreLoadPct is float mx ? $"núcleo {mx:0}%" : "núcleo —");
+        if (show.Contains("cpu_temp")) cpu.Add(T(cpuLive.TempC));
+        if (show.Contains("cpu_clock")) cpu.Add(cpuLive.AvgClockMHz is float ca ? $"{ca / 1000:0.00} GHz" : "— GHz");
+        if (show.Contains("cpu_clockmax")) cpu.Add(cpuLive.MaxClockMHz is float cm ? $"pico {cm / 1000:0.00} GHz" : "pico —");
+        if (show.Contains("cpu_power")) cpu.Add(cpuLive.PowerW is float cw && cw > 0 ? $"{cw:0} W" : "— W"); // 0 = sem leitura (precisa de administrador)
         Line("CPU", cpu, HwName(HardwareNaming.ShortCpuName(_cpuName)));
 
         var ram = new List<string>();

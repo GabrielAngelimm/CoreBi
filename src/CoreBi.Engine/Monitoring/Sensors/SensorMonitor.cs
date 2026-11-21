@@ -1,8 +1,6 @@
-using LibreHardwareMonitor.Hardware;
-
 using System.Collections.ObjectModel;
-
 using CoreBi.Engine.Infrastructure;
+using LibreHardwareMonitor.Hardware;
 
 namespace CoreBi.Engine.Monitoring.Sensors;
 
@@ -17,39 +15,46 @@ public sealed class SensorMonitor : IDisposable
     private readonly Dictionary<string, SensorRow> _index = new();
     private volatile bool _open;
     private volatile bool _paused, _gpuRetired;
-    private HashSet<string>? _networks; // placas de rede físicas e ativas; as interfaces virtuais nem são lidas
+    private HashSet<string>? _networks; // placas de rede físicas e ativas; interfaces virtuais não são lidas
+    private static bool? _pawnIoInstalled;
 
     public ObservableCollection<SensorRow> Rows { get; } = new();
     public bool IsOpen => _open;
 
     /// <summary>
-    /// Pausa todas as leituras (desta biblioteca e da NVML do próprio CoreBi). Chamado quando o Windows mexe em dispositivos:
-    /// pode ser o driver de vídeo sendo trocado, e ler a placa no meio da troca derruba o processo.
+    /// Pausa todas as leituras (LHM e NVML). Chamado quando o Windows altera dispositivos:
+    /// pode ser o driver de vídeo sendo trocado, e ler a placa durante a troca derruba o processo.
     /// </summary>
-    public void Pause() { _paused = true; Graphics.Nvml.Suspended = true; }
+    public void Pause()
+    {
+        _paused = true;
+        GpuAccessGate.SetSuspended(true);
+    }
 
-    /// <summary>Volta a ler depois que os dispositivos assentaram. A placa de vídeo continua de fora se o driver dela mudou.</summary>
-    public void Resume() { _paused = false; if (!_gpuRetired) Graphics.Nvml.Suspended = false; }
+    public void Resume()
+    {
+        _paused = false;
+        if (!_gpuRetired) GpuAccessGate.SetSuspended(false);
+    }
 
     public bool IsPaused => _paused;
 
     /// <summary>
-    /// O driver de vídeo mudou com o CoreBi aberto: a placa sai das leituras até o app abrir de novo. A biblioteca de sensores e a
-    /// NVML ficam presas ao driver antigo (a DLL carregada não se troca com o processo vivo), então reconectar não é seguro.
+    /// O driver de vídeo mudou com o CoreBi aberto: a placa sai das leituras até o app abrir de novo.
+    /// A biblioteca de sensores e a NVML ficam presas à DLL do driver anterior, então reconectar não é seguro.
     /// </summary>
     public void RetireGpu()
     {
         lock (_lifecycle)
         {
             _gpuRetired = true;
-            Graphics.Nvml.Suspended = true;
-            foreach (var row in Rows.Where(r => IsGpu(r.HardwareType))) row.Update(null, null, null);
+            GpuAccessGate.SetSuspended(true);
+            foreach (var row in Rows.Where(r => SensorTypeMeta.IsGpu(r.HardwareType))) row.Update(null, null, null);
         }
     }
 
     public bool GpuRetired => _gpuRetired;
 
-    private static bool IsGpu(HardwareType t) => t is HardwareType.GpuNvidia or HardwareType.GpuAmd or HardwareType.GpuIntel;
     public IReadOnlyList<SensorReading> Snapshot()
     {
         lock (_lifecycle)
@@ -58,7 +63,7 @@ public sealed class SensorMonitor : IDisposable
 
     /// <summary>
     /// Relatório de saúde do próprio SSD NVMe (aviso crítico, erros de mídia, desligamentos inesperados), por nome do disco.
-    /// O Windows nem sempre repassa esses contadores; a biblioteca de sensores os lê direto do disco a cada atualização.
+    /// O Windows nem sempre repassa esses contadores; o LibreHardwareMonitor os lê diretamente do disco.
     /// </summary>
     public IReadOnlyDictionary<string, NvmeLog> NvmeLogs()
     {
@@ -75,10 +80,10 @@ public sealed class SensorMonitor : IDisposable
                     if (smart == null) continue;
                     ulong? Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType type) =>
                         smart.FirstOrDefault(a => a.Info?.Type == type)?.Attribute.RawValueULong;
-                    var log = new NvmeLog(Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType.CriticalWarning),
+                    var log = new NvmeLog(
+                        Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType.CriticalWarning),
                         Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType.MediaAndDataIntegrityErrors),
-                        Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType.UnsafeShutdownCount),
-                        Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType.NumberOfErrorInformationLogEntries));
+                        Raw(DiskInfoToolkit.Interop.Enums.SmartAttributeType.UnsafeShutdownCount));
                     if (log.CriticalWarning != null || log.MediaErrors != null) logs[hw.Name] = log;
                 }
                 catch (Exception ex) { DiagnosticLog.Write("sensors.nvme", ex); }
@@ -90,7 +95,6 @@ public sealed class SensorMonitor : IDisposable
     public SensorMonitor() : this(new LibreHardwareSource()) { }
     internal SensorMonitor(IHardwareSource source) => _source = source;
 
-    /// <summary>Detecta o hardware (leva de 0,5 a alguns segundos) fora da thread da janela. Até terminar, Refresh não faz nada.</summary>
     public Task OpenAsync()
     {
         lock (_lifecycle)
@@ -118,13 +122,15 @@ public sealed class SensorMonitor : IDisposable
             if (!_open || _disposed || _paused) return;
             foreach (var hw in _source.Hardware)
             {
-                if (_gpuRetired && IsGpu(hw.HardwareType)) continue;
+                if (_gpuRetired && SensorTypeMeta.IsGpu(hw.HardwareType)) continue;
                 if (hw.HardwareType == HardwareType.Network && _networks != null && !_networks.Contains(hw.Name)) continue;
-                try { Walk(hw, hw); _failedHardware.Remove(hw.Identifier.ToString()); }
+                string rootId = hw.Identifier.ToString();
+                try { Walk(hw, hw); _failedHardware.Remove(rootId); }
                 catch (Exception ex)
                 {
-                    if (_failedHardware.Add(hw.Identifier.ToString())) DiagnosticLog.Write("sensors.refresh", ex);
-                    foreach (var row in Rows.Where(r => r.Hardware == hw.Name)) row.Update(null, null, null);
+                    if (_failedHardware.Add(rootId)) DiagnosticLog.Write("sensors.refresh", ex);
+                    foreach (var row in Rows.Where(r => r.RootId == rootId || r.Hardware == hw.Name))
+                        row.Update(null, null, null);
                 }
             }
         }
@@ -162,53 +168,70 @@ public sealed class SensorMonitor : IDisposable
             Walk(sub, root);
     }
 
-    /// <summary>Recomeça mínimo, média e máximo de todos os sensores a partir da leitura atual.</summary>
     public void ResetStats()
     {
         lock (_lifecycle)
             foreach (var row in Rows) row.ResetStats();
     }
 
-    /// <summary>Temperatura principal da CPU: Package (Intel) / Tctl-Tdie (AMD), senão a maior entre os núcleos.</summary>
     public float? CpuTemperature
     {
         get
         {
-            var temps = Rows.Where(r => r.HardwareType == HardwareType.Cpu
-                                     && r.Type == SensorType.Temperature
-                                     && r.RawValue is > 0).ToList();
-            var main = temps.FirstOrDefault(r => r.Name.Contains("Package") || r.Name.Contains("Tctl") || r.Name.Contains("Tdie"));
-            return main?.RawValue ?? temps.Max(r => r.RawValue);
+            lock (_lifecycle)
+            {
+                var temps = Rows.Where(r => r.HardwareType == HardwareType.Cpu
+                                         && r.Type == SensorType.Temperature
+                                         && r.RawValue is > 0).ToList();
+                var main = temps.FirstOrDefault(r => r.Name.Contains("Package") || r.Name.Contains("Tctl") || r.Name.Contains("Tdie"));
+                return main?.RawValue ?? temps.Max(r => r.RawValue);
+            }
         }
     }
 
-    /// <summary>Carga total da CPU em %.</summary>
-    public float? CpuLoad => Rows.FirstOrDefault(r => r.HardwareType == HardwareType.Cpu
-                                                   && r.Type == SensorType.Load
-                                                   && r.Name == "CPU Total")?.RawValue;
-
-    /// <summary>Consumo do pacote da CPU em W.</summary>
-    public float? CpuPower => Rows.FirstOrDefault(r => r.HardwareType == HardwareType.Cpu
-                                                    && r.Type == SensorType.Power
-                                                    && r.Name.Contains("Package") && r.RawValue > 0)?.RawValue;
-
-    /// <summary>
-    /// Driver PawnIO (necessário para temperatura/consumo da CPU via MSR/SMN).
-    /// A biblioteca procura exatamente esta chave de desinstalação.
-    /// </summary>
-    public static bool IsPawnIOInstalled
+    public float? CpuLoad
     {
         get
         {
-            try
-            {
-                using var hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine,
-                                                                         Microsoft.Win32.RegistryView.Registry64);
-                using var key = hklm.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO");
-                return key != null;
-            }
-            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
-            { DiagnosticLog.Write("sensors.pawnio", ex); return false; }
+            lock (_lifecycle)
+                return Rows.FirstOrDefault(r => r.HardwareType == HardwareType.Cpu
+                                             && r.Type == SensorType.Load
+                                             && r.Name == "CPU Total")?.RawValue;
+        }
+    }
+
+    public float? CpuPower
+    {
+        get
+        {
+            lock (_lifecycle)
+                return Rows.FirstOrDefault(r => r.HardwareType == HardwareType.Cpu
+                                             && r.Type == SensorType.Power
+                                             && r.Name.Contains("Package") && r.RawValue > 0)?.RawValue;
+        }
+    }
+
+    /// <summary>
+    /// Driver PawnIO (necessário para temperatura/consumo da CPU via MSR/SMN).
+    /// A biblioteca procura exatamente esta chave de desinstalação; o resultado é cacheado para evitar abrir o Registro a cada tick.
+    /// </summary>
+    public static bool IsPawnIOInstalled => _pawnIoInstalled ??= ProbePawnIO();
+
+    public static void RefreshPawnIOStatus() => _pawnIoInstalled = ProbePawnIO();
+
+    private static bool ProbePawnIO()
+    {
+        try
+        {
+            using var hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine,
+                                                                     Microsoft.Win32.RegistryView.Registry64);
+            using var key = hklm.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO");
+            return key != null;
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
+        {
+            DiagnosticLog.Write("sensors.pawnio", ex);
+            return false;
         }
     }
 
@@ -216,11 +239,10 @@ public sealed class SensorMonitor : IDisposable
 
     public enum CpuSensorProblem { None, NotElevated, PawnIOMissing, ReadFailed }
 
-    /// <summary>Por que a temperatura/consumo da CPU não aparecem (o motivo mais provável primeiro).</summary>
     public CpuSensorProblem DiagnoseCpuSensors()
     {
         if (CpuTemperature != null) return CpuSensorProblem.None;
-        if (!IsElevated) return CpuSensorProblem.NotElevated;
+        if (!ProcessElevation.IsElevated) return CpuSensorProblem.NotElevated;
         if (!IsPawnIOInstalled) return CpuSensorProblem.PawnIOMissing;
         return CpuSensorProblem.ReadFailed;
     }
@@ -260,8 +282,7 @@ public sealed class SensorMonitor : IDisposable
     }
 }
 
-/// <summary>Campos do log de saúde NVMe; null quando o disco não traz o campo.</summary>
-public sealed record NvmeLog(ulong? CriticalWarning, ulong? MediaErrors, ulong? UnsafeShutdowns, ulong? ErrorLogEntries);
+public sealed record NvmeLog(ulong? CriticalWarning, ulong? MediaErrors, ulong? UnsafeShutdowns);
 
 internal interface IHardwareSource
 {

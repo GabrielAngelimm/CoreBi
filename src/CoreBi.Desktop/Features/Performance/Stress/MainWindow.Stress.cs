@@ -271,36 +271,14 @@ public partial class MainWindow
         StStatus.SetResourceReference(TextBlock.ForegroundProperty, aborted ? "Danger" : "Fg");
     }
 
-    /// <summary>Temperatura do núcleo da GPU principal (dedicada).</summary>
-    internal float? MainGpuTemp()
-    {
-        if (_gpus.Count == 0) return null;
-        var temps = _monitor.Rows.Where(r => r.Hardware == _gpus[0].Name && r.Type == SensorType.Temperature).ToList();
-        return (temps.FirstOrDefault(r => r.Name == "GPU Core") ?? temps.FirstOrDefault())?.RawValue;
-    }
+    internal float? MainGpuTemp() => _gpus.Count == 0 ? null : GpuMonitor.ReadLive(_gpus[0], _monitor.Snapshot()).TempC;
 
-    /// <summary>Consumo da GPU principal: NVML quando disponível, senão LibreHardwareMonitor.</summary>
-    internal float? MainGpuPower()
-    {
-        if (_gpus.Count == 0) return null;
-        var g = _gpus[0];
-        if (g.NvmlHandle != IntPtr.Zero && Nvml.PowerUsageMw(g.NvmlHandle) is uint mw) return mw / 1000f;
-        return _monitor.Rows.FirstOrDefault(r => r.Hardware == g.Name && r.Type == SensorType.Power)?.RawValue;
-    }
+    internal float? MainGpuPower() => _gpus.Count == 0 ? null : GpuMonitor.ReadLive(_gpus[0], _monitor.Snapshot()).PowerW;
 
-    internal string MainGpuPerfCap()
-    {
-        if (_gpus.Count == 0) return "";
-        return _gpus[0].LiveExtras().FirstOrDefault(kv => kv.Key.StartsWith("PerfCap")).Value ?? "";
-    }
+    internal string MainGpuPerfCap() =>
+        _gpus.Count == 0 ? "" : _gpus[0].LiveExtras().FirstOrDefault(kv => kv.Key.StartsWith("PerfCap", StringComparison.Ordinal)).Value ?? "";
 
-    /// <summary>Clock médio dos núcleos do processador; null quando o sensor não dá a leitura.</summary>
-    internal double? CpuCoreClock()
-    {
-        var clocks = _monitor.Rows.Where(r => r.HardwareType == HardwareType.Cpu && r.Type == SensorType.Clock &&
-                                              r.Name.StartsWith("Core #") && r.RawValue > 0).Select(r => (double)r.RawValue!.Value).ToList();
-        return clocks.Count > 0 ? clocks.Average() : null;
-    }
+    internal double? CpuCoreClock() => GpuMonitor.ReadCpu(_monitor, _monitor.Snapshot()).AvgClockMHz;
 
     internal void UpdateStressPanel()
     {

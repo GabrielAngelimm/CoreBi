@@ -108,7 +108,7 @@ public partial class MainWindow : Window
             _rtssOverlay.Dispose();
             _toast?.Close();
             _frames.Dispose();
-            _windowsGpuUsage.Dispose();
+            _gpuMonitor.Dispose();
             UnregisterHotKey(new System.Windows.Interop.WindowInteropHelper(this).Handle, HotkeyId);
             _monitor.Dispose();
         };
