@@ -208,7 +208,7 @@ internal static partial class Program
             Expect<OperationCanceledException>(() => DiskBench.Run(test.Path, 16, (_, _) => { }, cancel.Token));
             Expect<OperationCanceledException>(() => MemoryBench.MeasureLatencyNs(cancel.Token));
             Expect<OperationCanceledException>(() => MemoryBench.MeasureBandwidth(cancel.Token));
-            Expect<OperationCanceledException>(() => MemoryBench.MeasureLoading((_, _) => { }, cancel.Token));
+            Expect<OperationCanceledException>(() => LoadingBench.Measure((_, _) => { }, cancel.Token));
             Require(!Directory.EnumerateFileSystemEntries(test.Path).Any(), "Pre-cancelled workload created files"); return new { noPartialMeasurements = true };
         });
         Check("hardware references: unknown models produce no invented balance", () =>

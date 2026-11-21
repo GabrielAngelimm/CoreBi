@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using CoreBi.Engine.Infrastructure;
-using CoreBi.Engine.Performance.Benchmarks;
 using Microsoft.Diagnostics.Tracing;
 using Microsoft.Diagnostics.Tracing.Session;
 

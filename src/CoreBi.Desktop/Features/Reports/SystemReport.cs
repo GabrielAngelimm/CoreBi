@@ -1,4 +1,5 @@
 using CoreBi.Desktop.Features.Monitoring.Inventory;
+using CoreBi.Engine.Monitoring;
 using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Reports;
 

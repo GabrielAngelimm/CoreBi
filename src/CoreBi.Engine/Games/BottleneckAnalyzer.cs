@@ -38,7 +38,7 @@ public static class BottleneckAnalyzer
     {
         var snapshot = monitor.Snapshot();
         var gpuLive = gpu != null ? GpuMonitor.ReadLive(gpu, snapshot) : null;
-        var cpuLive = GpuMonitor.ReadCpu(monitor, snapshot);
+        var cpuLive = CpuTelemetry.Read(monitor, snapshot);
         return new LoadSample(
             gpuLive?.LoadPct,
             cpuLive.LoadPct,

@@ -160,7 +160,7 @@ internal static partial class Program
                 Machine = "PC-PRIV",
                 Disks =
                 {
-                    new ReportDisk(
+                    new ReportFinding(
                         Name: "SSD",
                         Details: "NVMe",
                         Verdict: "SAUDÁVEL",

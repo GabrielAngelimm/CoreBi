@@ -1,5 +1,6 @@
 using System.Globalization;
 using CoreBi.Engine.Infrastructure;
+using CoreBi.Engine.Monitoring;
 using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Memory;

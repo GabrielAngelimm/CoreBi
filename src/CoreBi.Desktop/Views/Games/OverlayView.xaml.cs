@@ -10,6 +10,7 @@ using CoreBi.Engine.Games;
 using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Memory;
+using CoreBi.Engine.Monitoring.Sensors;
 
 namespace CoreBi.Desktop.Views;
 
@@ -303,7 +304,7 @@ public partial class OverlayView : UserControl
         var sensors = _context.Sensors.Snapshot();
         var gpuInfo = _context.PrimaryGpu;
         var gpuLive = gpuInfo != null ? GpuMonitor.ReadLive(gpuInfo, sensors) : null;
-        var cpuLive = GpuMonitor.ReadCpu(_context.Sensors, sensors);
+        var cpuLive = CpuTelemetry.Read(_context.Sensors, sensors);
         var lines = new List<OverlayLine>();
         static string Temp(float? v) => v is float x ? $"{x:0} °C" : "—";
         static string Pct(double? v) => v is double x ? $"{x:0}%" : "—";

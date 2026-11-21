@@ -1,7 +1,6 @@
 using System.Management;
 using System.Text.RegularExpressions;
 using CoreBi.Engine.Infrastructure;
-using CoreBi.Engine.Monitoring.Inventory;
 
 namespace CoreBi.Engine.Monitoring.Graphics;
 

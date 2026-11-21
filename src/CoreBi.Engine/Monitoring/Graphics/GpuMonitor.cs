@@ -19,17 +19,8 @@ public sealed record GpuLiveSample(
     double? VramPct,
     bool ThermalThrottled);
 
-public sealed record CpuLiveSample(
-    float? LoadPct,
-    float? BusiestCoreLoadPct,
-    string? BusiestCoreLabel,
-    float? TempC,
-    float? PowerW,
-    float? AvgClockMHz,
-    float? MaxClockMHz);
-
 /// <summary>
-/// Centraliza a telemetria ao vivo de GPU (WDDM PDH + NVML + fallback LibreHardwareMonitor) e CPU,
+/// Centraliza a telemetria ao vivo de GPU (WDDM PDH + NVML + fallback LibreHardwareMonitor),
 /// garantindo que painel, overlay, gargalo, placa de vídeo e stress usem exatamente a mesma leitura.
 /// </summary>
 public sealed class GpuMonitor : IDisposable
@@ -94,35 +85,6 @@ public sealed class GpuMonitor : IDisposable
 
         return new GpuLiveSample(load, coreClock, memClock, temp, hotspot, power, powerLimit, voltage, fanPct, fanRpm,
             vramUsedGb, vramTotalGb, vramPct, thermal);
-    }
-
-    public static CpuLiveSample ReadCpu(SensorMonitor monitor, IEnumerable<SensorReading> sensors)
-    {
-        var cpuSensors = sensors.Where(r => r.HardwareType == HardwareType.Cpu && r.RawValue != null).ToList();
-        var busiest = cpuSensors
-            .Where(r => r.Type == SensorType.Load && r.Name.StartsWith("CPU Core #", StringComparison.Ordinal) && !r.Name.Contains("Thread", StringComparison.Ordinal))
-            .OrderByDescending(r => r.RawValue)
-            .FirstOrDefault();
-
-        var clocks = cpuSensors
-            .Where(r => r.Type == SensorType.Clock
-                     && r.Name.Contains("Core #", StringComparison.Ordinal)
-                     && !r.Name.Contains("Effective", StringComparison.Ordinal)
-                     && r.RawValue > 0)
-            .Select(r => r.RawValue!.Value)
-            .ToList();
-
-        float? avgClock = clocks.Count > 0 ? clocks.Average() : null;
-        float? maxClock = clocks.Count > 0 ? clocks.Max() : null;
-
-        return new CpuLiveSample(
-            monitor.CpuLoad,
-            busiest?.RawValue,
-            busiest?.Name.Replace("CPU Core #", "núcleo "),
-            monitor.CpuTemperature,
-            monitor.CpuPower,
-            avgClock,
-            maxClock);
     }
 
     public void Dispose() => _windowsUsage.Dispose();

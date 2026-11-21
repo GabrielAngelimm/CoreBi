@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Performance.Graphics;
 using Vortice.D3DCompiler;
 using Vortice.Direct3D;

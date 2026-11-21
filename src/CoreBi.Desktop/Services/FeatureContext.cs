@@ -98,7 +98,7 @@ internal sealed class FeatureContext
     public GpuLiveSample? ReadPrimaryGpuLive() =>
         PrimaryGpu is { } gpu ? GpuMonitor.ReadLive(gpu, Sensors.Snapshot()) : null;
 
-    public CpuLiveSample ReadCpuLive() => GpuMonitor.ReadCpu(Sensors, Sensors.Snapshot());
+    public CpuLiveSample ReadCpuLive() => CpuTelemetry.Read(Sensors, Sensors.Snapshot());
 
     public float? PrimaryGpuTemp() => ReadPrimaryGpuLive()?.TempC;
     public float? PrimaryGpuPower() => ReadPrimaryGpuLive()?.PowerW;

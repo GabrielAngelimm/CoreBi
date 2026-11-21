@@ -424,7 +424,7 @@ internal static partial class Program
         });
         Check("loading: real files and cleanup", () =>
         {
-            var result = MemoryBench.MeasureLoading((_, _) => { }, CancellationToken.None);
+            var result = LoadingBench.Measure((_, _) => { }, CancellationToken.None);
             Require(result.SeqReadMBs > 0 && result.FilesPerSec > 0, "No loading result");
             return new { result, scope = "functional loading workload; not actual game load time" };
         });
