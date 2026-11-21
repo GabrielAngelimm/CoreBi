@@ -1,5 +1,4 @@
 using CoreBi.Desktop.Services;
-using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Power;
 using CoreBi.Engine.Monitoring.Sensors;
@@ -7,7 +6,6 @@ using LibreHardwareMonitor.Hardware;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Media;
 
 namespace CoreBi.Desktop.Views;
 
@@ -354,7 +352,7 @@ public partial class PowerView : UserControl
 
 
     /// <summary>Guarda o consumo de processador e placa de vídeo e soma a energia da sessão; com a página aberta, atualiza as leituras.</summary>
-    internal void Sample()
+    internal void Tick()
     {
         if (_monitor == null || !_monitor.IsOpen) return;
         DateTime now = DateTime.Now;

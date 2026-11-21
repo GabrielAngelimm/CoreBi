@@ -30,7 +30,7 @@ public partial class StartupView : UserControl
     private void Say(string status, string detail = "") => ToolPage.Say(StartupSummary, StartupResult, status, detail);
 
     /// <summary>Leitura pedida (abrir a página, "Ler novamente"): o console mostra a hora da leitura.</summary>
-    internal Task ScanStartupAsync() => ScanAsync(announce: true);
+    internal Task RefreshAsync() => ScanAsync(announce: true);
 
     private bool _scanning;
     /// <summary>Lê a lista e os removidos. Depois de uma ação (announce = false) o console continua mostrando o resultado dela.</summary>
@@ -77,7 +77,7 @@ public partial class StartupView : UserControl
         _ => off == 0 ? "todos ligados" : off == total ? "todos desligados" : off == 1 ? "1 desligado" : $"{off} desligados",
     };
 
-    internal async void BtnStartupScan_Click(object sender, RoutedEventArgs e) => await ScanStartupAsync();
+    private async void BtnStartupScan_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
 
     internal async void StartupToggle_Click(object sender, RoutedEventArgs e)
     {

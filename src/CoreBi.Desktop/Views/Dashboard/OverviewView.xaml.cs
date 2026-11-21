@@ -58,7 +58,7 @@ namespace CoreBi.Desktop.Views
             UpdateDashboard();
         }
 
-        internal void CollectSample()
+        internal void Tick()
         {
             if (_context == null) return;
             _samples.Add(new DashSample(DateTime.Now, _context.Sensors.CpuTemperature, _context.PrimaryGpuTemp(),

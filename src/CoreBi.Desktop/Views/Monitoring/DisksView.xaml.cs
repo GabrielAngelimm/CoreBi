@@ -7,7 +7,6 @@ using LibreHardwareMonitor.Hardware;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Media;
 
 namespace CoreBi.Desktop.Views;
 
@@ -106,7 +105,7 @@ public partial class DisksView : UserControl
 
 
     /// <summary>Guarda temperatura e taxas de cada disco do LibreHardwareMonitor; com a página aberta, atualiza as leituras.</summary>
-    internal void Sample()
+    internal void Tick()
     {
         if (_monitor == null || !_monitor.IsOpen) return;
         var seen = new HashSet<string>(StringComparer.Ordinal);

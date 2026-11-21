@@ -1,0 +1,124 @@
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+
+namespace CoreBi.Desktop;
+
+/// <summary>
+/// Propriedades anexadas do design system: ícone (glifo Segoe Fluent), legenda, texto de espera, sufixo de unidade, canal
+/// do componente e a luz de um botão sob o mouse. Os templates de Theme.xaml leem estes valores; as páginas só os declaram.
+/// </summary>
+public static class Ui
+{
+    public static readonly DependencyProperty IconProperty = DependencyProperty.RegisterAttached(
+        "Icon", typeof(string), typeof(Ui), new FrameworkPropertyMetadata(""));
+    public static string GetIcon(DependencyObject d) => (string)d.GetValue(IconProperty);
+    public static void SetIcon(DependencyObject d, string value) => d.SetValue(IconProperty, value);
+
+    public static readonly DependencyProperty CaptionProperty = DependencyProperty.RegisterAttached(
+        "Caption", typeof(string), typeof(Ui), new FrameworkPropertyMetadata(""));
+    public static string GetCaption(DependencyObject d) => (string)d.GetValue(CaptionProperty);
+    public static void SetCaption(DependencyObject d, string value) => d.SetValue(CaptionProperty, value);
+
+    public static readonly DependencyProperty PlaceholderProperty = DependencyProperty.RegisterAttached(
+        "Placeholder", typeof(string), typeof(Ui), new FrameworkPropertyMetadata(""));
+    public static string GetPlaceholder(DependencyObject d) => (string)d.GetValue(PlaceholderProperty);
+    public static void SetPlaceholder(DependencyObject d, string value) => d.SetValue(PlaceholderProperty, value);
+
+    public static readonly DependencyProperty SuffixProperty = DependencyProperty.RegisterAttached(
+        "Suffix", typeof(string), typeof(Ui), new FrameworkPropertyMetadata(""));
+    public static string GetSuffix(DependencyObject d) => (string)d.GetValue(SuffixProperty);
+    public static void SetSuffix(DependencyObject d, string value) => d.SetValue(SuffixProperty, value);
+
+    /// <summary>
+    /// Componente de hardware (Cpu, Gpu, Memory, Virtual, Storage, Board, Net ou Signal; vazio = Steel): o ícone (ChannelIcon) e o
+    /// fundo claro da ficha (ChannelWash) pintam por ele, para cada peça ter a mesma cor em todas as telas.
+    /// </summary>
+    public static readonly DependencyProperty ChannelProperty = DependencyProperty.RegisterAttached(
+        "Channel", typeof(string), typeof(Ui), new FrameworkPropertyMetadata(""));
+    public static string GetChannel(DependencyObject d) => (string)d.GetValue(ChannelProperty);
+    public static void SetChannel(DependencyObject d, string value) => d.SetValue(ChannelProperty, value);
+
+    /// <summary>Cor própria do glifo de um botão (vazio = a cor do texto): os botões fantasmas acendem o glifo no sinal.</summary>
+    public static readonly DependencyProperty IconBrushProperty = DependencyProperty.RegisterAttached(
+        "IconBrush", typeof(Brush), typeof(Ui), new FrameworkPropertyMetadata(null));
+    public static Brush? GetIconBrush(DependencyObject d) => (Brush?)d.GetValue(IconBrushProperty);
+    public static void SetIconBrush(DependencyObject d, Brush? value) => d.SetValue(IconBrushProperty, value);
+
+    /// <summary>Medidor (ScaleTransform de 0 a 1) que desliza até a leitura nova em vez de saltar; sem animate, vai direto.</summary>
+    public static void Glide(ScaleTransform meter, double to, bool animate)
+    {
+        to = Math.Clamp(double.IsFinite(to) ? to : 0, 0, 1);
+        if (!animate)
+        {
+            meter.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            meter.ScaleX = to;
+            return;
+        }
+        meter.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(to, TimeSpan.FromMilliseconds(500)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+    }
+
+    /// <summary>Camada que acende por cima de um botão quando o mouse passa (cada estilo de botão escolhe a sua).</summary>
+    public static readonly DependencyProperty HoverFillProperty = DependencyProperty.RegisterAttached(
+        "HoverFill", typeof(Brush), typeof(Ui), new FrameworkPropertyMetadata(null));
+    public static Brush? GetHoverFill(DependencyObject d) => (Brush?)d.GetValue(HoverFillProperty);
+    public static void SetHoverFill(DependencyObject d, Brush? value) => d.SetValue(HoverFillProperty, value);
+
+    /// <summary>
+    /// Verdadeiro dentro de um SlidingSelectionPanel (os filhos herdam): o item marcado não pinta o próprio fundo, porque o
+    /// painel desenha um destaque só e o desliza até ele.
+    /// </summary>
+    public static readonly DependencyProperty SlidingGroupProperty = DependencyProperty.RegisterAttached(
+        "SlidingGroup", typeof(bool), typeof(Ui), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits));
+    public static bool GetSlidingGroup(DependencyObject d) => (bool)d.GetValue(SlidingGroupProperty);
+    public static void SetSlidingGroup(DependencyObject d, bool value) => d.SetValue(SlidingGroupProperty, value);
+
+    /// <summary>
+    /// Botão de iniciar/parar: o mesmo lugar troca de papel (ação principal ↔ interromper),
+    /// com cor, glifo e texto coerentes. Assim nenhum teste depende só do texto para mostrar que está rodando.
+    /// </summary>
+    public static void SetRunning(System.Windows.Controls.Button button, bool running, string idleText, string runningText = "Parar", string idleIcon = "\uE768")
+    {
+        if (button.TryFindResource(running ? "StopButton" : "PrimaryButton") is Style style) button.Style = style;
+        SetIcon(button, running ? "\uE71A" : idleIcon);
+        button.Content = running ? runningText : idleText;
+    }
+
+    /// <summary>
+    /// Selo de veredito (estilo Badge com um LED e um texto dentro): tone é "Ok", "Warn", "Danger" ou "" (sem dados).
+    /// Saudável fica em tinta com o LED verde; atenção e crítico ganham fundo e texto na cor, porque pedem que alguém olhe.
+    /// </summary>
+    public static void SetTone(System.Windows.Controls.Border badge, string tone)
+    {
+        bool alert = tone is "Warn" or "Danger";
+        string soft = tone + "Soft";
+        if (alert)
+        {
+            badge.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, soft);
+            badge.SetResourceReference(System.Windows.Controls.Border.BorderBrushProperty, soft);
+        }
+        else
+        {
+            badge.ClearValue(System.Windows.Controls.Border.BackgroundProperty); // o estilo Badge é transparente com fio
+            badge.ClearValue(System.Windows.Controls.Border.BorderBrushProperty);
+        }
+        if (badge.Child is not System.Windows.Controls.Panel panel) return;
+        foreach (var child in panel.Children)
+        {
+            if (child is System.Windows.Shapes.Ellipse led)
+                led.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, tone.Length > 0 ? tone : "Faint");
+            else if (child is System.Windows.Controls.TextBlock text)
+                text.SetResourceReference(System.Windows.Controls.TextBlock.ForegroundProperty, alert ? tone : tone == "Ok" ? "Fg" : "Muted");
+        }
+    }
+
+    /// <summary>Raio dos painéis (RadiusPanel), para recortar cantos desenhados em código.</summary>
+    public static double PanelRadius(FrameworkElement element) =>
+        element.TryFindResource("RadiusPanel") is CornerRadius r ? r.TopLeft : 10;
+
+    public static string? CheckedTag(System.Windows.Controls.Panel panel) =>
+        panel.Children.OfType<System.Windows.Controls.RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
+
+    public static string CheckedText(System.Windows.Controls.Panel panel) =>
+        panel.Children.OfType<System.Windows.Controls.RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Content?.ToString() ?? "";
+}

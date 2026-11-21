@@ -8,62 +8,41 @@ using CoreBi.Engine.Persistence;
 
 namespace CoreBi.Desktop.Services;
 
+/// <summary>Registra um evento na atividade recente da Visão geral.</summary>
+internal delegate void RecordEventHandler(string icon, string title, string detail, string value, string channel);
+
+/// <summary>Aviso no canto da tela (também vai para a atividade recente).</summary>
+internal delegate void NotifyHandler(string title, string detail, string icon);
+
+/// <summary>Durante um benchmark: pausa as leituras de sensores (driver) e, se pedido, suspende o overlay.</summary>
+internal delegate void BenchmarkIsolationHandler(bool pauseSensors, bool suspendOverlay);
+
 /// <summary>
 /// Contexto único compartilhado entre o shell (MainWindow) e todas as 14 páginas: coordenação de workloads,
 /// telemetria compartilhada, configurações, ciclo de vida e ações de navegação/notificação.
+/// O shell monta uma instância e cada página a recebe em <c>Initialize</c>; não é um contêiner de serviços.
 /// </summary>
 internal sealed class FeatureContext
 {
+    private const string DefaultCriticalMessage = "Aguarde a operação em andamento terminar antes de fechar o CoreBi.";
+
     private readonly object _criticalSync = new();
     private readonly List<string> _criticalMessages = new();
 
-    public FeatureContext(
-        Window owner,
-        WorkloadCoordinator workloads,
-        CancellationToken lifetime,
-        AppSettings settings,
-        SensorMonitor sensors,
-        FrameMonitor frames,
-        GpuMonitor gpuTelemetry,
-        Action<string> navigate,
-        Action<string, string, string, string, string> recordEvent,
-        Action<string, string, string> notify,
-        Func<bool> saveSettings,
-        Action syncFrameMonitoring,
-        Action<bool, bool> setBenchmarkIsolation,
-        Func<bool> isLiveMotion)
-    {
-        Owner = owner;
-        Workloads = workloads;
-        Lifetime = lifetime;
-        Settings = settings;
-        Sensors = sensors;
-        Frames = frames;
-        GpuTelemetry = gpuTelemetry;
-        Navigate = navigate;
-        RecordEvent = recordEvent;
-        Notify = notify;
-        SaveSettings = saveSettings;
-        SyncFrameMonitoring = syncFrameMonitoring;
-        SetBenchmarkIsolation = setBenchmarkIsolation;
-        IsLiveMotion = isLiveMotion;
-    }
+    public required Window Owner { get; init; }
+    public required WorkloadCoordinator Workloads { get; init; }
+    public required CancellationToken Lifetime { get; init; }
+    public required AppSettings Settings { get; init; }
+    public required SensorMonitor Sensors { get; init; }
+    public required FrameMonitor Frames { get; init; }
 
-    public Window Owner { get; }
-    public WorkloadCoordinator Workloads { get; }
-    public CancellationToken Lifetime { get; }
-    public AppSettings Settings { get; }
-    public SensorMonitor Sensors { get; }
-    public FrameMonitor Frames { get; }
-    public GpuMonitor GpuTelemetry { get; }
-
-    public Action<string> Navigate { get; }
-    public Action<string, string, string, string, string> RecordEvent { get; }
-    public Action<string, string, string> Notify { get; }
-    public Func<bool> SaveSettings { get; }
-    public Action SyncFrameMonitoring { get; }
-    public Action<bool, bool> SetBenchmarkIsolation { get; }
-    public Func<bool> IsLiveMotion { get; }
+    public required Action<string> Navigate { get; init; }
+    public required RecordEventHandler RecordEvent { get; init; }
+    public required NotifyHandler Notify { get; init; }
+    public required Func<bool> SaveSettings { get; init; }
+    public required Action SyncFrameMonitoring { get; init; }
+    public required BenchmarkIsolationHandler SetBenchmarkIsolation { get; init; }
+    public required Func<bool> IsLiveMotion { get; init; }
 
     public IReadOnlyList<GpuInfo> Gpus { get; internal set; } = Array.Empty<GpuInfo>();
     public IReadOnlyList<DriveCard> Drives { get; internal set; } = Array.Empty<DriveCard>();
@@ -82,15 +61,13 @@ internal sealed class FeatureContext
         get
         {
             lock (_criticalSync)
-                return _criticalMessages.Count > 0 ? _criticalMessages[^1] : "Aguarde a operação em andamento terminar antes de fechar o CoreBi.";
+                return _criticalMessages.Count > 0 ? _criticalMessages[^1] : DefaultCriticalMessage;
         }
     }
 
     public IDisposable BeginCriticalOperation(string? blockingMessage = null)
     {
-        string message = string.IsNullOrWhiteSpace(blockingMessage)
-            ? "Aguarde a operação em andamento terminar antes de fechar o CoreBi."
-            : blockingMessage;
+        string message = string.IsNullOrWhiteSpace(blockingMessage) ? DefaultCriticalMessage : blockingMessage;
         lock (_criticalSync) _criticalMessages.Add(message);
         return new CriticalScope(this, message);
     }

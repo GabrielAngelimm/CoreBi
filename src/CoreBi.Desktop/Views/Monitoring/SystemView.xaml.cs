@@ -85,7 +85,7 @@ public partial class SystemView : UserControl
     }
 
     /// <summary>As especificações das placas de vídeo (chip, arquitetura, VRAM exata) chegam depois do inventário.</summary>
-    internal void GpusReady() { if (_inventory != null) Rebuild(); }
+    internal void RefreshHardware() { if (_inventory != null) Rebuild(); }
 
     /// <summary>Abre a ficha de uma categoria pelo nome ("Processador", "Memória RAM"...), como a Visão geral pede.</summary>
     internal void Select(string category)

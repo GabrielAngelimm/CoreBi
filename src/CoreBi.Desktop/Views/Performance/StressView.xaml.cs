@@ -356,7 +356,10 @@ public partial class StressView : UserControl, IDisposable
         StressLog.ScrollIntoView(StressLog.Items[^1]);
     }
 
-    internal void DrawChart()
+    /// <summary>Redesenha o gráfico com as cores do tema atual.</summary>
+    internal void RedrawTheme() => DrawChart();
+
+    private void DrawChart()
     {
         TempChart.Children.Clear();
         double w = TempChart.ActualWidth, h = TempChart.ActualHeight;

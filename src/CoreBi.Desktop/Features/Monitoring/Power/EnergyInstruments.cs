@@ -4,16 +4,11 @@ using System.Windows.Media;
 
 namespace CoreBi.Desktop;
 
-/// <summary>Base dos instrumentos da página Energia.</summary>
-public abstract class EnergyInstrument : InstrumentBase
-{
-}
-
 /// <summary>
 /// Consumo dos últimos 5 min (1 amostra/s), empilhado: processador embaixo e placa de vídeo por cima, cada um no seu canal,
 /// então o contorno superior é a soma. Pausa sob o mouse e mostra a hora e cada parcela, como os gráficos de Discos e Visão geral.
 /// </summary>
-public sealed class PowerTrace : EnergyInstrument
+public sealed class PowerTrace : InstrumentBase
 {
     public const int Capacity = 300;
     private IReadOnlyList<(float? Cpu, float? Gpu)> _samples = Array.Empty<(float?, float?)>();
@@ -213,7 +208,7 @@ public sealed class PowerTrace : EnergyInstrument
 }
 
 /// <summary>Divisão do consumo agora: um medidor segmentado só, com a parte do processador e a da placa de vídeo na proporção.</summary>
-public sealed class SplitBar : EnergyInstrument
+public sealed class SplitBar : InstrumentBase
 {
     public static readonly DependencyProperty FirstProperty = Number(nameof(First), typeof(SplitBar));
     public static readonly DependencyProperty SecondProperty = Number(nameof(Second), typeof(SplitBar));
@@ -237,7 +232,7 @@ public sealed class SplitBar : EnergyInstrument
 /// Trilho da fonte: escala de −10 % a +10 % em volta do nominal, com a tolerância ATX (±5 %) acesa em aço suave, o traço
 /// do nominal, a faixa vista desde que o CoreBi abriu (embaixo) e o ponteiro da leitura (âmbar fora da tolerância).
 /// </summary>
-public sealed class RailGauge : EnergyInstrument
+public sealed class RailGauge : InstrumentBase
 {
     public static readonly DependencyProperty NominalProperty = Number(nameof(Nominal), typeof(RailGauge));
     public static readonly DependencyProperty ValueProperty = Number(nameof(Value), typeof(RailGauge));
@@ -287,7 +282,7 @@ public sealed class RailGauge : EnergyInstrument
 }
 
 /// <summary>Tensão de componente numa escala fixa: trilho fino, a faixa vista na sessão e o ponto da leitura (âmbar quando baixa).</summary>
-public sealed class RangeStrip : EnergyInstrument
+public sealed class RangeStrip : InstrumentBase
 {
     public static readonly DependencyProperty ValueProperty = Number(nameof(Value), typeof(RangeStrip));
     public static readonly DependencyProperty MinProperty = Number(nameof(Min), typeof(RangeStrip));
@@ -324,7 +319,7 @@ public sealed class RangeStrip : EnergyInstrument
 /// Faixa de 0 a 100 % do estado do processador no plano, acesa até o máximo, para a barra ler como o valor (100 % = cheia):
 /// cheia até o mínimo, que vale mesmo em repouso, e mais clara do mínimo ao máximo, aonde ele só chega com carga.
 /// </summary>
-public sealed class SpanMeter : EnergyInstrument
+public sealed class SpanMeter : InstrumentBase
 {
     public static readonly DependencyProperty FromProperty = Number(nameof(From), typeof(SpanMeter));
     public static readonly DependencyProperty ToProperty = Number(nameof(To), typeof(SpanMeter));
@@ -344,7 +339,7 @@ public sealed class SpanMeter : EnergyInstrument
 }
 
 /// <summary>Bateria desenhada: corpo com gomos de carga em tinta e o polo à direita. Âmbar abaixo de 20 % e vermelho abaixo de 10 % fora da tomada.</summary>
-public sealed class BatteryMeter : EnergyInstrument
+public sealed class BatteryMeter : InstrumentBase
 {
     public static readonly DependencyProperty ValueProperty = Number(nameof(Value), typeof(BatteryMeter));
     public static readonly DependencyProperty OnPowerProperty =
@@ -377,7 +372,7 @@ public sealed class BatteryMeter : EnergyInstrument
 /// Capacidade da bateria: o contorno é a capacidade de fábrica, o aço é a capacidade máxima de hoje (o que o desgaste deixou)
 /// e a tinta é a carga agora. A diferença entre o contorno e o aço é o desgaste.
 /// </summary>
-public sealed class CapacityStack : EnergyInstrument
+public sealed class CapacityStack : InstrumentBase
 {
     public static readonly DependencyProperty DesignProperty = Number(nameof(Design), typeof(CapacityStack));
     public static readonly DependencyProperty FullProperty = Number(nameof(Full), typeof(CapacityStack));
@@ -403,7 +398,7 @@ public sealed class CapacityStack : EnergyInstrument
 /// em vermelho, cada desligamento inesperado. Dias que o registro de eventos já não cobre ficam tracejados. Sob o mouse, a linha
 /// mostra os horários de cada trecho.
 /// </summary>
-public sealed class UptimeChart : EnergyInstrument
+public sealed class UptimeChart : InstrumentBase
 {
     public sealed record Day(string Label, bool Today, bool Covered, IReadOnlyList<(double From, double To, bool Current)> Spans, IReadOnlyList<double> Crashes, string Total, IReadOnlyList<string> Detail);
 

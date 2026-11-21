@@ -27,7 +27,6 @@ public abstract class InstrumentBase : FrameworkElement
     public static readonly DependencyProperty MutedBrushProperty = Paint(nameof(MutedBrush));
     public static readonly DependencyProperty FaintBrushProperty = Paint(nameof(FaintBrush));
     public static readonly DependencyProperty SurfaceBrushProperty = Paint(nameof(SurfaceBrush));
-    public static readonly DependencyProperty OkBrushProperty = Paint(nameof(OkBrush));
     public static readonly DependencyProperty WarnBrushProperty = Paint(nameof(WarnBrush));
     public static readonly DependencyProperty WarnSoftBrushProperty = Paint(nameof(WarnSoftBrush));
     public static readonly DependencyProperty DangerBrushProperty = Paint(nameof(DangerBrush));
@@ -45,7 +44,6 @@ public abstract class InstrumentBase : FrameworkElement
     public Brush MutedBrush { get => (Brush)GetValue(MutedBrushProperty); set => SetValue(MutedBrushProperty, value); }
     public Brush FaintBrush { get => (Brush)GetValue(FaintBrushProperty); set => SetValue(FaintBrushProperty, value); }
     public Brush SurfaceBrush { get => (Brush)GetValue(SurfaceBrushProperty); set => SetValue(SurfaceBrushProperty, value); }
-    public Brush OkBrush { get => (Brush)GetValue(OkBrushProperty); set => SetValue(OkBrushProperty, value); }
     public Brush WarnBrush { get => (Brush)GetValue(WarnBrushProperty); set => SetValue(WarnBrushProperty, value); }
     public Brush WarnSoftBrush { get => (Brush)GetValue(WarnSoftBrushProperty); set => SetValue(WarnSoftBrushProperty, value); }
     public Brush DangerBrush { get => (Brush)GetValue(DangerBrushProperty); set => SetValue(DangerBrushProperty, value); }
@@ -67,7 +65,6 @@ public abstract class InstrumentBase : FrameworkElement
         SetResourceReference(MutedBrushProperty, "Muted");
         SetResourceReference(FaintBrushProperty, "Faint");
         SetResourceReference(SurfaceBrushProperty, "Surface");
-        SetResourceReference(OkBrushProperty, "Ok");
         SetResourceReference(WarnBrushProperty, "Warn");
         SetResourceReference(WarnSoftBrushProperty, "WarnSoft");
         SetResourceReference(DangerBrushProperty, "Danger");

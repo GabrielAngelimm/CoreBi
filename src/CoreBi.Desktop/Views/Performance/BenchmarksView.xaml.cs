@@ -36,7 +36,7 @@ namespace CoreBi.Desktop.Views
             ResetStages();
             UpdateCpuHistory();
             UpdateGameBenchHistory();
-            TickLive();
+            Tick();
         }
 
         internal void SelectTest(string testTag)
@@ -51,7 +51,7 @@ namespace CoreBi.Desktop.Views
             InitDiskBench();
         }
 
-        internal void TickLive()
+        internal void Tick()
         {
             if (_context == null) return;
             var cells = new List<BenchStat>();
