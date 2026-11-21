@@ -67,6 +67,8 @@ public partial class DisksView : UserControl
         _refreshing = true;
         BtnDiskRefresh.IsEnabled = false;
         DiskHealthStatus.Text = "Lendo os discos…";
+        bool first = _readAt == default;
+        if (first) Skeleton.Set(true, DiskPlate, LifeCard, TempCard, OdoCard, CheckCard); // primeira leitura: a ficha ainda não tem disco
         try
         {
             var sensors = _monitor.Snapshot();
@@ -99,6 +101,7 @@ public partial class DisksView : UserControl
         finally
         {
             _refreshing = false;
+            if (first) Skeleton.Set(false, DiskPlate, LifeCard, TempCard, OdoCard, CheckCard);
             if (!_context.IsClosing) BtnDiskRefresh.IsEnabled = true;
         }
     }

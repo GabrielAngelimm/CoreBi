@@ -20,6 +20,7 @@ public partial class GraphicsView : UserControl
     public GraphicsView()
     {
         InitializeComponent();
+        Skeleton.Set(true, GpuPlateCard, GpuSpecCard); // até a leitura da placa de vídeo, logo depois de o CoreBi abrir
         SizeChanged += (_, _) => FitColumns();
         ((INotifyCollectionChanged)GpuSections.Items).CollectionChanged += (_, _) => FitColumns();
     }
@@ -46,6 +47,7 @@ public partial class GraphicsView : UserControl
 
         if (gpus.Count > 0) ShowGpu(gpus[0]);
         else ShowNoGpu();
+        Skeleton.Set(false, GpuPlateCard, GpuSpecCard);
     }
 
     internal void ShowGpu(GpuInfo gpu)

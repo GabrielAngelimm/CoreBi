@@ -343,7 +343,7 @@
                         </Grid>
                     </Border>
 
-                    <Border Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,20,24,12">
+                    <Border x:Name="NetInfoCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,20,24,12" local:Skeleton.Top="34">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />

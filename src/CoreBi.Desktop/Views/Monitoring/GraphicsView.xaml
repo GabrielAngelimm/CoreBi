@@ -84,7 +84,7 @@
         </Grid>
 
         <!-- O painel da placa: a identificação em cima e as leituras vivas embaixo -->
-        <Border Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16">
+        <Border x:Name="GpuPlateCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16" local:Skeleton.Shape="Text">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -143,7 +143,7 @@
 
         <!-- Ficha técnica: grupos chave/valor em colunas que dividem a largura; o painel tem a altura do conteúdo e rola por dentro se
              a janela for baixa -->
-        <Border Grid.Row="2" Style="{StaticResource CardBorder}" Padding="0" VerticalAlignment="Top">
+        <Border x:Name="GpuSpecCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="0" VerticalAlignment="Top">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />

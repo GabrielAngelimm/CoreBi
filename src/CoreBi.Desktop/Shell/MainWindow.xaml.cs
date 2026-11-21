@@ -32,6 +32,7 @@ public partial class MainWindow : Window, ILiveMotionHost
     private readonly DispatcherTimer _timer;
     private ToastWindow? _toast;
     private bool _sensorsHeldForBenchmark;
+    private bool _polling;
 
     public MainWindow()
     {
@@ -156,7 +157,7 @@ public partial class MainWindow : Window, ILiveMotionHost
         return IntPtr.Zero;
     }
 
-    private void OnTelemetryTick(object? sender, EventArgs e)
+    private async void OnTelemetryTick(object? sender, EventArgs e)
     {
         // Durante benchmarks de GPU/disco as leituras de sensores (NVML/driver) ficam pausadas para não gerar engasgos no 1% low.
         if (_sensorsHeldForBenchmark)
@@ -166,7 +167,16 @@ public partial class MainWindow : Window, ILiveMotionHost
             return;
         }
 
-        _monitor.Refresh();
+        // A leitura dos sensores leva dezenas de ms (chips da placa-mãe, SMART, NVML): roda fora da janela, para a interface não
+        // congelar a cada segundo (a navegação e as animações engasgavam no tique). Se a anterior ainda não voltou, este tique pula.
+        if (_polling) return;
+        _polling = true;
+        SensorPoll? poll;
+        try { poll = await _monitor.PollAsync(); }
+        catch (Exception ex) { poll = null; DiagnosticLog.Write("sensors.poll", ex); }
+        finally { _polling = false; }
+        if (_context.IsClosing || _sensorsHeldForBenchmark) return;
+        if (poll != null) _monitor.Apply(poll);
         _gpuMonitor.UpdateLoads(_context.Gpus);
         PageSensors.Tick();
         UpdateSidebarTelemetry();
@@ -195,7 +205,8 @@ public partial class MainWindow : Window, ILiveMotionHost
                 return;
             }
             if (_context.IsClosing) return;
-            _monitor.Refresh();
+            if (await _monitor.PollAsync() is { } poll && !_context.IsClosing) _monitor.Apply(poll); // primeira leitura também fora da janela
+            if (_context.IsClosing) return;
             UpdateCpuSensorWarning();
             PageSensors.Populate();
             PageDash.UpdateDashboard();
@@ -286,6 +297,7 @@ public partial class MainWindow : Window, ILiveMotionHost
     private void SetBenchmarkIsolation(bool pauseSensors, bool suspendOverlay)
     {
         _sensorsHeldForBenchmark = pauseSensors;
+        if (pauseSensors) _monitor.WaitForPoll(); // uma leitura em andamento termina antes de o teste começar a medir
         PageOverlay.SuspendForBenchmark(suspendOverlay);
         SyncFrameMonitoring(); // a captura de quadros do overlay também para durante o teste
     }

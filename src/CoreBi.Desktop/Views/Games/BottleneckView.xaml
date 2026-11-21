@@ -207,7 +207,7 @@
                     </Grid>
 
                     <!-- As leituras que provam o veredito e, embaixo, o equilíbrio estimado pela tabela de desempenho -->
-                    <Border x:Name="BnSideCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0">
+                    <Border x:Name="BnSideCard" local:Skeleton.Shape="Text" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0">
                         <DockPanel>
                             <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="{StaticResource PanelPadding}">
                                 <StackPanel>

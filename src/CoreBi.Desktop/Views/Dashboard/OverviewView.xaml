@@ -258,7 +258,8 @@
                     </Border>
 
                     <!-- O botão fantasma no pé já tem 6 px de respiro interno: o painel desconta isso embaixo -->
-                    <Border Grid.Row="2" Style="{StaticResource CardBorder}" Padding="24,20,24,14">
+                    <!-- Esqueleto abaixo do título até o registro de eventos do Windows responder (lido fora da janela) -->
+                    <Border x:Name="DashHealthCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="24,20,24,14" local:Skeleton.Top="34" local:Skeleton.Shape="Text">
                         <StackPanel>
                             <Grid Margin="0,0,0,6">
                                 <TextBlock Text="Saúde do PC" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />

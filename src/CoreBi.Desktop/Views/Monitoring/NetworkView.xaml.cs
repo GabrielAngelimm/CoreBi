@@ -368,7 +368,10 @@ public partial class NetworkView : UserControl
     private async void NetworkView_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (!IsVisible || _running || _result != null || _context == null || _context.IsClosing) return;
-        var adapter = await Task.Run(NetworkTest.ReadAdapter);
+        if (NetInfo.ItemsSource == null) Skeleton.SetActive(NetInfoCard, true); // primeira leitura do adaptador
+        NetworkAdapterInfo? adapter;
+        try { adapter = await Task.Run(NetworkTest.ReadAdapter); }
+        finally { Skeleton.SetActive(NetInfoCard, false); }
         if (_context.IsClosing || _running || _result != null) return;
         ShowAdapter(adapter);
     }

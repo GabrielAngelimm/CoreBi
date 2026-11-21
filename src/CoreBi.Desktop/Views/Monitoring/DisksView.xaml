@@ -203,7 +203,7 @@
                         </Grid.RowDefinitions>
 
                         <!-- Placa de identificação: modelo, veredito, especificação e espaço por unidade -->
-                        <Border x:Name="DiskPlate" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}">
+                        <Border x:Name="DiskPlate" local:Skeleton.Shape="Text" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -268,7 +268,7 @@
                         </Border>
 
                         <!-- Vida útil -->
-                        <Border x:Name="LifeCard" Grid.Row="2" Style="{StaticResource CardBorder}">
+                        <Border x:Name="LifeCard" local:Skeleton.Shape="Text" Grid.Row="2" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -302,7 +302,7 @@
                         </Border>
 
                         <!-- Temperatura -->
-                        <Border x:Name="TempCard" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
+                        <Border x:Name="TempCard" local:Skeleton.Shape="Text" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -353,7 +353,7 @@
                         </Border>
 
                         <!-- Odômetro: uso acumulado desde a fábrica -->
-                        <Border x:Name="OdoCard" Grid.Row="2" Grid.Column="4" Style="{StaticResource CardBorder}" Padding="0">
+                        <Border x:Name="OdoCard" local:Skeleton.Shape="Text" Grid.Row="2" Grid.Column="4" Style="{StaticResource CardBorder}" Padding="0">
                             <UniformGrid x:Name="OdoGrid" Columns="4">
                                 <Border x:Name="OdoCell0" Style="{StaticResource OdoCell}" BorderThickness="0">
                                     <StackPanel>
@@ -386,7 +386,7 @@
                             </UniformGrid>
                         </Border>
                     <!-- Integridade: S.M.A.R.T. e contadores de erro, numa faixa discreta -->
-                        <Border x:Name="CheckCard" Grid.Row="4" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}" Padding="24,12">
+                        <Border x:Name="CheckCard" local:Skeleton.RowHeight="28" Grid.Row="4" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}" Padding="24,12">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
