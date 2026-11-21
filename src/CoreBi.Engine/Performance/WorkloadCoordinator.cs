@@ -15,6 +15,7 @@ public static class WorkloadOperations
     public const string WindowsUpdate = "Windows Update";
     public const string DriverBackup = "Driver backup";
     public const string InstallApps = "Install apps";
+    public const string InstallPawnIo = "Install PawnIO";
 }
 
 /// <summary>One owner for every benchmark/stress operation, including asynchronous preparation.</summary>

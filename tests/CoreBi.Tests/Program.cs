@@ -3,7 +3,6 @@ using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Threading;
 using CoreBi.Desktop;
 using CoreBi.Engine.Infrastructure;
@@ -113,7 +112,7 @@ internal static partial class Program
             inv.Gpus.Add(new VideoAdapter("NVIDIA GeForce RTX 4060 Ti", "NVIDIA", "566.36", "32.0.15.6636", null, 8UL << 30));
             inv.Displays.Add(new DisplayInfo(1, "NVIDIA GeForce RTX 4060 Ti", "LG ULTRAGEAR", "GSM", 27, 1920, 1080, 60, 144, 32, 0, 0, true, "DisplayPort", 2023, 22));
             inv.Disks.Add(new PhysicalDiskInfo(0, "Samsung SSD 980 1TB", 1UL << 40, "NVMe", "SSD", "3B4QFXO7", "S64ANS0T", false, "Saudável", "GPT"));
-            inv.Board = new CoreBi.Engine.Monitoring.Inventory.BoardInfo("Gigabyte Technology Co., Ltd.", "B550M AORUS ELITE", "x.x", "MB-SERIAL-9", null, null, "Desktop");
+            inv.Board = new BoardInfo("Gigabyte Technology Co., Ltd.", "B550M AORUS ELITE", "x.x", "MB-SERIAL-9", null, null, "Desktop");
             inv.Firmware = new FirmwareInfo("American Megatrends International, LLC.", "FF", new DateTime(2025, 9, 26), "3.3", true, true, "2.0", true, "AMD", "3.94.2.5");
             inv.Settings = new WindowsSettings(false, true, true, true, "(UTC-03:00) Brasília");
             inv.Security = new WindowsSecurity("Windows Defender", true, true, DateTime.Now.AddDays(-1), "Nunca notificar");
@@ -424,7 +423,7 @@ internal static partial class Program
         });
         Check("loading: real files and cleanup", () =>
         {
-            var result = MemoryBench.MeasureLoading((_, _) => { }, CancellationToken.None);
+            var result = LoadingBench.Measure((_, _) => { }, CancellationToken.None);
             Require(result.SeqReadMBs > 0 && result.FilesPerSec > 0, "No loading result");
             return new { result, scope = "functional loading workload; not actual game load time" };
         });

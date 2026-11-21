@@ -1,4 +1,4 @@
-namespace CoreBi.Engine.Monitoring.Inventory;
+namespace CoreBi.Engine.Monitoring;
 
 public class InfoNode
 {

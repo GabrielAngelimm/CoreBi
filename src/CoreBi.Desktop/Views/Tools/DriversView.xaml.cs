@@ -20,7 +20,7 @@ public partial class DriversView : UserControl
 
     internal bool _drvInit, _drvBusy;
     internal List<GpuDriverStatus> _drvGpus = new();
-    internal BoardInfo _drvBoardInfo = new();
+    internal BoardSupportInfo _drvBoardInfo = new();
     internal List<WuDriver> _drvWu = new();
     internal CancellationTokenSource? _drvCts;
 
@@ -115,10 +115,7 @@ public partial class DriversView : UserControl
             {
                 double at = 0.4 + 0.6 * i / Math.Max(1, _drvGpus.Count);
                 if (g.Vendor is "NVIDIA" or "AMD") DrvSet($"Consultando a {g.Vendor}…", at, g.GpuName);
-                if (g.Vendor == "NVIDIA") await GpuDriverLookup.CheckNvidiaAsync(g, studio, _drvCts.Token);
-                else if (g.Vendor == "AMD") await GpuDriverLookup.CheckAmdAsync(g, _drvCts.Token);
-                else if (g.Vendor == "Intel") g.Message = "A Intel não tem consulta automática. Veja a versão mais recente na página oficial.";
-                else g.Message = "Sem consulta automática para esta placa: o driver dela chega pelo Windows Update.";
+                await GpuDriverLookup.CheckAsync(g, studio, _drvCts.Token);
                 i++;
             }
             if (_context.IsClosing) return;

@@ -159,7 +159,7 @@ internal static class ReportHtmlRenderer
         sb.Append("</div>");
     }
 
-    private static void RenderFindings(StringBuilder sb, int number, string title, string channel, List<ReportDisk> items)
+    private static void RenderFindings(StringBuilder sb, int number, string title, string channel, List<ReportFinding> items)
     {
         sb.Append($"<section class=\"sheet c-{Channel(channel)}\">");
         RenderHead(sb, number, title);

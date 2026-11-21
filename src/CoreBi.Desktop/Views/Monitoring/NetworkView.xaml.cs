@@ -252,7 +252,7 @@ public partial class NetworkView : UserControl
 
         SetReadout(NetJitter, r?.JitterMs);
         NetLoss.Text = r?.LossPct is { } loss ? loss.ToString("0.#", PtBr) : "—";
-        NetLoss.SetResourceReference(TextBlock.ForegroundProperty, r?.LossPct == null ? "Faint" : r.LossPct > 1 ? "Warn" : "Fg");
+        NetLoss.SetResourceReference(TextBlock.ForegroundProperty, r?.LossPct == null ? "Faint" : r.LossPct > NetworkThresholds.InternetLossWarnPct ? "Warn" : "Fg");
         SetReadout(NetLoaded, r?.LoadedLatencyMs);
         if (r?.Bufferbloat == true) NetLoaded.SetResourceReference(TextBlock.ForegroundProperty, "Warn");
         NetLoadedSub.Text = r?.BufferbloatMs is { } bloat ? $"{(bloat >= 0 ? "+" : "−")}{Math.Abs(bloat):0} ms durante o download" : "";
@@ -292,7 +292,7 @@ public partial class NetworkView : UserControl
             row.ColumnDefinitions.Add(new ColumnDefinition());
             // Achado informativo (roteador que não responde a ping) não leva a cor do veredito. O glifo fica solto, sem bolha
             // colorida em volta: a cor está no sinal, não num enfeite (como a saúde do PC na Visão geral).
-            bool info = note.StartsWith("O roteador não responde", StringComparison.Ordinal);
+            bool info = note.StartsWith(NetworkThresholds.RouterSilentNotePrefix, StringComparison.Ordinal);
             string noteKey = info ? "Muted" : key;
             var glyph = new TextBlock
             {
@@ -342,9 +342,9 @@ public partial class NetworkView : UserControl
         string wanText = r.InternetVerdict switch
         {
             HealthVerdict.Good => $"estável · perda {r.LossPct?.ToString("0.#", PtBr) ?? "0"} %",
-            HealthVerdict.Warning => r.LossPct > 1 ? $"perda de {r.LossPct?.ToString("0.#", PtBr)} %"
-                                 : r.LatencyMs > 80 ? "latência alta" : r.JitterMs > 20 ? "jitter alto" : "um alvo sem resposta",
-            HealthVerdict.Critical => r.LatencyMs == null ? "sem resposta" : r.LossPct > 5 ? $"perda de {r.LossPct?.ToString("0.#", PtBr)} %" : "latência muito alta",
+            HealthVerdict.Warning => r.LossPct > NetworkThresholds.InternetLossWarnPct ? $"perda de {r.LossPct?.ToString("0.#", PtBr)} %"
+                                 : r.LatencyMs > NetworkThresholds.InternetLatencyWarnMs ? "latência alta" : r.JitterMs > NetworkThresholds.InternetJitterWarnMs ? "jitter alto" : "um alvo sem resposta",
+            HealthVerdict.Critical => r.LatencyMs == null ? "sem resposta" : r.LossPct > NetworkThresholds.InternetLossCritPct ? $"perda de {r.LossPct?.ToString("0.#", PtBr)} %" : "latência muito alta",
             _ => r.Internet.Count == 0 ? "não medido" : "sem resposta a ping",
         };
         // Trecho estável fica neutro (um fio cheio, mais claro que o de "não medido"); só o trecho com problema ganha cor,

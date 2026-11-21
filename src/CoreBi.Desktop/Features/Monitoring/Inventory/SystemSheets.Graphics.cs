@@ -1,3 +1,4 @@
+using CoreBi.Engine.Monitoring;
 using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Inventory;
 

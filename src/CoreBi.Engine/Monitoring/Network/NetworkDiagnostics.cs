@@ -2,6 +2,18 @@ using CoreBi.Engine.Monitoring.Health;
 
 namespace CoreBi.Engine.Monitoring.Network;
 
+/// <summary>Limites do veredito da internet e prefixo do achado informativo, compartilhados com a apresentação.</summary>
+public static class NetworkThresholds
+{
+    public const double InternetLossWarnPct = 1;
+    public const double InternetLossCritPct = 5;
+    public const double InternetLatencyWarnMs = 80;
+    public const double InternetJitterWarnMs = 20;
+
+    /// <summary>Início do achado que não afeta o veredito (roteador que bloqueia ping).</summary>
+    public const string RouterSilentNotePrefix = "O roteador não responde";
+}
+
 internal static class NetworkDiagnostics
 {
     private sealed record Note(string Text, bool AffectsVerdict);
@@ -45,7 +57,7 @@ internal static class NetworkDiagnostics
         if (lanBad)
             notes.Add(new($"A rede local está instável (roteador: {router.Avg:0} ms, perda {router.LossPct:0.#}%, jitter {router.Jitter:0} ms). Se for Wi-Fi, aproxime-se do roteador ou use cabo.", true));
         if (!router.Answered)
-            notes.Add(new("O roteador não responde a ping (alguns modelos bloqueiam). Isso por si só não é problema.", false));
+            notes.Add(new(NetworkThresholds.RouterSilentNotePrefix + " a ping (alguns modelos bloqueiam). Isso por si só não é problema.", false));
 
         var internetVerdict = HealthVerdict.Good;
         if (answeredInternet.Count == 0)
@@ -63,11 +75,11 @@ internal static class NetworkDiagnostics
                 notes.Add(new("Um dos alvos de internet não respondeu a ping; a perda nesse alvo é inconclusiva.", true));
                 internetVerdict = HealthVerdict.Warning;
             }
-            if (netLoss > 5 || netAvg > 150) { critical = true; internetVerdict = HealthVerdict.Critical; }
-            else if (netLoss > 1 || netAvg > 80 || netJit > 20) internetVerdict = HealthVerdict.Warning;
-            if (netLoss > 1) notes.Add(new($"Há perda de pacotes nos alvos que responderam ({netLoss:0.#}%). Verifique a rede local e, se persistir, o provedor.", true));
-            if (netAvg > 80) notes.Add(new($"Latência alta até os alvos de internet ({netAvg:0} ms). O teste não identifica sozinho a origem do atraso.", true));
-            if (netJit > 20) notes.Add(new($"O jitter está alto ({netJit:0} ms): a latência oscila, o que causa engasgos em jogos online.", true));
+            if (netLoss > NetworkThresholds.InternetLossCritPct || netAvg > 150) { critical = true; internetVerdict = HealthVerdict.Critical; }
+            else if (netLoss > NetworkThresholds.InternetLossWarnPct || netAvg > NetworkThresholds.InternetLatencyWarnMs || netJit > NetworkThresholds.InternetJitterWarnMs) internetVerdict = HealthVerdict.Warning;
+            if (netLoss > NetworkThresholds.InternetLossWarnPct) notes.Add(new($"Há perda de pacotes nos alvos que responderam ({netLoss:0.#}%). Verifique a rede local e, se persistir, o provedor.", true));
+            if (netAvg > NetworkThresholds.InternetLatencyWarnMs) notes.Add(new($"Latência alta até os alvos de internet ({netAvg:0} ms). O teste não identifica sozinho a origem do atraso.", true));
+            if (netJit > NetworkThresholds.InternetJitterWarnMs) notes.Add(new($"O jitter está alto ({netJit:0} ms): a latência oscila, o que causa engasgos em jogos online.", true));
         }
 
         double? bloat = Bufferbloat(loadedBaselineTarget, loadedMs);

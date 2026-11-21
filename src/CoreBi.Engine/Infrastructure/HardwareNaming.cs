@@ -2,15 +2,18 @@ using System.Text.RegularExpressions;
 
 namespace CoreBi.Engine.Infrastructure;
 
-public static class HardwareNaming
+public static partial class HardwareNaming
 {
-    private static readonly Regex MobileGpuRegex = new(@"Laptop|Mobile|Max-Q|Notebook", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    private static readonly Regex IntelGenRegex = new(@"\d+th Gen\s*", RegexOptions.Compiled);
+    [GeneratedRegex(@"Laptop|Mobile|Max-Q|Notebook", RegexOptions.IgnoreCase)]
+    private static partial Regex MobileGpuRegex();
 
-    public static bool IsMobileGpu(string? name) =>
-        !string.IsNullOrWhiteSpace(name) && MobileGpuRegex.IsMatch(name);
+    [GeneratedRegex(@"\d+th Gen\s*")]
+    private static partial Regex IntelGenRegex();
 
-    public static bool IsMicrosoftBasicAdapter(string? name, string? pnpDeviceId = null) =>
+    internal static bool IsMobileGpu(string? name) =>
+        !string.IsNullOrWhiteSpace(name) && MobileGpuRegex().IsMatch(name);
+
+    internal static bool IsMicrosoftBasicAdapter(string? name, string? pnpDeviceId = null) =>
         (name?.Contains("Microsoft Basic", StringComparison.OrdinalIgnoreCase) ?? false)
         || (pnpDeviceId?.StartsWith("ROOT", StringComparison.OrdinalIgnoreCase) == true
             && (name?.Contains("Basic", StringComparison.OrdinalIgnoreCase) ?? false));
@@ -37,14 +40,14 @@ public static class HardwareNaming
             s = space >= 0 ? s[..space] : s[..i];
         }
         s = s.Replace("Processor", "").Replace("CPU", "");
-        s = IntelGenRegex.Replace(s, ""); // "13th Gen Core i7-13700K"
+        s = IntelGenRegex().Replace(s, ""); // "13th Gen Core i7-13700K"
         int at = s.IndexOf('@');
         if (at > 0) s = s[..at]; // "Core i5-12400F CPU @ 2.50GHz"
         return string.Join(' ', s.Split(' ', StringSplitOptions.RemoveEmptyEntries));
     }
 
     /// <summary>Converte versão WMI da NVIDIA (ex.: "32.0.15.9597") para o formato de pacote ("595.97").</summary>
-    public static string? NvidiaDriverVersion(string? wmiVersion)
+    internal static string? NvidiaDriverVersion(string? wmiVersion)
     {
         if (string.IsNullOrWhiteSpace(wmiVersion)) return null;
         string[] parts = wmiVersion.Split('.');

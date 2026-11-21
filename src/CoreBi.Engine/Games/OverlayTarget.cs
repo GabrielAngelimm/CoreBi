@@ -21,7 +21,7 @@ public static class OverlayTarget
         return pid;
     }
 
-    public static bool CoversMonitor(int x, int y, int width, int height, int left, int top, int right, int bottom)
+    internal static bool CoversMonitor(int x, int y, int width, int height, int left, int top, int right, int bottom)
         => Math.Abs((long)x - left) <= 2 && Math.Abs((long)y - top) <= 2
             && Math.Abs((long)x + width - right) <= 2 && Math.Abs((long)y + height - bottom) <= 2;
 

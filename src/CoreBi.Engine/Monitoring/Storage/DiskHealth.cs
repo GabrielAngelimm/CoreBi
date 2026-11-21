@@ -138,6 +138,17 @@ public static class DiskHealth
         return samples.Values.OrderBy(r => r.Index).Select(Evaluate).ToList();
     }
 
+    /// <summary>
+    /// Quedas de energia e resets forçados acontecem em qualquer PC: o que preocupa é a frequência (por hora ligado), não o total.
+    /// </summary>
+    public static HealthVerdict RateUnsafeShutdowns(ulong count, long? powerOnHours)
+    {
+        double perHour = powerOnHours is > 0 ? (double)count / powerOnHours.Value : 0;
+        return count >= 200 && perHour > 0.1 ? HealthVerdict.Critical
+            : count >= DiskDetail.UnsafeShutdownWarnAt && perHour > 0.02 ? HealthVerdict.Warning
+            : HealthVerdict.Good;
+    }
+
     private static void EnrichFromSensors(Dictionary<int, DiskSample> samples, IEnumerable<SensorReading> sensors,
         IReadOnlyDictionary<string, NvmeLog>? nvme)
     {

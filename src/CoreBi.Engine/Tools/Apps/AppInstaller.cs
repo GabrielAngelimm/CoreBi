@@ -67,7 +67,7 @@ public static partial class AppInstaller
         new() { Name = "VLC", Description = "Player de vídeo e música que abre qualquer formato.", WingetId = "VideoLAN.VLC", DisplayPrefix = "VLC media player" },
     };
 
-    public static string WingetPath =>
+    internal static string WingetPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\WindowsApps\winget.exe");
 
     public static bool WingetAvailable => File.Exists(WingetPath);
@@ -101,10 +101,13 @@ public static partial class AppInstaller
         var names = InstalledNames();
         foreach (var a in apps)
         {
-            a.Installed = names.Any(n => n.StartsWith(a.DisplayPrefix, StringComparison.OrdinalIgnoreCase));
+            a.Installed = IsInstalled(a, names);
             if (a.Installed) a.Selected = false;
         }
     }
+
+    public static bool IsInstalled(InstallableApp app, IEnumerable<string> installedNames) =>
+        installedNames.Any(n => n.StartsWith(app.DisplayPrefix, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Instala um app em silêncio via winget. Retorna (ok, mensagem curta).</summary>
     public static async Task<(bool Ok, string Message)> InstallAsync(InstallableApp app, CancellationToken ct)

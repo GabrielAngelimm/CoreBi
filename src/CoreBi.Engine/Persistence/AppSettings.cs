@@ -16,7 +16,7 @@ public sealed record BenchRecord(DateTime Date, string Test, double Score, strin
 /// </summary>
 public sealed class AppSettings
 {
-    public static string Folder => AppPaths.DataFolder;
+    internal static string Folder => AppPaths.DataFolder;
     private static string FilePath => Path.Combine(Folder, "settings.json");
 
     // Benchmark: últimos resultados, mais recente primeiro (Normalize corta pelo fim).

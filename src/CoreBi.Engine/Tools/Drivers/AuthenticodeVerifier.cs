@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 namespace CoreBi.Engine.Tools.Drivers;
 
 /// <summary>Authenticode verification shared by driver downloads.</summary>
@@ -62,4 +63,15 @@ internal static class AuthenticodeVerifier
         }
     }
 
+    internal static void VerifyPublisher(string file, string vendor)
+    {
+        int trust = AuthenticodeVerifier.WinVerifyTrustFile(file);
+        if (trust != 0) throw new InvalidOperationException($"Assinatura digital inválida (0x{trust:X8}).");
+#pragma warning disable SYSLIB0057
+        using var rawCert = X509Certificate.CreateFromSignedFile(file);
+        using var certificate = new X509Certificate2(rawCert);
+#pragma warning restore SYSLIB0057
+        if (!DriverDownloadPolicy.IsPublisher(certificate.GetNameInfo(X509NameType.SimpleName, forIssuer: false), vendor))
+            throw new InvalidOperationException("O assinante não corresponde ao fabricante esperado.");
+    }
 }

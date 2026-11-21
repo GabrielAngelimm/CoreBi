@@ -3,7 +3,7 @@ using System.Globalization;
 namespace CoreBi.Engine.Infrastructure;
 
 /// <summary>Firmware/driver release dates are calendar dates, not local instants.</summary>
-public static class WmiCalendarDate
+internal static class WmiCalendarDate
 {
     public static bool TryParse(string? value, out DateTime date)
     {

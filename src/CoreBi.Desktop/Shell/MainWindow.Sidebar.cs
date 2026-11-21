@@ -3,6 +3,7 @@ using System.Windows;
 using CoreBi.Engine.Monitoring.Memory;
 using CoreBi.Engine.Monitoring.Sensors;
 using CoreBi.Engine.Monitoring.Storage;
+using CoreBi.Engine.Performance;
 using CoreBi.Engine.Tools.Apps;
 
 namespace CoreBi.Desktop;
@@ -109,7 +110,7 @@ public partial class MainWindow
             "CoreBi", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
-        using var workload = _workloads.TryBegin("Install PawnIO");
+        using var workload = _workloads.TryBegin(WorkloadOperations.InstallPawnIo);
         if (workload == null) { MessageBox.Show(this, "Termine a outra operação antes.", "CoreBi"); return; }
         using var critical = _context.BeginCriticalOperation("Aguarde a instalação do PawnIO terminar antes de fechar o CoreBi.");
         try

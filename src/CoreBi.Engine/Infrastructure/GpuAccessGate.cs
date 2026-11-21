@@ -4,7 +4,7 @@ namespace CoreBi.Engine.Infrastructure;
 /// Coordena a suspensão segura de leituras nativas de GPU (como NVML) durante mudanças de dispositivos
 /// ou troca do driver de vídeo, evitando falha nativa fora do alcance de blocos catch.
 /// </summary>
-public static class GpuAccessGate
+internal static class GpuAccessGate
 {
     private static volatile bool _suspended;
 

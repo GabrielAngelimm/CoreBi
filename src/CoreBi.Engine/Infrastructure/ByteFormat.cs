@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace CoreBi.Engine.Infrastructure;
 
-public static class ByteFormat
+internal static class ByteFormat
 {
     public static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 

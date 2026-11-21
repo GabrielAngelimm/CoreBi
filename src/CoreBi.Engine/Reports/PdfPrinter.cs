@@ -11,7 +11,7 @@ namespace CoreBi.Engine.Reports;
 /// </summary>
 public static class PdfPrinter
 {
-    public static string? FindEdge()
+    private static string? FindEdge()
     {
         foreach (var hive in new[] { Registry.LocalMachine, Registry.CurrentUser })
         {

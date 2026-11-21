@@ -5,8 +5,8 @@ using System.Text;
 using System.Windows;
 using CoreBi.Desktop.Features.Monitoring.Inventory;
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Monitoring;
 using CoreBi.Engine.Monitoring.Health;
-using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Power;
 using CoreBi.Engine.Monitoring.Storage;
 using CoreBi.Engine.Persistence;
@@ -66,11 +66,11 @@ internal static class ReportExportService
 
         var nvme = context.Sensors.NvmeLogs();
         var disks = await Task.Run(() => DiskHealth.Read(sensorsSnapshot, nvme));
-        data.Disks.AddRange(disks.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
+        data.Disks.AddRange(disks.Select(d => new ReportFinding(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
         var power = await Task.Run(() => BatteryInfo.Read(sensorsSnapshot));
-        data.Power.AddRange(power.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
+        data.Power.AddRange(power.Select(d => new ReportFinding(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
         if (networkResult != null)
-            data.Network.AddRange(networkResult.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
+            data.Network.AddRange(networkResult.Select(d => new ReportFinding(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
 
         if (ext == ".pdf") await PdfPrinter.PrintAsync(ReportBuilder.Html(data), path, context.Lifetime);
         else await File.WriteAllTextAsync(path, ext == ".json" ? ReportBuilder.Json(data) : ReportBuilder.Html(data), new UTF8Encoding(true), context.Lifetime);

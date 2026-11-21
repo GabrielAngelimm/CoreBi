@@ -1,6 +1,7 @@
 using CoreBi.Desktop.Features.Monitoring.Inventory;
 using CoreBi.Desktop.Features.Reports;
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Monitoring;
 using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Memory;

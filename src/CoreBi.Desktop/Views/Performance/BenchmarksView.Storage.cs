@@ -99,7 +99,6 @@ public partial class BenchmarksView
 
         try
         {
-            // Os sensores consultam o driver do disco: pausa durante o teste para não atrapalhar a medição.
             _context.SetBenchmarkIsolation(true, false);
             var r = await Task.Run(() => DiskBench.Run(root, fileMb, (phase, f) => progress = (phase, f), ct), ct);
             ct.ThrowIfCancellationRequested();
@@ -182,13 +181,12 @@ public partial class BenchmarksView
             ct.ThrowIfCancellationRequested();
             Show();
 
-            load = await Task.Run(() => MemoryBench.MeasureLoading((phase, f) => progress = (phase, 0.35 + f * 0.6), ct), ct);
+            load = await Task.Run(() => LoadingBench.Measure((phase, f) => progress = (phase, 0.35 + f * 0.6), ct), ct);
             Show();
 
             MemStatus.Text = "Concluído";
             MemDetail.Text = "Arquivos de teste apagados";
-            // Nota para a barra do histórico: mais rápido = maior (inverso da latência e do tempo de carga do mapa).
-            SaveBenchRecord("mem", 1000 / lat.Value + 10 / load.MapLoadSeconds,
+            SaveBenchRecord("mem", MemoryBench.Score(lat.Value, load.MapLoadSeconds),
                 $"{lat:0} ns · {bw.Value.Read:0} GB/s · mapa {load.MapLoadSeconds:0.00} s");
         }
         catch (OperationCanceledException) { MemStatus.Text = "Cancelado"; MemDetail.Text = "Arquivos de teste apagados"; }
