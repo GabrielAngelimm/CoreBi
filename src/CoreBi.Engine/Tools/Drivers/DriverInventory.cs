@@ -87,9 +87,9 @@ public static class DriverInventory
         return list;
     }
 
-    public static BoardInfo ReadBoard()
+    public static BoardSupportInfo ReadBoard()
     {
-        var b = new BoardInfo();
+        var b = new BoardSupportInfo();
         var board = WmiQuery.FirstOrDefault("SELECT Manufacturer, Product FROM Win32_BaseBoard",
             o => (Maker: WmiQuery.GetString(o, "Manufacturer") ?? "", Model: WmiQuery.GetString(o, "Product") ?? ""));
         b.Maker = board.Maker ?? "";

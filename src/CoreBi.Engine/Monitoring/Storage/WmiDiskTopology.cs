@@ -5,7 +5,6 @@ namespace CoreBi.Engine.Monitoring.Storage;
 
 internal sealed record WmiDiskRecord(
     int Index,
-    string DeviceId,
     string Model,
     string Serial,
     string Firmware,
@@ -13,7 +12,7 @@ internal sealed record WmiDiskRecord(
     long SizeBytes,
     string PnpDeviceId);
 
-internal sealed record StoragePhysicalInfo(int Index, string Media, string? Bus, int HealthStatus, string? PartitionStyle);
+internal sealed record StoragePhysicalInfo(string Media, string? Bus, int HealthStatus, string? PartitionStyle);
 
 internal static class WmiDiskTopology
 {
@@ -34,7 +33,6 @@ internal static class WmiDiskTopology
                     : (WmiQuery.GetString(d, "InterfaceType") ?? "");
                 return new WmiDiskRecord(
                     idx,
-                    WmiQuery.GetString(d, "DeviceID") ?? $@"\\.\PHYSICALDRIVE{idx}",
                     WmiQuery.GetString(d, "Model") ?? $"Disco {idx}",
                     WmiQuery.GetString(d, "SerialNumber") ?? "",
                     WmiQuery.GetString(d, "FirmwareRevision") ?? "",
@@ -61,7 +59,7 @@ internal static class WmiDiskTopology
             string? bus = MapBusType(WmiQuery.GetInt32(d, "BusType"));
             int health = WmiQuery.GetNullableInt32(d, "HealthStatus") ?? 5;
             styles.TryGetValue(idx, out string? style);
-            map[idx] = new StoragePhysicalInfo(idx, media, bus, health, style);
+            map[idx] = new StoragePhysicalInfo(media, bus, health, style);
         }, StorageScope);
 
         return map;

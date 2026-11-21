@@ -20,7 +20,7 @@ public partial class DriversView : UserControl
 
     internal bool _drvInit, _drvBusy;
     internal List<GpuDriverStatus> _drvGpus = new();
-    internal BoardInfo _drvBoardInfo = new();
+    internal BoardSupportInfo _drvBoardInfo = new();
     internal List<WuDriver> _drvWu = new();
     internal CancellationTokenSource? _drvCts;
 
