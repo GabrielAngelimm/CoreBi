@@ -10,12 +10,12 @@ internal static class MeshPrimitives
     {
         for (int i = 0; i <= segments; i++)
         {
-            float u = i / (float)segments * MathF.Tau;
+            float u = MathF.Tau * i / segments; // mesma ordem de operações da cena de ray tracing original (nota comparável)
             float cu = MathF.Cos(u), su = MathF.Sin(u);
             var center = new Vector3(cu * majorRadius, 0, su * majorRadius);
             for (int j = 0; j <= sides; j++)
             {
-                float v = j / (float)sides * MathF.Tau;
+                float v = MathF.Tau * j / sides;
                 var normal = new Vector3(cu * MathF.Cos(v), MathF.Sin(v), su * MathF.Cos(v));
                 addVertex(center + normal * minorRadius, normal, new Vector2(i / (float)segments, j / (float)sides));
             }

@@ -27,7 +27,6 @@ public sealed class GameSimBench
     private readonly float[] _dmg = new float[Entities];
     private readonly byte[] _team = new byte[Entities];
     private readonly int[] _cellStart = new int[GridN * GridN + 1];
-    private readonly int[] _cellFill = new int[GridN * GridN + 1];
     private readonly int[] _sorted = new int[Entities];
     private readonly int[] _cellOf = new int[Entities];
     private readonly float[] _drawKey = new float[Entities];
@@ -139,8 +138,10 @@ public sealed class GameSimBench
             _cellStart[c + 1]++;
         }
         for (int c = 0; c < GridN * GridN; c++) _cellStart[c + 1] += _cellStart[c];
-        Array.Copy(_cellStart, _cellFill, _cellStart.Length);
-        for (int i = 0; i < Entities; i++) _sorted[_cellFill[_cellOf[i]]++] = i;
+        // A cópia alocada a cada frame faz parte da carga medida desde a primeira versão: trocar por um buffer fixo
+        // mudaria a nota e o histórico salvo deixaria de ser comparável.
+        var fill = (int[])_cellStart.Clone();
+        for (int i = 0; i < Entities; i++) _sorted[fill[_cellOf[i]]++] = i;
     }
 
     /// <summary>Física + separação (colisão) + IA de combate de uma unidade. Lê o estado atual, escreve só a própria.</summary>

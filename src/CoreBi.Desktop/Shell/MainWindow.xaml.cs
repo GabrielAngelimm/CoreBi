@@ -223,20 +223,15 @@ public partial class MainWindow : Window, ILiveMotionHost
 
         async Task LoadGpuAndCpu()
         {
+            var gpuTask = Task.Run(GpuInfoCollector.Collect);
+            var cpuTask = Task.Run(SystemInfoCollector.ReadCpuName);
+            // Falhas independentes: uma placa de vídeo ilegível não apaga o nome do processador.
             List<GpuInfo> gpus;
+            try { gpus = await gpuTask; }
+            catch { gpus = new(); }
             string cpuName;
-            try
-            {
-                var gpuTask = Task.Run(GpuInfoCollector.Collect);
-                var cpuTask = Task.Run(SystemInfoCollector.ReadCpuName);
-                gpus = await gpuTask;
-                cpuName = await cpuTask;
-            }
-            catch
-            {
-                gpus = new();
-                cpuName = "";
-            }
+            try { cpuName = await cpuTask; }
+            catch { cpuName = ""; }
             if (_context.IsClosing) return;
 
             _context.Gpus = gpus;
@@ -542,7 +537,7 @@ public partial class MainWindow : Window, ILiveMotionHost
     private void SyncFrameMonitoring()
     {
         if (_context.IsClosing) return;
-        bool needed = PageBottleneck.IsVisible || PageOverlay.IsOverlayEnabled || PageBottleneck.HasActiveSession;
+        bool needed = PageBottleneck.IsVisible || PageOverlay.IsOverlayLive || PageBottleneck.HasActiveSession;
         if (needed) _frames.Start();
         else if (_frames.Running) _frames.Stop();
     }
@@ -552,10 +547,13 @@ public partial class MainWindow : Window, ILiveMotionHost
     {
         _gpuBenchActive = pauseSensors;
         PageOverlay.SuspendForBenchmark(suspendOverlay);
+        SyncFrameMonitoring(); // a captura de quadros do overlay também para durante o teste
     }
 
-    private void ShowToast(string title, string detail, string icon = "\uE946")
+    /// <summary>Aviso no canto da tela que também fica registrado na atividade recente da Visão geral.</summary>
+    private void ShowToast(string title, string detail, string icon)
     {
+        PageDash.AddEvent(icon, title, detail.Split('\n')[0], "");
         _toast ??= new ToastWindow();
         _toast.Notify(title, detail, icon);
     }

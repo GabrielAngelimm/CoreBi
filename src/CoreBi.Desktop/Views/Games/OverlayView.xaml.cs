@@ -69,6 +69,9 @@ public partial class OverlayView : UserControl
 
     internal bool IsOverlayEnabled => ChkOverlay.IsChecked == true;
 
+    /// <summary>Overlay ligado e não suspenso por um benchmark: só então precisa da captura de quadros (ETW).</summary>
+    internal bool IsOverlayLive => IsOverlayEnabled && !_suspendedForBenchmark;
+
     internal void Initialize(FeatureContext context)
     {
         _context = context;

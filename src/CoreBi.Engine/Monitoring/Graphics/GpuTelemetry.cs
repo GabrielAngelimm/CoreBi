@@ -42,6 +42,24 @@ public sealed class GpuMonitor : IDisposable
             gpu.WindowsLoad = _windowsUsage.GetLoad(gpu.AdapterLuid);
     }
 
+    /// <summary>
+    /// Temperatura do núcleo ("GPU Core"; sem esse sensor, o primeiro da placa). Se o "GPU Core" existe mas está sem
+    /// leitura, fica ausente: cair para o hot spot faria o Gargalo acusar limite térmico com outra grandeza.
+    /// </summary>
+    public static float? ReadTemp(GpuInfo gpu, IEnumerable<SensorReading> sensors)
+    {
+        var temps = sensors.Where(r => r.Hardware == gpu.Name && r.Type == SensorType.Temperature).ToList();
+        return (temps.FirstOrDefault(r => r.Name == "GPU Core") ?? temps.FirstOrDefault())?.RawValue;
+    }
+
+    /// <summary>Consumo da placa: NVML quando há, senão o sensor de potência da biblioteca. Uma única consulta ao driver.</summary>
+    public static float? ReadPower(GpuInfo gpu, IEnumerable<SensorReading> sensors)
+    {
+        if (gpu.NvmlHandle != IntPtr.Zero && Nvml.PowerUsageMw(gpu.NvmlHandle) is uint mw) return mw / 1000f;
+        return sensors.FirstOrDefault(r => r.Hardware == gpu.Name && r.Type == SensorType.Power && r.RawValue != null)?.RawValue;
+    }
+
+    /// <summary>Leitura completa (até seis consultas NVML): use só onde vários campos aparecem juntos.</summary>
     public static GpuLiveSample ReadLive(GpuInfo gpu, IEnumerable<SensorReading> sensors)
     {
         var h = gpu.NvmlHandle;
@@ -59,12 +77,10 @@ public sealed class GpuMonitor : IDisposable
             ? mc
             : Row(SensorType.Clock, "GPU Memory")?.RawValue is > 0 and float fm ? fm : null;
 
-        float? temp = (Row(SensorType.Temperature, "GPU Core") ?? Any(SensorType.Temperature))?.RawValue;
+        float? temp = ReadTemp(gpu, sensors);
         float? hotspot = Row(SensorType.Temperature, "GPU Hot Spot")?.RawValue;
 
-        float? power = nvml && Nvml.PowerUsageMw(h) is uint mw
-            ? mw / 1000f
-            : Any(SensorType.Power)?.RawValue;
+        float? power = ReadPower(gpu, gpuSensors);
         float? powerLimit = nvml && Nvml.PowerLimitMw(h) is uint lim && lim > 0 ? lim / 1000f : null;
 
         float? voltage = Row(SensorType.Voltage, "GPU Core Voltage")?.RawValue

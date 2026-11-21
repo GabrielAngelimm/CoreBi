@@ -100,8 +100,10 @@ internal sealed class FeatureContext
 
     public CpuLiveSample ReadCpuLive() => GpuMonitor.ReadCpu(Sensors, Sensors.Snapshot());
 
-    public float? PrimaryGpuTemp() => ReadPrimaryGpuLive()?.TempC;
-    public float? PrimaryGpuPower() => ReadPrimaryGpuLive()?.PowerW;
+    // Temperatura e consumo sozinhos não pagam a leitura completa (seis consultas NVML): são pedidos a cada segundo
+    // por várias páginas, inclusive durante benchmarks, quando o driver deve ser poupado.
+    public float? PrimaryGpuTemp() => PrimaryGpu is { } gpu ? GpuMonitor.ReadTemp(gpu, Sensors.Snapshot()) : null;
+    public float? PrimaryGpuPower() => PrimaryGpu is { } gpu ? GpuMonitor.ReadPower(gpu, Sensors.Snapshot()) : null;
     public float? PrimaryGpuLoad() => PrimaryGpu?.WindowsLoad;
 
     public string PrimaryGpuPerfCap() =>
