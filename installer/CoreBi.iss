@@ -2,7 +2,7 @@
 ; Compilado por tools\Installer.ps1 a partir de artifacts\publish\win-x64.
 
 #ifndef AppVersion
-  #define AppVersion "0.2.3"
+  #define AppVersion "0.2.6"
 #endif
 #ifndef PublishDir
   #define PublishDir "..\artifacts\publish\win-x64"
@@ -85,7 +85,8 @@ begin
   if not Exec(ExpandConstant('{cmd}'),
     '/C winget install --id ' + Id + ' --exact --source winget --accept-package-agreements --silent --accept-source-agreements',
     '', SW_HIDE, ewWaitUntilTerminated, ResultCode) or ((ResultCode <> 0) and (ResultCode <> 3010)) then
-    MsgBox('Não foi possível instalar ' + Nome + ' agora. O CoreBi funciona normalmente, mas ' + Consequencia + ' Você pode instalar depois pelo winget (' + Id + ') ou pelo site oficial.', mbInformation, MB_OK);
+    if not WizardSilent then
+      MsgBox('Não foi possível instalar ' + Nome + ' agora. O CoreBi funciona normalmente, mas ' + Consequencia + ' Você pode instalar depois pelo winget (' + Id + ') ou pelo site oficial.', mbInformation, MB_OK);
 end;
 
 procedure MostrarDescricao(Sender: TObject);

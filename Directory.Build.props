@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Optimize>true</Optimize>
+    <Optimize Condition="'$(Configuration)'=='Release'">true</Optimize>
     <Deterministic>true</Deterministic>
     <Version>0.2.6</Version>
     <Product>CoreBi</Product>

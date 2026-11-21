@@ -20,6 +20,8 @@ jobs:
         with:
           global-json-file: global.json
       - run: ./tools/SecretScan.ps1
+      - run: python -B tools/sync_theme.py --check
+      - run: python -B tools/check_resources.py
       - run: dotnet restore CoreBi.slnx --locked-mode
       - run: dotnet format whitespace CoreBi.slnx --no-restore --verify-no-changes
       - run: dotnet build CoreBi.slnx -c Release --no-restore

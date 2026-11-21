@@ -5,7 +5,8 @@
 *.user
 *.log
 /TestResults/
-premium-audit.json
+**/__pycache__/
+*.pyc
 /outputs/
 /work/
 /reports/

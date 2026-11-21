@@ -17,6 +17,7 @@ import pathlib
 import re
 import sys
 
+sys.dont_write_bytecode = True
 import sync_theme
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "src" / "CoreBi.Desktop"
@@ -27,7 +28,7 @@ HUD = ROOT / "Shell" / "HudPalette.xaml"
 
 KEY = re.compile(r'x:Key="([^"{]+)"')
 REF = re.compile(r"\{(StaticResource|DynamicResource)\s+([^}\s]+)\s*\}")
-CS_CALL = re.compile(r"\b(FindResource|TryFindResource|Palette|SetResourceReference|WithAlpha|Brush|Channel|AreaFill)\(([^;]*)")
+CS_CALL = re.compile(r"\b(FindResource|TryFindResource|Palette|SetResourceReference|WithAlpha|Brush|Tint|Channel)\(([^;]*)")
 LITERAL = re.compile(r'"([A-Za-z][A-Za-z0-9]*)"')
 
 
@@ -66,17 +67,14 @@ def main() -> int:
             continue
         problems += check_xaml(path, app_keys, ordered=True)
 
-    # Estilos e chaves locais de UserControl.Resources não são visíveis no código do MainWindow: o código só usa as globais.
+    # Estilos e chaves locais de UserControl.Resources não são visíveis no código global: C# só consome chaves do app.
     for path in sorted(ROOT.rglob("*.cs")):
-        # O ThemeManager define as chaves (e monta nomes como key + "Deep"): não é consumidor
         if "obj" in path.parts or "bin" in path.parts or path.name == "ThemeManager.cs":
             continue
         for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             literals: list[str] = []
             for m in CS_CALL.finditer(line):
                 literals += LITERAL.findall(m.group(2))
-            if "SetRunning(" in line:
-                continue
             for key in literals:
                 if key not in app_keys:
                     problems.append(f"{path.relative_to(ROOT)}:{number}: chave '{key}' não definida")

@@ -1,4 +1,4 @@
-param([string]$OutputDirectory)
+﻿param([string]$OutputDirectory)
 . (Join-Path $PSScriptRoot 'Common.ps1')
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $script:RepoRoot 'artifacts/publish/win-x64' }
 $OutputDirectory = [System.IO.Path]::GetFullPath($OutputDirectory)
@@ -7,6 +7,8 @@ Push-Location $script:RepoRoot
 try {
     Invoke-CoreBiDotnet publish 'src/CoreBi.Desktop/CoreBi.Desktop.csproj' -c Release -r win-x64 --self-contained true '-p:PublishSingleFile=true' '-p:RestoreLockedMode=true' '-p:IncludeNativeLibrariesForSelfExtract=true' '-p:DebugType=None' '-p:DebugSymbols=false' -o $OutputDirectory
     Move-Item -LiteralPath (Join-Path $OutputDirectory 'CoreBi.Desktop.exe') -Destination (Join-Path $OutputDirectory 'CoreBi.exe') -Force
+    $licensesTarget = Join-Path $OutputDirectory 'licenses'
+    if (Test-Path -LiteralPath $licensesTarget) { Remove-Item -LiteralPath $licensesTarget -Recurse -Force }
     Copy-Item -LiteralPath (Join-Path $script:RepoRoot 'licenses') -Destination $OutputDirectory -Recurse -Force
     foreach ($required in @('THIRD-PARTY.md','packages.json')) {
         if (-not (Test-Path -LiteralPath (Join-Path $OutputDirectory "licenses/$required"))) { throw "Licença ausente no pacote: $required" }

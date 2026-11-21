@@ -1,14 +1,13 @@
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-import json, html
+import json
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT/'artifacts'/'brand'
 BRAND = ROOT/'brand'
 BRAND.mkdir(parents=True, exist_ok=True)
 OUT.mkdir(parents=True, exist_ok=True)
-palette = {'graphite':'#111B24','signal':'#27C9BC','paper':'#EDF4F4','steel':'#8295A3','ink':'#172E3A','copper':'#BF815C'}
-# A shared geometric source drives SVG, PNG and the native Windows icon.
+palette = {'graphite':'#111B24','signal':'#27C9BC','paper':'#EDF4F4','steel':'#8295A3','ink':'#172E3A'}
 shapes = [
     {'role':'foreground','points':[[141,35],[81,35],[34,82],[34,174],[81,221],[141,221],[141,195],[93,195],[60,162],[60,94],[93,61],[141,61]]},
     {'role':'foreground','points':[[155,35],[184,35],[218,69],[218,108],[202,124],[222,144],[222,185],[186,221],[155,221],[155,195],[175,195],[196,174],[196,156],[178,138],[155,138],[155,112],[177,112],[192,97],[192,81],[173,61],[155,61]]},
@@ -68,7 +67,7 @@ for size,x,y in [(96,1098,746),(48,1230,770),(32,1326,778),(16,1398,786)]:
     d.text((x,y+size+18),str(size),font=font(15,mono=True),fill=palette['steel'])
 d.line((64,922,1536,922),fill='#334550')
 d.text((72,965),'DESENHO VETORIAL PRÓPRIO · SEM SOMBRAS OU EFEITOS',font=font(17,mono=True),fill=palette['steel'])
-d.text((72,1002),'Geometria única para SVG, PNG e ícone Windows. Interface preservada nesta etapa.',font=font(22),fill=palette['paper'])
+d.text((72,1002),'Geometria única para SVG, PNG e ícone Windows.',font=font(22),fill=palette['paper'])
 board.save(BRAND/'CoreBi-identidade.png')
 board.save(OUT/'CoreBi-identidade.png')
 for name in ['corebi-symbol-dark.svg','corebi-symbol-light.svg','corebi-wordmark-dark.svg','corebi.ico']:
@@ -76,5 +75,5 @@ for name in ['corebi-symbol-dark.svg','corebi-symbol-light.svg','corebi-wordmark
 print(json.dumps({'brand':str(BRAND),'preview':str(OUT/'CoreBi-identidade.png'),'assets':len(list(BRAND.iterdir()))}))
 
 assets=ROOT/'src'/'CoreBi.Desktop'/'Assets'
-for source,target in [('corebi-symbol-dark.png','logo.png'),('corebi-symbol-light.png','logo-dark.png'),('corebi-symbol-dark.png','logo-badge.png'),('corebi.ico','corebi.ico')]:
+for source,target in [('corebi-symbol-dark.png','logo.png'),('corebi-symbol-light.png','logo-dark.png'),('corebi.ico','corebi.ico')]:
     (assets/target).write_bytes((BRAND/source).read_bytes())

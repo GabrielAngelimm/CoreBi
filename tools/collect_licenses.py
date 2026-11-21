@@ -10,12 +10,17 @@ import shutil
 import urllib.request
 import xml.etree.ElementTree as ET
 
+NON_WINDOWS_RUNTIME = re.compile(r'^runtime\.(android|linux|osx|maccatalyst|ios|tvos|freebsd|illumos|solaris|browser|wasi)', re.I)
+
 ROOT = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
 parser.add_argument('--packages', type=Path, default=Path(os.environ.get('NUGET_PACKAGES', str(Path.home()/'.nuget'/'packages'))))
 args = parser.parse_args()
 assets = json.loads((ROOT/'src/CoreBi.Desktop/obj/project.assets.json').read_text(encoding='utf-8'))
-packages = {key for key, value in assets['libraries'].items() if value['type'] == 'package'}
+packages = {
+    key for key, value in assets['libraries'].items()
+    if value['type'] == 'package' and not NON_WINDOWS_RUNTIME.match(key)
+}
 for framework in assets['project']['frameworks'].values():
     for item in framework.get('downloadDependencies', []):
         if 'AspNetCore' not in item['name']:
@@ -23,6 +28,9 @@ for framework in assets['project']['frameworks'].values():
 
 destination = ROOT/'licenses'
 destination.mkdir(exist_ok=True)
+for child in destination.iterdir():
+    if child.is_dir() and child.name != 'SPDX':
+        shutil.rmtree(child)
 rows = []
 expressions = set()
 for package in sorted(packages, key=str.lower):
@@ -47,6 +55,8 @@ for package in sorted(packages, key=str.lower):
             notices.append(target.relative_to(ROOT).as_posix())
     repository = meta.find(ns+'repository')
     repo = repository.get('url','') if repository is not None else value('projectUrl')
+    if repo.startswith('git://github.com/'):
+        repo = 'https://github.com/' + repo[len('git://github.com/'):]
     commit = repository.get('commit','') if repository is not None else ''
     source = repo+'/tree/'+commit if repo.startswith('https://github.com/') and commit else repo
     rows.append(dict(package=package_id,version=version,license=license_name,authors=value('authors'),copyright=value('copyright'),source=source,notices=notices))

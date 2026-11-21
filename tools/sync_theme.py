@@ -24,7 +24,6 @@ INDENT = "    "
 HEX = r'"(#[0-9A-Fa-f]{6,8})"'
 SOLID = re.compile(r'^\(("?)([\w.]+)\1,\s*' + HEX + r",\s*" + HEX + r"\),?$")
 def table(source: str, name: str) -> list[str]:
-    """Linhas do inicializador de uma tabela (entre a chave que abre e a que fecha)."""
     start = source.index(f" {name} =")
     body = source[source.index("{", start) + 1 : source.index("};", start)]
     return [line.strip() for line in body.splitlines() if line.strip()]
