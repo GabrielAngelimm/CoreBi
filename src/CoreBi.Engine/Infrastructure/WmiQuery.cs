@@ -60,6 +60,10 @@ internal static class WmiQuery
         catch { return null; }
     }
 
+    /// <summary>Texto para exibir: vazio ou ausente vira "—".</summary>
+    public static string GetText(ManagementBaseObject item, string property) =>
+        GetString(item, property) is { Length: > 0 } s ? s : "—";
+
     public static ulong GetUInt64(ManagementBaseObject item, string property)
     {
         try { return item[property] is { } v ? Convert.ToUInt64(v) : 0UL; }

@@ -21,6 +21,7 @@ public static class NetworkTest
     private const int MaxConsecutiveFailures = 3;
     internal const long DownloadBudgetBytes = 350_000_000, UploadBudgetBytes = 200_000_000;
 
+    // Faixas da barra de progresso, proporcionais ao tempo de cada fase na Cloudflare (≈ 6 s de pings, 8 s de download e 6 s de upload).
     private const double LatencyStart = 0.02, DnsStart = 0.31, LatencyEnd = 0.33, DownloadEnd = 0.71, UploadEnd = 0.98;
 
     private static HttpClient CreateHttpClient()

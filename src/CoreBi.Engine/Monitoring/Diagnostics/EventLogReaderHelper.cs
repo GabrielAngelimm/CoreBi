@@ -4,9 +4,9 @@ namespace CoreBi.Engine.Monitoring.Diagnostics;
 
 internal static class EventLogReaderHelper
 {
-    public static void ForEach(string logName, string xpath, Action<EventRecord> action, bool reverseDirection = false)
+    public static void ForEach(string logName, string xpath, Action<EventRecord> action)
     {
-        using var reader = new EventLogReader(new EventLogQuery(logName, PathType.LogName, xpath) { ReverseDirection = reverseDirection });
+        using var reader = new EventLogReader(new EventLogQuery(logName, PathType.LogName, xpath));
         for (EventRecord? record = reader.ReadEvent(); record != null; record = reader.ReadEvent())
         {
             using (record) action(record);

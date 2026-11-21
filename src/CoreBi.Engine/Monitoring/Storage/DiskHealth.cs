@@ -20,6 +20,7 @@ public sealed class DiskHealthCard
 
 public sealed class DiskDetail
 {
+    /// <summary>Desgaste (%) a partir do qual o veredito vira atenção e crítico.</summary>
     public const double WearWarnAt = 80, WearCritAt = 95;
     public const ulong UnsafeShutdownWarnAt = 50;
 
@@ -49,6 +50,7 @@ public sealed class DiskDetail
     public bool? PredictFailure { get; init; }
     /// <summary>HealthStatus do Windows: 0 saudável, 1 atenção, 2 não saudável, 5 desconhecido.</summary>
     public int WindowsHealth { get; init; } = 5;
+    /// <summary>Nome do disco no LibreHardwareMonitor, para a leitura ao vivo; null quando não há par único.</summary>
     public string? SensorHardware { get; init; }
     public NvmeLog? Nvme { get; init; }
 }
@@ -134,6 +136,17 @@ public static class DiskHealth
         if (sensors != null) EnrichFromSensors(samples, sensors, nvme);
 
         return samples.Values.OrderBy(r => r.Index).Select(Evaluate).ToList();
+    }
+
+    /// <summary>
+    /// Quedas de energia e resets forçados acontecem em qualquer PC: o que preocupa é a frequência (por hora ligado), não o total.
+    /// </summary>
+    public static HealthVerdict RateUnsafeShutdowns(ulong count, long? powerOnHours)
+    {
+        double perHour = powerOnHours is > 0 ? (double)count / powerOnHours.Value : 0;
+        return count >= 200 && perHour > 0.1 ? HealthVerdict.Critical
+            : count >= DiskDetail.UnsafeShutdownWarnAt && perHour > 0.02 ? HealthVerdict.Warning
+            : HealthVerdict.Good;
     }
 
     private static void EnrichFromSensors(Dictionary<int, DiskSample> samples, IEnumerable<SensorReading> sensors,

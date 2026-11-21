@@ -28,9 +28,9 @@ internal sealed class HardwareDeviceWatcher : IDisposable
     private DispatcherTimer? _usbDebounce;
     private DispatcherTimer? _displaySettle;
 
-    private string? _displayBefore;
-    private bool _displayChanged;
-    private string? _displayLast;
+    private string? _displayBefore;   // retrato das placas de vídeo antes do aviso
+    private bool _displayChanged;     // algum retrato desta rodada de avisos saiu diferente
+    private string? _displayLast;     // retrato da conferência anterior, para exigir dois iguais seguidos
     private int _displayGeneration, _displayChecks;
     private bool _sensorsPaused;
 
@@ -61,6 +61,7 @@ internal sealed class HardwareDeviceWatcher : IDisposable
         else if (eventCode == DbtDevNodesChanged)
         {
             HoldSensorsForDeviceChange();
+            // O aviso chega várias vezes seguidas por dispositivo: espera assentar e compara com a lista anterior.
             _usbDebounce ??= new DispatcherTimer(TimeSpan.FromMilliseconds(1500), DispatcherPriority.Normal, (_, _) =>
             {
                 _usbDebounce!.Stop();
@@ -119,8 +120,10 @@ internal sealed class HardwareDeviceWatcher : IDisposable
             ResumeSensors();
             return;
         }
+        // Chegou outro aviso durante a leitura: a conferência recomeça com ele.
         if (_context.IsClosing || generation != _displayGeneration) return;
         _displayChecks++;
+        // Sem WMI, segue com o que sabe; com placa parada ou retrato ainda mudando, espera mais (30 conferências de 2 s, cerca de 1 min).
         bool settled = now == null || _displayChecks >= 30 || (now.Value.Healthy && now.Value.Signature == _displayLast);
         if (now != null)
         {
@@ -181,6 +184,7 @@ internal sealed class HardwareDeviceWatcher : IDisposable
         bool volumeJustNow = (DateTime.Now - _lastVolumeEvent).TotalSeconds < 4;
         static bool IsStorage(ConnectedDevice d) => d.Name.Contains("Mass Storage", StringComparison.OrdinalIgnoreCase)
             || d.Name.Contains("Armazenamento", StringComparison.OrdinalIgnoreCase);
+        // Um dispositivo composto (ex.: Arduino Leonardo) gera vários registros: anuncia o mais descritivo.
         static ConnectedDevice? PickBest(List<ConnectedDevice> items) =>
             items.FirstOrDefault(d => d.Maker != null)
             ?? items.FirstOrDefault(d => !d.Name.Contains("Composite", StringComparison.OrdinalIgnoreCase)

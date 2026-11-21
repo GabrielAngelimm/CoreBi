@@ -5,7 +5,6 @@ namespace CoreBi.Engine.Monitoring.Storage;
 
 internal sealed record WmiDiskRecord(
     int Index,
-    string DeviceId,
     string Model,
     string Serial,
     string Firmware,
@@ -13,7 +12,7 @@ internal sealed record WmiDiskRecord(
     long SizeBytes,
     string PnpDeviceId);
 
-internal sealed record StoragePhysicalInfo(int Index, string Media, string? Bus, int HealthStatus, string? PartitionStyle);
+internal sealed record StoragePhysicalInfo(string Media, string? Bus, int HealthStatus, string? PartitionStyle);
 
 internal static class WmiDiskTopology
 {
@@ -22,6 +21,8 @@ internal static class WmiDiskTopology
     private static readonly Regex RefIdRegex = new("DeviceID=\"(.*)\"", RegexOptions.Compiled);
     private static readonly Regex PhysicalDriveRegex = new(@"PHYSICALDRIVE(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    // Base: Win32_DiskDrive existe em qualquer Windows (única consulta obrigatória). Sem a API de armazenamento
+    // (MSFT_*) ou sem permissão, a leitura segue só com o resto.
     public static List<WmiDiskRecord> ReadDiskDrivesOrThrow() =>
         WmiQuery.SelectOrThrow(
             "SELECT Index, DeviceID, Model, SerialNumber, FirmwareRevision, InterfaceType, Size, PNPDeviceID FROM Win32_DiskDrive",
@@ -34,7 +35,6 @@ internal static class WmiDiskTopology
                     : (WmiQuery.GetString(d, "InterfaceType") ?? "");
                 return new WmiDiskRecord(
                     idx,
-                    WmiQuery.GetString(d, "DeviceID") ?? $@"\\.\PHYSICALDRIVE{idx}",
                     WmiQuery.GetString(d, "Model") ?? $"Disco {idx}",
                     WmiQuery.GetString(d, "SerialNumber") ?? "",
                     WmiQuery.GetString(d, "FirmwareRevision") ?? "",
@@ -61,7 +61,7 @@ internal static class WmiDiskTopology
             string? bus = MapBusType(WmiQuery.GetInt32(d, "BusType"));
             int health = WmiQuery.GetNullableInt32(d, "HealthStatus") ?? 5;
             styles.TryGetValue(idx, out string? style);
-            map[idx] = new StoragePhysicalInfo(idx, media, bus, health, style);
+            map[idx] = new StoragePhysicalInfo(media, bus, health, style);
         }, StorageScope);
 
         return map;
@@ -83,8 +83,8 @@ internal static class WmiDiskTopology
         10 => "SAS",
         8 => "RAID",
         12 => "SD",
-        6 => "Fibre",
-        3 => "SCSI",
+        6 => "Fibre Channel",
+        3 => "ATA",
         _ => null
     };
 

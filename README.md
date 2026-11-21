@@ -79,6 +79,8 @@ src/CoreBi.Engine/       Coletores, regras, benchmarks, integrações e persist�
 src/CoreBi.Desktop/      Shell WPF, páginas, apresentação e serviços da interface
 tests/CoreBi.Tests/      Regressões, WPF e verificações opcionais de hardware
 tools/                   Compilação, testes, publicação e manutenção
+installer/               Script do instalador Windows (Inno Setup)
+brand/                   Identidade visual: símbolo, logotipo e ícone (tools/generate_brand.py)
 docs/                    Guias, arquitetura, manutenção, segurança e validação
 licenses/                Licenças e avisos dos componentes distribuídos
 ```
@@ -89,7 +91,7 @@ licenses/                Licenças e avisos dos componentes distribuídos
 .\tools\Test.ps1
 ```
 
-O modo padrão executa a suíte de regressões (regras, segurança, rede, RTSS e verificações WPF das 14 páginas). Os modos `Hardware`, `Startup`, `Integrations` e `Bench` são optativos; veja os comandos, o alcance e os cuidados em [CONTRIBUTING.md](docs/CONTRIBUTING.md).
+O modo padrão executa a suíte de regressões (regras, segurança, rede, RTSS e verificações WPF das 14 páginas). Os modos `Hardware`, `Startup`, `Integrations`, `Bench` e `OverlayTelemetry` são optativos; veja os comandos, o alcance e os cuidados em [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 - [Arquitetura e responsabilidades](docs/ARCHITECTURE.md)
 - [Validações realizadas e pendências](docs/VALIDATION.md)

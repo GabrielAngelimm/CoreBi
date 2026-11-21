@@ -1,4 +1,5 @@
 using CoreBi.Desktop.Features.Monitoring.Inventory;
+using CoreBi.Engine.Monitoring;
 using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Reports;
 
@@ -46,5 +47,6 @@ internal static class SystemReport
         _ => "steel",
     };
 
+    // A explicação só entra quando diz o que fazer (veredito âmbar); o resto é contexto da tela.
     private static ReportRow Row(SpecRow r) => new(r.Key, r.Value, r.Note, r.Cells, r.Tone == Tone.Warn ? r.Help : null);
 }

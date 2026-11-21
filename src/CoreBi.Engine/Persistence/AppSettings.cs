@@ -16,9 +16,10 @@ public sealed record BenchRecord(DateTime Date, string Test, double Score, strin
 /// </summary>
 public sealed class AppSettings
 {
-    public static string Folder => AppPaths.DataFolder;
+    internal static string Folder => AppPaths.DataFolder;
     private static string FilePath => Path.Combine(Folder, "settings.json");
 
+    // Benchmark: últimos resultados, mais recente primeiro (Normalize corta pelo fim).
     public List<BenchRun> BenchRuns { get; set; } = new();
     public List<BenchRecord> BenchRecords { get; set; } = new();
     public List<JsonElement> StartupRemoved { get; set; } = new();
@@ -28,6 +29,7 @@ public sealed class AppSettings
     public string OverlayCorner { get; set; } = OverlayMetrics.DefaultCorner;
     public double OverlayScale { get; set; } = OverlayMetrics.DefaultScale;
     public double OverlayOpacity { get; set; } = OverlayMetrics.DefaultOpacity;
+    /// <summary>Itens escolhidos para o overlay (chaves de OverlayMetrics); null = padrão.</summary>
     public List<string>? OverlayItems { get; set; }
     /// <summary>Controla a oferta única de "Nome do hardware" para seleções salvas anteriores.</summary>
     public bool OverlayNamesOffered { get; set; }

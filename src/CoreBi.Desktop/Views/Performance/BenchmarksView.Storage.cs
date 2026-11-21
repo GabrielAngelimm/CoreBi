@@ -181,12 +181,12 @@ public partial class BenchmarksView
             ct.ThrowIfCancellationRequested();
             Show();
 
-            load = await Task.Run(() => MemoryBench.MeasureLoading((phase, f) => progress = (phase, 0.35 + f * 0.6), ct), ct);
+            load = await Task.Run(() => LoadingBench.Measure((phase, f) => progress = (phase, 0.35 + f * 0.6), ct), ct);
             Show();
 
             MemStatus.Text = "Concluído";
             MemDetail.Text = "Arquivos de teste apagados";
-            SaveBenchRecord("mem", 1000 / lat.Value + 10 / load.MapLoadSeconds,
+            SaveBenchRecord("mem", MemoryBench.Score(lat.Value, load.MapLoadSeconds),
                 $"{lat:0} ns · {bw.Value.Read:0} GB/s · mapa {load.MapLoadSeconds:0.00} s");
         }
         catch (OperationCanceledException) { MemStatus.Text = "Cancelado"; MemDetail.Text = "Arquivos de teste apagados"; }

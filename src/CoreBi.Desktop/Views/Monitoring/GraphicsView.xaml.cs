@@ -78,7 +78,7 @@ public partial class GraphicsView : UserControl
         ShowNoSensors(false);
     }
 
-    internal void TickLive()
+    internal void Tick()
     {
         // A página só consulta o driver quando está à vista: o CoreBi fica aberto em jogos.
         if (_selectedGpu == null || _gpuBoard == null || !IsVisible) return;

@@ -7,7 +7,7 @@ public sealed record ReportSensor(string Hardware, string Category, string Name,
 public sealed record ReportBench(DateTime Date, string Test, string Summary);
 
 /// <summary>Achado de outra página (disco, bateria, rede). Tone: "ok", "warn", "danger" ou vazio.</summary>
-public sealed record ReportDisk(string Name, string Details, string Verdict, string Reasons, List<KeyValuePair<string, string>> Metrics, string Tone = "");
+public sealed record ReportFinding(string Name, string Details, string Verdict, string Reasons, List<KeyValuePair<string, string>> Metrics, string Tone = "");
 public sealed record ReportGpu(string Name, string Subtitle, List<ReportNode> Sections);
 
 public sealed record ReportRow(string Key, string Value, string? Note = null, List<string>? Cells = null, string? Advice = null);
@@ -40,9 +40,9 @@ public sealed class ReportData
     public List<ReportSheet> Sheets { get; init; } = new();
     public List<ReportNode> System { get; init; } = new();
     public List<ReportGpu> Gpus { get; init; } = new();
-    public List<ReportDisk> Disks { get; init; } = new();
-    public List<ReportDisk> Power { get; init; } = new();
-    public List<ReportDisk> Network { get; init; } = new();
+    public List<ReportFinding> Disks { get; init; } = new();
+    public List<ReportFinding> Power { get; init; } = new();
+    public List<ReportFinding> Network { get; init; } = new();
     public List<ReportSensor> Sensors { get; init; } = new();
     public List<ReportBench> Benchmarks { get; init; } = new();
 }

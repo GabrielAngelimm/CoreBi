@@ -3,7 +3,6 @@ using System.Text.Json;
 using CoreBi.Engine.Games;
 using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring.Health;
-using CoreBi.Engine.Monitoring.Network;
 using CoreBi.Engine.Monitoring.Power;
 using CoreBi.Engine.Monitoring.Storage;
 using CoreBi.Engine.Persistence;
@@ -160,7 +159,7 @@ internal static partial class Program
                 Machine = "PC-PRIV",
                 Disks =
                 {
-                    new ReportDisk(
+                    new ReportFinding(
                         Name: "SSD",
                         Details: "NVMe",
                         Verdict: "SAUDÁVEL",
@@ -204,6 +203,17 @@ internal static partial class Program
             working.Remove(new StartupEntry { Name = "Valid" });
             Require(working.Backups.Count == 1, $"Corrupt JSON broke backup listing (count={working.Backups.Count})");
             return new { rollbackClean = true, corruptIsolated = true };
+        });
+        Check("formatting: Explorer capacities, vendor disk sizes and sentence-case verdicts", () =>
+        {
+            // 1 TB anunciado = 931 GB no Explorador (corta as casas acima de 100); o disco mostra a medida do fabricante.
+            Require(CoreBi.Engine.Monitoring.Inventory.Fmt.Bytes(1_000_204_886_016) == "931 GB", "Capacity must floor like Explorer");
+            Require(CoreBi.Engine.Monitoring.Inventory.Fmt.Bytes(81.3 * 1048576) == "81 MB", "MB capacities have no decimals");
+            Require(ByteFormat.Decimal(500_107_862_016) == "500,1 GB" && ByteFormat.Decimal(32_000_000) == "32 MB", "Disk size uses vendor units");
+            Require(HardwareNaming.Sentence("SAUDÁVEL") == "Saudável" && HardwareNaming.Sentence("SEM REDE") == "Sem rede"
+                    && HardwareNaming.Sentence("temperatura") == "Temperatura", "Verdict labels must be sentence case");
+            Require(WmiDiskTopology.MapBusType(3) == "ATA" && WmiDiskTopology.MapBusType(6) == "Fibre Channel", "Storage bus labels");
+            return new { explorer = "931 GB", verdict = "Saudável" };
         });
     }
 

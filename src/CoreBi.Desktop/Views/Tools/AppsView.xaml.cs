@@ -73,7 +73,7 @@ public partial class AppsView : UserControl
     }
 
     private bool _appsRefreshing;
-    internal async Task InitAppsAsync()
+    internal async Task RefreshAsync()
     {
         if (_appsBusy || _appsRefreshing || _context == null || _context.IsClosing) return;
         _appsRefreshing = true;
@@ -98,7 +98,7 @@ public partial class AppsView : UserControl
             if (_context.IsClosing) return;
             foreach (var app in _installApps)
             {
-                app.Installed = names.Any(name => name.StartsWith(app.DisplayPrefix, StringComparison.OrdinalIgnoreCase));
+                app.Installed = AppInstaller.IsInstalled(app, names);
                 if (first) app.Selected = app.PreSelect && !app.Installed;
                 else if (app.Installed) app.Selected = false;
             }
@@ -128,6 +128,7 @@ public partial class AppsView : UserControl
 
     private void BtnAppsStore_Click(object sender, RoutedEventArgs e)
     {
+        // Página do "Instalador de Aplicativo" (App Installer), que traz o winget.
         try { Process.Start(new ProcessStartInfo("ms-windows-store://pdp/?productid=9NBLGGH4NNS1") { UseShellExecute = true }); }
         catch (Exception ex) { Say("Não foi possível abrir a Microsoft Store", ex.Message); }
     }

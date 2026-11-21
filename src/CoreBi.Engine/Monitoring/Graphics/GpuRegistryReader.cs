@@ -24,7 +24,7 @@ internal static class GpuRegistryReader
         {
             return mem switch
             {
-                int i when i > 0 => (uint)i,
+                int i when i != 0 => (uint)i, // REG_DWORD acima de 2 GB chega negativo como int
                 uint u => u,
                 byte[] b when b.Length >= 4 => BitConverter.ToUInt32(b, 0),
                 _ => 0

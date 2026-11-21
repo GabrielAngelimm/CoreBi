@@ -1,5 +1,7 @@
 # Validação
 
+## Alternativa M-Lab e tela de Rede — 2026-10-28
+
 - Alternativa M-Lab: regressões verificam a proteção da API do motor, escolha de servidores HTTPS seguros, resposta sem capacidade, contagem de upload confirmada e a troca automática após uma falha. Um servidor WebSocket local exercita transferências NDT7 e respostas de upload com AppInfo ou somente TCPInfo. Em 28/10/2026, um teste real de upload com limite de 100 MB confirmou aproximadamente 453 Mbps pelo contador TCP, que inclui sobrecarga de protocolo. Uma medição isolada não valida a precisão em 1 Gbps nem garante resultados futuros. Nesta versão pessoal a tela usa a autorização prévia do proprietário; a distribuição requer o consentimento informado dos demais usuários.
 - A tela de Rede com resultado e oito dados do adaptador foi renderizada em 1120 × 800 unidades WPF; a verificação confirmou que o conteúdo coube sem rolagem nesse tamanho. Resultados com muitas mensagens ou janelas menores ainda podem exigir rolagem.
 
@@ -33,7 +35,7 @@ Detalhes da implementação e limites em [OVERLAY.md](OVERLAY.md).
 
 Fontes técnicas: [sensores físicos](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/blob/3d331e3370efb858411f19511373eff65a218701/LibreHardwareMonitorLib/Hardware/Memory/TotalMemory.cs) e [virtuais](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/blob/3d331e3370efb858411f19511373eff65a218701/LibreHardwareMonitorLib/Hardware/Memory/VirtualMemory.cs) da versão 0.9.6 instalada; [definição de uso da GPU pelo Windows](https://devblogs.microsoft.com/directx/gpus-in-the-task-manager/).
 
-## Revisão de organização
+## Revisão de organização — 2026-10-23
 
 Verificações locais em 23/10/2026, Windows x64, SDK 10.0.402, Ryzen 7 5700X, RTX 4060 Ti, 32 GiB e SSD XPG GAMMIX S70 BLADE.
 

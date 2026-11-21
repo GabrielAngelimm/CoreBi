@@ -1,4 +1,4 @@
-namespace CoreBi.Engine.Performance.Benchmarks;
+namespace CoreBi.Engine.Infrastructure;
 
 /// <summary>Estatísticas comuns de frametime e passadas (percentil 99 / 1% low e mediana).</summary>
 internal static class FrameTimeStats

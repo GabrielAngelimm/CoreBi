@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using CoreBi.Engine.Infrastructure;
-using CoreBi.Engine.Performance.Benchmarks;
 using Microsoft.Diagnostics.Tracing;
 using Microsoft.Diagnostics.Tracing.Session;
 
@@ -106,7 +105,9 @@ public sealed class FrameMonitor : IDisposable
             q.Enqueue(t);
             history.Last = t;
             while (q.Count > 0 && q.Peek() < t - HistoryMs) q.Dequeue();
-            foreach (var old in streams.Where(x => x.Value.Last < t - HistoryMs).Select(x => x.Key).ToArray()) streams.Remove(old);
+            // Com um único fluxo, ele é o que acabou de receber t: nada a remover, e evita alocar a cada evento ETW.
+            if (streams.Count > 1)
+                foreach (var old in streams.Where(x => x.Value.Last < t - HistoryMs).Select(x => x.Key).ToArray()) streams.Remove(old);
             _lastSeen[pid] = Stopwatch.GetTimestamp();
             if (Stopwatch.GetElapsedTime(_lastCleanup).TotalSeconds >= 10)
             {
@@ -153,6 +154,12 @@ public sealed class FrameMonitor : IDisposable
     public FrameStats? GetForegroundStats() =>
         ForegroundWindow.TryGetForeignForeground(out _, out int pid) ? GetStats(pid) : null;
 
+    /// <summary>
+    /// Nome do programa medido. O jogo é identificado só pelo PID (eventos ETW e janela em primeiro plano), de propósito:
+    /// o CoreBi roda ao lado de jogos online, e abrir um handle do jogo para ler descrição, ícone, módulos ou memória
+    /// (MainModule, FileVersionInfo, ReadProcessMemory) pode chamar a atenção de anticheats. A única consulta é esta,
+    /// de nome, que o .NET faz com o acesso mínimo (PROCESS_QUERY_LIMITED_INFORMATION) e que fica 5 s em cache.
+    /// </summary>
     private string ResolveProcessName(int pid)
     {
         long now = Stopwatch.GetTimestamp();

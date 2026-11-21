@@ -11,7 +11,7 @@ namespace CoreBi.Engine.Reports;
 /// </summary>
 public static class PdfPrinter
 {
-    public static string? FindEdge()
+    private static string? FindEdge()
     {
         foreach (var hive in new[] { Registry.LocalMachine, Registry.CurrentUser })
         {
@@ -39,6 +39,7 @@ public static class PdfPrinter
         try
         {
             await File.WriteAllTextAsync(source, html, new UTF8Encoding(true), cancel).ConfigureAwait(false);
+            // Perfil próprio e temporário (--user-data-dir): não mexe no Edge aberto nem no perfil de quem usa o PC.
             var psi = new ProcessStartInfo(edge)
             {
                 UseShellExecute = false,
@@ -63,8 +64,11 @@ public static class PdfPrinter
                 if (cancel.IsCancellationRequested) throw;
             }
             // Com o app elevado o Edge se relança sem elevação e o processo filho sai na hora: o PDF surge logo depois.
+            // Espera o arquivo existir e parar de crescer antes de copiar e apagar a pasta de trabalho.
             long lastSize = -1;
-            int maxEmptyWaits = ProcessElevation.IsElevated ? 24 : 8;
+            // Sem elevação o Edge já terminou aqui, então 2 s bastam. Elevado, o Edge relançado ainda precisa abrir
+            // (perfil novo, disco frio) e imprimir: espera o prazo inteiro, como antes.
+            int maxEmptyWaits = ProcessElevation.IsElevated ? 240 : 8;
             for (int waited = 0; waited < 240; waited++)
             {
                 long size = File.Exists(output) ? new FileInfo(output).Length : 0;

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Engine.Performance.Benchmarks;
 
@@ -20,13 +21,13 @@ public sealed class GameSimBench
     private const float Radius = Cell;
     private const float Dt = 1 / 60f;
 
+    // Estado (SoA) em buffer duplo: lê de "cur" (_x…), escreve em "nxt" (_nx…). É o que dispensa trava no Parallel.For.
     private float[] _x = new float[Entities], _y = new float[Entities], _vx = new float[Entities], _vy = new float[Entities];
     private float[] _nx = new float[Entities], _ny = new float[Entities], _nvx = new float[Entities], _nvy = new float[Entities];
     private readonly float[] _hp = new float[Entities];
     private readonly float[] _dmg = new float[Entities];
     private readonly byte[] _team = new byte[Entities];
     private readonly int[] _cellStart = new int[GridN * GridN + 1];
-    private readonly int[] _cellFill = new int[GridN * GridN + 1];
     private readonly int[] _sorted = new int[Entities];
     private readonly int[] _cellOf = new int[Entities];
     private readonly float[] _drawKey = new float[Entities];
@@ -46,6 +47,7 @@ public sealed class GameSimBench
         if (duration <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(duration));
         ct.ThrowIfCancellationRequested();
         Reset();
+        // Aquecimento (JIT, caches, clock da CPU subindo) fora da medição.
         var warm = Stopwatch.StartNew();
         while (warm.Elapsed.TotalSeconds < 2 && !ct.IsCancellationRequested) Step(out _, out _);
 
@@ -137,10 +139,13 @@ public sealed class GameSimBench
             _cellStart[c + 1]++;
         }
         for (int c = 0; c < GridN * GridN; c++) _cellStart[c + 1] += _cellStart[c];
-        Array.Copy(_cellStart, _cellFill, _cellStart.Length);
-        for (int i = 0; i < Entities; i++) _sorted[_cellFill[_cellOf[i]]++] = i;
+        // A cópia alocada a cada frame faz parte da carga medida desde a primeira versão: trocar por um buffer fixo
+        // mudaria a nota e o histórico salvo deixaria de ser comparável.
+        var fill = (int[])_cellStart.Clone();
+        for (int i = 0; i < Entities; i++) _sorted[fill[_cellOf[i]]++] = i;
     }
 
+    /// <summary>Física + separação (colisão) + IA de combate de uma unidade. Lê o estado atual, escreve só a própria.</summary>
     private void Simulate(int i)
     {
         float x = _x[i], y = _y[i], vx = _vx[i], vy = _vy[i];
@@ -204,6 +209,10 @@ public sealed class GameSimBench
         _dmg[i] = dmg;
     }
 
+    /// <summary>
+    /// Lógica de jogo em série: quem morre ou chega à base inimiga renasce na própria base. O fluxo contínuo nos dois
+    /// sentidos mantém uma frente de batalha no meio e a carga estável durante o teste.
+    /// </summary>
     private void GameLogic()
     {
         for (int i = 0; i < Entities; i++)

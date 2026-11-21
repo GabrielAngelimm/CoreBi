@@ -7,6 +7,7 @@ namespace CoreBi.Engine.Reports;
 /// <summary>
 /// Gera relatórios em HTML (arquivo único pronto para tela e impressão A4) ou JSON, omitindo números de série
 /// e o nome do usuário local.
+/// O relatório costuma ser enviado a terceiros.
 /// </summary>
 public static class ReportBuilder
 {

@@ -9,7 +9,7 @@ namespace CoreBi.Engine.Games;
 /// </summary>
 public static class HardwareCatalog
 {
-    private sealed record Entry(Regex Pattern, int Length, double Index);
+    private sealed record Entry(Regex Pattern, double Index);
 
     private static readonly Regex IntelFSuffix = new(@"(\d{4,5}K?)F\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -46,8 +46,8 @@ public static class HardwareCatalog
     private static Entry[] Compile(params (string Key, double Index)[] rows) =>
         rows.OrderByDescending(t => t.Key.Length)
             .Select(t => new Entry(
-                new Regex(@"(?<![A-Za-z0-9])" + Regex.Escape(t.Key) + @"(?![A-Za-z0-9])", RegexOptions.IgnoreCase | RegexOptions.Compiled),
-                t.Key.Length,
+                // Sem Compiled: compilar as ~79 expressões na inicialização custa mais que interpretá-las nas raras consultas.
+                new Regex(@"(?<![A-Za-z0-9])" + Regex.Escape(t.Key) + @"(?![A-Za-z0-9])", RegexOptions.IgnoreCase),
                 t.Index))
             .ToArray();
 

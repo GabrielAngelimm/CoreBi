@@ -58,7 +58,7 @@ namespace CoreBi.Desktop.Views
             UpdateDashboard();
         }
 
-        internal void CollectSample()
+        internal void Tick()
         {
             if (_context == null) return;
             _samples.Add(new DashSample(DateTime.Now, _context.Sensors.CpuTemperature, _context.PrimaryGpuTemp(),
@@ -94,6 +94,12 @@ namespace CoreBi.Desktop.Views
 
         internal void RedrawTheme() => UpdateDashboard();
 
+        // Formatos gravados em BenchRecord.Summary (settings.json), lidos por posição:
+        //   rt:   "1.499 pts · 150 FPS · Alta 1080p [· instável]"
+        //   gpu:  "4.286 pts · 429 FPS · 1080p"
+        //   sim:  "120 FPS · 1% low 95"
+        //   mem:  "84 ns · 36 GB/s · mapa 0,19 s"
+        //   disk: "C: · 2.929/3.320 MiB/s · 4K 14,6k IOPS"
         internal static DashEvent BenchEvent(BenchRecord r)
         {
             var parts = r.Summary.Split('·', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
@@ -239,7 +245,7 @@ namespace CoreBi.Desktop.Views
             static DashCheck Item(bool ok, string title, string okText, string badText) => new(title, ok ? okText : badText, ok);
 
             var list = new List<DashCheck>();
-            if (_context.Sensors.IsOpen)
+            if (_context.Sensors.IsOpen) // enquanto detecta o hardware, ainda não dá para saber
             {
                 var sensors = _context.Sensors.DiagnoseCpuSensors();
                 list.Add(Item(sensors == SensorMonitor.CpuSensorProblem.None, "Sensores da CPU",

@@ -36,6 +36,10 @@ public partial class OverviewView
 
     private void DashChart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
 
+    /// <summary>
+    /// Sem sensor de temperatura o gráfico abre na carga, que sempre tem leitura; quando a temperatura aparece, volta
+    /// para ela. Só enquanto a pessoa não escolheu uma aba.
+    /// </summary>
     private void PickMetric()
     {
         if (_context == null || _metricChosen || !_context.Sensors.IsOpen || _samples.Count < 3) return;
@@ -344,7 +348,7 @@ public partial class OverviewView
     {
         if (_context == null) return;
         static string Gb(double bytes) => $"{bytes / 1073741824.0:0.0} GB";
-        static string Pct(double fraction) => $"{fraction * 100:0} %";
+        static string Pct(double fraction) => $"{fraction * 100:0} %"; // o "P0" do pt-BR cola o sinal no número
         var mem = MemoryInfo.ReadPhysicalUsage();
         double ram = mem is { Total: > 0 } u ? (double)u.Used / u.Total : 0;
         Brush memoryBrush = ThemeManager.Brush("Memory");

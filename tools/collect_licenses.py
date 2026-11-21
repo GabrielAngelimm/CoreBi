@@ -1,5 +1,6 @@
 """Collect notices from restored NuGet packages. Run after a win-x64 restore.
 No package source or binary is modified. SPDX texts are fetched only when absent.
+--check compares licenses/packages.json with src/CoreBi.Desktop/packages.lock.json (no restore or NuGet cache needed).
 """
 from pathlib import Path
 import argparse
@@ -15,7 +16,45 @@ NON_WINDOWS_RUNTIME = re.compile(r'^runtime\.(android|linux|osx|maccatalyst|ios|
 ROOT = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
 parser.add_argument('--packages', type=Path, default=Path(os.environ.get('NUGET_PACKAGES', str(Path.home()/'.nuget'/'packages'))))
+parser.add_argument('--check', action='store_true', help='compare licenses/packages.json with src/CoreBi.Desktop/packages.lock.json; no NuGet cache needed')
 args = parser.parse_args()
+
+# Runtime packs come from the pinned SDK (downloadDependencies), not from the lock file.
+SDK_RUNTIME_PACK = re.compile(r'^Microsoft\.(NETCore|WindowsDesktop)\.App\.Runtime\.', re.I)
+
+def check():
+    lock = json.loads((ROOT/'src/CoreBi.Desktop/packages.lock.json').read_text(encoding='utf-8'))
+    locked = {}
+    for target in lock['dependencies'].values():
+        for package_id, entry in target.items():
+            if entry.get('type') == 'Project' or NON_WINDOWS_RUNTIME.match(package_id):
+                continue
+            locked.setdefault(package_id.lower(), set()).add((package_id, entry['resolved']))
+    listed = {}
+    for row in json.loads((ROOT/'licenses/packages.json').read_text(encoding='utf-8')):
+        if not SDK_RUNTIME_PACK.match(row['package']):
+            listed[row['package'].lower()] = (row['package'], row['version'])
+    problems = []
+    for key in sorted(locked.keys() - listed.keys()):
+        for package_id, version in sorted(locked[key]):
+            problems.append(f'faltando em licenses/packages.json: {package_id} {version}')
+    for key in sorted(listed.keys() - locked.keys()):
+        problems.append(f'sobrando em licenses/packages.json: {listed[key][0]} {listed[key][1]}')
+    for key in sorted(locked.keys() & listed.keys()):
+        versions = sorted(version for _, version in locked[key])
+        if versions != [listed[key][1]]:
+            problems.append(f'versão divergente: {listed[key][0]} {listed[key][1]} em licenses/packages.json, {", ".join(versions)} no lock')
+    if problems:
+        print('licenses/ desatualizado em relação a src/CoreBi.Desktop/packages.lock.json:')
+        for problem in problems:
+            print('  - ' + problem)
+        print('Rode uma restauração win-x64 e depois: python tools/collect_licenses.py')
+        raise SystemExit(1)
+    print(f'licenses/packages.json confere com o lock ({len(locked)} pacotes; runtime packs do SDK não verificados).')
+
+if args.check:
+    check()
+    raise SystemExit(0)
 assets = json.loads((ROOT/'src/CoreBi.Desktop/obj/project.assets.json').read_text(encoding='utf-8'))
 packages = {
     key for key, value in assets['libraries'].items()

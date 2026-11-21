@@ -2,7 +2,7 @@
 
 ## Canonical UI Map
 
-| Capability | Canonical owner | Source of truth | Allowed variants | Verification |
+| Capacidade | Responsável canônico | Fonte de verdade | Variações permitidas | Verificação |
 | --- | --- | --- | --- | --- |
 | Table Selection | WPF DataGrid/ListBox e estilos compartilhados | src/CoreBi.Desktop/Shell/Theme.xaml | Seleção simples ou múltipla conforme operação original | tests/CoreBi.Tests/Program.cs constrói todas as páginas; teclado completo pendente |
 | Select/Listbox | WPF ListBox, controle segmentado, chips e ladrilhos (RadioButton) | src/CoreBi.Desktop/Shell/Theme.xaml | Segmentos para opções fixas; chips para listas geradas; ladrilhos para escolher o teste; lista para inventário e paleta de comandos | Construção e navegação WPF; revisão manual de foco pendente |

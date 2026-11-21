@@ -18,6 +18,7 @@ public sealed class StressTester : IDisposable
     public long MemoryAllocatedBytes { get; private set; }
     public string? Error { get; private set; }
 
+    /// <param name="ramFraction">Fração da memória livre (não da total) a usar, de 0.1 a 0.9.</param>
     public void Start(bool cpu, bool ram, double ramFraction = 0.6)
     {
         if (!cpu && !ram) throw new ArgumentException("Selecione CPU ou RAM.");
@@ -149,7 +150,7 @@ public sealed class StressTester : IDisposable
                     allocated += chunkLongs * 8L;
                 }
             }
-            catch (OutOfMemoryException) { }
+            catch (OutOfMemoryException) { } // segue com o que conseguiu alocar
             MemoryAllocatedBytes = allocated;
             if (chunks.Count == 0) { Error = "Não foi possível alocar memória para o teste."; return; }
 

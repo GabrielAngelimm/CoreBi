@@ -5,7 +5,7 @@ using LibreHardwareMonitor.Hardware;
 namespace CoreBi.Engine.Monitoring.Sensors;
 
 /// <summary>Encapsula o LibreHardwareMonitorLib e mantém a lista de sensores atualizada.</summary>
-public sealed class SensorMonitor : IDisposable
+public sealed partial class SensorMonitor : IDisposable
 {
     private readonly IHardwareSource _source;
     private readonly object _lifecycle = new();
@@ -16,7 +16,7 @@ public sealed class SensorMonitor : IDisposable
     private volatile bool _open;
     private volatile bool _paused, _gpuRetired;
     private HashSet<string>? _networks; // placas de rede físicas e ativas; interfaces virtuais não são lidas
-    private static bool? _pawnIoInstalled;
+    private SensorReading[]? _snapshot; // cópia da última leitura; refeita só depois de Refresh, ResetStats ou mudança de linhas
 
     public ObservableCollection<SensorRow> Rows { get; } = new();
     public bool IsOpen => _open;
@@ -31,6 +31,7 @@ public sealed class SensorMonitor : IDisposable
         GpuAccessGate.SetSuspended(true);
     }
 
+    /// <summary>Volta a ler depois que os dispositivos assentaram. A placa de vídeo continua de fora se o driver dela mudou.</summary>
     public void Resume()
     {
         _paused = false;
@@ -50,15 +51,20 @@ public sealed class SensorMonitor : IDisposable
             _gpuRetired = true;
             GpuAccessGate.SetSuspended(true);
             foreach (var row in Rows.Where(r => SensorTypeMeta.IsGpu(r.HardwareType))) row.Update(null, null, null);
+            _snapshot = null;
         }
     }
 
     public bool GpuRetired => _gpuRetired;
 
+    /// <summary>
+    /// Cópia imutável das leituras, para quem lê fora da coleção da interface (overlay, painéis, relatório).
+    /// Várias páginas pedem a cópia no mesmo tique: ela é montada uma vez por leitura, não uma vez por pedido.
+    /// </summary>
     public IReadOnlyList<SensorReading> Snapshot()
     {
         lock (_lifecycle)
-            return Rows.Select(r => new SensorReading(r.Id, r.Hardware, r.Name, r.Type, r.HardwareType, r.RawValue, r.Category, r.Value, r.Min, r.Max)).ToArray();
+            return _snapshot ??= Rows.Select(r => new SensorReading(r.Id, r.Hardware, r.Name, r.Type, r.HardwareType, r.RawValue, r.Category, r.Value, r.Min, r.Max)).ToArray();
     }
 
     /// <summary>
@@ -93,7 +99,11 @@ public sealed class SensorMonitor : IDisposable
     }
 
     public SensorMonitor() : this(new LibreHardwareSource()) { }
-    internal SensorMonitor(IHardwareSource source) => _source = source;
+    internal SensorMonitor(IHardwareSource source)
+    {
+        _source = source;
+        Rows.CollectionChanged += (_, _) => _snapshot = null;
+    }
 
     public Task OpenAsync()
     {
@@ -133,6 +143,7 @@ public sealed class SensorMonitor : IDisposable
                         row.Update(null, null, null);
                 }
             }
+            _snapshot = null;
         }
     }
 
@@ -171,9 +182,13 @@ public sealed class SensorMonitor : IDisposable
     public void ResetStats()
     {
         lock (_lifecycle)
+        {
             foreach (var row in Rows) row.ResetStats();
+            _snapshot = null;
+        }
     }
 
+    /// <summary>Temperatura principal da CPU: Package (Intel) / Tctl-Tdie (AMD), senão a maior entre os núcleos.</summary>
     public float? CpuTemperature
     {
         get
@@ -211,57 +226,6 @@ public sealed class SensorMonitor : IDisposable
         }
     }
 
-    /// <summary>
-    /// Driver PawnIO (necessário para temperatura/consumo da CPU via MSR/SMN).
-    /// A biblioteca procura exatamente esta chave de desinstalação; o resultado é cacheado para evitar abrir o Registro a cada tick.
-    /// </summary>
-    public static bool IsPawnIOInstalled => _pawnIoInstalled ??= ProbePawnIO();
-
-    public static void RefreshPawnIOStatus() => _pawnIoInstalled = ProbePawnIO();
-
-    private static bool ProbePawnIO()
-    {
-        try
-        {
-            using var hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine,
-                                                                     Microsoft.Win32.RegistryView.Registry64);
-            using var key = hklm.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO");
-            return key != null;
-        }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException)
-        {
-            DiagnosticLog.Write("sensors.pawnio", ex);
-            return false;
-        }
-    }
-
-    public static bool IsElevated => ProcessElevation.IsElevated;
-
-    public enum CpuSensorProblem { None, NotElevated, PawnIOMissing, ReadFailed }
-
-    public CpuSensorProblem DiagnoseCpuSensors()
-    {
-        if (CpuTemperature != null) return CpuSensorProblem.None;
-        if (!ProcessElevation.IsElevated) return CpuSensorProblem.NotElevated;
-        if (!IsPawnIOInstalled) return CpuSensorProblem.PawnIOMissing;
-        return CpuSensorProblem.ReadFailed;
-    }
-
-    public static string Explain(CpuSensorProblem p) => p switch
-    {
-        // A primeira frase vale sozinha (a Visão geral mostra só ela); sem citar outros programas.
-        CpuSensorProblem.NotElevated =>
-            "O Windows só libera os sensores internos do processador com o CoreBi aberto como administrador. " +
-            "Feche e abra de novo aceitando o pedido de administrador.",
-        CpuSensorProblem.PawnIOMissing =>
-            "Falta o driver PawnIO, que lê a temperatura e o consumo do processador. Ele é gratuito e assinado. " +
-            "Depois de instalar, feche e abra o CoreBi.",
-        CpuSensorProblem.ReadFailed =>
-            "O PawnIO está instalado, mas a leitura falhou. Se acabou de instalar, reinicie o PC. Se continuar, " +
-            "confira se o antivírus bloqueou o driver ou se a biblioteca de sensores ainda não reconhece este processador.",
-        _ => ""
-    };
-
     public void Dispose()
     {
         bool close;
@@ -283,27 +247,3 @@ public sealed class SensorMonitor : IDisposable
 }
 
 public sealed record NvmeLog(ulong? CriticalWarning, ulong? MediaErrors, ulong? UnsafeShutdowns);
-
-internal interface IHardwareSource
-{
-    IEnumerable<IHardware> Hardware { get; }
-    void Open();
-    void Close();
-}
-
-internal sealed class LibreHardwareSource : IHardwareSource
-{
-    private readonly Computer _computer = new()
-    {
-        IsCpuEnabled = true,
-        IsGpuEnabled = true,
-        IsMemoryEnabled = true,
-        IsMotherboardEnabled = true,
-        IsStorageEnabled = true,
-        IsNetworkEnabled = true,
-        IsControllerEnabled = true
-    };
-    public IEnumerable<IHardware> Hardware => _computer.Hardware;
-    public void Open() => _computer.Open();
-    public void Close() => _computer.Close();
-}

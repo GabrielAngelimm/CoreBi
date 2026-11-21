@@ -29,6 +29,7 @@ public partial class StressView : UserControl, IDisposable
     private bool _gpuBurnOn;
     private double _gpuTempLimit = 85;
     private float _gpuMaxTemp;
+    /// <summary>Parada pedida enquanto as threads ou a janela da placa de vídeo ainda encerram; aplicada no próximo tique.</summary>
     private (string Reason, string Status, bool Aborted)? _pendingStop;
 
     public StressView() => InitializeComponent();
@@ -79,6 +80,7 @@ public partial class StressView : UserControl, IDisposable
     private void UpdateStressColumns()
     {
         bool cpu = ChkCpu.IsChecked == true, ram = ChkRam.IsChecked == true, gpu = ChkGpu.IsChecked == true;
+        // O corte de temperatura do processador vale também para o teste só de RAM, que esquenta o processador.
         bool cpuSide = cpu || ram || !gpu;
         static Visibility Show(bool on) => on ? Visibility.Visible : Visibility.Collapsed;
         CpuColumn.Visibility = Show(cpuSide);
@@ -110,18 +112,22 @@ public partial class StressView : UserControl, IDisposable
         bool cpu = ChkCpu.IsChecked == true, ram = ChkRam.IsChecked == true, gpu = ChkGpu.IsChecked == true;
         if (!cpu && !ram && !gpu) { StressHint.Text = "Escolha pelo menos um componente."; return; }
 
-        if ((cpu || ram) && (!double.TryParse(TempLimit.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out _tempLimit)
-                             || _tempLimit < 40 || _tempLimit > 110))
+        // Valida em variáveis locais: um valor recusado não pode virar a linha de corte desenhada no gráfico.
+        double tempLimit = _tempLimit, gpuTempLimit = _gpuTempLimit;
+        if ((cpu || ram) && (!double.TryParse(TempLimit.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out tempLimit)
+                             || tempLimit < 40 || tempLimit > 110))
         {
             StressHint.Text = "O limite do processador vai de 40 a 110 °C.";
             return;
         }
-        if (gpu && (!double.TryParse(GpuTempLimit.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out _gpuTempLimit)
-                    || _gpuTempLimit < 40 || _gpuTempLimit > 100))
+        if (gpu && (!double.TryParse(GpuTempLimit.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out gpuTempLimit)
+                    || gpuTempLimit < 40 || gpuTempLimit > 100))
         {
             StressHint.Text = "O limite da placa de vídeo vai de 40 a 100 °C.";
             return;
         }
+        _tempLimit = tempLimit;
+        _gpuTempLimit = gpuTempLimit;
 
         double minutes = double.Parse(Ui.CheckedTag(StressDurationPanel) ?? "10", CultureInfo.InvariantCulture);
         if ((cpu || ram) && _context.Sensors.CpuTemperature == null)
@@ -295,6 +301,7 @@ public partial class StressView : UserControl, IDisposable
         }
 
         StTemp.Text = temp == null ? "—" : $"{temp:0.#}";
+        // A leitura principal fica âmbar a 5 °C do corte.
         StTemp.SetResourceReference(TextBlock.ForegroundProperty, _stress.Running && temp >= _tempLimit - 5 ? "Warn" : "Fg");
         StTempMax.Text = _stressMaxTemp > 0 ? $"{_stressMaxTemp:0.#} °C" : "";
         StClock.Text = _context.ReadCpuLive().AvgClockMHz is float clock ? $"{clock:0} MHz" : "";
@@ -349,7 +356,10 @@ public partial class StressView : UserControl, IDisposable
         StressLog.ScrollIntoView(StressLog.Items[^1]);
     }
 
-    internal void DrawChart()
+    /// <summary>Redesenha o gráfico com as cores do tema atual.</summary>
+    internal void RedrawTheme() => DrawChart();
+
+    private void DrawChart()
     {
         TempChart.Children.Clear();
         double w = TempChart.ActualWidth, h = TempChart.ActualHeight;

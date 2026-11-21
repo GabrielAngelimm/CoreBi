@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
 using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Engine.Tools.Drivers;
@@ -44,7 +43,7 @@ public static class DriverInstaller
             // Keep the verified file locked against replacement until CreateProcess has mapped the image.
             using var guard = File.Open(file, FileMode.Open, FileAccess.Read, FileShare.Read);
             progress("Conferindo a assinatura digital…", 1);
-            VerifyPublisher(file, driver.Vendor);
+            AuthenticodeVerifier.VerifyPublisher(file, driver.Vendor);
             token.ThrowIfCancellationRequested();
             string restore = await TryRestorePointAsync(token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
@@ -98,18 +97,6 @@ public static class DriverInstaller
             return response;
         }
         throw new HttpRequestException("Limite de redirecionamentos excedido.");
-    }
-
-    private static void VerifyPublisher(string file, string vendor)
-    {
-        int trust = AuthenticodeVerifier.WinVerifyTrustFile(file);
-        if (trust != 0) throw new InvalidOperationException($"Assinatura digital inválida (0x{trust:X8}).");
-#pragma warning disable SYSLIB0057
-        using var rawCert = X509Certificate.CreateFromSignedFile(file);
-        using var certificate = new X509Certificate2(rawCert);
-#pragma warning restore SYSLIB0057
-        if (!DriverDownloadPolicy.IsPublisher(certificate.GetNameInfo(X509NameType.SimpleName, forIssuer: false), vendor))
-            throw new InvalidOperationException("O assinante não corresponde ao fabricante esperado.");
     }
 
     private static async Task<string> TryRestorePointAsync(CancellationToken token)

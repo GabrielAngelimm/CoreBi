@@ -1,6 +1,6 @@
 namespace CoreBi.Engine.Infrastructure;
 
-public static class AppPaths
+internal static class AppPaths
 {
     private static readonly object Sync = new();
     private static string? _overrideFolder;

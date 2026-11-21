@@ -5,8 +5,8 @@ using System.Text;
 using System.Windows;
 using CoreBi.Desktop.Features.Monitoring.Inventory;
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Monitoring;
 using CoreBi.Engine.Monitoring.Health;
-using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Power;
 using CoreBi.Engine.Monitoring.Storage;
 using CoreBi.Engine.Persistence;
@@ -36,6 +36,7 @@ internal static class ReportExportService
 
         string path = dlg.FileName;
         string ext = Path.GetExtension(path).ToLowerInvariant();
+        // A extensão digitada manda; sem uma conhecida, vale o tipo escolhido na lista.
         if (ext is not (".html" or ".htm" or ".pdf" or ".json"))
         {
             ext = dlg.FilterIndex switch { 2 => ".pdf", 3 => ".json", _ => ".html" };
@@ -44,12 +45,14 @@ internal static class ReportExportService
 
         onStatus(ext == ".pdf" ? "Gerando PDF…" : "Gerando relatório…");
 
+        // Dados que vivem na interface são copiados aqui (thread da tela); a leitura dos discos roda em segundo plano.
         var sensorsSnapshot = context.Sensors.Snapshot();
         var data = new ReportData
         {
             Date = DateTime.Now,
             Machine = Environment.MachineName,
             AppVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "",
+            // logo-dark.png é o logo para fundo claro (traço escuro); logo.png, para fundo escuro.
             LogoBase64 = LoadLogoBase64("logo-dark.png"),
             LogoOnDarkBase64 = LoadLogoBase64("logo.png"),
             Dark = !ThemeManager.IsLight,
@@ -63,11 +66,11 @@ internal static class ReportExportService
 
         var nvme = context.Sensors.NvmeLogs();
         var disks = await Task.Run(() => DiskHealth.Read(sensorsSnapshot, nvme));
-        data.Disks.AddRange(disks.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
+        data.Disks.AddRange(disks.Select(d => new ReportFinding(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
         var power = await Task.Run(() => BatteryInfo.Read(sensorsSnapshot));
-        data.Power.AddRange(power.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
+        data.Power.AddRange(power.Select(d => new ReportFinding(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
         if (networkResult != null)
-            data.Network.AddRange(networkResult.Select(d => new ReportDisk(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
+            data.Network.AddRange(networkResult.Select(d => new ReportFinding(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
 
         if (ext == ".pdf") await PdfPrinter.PrintAsync(ReportBuilder.Html(data), path, context.Lifetime);
         else await File.WriteAllTextAsync(path, ext == ".json" ? ReportBuilder.Json(data) : ReportBuilder.Html(data), new UTF8Encoding(true), context.Lifetime);

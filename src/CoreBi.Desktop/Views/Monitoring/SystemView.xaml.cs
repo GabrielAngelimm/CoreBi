@@ -1,6 +1,7 @@
 using CoreBi.Desktop.Features.Monitoring.Inventory;
 using CoreBi.Desktop.Features.Reports;
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Monitoring;
 using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Memory;
@@ -85,7 +86,7 @@ public partial class SystemView : UserControl
     }
 
     /// <summary>As especificações das placas de vídeo (chip, arquitetura, VRAM exata) chegam depois do inventário.</summary>
-    internal void GpusReady() { if (_inventory != null) Rebuild(); }
+    internal void RefreshHardware() { if (_inventory != null) Rebuild(); }
 
     /// <summary>Abre a ficha de uma categoria pelo nome ("Processador", "Memória RAM"...), como a Visão geral pede.</summary>
     internal void Select(string category)

@@ -41,9 +41,11 @@ public class SensorRow : INotifyPropertyChanged
     public string AvgNumber => IsCounter ? "" : Digits(AvgValue);
     public string MaxNumber => IsCounter ? "" : Digits(_max);
 
+    /// <summary>Contador que só cresce (dados lidos, gravados, baixados): mínimo, média e máximo não dizem nada.</summary>
     public bool IsCounter => Type == SensorType.Energy
         || (Type == SensorType.Data && (Name.StartsWith("Data ", StringComparison.Ordinal) || Name.StartsWith("Host ", StringComparison.Ordinal)));
 
+    /// <summary>Canal de cor: 0 = processador, 1 = placa de vídeo, 2 = os demais.</summary>
     public int Channel => (RootId.Length > 0 ? RootType : HardwareType) switch
     {
         HardwareType.Cpu => 0,
@@ -51,6 +53,7 @@ public class SensorRow : INotifyPropertyChanged
         _ => 2
     };
 
+    /// <summary>Veredito só para temperatura: 0 normal, 1 atenção, 2 crítico (discos esquentam menos).</summary>
     public int Level
     {
         get
@@ -62,6 +65,7 @@ public class SensorRow : INotifyPropertyChanged
         }
     }
 
+    /// <summary>Mínimo, média e máximo são contados aqui, desde a abertura ou desde ResetStats; os da biblioteca só servem de ponto de partida na primeira leitura.</summary>
     public void Update(float? value, float? min, float? max)
     {
         value = Finite(value);

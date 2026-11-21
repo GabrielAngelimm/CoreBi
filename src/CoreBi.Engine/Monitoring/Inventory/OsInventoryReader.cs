@@ -25,7 +25,7 @@ internal static class OsInventoryReader
             cs =>
             {
                 bool partOfDomain = WmiQuery.GetNullableBool(cs, "PartOfDomain") == true;
-                string domain = WmiQuery.GetString(cs, "Domain") ?? "—";
+                string domain = WmiQuery.GetText(cs, "Domain");
                 string workgroup = WmiQuery.GetString(cs, "Workgroup") ?? domain;
                 string? rawMaker = WmiQuery.GetString(cs, "Manufacturer");
                 string? rawModel = WmiQuery.GetString(cs, "Model");
@@ -48,7 +48,7 @@ internal static class OsInventoryReader
         WmiQuery.ForEachOrThrow("SELECT Caption, BuildNumber, InstallDate, LastBootUpTime FROM Win32_OperatingSystem", os =>
         {
             caption = (WmiQuery.GetString(os, "Caption") ?? "Windows").Replace("Microsoft ", "");
-            build = WmiQuery.GetString(os, "BuildNumber") ?? "—";
+            build = WmiQuery.GetText(os, "BuildNumber");
             installed = CimDate(os["InstallDate"]);
             boot = CimDate(os["LastBootUpTime"]);
         });
@@ -161,6 +161,7 @@ internal static class OsInventoryReader
         return new WindowsSecurity(av, realTime, tamper, signatures, uac);
     }
 
+    /// <summary>BitLocker por letra de unidade. A consulta precisa de administrador; sem ele o mapa volta vazio.</summary>
     public static Dictionary<string, bool> ReadBitLocker()
     {
         var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);

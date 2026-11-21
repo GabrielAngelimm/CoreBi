@@ -1,7 +1,11 @@
 ﻿param([string]$OutputDirectory)
 . (Join-Path $PSScriptRoot 'Common.ps1')
+# A pasta padrão é recriada a cada publicação: o instalador empacota tudo o que estiver nela.
+# Uma pasta passada em -OutputDirectory é usada como está.
+$cleanOutput = -not $OutputDirectory
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $script:RepoRoot 'artifacts/publish/win-x64' }
 $OutputDirectory = [System.IO.Path]::GetFullPath($OutputDirectory)
+if ($cleanOutput -and (Test-Path -LiteralPath $OutputDirectory)) { Remove-Item -LiteralPath $OutputDirectory -Recurse -Force }
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 Push-Location $script:RepoRoot
 try {

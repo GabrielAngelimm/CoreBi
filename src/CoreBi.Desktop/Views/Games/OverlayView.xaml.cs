@@ -10,6 +10,7 @@ using CoreBi.Engine.Games;
 using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Memory;
+using CoreBi.Engine.Monitoring.Sensors;
 
 namespace CoreBi.Desktop.Views;
 
@@ -69,6 +70,9 @@ public partial class OverlayView : UserControl
 
     internal bool IsOverlayEnabled => ChkOverlay.IsChecked == true;
 
+    /// <summary>Overlay ligado e não suspenso por um benchmark: só então precisa da captura de quadros (ETW).</summary>
+    internal bool IsOverlayLive => IsOverlayEnabled && !_suspendedForBenchmark;
+
     internal void Initialize(FeatureContext context)
     {
         _context = context;
@@ -77,6 +81,7 @@ public partial class OverlayView : UserControl
             rb.IsChecked = (string)rb.Tag == settings.OverlayCorner;
 
         var scales = OvScalePanel.Children.OfType<RadioButton>().ToList();
+        // O tamanho salvo vai para a opção mais próxima (os três tamanhos já mudaram de valor uma vez).
         var nearest = scales.MinBy(rb => Math.Abs(double.Parse((string)rb.Tag, CultureInfo.InvariantCulture) - settings.OverlayScale));
         foreach (var rb in scales) rb.IsChecked = rb == nearest;
 
@@ -303,7 +308,7 @@ public partial class OverlayView : UserControl
         var sensors = _context.Sensors.Snapshot();
         var gpuInfo = _context.PrimaryGpu;
         var gpuLive = gpuInfo != null ? GpuMonitor.ReadLive(gpuInfo, sensors) : null;
-        var cpuLive = GpuMonitor.ReadCpu(_context.Sensors, sensors);
+        var cpuLive = CpuTelemetry.Read(_context.Sensors, sensors);
         var lines = new List<OverlayLine>();
         static string Temp(float? v) => v is float x ? $"{x:0} °C" : "—";
         static string Pct(double? v) => v is double x ? $"{x:0}%" : "—";
@@ -337,7 +342,7 @@ public partial class OverlayView : UserControl
         if (show.Contains("cpu_temp")) cpu.Add(Temp(cpuLive.TempC));
         if (show.Contains("cpu_clock")) cpu.Add(cpuLive.AvgClockMHz is float ca ? $"{ca / 1000:0.00} GHz" : "— GHz");
         if (show.Contains("cpu_clockmax")) cpu.Add(cpuLive.MaxClockMHz is float cm ? $"pico {cm / 1000:0.00} GHz" : "pico —");
-        if (show.Contains("cpu_power")) cpu.Add(cpuLive.PowerW is float cw && cw > 0 ? $"{cw:0} W" : "— W");
+        if (show.Contains("cpu_power")) cpu.Add(cpuLive.PowerW is float cw && cw > 0 ? $"{cw:0} W" : "— W"); // 0 = sem leitura (precisa de administrador)
         Line("CPU", cpu, ShortOverlayName(HardwareNaming.ShortCpuName(_context.CpuName)));
 
         var ram = new List<string>();

@@ -4,12 +4,13 @@
 .vs/
 *.user
 *.log
-/TestResults/
+TestResults/
 **/__pycache__/
 *.pyc
 /outputs/
 /work/
 /reports/
+/report/
 /logs/
 *.dmp
 *.binlog

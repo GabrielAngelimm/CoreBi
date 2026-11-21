@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $folder = Join-Path $repo 'artifacts/tools/gitleaks'
 $executable = Join-Path $folder 'gitleaks.exe'

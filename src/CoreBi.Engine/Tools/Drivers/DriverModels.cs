@@ -27,12 +27,12 @@ public sealed class GpuDriverStatus
     public bool UpdateAvailable =>
         Vendor == "NVIDIA" && Latest.Length > 0 && Installed.Length > 0 && CompareVersions(Latest, Installed) > 0;
 
-    public static int CompareVersions(string a, string b) =>
+    internal static int CompareVersions(string a, string b) =>
         Version.TryParse(a, out var left) && Version.TryParse(b, out var right) ? left.CompareTo(right) : 0;
 }
 
 /// <summary>Placa-mãe, BIOS estruturada e página oficial de suporte do fabricante.</summary>
-public sealed class BoardInfo
+public sealed class BoardSupportInfo
 {
     public string Maker { get; set; } = "";
     public string Model { get; set; } = "";
@@ -40,9 +40,6 @@ public sealed class BoardInfo
     public string BiosDate { get; set; } = "";
     public string Brand { get; set; } = "";
     public string SupportUrl { get; set; } = "";
-
-    public string Bios => BiosVersion.Length == 0 ? ""
-        : BiosDate.Length > 0 && BiosDate != "—" ? $"{BiosVersion} ({BiosDate})" : BiosVersion;
 }
 
 /// <summary>Um driver disponível no Windows Update.</summary>

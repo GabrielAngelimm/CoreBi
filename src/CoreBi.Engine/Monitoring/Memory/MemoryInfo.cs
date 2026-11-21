@@ -12,11 +12,7 @@ public static class MemoryInfo
     }
 
     /// <summary>RAM visível ao Windows e memória virtual (limite de commit = RAM + arquivo de paginação), numa só amostra.</summary>
-    public readonly record struct Snapshot(long Total, long Available, long CommitLimit, long CommitAvailable)
-    {
-        public long Used => Total - Available;
-        public float UsedPercent => Total > 0 ? (float)(100.0 * Used / Total) : 0f;
-    }
+    public readonly record struct Snapshot(long Total, long Available, long CommitLimit);
 
     /// <summary>GB e percentual devem vir desta mesma amostra de RAM física do Windows.</summary>
     public static PhysicalUsage? ReadPhysicalUsage() =>
@@ -29,7 +25,7 @@ public static class MemoryInfo
     {
         var status = new NativeMemoryStatus { Length = (uint)Marshal.SizeOf<NativeMemoryStatus>() };
         return GlobalMemoryStatusEx(ref status) && status.TotalPhysical > 0
-            ? new((long)status.TotalPhysical, (long)status.AvailablePhysical, (long)status.TotalPageFile, (long)status.AvailablePageFile)
+            ? new((long)status.TotalPhysical, (long)status.AvailablePhysical, (long)status.TotalPageFile)
             : null;
     }
 

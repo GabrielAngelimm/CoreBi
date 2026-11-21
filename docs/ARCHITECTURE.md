@@ -5,30 +5,42 @@
 ```text
 CoreBi/
   brand/                         Geometria autoral, SVGs, PNGs e ícone Windows
+  installer/                     Script do Inno Setup
   src/
-    CoreBi.Engine/               Regras, coleta, algoritmos e integrações Windows
-      Monitoring/                Inventory, Sensors, Graphics, Storage, Power,
-                                 Network, Memory, Devices e Diagnostics
-      Performance/               Benchmarks, Stress, Graphics, Shaders e coordenador
-      Games/                     ETW, métricas, gargalo e catálogo de hardware
+    CoreBi.Engine/               Regras, coleta, algoritmos e integrações Windows (sem WPF)
+      Monitoring/                Inventory, Sensors, Graphics, Storage, Power, Network,
+                                 Memory, Devices, Diagnostics e Health (cartões de saúde);
+                                 InfoNode (árvore chave/valor) fica na raiz, usada por várias áreas
+      Performance/               Benchmarks, Stress, Graphics (D3D), Shaders e WorkloadCoordinator
+      Games/                     ETW (FrameMonitor), gargalo, OverlayBi/RTSS e catálogo de hardware
       Tools/                     Startup, Drivers e Apps
-      Infrastructure/            JSON atômico, processos, ACL e diagnóstico local
+      Infrastructure/            Auxiliares sem regra de produto: JSON atômico, processos, ACL,
+                                 WMI, COM, log local, nomes e bytes formatados
       Persistence/               Configurações e normalização
-      Reports/                   Relatórios a partir de leituras coletadas
+      Reports/                   Relatórios HTML/JSON/PDF a partir de leituras coletadas
     CoreBi.Desktop/              WPF: apresentação e composição
-      Shell/                     Janela, navegação, paleta de comandos, tema, Win32Window,
-                                 InstrumentBase, ObservableObject e recursos compartilhados
-      Views/                     14 páginas autocontidas com handlers e estado próprios
-      Features/                  Apresentação por domínio, instrumentos e exportação de relatórios
+      Shell/                     Janela principal (MainWindow + partes Sidebar, Navigation e Palette),
+                                 tema (ThemeManager, Theme.xaml), toast e Win32Window
+      Controls/                  Blocos visuais reutilizáveis: InstrumentBase, ObservableObject,
+                                 painéis de layout, conversores, HwIcon e propriedades anexadas (Ui)
+      Views/<Área>/              14 páginas autocontidas com handlers e estado próprios
+      Features/<Área>/           Apresentação por domínio (fichas, instrumentos, overlay, exportação)
       Services/                  FeatureContext, HardwareDeviceWatcher, permissões e links
       Assets/                    Marca e ícone
-  tests/CoreBi.Tests/             Executor de regressões, integração, WPF e hardware
+  tests/CoreBi.Tests/            Executor de regressões, integração, WPF e hardware
   tools/                         Build, testes, publicação, licenças e marca
   docs/                          Guias, contratos, segurança e validação
   licenses/                      Textos e avisos redistribuídos com o binário
 ```
 
-`Desktop → Engine` consome apenas a API pública do Engine (`Engine` não referencia WPF nem expõe internos para o Desktop). `Tests` acessa membros internos para verificar regras e composição sem criar APIs públicas apenas para teste. Tipos ficam próximos de seus consumidores. Não há contêiner de DI, projeto por classe, ORM ou framework adicional sem necessidade.
+`Desktop → Engine` consome apenas a API pública do Engine (`Engine` não referencia WPF nem expõe internos para o Desktop). `Tests` acessa membros internos para verificar regras e composição sem criar APIs públicas apenas para teste; por isso o que só o Engine usa é `internal`. Tipos ficam próximos de seus consumidores. Não há contêiner de DI, projeto por classe, ORM ou framework adicional sem necessidade.
+
+### Regras de organização
+
+- **Engine:** namespace = pasta (`CoreBi.Engine.Monitoring.Storage` ↔ `Monitoring/Storage/`). Uma regra que a interface precisa (limiares, pontuações, vereditos) mora no Engine e o Desktop só a exibe; duplicar a conta na view é bug esperando acontecer.
+- **Desktop:** pastas organizam, mas tipos referenciados por XAML ficam no namespace `CoreBi.Desktop` (prefixo `local:`), porque mudar o namespace exigiria editar o XAML. Páginas ficam em `CoreBi.Desktop.Views`.
+- **Um arquivo, uma responsabilidade.** Classes grandes se dividem em `partial` por assunto (`MainWindow.Sidebar.cs`, `SystemSheets.Memory.cs`, `BenchmarksView.Gpu.cs`), não por tamanho arbitrário.
+- **Comentários explicam o porquê** (restrição de hardware, anticheat, compatibilidade com o Explorador). Não remova um comentário de decisão numa limpeza sem levar a decisão junto.
 
 ## Coleta e vida útil
 
@@ -46,7 +58,20 @@ Shaders HLSL ficam em arquivos próprios incorporados ao assembly. A extração 
 
 ## Páginas autocontidas e serviços
 
-Todas as 14 páginas (`OverviewView`, `SystemView`, `SensorsView`, `GraphicsView`, `DisksView`, `PowerView`, `NetworkView`, `OverlayView`, `BottleneckView`, `BenchmarksView`, `StressView`, `StartupView`, `AppsView` e `DriversView`) possuem seus próprios handlers, modelos de visualização e ciclo de vida. `FeatureContext` fornece um ponto único de composição compartilhado com o shell: janela proprietária, `WorkloadCoordinator`, token de vida útil, configurações, coletores compartilhados (`SensorMonitor`, `FrameMonitor`, `GpuMonitor`), navegação, registro de eventos, notificações, isolamento de benchmarks e operações críticas. `HardwareDeviceWatcher` centraliza o tratamento de `WM_DEVICECHANGE` (volumes removíveis, USB e troca de driver de vídeo), e `ReportExportService` encapsula a exportação de relatórios HTML/PDF/JSON.
+Todas as 14 páginas (`OverviewView`, `SystemView`, `SensorsView`, `GraphicsView`, `DisksView`, `PowerView`, `NetworkView`, `OverlayView`, `BottleneckView`, `BenchmarksView`, `StressView`, `StartupView`, `AppsView` e `DriversView`) possuem seus próprios handlers, modelos de visualização e ciclo de vida. Cada uma recebe um `FeatureContext` em `Initialize` e fala com o shell só por ele.
+
+`FeatureContext` é o ponto único de composição: janela proprietária, `WorkloadCoordinator`, token de vida útil, configurações, coletores compartilhados (`SensorMonitor`, `FrameMonitor`), navegação, registro de eventos, notificações, isolamento de benchmarks e operações críticas. As dependências são propriedades `required`: esquecer uma ao montar o contexto é erro de compilação. Os callbacks têm delegados nomeados (`RecordEventHandler`, `NotifyHandler`, `BenchmarkIsolationHandler`) para que os parâmetros tenham nome. `HardwareDeviceWatcher` centraliza o `WM_DEVICECHANGE` (volumes removíveis, USB e troca de driver de vídeo), e `ReportExportService` encapsula a exportação de relatórios HTML/PDF/JSON.
+
+O shell chama as páginas por um contrato de nomes fixos (nem toda página implementa todos):
+
+| Método | Quando o shell chama |
+|---|---|
+| `Tick()` | A cada segundo, no timer de telemetria (a página decide se está visível) |
+| `RefreshAsync()` | Ao abrir a página (páginas "frias" mostram o véu de carregamento na primeira vez) |
+| `RefreshHardware()` | Quando placas de vídeo, processador ou discos terminam de ser lidos ou mudam |
+| `RedrawTheme()` | Na troca de tema claro/escuro, para desenhos feitos em código |
+
+A navegação usa `nameof(PageX)`, e o `Tag` de cada item da barra lateral é o nome do campo da página no XAML.
 
 Chamadas assíncronas de atualização retornam `Task`, permitindo aguardar e validar o carregamento. Coletas em andamento deixam de atualizar a página após o fechamento. Tema pertence ao shell; benchmark pertence a `Views/Performance/BenchmarksView*.cs`; exportação pertence a `Features/Reports`.
 
@@ -66,9 +91,9 @@ O OverlayBi possui dois caminhos: a janela WPF original e a publicação opciona
 
 A interface segue o design system em [DESIGN.md](DESIGN.md) mantendo WPF direto sem framework MVVM externo: cada view gerencia seu próprio estado, usando `ObservableObject` para notificações de leitura ao vivo e `InstrumentBase` para gráficos e medidores customizados sensíveis ao tema.
 
-O shell (`MainWindow.xaml.cs` e `MainWindow.Palette.cs`) concentra apenas o que é transversal: janela sem moldura (`Win32Window`), navegação, tema (`ThemeManager`, `Theme.xaml`), propriedades anexadas do design system (`Ui.cs`), paleta de comandos, telemetria da barra lateral e orquestração do ciclo de vida. Cores de estados definidos em código usam `SetResourceReference`; desenhos em código (gráficos, anéis) usam `ThemeManager.Brush(chave)` e são refeitos em `RedrawThemedVisuals` na troca de tema. `tools/check_resources.py` confere as chaves de recurso, que o compilador de XAML não valida.
+O shell (`MainWindow.xaml.cs` e as partes `Sidebar`, `Navigation` e `Palette`) concentra apenas o que é transversal: janela sem moldura (`Win32Window`), navegação, tema (`ThemeManager`, `Theme.xaml`), paleta de comandos, telemetria da barra lateral e orquestração do ciclo de vida. Propriedades anexadas do design system ficam em `Controls/Ui.cs`. Cores de estados definidos em código usam `SetResourceReference`; desenhos em código (gráficos, anéis) usam `ThemeManager.Brush(chave)` e são refeitos na troca de tema pelo `RedrawTheme()` de cada página. `tools/check_resources.py` confere as chaves de recurso, que o compilador de XAML não valida.
 
-Novas regras entram no Engine. Templates e tema continuam compartilhados em `Shell`.
+Novas regras entram no Engine. Templates e tema continuam compartilhados em `Shell`; controles reutilizáveis entram em `Controls`.
 
 ## Persistência e erro
 

@@ -69,21 +69,26 @@ public sealed class NetworkResult
     public NetworkAdapterInfo? Adapter { get; init; }
     public PingResult? Router { get; init; }
     public IReadOnlyList<PingResult> Internet { get; init; } = [];
+    /// <summary>Latência média até a internet (alvos que responderam), jitter do pior alvo e perda média.</summary>
     public double? LatencyMs { get; init; }
     public double? JitterMs { get; init; }
     public double? LossPct { get; init; }
     public double? DnsMs { get; init; }
     public double? DownloadMbps { get; init; }
     public double? UploadMbps { get; init; }
+    /// <summary>O upload usa contadores TCP, que incluem a sobrecarga do protocolo.</summary>
     public bool UploadIncludesProtocol { get; init; }
+    /// <summary>Pings a 1.1.1.1 enquanto o download enche a conexão.</summary>
     public IReadOnlyList<double?> LoadedSamples { get; init; } = [];
     public double? LoadedLatencyMs { get; init; }
+    /// <summary>Quanto a latência sobe com a conexão cheia; acima de 100 ms o veredito aponta bufferbloat.</summary>
     public double? BufferbloatMs { get; init; }
     public bool Bufferbloat => BufferbloatMs > 100;
     public HealthVerdict LocalVerdict { get; init; } = HealthVerdict.Unknown;
     public HealthVerdict InternetVerdict { get; init; } = HealthVerdict.Unknown;
     public IReadOnlyList<string> Notes { get; init; } = [];
     public DateTime TestedAt { get; init; } = DateTime.Now;
+    /// <summary>Prazo de uma limitação HTTP; enquanto ativo não se inicia outra transferência.</summary>
     public DateTimeOffset? RetryAfterUtc { get; init; }
     public NetworkPhase? InterruptedPhase { get; init; }
     public double InterruptedFraction { get; init; }

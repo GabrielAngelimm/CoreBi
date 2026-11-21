@@ -7,7 +7,6 @@ using LibreHardwareMonitor.Hardware;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using System.Windows.Media;
 
 namespace CoreBi.Desktop.Views;
 
@@ -106,7 +105,7 @@ public partial class DisksView : UserControl
 
 
     /// <summary>Guarda temperatura e taxas de cada disco do LibreHardwareMonitor; com a página aberta, atualiza as leituras.</summary>
-    internal void Sample()
+    internal void Tick()
     {
         if (_monitor == null || !_monitor.IsOpen) return;
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -360,11 +359,12 @@ public partial class DisksView : UserControl
             rows.Add(Count("Erros de mídia", (long)media));
             if (d.Nvme.UnsafeShutdowns is ulong unsafeCount)
             {
-                // Quedas de energia e resets forçados acontecem em qualquer PC: o que preocupa é a frequência (por hora ligado), não o total.
-                double perHour = d.PowerOnHours is > 0 ? (double)unsafeCount / d.PowerOnHours.Value : 0;
-                (string text, string state) = unsafeCount >= 200 && perHour > 0.1 ? ("alto", "Danger")
-                    : unsafeCount >= 50 && perHour > 0.02 ? ("atenção", "Warn")
-                    : ("ok", "Ok");
+                (string text, string state) = DiskHealth.RateUnsafeShutdowns(unsafeCount, d.PowerOnHours) switch
+                {
+                    HealthVerdict.Critical => ("alto", "Danger"),
+                    HealthVerdict.Warning => ("atenção", "Warn"),
+                    _ => ("ok", "Ok"),
+                };
                 rows.Add(new("Desligamentos inesperados", $"{unsafeCount:N0} · {text}", state,
                     "Quedas de energia ou desligamentos sem avisar o SSD, somados desde a fábrica. Avaliado pela frequência: ok é raro, atenção é frequente, alto é muito frequente."));
             }
@@ -491,6 +491,7 @@ public partial class DisksView : UserControl
     private static void Readout(TextBlock target, string value, string unit, bool balanced = false) =>
         ReadoutFormat.Set(target, value, unit, unitRatio: 0.4, balanced: balanced);
 
+    /// <summary>GB (decimais, como o S.M.A.R.T. informa) → valor e unidade; TB a partir de 1000 GB.</summary>
     private static (string Value, string Unit) SplitData(double gb, bool decimals = true) =>
         gb >= 1000 ? (decimals ? $"{gb / 1000:N1}" : $"{gb / 1000:N0}", "TB") : ($"{gb:N0}", "GB");
 

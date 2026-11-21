@@ -17,6 +17,10 @@ public sealed record LoadSample(
     public const float CpuLimitPct = 85;
     public const float RamLimitPct = 92;
 
+    /// <summary>
+    /// Regras, na ordem: VRAM cheia → térmico → GPU no limite (normal em jogo pesado) → CPU/núcleo no limite com GPU
+    /// sobrando → RAM cheia → nada no limite (trava de FPS, V-Sync ou menu).
+    /// </summary>
     public Limiter Classify()
     {
         if (Fps is not > 0) return Limiter.Unknown;
@@ -34,11 +38,11 @@ public static class BottleneckAnalyzer
     public static LoadSample Sample(SensorMonitor monitor, GpuInfo? gpu, FrameStats? frames) =>
         Sample(monitor, gpu, frames, MemoryInfo.ReadPhysicalUsage());
 
-    public static LoadSample Sample(SensorMonitor monitor, GpuInfo? gpu, FrameStats? frames, MemoryInfo.PhysicalUsage? memory)
+    internal static LoadSample Sample(SensorMonitor monitor, GpuInfo? gpu, FrameStats? frames, MemoryInfo.PhysicalUsage? memory)
     {
         var snapshot = monitor.Snapshot();
         var gpuLive = gpu != null ? GpuMonitor.ReadLive(gpu, snapshot) : null;
-        var cpuLive = GpuMonitor.ReadCpu(monitor, snapshot);
+        var cpuLive = CpuTelemetry.Read(monitor, snapshot);
         return new LoadSample(
             gpuLive?.LoadPct,
             cpuLive.LoadPct,

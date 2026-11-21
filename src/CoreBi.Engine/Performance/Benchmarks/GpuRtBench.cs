@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Performance.Graphics;
 using Vortice.Direct3D;
 using Vortice.Direct3D12;
@@ -297,6 +298,7 @@ public sealed class GpuRtBench
                             titleFrames++;
                         }
 
+                        // Câmera e objetos pelo tempo da passada: a mesma cena no mesmo instante em qualquer PC.
                         float t = (float)(clock.Elapsed.TotalSeconds / duration.TotalSeconds);
                         float secs = (float)clock.Elapsed.TotalSeconds;
                         var (eye, target) = RtScene.CameraAt(t);
@@ -363,6 +365,7 @@ public sealed class GpuRtBench
                         cl.ResourceBarrierUnorderedAccessView(output);
 
                         double now = clock.Elapsed.TotalSeconds;
+                        // Mostra na janela a ~30 Hz (cópia barata); o resto dos frames só é calculado.
                         bool present = now - lastPresent >= 1 / 30.0;
                         if (present)
                         {
