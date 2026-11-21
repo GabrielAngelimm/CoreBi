@@ -360,11 +360,12 @@ public partial class DisksView : UserControl
             rows.Add(Count("Erros de mídia", (long)media));
             if (d.Nvme.UnsafeShutdowns is ulong unsafeCount)
             {
-                // Quedas de energia e resets forçados acontecem em qualquer PC: o que preocupa é a frequência (por hora ligado), não o total.
-                double perHour = d.PowerOnHours is > 0 ? (double)unsafeCount / d.PowerOnHours.Value : 0;
-                (string text, string state) = unsafeCount >= 200 && perHour > 0.1 ? ("alto", "Danger")
-                    : unsafeCount >= 50 && perHour > 0.02 ? ("atenção", "Warn")
-                    : ("ok", "Ok");
+                (string text, string state) = DiskHealth.RateUnsafeShutdowns(unsafeCount, d.PowerOnHours) switch
+                {
+                    HealthVerdict.Critical => ("alto", "Danger"),
+                    HealthVerdict.Warning => ("atenção", "Warn"),
+                    _ => ("ok", "Ok"),
+                };
                 rows.Add(new("Desligamentos inesperados", $"{unsafeCount:N0} · {text}", state,
                     "Quedas de energia ou desligamentos sem avisar o SSD, somados desde a fábrica. Avaliado pela frequência: ok é raro, atenção é frequente, alto é muito frequente."));
             }

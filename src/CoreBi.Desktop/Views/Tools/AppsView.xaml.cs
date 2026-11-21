@@ -98,7 +98,7 @@ public partial class AppsView : UserControl
             if (_context.IsClosing) return;
             foreach (var app in _installApps)
             {
-                app.Installed = names.Any(name => name.StartsWith(app.DisplayPrefix, StringComparison.OrdinalIgnoreCase));
+                app.Installed = AppInstaller.IsInstalled(app, names);
                 if (first) app.Selected = app.PreSelect && !app.Installed;
                 else if (app.Installed) app.Selected = false;
             }

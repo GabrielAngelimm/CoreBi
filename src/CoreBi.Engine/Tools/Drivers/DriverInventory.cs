@@ -5,7 +5,7 @@ namespace CoreBi.Engine.Tools.Drivers;
 /// <summary>Inventário local via WMI de drivers assinados, GPUs e placa-mãe/BIOS.</summary>
 public static class DriverInventory
 {
-    private static readonly HashSet<string> MainClasses = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> MainClasses = new(StringComparer.Ordinal)
     {
         "DISPLAY", "NET", "MEDIA", "BLUETOOTH", "HDC", "SCSIADAPTER", "USB", "SYSTEM",
     };

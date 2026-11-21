@@ -1,3 +1,4 @@
+using CoreBi.Engine.Monitoring.Sensors;
 using LibreHardwareMonitor.Hardware;
 
 namespace CoreBi.Engine.Monitoring.Power;
@@ -56,7 +57,7 @@ public static class VoltageMapper
                 else if (n.StartsWith("SOC")) soc ??= Line("Processador · SoC", v, 0.6, 1.4);
                 else if (n.Contains("VID")) vids.Add(v);
             }
-            else if (v.HardwareType is HardwareType.GpuNvidia or HardwareType.GpuAmd or HardwareType.GpuIntel)
+            else if (SensorTypeMeta.IsGpu(v.HardwareType))
             {
                 if (n.StartsWith("GPUCORE") || n == "CORE") gpu ??= Line("Placa de vídeo · núcleo", v, 0.6, 1.2);
             }

@@ -22,8 +22,7 @@ internal static partial class Program
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(40));
             var result = DriverInventory.ReadGpus().First();
-            if (result.Vendor == "NVIDIA") GpuDriverLookup.CheckNvidiaAsync(result, false, timeout.Token).GetAwaiter().GetResult();
-            if (result.Vendor == "AMD") GpuDriverLookup.CheckAmdAsync(result, timeout.Token).GetAwaiter().GetResult();
+            GpuDriverLookup.CheckAsync(result, false, timeout.Token).GetAwaiter().GetResult();
             Require(result.Vendor.Length > 0, "GPU vendor missing");
             if (result.Vendor is "NVIDIA" or "AMD")
             {

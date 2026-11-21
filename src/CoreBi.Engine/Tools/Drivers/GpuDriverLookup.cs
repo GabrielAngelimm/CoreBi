@@ -35,7 +35,17 @@ public static partial class GpuDriverLookup
         return c;
     }
 
-    public static async Task CheckNvidiaAsync(GpuDriverStatus status, bool studio, CancellationToken ct)
+    /// <summary>Consulta pelo fabricante; Intel e os demais não têm consulta automática e recebem só a orientação.</summary>
+    public static Task CheckAsync(GpuDriverStatus status, bool studio, CancellationToken ct)
+    {
+        if (status.Vendor == "NVIDIA") return CheckNvidiaAsync(status, studio, ct);
+        if (status.Vendor == "AMD") return CheckAmdAsync(status, ct);
+        if (status.Vendor == "Intel") status.Message = "A Intel não tem consulta automática. Veja a versão mais recente na página oficial.";
+        else status.Message = "Sem consulta automática para esta placa: o driver dela chega pelo Windows Update.";
+        return Task.CompletedTask;
+    }
+
+    internal static async Task CheckNvidiaAsync(GpuDriverStatus status, bool studio, CancellationToken ct)
     {
         status.Latest = ""; status.DownloadUrl = ""; status.SizeText = "";
         try
@@ -66,7 +76,7 @@ public static partial class GpuDriverLookup
     /// AMD não tem API de versão: consulta a página oficial do modelo para localizar o instalador; se mudar ou bloquear,
     /// deixa a URL oficial pronta para abrir manualmente.
     /// </summary>
-    public static async Task CheckAmdAsync(GpuDriverStatus status, CancellationToken ct)
+    internal static async Task CheckAmdAsync(GpuDriverStatus status, CancellationToken ct)
     {
         status.Latest = ""; status.DownloadUrl = ""; status.SizeText = "";
         try
