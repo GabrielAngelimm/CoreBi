@@ -26,10 +26,11 @@ public partial class MainWindow
 
     internal void InitBottleneckAndOverlay()
     {
-        var (ratio, text) = BottleneckAnalyzer.Balance(_gpuIdx, _cpuIdx);
+        string gpuName = _gpus.FirstOrDefault()?.Name ?? "";
+        var (ratio, text) = BottleneckAnalyzer.Balance(HardwareCatalog.GpuPerf(gpuName) ?? 0, HardwareCatalog.CpuPerf(_cpuName) ?? 0);
         _balanceRatio = ratio;
-        BnCpuName.Text = GameCatalog.ShortCpuName(_cpuName);
-        BnGpuName.Text = GameCatalog.ShortGpuName(_gpuName);
+        BnCpuName.Text = HardwareCatalog.ShortCpuName(_cpuName);
+        BnGpuName.Text = HardwareCatalog.ShortGpuName(gpuName);
         BnBalanceText.Text = text;
 
         // Preferências do overlay

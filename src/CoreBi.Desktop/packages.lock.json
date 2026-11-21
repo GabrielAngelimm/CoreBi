@@ -230,11 +230,6 @@
         "resolved": "4.7.0",
         "contentHash": "VybpaOQQhqE6siHppMktjfGBw1GCwvCqiufqmP8F1nj7fTUNtW35LOEt3UZTEsECfo+ELAl/9o9nJx3U91i7vA=="
       },
-      "System.Security.Cryptography.ProtectedData": {
-        "type": "Transitive",
-        "resolved": "11.0.0",
-        "contentHash": "iS9iyAMwLDPFBzTdcREDkzRBYmwy7aENYl7EXxAvnNJNCbl7+UVRgJfWaVLtVjSeDmT3JIItgGODmuAPljXFww=="
-      },
       "Vortice.D3DCompiler": {
         "type": "Transitive",
         "resolved": "3.8.3",
@@ -308,7 +303,6 @@
           "Microsoft.Diagnostics.Tracing.TraceEvent": "[4.0.0, )",
           "System.Diagnostics.EventLog": "[11.0.0, )",
           "System.Management": "[11.0.0, )",
-          "System.Security.Cryptography.ProtectedData": "[11.0.0, )",
           "Vortice.D3DCompiler": "[3.8.3, )",
           "Vortice.Direct3D11": "[3.8.3, )",
           "Vortice.Direct3D12": "[3.8.3, )",
