@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using CoreBi.Engine.Monitoring.Devices;
+using CoreBi.Engine.Monitoring.Graphics;
 using CoreBi.Engine.Monitoring.Inventory;
 using CoreBi.Engine.Monitoring.Storage;
 
@@ -37,6 +38,60 @@ public partial class MainWindow
         _toast.Notify(title, text, icon);
     }
 
+    // ---------------- Troca de driver de vídeo com o app aberto ----------------
+    // O Windows avisa (DBT_DEVNODES_CHANGED) quando qualquer dispositivo muda, inclusive a placa de vídeo no meio de uma troca de
+    // driver. Ler a placa nessa hora é falha nativa dentro da NVML, que derruba o processo. Então: a cada aviso, as leituras
+    // pausam na hora; quando os avisos param e as placas estão de pé, compara com o retrato de antes. Se nada mudou (pendrive,
+    // fone, controle), as leituras voltam. Se o driver de vídeo mudou, a placa sai das leituras até o CoreBi abrir de novo.
+
+    internal string? _displayBefore;       // retrato das placas de vídeo antes do aviso
+    internal bool _displayChanged;         // algum retrato desta rodada de avisos saiu diferente
+    internal string? _displayLast;         // retrato da conferência anterior, para exigir dois iguais seguidos
+    internal int _displayGeneration, _displayChecks;
+    internal DispatcherTimer? _displaySettle;
+
+    internal async void SnapshotDisplay()
+    {
+        var now = await Task.Run(DisplayAdapters.Read);
+        if (now is { Healthy: true } && _displayBefore == null) _displayBefore = now.Value.Signature;
+    }
+
+    internal void HoldSensorsForDeviceChange()
+    {
+        _monitor.Pause();
+        _displayGeneration++;
+        _displayChecks = 0;
+        _displayLast = null;
+        _displaySettle ??= new DispatcherTimer(TimeSpan.FromSeconds(2), DispatcherPriority.Normal, async (_, _) => await SettleDisplayAsync(), Dispatcher);
+        _displaySettle.Stop();
+        _displaySettle.Start();
+    }
+
+    internal async Task SettleDisplayAsync()
+    {
+        _displaySettle!.Stop();
+        int generation = _displayGeneration;
+        var now = await Task.Run(DisplayAdapters.Read);
+        if (_features.IsClosing || generation != _displayGeneration) return; // chegou outro aviso: a conferência recomeça
+        _displayChecks++;
+        // Sem WMI, segue com o que sabe; com placa parada ou retrato ainda mudando, espera mais (até cerca de 1 min)
+        bool settled = now == null || _displayChecks >= 30 || (now.Value.Healthy && now.Value.Signature == _displayLast);
+        if (now != null)
+        {
+            if (_displayBefore != null && now.Value.Signature != _displayBefore) _displayChanged = true;
+            _displayLast = now.Value.Signature;
+        }
+        if (!settled) { _displaySettle.Start(); return; }
+
+        if (_displayChanged && !_monitor.GpuRetired)
+        {
+            _monitor.RetireGpu();
+            Toast("Driver de vídeo atualizado", "Abra o CoreBi de novo para voltar a ler a placa de vídeo.", "\uE7F4");
+        }
+        if (now is { Healthy: true } && !_displayChanged) _displayBefore = now.Value.Signature;
+        _monitor.Resume();
+    }
+
     internal async void SnapshotUsb()
     {
         try
@@ -62,6 +117,7 @@ public partial class MainWindow
         }
         else if (ev == DBT_DEVNODES_CHANGED)
         {
+            HoldSensorsForDeviceChange();
             // Chega várias vezes seguidas por dispositivo: espera assentar e compara com a lista anterior.
             _usbDebounce ??= new DispatcherTimer(TimeSpan.FromMilliseconds(1500), DispatcherPriority.Normal, (_, _) =>
             {

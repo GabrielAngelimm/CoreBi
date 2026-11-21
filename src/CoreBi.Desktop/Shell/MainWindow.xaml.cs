@@ -50,6 +50,7 @@ public partial class MainWindow : Window
 
         InitBench();
         SnapshotUsb();
+        SnapshotDisplay();
         RefreshDrives();
         UpdateDashboard();
 
