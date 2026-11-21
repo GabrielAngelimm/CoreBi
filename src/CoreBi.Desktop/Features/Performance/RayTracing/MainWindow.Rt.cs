@@ -1,6 +1,7 @@
 using System.Windows.Threading;
 using CoreBi.Engine.Performance.Benchmarks;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace CoreBi.Desktop;
 
@@ -9,27 +10,82 @@ public partial class MainWindow
 {
     internal GpuRtBench? _rtBench;
 
+    /// <summary>null = ainda não verificado; vazio = a placa tem ray tracing por hardware; senão, o motivo dado pelo Direct3D 12.</summary>
+    internal string? _rtSupport;
+    private bool _rtChecking;
+
+    /// <summary>
+    /// Pergunta uma vez, fora da thread da janela, se a placa principal roda DXR 1.1 (a mesma verificação do clique em Iniciar).
+    /// Sem suporte, a legenda da tecla diz isso, a placa do palco mostra o motivo e o botão fica desligado com o motivo na dica.
+    /// </summary>
+    internal async void CheckRtSupportOnce()
+    {
+        if (_rtSupport != null || _rtChecking || AnyBenchRunning || TestRunning) return;
+        _rtChecking = true;
+        string adapterName = _gpus.Count > 0 ? _gpus[0].Name : "";
+        string? why = await Task.Run(() => GpuRtBench.CheckSupport(adapterName));
+        _rtChecking = false;
+        if (_features.IsClosing) return;
+        _rtSupport = why ?? "";
+        if (why == null) return;
+
+        var (status, detail) = RtSupportText(why);
+        if (BenchTestPanel.Children.OfType<RadioButton>().FirstOrDefault(r => r.Tag as string == "rt") is { } tab)
+        {
+            Ui.SetCaption(tab, "Sem suporte nesta placa");
+            tab.ToolTip = $"{tab.ToolTip}\n\n{why}";
+        }
+        RtStatus.Text = status;
+        RtDetail.Text = detail;
+        RtDetail.ToolTip = detail.Length > 0 ? detail : null;
+        BtnRtBench.IsEnabled = false;
+        BtnRtBench.ToolTip = why;
+    }
+
+    /// <summary>Motivo do Direct3D 12 em duas partes para a placa do palco: o estado (primeira frase) e o detalhe (o resto).</summary>
+    internal static (string Status, string Detail) RtSupportText(string why)
+    {
+        if (why.StartsWith("Direct3D 12 indisponível", StringComparison.Ordinal)) return ("Sem Direct3D 12 nesta placa", "");
+        int dot = why.IndexOf(". ", StringComparison.Ordinal);
+        return dot < 0 ? (why.TrimEnd('.'), "") : (why[..dot], why[(dot + 2)..]);
+    }
+
     internal static string PresetName(string p) => p switch { "normal" => "Normal", "extrema" => "Extrema", _ => "Alta" };
 
-    /// <summary>Histórico: cada barra compara com o melhor resultado do MESMO preset e resolução (só isso é comparável).</summary>
-    internal List<MeterItem> RtHistoryItems()
+    /// <summary>Régua do ray tracing; a variação entre passadas diz se o resultado serve para comparar (abaixo de 3 %).</summary>
+    internal static List<BenchStat> RtStats(GpuRtResult? r, string vs = "")
     {
-        var list = _settings.BenchRecords.Where(r => r.Test.StartsWith("rt:")).OrderByDescending(r => r.Date).ToList();
-        var best = list.GroupBy(r => r.Test).ToDictionary(g => g.Key, g => g.Max(r => r.Score));
-        return list.Select(r => new MeterItem($"{r.Date:dd/MM HH:mm}", r.Summary, best[r.Test] > 0 ? r.Score / best[r.Test] : 0)).ToList();
+        string passes = r is null ? "" : string.Join("\n", r.Passes.Select((p, i) => $"Passada {i + 1}: {p.AvgFps:0.0} FPS, 1% low {p.Low1Fps:0.0}"));
+        string reliability = r is null ? ""
+            : r.Reliable ? "\nAbaixo de 3 %: as passadas concordam e o resultado serve para comparar."
+            : "\nAcima de 3 %: algo atrapalhou (programa em segundo plano, temperatura ou limite de energia). Feche outros programas e rode de novo antes de comparar.";
+        return new()
+        {
+            new("Nota", r is null ? "—" : $"{r.Score:N0}", "pts", vs,
+                Tip: "Referência medida: AMD Radeon RX 9070, preset Alta em 1440p, modo Padrão: 878 pts (87,8 FPS, 1% low 77), variação de 0,5 %."),
+            new("FPS, mediana", r is null ? "—" : $"{r.MedianFps:0.0}", "FPS", "Quadros por segundo"),
+            new("1% low, mediana", r is null ? "—" : $"{r.MedianLow1:0.0}", "FPS", "Quadros mais lentos",
+                Tip: "Média do 1% de quadros mais lentos: mostra os engasgos que o FPS médio esconde."),
+            new("Variação entre passadas", r is null ? "—" : $"{r.VariationPct:0.0}", "%",
+                r is null ? "" : r.Reliable ? "Confiável" : "Instável, rode de novo", r is null ? "" : r.Reliable ? "Ok" : "Warn",
+                r is null ? null : passes + reliability),
+            new("Raios por segundo", r is null ? "—" : $"{r.GigaRaysPerSec:0.0}", "bilhões", r is null ? "" : "estimado",
+                Tip: "Estimado pelas amostras e rebatidas por pixel do preset."),
+        };
     }
 
     internal async void BtnRtBench_Click(object sender, RoutedEventArgs e)
     {
         if (_workloads.ActiveOperation == "GPU ray tracing") { _rtBench?.Cancel(); return; }
-        if (AnyBenchRunning || TestRunning) { RtStatus.Text = "Termine o outro teste antes."; return; }
+        if (AnyBenchRunning || TestRunning) { RtStatus.Text = "Termine o outro teste antes."; RtDetail.Text = ""; return; }
         using var workload = _workloads.TryBegin("GPU ray tracing");
-        if (workload == null) { RtStatus.Text = "Termine o outro teste antes."; return; }
+        if (workload == null) { RtStatus.Text = "Termine o outro teste antes."; RtDetail.Text = ""; return; }
 
         string adapterName = _gpus.Count > 0 ? _gpus[0].Name : "";
         RtStatus.Text = "Verificando suporte a ray tracing…";
+        RtDetail.Text = "";
         string? why = await Task.Run(() => GpuRtBench.CheckSupport(adapterName));
-        if (why != null) { RtStatus.Text = why; return; }
+        if (why != null) { (RtStatus.Text, RtDetail.Text) = RtSupportText(why); return; }
 
         var size = (CheckedTag(RtResPanel) ?? "2560x1440").Split('x').Select(int.Parse).ToArray();
         string preset = CheckedTag(RtPresetPanel) ?? "alta";
@@ -46,14 +102,16 @@ public partial class MainWindow
         };
         var bench = _rtBench;
         SetGameBenchRunning(BtnRtBench, true);
-        RtResult.ItemsSource = null;
-        RtVerdict.Text = "";
+        RtResult.ItemsSource = RtStats(null);
+        RtTrace.Clear();
+        RtStatus.Text = "Rodando";
         var timer = new DispatcherTimer(TimeSpan.FromMilliseconds(250), DispatcherPriority.Normal, (_, _) =>
         {
             RtFpsNow.Text = bench.CurrentFps > 0 ? $"{bench.CurrentFps:0}" : "—";
-            RtPhase.Text = bench.Phase.Length > 0 ? bench.Phase : "—";
             RtProgress.ScaleX = bench.Progress;
-            RtStatus.Text = $"Rodando · {size[0]}x{size[1]} · {PresetName(preset)} · {bench.Progress:P0}";
+            RtTrace.Add(bench.Progress, bench.CurrentFps);
+            RtStatus.Text = bench.Phase.Length > 0 ? bench.Phase : "Rodando";
+            RtDetail.Text = $"{bench.Progress * 100:0} %";
         }, Dispatcher);
         timer.Start();
 
@@ -66,7 +124,7 @@ public partial class MainWindow
         {
             r = await Task.Factory.StartNew(bench.Run, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
-        catch (Exception ex) { RtStatus.Text = "Falhou: " + ex.Message; return; }
+        catch (Exception ex) { RtStatus.Text = "Falhou: " + ex.Message; RtDetail.Text = ""; return; }
         finally
         {
             timer.Stop();
@@ -75,34 +133,21 @@ public partial class MainWindow
             SetGameBenchRunning(BtnRtBench, false);
             RtProgress.ScaleX = 0;
             RtFpsNow.Text = "—";
-            RtPhase.Text = "—";
         }
 
         if (r == null)
         {
             RtStatus.Text = bench.Cancelled ? "Cancelado" : $"Falhou: {bench.Error}";
+            RtDetail.Text = "";
             return;
         }
+        string key = $"rt:{r.Preset}:{r.Height}";
+        string vs = VsBest(r.Score, _settings.BenchRecords.Where(x => x.Test == key).Select(x => x.Score));
         string driver = await Task.Run(() => DriverVersionOf(r.Adapter));
-        RtStatus.Text = $"Concluído · {r.Adapter}" + (driver.Length > 0 ? $" · driver {driver}" : "");
-        RtVerdict.Text = r.Reliable
-            ? $"✔ Resultado confiável: as 3 passadas variaram só {r.VariationPct:0.0}%."
-            : $"⚠ Variação de {r.VariationPct:0.0}% entre as passadas (acima de 3%). Algo atrapalhou: programa em segundo plano, " +
-              "temperatura ou limite de energia. Feche outros programas e rode de novo antes de comparar.";
-        var rows = new List<KeyValuePair<string, string>>
-        {
-            new("Nota", $"{r.Score:N0} pts"),
-            new("FPS (mediana)", $"{r.MedianFps:0.0}"),
-            new("1% low (mediana)", $"{r.MedianLow1:0.0}"),
-            new("Variação entre passadas", $"{r.VariationPct:0.0}%"),
-            new("Raios por segundo (estimado)", $"{r.GigaRaysPerSec:0.0} bilhões"),
-            new("Preset · resolução", $"{PresetName(r.Preset)} · {r.Width}x{r.Height}"),
-        };
-        for (int i = 0; i < r.Passes.Count; i++)
-            rows.Add(new($"Passada {i + 1}", $"{r.Passes[i].AvgFps:0.0} FPS · 1% low {r.Passes[i].Low1Fps:0.0}"));
-        RtResult.ItemsSource = rows;
-        SaveBenchRecord($"rt:{r.Preset}:{r.Height}",
-                        r.Score, $"{r.Score:N0} pts · {r.MedianFps:0} FPS · {PresetName(r.Preset)} {r.Height}p" + (r.Reliable ? "" : " · instável"));
+        RtStatus.Text = "Concluído";
+        RtDetail.Text = driver.Length > 0 ? $"Driver {driver}" : "";
+        RtResult.ItemsSource = RtStats(r, vs);
+        SaveBenchRecord(key, r.Score, $"{r.Score:N0} pts · {r.MedianFps:0} FPS · {PresetName(r.Preset)} {r.Height}p" + (r.Reliable ? "" : " · instável"));
     }
 
     internal static string DriverVersionOf(string adapter)

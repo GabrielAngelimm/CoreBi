@@ -1612,4 +1612,280 @@
     </Style>
     <!-- rodada-unslop: ferramentas fim -->
 
+    <!-- rodada-unslop: bancada de teste início -->
+    <!--
+        Bancada de teste (Benchmark e Teste de carga): a mesma tecla horizontal escolhe o teste (TestTab, um por vez) e o que
+        carregar (TestToggle, vários). Ícone do componente na cor dele, sem fundo; nome na letra da estrutura e a peça embaixo.
+        A escolhida leva o sinal (fio Signal e fundo SignalSoft, texto aceso), nunca a cor do componente; o TestToggle ligado
+        também acende o visto no sinal, porque ali a escolha é múltipla. Desligada, a tecla fica a meia opacidade.
+    -->
+    <Style x:Key="TestTab" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border x:Name="face" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusInset}" Padding="14,12,14,12" SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Width="30" Height="30" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="14" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False">
+                                    <ContentPresenter.Resources>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        </Style>
+                                    </ContentPresenter.Resources>
+                                </ContentPresenter>
+                                <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontFamily="{StaticResource SmallFont}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="face" Property="Background" Value="{DynamicResource Hover}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalSoft}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Signal}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="face" Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="TestToggle" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Border x:Name="face" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusInset}" Padding="14,12,14,12" SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
+                                          Width="30" Height="30" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
+                                <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="14" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False"/>
+                                <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontFamily="{StaticResource SmallFont}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Border x:Name="box" Grid.Column="2" Width="18" Height="18" CornerRadius="{StaticResource RadiusSmall}" BorderThickness="1.5"
+                                    BorderBrush="{DynamicResource LineStrong}" VerticalAlignment="Center">
+                                <TextBlock x:Name="mark" Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="11"
+                                           Foreground="{DynamicResource SignalFg}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="face" Property="Background" Value="{DynamicResource Hover}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
+                            <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Faint}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalSoft}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Signal}"/>
+                            <Setter TargetName="box" Property="Background" Value="{DynamicResource Signal}"/>
+                            <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Signal}"/>
+                            <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="face" Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!--
+        Placa do palco: quem está sendo medido (nome em DIN 24, como o da peça em Sensores e Discos) e o estado do teste à direita.
+        Linha em bloco de 30: com a mesma família e a mesma altura de linha em bloco, o WPF põe a linha de base na mesma fração da
+        linha (altura × ascendente ÷ entrelinha da fonte, que não muda com o tamanho), então o estado em DIN 14 com o mesmo bloco
+        de 30 (PlateStatus no Benchmark) assenta na linha de base do nome.
+    -->
+    <Style x:Key="TestPlateTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="LineHeight" Value="30"/>
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+    </Style>
+    <!--
+        Estado do teste, o mesmo nas duas telas: texto corrido (sem negrito, para não parecer título nem botão), alinhado à
+        direita, e o LED à esquerda só quando há estado real (rodando no sinal, corte em vermelho). Parado, não há LED.
+    -->
+    <Style x:Key="TestStatus" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="TextAlignment" Value="Right"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="MaxWidth" Value="460"/>
+    </Style>
+    <!--
+        LED do estado: vai num InlineUIContainer dentro de um TextBlock com o mesmo estilo do estado, então o pé do ponto assenta
+        na linha de base do texto (a base de um elemento embutido é a borda de baixo). Com 7 px, o centro fica 3,5 acima da base,
+        o meio da altura-x da DIN 14 (6,5 px medidos nas capturas), em qualquer altura de linha.
+    -->
+    <Style x:Key="TestStatusLed" TargetType="Ellipse" BasedOn="{StaticResource StatusLed}">
+        <Setter Property="Width" Value="7"/>
+        <Setter Property="Height" Value="7"/>
+        <Setter Property="Margin" Value="0,0,8,0"/>
+        <Setter Property="Fill" Value="{DynamicResource Signal}"/>
+    </Style>
+    <Style x:Key="TestDetail" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="TextAlignment" Value="Right"/>
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="Margin" Value="0,3,0,0"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <!-- Mostrador grande do palco (temperatura, erros de memória): o número que se acompanha durante o teste -->
+    <Style x:Key="TestHero" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
+        <Setter Property="FontSize" Value="72"/>
+        <Setter Property="FontWeight" Value="Light"/>
+        <Setter Property="LineHeight" Value="76"/>
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+        <Setter Property="Margin" Value="-3,4,0,0"/>
+        <Style.Triggers>
+            <!-- Sem leitura: o travessão fica no tamanho de uma leitura comum, um tom abaixo e colado ao rótulo -->
+            <Trigger Property="Text" Value="—">
+                <Setter Property="FontSize" Value="32"/>
+                <Setter Property="LineHeight" Value="40"/>
+                <Setter Property="Margin" Value="0,4,0,0"/>
+                <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!-- Resultado principal do Benchmark (a nota, multi e single-core): o maior número da tela depois do teste -->
+    <Style x:Key="TestResult" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
+        <Setter Property="FontSize" Value="40"/>
+        <Setter Property="FontWeight" Value="Light"/>
+        <Setter Property="LineHeight" Value="46"/>
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Style.Triggers>
+            <Trigger Property="Text" Value="—">
+                <Setter Property="FontSize" Value="28"/>
+                <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!-- Célula da régua de resultado: fio à esquerda (a primeira não tem), rótulo, número e unidade, e uma linha de contexto -->
+    <!-- Mesma altura de linha da nota (TestResult): na régua, número de 30 e nota de 40 ficam na mesma linha de base -->
+    <Style x:Key="TestCellValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
+        <Setter Property="FontSize" Value="30"/>
+        <Setter Property="FontWeight" Value="Light"/>
+        <Setter Property="LineHeight" Value="46"/>
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Style.Triggers>
+            <Trigger Property="Text" Value="—">
+                <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!-- Leitura ao vivo pequena (placa do Benchmark, leituras secundárias do Teste de carga): rótulo em cima, número embaixo -->
+    <Style x:Key="TestLiveCell" TargetType="StackPanel">
+        <Setter Property="MinWidth" Value="84"/>
+        <Setter Property="Margin" Value="0,0,32,10"/>
+    </Style>
+    <Style x:Key="TestLiveValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
+        <Setter Property="FontSize" Value="22"/>
+        <Setter Property="Margin" Value="0,4,0,0"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Style.Triggers>
+            <Trigger Property="Text" Value="—">
+                <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!-- Unidade de uma leitura que some junto com o número: Tag recebe o texto da leitura; com "—" a unidade não aparece -->
+    <Style x:Key="TestUnit" TargetType="TextBlock" BasedOn="{StaticResource Unit}">
+        <Style.Triggers>
+            <Trigger Property="Tag" Value="—">
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!--
+        Unidade ao lado de um número da régua (TestCellValue e TestResult, blocos de 46): a mesma família (Bahnschrift) no mesmo
+        bloco de 46, alinhada pelo topo. A base cai a 46 × ascendente ÷ entrelinha nos dois, que é a mesma fração em qualquer
+        tamanho, então número de 30 ou 40 e unidade de 12,5 ficam na mesma linha de base. Antes, alinhada por baixo com 5 de
+        margem, ela ficava 2 px abaixo do número (medido em "00:00 de 10:00").
+    -->
+    <Style x:Key="TestCellUnit" TargetType="TextBlock" BasedOn="{StaticResource TestUnit}">
+        <Setter Property="LineHeight" Value="46"/>
+        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="Margin" Value="5,0,0,0"/>
+    </Style>
+    <!-- Grupo de configuração (rótulo e controle): desligado, o grupo inteiro baixa, para não parecer escolha disponível -->
+    <Style x:Key="TestSection" TargetType="StackPanel">
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.5"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!--
+        Palco de imagem (Render 3D, Simulação de jogo): parado é um poço do tom da bancada com fio, que não pesa no tema claro;
+        com a imagem (Tag recebe o texto de espera, que some quando o teste começa) vira o fundo escuro Well.
+    -->
+    <Style x:Key="TestStage" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Bg}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusInset}"/>
+        <Setter Property="ClipToBounds" Value="True"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Tag.Visibility, RelativeSource={RelativeSource Self}}" Value="Collapsed">
+                <Setter Property="Background" Value="{DynamicResource Well}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Well}"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+    <!--
+        Cartão de histórico ou registro na coluna da bancada: com itens, desce até o pé do palco e rola por dentro; vazio,
+        encolhe à frase (Tag recebe a lista).
+    -->
+    <Style x:Key="TestLogCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Padding" Value="24,20,8,8"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Tag.HasItems, RelativeSource={RelativeSource Self}}" Value="False">
+                <Setter Property="VerticalAlignment" Value="Top"/>
+                <Setter Property="Padding" Value="24,20,24,20"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+    <!-- rodada-unslop: bancada de teste fim -->
+
 </ResourceDictionary>
