@@ -165,7 +165,6 @@ public partial class NetworkView : UserControl
         NetMeta.Text = "Sem resultado";
     }
 
-    // ---------------- Progresso ----------------
 
     private void ShowProgress(NetworkProgress p)
     {
@@ -216,7 +215,6 @@ public partial class NetworkView : UserControl
         _ => "",
     };
 
-    // ---------------- Resultado ----------------
 
     private static string Format(double v) => v.ToString(v >= 100 ? "0" : "0.#", PtBr);
 
@@ -365,7 +363,6 @@ public partial class NetworkView : UserControl
         caption.Text = text;
     }
 
-    // ---------------- Conexão (lida sem tráfego, também antes do teste) ----------------
 
     private async void NetworkView_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
@@ -419,7 +416,6 @@ public partial class NetworkView : UserControl
             || kind.StartsWith(value, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ---------------- Mostrador ----------------
 
     // Dois arcos de 136° espelhados (esquerda = download, direita = upload), de baixo (1 Mbps) para cima (1 Gbps), em escala
     // logarítmica: cada década ocupa um terço do arco. Segmentos na proporção 70/30 dos medidores do app.
@@ -475,7 +471,6 @@ public partial class NetworkView : UserControl
         NetDial.Children.Add(onPath);
     }
 
-    // ---------------- Traço de pings ----------------
 
     private void NetTrace_SizeChanged(object sender, SizeChangedEventArgs e) => DrawTrace();
 

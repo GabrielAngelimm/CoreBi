@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -46,6 +45,11 @@ internal static partial class Program
         try { var details = test(); Results.Add(new { name, status = "PASS", elapsedMs = watch.ElapsedMilliseconds, details }); Console.WriteLine("PASS " + name); }
         catch (Exception ex) { Failures++; Results.Add(new { name, status = "FAIL", error = ex.ToString() }); Console.WriteLine("FAIL " + name + ": " + ex.Message); }
     }
+    private static void Skip(string name, string reason)
+    {
+        Results.Add(new { name, status = "SKIP", reason });
+        Console.WriteLine($"SKIP {name} ({reason})");
+    }
     private static void Require(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
     [STAThread]
     public static int Main(string[] args)
@@ -58,9 +62,19 @@ internal static partial class Program
         Environment.SetEnvironmentVariable("COREBI_DATA_DIR", Path.Combine(Output, "settings"));
         CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("pt-BR");
         if (args.Contains("--overlay-telemetry")) OverlayTelemetry();
-        else if (args.Contains("--bench")) Benches(); else if (args.Contains("--hardware")) Hardware(); else if (args.Contains("--startup")) Startup(); else if (args.Contains("--integrations")) Integrations(); else { Logic(); TelemetryTests(); RtssTests(); Hardening(); NetworkTests(); MlabTests(); Ui(); }
+        else if (args.Contains("--bench")) Benches();
+        else if (args.Contains("--hardware")) Hardware();
+        else if (args.Contains("--startup")) Startup();
+        else if (args.Contains("--integrations")) Integrations();
+        else { Logic(); RegressionTests(); TelemetryTests(); RtssTests(); Hardening(); NetworkTests(); MlabTests(); Ui(); }
+        string reportName = args.Contains("--overlay-telemetry") ? "overlay-telemetry.json"
+            : args.Contains("--bench") ? "bench.json"
+            : args.Contains("--hardware") ? "hardware.json"
+            : args.Contains("--startup") ? "startup.json"
+            : args.Contains("--integrations") ? "integrations.json"
+            : "tests.json";
         var text = JsonSerializer.Serialize(Results, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(Path.Combine(Output, args.Contains("--bench") ? "bench.json" : args.Contains("--hardware") ? "hardware.json" : args.Contains("--startup") ? "startup.json" : args.Contains("--integrations") ? "integrations.json" : "tests.json"), text);
+        File.WriteAllText(Path.Combine(Output, reportName), text);
         return Failures == 0 ? 0 : 1;
     }
     private static void Logic()
@@ -191,7 +205,8 @@ internal static partial class Program
         });
         Check("settings: separate storage, atomic save and removed FPS API key dropped", () =>
         {
-            // Configuração gravada por uma versão com o FPS estimado: carrega normalmente e a chave cifrada da API não volta ao arquivo.
+            using var folder = new CaseFolder();
+            using var _ = AppPaths.OverrideDataFolder(folder.Path);
             Directory.CreateDirectory(AppSettings.Folder);
             var path = Path.Combine(AppSettings.Folder, "settings.json");
             File.WriteAllText(path, "{\"HowManyFpsKeyProtected\":\"chave-cifrada-de-teste\",\"LightTheme\":true}");
@@ -203,9 +218,8 @@ internal static partial class Program
         Check("CPU render: deterministic samples and cancellation", () =>
         {
             var a = new BenchRenderer(); var b = new BenchRenderer();
-            var render = typeof(BenchRenderer).GetMethod("RenderBucket", BindingFlags.Instance | BindingFlags.NonPublic)!;
-            render.Invoke(a, new object[] { (440, 240, 8, 8), CancellationToken.None });
-            render.Invoke(b, new object[] { (440, 240, 8, 8), CancellationToken.None });
+            a.RenderBucket((440, 240, 8, 8), CancellationToken.None);
+            b.RenderBucket((440, 240, 8, 8), CancellationToken.None);
             Require(a.Pixels.SequenceEqual(b.Pixels) && a.SamplesDone == 65536, "Render is not reproducible");
             using var cancel = new CancellationTokenSource(); cancel.Cancel();
             var result = new BenchRenderer().Run(1, TimeSpan.Zero, cancel.Token);
@@ -244,11 +258,8 @@ internal static partial class Program
                 LoadedLatencyMs = 5,
             };
             window.PageNet.DisplayResult(demo);
-            SaveNetworkPreview(window.PageNet, 1120, 800, "network-providers.png");
+            MeasurePage(window.PageNet, 1120, 800);
             Require(window.PageNet.NetScroll.ScrollableHeight <= 1, $"Network result overflows: {window.PageNet.NetScroll.ScrollableHeight:0.0}px");
-            ThemeManager.Apply(true);
-            SaveNetworkPreview(window.PageNet, 760, 800, "network-providers-narrow-light.png");
-            ThemeManager.Apply(false);
             using (var held = window._workloads.TryBegin("test"))
             {
                 window.PageStress.StartStress(); Require(window.PageStress.StressHint.Text.Contains("benchmark"), "Stress ignored coordinator");
@@ -265,36 +276,36 @@ internal static partial class Program
                 "A skipped ping was presented as a failed ping");
             window.NavBench.IsChecked = true; Require(window.PageBench.Visibility == Visibility.Visible, "Sidebar event did not navigate");
             Require(window.Title == "CoreBi", "Original title remained");
-            ThemeManager.Apply(true); ThemeManager.Apply(false);
-            var overlay = new OverlayWindow(); overlay.Close();
-            string diskStatus = window.PageDisks.DiskHealthStatus.Text, energyStatus = window.PageEnergy.EnergyStatus.Text;
+
+            ThemeManager.Apply(true);
+            var lightBg = ThemeManager.Brush("Bg").Color;
+            ThemeManager.Apply(false);
+            var darkBg = ThemeManager.Brush("Bg").Color;
+            Require(lightBg != darkBg && !ThemeManager.IsLight, "ThemeManager did not switch palette colors");
+
+            var overlay = new OverlayWindow { Corner = "BR" };
+            overlay.SetScale(1.5);
+            overlay.Reposition();
+            Require(overlay.Corner == "BR", "OverlayWindow did not retain corner");
+            overlay.Close();
+
+            string diskStatus = window.PageDisks.DiskHealthStatus.Text;
+            string energyStatus = window.PageEnergy.EnergyStatus.Text;
+            string netStatus = window.PageNet.NetStatus.Text;
             window.Close();
             Task.WhenAll(window.PageDisks.RefreshAsync(), window.PageEnergy.RefreshAsync(), window.PageNet.RunOrCancelAsync()).GetAwaiter().GetResult();
-            Require(window.PageDisks.DiskHealthStatus.Text == diskStatus && window.PageEnergy.EnergyStatus.Text == energyStatus,
+            Require(window.PageDisks.DiskHealthStatus.Text == diskStatus && window.PageEnergy.EnergyStatus.Text == energyStatus && window.PageNet.NetStatus.Text == netStatus,
                 "Closed monitoring pages accepted a new collection");
             return new { pages = pages.Length, removed = 6, sharedSensors = true, themeRoundTrip = true, stressBlockedDuringPreparation = true };
         });
         OverlayRenderingTests();
     }
 
-    private static void SaveNetworkPreview(CoreBi.Desktop.Views.NetworkView page, int width, int height, string file)
+    private static void MeasurePage(FrameworkElement page, int width, int height)
     {
         page.Measure(new Size(width, height));
         page.Arrange(new Rect(0, 0, width, height));
         page.UpdateLayout();
-        var visual = new System.Windows.Media.DrawingVisual();
-        using (var context = visual.RenderOpen())
-        {
-            var area = new Rect(0, 0, width, height);
-            context.DrawRectangle((System.Windows.Media.Brush)Application.Current.FindResource("Bg"), null, area);
-            context.DrawRectangle(new System.Windows.Media.VisualBrush(page), null, area);
-        }
-        var image = new System.Windows.Media.Imaging.RenderTargetBitmap(width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
-        image.Render(visual);
-        var png = new System.Windows.Media.Imaging.PngBitmapEncoder();
-        png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image));
-        using var screenshot = File.Create(Path.Combine(Output, file));
-        png.Save(screenshot);
     }
     private static void Startup()
     {
@@ -352,6 +363,8 @@ internal static partial class Program
                 Require(errors.Error == null, errors.Error ?? "EventLog query failed");
                 return new { errors.Whea, errors.GpuResets, scope = "read-only System log; no events cleared or written" };
             });
+        else
+            Skip("EventLog: real read-only hardware diagnostic query", "requires administrator");
         if (SensorMonitor.IsElevated)
             Check("ETW: real session start and stop", () =>
             {
@@ -364,6 +377,8 @@ internal static partial class Program
                 Require(!frames.Running, "ETW did not stop");
                 return new { started = true, stopped = true, scope = "session lifecycle only; no game FPS calibration" };
             });
+        else
+            Skip("ETW: real session start and stop", "requires administrator");
         Check("inventory: real system and GPU", () =>
         {
             var info = SystemInfoCollector.Collect(); var gpu = GpuInfoCollector.Collect();

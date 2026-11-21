@@ -75,7 +75,6 @@ public sealed class HwIcon : Control
         dc.DrawText(text, new Point((ActualWidth - text.Width) / 2, (ActualHeight - text.Height) / 2));
     }
 
-    // ---------------- desenhos ----------------
 
     private static string N(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
 

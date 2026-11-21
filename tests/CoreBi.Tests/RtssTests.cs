@@ -124,11 +124,15 @@ internal static partial class Program
                     && content.Text.Contains("<C=8027C9BC>") && !content.Text.Contains("<F="), "Formatting lost data/alpha/scale or allowed hypertext injection");
                 Require(content.Text.StartsWith("<FNT=Bahnschrift SemiCondensed,-13,400,1>")
                     && !content.Text.Contains("<A="), "RTSS profile font/zoom or tabulation could move the canonical fields");
-                int width = (int)Math.Round(panel.ActualWidth * 1.5), height = (int)Math.Round(panel.ActualHeight * 1.5);
-                Require(content.Text.Contains($"<B={width},{height},R12>") && !content.Text.Contains($"<B={width},{height},1>"),
+                double dpi = System.Windows.Media.VisualTreeHelper.GetDpi(panel).DpiScaleX;
+                int width = (int)Math.Round(panel.ActualWidth * 1.5 * dpi, MidpointRounding.AwayFromZero);
+                int height = (int)Math.Round(panel.ActualHeight * 1.5 * dpi, MidpointRounding.AwayFromZero);
+                int margin = (int)Math.Round(12 * dpi, MidpointRounding.AwayFromZero);
+                int radius = (int)Math.Round(8 * 1.5 * dpi, MidpointRounding.AwayFromZero);
+                Require(content.Text.Contains($"<B={width},{height},R{radius}>") && !content.Text.Contains($"<B={width},{height},1>"),
                     "Rounded WPF card was replaced by a square background or outline");
-                int left = corner.EndsWith('R') ? 1920 - width - 12 : 12;
-                int top = corner.StartsWith('B') ? 1080 - height - 12 : 12;
+                int left = corner.EndsWith('R') ? Math.Max(0, 1920 - width - margin) : margin;
+                int top = corner.StartsWith('B') ? Math.Max(0, 1080 - height - margin) : margin;
                 Require(content.Text.Contains($"<P={left},{top}><L0>"), "Fullscreen panel did not use the selected corner");
                 Require(content.Objects.Length == 36 + 120 * 4, "Graph grew beyond its bounded history");
                 Require(System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(content.Objects.AsSpan(32)) == 120,

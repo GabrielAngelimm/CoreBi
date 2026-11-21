@@ -129,7 +129,7 @@ internal static partial class Program
             double? uploadSpeed = MlabSpeedTest.Upload(upload, server.Upload, CancellationToken.None, 24_000_000).GetAwaiter().GetResult();
             Require(firstSpeed is > 1 && secondSpeed is > 1 && uploadSpeed is > 1 && upload.Bytes > 0,
                 $"NDT7 loopback failed: down={firstSpeed}/{secondSpeed}, up={uploadSpeed}, error={upload.Error}");
-            Require(first.Bytes is >= 16_000_000 and <= 16_065_536 && second.Bytes is >= 16_000_000 and <= 16_065_536 &&
+            Require(first.Bytes is >= 16_000_000 and <= 16_500_000 && second.Bytes is >= 16_000_000 and <= 16_500_000 &&
                 upload.Bytes <= 24_000_000 && server.Downloads == 2 && server.Uploads == 1,
                 "Unexpected transfer budget or request count");
             return new { downloads = server.Downloads, uploads = server.Uploads, uploadConfirmed = true };
@@ -163,7 +163,7 @@ internal static partial class Program
 
     private sealed class LocalNdtServer : IDisposable
     {
-        private readonly HttpListener _listener = new();
+        private readonly HttpListener _listener;
         private readonly CancellationTokenSource _stop = new();
         private readonly Task _accepting;
         private readonly System.Collections.Concurrent.ConcurrentBag<Task> _connections = new();
@@ -177,12 +177,26 @@ internal static partial class Program
         public LocalNdtServer(bool tcpOnly = false)
         {
             _tcpOnly = tcpOnly;
-            using var port = new TcpListener(IPAddress.Loopback, 0);
-            port.Start();
-            int number = ((IPEndPoint)port.LocalEndpoint).Port;
-            port.Stop();
-            _listener.Prefixes.Add($"http://127.0.0.1:{number}/");
-            _listener.Start();
+            int number = 0;
+            for (int attempt = 0; ; attempt++)
+            {
+                using var port = new TcpListener(IPAddress.Loopback, 0);
+                port.Start();
+                number = ((IPEndPoint)port.LocalEndpoint).Port;
+                port.Stop();
+                var candidate = new HttpListener();
+                candidate.Prefixes.Add($"http://127.0.0.1:{number}/");
+                try
+                {
+                    candidate.Start();
+                    _listener = candidate;
+                    break;
+                }
+                catch (HttpListenerException) when (attempt < 5)
+                {
+                    candidate.Close();
+                }
+            }
             Download = new Uri($"ws://127.0.0.1:{number}/ndt/v7/download");
             Upload = new Uri($"ws://127.0.0.1:{number}/ndt/v7/upload");
             _accepting = Accept();

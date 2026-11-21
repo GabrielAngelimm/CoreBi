@@ -1,13 +1,11 @@
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CoreBi.Desktop;
-using CoreBi.Engine.Monitoring.Storage;
 
 internal static partial class Program
 {

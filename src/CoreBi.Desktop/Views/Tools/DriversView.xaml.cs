@@ -40,7 +40,6 @@ public partial class DriversView : UserControl
         BtnDrvScan_Click(this, new RoutedEventArgs());
     }
 
-    // ------------------------------------------------------------------ layout
 
     private void DrvHeader_SizeChanged(object sender, SizeChangedEventArgs e)
         => _narrowHeader = ToolPage.PlaceConsole(DrvHeader, DrvConsole, _narrowHeader);
@@ -67,7 +66,6 @@ public partial class DriversView : UserControl
     private void DrvListScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
         => ToolPage.AlignHead(DrvListScroll, DrvHead, HeadMargin);
 
-    // ------------------------------------------------------------------ console
 
     internal void DrvSet(string text, double? frac = null, string detail = "")
     {
@@ -94,7 +92,6 @@ public partial class DriversView : UserControl
         BtnDrvWuInstall.IsEnabled = !busy && _drvWu.Count > 0;
     }
 
-    // ------------------------------------------------------------------ verificação
 
     internal async void BtnDrvScan_Click(object sender, RoutedEventArgs e)
     {
@@ -197,7 +194,6 @@ public partial class DriversView : UserControl
         DrvBoardNote.Visibility = known || b.Model.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    // ------------------------------------------------------------------ tabela de drivers instalados
 
     private void ShowInventory(List<DriverRow> inventory)
     {
@@ -250,7 +246,6 @@ public partial class DriversView : UserControl
         DrvEmpty.Visibility = shown == 0 && _view != null ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    // ------------------------------------------------------------------ ações
 
     internal void BtnDrvGpuPage_Click(object sender, RoutedEventArgs e)
     {

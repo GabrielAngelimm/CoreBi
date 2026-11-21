@@ -136,7 +136,6 @@ public partial class SystemView : UserControl
         Layout(SheetCard.ActualWidth);
     }
 
-    // ---------------- Layout que acompanha a largura ----------------
 
     private void IndexGrid_Loaded(object sender, RoutedEventArgs e) { _indexGrid = (UniformGrid)sender; Layout(SheetCard.ActualWidth); }
     private void SpecColumns_Loaded(object sender, RoutedEventArgs e) { _columns = (ColumnsPanel)sender; Layout(SheetCard.ActualWidth); }
@@ -166,7 +165,6 @@ public partial class SystemView : UserControl
         }
     }
 
-    // ---------------- Ações ----------------
 
     /// <summary>Clique numa linha copia o valor; o ícone vira um visto por um instante.</summary>
     private void SpecRow_Click(object sender, MouseButtonEventArgs e)

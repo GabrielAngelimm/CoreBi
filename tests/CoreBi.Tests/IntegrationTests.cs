@@ -52,5 +52,7 @@ internal static partial class Program
                 finally { File.Delete(probe); }
                 return new { protectedAcl = true, scope = "own temporary file only; no startup entry changed" };
             });
+        else
+            Skip("privileged workspace: protected ACL and owned-file roundtrip", "requires administrator");
     }
 }

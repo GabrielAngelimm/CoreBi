@@ -29,7 +29,7 @@ Detalhes da implementação e limites em [OVERLAY.md](OVERLAY.md).
 - O cálculo de RAM também foi testado com capacidades de 4, 8, 16, 24, 32, 64, 96, 128 e 1024 GiB e capacidade utilizável reduzida por reserva de hardware. Não depende de um total fixo de 32 GiB nem de marca de CPU/GPU. Essa matriz é uma regressão de cálculo, não um teste físico em nove computadores.
 - `dotnet run --project tests/CoreBi.Tests -c Release -- artifacts/tests/overlay-telemetry --overlay-telemetry` consulta RAM física e os contadores PDH reais da RTX 4060 Ti sem abrir a janela. A fonte Windows e a fonte NVML podem divergir mais de 10 pontos; não medem a mesma definição de carga. Consultas em instantes/intervalos diferentes também podem divergir transitoriamente.
 - Teste manual da versão corrigida confirmado pelo usuário em 2026-10-23, no For Honor em modo sem bordas: overlay estável e percentuais de RAM/GPU conferindo. Esta confirmação cobre o cenário testado; os testes automatizados certificam a estabilidade do layout e a coleta, não todos os caminhos de apresentação do Windows. Não houve implementação de overlay em tela cheia exclusiva.
-- O auditor estático Premium não entende a localização canônica `docs/DESIGN.md` já declarada em `premium-ui.json` e sinaliza ausência de `DESIGN.md` na raiz. A documentação e os tokens existentes foram preservados; este alerta não substitui a compilação nem os testes WPF.
+- A documentação de design reside canonicamente em `docs/DESIGN.md`; a validação de recursos e sincronização da paleta é executada por `tools/check_resources.py` e `tools/sync_theme.py --check`.
 
 Fontes técnicas: [sensores físicos](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/blob/3d331e3370efb858411f19511373eff65a218701/LibreHardwareMonitorLib/Hardware/Memory/TotalMemory.cs) e [virtuais](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/blob/3d331e3370efb858411f19511373eff65a218701/LibreHardwareMonitorLib/Hardware/Memory/VirtualMemory.cs) da versão 0.9.6 instalada; [definição de uso da GPU pelo Windows](https://devblogs.microsoft.com/directx/gpus-in-the-task-manager/).
 
@@ -59,7 +59,7 @@ A [versão publicada](https://github.com/GabrielAngelimm/CoreBi/releases/tag/v0.
 
 Os testes de disco usaram 64 MiB; raster usou 640 × 360 por 3 s; DXR, três passagens de 1 s a 320 × 180. São verificações funcionais, sem equivalência aos presets completos de outros utilitários. A consulta NuGet com transitivas não retornou vulnerabilidades conhecidas em 23/10/2026. O executável self-contained abriu e respondeu; seus ZIPs foram publicados com SHA256.
 
-A [CI daquela versão](https://github.com/GabrielAngelimm/CoreBi/actions/runs/39909144675) passou. O estado do código atual está no [workflow Verify](https://github.com/GabrielAngelimm/CoreBi/actions/workflows/verify.yml), que repete varredura do histórico, restore bloqueado, formato, build, 24 regressões/WPF e publicação Windows.
+A [CI daquela versão](https://github.com/GabrielAngelimm/CoreBi/actions/runs/39909144675) passou. O estado do código atual está no [workflow Verify](https://github.com/GabrielAngelimm/CoreBi/actions/workflows/verify.yml), que repete varredura do histórico, validação de tema/recursos, restore bloqueado, formato, build, suíte de regressões/WPF e publicação Windows.
 
 ## Falhas cobertas e limites
 

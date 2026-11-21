@@ -262,7 +262,6 @@ public partial class MainWindow : Window, ILiveMotionHost
         if (PageDash.IsVisible) PageDash.UpdateDashboard(full: false);
     }
 
-    // ---------------- Barra lateral (telemetria + PawnIO + tema) ----------------
 
     private void UpdateSidebarTelemetry()
     {
@@ -400,7 +399,6 @@ public partial class MainWindow : Window, ILiveMotionHost
         UpdateCpuSensorWarning();
     }
 
-    // ---------------- Janela / navegação ----------------
 
     private void Min_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void Max_Click(object sender, RoutedEventArgs e)

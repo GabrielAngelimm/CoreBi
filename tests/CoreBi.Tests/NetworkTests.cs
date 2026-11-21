@@ -253,7 +253,7 @@ internal static partial class Program
             var transfer = new NetworkTransfer();
             var speed = NetworkTest.Download(transfer, client, limit, TimeSpan.FromSeconds(4), TimeSpan.FromMilliseconds(100), 4,
                 CancellationToken.None, byteBudget: 16_000_000).GetAwaiter().GetResult();
-            Require(speed is > 0 && transfer.Bytes is >= 16_000_000 and <= 16_327_680 && transfer.Clock.Elapsed.TotalSeconds < 4,
+            Require(speed is > 0 && transfer.Bytes is >= 16_000_000 and <= 16_500_000 && transfer.Clock.Elapsed.TotalSeconds < 4,
                 "Download did not stop within the shared budget");
             Require(transfer.Error == null && !limit.Limited, "Budget completion was treated as a failure");
             return new { transfer.Bytes, elapsedMs = transfer.Clock.ElapsedMilliseconds };

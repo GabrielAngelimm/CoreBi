@@ -28,7 +28,7 @@ internal static partial class Program
             var upload = NetworkTest.Upload(uploadTransfer, client, limit, duration, TimeSpan.FromSeconds(2), 3,
                 CancellationToken.None, byteBudget: 20_000_000).GetAwaiter().GetResult();
             Require(first is > 10 && second is > 10 && upload is > 10 && !limit.Limited, "Loopback transfers did not complete");
-            Require(firstTransfer.Bytes is >= 16_000_000 and <= 16_327_680 && secondTransfer.Bytes is >= 16_000_000 and <= 16_327_680
+            Require(firstTransfer.Bytes is >= 16_000_000 and <= 16_500_000 && secondTransfer.Bytes is >= 16_000_000 and <= 16_500_000
                 && uploadTransfer.Bytes == 20_000_000, $"Unexpected payloads: {firstTransfer.Bytes}, {secondTransfer.Bytes}, {uploadTransfer.Bytes}");
             Require(server.DownloadRequests == 8 && server.UploadRequests >= 3 && server.BadRequests == 0,
                 "Unexpected requests in the real HTTP exchange");

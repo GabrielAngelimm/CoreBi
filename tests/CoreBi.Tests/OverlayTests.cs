@@ -1,8 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.IO;
 using CoreBi.Desktop;
 using CoreBi.Engine.Games;
 
@@ -61,10 +59,6 @@ internal static partial class Program
             sizes.Add(panel.RenderSize);
             Require(sizes.All(s => s == sizes[0]), $"Overlay changed size: {string.Join("; ", sizes)}");
             Require(positions.All(p => p.SequenceEqual(positions[0])), "Readouts shifted at a digit boundary");
-            var bitmap = new RenderTargetBitmap((int)Math.Ceiling(panel.ActualWidth), (int)Math.Ceiling(panel.ActualHeight), 96, 96, PixelFormats.Pbgra32);
-            bitmap.Render(panel);
-            var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-            using (var file = File.Create(Path.Combine(Output, "overlay-layout.png"))) encoder.Save(file);
             return new { width = sizes[0].Width, height = sizes[0].Height, samples = sizes.Count };
         });
         Check("overlay: selection changes rebuild once and sparse presets keep their size", () =>

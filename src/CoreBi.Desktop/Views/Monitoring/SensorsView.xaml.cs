@@ -153,7 +153,6 @@ public partial class SensorsView : UserControl
         StatsNote = $"Contam desde as {_since:HH:mm}. A leitura pausa durante o teste de placa de vídeo.";
     }
 
-    // ---------------- Cabeçalho fixo ----------------
 
     /// <summary>
     /// O cabeçalho do componente à vista fica fixo no topo do cartão. Ele mostra o último componente cujo cabeçalho já chegou ao topo;
@@ -201,7 +200,6 @@ public partial class SensorsView : UserControl
         SensorCard.Clip = new System.Windows.Media.RectangleGeometry(new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), r, r);
     }
 
-    // ---------------- Índice e filtros ----------------
 
     /// <summary>O índice só é refeito quando o conjunto de componentes muda; a seleção acompanha o filtro.</summary>
     private void BuildIndex(SensorLayout layout)

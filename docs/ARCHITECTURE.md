@@ -16,10 +16,11 @@ CoreBi/
       Persistence/               Configurações e normalização
       Reports/                   Relatórios a partir de leituras coletadas
     CoreBi.Desktop/              WPF: apresentação e composição
-      Shell/                     Janela, navegação, tema, recursos e adaptador
-      Views/                     14 páginas; 6 já possuem handlers/estado próprios
-      Features/                  Apresentação por domínio e exportação de relatórios
-      Services/                  Contexto mínimo de vida útil, permissões e links
+      Shell/                     Janela, navegação, paleta de comandos, tema, Win32Window,
+                                 InstrumentBase, ObservableObject e recursos compartilhados
+      Views/                     14 páginas autocontidas com handlers e estado próprios
+      Features/                  Apresentação por domínio, instrumentos e exportação de relatórios
+      Services/                  FeatureContext, HardwareDeviceWatcher, permissões e links
       Assets/                    Marca e ícone
   tests/CoreBi.Tests/             Executor de regressões, integração, WPF e hardware
   tools/                         Build, testes, publicação, licenças e marca
@@ -27,7 +28,7 @@ CoreBi/
   licenses/                      Textos e avisos redistribuídos com o binário
 ```
 
-`Desktop → Engine`; `Engine` não referencia WPF. `Tests` acessa membros internos para verificar regras e composição sem expor APIs públicas só para teste. Tipos ficam próximos de seus consumidores. Não há contêiner de DI, projeto por classe, ORM ou framework adicional sem necessidade.
+`Desktop → Engine` consome apenas a API pública do Engine (`Engine` não referencia WPF nem expõe internos para o Desktop). `Tests` acessa membros internos para verificar regras e composição sem criar APIs públicas apenas para teste. Tipos ficam próximos de seus consumidores. Não há contêiner de DI, projeto por classe, ORM ou framework adicional sem necessidade.
 
 ## Coleta e vida útil
 
@@ -43,17 +44,17 @@ Uma instância de `SensorMonitor` atende as páginas e o overlay. A abertura é 
 
 Shaders HLSL ficam em arquivos próprios incorporados ao assembly. A extração preservou os algoritmos e foi validada executando as cenas reais. A compilação dos shaders continua em tempo de execução por D3DCompiler/DXC.
 
-## Páginas com responsabilidade própria
+## Páginas autocontidas e serviços
 
-`AppsView`, `DriversView`, `StartupView`, `DisksView`, `PowerView` e `NetworkView` possuem seus próprios handlers e estado de apresentação. `FeatureContext` compartilha apenas janela proprietária, coordenador, token de vida útil e operações críticas. Disco e Energia recebem o mesmo coletor de sensores; não abrem coletores adicionais. Rede mantém seu último resultado para a exportação e usa o coordenador comum para impedir cargas concorrentes.
+Todas as 14 páginas (`OverviewView`, `SystemView`, `SensorsView`, `GraphicsView`, `DisksView`, `PowerView`, `NetworkView`, `OverlayView`, `BottleneckView`, `BenchmarksView`, `StressView`, `StartupView`, `AppsView` e `DriversView`) possuem seus próprios handlers, modelos de visualização e ciclo de vida. `FeatureContext` fornece um ponto único de composição compartilhado com o shell: janela proprietária, `WorkloadCoordinator`, token de vida útil, configurações, coletores compartilhados (`SensorMonitor`, `FrameMonitor`, `GpuMonitor`), navegação, registro de eventos, notificações, isolamento de benchmarks e operações críticas. `HardwareDeviceWatcher` centraliza o tratamento de `WM_DEVICECHANGE` (volumes removíveis, USB e troca de driver de vídeo), e `ReportExportService` encapsula a exportação de relatórios HTML/PDF/JSON.
 
-Chamadas assíncronas de atualização retornam `Task`, permitindo aguardar e validar o carregamento. Coletas em andamento deixam de atualizar a página após o fechamento. Tema pertence ao shell; benchmark de disco pertence a `Features/Performance/DiskBenchmark`; exportação pertence a `Features/Reports`. Os arquivos de Rede/Disco não concentram mais esses fluxos sem relação.
+Chamadas assíncronas de atualização retornam `Task`, permitindo aguardar e validar o carregamento. Coletas em andamento deixam de atualizar a página após o fechamento. Tema pertence ao shell; benchmark pertence a `Views/Performance/BenchmarksView*.cs`; exportação pertence a `Features/Reports`.
 
-As operações críticas bloqueiam o fechamento enquanto são gerenciadas pelo aplicativo. Um instalador oficial que já foi aberto continua em seu próprio processo. Serviços Windows permanecem no Engine.
+As operações críticas bloqueiam o fechamento enquanto são gerenciadas pelo aplicativo, exibindo a mensagem da operação ativa. Um instalador oficial que já foi aberto continua em seu próprio processo. Serviços Windows permanecem no Engine:
 
-- `AppInstaller`: catálogo, detecção local e argumentos explícitos de winget.
-- `DriverManager`: inventário e metadados oficiais; `DriverInstaller`: download/assinatura/execução; `WindowsUpdateService`: escopo COM, identidades e resultados individuais.
-- `StartupService`: backup durável antes de remover, registro canônico protegido e restauração por ID. `StartupManager`: acesso ao Registro/atalhos e verificação de conflitos. A interface não fornece caminhos arbitrários para restaurar.
+- `AppInstaller`: catálogo, detecção local, instalação interativa e argumentos explícitos de winget.
+- `DriverInventory`, `GpuDriverLookup`, `DriverBackup`, `DriverInstaller` e `WindowsUpdateService`: inventário, metadados oficiais, download/assinatura/execução, backup pnputil e escopo COM com resultados individuais.
+- `StartupService` e `StartupManager`: backup durável antes de remover (com rollback em caso de falha), registro canônico protegido e restauração por ID. A interface não fornece caminhos arbitrários para restaurar.
 - `ProcessRunner`: `ArgumentList`, leitura concorrente/buffer limitado de stdout e stderr, cancelamento da árvore de processo criada pelo CoreBi.
 - `ProtectedWorkspace`: diretórios administrativos sem herança ampla, com proprietário e ACL verificados; recusa reparse points.
 
@@ -63,11 +64,11 @@ O download percorre somente HTTPS em domínios oficiais NVIDIA/AMD, valida cada 
 
 O OverlayBi possui dois caminhos: a janela WPF original e a publicação opcional no RTSS já em execução. `RtssOverlayClient`, no Engine, valida o ABI/limites, usa lock não bloqueante, possui somente seu slot e libera as seções mapeadas em cada operação. `OverlayTarget` identifica a geometria do processo em primeiro plano sem tentar adivinhar o modo exclusivo. O Desktop mede o painel canônico e projeta seus textos, cores, separadores, gráfico e raio do cartão em camadas RTSS, sem duplicar seu layout por tabulações nem usar capturas/imagens. A fonte/zoom do conteúdo é explícita, sem alterar perfis. Só oculta WPF após observar o consumo OSD; falhas e ausência do servidor mantêm o caminho anterior. Não há DLL de hook ou processo auxiliar incluído. Contrato, configuração e limitações em [OVERLAY.md](OVERLAY.md).
 
-A interface foi redesenhada por completo (design system em [DESIGN.md](DESIGN.md)), mas a camada de apresentação **não foi convertida para MVVM**: a reformulação manteve os nomes de elementos, os handlers e o contrato dos testes, para trocar a aparência sem arriscar os fluxos. As demais ferramentas ainda usam arquivos parciais de `MainWindow`, páginas que encaminham eventos e acessos tipados em `MainWindow.ViewAccess.cs`. As seis páginas listadas acima já dispensam essa ponte.
+A interface segue o design system em [DESIGN.md](DESIGN.md) mantendo WPF direto sem framework MVVM externo: cada view gerencia seu próprio estado, usando `ObservableObject` para notificações de leitura ao vivo e `InstrumentBase` para gráficos e medidores customizados sensíveis ao tema.
 
-O shell concentra o que é transversal: tema (`ThemeManager`, `Theme.xaml`), propriedades anexadas do design system (`Ui.cs`), paleta de comandos (`MainWindow.Palette.cs`), telemetria e chave de tema da barra lateral. Cores de estados definidos em código usam `SetResourceReference`; desenhos em código (gráficos, anéis) usam `MainWindow.Palette(chave)` e são refeitos em `RedrawThemedVisuals` na troca de tema. `tools/check_resources.py` confere as chaves de recurso, que o compilador de XAML não valida.
+O shell (`MainWindow.xaml.cs` e `MainWindow.Palette.cs`) concentra apenas o que é transversal: janela sem moldura (`Win32Window`), navegação, tema (`ThemeManager`, `Theme.xaml`), propriedades anexadas do design system (`Ui.cs`), paleta de comandos, telemetria da barra lateral e orquestração do ciclo de vida. Cores de estados definidos em código usam `SetResourceReference`; desenhos em código (gráficos, anéis) usam `ThemeManager.Brush(chave)` e são refeitos em `RedrawThemedVisuals` na troca de tema. `tools/check_resources.py` confere as chaves de recurso, que o compilador de XAML não valida.
 
-Novas regras entram no Engine. Ao evoluir uma página, mova seu estado/handlers para a própria página ou um presenter enxuto e elimine os acessos correspondentes da ponte. Um viewmodel deve resolver uma necessidade concreta, sem introduzir outro framework só para uniformidade. Templates e tema continuam compartilhados em `Shell`.
+Novas regras entram no Engine. Templates e tema continuam compartilhados em `Shell`.
 
 ## Persistência e erro
 

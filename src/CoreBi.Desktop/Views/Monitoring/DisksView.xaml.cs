@@ -103,7 +103,6 @@ public partial class DisksView : UserControl
         }
     }
 
-    // ---------------- ao vivo (a cada segundo, mesmo com a página fechada) ----------------
 
     /// <summary>Guarda temperatura e taxas de cada disco do LibreHardwareMonitor; com a página aberta, atualiza as leituras.</summary>
     internal void Sample()
@@ -182,7 +181,6 @@ public partial class DisksView : UserControl
         }
     }
 
-    // ---------------- disco escolhido ----------------
 
     private void DiskCards_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -466,7 +464,6 @@ public partial class DisksView : UserControl
         }
     }
 
-    // ---------------- layout ----------------
 
     /// <summary>Larga: odômetro ao lado da temperatura. Estreita: odômetro desce para uma faixa 2 × 2.</summary>
     private void DiskBody_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -489,7 +486,6 @@ public partial class DisksView : UserControl
         LifeDial.MinHeight = wide ? 210 : 190;
     }
 
-    // ---------------- formatação ----------------
 
     private static void Readout(TextBlock target, string value, string unit, bool balanced = false) =>
         ReadoutFormat.Set(target, value, unit, unitRatio: 0.4, balanced: balanced);

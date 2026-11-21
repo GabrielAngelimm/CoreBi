@@ -88,7 +88,7 @@ licenses/                Licenças e avisos dos componentes distribuídos
 .\tools\Test.ps1
 ```
 
-O modo padrão executa 24 regressões e verificações WPF. Os modos `Hardware`, `Startup`, `Integrations` e `Bench` são optativos; veja os comandos, o alcance e os cuidados em [CONTRIBUTING.md](docs/CONTRIBUTING.md).
+O modo padrão executa a suíte de regressões (regras, segurança, rede, RTSS e verificações WPF das 14 páginas). Os modos `Hardware`, `Startup`, `Integrations` e `Bench` são optativos; veja os comandos, o alcance e os cuidados em [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 - [Arquitetura e responsabilidades](docs/ARCHITECTURE.md)
 - [Validações realizadas e pendências](docs/VALIDATION.md)

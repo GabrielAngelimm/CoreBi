@@ -280,6 +280,6 @@ Nada mais precisa mudar: as telas só usam essas chaves.
 ## Verificação
 
 - `tools/check_resources.py` cruza cada `{StaticResource}`/`{DynamicResource}` e cada chave usada em C# com as definidas no tema (incluindo `HudPalette.xaml`), respeitando a ordem de carga (o compilador de XAML não detecta chave inexistente), e confere se a paleta do `Theme.xaml` está em dia com o `ThemeManager.cs`.
-- Compilação WPF, construção e navegação das 15 páginas, ida e volta de tema e regras de indisponibilidade estão no executor de testes (`tests/CoreBi.Tests`).
+- Compilação WPF, construção e navegação das 14 páginas, ida e volta de tema e regras de indisponibilidade estão no executor de testes (`tests/CoreBi.Tests`).
 - Prints para revisar o visual: `CoreBi.Tests.exe --shots pasta [segundos] ["páginas"] [dark,light]` abre a janela fora da tela, invisível e sem roubar o foco, lê o hardware de verdade (elevado, também os sensores do processador) e salva cada página em PNG nos temas pedidos, com uma cópia das configurações.
 - Ainda pendente de revisão manual em Windows: navegação completa por teclado, leitor de tela, alto contraste e DPI em vários monitores.

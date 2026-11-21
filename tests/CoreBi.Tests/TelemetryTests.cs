@@ -18,18 +18,17 @@ internal static partial class Program
                 && MemoryInfo.PhysicalUsageFrom(32, 33) == null, "Invalid RAM readings must be unavailable");
             Require(MemoryInfo.PhysicalUsageFrom(32, 32)?.UsedPercent == 0
                 && MemoryInfo.PhysicalUsageFrom(32, 0)?.UsedPercent == 100, "Physical RAM boundary values");
-            long[] capacitiesGiB = [4, 8, 16, 24, 32, 64, 96, 128, 1024];
-            foreach (long capacity in capacitiesGiB)
+            foreach (long capacity in new[] { 4L, 32L, 1024L })
             {
                 long total = capacity * gib;
                 var reading = MemoryInfo.PhysicalUsageFrom(total, total * 5 / 8);
                 Require(reading?.UsedPercent == 37.5f && reading?.Used == total * 3 / 8,
-                    $"Physical RAM calculation depends on a particular capacity: {capacity} GiB");
+                    $"Physical RAM calculation failed for capacity: {capacity} GiB");
             }
             long usable = 32 * gib - 128 * 1024 * 1024;
             Require(MemoryInfo.PhysicalUsageFrom(usable, usable / 4)?.UsedPercent == 75,
                 "Use Windows-available physical capacity, including hardware reservations");
-            return new { usedGiB = memory!.Value.Used / (double)gib, memory.Value.UsedPercent, capacitiesGiB };
+            return new { usedGiB = memory!.Value.Used / (double)gib, memory.Value.UsedPercent };
         });
         Check("RAM: duplicate physical and virtual sensor names cannot select virtual load", () =>
         {

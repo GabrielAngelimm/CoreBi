@@ -7,7 +7,6 @@ using CoreBi.Engine.Monitoring.Storage;
 
 namespace CoreBi.Desktop.Features.Monitoring.Inventory;
 
-// ---------------- Modelos da ficha ----------------
 
 /// <summary>Botão do índice: ícone e categoria. Nome e especificação do componente aparecem na dica e na ficha.</summary>
 public sealed record IndexItem(string Key, string Glyph, string Category, string Name, string Spec)
@@ -168,7 +167,6 @@ public static class SystemSheets
     private static SpecRow Verdict(string key, string value, Tone tone, string? note = null, string? help = null, string? tip = null) =>
         new(key, value, note, tip, tone, help);
 
-    // ---------------- Processador ----------------
 
     private static Sheet CpuSheet(SystemInventory inv)
     {
@@ -251,7 +249,6 @@ public static class SystemSheets
         };
     }
 
-    // ---------------- Placa de vídeo ----------------
 
     private static Sheet GpuSheet(SystemInventory inv, IReadOnlyList<GpuInfo> gpus)
     {
@@ -381,7 +378,6 @@ public static class SystemSheets
         return name;
     }
 
-    // ---------------- Memória ----------------
 
     private static Sheet RamSheet(SystemInventory inv, MemoryInfo.Snapshot? memory, DateTime now)
     {
@@ -507,7 +503,6 @@ public static class SystemSheets
         };
     }
 
-    // ---------------- Placa-mãe e BIOS ----------------
 
     private static Sheet BoardSheet(SystemInventory inv, DateTime now)
     {
@@ -581,7 +576,6 @@ public static class SystemSheets
         };
     }
 
-    // ---------------- Armazenamento ----------------
 
     private static Sheet StorageSheet(SystemInventory inv, IReadOnlyList<DriveCard> drives)
     {
@@ -668,7 +662,6 @@ public static class SystemSheets
         return (rows, layout);
     }
 
-    // ---------------- Sistema operacional ----------------
 
     private static Sheet OsSheet(SystemInventory inv, DateTime now)
     {

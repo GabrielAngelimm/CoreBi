@@ -25,6 +25,8 @@ internal static partial class Program
     {
         Check("settings: null collections and invalid scale recover safely", () =>
         {
+            using var folder = new CaseFolder();
+            using var _ = AppPaths.OverrideDataFolder(folder.Path);
             Directory.CreateDirectory(AppSettings.Folder);
             string file = Path.Combine(AppSettings.Folder, "settings.json");
             File.WriteAllText(file, "{\"BenchRuns\":null,\"BenchRecords\":null,\"StartupRemoved\":null,\"OverlayScale\":999,\"OverlayCorner\":\"bad\"}");
@@ -220,9 +222,23 @@ internal static partial class Program
         });
         Check("network: successful HTTP is not diagnosed as offline due to blocked ping", () =>
         {
-            Require(CoreBi.Engine.Monitoring.Network.NetworkDiagnostics.HasHttpEvidence(100, null), "HTTP evidence ignored");
-            Require(!CoreBi.Engine.Monitoring.Network.NetworkDiagnostics.HasHttpEvidence(null, null), "Missing HTTP treated as success");
-            return new { icmpAndHttpDistinguished = true };
+            var silentRouter = new CoreBi.Engine.Monitoring.Network.PingResult("Roteador", "192.168.0.1", new double?[] { null, null });
+            var silentInternet = new CoreBi.Engine.Monitoring.Network.PingResult("Internet", "1.1.1.1", new double?[] { null, null });
+            var withHttp = CoreBi.Engine.Monitoring.Network.NetworkDiagnostics.Analyze(
+                silentRouter, new[] { silentInternet }, silentInternet,
+                dnsMs: 12, downMbps: 250, upMbps: 80, downError: null, upError: null, upIncomplete: false,
+                providerError: null, loadedMs: null, limitedUntil: null, rateLimited: false);
+            var noHttp = CoreBi.Engine.Monitoring.Network.NetworkDiagnostics.Analyze(
+                silentRouter, new[] { silentInternet }, silentInternet,
+                dnsMs: null, downMbps: null, upMbps: null, downError: "timeout", upError: "timeout", upIncomplete: false,
+                providerError: null, loadedMs: null, limitedUntil: null, rateLimited: false);
+            Require(withHttp.Overall != CoreBi.Engine.Monitoring.Health.HealthVerdict.Critical
+                && withHttp.InternetVerdict == CoreBi.Engine.Monitoring.Health.HealthVerdict.Unknown,
+                $"HTTP evidence ignored by diagnostics: {withHttp.Overall}/{withHttp.InternetVerdict}");
+            Require(noHttp.Overall == CoreBi.Engine.Monitoring.Health.HealthVerdict.Critical
+                && noHttp.InternetVerdict == CoreBi.Engine.Monitoring.Health.HealthVerdict.Critical,
+                $"Missing ICMP + HTTP not flagged Critical: {noHttp.Overall}/{noHttp.InternetVerdict}");
+            return new { withHttp = withHttp.Overall.ToString(), noHttp = noHttp.Overall.ToString() };
         });
         Check("network: lost pings count as loss and stay out of latency and jitter", () =>
         {
@@ -265,7 +281,13 @@ internal static partial class Program
     {
         if (args[1] == "pipes") { Console.Out.Write(new string('x', 200000) + "OUTEND"); Console.Error.Write(new string('y', 200000) + "ERREND"); }
         else if (args[1] == "echo") Console.Write(args[2]);
-        else if (args[1] == "sleep") { File.WriteAllText(args[2], Environment.ProcessId.ToString()); Thread.Sleep(30000); }
+        else if (args[1] == "sleep")
+        {
+            string tmp = args[2] + ".tmp";
+            File.WriteAllText(tmp, Environment.ProcessId.ToString());
+            File.Move(tmp, args[2], overwrite: true);
+            Thread.Sleep(30000);
+        }
         return 0;
     }
 }

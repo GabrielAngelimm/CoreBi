@@ -127,7 +127,6 @@ public partial class PowerView : UserControl
         ? s.OnAc == false ? "Na bateria" : "Na tomada"
         : s.OnAc == false ? "Alimentado pelo nobreak" : "Na tomada";
 
-    // ---------------- fonte e bateria ----------------
 
     private void ShowSource(PowerSnapshot s)
     {
@@ -186,7 +185,6 @@ public partial class PowerView : UserControl
         BatteryReason.ToolTip = Join(shown.Manufacturer, shown.Model, shown.Chemistry) is { Length: > 0 } id ? id : null;
     }
 
-    // ---------------- plano de energia ----------------
 
     /// <summary>
     /// Plano ativo e o que ele define. Com um plano escolhido que ainda não foi aplicado, a mesma área vira a prévia da troca:
@@ -297,7 +295,6 @@ public partial class PowerView : UserControl
         finally { _applyingPlan = false; }
     }
 
-    // ---------------- ligado nos últimos 7 dias ----------------
 
     private void ShowHistory(PowerHistory h)
     {
@@ -357,7 +354,6 @@ public partial class PowerView : UserControl
         DaysCaption.Visibility = shortLog ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    // ---------------- ao vivo (a cada segundo, mesmo com a página fechada) ----------------
 
     /// <summary>Guarda o consumo de processador e placa de vídeo e soma a energia da sessão; com a página aberta, atualiza as leituras.</summary>
     internal void Sample()
@@ -529,7 +525,6 @@ public partial class PowerView : UserControl
 
     private void VoltAll_Click(object sender, RoutedEventArgs e) => _context.Navigate("PageSensors");
 
-    // ---------------- layout ----------------
 
     /// <summary>
     /// Larga: alimentação e consumo em cima, na mesma altura; tensões e histórico embaixo, o histórico esticado até o fim da página.
@@ -584,7 +579,6 @@ public partial class PowerView : UserControl
             rows[r].Height = r == 0 ? GridLength.Auto : r == 1 ? new GridLength(16) : r == 2 ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
     }
 
-    // ---------------- formatação ----------------
 
     private static void Readout(TextBlock target, string value, string unit) =>
         ReadoutFormat.Set(target, value, unit, unitRatio: 0.3, dimWhenDash: true);
