@@ -41,7 +41,7 @@
                                 <Trigger.ExitActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="hint" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.1" />
+                                            <DoubleAnimation Storyboard.TargetName="hint" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18" />
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.ExitActions>
@@ -132,8 +132,6 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
-                    <RowDefinition Height="16" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <!-- Cabeçalho: título à esquerda, interruptor e atalho à direita -->
@@ -144,17 +142,24 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel>
                         <TextBlock Text="OverlayBi" Style="{StaticResource PageTitle}" />
-                        <TextBlock Text="FPS, frametime e sensores por cima do jogo, sem injetar nada no processo." Style="{StaticResource PageSubtitle}" />
+                        <TextBlock Text="FPS, frametime e sensores por cima do jogo." Style="{StaticResource PageSubtitle}" />
                     </StackPanel>
-                    <Border Grid.Column="1" Style="{StaticResource CardBorder}" Padding="18,12" VerticalAlignment="Center" Margin="16,0,0,0">
+                    <Border Grid.Column="1" Style="{StaticResource CardBorder}" Padding="16,12" VerticalAlignment="Center" Margin="16,0,0,0">
                         <StackPanel Orientation="Horizontal">
                             <CheckBox x:Name="ChkOverlay" Style="{StaticResource Switch}" Content="Mostrar overlay" FontSize="14" FontWeight="SemiBold"
                                       Checked="ChkOverlay_Changed" Unchecked="ChkOverlay_Changed" />
-                            <Border Width="1" Height="22" Background="{DynamicResource Line}" Margin="18,0" />
-                            <TextBlock Text="Atalho global" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
-                            <Border Style="{StaticResource KeyCap}"><TextBlock Text="Ctrl" Style="{StaticResource KeyCapText}" /></Border>
-                            <Border Style="{StaticResource KeyCap}"><TextBlock Text="Shift" Style="{StaticResource KeyCapText}" /></Border>
-                            <Border Style="{StaticResource KeyCap}" Margin="0"><TextBlock Text="O" Style="{StaticResource KeyCapText}" /></Border>
+                            <Border Width="1" Height="22" Background="{DynamicResource Line}" Margin="16,0" />
+                            <!-- A tecla é a letra O: na fonte da interface ela é redonda e não se confunde com o zero da DIN -->
+                            <StackPanel Orientation="Horizontal" Background="Transparent" ToolTip="Ctrl + Shift + O (a letra O) liga e desliga o overlay de qualquer lugar, inclusive dentro do jogo.">
+                                <!--
+                                    Tudo na base de "Mostrar overlay" (medido): centrado, o rótulo ficava 2 px acima e as teclas 1 px;
+                                    4 px de margem em cima descem o rótulo 2 e 2 px descem as teclas 1.
+                                -->
+                                <TextBlock Text="Atalho global" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,4,8,0" />
+                                <Border Style="{StaticResource KeyCap}" Margin="0,2,4,0"><TextBlock Text="Ctrl" Style="{StaticResource KeyCapText}" /></Border>
+                                <Border Style="{StaticResource KeyCap}" Margin="0,2,4,0"><TextBlock Text="Shift" Style="{StaticResource KeyCapText}" /></Border>
+                                <Border Style="{StaticResource KeyCap}" Margin="0,2,0,0"><TextBlock Text="O" Style="{StaticResource KeyCapText}" FontFamily="{StaticResource UiFont}" /></Border>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -166,78 +171,56 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="6*" />
+                        <ColumnDefinition Width="3*" />
                         <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="5*" />
+                        <ColumnDefinition Width="2*" />
                     </Grid.ColumnDefinitions>
 
-                    <Border x:Name="OvPositionCard" Style="{StaticResource CardBorder}" Padding="24,20,24,18">
+                    <Border x:Name="OvPositionCard" Style="{StaticResource CardBorder}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" MinHeight="34" />
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
+                            <!--
+                                Título à esquerda; à direita, o estado da detecção de FPS (LED e uma linha, só quando há o que dizer) e, sem jogo
+                                medido, a nota da prévia. O estado mora aqui, e não numa faixa sob os cartões, para a página terminar na mesma
+                                linha que as outras.
+                            -->
                             <Grid>
-                                <StackPanel>
-                                    <TextBlock Text="Posição e tamanho" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock Text="Clique em um canto do monitor para escolher onde o overlay aparece no jogo.&#10;Abaixo, ajuste a transparência e o tamanho. A prévia mostra os itens marcados em “O que mostrar”."
-                                               Style="{StaticResource Caption}" Margin="0,3,0,0" />
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Posição e tamanho" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="24,0,0,0">
+                                    <Ellipse x:Name="OvStatusDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
+                                    <TextBlock x:Name="OvStatus" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="460" Style="{StaticResource Num}" VerticalAlignment="Center" />
                                 </StackPanel>
+                                <!-- Estado real: sem jogo medido, o FPS da prévia é de exemplo (os sensores são ao vivo) -->
+                                <TextBlock x:Name="OvSampleNote" Grid.Column="2" Text="Prévia com FPS de exemplo" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="20,0,0,0"
+                                           ToolTip="Enquanto o CoreBi não mede um jogo, a prévia mostra 144 FPS de exemplo. Os sensores são lidos ao vivo." Visibility="Collapsed" />
                             </Grid>
 
                             <!-- Monitor: desenho fixo em 820 de largura, escalado para o espaço que sobrar -->
-                            <local:FillBox x:Name="OvMonitorBox" Grid.Row="1" MinHeight="300" Margin="0,18,0,16">
+                            <local:FillBox x:Name="OvMonitorBox" Grid.Row="1" MinHeight="300" Margin="0,16">
                                 <Viewbox Stretch="Uniform">
                                     <StackPanel Width="820">
-                                        <Border CornerRadius="16" Background="#06090C" BorderBrush="#2C3235" BorderThickness="1" Padding="10,10,10,0">
+                                        <Border CornerRadius="16" Background="{StaticResource HudScreenBezel}" BorderBrush="{StaticResource HudScreenEdge}" BorderThickness="1" Padding="10,10,10,0">
                                             <StackPanel>
                                                 <Grid Width="798" Height="449">
                                                     <Grid.Clip>
                                                         <RectangleGeometry Rect="0,0,798,449" RadiusX="7" RadiusY="7" />
                                                     </Grid.Clip>
-                                                    <!-- Cena de jogo: céu ao entardecer, serras e chão, em tons apagados para não brigar com o overlay -->
-                                                    <Rectangle>
-                                                        <Rectangle.Fill>
-                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                                <GradientStop Color="#111B24" Offset="0" />
-                                                                <GradientStop Color="#1F2E3B" Offset="0.32" />
-                                                                <GradientStop Color="#3A4852" Offset="0.55" />
-                                                                <GradientStop Color="#5A5852" Offset="0.66" />
-                                                                <GradientStop Color="#2A3036" Offset="0.8" />
-                                                            </LinearGradientBrush>
-                                                        </Rectangle.Fill>
-                                                    </Rectangle>
+                                                    <!-- Cena de jogo: céu, duas serras e chão, em planos chapados e apagados para não brigar com o overlay -->
+                                                    <Rectangle Fill="{StaticResource HudScene}" />
                                                     <Canvas IsHitTestVisible="False">
-                                                        <Ellipse Canvas.Left="360" Canvas.Top="150" Width="380" Height="210">
-                                                            <Ellipse.Fill>
-                                                                <RadialGradientBrush>
-                                                                    <GradientStop Color="#4DE3A57C" Offset="0" />
-                                                                    <GradientStop Color="#00E3A57C" Offset="1" />
-                                                                </RadialGradientBrush>
-                                                            </Ellipse.Fill>
-                                                        </Ellipse>
-                                                        <Path Fill="#34424D" Data="M0,292 L64,250 L122,272 L204,212 L282,258 L352,228 L440,276 L532,222 L612,254 L694,214 L798,258 L798,449 L0,449 Z" />
-                                                        <Path Fill="#222D36" Data="M0,334 L86,286 L168,318 L258,272 L346,326 L428,296 L516,338 L606,292 L698,326 L798,296 L798,449 L0,449 Z" />
-                                                        <Path Fill="#121A20" Data="M0,388 C150,362 292,378 418,370 C556,360 676,382 798,366 L798,449 L0,449 Z" />
+                                                        <Path Fill="{StaticResource HudSceneFar}" Data="M0,292 L64,250 L122,272 L204,212 L282,258 L352,228 L440,276 L532,222 L612,254 L694,214 L798,258 L798,449 L0,449 Z" />
+                                                        <Path Fill="{StaticResource HudSceneNear}" Data="M0,334 L86,286 L168,318 L258,272 L346,326 L428,296 L516,338 L606,292 L698,326 L798,296 L798,449 L0,449 Z" />
+                                                        <Path Fill="{StaticResource HudSceneGround}" Data="M0,388 C150,362 292,378 418,370 C556,360 676,382 798,366 L798,449 L0,449 Z" />
                                                     </Canvas>
-                                                    <!-- Vinheta e reflexo do vidro -->
-                                                    <Rectangle IsHitTestVisible="False">
-                                                        <Rectangle.Fill>
-                                                            <RadialGradientBrush RadiusX="0.72" RadiusY="0.78">
-                                                                <GradientStop Color="#00000000" Offset="0.55" />
-                                                                <GradientStop Color="#99030507" Offset="1" />
-                                                            </RadialGradientBrush>
-                                                        </Rectangle.Fill>
-                                                    </Rectangle>
-                                                    <Rectangle IsHitTestVisible="False">
-                                                        <Rectangle.Fill>
-                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0.6,1">
-                                                                <GradientStop Color="#12FFFFFF" Offset="0" />
-                                                                <GradientStop Color="#00FFFFFF" Offset="0.45" />
-                                                            </LinearGradientBrush>
-                                                        </Rectangle.Fill>
-                                                    </Rectangle>
 
                                                     <!-- Os quatro cantos (um quarto da tela cada) -->
                                                     <Grid x:Name="OvCornerPanel">
@@ -249,13 +232,13 @@
                                                             <ColumnDefinition Width="*" />
                                                             <ColumnDefinition Width="*" />
                                                         </Grid.ColumnDefinitions>
-                                                        <RadioButton Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="TL" ToolTip="Superior esquerdo"
+                                                        <RadioButton Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="TL" ToolTip="Canto superior esquerdo"
                                                                      HorizontalContentAlignment="Left" VerticalContentAlignment="Top" Checked="OvOption_Changed" />
-                                                        <RadioButton Grid.Column="1" Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="TR" ToolTip="Superior direito"
+                                                        <RadioButton Grid.Column="1" Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="TR" ToolTip="Canto superior direito"
                                                                      HorizontalContentAlignment="Right" VerticalContentAlignment="Top" Checked="OvOption_Changed" />
-                                                        <RadioButton Grid.Row="1" Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="BL" ToolTip="Inferior esquerdo"
+                                                        <RadioButton Grid.Row="1" Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="BL" ToolTip="Canto inferior esquerdo"
                                                                      HorizontalContentAlignment="Left" VerticalContentAlignment="Bottom" Checked="OvOption_Changed" />
-                                                        <RadioButton Grid.Row="1" Grid.Column="1" Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="BR" ToolTip="Inferior direito"
+                                                        <RadioButton Grid.Row="1" Grid.Column="1" Style="{StaticResource CornerZone}" GroupName="OvCorner" Tag="BR" ToolTip="Canto inferior direito"
                                                                      HorizontalContentAlignment="Right" VerticalContentAlignment="Bottom" Checked="OvOption_Changed" />
                                                     </Grid>
 
@@ -277,23 +260,8 @@
                                             </StackPanel>
                                         </Border>
                                         <!-- Pé: coluna afunilada e base -->
-                                        <Path HorizontalAlignment="Center" Data="M14,0 L110,0 L124,58 L0,58 Z" Stretch="None">
-                                            <Path.Fill>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                    <GradientStop Color="#0C0F11" Offset="0" />
-                                                    <GradientStop Color="#1E2326" Offset="0.25" />
-                                                    <GradientStop Color="#272C30" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Path.Fill>
-                                        </Path>
-                                        <Border Width="270" Height="12" CornerRadius="6,6,8,8" HorizontalAlignment="Center" BorderBrush="#353B3F" BorderThickness="0,1,0,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                    <GradientStop Color="#2C3236" Offset="0" />
-                                                    <GradientStop Color="#161A1D" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
-                                        </Border>
+                                        <Path HorizontalAlignment="Center" Data="M14,0 L110,0 L124,58 L0,58 Z" Stretch="None" Fill="{StaticResource HudStand}" />
+                                        <Border Width="270" Height="12" CornerRadius="6,6,8,8" HorizontalAlignment="Center" Background="{StaticResource HudStandBase}" BorderBrush="{StaticResource HudScreenEdge}" BorderThickness="0,1,0,0" />
                                     </StackPanel>
                                 </Viewbox>
                             </local:FillBox>
@@ -308,23 +276,23 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE81E;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Muted}" Margin="0,0,8,0" />
-                                        <TextBlock Text="Posição" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                        <TextBlock x:Name="OvCornerName" Text="Superior esquerdo" FontWeight="SemiBold" VerticalAlignment="Center" />
-                                    </StackPanel>
-                                    <Border Grid.Column="1" Width="1" Height="22" Background="{DynamicResource Line}" Margin="18,0" />
+                                    <!-- Rótulo e valor como Runs do mesmo TextBlock: a mesma linha de base por construção (em dois TextBlocks
+                                         centrados o rótulo ficava 1 px acima). O espaço (um médio e um fino, a 12 px) dá ≈ 8 px. -->
+                                    <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                        <Run Text="Posição" FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Muted}" /><Run Text="&#x2002;&#x2009;" FontSize="12" /><Run x:Name="OvCornerName" Text="Canto superior esquerdo" FontWeight="SemiBold" />
+                                    </TextBlock>
+                                    <Border Grid.Column="1" Width="1" Height="22" Background="{DynamicResource Line}" Margin="16,0" />
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="Opacidade" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                        <TextBlock Text="Opacidade" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
                                         <Slider x:Name="OvOpacity" Style="{StaticResource OpacitySlider}" Minimum="30" Maximum="100" SmallChange="1" LargeChange="10"
                                                 TickFrequency="1" IsSnapToTickEnabled="True" IsMoveToPointEnabled="True" Width="130" VerticalAlignment="Center"
-                                                ValueChanged="OvOpacity_Changed" PreviewMouseWheel="OvOpacity_Wheel" ToolTip="Arraste, clique no trilho ou use a roda do mouse" />
-                                        <TextBlock x:Name="OvOpacityText" Text="100%" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" FontSize="12"
-                                                   Width="38" TextAlignment="Right" VerticalAlignment="Center" Margin="6,0,0,0" />
+                                                ValueChanged="OvOpacity_Changed" PreviewMouseWheel="OvOpacity_Wheel" ToolTip="Também ajusta com a roda do mouse" />
+                                        <TextBlock x:Name="OvOpacityText" Text="100 %" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" FontSize="12"
+                                                   Width="42" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
                                     </StackPanel>
-                                    <Border Grid.Column="3" Width="1" Height="22" Background="{DynamicResource Line}" Margin="18,0" />
+                                    <Border Grid.Column="3" Width="1" Height="22" Background="{DynamicResource Line}" Margin="16,0" />
                                     <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="Tamanho" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                        <TextBlock Text="Tamanho" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,8,0" />
                                         <Border Style="{StaticResource SegmentGroup}">
                                             <local:SlidingSelectionPanel x:Name="OvScalePanel" Style="{StaticResource SegmentRail}">
                                                 <RadioButton Style="{StaticResource Segment}" GroupName="OvScale" Content="Pequeno" Tag="1" Checked="OvOption_Changed" />
@@ -338,8 +306,8 @@
                         </Grid>
                     </Border>
 
-                    <!-- O que mostrar: uma linha por componente, com os itens em pílulas (marcado = visto verde-água) -->
-                    <Border x:Name="OvItemsCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,20,24,18">
+                    <!-- O que mostrar: uma linha por componente, com os itens em pílulas (marcado = fio e visto no sinal, fundo tingido) -->
+                    <Border x:Name="OvItemsCard" Grid.Column="2" Style="{StaticResource CardBorder}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -351,18 +319,15 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Margin="0,0,16,0">
-                                    <TextBlock Text="O que mostrar" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock Text="Marque o que quer ver no jogo: cada grupo vira uma linha do overlay. Os botões ao lado são combinações prontas." Style="{StaticResource Caption}" Margin="0,3,0,0" />
-                                </StackPanel>
+                                <TextBlock Text="O que mostrar" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="0,0,16,0" />
                                 <Border Grid.Column="1" Style="{StaticResource SegmentGroup}" VerticalAlignment="Top">
                                     <local:SlidingSelectionPanel x:Name="OvPresetPanel" Style="{StaticResource SegmentRail}">
                                         <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Essencial" Tag="default" Click="OvPreset_Click">
                                             <RadioButton.ToolTip>
                                                 <StackPanel MaxWidth="290">
                                                     <TextBlock Text="Essencial" FontWeight="SemiBold" />
-                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="O básico para jogar sem poluir a tela: o que a placa de vídeo e o processador estão fazendo agora, e quanta memória está em uso." />
-                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS, frametime e 1% low · GPU: uso, temperatura, clock e consumo · VRAM · CPU: uso, temperatura, clock e consumo · RAM · nome do hardware" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="O básico para jogar sem poluir a tela: o que a placa de vídeo e o processador estão fazendo agora, e quanta memória está em uso." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="FPS, frametime e 1% low · GPU: uso, temperatura, clock e consumo · VRAM · CPU: uso, temperatura, clock e consumo · RAM · nome do hardware" />
                                                 </StackPanel>
                                             </RadioButton.ToolTip>
                                         </RadioButton>
@@ -370,8 +335,8 @@
                                             <RadioButton.ToolTip>
                                                 <StackPanel MaxWidth="290">
                                                     <TextBlock Text="Só FPS" FontWeight="SemiBold" />
-                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="O overlay mais discreto possível: só o contador e a estabilidade dos quadros." />
-                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS, frametime e 1% low" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="O overlay mais discreto possível: só o contador e a estabilidade dos quadros." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="FPS, frametime e 1% low" />
                                                 </StackPanel>
                                             </RadioButton.ToolTip>
                                         </RadioButton>
@@ -379,8 +344,8 @@
                                             <RadioButton.ToolTip>
                                                 <StackPanel MaxWidth="290">
                                                     <TextBlock Text="Gargalo" FontWeight="SemiBold" />
-                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="Para descobrir quem está limitando o jogo: compara o uso da GPU com o do núcleo de CPU mais ocupado e mostra se a memória aperta." />
-                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS, 1% low e gráfico · GPU: uso, clock e limitador · VRAM · CPU: uso, núcleo mais ocupado e clock · RAM em %" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="Para descobrir quem está limitando o jogo: compara o uso da GPU com o do núcleo de CPU mais ocupado e mostra se a memória aperta." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="FPS, 1% low e gráfico · GPU: uso, clock e limitador · VRAM · CPU: uso, núcleo mais ocupado e clock · RAM em %" />
                                                 </StackPanel>
                                             </RadioButton.ToolTip>
                                         </RadioButton>
@@ -388,8 +353,8 @@
                                             <RadioButton.ToolTip>
                                                 <StackPanel MaxWidth="290">
                                                     <TextBlock Text="Térmico" FontWeight="SemiBold" />
-                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="Para acompanhar calor e consumo em sessões longas e testar a refrigeração." />
-                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="FPS · GPU: temperatura, hotspot, consumo e ventoinha · CPU: temperatura, consumo e clock · hora" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="Para acompanhar calor e consumo em sessões longas e testar a refrigeração." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="FPS · GPU: temperatura, hotspot, consumo e ventoinha · CPU: temperatura, consumo e clock · hora" />
                                                 </StackPanel>
                                             </RadioButton.ToolTip>
                                         </RadioButton>
@@ -397,26 +362,22 @@
                                             <RadioButton.ToolTip>
                                                 <StackPanel MaxWidth="290">
                                                     <TextBlock Text="Tudo" FontWeight="SemiBold" />
-                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,3,0,0" Text="Liga todos os itens disponíveis. Fica grande: combina melhor com o tamanho Pequeno." />
-                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,7,0,0" Text="Todos os grupos: FPS, GPU, VRAM, CPU, RAM e rodapé" />
+                                                    <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="Liga todos os itens disponíveis. Fica grande: combina melhor com o tamanho Pequeno." />
+                                                    <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="Todos os grupos: FPS, GPU, VRAM, CPU, RAM e rodapé" />
                                                 </StackPanel>
                                             </RadioButton.ToolTip>
                                         </RadioButton>
                                     </local:SlidingSelectionPanel>
                                 </Border>
                             </Grid>
-                            <local:SpreadPanel x:Name="OvItemsPanel" Grid.Row="1" Margin="0,10,0,6" />
-                            <TextBlock Grid.Row="2" Style="{StaticResource Footnote}"
-                                       Text="Hotspot, clock da memória e ventoinha dependem da placa. Clock, temperatura e consumo da CPU precisam do CoreBi aberto como administrador." />
+                            <local:SpreadPanel x:Name="OvItemsPanel" Grid.Row="1" Margin="0,16,0,8" />
+                            <!-- Só sem administrador: é o único motivo de um item marcado da CPU aparecer com travessão (os da placa ficam na dica de cada item) -->
+                            <TextBlock x:Name="OvAdminNote" Grid.Row="2" Style="{StaticResource Footnote}"
+                                       Text="Temperatura, clock e consumo da CPU precisam do CoreBi aberto como administrador." />
                         </Grid>
                     </Border>
                 </Grid>
 
-                <!-- Estado da medição de FPS: uma linha só, o suficiente para saber se o overlay já está lendo o jogo -->
-                <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="4,2,0,0" MinHeight="18">
-                    <Ellipse x:Name="OvStatusDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
-                    <TextBlock x:Name="OvStatus" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="700" Style="{StaticResource Num}" />
-                </StackPanel>
             </Grid>
         </Grid>
     </ScrollViewer>

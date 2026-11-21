@@ -22,4 +22,18 @@
     <SolidColorBrush x:Key="HudZoneHover" Color="#1FE6EAEC"/>
     <!-- Fechar a janela: o vermelho do próprio Windows, igual em qualquer tema -->
     <SolidColorBrush x:Key="CloseHover" Color="#C42B1C"/>
+    <!-- rodada-unslop: overlay-dash-discos-rede início -->
+    <!--
+        Monitor desenhado em OverlayBi: moldura, cena de jogo e pé, em planos chapados (sem degradê, brilho, vinheta nem
+        reflexo). A cena escurece do céu para o chão, para as serras lerem como silhuetas e o overlay se destacar por cima.
+    -->
+    <SolidColorBrush x:Key="HudScreenBezel" Color="#06090C"/>
+    <SolidColorBrush x:Key="HudScreenEdge" Color="#2C3235"/>
+    <SolidColorBrush x:Key="HudScene" Color="#3A4852"/>
+    <SolidColorBrush x:Key="HudSceneFar" Color="#2A3741"/>
+    <SolidColorBrush x:Key="HudSceneNear" Color="#1E2830"/>
+    <SolidColorBrush x:Key="HudSceneGround" Color="#121A20"/>
+    <SolidColorBrush x:Key="HudStand" Color="#1E2326"/>
+    <SolidColorBrush x:Key="HudStandBase" Color="#24292C"/>
+    <!-- rodada-unslop: overlay-dash-discos-rede fim -->
 </ResourceDictionary>

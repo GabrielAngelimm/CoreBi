@@ -208,18 +208,18 @@ public partial class MainWindow
     private long _rtssPendingSince;
 
     /// <summary>
-    /// Estado da detecção de FPS, num LED: medindo um jogo (sinal, ao vivo), publicado pelo RTSS (ok), aguardando (cinza),
-    /// desligada ou com erro.
+    /// Estado da detecção de FPS, num LED: medindo um jogo (sinal, ao vivo), desenhado dentro do jogo em tela cheia (ok),
+    /// aguardando (cinza), desligada ou com erro. Os números ficam na prévia, não se repetem aqui.
     /// </summary>
     internal void UpdateOverlayStatus(FrameStats? f)
     {
-        (string text, string brush) = _rtssShowing ? ("Overlay publicado no jogo pelo RTSS", "Ok")
-            : _frames.Error != null ? ($"Indisponível: {_frames.Error}", "Danger")
+        (string text, string brush) = _rtssShowing ? ("Overlay dentro do jogo, em tela cheia", "Ok")
+            : _frames.Error != null ? ($"Detecção de FPS indisponível: {_frames.Error}", "Danger")
             : !_frames.Running ? ("", "Faint")
-            : f != null ? ($"{f.ProcessName}: {f.Fps:0} FPS ({f.FrameTimeMs:0.0} ms) · 1% low {f.Low1Fps:0}", "Signal")
-            : ("Aguardando um jogo · o FPS aparece assim que ele abrir", "Muted");
+            : f != null ? ($"Medindo {f.ProcessName}", "Signal")
+            : ("Aguardando um jogo", "Muted");
         OvStatus.Text = text;
-        OvStatusDot.Visibility = text.Length == 0 ? Visibility.Hidden : Visibility.Visible; // desligado: a linha fica em branco, sem aviso
+        OvStatusDot.Visibility = text.Length == 0 ? Visibility.Collapsed : Visibility.Visible; // desligado: nada no título do cartão, sem aviso
         // Só problemas do RTSS merecem dica; o estado normal já diz tudo.
         OvStatus.ToolTip = _rtssShowing ? null : _rtssStatus switch
         {
@@ -227,8 +227,10 @@ public partial class MainWindow
             RtssStatus.Incompatible => "RTSS: protocolo incompatível ou ainda não inicializado. Atualize o RTSS.",
             RtssStatus.SlotsFull => "RTSS: todos os slots de OSD estão ocupados por outros programas.",
             RtssStatus.ContentTooLarge => "RTSS: os itens escolhidos excedem a capacidade do OSD.",
-            _ => null
-        }; OvStatusDot.SetResourceReference(Shape.FillProperty, brush);
+            // O erro pode passar da largura da linha no título do cartão: inteiro na dica
+            _ => _frames.Error != null ? text : null
+        };
+        OvStatusDot.SetResourceReference(Shape.FillProperty, brush);
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
