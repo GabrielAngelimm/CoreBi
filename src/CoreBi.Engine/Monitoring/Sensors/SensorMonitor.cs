@@ -16,10 +16,40 @@ public sealed class SensorMonitor : IDisposable
     private bool _disposed;
     private readonly Dictionary<string, SensorRow> _index = new();
     private volatile bool _open;
+    private volatile bool _paused, _gpuRetired;
     private HashSet<string>? _networks; // placas de rede físicas e ativas; as interfaces virtuais nem são lidas
 
     public ObservableCollection<SensorRow> Rows { get; } = new();
     public bool IsOpen => _open;
+
+    /// <summary>
+    /// Pausa todas as leituras (desta biblioteca e da NVML do próprio CoreBi). Chamado quando o Windows mexe em dispositivos:
+    /// pode ser o driver de vídeo sendo trocado, e ler a placa no meio da troca derruba o processo.
+    /// </summary>
+    public void Pause() { _paused = true; Graphics.Nvml.Suspended = true; }
+
+    /// <summary>Volta a ler depois que os dispositivos assentaram. A placa de vídeo continua de fora se o driver dela mudou.</summary>
+    public void Resume() { _paused = false; if (!_gpuRetired) Graphics.Nvml.Suspended = false; }
+
+    public bool IsPaused => _paused;
+
+    /// <summary>
+    /// O driver de vídeo mudou com o CoreBi aberto: a placa sai das leituras até o app abrir de novo. A biblioteca de sensores e a
+    /// NVML ficam presas ao driver antigo (a DLL carregada não se troca com o processo vivo), então reconectar não é seguro.
+    /// </summary>
+    public void RetireGpu()
+    {
+        lock (_lifecycle)
+        {
+            _gpuRetired = true;
+            Graphics.Nvml.Suspended = true;
+            foreach (var row in Rows.Where(r => IsGpu(r.HardwareType))) row.Update(null, null, null);
+        }
+    }
+
+    public bool GpuRetired => _gpuRetired;
+
+    private static bool IsGpu(HardwareType t) => t is HardwareType.GpuNvidia or HardwareType.GpuAmd or HardwareType.GpuIntel;
     public IReadOnlyList<SensorReading> Snapshot()
     {
         lock (_lifecycle)
@@ -35,7 +65,7 @@ public sealed class SensorMonitor : IDisposable
         var logs = new Dictionary<string, NvmeLog>(StringComparer.Ordinal);
         lock (_lifecycle)
         {
-            if (!_open || _disposed) return logs;
+            if (!_open || _disposed || _paused) return logs;
             foreach (var hw in _source.Hardware)
             {
                 if (hw.HardwareType != HardwareType.Storage || hw is not LibreHardwareMonitor.Hardware.Storage.StorageDevice device) continue;
@@ -85,9 +115,10 @@ public sealed class SensorMonitor : IDisposable
     {
         lock (_lifecycle)
         {
-            if (!_open || _disposed) return;
+            if (!_open || _disposed || _paused) return;
             foreach (var hw in _source.Hardware)
             {
+                if (_gpuRetired && IsGpu(hw.HardwareType)) continue;
                 if (hw.HardwareType == HardwareType.Network && _networks != null && !_networks.Contains(hw.Name)) continue;
                 try { Walk(hw, hw); _failedHardware.Remove(hw.Identifier.ToString()); }
                 catch (Exception ex)
