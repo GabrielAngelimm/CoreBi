@@ -235,7 +235,10 @@ public static class Skeleton
             var strong = (Brush?)GetValue(StrongProperty) ?? Brushes.Gray;
             // A camada cobre também o recuo do painel (sem passar da moldura), para nada do conteúdo vazar pelas bordas
             var pad = _border.Padding;
-            var cover = new Rect(-pad.Left, top, w + pad.Left + pad.Right, Math.Max(0, h - top + pad.Bottom));
+            // Sem cabeçalho preservado (Top 0), cobre também o recuo de cima: o acento de um título (o "ú" de "últimos") passa do
+            // topo do conteúdo e vazava como um pontinho
+            double coverTop = top <= 0 ? -pad.Top : top;
+            var cover = new Rect(-pad.Left, coverTop, w + pad.Left + pad.Right, Math.Max(0, h - coverTop + pad.Bottom));
             dc.PushClip(new RectangleGeometry(new Rect(-pad.Left, -pad.Top, w + pad.Left + pad.Right, h + pad.Top + pad.Bottom),
                 Math.Max(0, _border.CornerRadius.BottomLeft - 1), Math.Max(0, _border.CornerRadius.BottomLeft - 1)));
             dc.DrawRectangle(fill, null, cover);

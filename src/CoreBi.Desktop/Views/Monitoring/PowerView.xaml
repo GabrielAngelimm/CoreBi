@@ -360,7 +360,7 @@
 
                     <!-- Tensões -->
                     <Border x:Name="VoltCard" Grid.Row="2" Style="{StaticResource CardBorder}"
-                            local:Skeleton.Layout="row 24: h 90^16; gap 4; row 17: c 85%; gap 10; row 26: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 10; rows 3 24: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 1; line; gap 6; row 18: c 80; rows 5 22: c 150@0.6, box *^6, t 72@0.8>; gap 2; row 30: c 190@0.9">
+                            local:Skeleton.Layout="row 24: h 90^16; gap 4; row 17: c 85%; row 17: c 12%; gap 6; row 26: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 10; rows 3 24: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 2; line; gap 7; row 18: c 80; rows 5 22: c 150@0.6, box *^6, t 72@0.8>; gap 2; row 30: c 190@0.9">
                         <StackPanel>
                             <TextBlock Text="Tensões" Style="{StaticResource SectionTitle}" />
                             <TextBlock Text="Voltagem que chega a cada peça; fora da faixa usual, o valor fica âmbar." Style="{StaticResource Caption}" Margin="0,4,0,0" />
@@ -382,7 +382,7 @@
 
                     <!-- Tempo ligado nos últimos 7 dias -->
                     <Border x:Name="DaysCard" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}"
-                            local:Skeleton.Layout="row 24: h 260^16; gap 16; line; gap 18; row 16: c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4; gap 6; row 30: n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24; gap 18; line; gap 16; foot 18: - 58, c 22, - *, c 22, - *, c 22, - *, c 22, - *, c 26, - 78; share 7: c 58@0.6, box *^8, - 12, c 66@0.6>">
+                            local:Skeleton.Layout="row 24: h 260^16; gap 8; line; gap 18; row 16: c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4; gap 6; row 30: n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24; gap 18; line; gap 16; foot 18: - 58, c 22, - *, c 22, - *, c 22, - *, c 22, - *, c 26, - 78; share 7: c 58@0.6, box *^8, - 12, c 66@0.6>">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
