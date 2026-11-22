@@ -22,8 +22,8 @@ public partial class GraphicsView : UserControl
         InitializeComponent();
         Skeleton.Set(true, GpuPlateCard, GpuSpecCard); // até a leitura da placa de vídeo, logo depois de o CoreBi abrir
         SizeChanged += (_, _) => FitColumns();
-        // Instrumentos e faixa do driver: a leitura nova entra com a página, antes do primeiro quadro (o tique pula a entrada)
-        PageMotion.RevealLive(this, () => { if (_selectedGpu != null) { SampleGpuBoard(); Ui.SetItems(GpuExtras, GpuSheet.Facts(_selectedGpu)); } });
+        // Leituras ao vivo: a leitura nova entra com a página, antes do primeiro quadro (o tique pula a entrada)
+        PageMotion.RevealLive(this, () => { if (_selectedGpu != null) SampleGpuBoard(); });
         ((INotifyCollectionChanged)GpuSections.Items).CollectionChanged += (_, _) => FitColumns();
     }
 
@@ -59,11 +59,8 @@ public partial class GraphicsView : UserControl
         GpuVendor.Text = gpu.Vendor;
         GpuName.Text = HardwareNaming.ShortGpuName(gpu.Name);
         GpuName.ToolTip = gpu.Name;
-        GpuSubtitle.Text = GpuSheet.Subtitle(spec, gpu.Vendor);
-        GpuReadouts.ItemsSource = GpuSheet.Readouts(gpu, spec);
-        var facts = GpuSheet.Facts(gpu);
-        GpuSections.ItemsSource = GpuSheet.Groups(gpu, spec, livePcie: facts.Any(f => f.Label == "PCIe em uso"));
-        GpuExtras.ItemsSource = facts;
+        GpuSubtitle.Text = GpuSheet.Subtitle(spec);
+        GpuSections.ItemsSource = GpuSheet.Groups(gpu, spec);
         GpuSensorsLink.Visibility = Visibility.Visible;
         _gpuBoard = new GpuBoard(gpu, spec);
         GpuGauges.ItemsSource = _gpuBoard.Gauges;
@@ -87,8 +84,6 @@ public partial class GraphicsView : UserControl
         // A página só consulta o driver quando está à vista: o CoreBi fica aberto em jogos.
         if (_selectedGpu == null || _gpuBoard == null || !IsVisible || PageMotion.IsEntering(this)) return;
         SampleGpuBoard();
-        // A faixa do driver só troca quando um valor mudou: refazê-la a cada segundo pesava na entrada da página
-        Ui.SetItems(GpuExtras, GpuSheet.Facts(_selectedGpu));
     }
 
     private void SampleGpuBoard()
@@ -112,20 +107,28 @@ public partial class GraphicsView : UserControl
         FitColumns();
     }
 
-    private void GpuGauges_SizeChanged(object sender, SizeChangedEventArgs e) => FitColumns();
+    private void GpuBand_SizeChanged(object sender, SizeChangedEventArgs e) => FitColumns();
 
     /// <summary>
-    /// Instrumentos numa fila só a partir de 1300 px (abaixo, quatro por linha); ficha técnica em 4, 3, 2 ou 1 coluna conforme a
+    /// Leituras ao vivo na mesma faixa da identificação quando sobram ao menos uns 1000 px ao lado dela (a 1920 maximizada, sim);
+    /// abaixo disso, descem para uma segunda linha da faixa, quatro por linha. Ficha técnica em 4, 3, 2 ou 1 coluna conforme a
     /// largura, para cada coluna ter ao menos uns 340 px (chave e valor sem quebrar), e nunca mais colunas que grupos (com duas no mínimo).
     /// </summary>
     private void FitColumns()
     {
-        double w = GpuGauges.ActualWidth;
-        if (_gaugeGrid != null && w > 0)
+        double band = GpuBand.ActualWidth;
+        if (_gaugeGrid != null && band > 0)
         {
-            bool row = w >= 1300;
-            _gaugeGrid.Rows = row ? 1 : 0;
-            _gaugeGrid.Columns = row ? 0 : 4;
+            bool beside = band >= 1500;
+            foreach (UIElement e in new UIElement[] { GpuGauges, GpuNoSensors })
+            {
+                Grid.SetRow(e, beside ? 0 : 1);
+                Grid.SetColumn(e, beside ? 2 : 0);
+                Grid.SetColumnSpan(e, beside ? 1 : 3);
+                ((FrameworkElement)e).Margin = beside ? new Thickness(0) : new Thickness(0, 20, 0, 0);
+            }
+            _gaugeGrid.Rows = beside ? 1 : 0;
+            _gaugeGrid.Columns = beside ? 0 : 4;
         }
         if (_specColumns != null && GpuSections.ActualWidth > 0)
         {

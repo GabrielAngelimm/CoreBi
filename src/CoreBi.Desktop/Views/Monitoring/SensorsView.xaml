@@ -1,7 +1,9 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.SensorsView" xmlns:local="clr-namespace:CoreBi.Desktop" xmlns:inv="clr-namespace:CoreBi.Desktop.Features.Monitoring.Inventory">
     <UserControl.Resources>
-        <!-- Cabeçalho das colunas de um grupo: miúdo e um tom abaixo, alinhado com os números (à direita) -->
+        <!-- Cabeçalho das colunas de um grupo: miúdo e um tom abaixo, alinhado com os números (à direita). Na faixa de 31 px a tinta
+             das maiúsculas ficava 10 px abaixo do fio de cima e 12 acima do de baixo; desce 1 para ficar 11 e 11. -->
         <Style x:Key="ColHead" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,1,0,-1" />
             <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="{DynamicResource Faint}" />

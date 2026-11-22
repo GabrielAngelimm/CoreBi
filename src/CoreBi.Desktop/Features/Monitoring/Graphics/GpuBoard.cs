@@ -4,7 +4,7 @@ using CoreBi.Engine.Monitoring.Sensors;
 
 namespace CoreBi.Desktop;
 
-/// <summary>Um instrumento ao vivo da placa: leitura grande, complemento e histórico curto no canal Gpu.</summary>
+/// <summary>Uma leitura ao vivo da placa: número grande, medidor da fração da escala e complemento.</summary>
 public sealed class GpuGauge : ObservableObject
 {
     public GpuGauge(string key, string label, string? tip = null) { Key = key; Label = label; Tip = tip; }
@@ -16,7 +16,7 @@ public sealed class GpuGauge : ObservableObject
     private string _value = "—", _unit = "", _sub = "", _tone = "";
     private bool _first;
     private double _max = 100;
-    private IReadOnlyList<float?> _samples = Array.Empty<float?>();
+    private double _fraction;
 
     public string Value { get => _value; set => Set(ref _value, value); }
     public string Unit { get => _unit; set => Set(ref _unit, value); }
@@ -24,7 +24,8 @@ public sealed class GpuGauge : ObservableObject
     public string Tone { get => _tone; set => Set(ref _tone, value); }
     public bool First { get => _first; set => Set(ref _first, value); }
     public double Max { get => _max; set => Set(ref _max, value); }
-    public IReadOnlyList<float?> Samples { get => _samples; set { _samples = value; OnPropertyChanged(); } }
+    /// <summary>Quanto da escala (<see cref="Max"/>) a leitura ocupa, de 0 a 1, para o medidor.</summary>
+    public double Fraction { get => _fraction; set => Set(ref _fraction, value); }
 }
 
 /// <summary>
@@ -94,6 +95,11 @@ internal sealed class GpuBoard
 
         Push("core", core, gap);
         _core.Value = core is float cc ? $"{cc:N0}" : "—";
+        // O limitador do driver só aparece quando segura a placa por calor ou por proteção do hardware (energia e ociosa são o normal)
+        string cap = _gpu.LiveExtras().FirstOrDefault(kv => kv.Key.StartsWith("PerfCap", StringComparison.Ordinal)).Value ?? "";
+        _core.Sub = cap.Contains("Térmico") ? "segurado pela temperatura"
+            : cap.Contains("HW slowdown") || cap.Contains("Power brake") ? "segurado pelo hardware" : "";
+        _core.Tone = _core.Sub.Length > 0 ? "Warn" : "";
         _core.Unit = "MHz";
         _core.Max = Ceiling(core is null ? _coreCeiling : Math.Max(_coreCeiling, Peak("core")), 500);
 
@@ -105,14 +111,14 @@ internal sealed class GpuBoard
         Push("temp", temp, gap);
         _temp.Value = temp is float tt ? $"{tt:0}" : "—";
         _temp.Unit = "°C";
-        _temp.Sub = hot is float hs ? $"ponto mais quente {hs:0} °C" : "";
+        _temp.Sub = hot is float hs ? $"ponto quente {hs:0} °C" : "";
         _temp.Tone = temp >= 95 || hot >= 105 ? "Danger" : "";
         _temp.Max = 100;
 
         Push("power", power, gap);
         _power.Value = power is float p ? $"{p:0}" : "—";
         _power.Unit = "W";
-        _power.Sub = power is float pp && limit is float pl ? $"{100 * pp / pl:0} % do limite de {pl:0} W" : "";
+        _power.Sub = power is float pp && limit is float pl ? $"{100 * pp / pl:0} % de {pl:0} W" : "";
         _power.Max = Ceiling(Math.Max(limit ?? 0, Peak("power") * 1.25), 50);
 
         Push("vram", vram is { } vv ? (float)vv.Used : null, gap);
@@ -138,7 +144,9 @@ internal sealed class GpuBoard
             _fan.Max = 100;
         }
 
-        foreach (var g in All) g.Samples = History(g.Key).ToArray();
+        // A escala de cada medidor é o Max acima; a última amostra dá a fração (sem leitura, o medidor fica vazio)
+        foreach (var g in All)
+            g.Fraction = History(g.Key) is { Count: > 0 } h && h[^1] is float v && g.Max > 0 ? Math.Clamp(v / g.Max, 0, 1) : 0;
         UpdateShown();
     }
 
