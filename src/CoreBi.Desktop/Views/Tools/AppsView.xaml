@@ -21,7 +21,7 @@
         </DataTemplate>
 
         <!--
-            Linha do catálogo (no estilo do Ninite): a linha inteira marca e desmarca. Da esquerda para a direita: o marcador redondo,
+            Linha do catálogo (no estilo do Ninite): a linha inteira marca e desmarca. 30 px de altura com 1 px livre em cima e embaixo, para dois marcados seguidos não virarem um bloco só. Da esquerda para a direita: o marcador redondo,
             o ícone, o nome e, à direita, o estado em texto curto quando há um ("Instalado", "Na fila", "Instalando…", "Falhou").
             Os três estados da legenda: disponível (marcador vazio), no pacote (marcador e realce no sinal, nome em seminegrito) e já
             instalado (marcador verde-claro com o visto, nome e ícone apagados, sem reagir ao mouse). Fora do filtro ou da busca, a
@@ -36,7 +36,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
-                        <Border x:Name="b" Height="32" Background="Transparent" CornerRadius="10" Padding="8,0,10,0" SnapsToDevicePixels="True">
+                        <Border x:Name="b" Height="30" Margin="0,1" Background="Transparent" CornerRadius="10" Padding="8,0,10,0" SnapsToDevicePixels="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="20" />
