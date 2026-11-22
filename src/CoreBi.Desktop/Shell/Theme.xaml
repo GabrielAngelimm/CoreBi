@@ -61,7 +61,7 @@
     <SolidColorBrush x:Key="VirtualSoft" Color="#1E7A5AC8"/>
     <SolidColorBrush x:Key="Storage" Color="#4A82CC"/>
     <!-- Tom fundo do armazenamento: a marca do "usado" na legenda do Espaço, que não repete o azul aceso da barra logo acima -->
-    <SolidColorBrush x:Key="StorageDeep" Color="#2B5490"/>
+    <SolidColorBrush x:Key="StorageDeep" Color="#1E4278"/>
     <SolidColorBrush x:Key="StorageSoft" Color="#1A4A82CC"/>
     <SolidColorBrush x:Key="Board" Color="#C8A370"/>
     <SolidColorBrush x:Key="BoardSoft" Color="#1AC8A370"/>

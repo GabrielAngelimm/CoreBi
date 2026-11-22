@@ -299,14 +299,16 @@
                                     <TextBlock Text="Vida útil" Style="{StaticResource CardTitle}" />
                                 </Grid>
                                 <!--
-                                    Três terços iguais com fio entre eles; em cada um, rótulo e valor alinhados à esquerda num ponto fixo (o
-                                    primeiro no recuo do cartão, os outros 16 depois do fio), então as posições não mudam com o tamanho dos números
+                                    Três colunas fixas com fio entre elas; em cada uma, rótulo e valor alinhados à esquerda num ponto fixo (o
+                                    primeiro no recuo do cartão, os outros 16 depois do fio), então as posições não mudam com o tamanho dos números.
+                                    As larguras (11:13:16) seguem a maior leitura de cada coluna ("100 %", "100 %", "1.151 TB"), então a folga antes
+                                    de cada fio e no fim da faixa fica igual, em vez de sobrar espaço nas duas primeiras
                                 -->
                                 <Grid Grid.Row="2" Margin="0,16,0,0">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="11*" />
+                                        <ColumnDefinition Width="13*" />
+                                        <ColumnDefinition Width="16*" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <TextBlock Text="Desgaste" Style="{StaticResource StatLabel}" />
