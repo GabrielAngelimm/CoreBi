@@ -133,7 +133,7 @@
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
     <Style x:Key="PageSubtitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="LineHeight" Value="20"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -167,7 +167,7 @@
         Escala de texto (a mesma em todas as páginas, para a letra não crescer e encolher na troca de tela; ver DESIGN.md):
         PageTitle 36 · PlateName 30 (o nome na placa de identificação) · TestPlateTitle 24 (a peça na bancada) · SectionTitle e
         CardTitle 17 (painel) · GroupTitle 15 (grupo, nó, seção dentro do painel) · ItemTitle 14 (nome numa lista ou tecla) ·
-        PageSubtitle, PageStatus e PlateText 13,5 · Body 13 · StatLabel e Label 12,5 · Caption 12 · StatSub e Footnote 11,5.
+        PageSubtitle, PageStatus e PlateText 14 · Body 13,5 · StatLabel e Label 13 · Caption 12,5 · StatSub e Footnote 12.
     -->
     <!-- Nome na placa de identificação (Sistema, Placa de vídeo, Discos) -->
     <Style x:Key="PlateName" TargetType="TextBlock">
@@ -179,7 +179,7 @@
     </Style>
     <!-- A frase sob o nome da placa (especificação, resumo) -->
     <Style x:Key="PlateText" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
@@ -203,7 +203,7 @@
     <!-- Rótulo de grupo: frase curta, sem caixa alta, na letra da estrutura -->
     <Style x:Key="Label" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="Margin" Value="0,0,0,8"/>
@@ -211,7 +211,7 @@
     </Style>
     <Style x:Key="Caption" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SmallFont}"/>
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="LineHeight" Value="17"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -219,15 +219,15 @@
     <!-- Nota de rodapé: fonte dos dados e limites da medição -->
     <Style x:Key="Footnote" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SmallFont}"/>
-        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontSize" Value="12"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
-        <Setter Property="LineHeight" Value="16"/>
+        <Setter Property="LineHeight" Value="17"/>
         <Setter Property="MaxWidth" Value="760"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
     <Style x:Key="Body" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontSize" Value="13.5"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="LineHeight" Value="20"/>
@@ -271,7 +271,7 @@
     </Style>
     <Style x:Key="Unit" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="VerticalAlignment" Value="Bottom"/>
         <Setter Property="Margin" Value="5,0,0,5"/>
@@ -279,7 +279,7 @@
     <!-- Rótulo de uma leitura (Temp., Clock, Desgaste): gravado no painel, na letra do instrumento -->
     <Style x:Key="StatLabel" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
@@ -290,7 +290,7 @@
     </Style>
     <Style x:Key="StatSub" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SmallFont}"/>
-        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontSize" Value="12"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="Margin" Value="0,2,0,0"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -358,7 +358,7 @@
     </Style>
     <!-- Estado vivo na barra de ações, à esquerda dos botões, na mesma linha: o que acabou de acontecer ("Lido às 20:31") -->
     <Style x:Key="PageStatus" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextWrapping" Value="NoWrap"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -1904,7 +1904,7 @@
     <!-- Cabeçalho de coluna de uma tabela feita à mão (linhas de altura fixa): DIN 12, um tom abaixo do conteúdo -->
     <Style x:Key="TableHead" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontSize" Value="12.5"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>

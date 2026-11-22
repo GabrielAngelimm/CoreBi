@@ -153,13 +153,13 @@ Duas vozes: a do instrumento e a do conteúdo.
 
 | Papel | Família | Onde |
 | --- | --- | --- |
-| Estrutura | Bahnschrift (DIN 1451, a letra de placas e mostradores e da assinatura CoreBi) | Título da página (`PageTitle`, 36 seminegrito), título de painel (`SectionTitle`, 17), título de grupo (`GroupTitle`, 15), nomes em destaque (`PlateName` 30 na placa de Sistema, Placa de vídeo e Discos; `TestPlateTitle` 24 para a peça em Sensores, Benchmark, Teste de carga e o resultado do Gargalo), nome de item numa lista ou tecla (`ItemTitle`, 14), navegação (14) e os cabeçalhos dela (12), botões (13,5 seminegrito), rótulos de leitura (`StatLabel` e `Label`, 12,5), segmentos e filtros (13), selos, teclas de atalho e cabeçalhos de coluna (`LabelFont`) |
+| Estrutura | Bahnschrift (DIN 1451, a letra de placas e mostradores e da assinatura CoreBi) | Título da página (`PageTitle`, 36 seminegrito), título de painel (`SectionTitle`, 17), título de grupo (`GroupTitle`, 15), nomes em destaque (`PlateName` 30 na placa de Sistema, Placa de vídeo e Discos; `TestPlateTitle` 24 para a peça em Sensores, Benchmark, Teste de carga e o resultado do Gargalo), nome de item numa lista ou tecla (`ItemTitle`, 14), navegação (14) e os cabeçalhos dela (12), botões (13,5 seminegrito), rótulos de leitura (`StatLabel` e `Label`, 13), segmentos e filtros (13), selos, teclas de atalho e cabeçalhos de coluna (`LabelFont`) |
 | Mostrador | Bahnschrift SemiCondensed, algarismos tabulares | Leituras (`ReadoutText` 22, `ReadoutLarge` 38, `ReadoutHero` 54), eixos de gráfico, overlay |
 | Conteúdo | Segoe UI Variable Text | Nomes, valores em texto, descrições e campos (13; `Body` com 20 de entrelinha) |
-| Texto pequeno | Segoe UI Variable Small (o tamanho óptico feito para letra miúda) | Legendas (`Caption` 12/17), notas (`Footnote` 11,5/16), subtextos (`StatSub` 11,5) |
+| Texto pequeno | Segoe UI Variable Small (o tamanho óptico feito para letra miúda) | Legendas (`Caption` 12,5/17), notas (`Footnote` 12/16), subtextos (`StatSub` 12) |
 | Código | Cascadia Mono | Registro do teste de carga e linhas de comando da Inicialização |
 
-Hierarquia de uma tela: título da página (DIN 36) → título de painel (DIN 17) → rótulo (DIN 12,5, `Muted`) → valor (mostrador ou Segoe 13 em `Fg`) → nota (Segoe Small 11,5, `Faint`). A estrutura fala a língua do instrumento e o conteúdo fica na letra de leitura do Windows, então título, rótulo e botão nunca se confundem com o dado. Números em texto comum usam `Typography.NumeralAlignment="Tabular"` (estilo `Num`) para não "dançar" quando o valor muda. Rótulos são curtos e em caixa de frase; não há rótulos em caixa alta. Botões dizem exatamente o que acontece ("Iniciar teste", "Exportar relatório", "Ler novamente").
+Hierarquia de uma tela: título da página (DIN 36) → título de painel (DIN 17) → rótulo (DIN 13, `Muted`) → valor (mostrador ou Segoe 13,5 em `Fg`) → nota (Segoe Small 12, `Faint`). A estrutura fala a língua do instrumento e o conteúdo fica na letra de leitura do Windows, então título, rótulo e botão nunca se confundem com o dado. Números em texto comum usam `Typography.NumeralAlignment="Tabular"` (estilo `Num`) para não "dançar" quando o valor muda. Rótulos são curtos e em caixa de frase; não há rótulos em caixa alta. Botões dizem exatamente o que acontece ("Iniciar teste", "Exportar relatório", "Ler novamente").
 
 **Centralização vertical.** A Bahnschrift assenta cerca de 1,5 px acima do centro da caixa de linha do WPF, então os controles com texto DIN compensam no preenchimento (filtros, opções em pílula, segmentos, teclas de atalho, o item de menu e a aba de Sistema), e os campos de texto (Segoe) sobem 1,5 px. O desvio foi medido nas capturas (`--shots`) em todos os controles de uma lista e fica em ±1 px (centro do corpo da letra contra o centro da caixa).
 
@@ -173,11 +173,11 @@ Hierarquia de uma tela: título da página (DIN 36) → título de painel (DIN 1
 | Título de painel ou cartão | `SectionTitle`, `CardTitle` | 17 DIN seminegrito |
 | Grupo, nó ou seção dentro de um painel | `GroupTitle` | 15 DIN seminegrito |
 | Nome de item numa lista ou tecla | `ItemTitle` | 14 DIN seminegrito |
-| Subtítulo da página, estado do cabeçalho, frase da placa | `PageSubtitle`, `PageStatus`, `PlateText` | 13,5 Segoe |
-| Texto corrido | `Body` | 13 Segoe |
-| Rótulo de leitura ou de grupo | `StatLabel`, `Label` | 12,5 DIN |
-| Legenda | `Caption` | 12 Segoe |
-| Nota e linha de contexto | `StatSub`, `Footnote` | 11,5 Segoe |
+| Subtítulo da página, estado do cabeçalho, frase da placa | `PageSubtitle`, `PageStatus`, `PlateText` | 14 Segoe |
+| Texto corrido | `Body` | 13,5 Segoe |
+| Rótulo de leitura ou de grupo | `StatLabel`, `Label` | 13 DIN |
+| Legenda | `Caption` | 12,5 Segoe |
+| Nota e linha de contexto | `StatSub`, `Footnote` | 12 Segoe |
 
 Leituras de mostrador seguem a sua própria escala (`ReadoutHero` 54, `ReadoutLarge` 38, instrumentos 34, `StatValue` 24, `ReadoutText` 22), e a unidade fica em DIN na metade do tamanho do número.
 
