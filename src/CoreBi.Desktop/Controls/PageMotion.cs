@@ -123,6 +123,15 @@ public static class PageMotion
     /// Roda <paramref name="work"/> depois que a entrada da página termina (ou já, se ela entrou há mais tempo ou sem animações),
     /// com a interface livre: montagem pesada no meio da entrada engasgaria o movimento.
     /// </summary>
+    /// <summary>O mesmo que <see cref="AfterEntrance"/>, para esperar com await: a leitura corre durante a entrada e só o que
+    /// mexe na tela espera ela terminar.</summary>
+    public static Task EntranceDone(FrameworkElement page)
+    {
+        var done = new TaskCompletionSource();
+        AfterEntrance(page, () => done.TrySetResult());
+        return done.Task;
+    }
+
     public static void AfterEntrance(FrameworkElement page, Action work)
     {
         long left = Animate ? (long)PageShift.TotalMilliseconds - (Environment.TickCount64 - (long)page.GetValue(EnteredAtProperty)) : 0;

@@ -39,18 +39,19 @@ public partial class MainWindow
         ShowPage(page);
         if (page == nameof(PageDash)) PageDash.RevealRings(); // os anéis enchem do zero junto com a entrada
 
-        // A leitura da página começa depois do primeiro quadro dela: a troca nunca espera os dados
+        // A leitura da página começa depois do primeiro quadro dela: a troca nunca espera os dados. Ao voltar a uma página já lida,
+        // a releitura é silenciosa (sem "Lendo…", medidor nem botões apagando) e só troca o que mudou, depois da entrada
         await Dispatcher.Yield(DispatcherPriority.Background);
         if (version != _navVersion || _context.IsClosing) return;
         switch (page)
         {
             case nameof(PageDash): PageDash.UpdateDashboard(); break;
             case nameof(PageOverlay): PageOverlay.UpdatePreview(); break;
-            case nameof(PageDisks): await PageDisks.RefreshAsync(); break;
-            case nameof(PageEnergy): await PageEnergy.RefreshAsync(); break;
+            case nameof(PageDisks): await PageDisks.RefreshAsync(entering: true); break;
+            case nameof(PageEnergy): await PageEnergy.RefreshAsync(entering: true); break;
             case nameof(PageDriver): PageDriver.InitDriver(); break;
-            case nameof(PageStartup): await PageStartup.RefreshAsync(); break;
-            case nameof(PageApps): await PageApps.RefreshAsync(); break;
+            case nameof(PageStartup): await PageStartup.RefreshAsync(entering: true); break;
+            case nameof(PageApps): await PageApps.RefreshAsync(entering: true); break;
         }
     }
 

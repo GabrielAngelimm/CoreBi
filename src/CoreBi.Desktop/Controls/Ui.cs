@@ -10,6 +10,47 @@ namespace CoreBi.Desktop;
 /// </summary>
 public static class Ui
 {
+    /// <summary>
+    /// Troca os itens de uma lista só quando mudaram (registros comparam por valor): trocar por uma cópia igual refaz as linhas, e o
+    /// que já estava na tela pisca a cada releitura.
+    /// </summary>
+    public static void SetItems<T>(System.Windows.Controls.ItemsControl list, IReadOnlyList<T>? items)
+    {
+        if (items != null && list.ItemsSource is IEnumerable<T> shown && shown.SequenceEqual(items)) return;
+        if (items == null && list.ItemsSource == null) return;
+        list.ItemsSource = items;
+    }
+
+    /// <summary>
+    /// Interruptor (estilo Switch): o estado aparece na hora (setters do template) e o deslize só acontece no clique de quem usa.
+    /// Com a animação presa ao IsChecked, cada linha recriada (voltar à página, reler a lista) ligava a chave de novo na tela.
+    /// </summary>
+    public static readonly DependencyProperty SwitchMotionProperty = DependencyProperty.RegisterAttached(
+        "SwitchMotion", typeof(bool), typeof(Ui), new PropertyMetadata(false, (d, e) =>
+        {
+            if (d is not System.Windows.Controls.Primitives.ToggleButton box) return;
+            box.Click -= SwitchClick;
+            if ((bool)e.NewValue) box.Click += SwitchClick;
+        }));
+    public static bool GetSwitchMotion(DependencyObject d) => (bool)d.GetValue(SwitchMotionProperty);
+    public static void SetSwitchMotion(DependencyObject d, bool value) => d.SetValue(SwitchMotionProperty, value);
+
+    private static void SwitchClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Control box || !SystemParameters.ClientAreaAnimation) return;
+        // O clique chega com o IsChecked já trocado e o botão já no lado novo: o deslize parte do lado antigo e volta a 0
+        bool on = box is System.Windows.Controls.Primitives.ToggleButton { IsChecked: true };
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var time = TimeSpan.FromMilliseconds(200);
+        if (box.Template?.FindName("knob", box) is UIElement knob)
+        {
+            if (knob.RenderTransform is not TranslateTransform { IsFrozen: false } slide) knob.RenderTransform = slide = new TranslateTransform();
+            slide.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(on ? -18 : 18, 0, time) { EasingFunction = ease, FillBehavior = FillBehavior.Stop });
+        }
+        if (box.Template?.FindName("on", box) is UIElement fill)
+            fill.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(on ? 0 : 1, on ? 1 : 0, time) { FillBehavior = FillBehavior.Stop });
+    }
+
     public static readonly DependencyProperty IconProperty = DependencyProperty.RegisterAttached(
         "Icon", typeof(string), typeof(Ui), new FrameworkPropertyMetadata(""));
     public static string GetIcon(DependencyObject d) => (string)d.GetValue(IconProperty);

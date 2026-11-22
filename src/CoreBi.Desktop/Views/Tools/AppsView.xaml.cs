@@ -69,14 +69,19 @@ public partial class AppsView : UserControl
     }
 
     private bool _appsRefreshing;
-    internal async Task RefreshAsync()
+    internal async Task RefreshAsync(bool entering = false)
     {
         if (_appsBusy || _appsRefreshing || _context == null || _context.IsClosing) return;
         _appsRefreshing = true;
-        AppsList.IsEnabled = false;
-        BtnAppsInstall.IsEnabled = false;
-        Say("Lendo aplicativos instalados…");
-        ToolPage.SetProgress(AppsProgressFill, 0);
+        // Voltar à página relê em silêncio: os cartões não apagam, sem "Lendo…" nem medidor (as marcas só mudam se mudou algo)
+        bool quiet = entering && _installApps != null;
+        if (!quiet)
+        {
+            AppsList.IsEnabled = false;
+            BtnAppsInstall.IsEnabled = false;
+            Say("Lendo aplicativos instalados…");
+            ToolPage.SetProgress(AppsProgressFill, 0);
+        }
         try
         {
             bool first = _installApps == null;
@@ -92,6 +97,7 @@ public partial class AppsView : UserControl
                 UpdateColumns();
             }
             var names = await Task.Run(AppInstaller.InstalledNames, _context.Lifetime);
+            if (entering) await PageMotion.EntranceDone(this);
             if (_context.IsClosing) return;
             foreach (var app in _installApps)
             {
@@ -101,7 +107,7 @@ public partial class AppsView : UserControl
             }
             _wingetAvailable = AppInstaller.WingetAvailable;
             BtnAppsStore.Visibility = _wingetAvailable ? Visibility.Collapsed : Visibility.Visible;
-            ToolPage.SetProgress(AppsProgressFill, 1);
+            if (!quiet) ToolPage.SetProgress(AppsProgressFill, 1);
             int installed = _installApps.Count(a => a.Installed);
             if (_wingetAvailable) Say($"{installed} de {_installApps.Count} já instalados");
             else Say("winget não encontrado", "Atualize o Instalador de Aplicativo na Microsoft Store e abra esta página de novo.");

@@ -82,7 +82,7 @@
                 <!-- Tabela: as larguras das colunas são as mesmas no cabeçalho e nas linhas -->
                 <!-- Esqueleto: cabeçalho de colunas e linhas de 44 com o interruptor, o nome e as colunas da tabela -->
                 <Border x:Name="StartupCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="48"
-                        local:Skeleton.Layout="gap 10; row 32: - 8, - 56, c 3*@0.24, - 16, c 4*@0.24, - 16, c 216@0.26, - 16, c 5*@0.2, - 36, - 8; lines 44: - 8, pill 56@0.68^20, s 3*, - 16, t 4*, - 16, t 216, - 16, c 5*, c 36@0.4^14~, - 8">
+                        local:Skeleton.Layout="gap 10; row 32: - 8, - 56, c 3*@0.24, - 16, c 4*@0.24, - 16, c 5*@0.2, - 36, - 8; lines 44: - 8, pill 56@0.68^20, s 3*, - 16, t 4*, - 16, c 5*, c 36@0.4^14~, - 8">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -120,14 +120,12 @@
                                 <ColumnDefinition Width="56" />
                                 <ColumnDefinition Width="3*" MinWidth="160" />
                                 <ColumnDefinition Width="4*" MinWidth="140" />
-                                <ColumnDefinition Width="232" />
                                 <ColumnDefinition Width="5*" MinWidth="160" />
                                 <ColumnDefinition Width="36" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="1" Text="Programa" Style="{StaticResource TableHead}" />
                             <TextBlock Grid.Column="2" Text="Descrição" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
-                            <TextBlock Grid.Column="3" Text="Origem" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
-                            <TextBlock Grid.Column="4" Text="Comando" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
+                            <TextBlock Grid.Column="3" Text="Comando" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
                         </Grid>
 
                         <ScrollViewer x:Name="StartupListScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" ScrollChanged="StartupListScroll_ScrollChanged">
@@ -141,7 +139,6 @@
                                                         <ColumnDefinition Width="56" />
                                                         <ColumnDefinition Width="3*" MinWidth="160" />
                                                         <ColumnDefinition Width="4*" MinWidth="140" />
-                                                        <ColumnDefinition Width="232" />
                                                         <ColumnDefinition Width="5*" MinWidth="160" />
                                                         <ColumnDefinition Width="36" />
                                                     </Grid.ColumnDefinitions>
@@ -162,11 +159,17 @@
                                                         </Border>
                                                     </Grid>
                                                     <TextBlock Grid.Column="2" Text="{Binding Detail}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,0,0,0" ToolTip="{Binding Detail}" />
-                                                    <TextBlock Grid.Column="3" Text="{Binding Source}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,0,0,0" ToolTip="{Binding Source}" />
                                                     <!-- Mono 12 centrado ficava com a base 2 px acima da Segoe 13 das outras colunas: 4 em cima o desce 2 -->
-                                                    <TextBlock Grid.Column="4" Text="{Binding Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
-                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,4,0,0" ToolTip="{Binding Command}" />
-                                                    <Button Grid.Column="5" Style="{StaticResource RowRemove}" Tag="{Binding}" Click="StartupRemove_Click" HorizontalAlignment="Right"
+                                                    <TextBlock Grid.Column="3" Text="{Binding Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
+                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,4,0,0">
+                                                        <!-- A origem (registro ou pasta Inicializar) saiu da tabela e fica na dica, junto do comando inteiro -->
+                                                        <TextBlock.ToolTip>
+                                                            <TextBlock>
+                                                                <Run Text="{Binding Command, Mode=OneWay}" /><LineBreak /><Run Text="{Binding Source, Mode=OneWay}" Foreground="{DynamicResource Muted}" />
+                                                            </TextBlock>
+                                                        </TextBlock.ToolTip>
+                                                    </TextBlock>
+                                                    <Button Grid.Column="4" Style="{StaticResource RowRemove}" Tag="{Binding}" Click="StartupRemove_Click" HorizontalAlignment="Right"
                                                             AutomationProperties.Name="Remover da inicialização"
                                                             ToolTip="Remover da inicialização. Sai da lista; dá para desfazer em Restaurar removidos." />
                                                 </Grid>

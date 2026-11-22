@@ -26,15 +26,20 @@ public partial class StartupView : UserControl
     private void Say(string status, string detail = "") => ToolPage.Say(StartupSummary, StartupResult, status, detail);
 
     /// <summary>Leitura pedida (abrir a página, "Ler novamente"): o subtítulo mostra a hora da leitura.</summary>
-    internal Task RefreshAsync() => ScanAsync(announce: true);
+    internal Task RefreshAsync(bool entering = false) => ScanAsync(announce: true, entering);
 
     private bool _scanning;
+
+    private static string Signature(IEnumerable<StartupEntry> list) =>
+        string.Join("\n", list.Select(e => $"{e.Source}|{e.Name}|{e.Command}|{e.Detail}|{e.Enabled}|{e.Machine}|{e.FileMissing}"));
     /// <summary>Lê a lista e os removidos. Depois de uma ação (announce = false) o subtítulo continua mostrando o resultado dela.</summary>
-    private async Task ScanAsync(bool announce)
+    private async Task ScanAsync(bool announce, bool entering = false)
     {
         if (_scanning || _context == null || _context.IsClosing) return;
         _scanning = true;
-        if (announce) { Say("Lendo programas…"); ToolPage.SetProgress(StartupProgressFill, 0); }
+        // Voltar à página relê em silêncio: sem "Lendo…" nem medidor, só a hora no fim (e a lista só muda se mudou)
+        bool quiet = entering && StartupList.ItemsSource != null;
+        if (announce && !quiet) { Say("Lendo programas…"); ToolPage.SetProgress(StartupProgressFill, 0); }
         if (StartupList.ItemsSource == null) Skeleton.SetActive(StartupCard, true); // primeira leitura: a tabela ainda não tem o que mostrar
         List<StartupEntry> list;
         string backupError = "";
@@ -42,22 +47,26 @@ public partial class StartupView : UserControl
         {
             list = await Task.Run(_startup.List, _context.Lifetime);
             if (_context.IsClosing) return;
-            if (announce) ToolPage.SetProgress(StartupProgressFill, 0.5);
+            if (announce && !quiet) ToolPage.SetProgress(StartupProgressFill, 0.5);
             try { _removed = await Task.Run(() => _startup.Backups, _context.Lifetime); }
             catch (UnauthorizedAccessException) { _removed = Array.Empty<StartupBackup>(); backupError = "Os removidos só aparecem com o CoreBi aberto como administrador."; }
             catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); backupError = "Não foi possível ler os removidos: " + ex.Message; }
         }
-        catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); ToolPage.EndProgress(StartupProgressFill); return; }
-        finally { _scanning = false; Skeleton.SetActive(StartupCard, false); }
+        catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); ToolPage.EndProgress(StartupProgressFill); _scanning = false; Skeleton.SetActive(StartupCard, false); return; }
+        if (entering) await PageMotion.EntranceDone(this);
+        _scanning = false;
+        Skeleton.SetActive(StartupCard, false);
         if (_context.IsClosing) return;
 
-        StartupList.ItemsSource = list;
+        // Mesma lista da tela (nomes, comandos, estados): as linhas ficam. Refazê-las a cada volta ou a cada interruptor fazia as
+        // chaves ligadas piscarem
+        if (StartupList.ItemsSource is not IEnumerable<StartupEntry> shown || Signature(shown) != Signature(list)) StartupList.ItemsSource = list;
         StartupEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         StartupCount.Text = list.Count > 0 ? list.Count.ToString() : "";
         StartupOff.Text = OffText(list.Count, list.Count(e => !e.Enabled));
         if (announce)
         {
-            ToolPage.SetProgress(StartupProgressFill, 1);
+            if (!quiet) ToolPage.SetProgress(StartupProgressFill, 1);
             Say($"Lido às {DateTime.Now:HH:mm}", backupError);
         }
         else if (backupError.Length > 0) StartupResult.Text = backupError;
@@ -84,6 +93,7 @@ public partial class StartupView : UserControl
         try
         {
             _startup.SetEnabled(item, turnOn);
+            item.Enabled = turnOn; // a linha já mostra o novo estado: a releitura encontra a mesma lista e não refaz nada
             Say($"{item.Name} {(turnOn ? "ligado" : "desligado")}", NextBoot);
         }
         catch (Exception ex) { Say($"Não foi possível mudar {item.Name}", ex.Message); }
