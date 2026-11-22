@@ -16,7 +16,7 @@ namespace CoreBi.Desktop;
 /// põem um fio ou um vão nessa pilha; <c>center 260: ...</c>: uma linha no meio do que sobra; <c>rest: ...</c>: uma linha com
 /// toda a altura que sobra;</item>
 /// <item><c>line</c>: um fio de 1 px na largura toda; <c>spread 6: ...</c>: seis linhas que dividem a altura que sobra, com o fio
-/// em cima de cada uma; <c>share 7: ...</c>: o mesmo, sem o fio; <c>bands 4</c> … <c>endbands</c>: o trecho entre eles
+/// em cima de cada uma; <c>share 7: ...</c>: o mesmo, sem o fio; <c>spaced 4 14: ...</c>: quatro linhas de 14 px com a primeira no topo e a última no pé (eixo de gráfico); <c>bands 4</c> … <c>endbands</c>: o trecho entre eles
 /// repetido em quatro faixas iguais do que sobra, centrado em cada uma, com o fio entre elas;</item>
 /// <item><c>pad 16 13 14 14</c>, só como primeiro comando: recua a área (esquerda, topo, direita, base);</item>
 /// <item><c>col 0 50%</c> … <c>col 50% 50%</c> … <c>end</c>: colunas lado a lado; cada <c>col</c> volta ao topo do bloco e
@@ -69,9 +69,10 @@ public static class SkeletonPlan
                 y = bottom;
                 continue;
             }
-            if (y >= bottom) break;
             string[] head = cmd.Split(':', 2);
             string[] words = head[0].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            // Uma coluna que chegou ao pé não encerra a planta: col e end ainda levam às colunas seguintes
+            if (y >= bottom && words[0] is not ("col" or "end" or "bands")) continue;
             switch (words[0])
             {
                 case "gap":
@@ -130,6 +131,15 @@ public static class SkeletonPlan
                     Row(dc, cells, x, y, width, Math.Max(0, bottom - y), line++, bar, strong);
                     y = bottom;
                     continue;
+                case "spaced" when words.Length >= 3:
+                    {
+                        // N linhas de H px com o meio da primeira no topo e o da última no pé do que sobra (rótulos de eixo de gráfico)
+                        int n = Math.Max(2, (int)Num(words[1]));
+                        double sh = Num(words[2]), step = Math.Max(0, bottom - y) / (n - 1);
+                        for (int i = 0; i < n; i++, line++) Row(dc, cells, x, y + i * step - sh / 2, width, sh, line, bar, strong);
+                        y = bottom;
+                        continue;
+                    }
                 case "spread" or "share":
                     {
                         // N linhas que dividem a altura que sobra; spread põe o fio em cima de cada uma (lista espalhada, como a de
