@@ -38,14 +38,14 @@ internal static class ReportExportService
         int bench = context.Settings.BenchRecords.Count + context.Settings.BenchRuns.Count;
         var diag = new List<ReportPart>
         {
-            new() { Key = Disks, Title = "Saúde dos discos", Caption = "Vida útil, temperatura e erros", Icon = "storage", Channel = "Storage" },
-            new() { Key = Power, Title = "Bateria e energia", Caption = "Fonte, bateria e desgaste", Icon = "\uE7E8" },
+            new() { Key = Disks, Title = "Saúde dos discos", Caption = "Vida útil e temperatura", Icon = "storage", Channel = "Storage" },
+            new() { Key = Power, Title = "Bateria e energia", Caption = "Fonte e bateria", Icon = "\uE7E8" },
             new() { Key = Network, Title = "Teste de rede", Icon = "net", Channel = "Net", Available = networkTested,
-                    Caption = networkTested ? "O último teste desta sessão" : "Faça o teste em Rede antes" },
+                    Caption = networkTested ? "O último teste desta sessão" : "Faça o teste em Rede" },
             new() { Key = Sensors, Title = "Sensores", Icon = "\uE9D9", Available = sensors > 0,
-                    Caption = sensors > 0 ? $"{sensors} leituras, com mínimo e máximo" : "Nenhum sensor respondeu" },
-            new() { Key = Bench, Title = "Benchmarks e testes", Icon = "\uE8B9", Available = bench > 0,
-                    Caption = bench > 0 ? $"{bench} {(bench == 1 ? "resultado salvo" : "resultados salvos")}" : "Nenhum teste feito ainda" },
+                    Caption = sensors > 0 ? $"{sensors} leituras" : "Nenhum sensor respondeu" },
+            new() { Key = Bench, Title = "Benchmarks", Icon = "\uE8B9", Available = bench > 0,
+                    Caption = bench > 0 ? $"{bench} {(bench == 1 ? "resultado" : "resultados")}" : "Nenhum teste feito ainda" },
         };
         return (sheets, diag);
     }
