@@ -70,10 +70,10 @@
                             </Grid>
                             <TextBlock x:Name="StartupPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" />
                         </Grid>
-                        <StackPanel Style="{StaticResource PageStatusBox}">
-                            <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" />
-                            <TextBlock x:Name="StartupResult" Style="{StaticResource PageDetail}" />
-                        </StackPanel>
+                        <DockPanel Style="{StaticResource PageStatusSlot}">
+                            <TextBlock x:Name="StartupResult" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
+                            <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
+                        </DockPanel>
                         <Button Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnStartupScan_Click"
                                 ToolTip="Lê de novo as chaves Run do registro e as pastas Inicializar do usuário e de todos os usuários." />
                     </StackPanel>

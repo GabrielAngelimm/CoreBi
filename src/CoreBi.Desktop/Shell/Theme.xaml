@@ -304,7 +304,7 @@
     <!-- Segunda parte do estado: o detalhe curto, um tom abaixo -->
     <Style x:Key="PageDetail" TargetType="TextBlock" BasedOn="{StaticResource PageStatus}">
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
-        <Setter Property="MaxWidth" Value="360"/>
+        <Setter Property="MaxWidth" Value="240"/>
         <Setter Property="Margin" Value="12,0,0,2"/>
         <Style.Triggers>
             <Trigger Property="Text" Value="">
@@ -312,9 +312,13 @@
             </Trigger>
         </Style.Triggers>
     </Style>
-    <!-- Caixa do estado na barra: 20 até o que vem depois (medidor, busca ou botão) -->
-    <Style x:Key="PageStatusBox" TargetType="StackPanel">
-        <Setter Property="Orientation" Value="Horizontal"/>
+    <!--
+        Vaga do estado na barra, de largura fixa e com o texto rente à direita: o estado muda de tamanho a cada etapa, e numa caixa
+        que acompanhasse o texto o medidor à esquerda dela pularia de lugar a cada troca. 20 até o que vem depois.
+    -->
+    <Style x:Key="PageStatusSlot" TargetType="DockPanel">
+        <Setter Property="Width" Value="420"/>
+        <Setter Property="LastChildFill" Value="True"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Margin" Value="0,0,20,0"/>
     </Style>
@@ -498,8 +502,22 @@
                     </Setter.Value>
                 </Setter>
             </Trigger>
+            <!-- Desligar e religar (enquanto uma tarefa corre) apaga e acende em 160 ms, sem piscar -->
             <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="root" Property="Opacity" Value="0.4"/>
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="root" Storyboard.TargetProperty="Opacity" To="0.4" Duration="0:0:0.16"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="root" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.16"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

@@ -126,10 +126,10 @@
                             <!-- A porcentagem conta junto com a barra (HeaderMotion) -->
                             <TextBlock x:Name="NetPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" FontSize="24" FontWeight="Light" MinWidth="72" Margin="16,0,0,0" />
                         </Grid>
-                        <StackPanel Style="{StaticResource PageStatusBox}">
-                            <TextBlock x:Name="NetStatus" Text="Pronto para testar" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" />
-                            <TextBlock x:Name="NetDetail" Style="{StaticResource PageDetail}" />
-                        </StackPanel>
+                        <DockPanel Style="{StaticResource PageStatusSlot}">
+                            <TextBlock x:Name="NetDetail" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
+                            <TextBlock x:Name="NetStatus" Text="Pronto para testar" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
+                        </DockPanel>
                         <Button x:Name="BtnNetTest" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE768;" Content="Testar a rede" Click="BtnNetTest_Click"
                                 ToolTip="Envia pings ao roteador e aos DNS 1.1.1.1 e 8.8.8.8 e transfere dados para medir a velocidade. O consumo pode chegar a centenas de MB." />
                     </StackPanel>

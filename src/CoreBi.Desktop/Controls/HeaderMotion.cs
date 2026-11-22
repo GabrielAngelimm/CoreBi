@@ -9,10 +9,11 @@ namespace CoreBi.Desktop;
 /// <summary>
 /// Movimento da barra de ações do cabeçalho, sem nenhuma animação contínua:
 /// <list type="bullet">
-/// <item>o estado (<see cref="SoftTextProperty"/>) acende em 200 ms quando o texto muda, em vez de trocar seco;</item>
+/// <item>o estado (<see cref="SoftTextProperty"/>) acende de leve (60 % a 100 % em 220 ms) quando o texto muda, em vez de trocar seco;</item>
 /// <item>o medidor de progresso (TaskMeter) abre a largura e acende ao começar (260 ms), a barra desliza até cada fração nova
 /// e a porcentagem conta junto com ela, quadro a quadro; ao chegar a 100 % ele fica cheio por um instante e então apaga e
-/// fecha a largura (300 ms), sem empurrar os botões, que ficam rentes à direita;</item>
+/// fecha a largura (300 ms), sem empurrar os botões, que ficam rentes à direita. Uma etapa nova que chega no meio da abertura não
+/// reinicia nada, e uma tarefa nova que começa enquanto ele fecha o faz voltar dali mesmo, sem saltar;</item>
 /// <item>um botão que troca de texto ou de cor (<see cref="Soften"/>) acende em 180 ms.</item>
 /// </list>
 /// Com "Mostrar animações no Windows" desligado tudo vai direto ao valor final.
@@ -58,14 +59,15 @@ public static class HeaderMotion
         long last = (long)text.GetValue(SoftAtProperty);
         text.SetValue(SoftAtProperty, now);
         if (now - last < 700) return;
-        text.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0.25, 1, TimeSpan.FromMilliseconds(200)) { EasingFunction = EaseOut });
+        // Um mergulho fundo (até quase apagar) lia como piscada; de 60 % o texto novo só assenta
+        text.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0.6, 1, TimeSpan.FromMilliseconds(220)) { EasingFunction = EaseOut });
     }
 
-    /// <summary>O elemento acende de 55 % a 100 % em 180 ms (troca de texto ou de cor de um botão).</summary>
+    /// <summary>O elemento acende de 60 % a 100 % em 180 ms (troca de texto ou de cor de um botão).</summary>
     public static void Soften(UIElement element)
     {
         if (!Animate || !element.IsVisible) return;
-        element.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0.55, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = EaseOut });
+        element.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0.6, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = EaseOut });
     }
 
     // ---------------- Medidor de progresso ----------------
@@ -78,6 +80,8 @@ public static class HeaderMotion
         public double Width;
         public Thickness Margin;
         public bool Shown;
+        public bool Hiding;
+        public double Target;
         public int Generation;
         public EventHandler? Tick;
     }
@@ -137,6 +141,9 @@ public static class HeaderMotion
     {
         var m = MeterOf(fill);
         fraction = Math.Clamp(double.IsFinite(fraction) ? fraction : 0, 0, 1);
+        // A mesma fração de novo (o motor repete a etapa enquanto troca o texto) não reinicia o deslize
+        if (m.Shown && !m.Hiding && fraction == m.Target && fraction < 1) return;
+        m.Target = fraction;
         m.Generation++;
         ShowMeter(m);
         StopTick(m);
@@ -169,12 +176,24 @@ public static class HeaderMotion
     private static void ShowMeter(Meter m)
     {
         var host = m.Host;
-        bool wasShown = m.Shown;
+        bool wasShown = m.Shown, wasHiding = m.Hiding;
         m.Shown = true;
+        m.Hiding = false;
+        // Já aberto ou abrindo: não mexe. Zerar as animações aqui fazia o medidor saltar para o fim da abertura (o "flick" das
+        // etapas que chegam juntas, como 0, 20 e 40 % ao ler os drivers)
+        if (wasShown && !wasHiding) return;
+        host.Visibility = Visibility.Visible;
+        if (wasHiding && Animate && !double.IsNaN(m.Width))
+        {
+            // Estava apagando: volta dali mesmo (sem From, cada animação parte do valor em que está)
+            host.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(1, Open) { EasingFunction = EaseOut });
+            host.BeginAnimation(FrameworkElement.WidthProperty, new DoubleAnimation(m.Width, Open) { EasingFunction = EaseOut });
+            host.BeginAnimation(FrameworkElement.MarginProperty, new ThicknessAnimation(m.Margin, Open) { EasingFunction = EaseOut });
+            return;
+        }
         host.BeginAnimation(UIElement.OpacityProperty, null);
         host.BeginAnimation(FrameworkElement.WidthProperty, null);
         host.BeginAnimation(FrameworkElement.MarginProperty, null);
-        host.Visibility = Visibility.Visible;
         if (wasShown || !Animate || double.IsNaN(m.Width))
         {
             host.Opacity = 1;
@@ -200,6 +219,8 @@ public static class HeaderMotion
             if (generation != m.Generation) return; // uma tarefa nova começou no meio: ela manda
             StopTick(m);
             m.Shown = false;
+            m.Hiding = false;
+            m.Target = 0;
             host.BeginAnimation(UIElement.OpacityProperty, null);
             host.BeginAnimation(FrameworkElement.WidthProperty, null);
             host.BeginAnimation(FrameworkElement.MarginProperty, null);
@@ -212,6 +233,7 @@ public static class HeaderMotion
             ShowPercent(m, 0);
         }
         if (!m.Shown || !Animate || host.Visibility != Visibility.Visible) { Collapse(); return; }
+        m.Hiding = true;
 
         // Apaga primeiro e fecha a largura logo depois, para o estado voltar ao lugar devagar
         var fade = new DoubleAnimation(0, Close) { BeginTime = delay, EasingFunction = EaseInOut };

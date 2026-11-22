@@ -14,7 +14,7 @@ public partial class StartupView : UserControl
     internal void Initialize(FeatureContext context) => _context = context;
     private bool RequireAdmin() => PermissionGuard.RequireAdmin(_context.Owner);
 
-    private const string NextBoot = "Vale na próxima vez que o Windows iniciar.";
+    private const string NextBoot = "Vale no próximo início do Windows.";
     private static readonly Thickness HeadMargin = new(8, 10, 8, 0);
 
     private readonly StartupService _startup = new();

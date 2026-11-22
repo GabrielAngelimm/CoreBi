@@ -55,10 +55,10 @@
                             </Grid>
                             <TextBlock x:Name="DrvPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" />
                         </Grid>
-                        <StackPanel Style="{StaticResource PageStatusBox}">
-                            <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" />
-                            <TextBlock x:Name="DrvDetail" Style="{StaticResource PageDetail}" />
-                        </StackPanel>
+                        <DockPanel Style="{StaticResource PageStatusSlot}">
+                            <TextBlock x:Name="DrvDetail" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
+                            <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
+                        </DockPanel>
                         <TextBox x:Name="DrvSearch" Style="{StaticResource SearchField}" local:Ui.Placeholder="Buscar dispositivo ou fabricante" Margin="0,0,10,0" TextChanged="DrvSearch_TextChanged" />
                         <Button x:Name="BtnDrvBackup" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE74E;" Content="Fazer backup" Margin="0,0,10,0"
                                 Click="BtnDrvBackup_Click" ToolTip="Exporta os drivers de terceiros para Documentos\CoreBi-Drivers, para reinstalar depois de formatar." />

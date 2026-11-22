@@ -118,10 +118,10 @@
                         </Grid>
                         <TextBlock x:Name="AppsPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" />
                     </Grid>
-                    <StackPanel Style="{StaticResource PageStatusBox}">
-                        <TextBlock x:Name="AppsStatus" Text="Lendo aplicativos instalados…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" />
-                        <TextBlock x:Name="AppsDetail" Style="{StaticResource PageDetail}" />
-                    </StackPanel>
+                    <DockPanel Style="{StaticResource PageStatusSlot}">
+                        <TextBlock x:Name="AppsDetail" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
+                        <TextBlock x:Name="AppsStatus" Text="Lendo aplicativos instalados…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
+                    </DockPanel>
                     <!-- Sem o winget não há como instalar: o atalho para atualizá-lo fica ao lado da ação principal -->
                     <Button x:Name="BtnAppsStore" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE719;" Content="Abrir na Microsoft Store"
                             Margin="0,0,10,0" Visibility="Collapsed" Click="BtnAppsStore_Click"
