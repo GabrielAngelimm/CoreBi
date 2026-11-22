@@ -173,13 +173,13 @@
                                                 <ItemsControl ItemsSource="{Binding Stats}" Focusable="False">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
-                                                            <UniformGrid Rows="1" />
+                                                            <local:EdgeRowPanel />
                                                         </ItemsPanelTemplate>
                                                     </ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <!-- Colunas iguais, cada leitura centrada na sua: o mesmo respiro à esquerda e à direita -->
-                                                            <StackPanel HorizontalAlignment="Center" Margin="4,0">
+                                                            <!-- De ponta a ponta (EdgeRowPanel): a primeira no recuo da esquerda, a última no da direita -->
+                                                            <StackPanel>
                                                                 <TextBlock Text="{Binding Key}" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
                                                                 <TextBlock Text="{Binding Value}" Style="{StaticResource Num}" Margin="0,4,0,0" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                                             </StackPanel>

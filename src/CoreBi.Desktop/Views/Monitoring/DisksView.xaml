@@ -269,7 +269,8 @@
                                             <TextBlock x:Name="DiskReasons" Grid.Column="1" Style="{StaticResource Body}" />
                                         </Grid>
                                     </StackPanel>
-                                    <Border x:Name="SpaceDivider" Grid.Column="2" Width="1" Background="{DynamicResource PlateWire}" SnapsToDevicePixels="True" Margin="0,0,32,0" />
+                                    <!-- Só o vão entre a identificação e o espaço, sem fio: os fios ficam entre as três leituras do espaço -->
+                                    <Border x:Name="SpaceDivider" Grid.Column="2" Width="0" Margin="0,0,32,0" />
                                     <!-- Espaço: a barra por unidade, as unidades lado a lado (com mais de uma) e os três números embaixo -->
                                     <StackPanel x:Name="DiskSpace" Grid.Column="3" VerticalAlignment="Center">
                                         <TextBlock Text="Espaço" Style="{StaticResource GroupTitle}" />
@@ -320,8 +321,8 @@
                                     <TextBlock Text="Vida útil" Style="{StaticResource CardTitle}" />
                                 </Grid>
                                 <local:LifeGauge x:Name="LifeDial" Grid.Row="1" MinHeight="210" Margin="0,10,0,8" Caption="restante" />
-                                <!-- Leituras do pé: colunas iguais, cada uma centrada na sua, sem fio em cima (o mostrador já separa) -->
-                                <UniformGrid Grid.Row="2" Rows="1" Margin="0,4,0,0">
+                                <!-- Leituras do pé de ponta a ponta: a primeira no recuo da esquerda, a última no da direita, vãos iguais; sem fio em cima -->
+                                <local:EdgeRowPanel Grid.Row="2" Margin="0,4,0,0">
                                     <StackPanel Style="{StaticResource SpaceCell}">
                                         <TextBlock Text="Desgaste" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
                                         <TextBlock x:Name="LifeWear" Style="{StaticResource LifeValue}" HorizontalAlignment="Center" />
@@ -334,7 +335,7 @@
                                         <TextBlock Text="Resistência" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
                                         <TextBlock x:Name="LifeEndurance" Style="{StaticResource LifeValue}" HorizontalAlignment="Center" />
                                     </StackPanel>
-                                </UniformGrid>
+                                </local:EdgeRowPanel>
                             </Grid>
                         </Border>
 
@@ -385,10 +386,10 @@
                                 </Grid>
                                 <local:ThermalScale x:Name="TempScale" Grid.Row="2" Margin="0,16,0,0" />
                                 <local:TraceChart x:Name="TempTrace" Grid.Row="3" MinHeight="150" Margin="0,12,0,0" />
-                                <!-- Rótulo e leitura na mesma letra e tamanho (as bases coincidem), centrados no pé do gráfico, sem fio em cima -->
-                                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
-                                    <TextBlock Text="Atividade agora" Style="{StaticResource StatLabel}" Margin="0,0,20,0" />
-                                    <TextBlock x:Name="DiskActivity" Style="{StaticResource StatLabel}" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" />
+                                <!-- Nota discreta no canto esquerdo do pé: rótulo e leitura na mesma letra (as bases coincidem), sem fio em cima -->
+                                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,14,0,0">
+                                    <TextBlock Text="Atividade agora" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" Margin="0,0,12,0" />
+                                    <TextBlock x:Name="DiskActivity" Style="{StaticResource Caption}" Foreground="{DynamicResource Muted}" Typography.NumeralAlignment="Tabular" />
                                 </StackPanel>
                             </Grid>
                         </Border>
