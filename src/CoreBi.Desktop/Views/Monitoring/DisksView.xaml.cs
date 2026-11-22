@@ -6,6 +6,7 @@ using CoreBi.Engine.Monitoring.Storage;
 using LibreHardwareMonitor.Hardware;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 
 namespace CoreBi.Desktop.Views;
@@ -35,7 +36,6 @@ public partial class DisksView : UserControl
     }
 
     public sealed record DiskCheck(string Title, string Value, string State, string? Tip = null);
-    public sealed record SpecItem(string Key, string Value, string? Tip = null);
     public sealed record VolumeRow(string Letter, string Label, string Line);
 
     private sealed class DiskTrace
@@ -71,7 +71,7 @@ public partial class DisksView : UserControl
             BtnDiskRefresh.IsEnabled = false;
             HeaderMotion.Say(DiskHealthStatus, null, "Lendo os discos…");
         }
-        if (first) Skeleton.Set(true, DiskPlate, LifeCard, TempCard, OdoCard, CheckCard); // primeira leitura: a ficha ainda não tem disco
+        if (first) Skeleton.Set(true, DiskPlate, LifeCard, TempCard, CheckCard); // primeira leitura: a ficha ainda não tem disco
         try
         {
             var sensors = _monitor.Snapshot();
@@ -101,7 +101,7 @@ public partial class DisksView : UserControl
                 DiskCards.ItemsSource = _bays;
                 DiskCards.SelectedItem = _bays.FirstOrDefault(b => b.Card.Index == keep) ?? _bays.FirstOrDefault();
             }
-            RackCount.Text = _bays.Count.ToString();
+            ShowRack();
 
             // Uma coisa por vez: o que pede atenção, quando há; senão só a hora da leitura (a contagem fica no rack)
             int bad = cards.Count(c => c.Verdict is HealthVerdict.Warning or HealthVerdict.Critical);
@@ -117,11 +117,46 @@ public partial class DisksView : UserControl
         finally
         {
             _refreshing = false;
-            if (first) Skeleton.Set(false, DiskPlate, LifeCard, TempCard, OdoCard, CheckCard);
+            if (first) Skeleton.Set(false, DiskPlate, LifeCard, TempCard, CheckCard);
             if (!_context.IsClosing) BtnDiskRefresh.IsEnabled = true;
         }
     }
 
+
+    private UniformGrid? _rackGrid;
+
+    private void RackGrid_Loaded(object sender, RoutedEventArgs e)
+    {
+        _rackGrid = (UniformGrid)sender;
+        ShowRack();
+    }
+
+    /// <summary>
+    /// A faixa de teclas só existe com mais de um disco (com um, a tecla repetiria a placa). As teclas dividem a largura em uma
+    /// fila; de seis discos em diante viram duas filas, para o nome não ficar cortado.
+    /// </summary>
+    private void ShowRack()
+    {
+        int n = _bays.Count;
+        DiskCards.Visibility = n > 1 ? Visibility.Visible : Visibility.Collapsed;
+        if (_rackGrid == null) return;
+        _rackGrid.Rows = n > 5 ? 2 : 1;
+        _rackGrid.Columns = n > 5 ? (n + 1) / 2 : Math.Max(1, n);
+    }
+
+    /// <summary>
+    /// Só para as capturas (CoreBi.Tests --shots "PageDisks:3"): repete o primeiro disco para ver a faixa de teclas num PC com
+    /// um disco só. Não é chamado pelo app; a próxima leitura volta aos discos reais.
+    /// </summary>
+    internal void PreviewRack(int count)
+    {
+        if (_bays.Count == 0 || count < 1) return;
+        var first = _bays[0].Card;
+        _bays = Enumerable.Range(0, count).Select(_ => new DiskBay(first)).ToList();
+        DiskCards.ItemsSource = _bays;
+        DiskCards.SelectedIndex = 0;
+        ShowRack();
+    }
 
     /// <summary>Guarda temperatura e taxas de cada disco do LibreHardwareMonitor; com a página aberta, atualiza as leituras.</summary>
     internal void Tick()
@@ -219,25 +254,20 @@ public partial class DisksView : UserControl
         bool healthy = card.Verdict == HealthVerdict.Good;
         DiskBadge.ToolTip = healthy ? "Nenhum problema encontrado nas leituras disponíveis." : null;
         DiskReasons.Text = healthy ? "" : card.Reasons;
-        DiskReasons.Visibility = DiskReasonIcon.Visibility = healthy ? Visibility.Collapsed : Visibility.Visible;
+        DiskReasonRow.Visibility = healthy || card.Reasons.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         DiskReasonIcon.Text = healthy ? "\uE73E" : card.Verdict == HealthVerdict.Unknown ? "\uE946" : "\uE7BA";
         DiskReasonIcon.SetResourceReference(TextBlock.ForegroundProperty, healthy ? "Muted" : tone.Length > 0 ? tone : "Faint");
         DiskReasons.SetResourceReference(TextBlock.ForegroundProperty, healthy ? "Muted" : "Fg");
 
         // Erro de leitura: só a placa com o motivo
         var instruments = d == null ? Visibility.Collapsed : Visibility.Visible;
-        foreach (var el in new UIElement[] { LifeCard, TempCard, CheckCard, OdoCard, DiskSpace, SpaceDivider }) el.Visibility = instruments;
-        if (d == null) { DiskSpecs.ItemsSource = null; return; }
-
-        var specs = new List<SpecItem>();
-        void Spec(string key, string value, string? tip = null) { if (value.Length > 0) specs.Add(new(key, value, tip)); }
-        Spec("", d.Kind);
-        Spec("", d.Bus);
-        Spec("", FmtSize(d.SizeBytes), SizeTip(d));
-        Spec("Unidades ", string.Join(" ", d.Letters));
-        Spec("Série ", d.Serial);
-        Spec("Firmware ", d.Firmware);
-        Ui.SetItems(DiskSpecs, specs);
+        foreach (var el in new UIElement[] { LifeCard, TempCard, CheckCard, OdoCard, DiskSpace }) el.Visibility = instruments;
+        // Sem o espaço embaixo, a placa é o painel inteiro: cantos de baixo redondos e sem o fio que a separava dele
+        PlateBand.CornerRadius = PlateWash.CornerRadius = d == null ? new CornerRadius(15) : (CornerRadius)FindResource("RadiusPanelTop");
+        PlateBand.BorderThickness = new Thickness(0, 0, 0, d == null ? 0 : 1);
+        DiskKind.Text = d == null ? "" : string.Join(" · ", new[] { d.Kind, d.Bus }.Where(s => s.Length > 0));
+        if (d == null) { DiskSpecs.Inlines.Clear(); DiskSpecs.ToolTip = null; return; }
+        ShowSpecs(d);
 
         ShowSpace(d);
         ShowLife(d);
@@ -245,6 +275,36 @@ public partial class DisksView : UserControl
         ShowChecks(d);
         ShowOdometer(d);
         ShowLive();
+    }
+
+    /// <summary>
+    /// A especificação numa frase sob o modelo, como em Placa de vídeo: "953,9 GB · Unidade C: · Firmware 3.2.F.83 · Série …",
+    /// chave em tom secundário e valor em tinta. O tipo e a conexão já estão no sobretítulo; a série, longa, vai por último
+    /// (cortada com reticências) e inteira na dica, com a do tamanho.
+    /// </summary>
+    private void ShowSpecs(DiskDetail d)
+    {
+        DiskSpecs.Inlines.Clear();
+        void Part(string key, string value)
+        {
+            if (value.Length == 0) return;
+            if (DiskSpecs.Inlines.Count > 0)
+            {
+                var sep = new Run("   ·   ");
+                sep.SetResourceReference(TextElement.ForegroundProperty, "Faint");
+                DiskSpecs.Inlines.Add(sep);
+            }
+            if (key.Length > 0) DiskSpecs.Inlines.Add(new Run(key + " "));
+            var v = new Run(value);
+            v.SetResourceReference(TextElement.ForegroundProperty, "Fg");
+            DiskSpecs.Inlines.Add(v);
+        }
+        Part("", FmtSize(d.SizeBytes));
+        Part(d.Letters.Count > 1 ? "Unidades" : "Unidade", string.Join(" ", d.Letters));
+        Part("Firmware", d.Firmware);
+        Part("Série", d.Serial);
+        var tips = new[] { SizeTip(d), d.Serial.Length > 0 ? "Série: " + d.Serial : null }.Where(t => t != null);
+        DiskSpecs.ToolTip = tips.Any() ? string.Join("\n\n", tips) : null;
     }
 
     /// <summary>
@@ -420,6 +480,7 @@ public partial class DisksView : UserControl
         var cells = new List<Border>();
         void Cell(Border cell, TextBlock target, string? value, string unit)
         {
+            cell.Visibility = value == null ? Visibility.Collapsed : Visibility.Visible;
             if (value == null) return;
             Readout(target, value, unit, balanced: true);
             cells.Add(cell);
@@ -446,68 +507,36 @@ public partial class DisksView : UserControl
 
     private List<Border> _odoCells = new();
 
-    // Esqueleto do odômetro nos dois arranjos: quatro leituras empilhadas e centradas (largo) ou 2 × 2 (estreito)
-    private const string OdoRead3 = "row 17: c *@0.62~; gap 4; row 40: n *@0.55^28~; gap 8; row 16: c *@0.7~";
-    private const string OdoWidePlan = "bands 4; pad 12 0 12 0; " + OdoRead3 + "; endbands";
-    private const string OdoNarrowPlan = "col 4% 42%; " + OdoRead3 + "; gap 16; " + OdoRead3 + "; col 54% 42%; " + OdoRead3 + "; gap 16; " + OdoRead3 + "; end";
-
-    /// <summary>Larga: quatro leituras empilhadas na coluna à direita. Estreita: faixa 2 × 2 abaixo da temperatura.</summary>
+    /// <summary>
+    /// O odômetro fica na placa: larga, à direita do nome; estreita, numa linha embaixo dele. A primeira célula presente não
+    /// tem fio à esquerda (como a primeira leitura da placa de Placa de vídeo). Sem nenhuma, some.
+    /// </summary>
     private void LayoutOdometer()
     {
         OdoCard.Visibility = _odoCells.Count == 0 || DiskCards.SelectedItem is not DiskBay { Disk: not null } ? Visibility.Collapsed : Visibility.Visible;
-        // Sem odômetro, a coluna dele some: vida útil e temperatura vão até a borda direita da placa, como o Espaço
-        bool odo = OdoCard.Visibility == Visibility.Visible;
-        OdoGap.Width = new GridLength(_wide && odo ? 16 : 0);
-        OdoColumn.Width = new GridLength(_wide && odo ? 170 : 0);
-        OdoGrid.Children.Clear();
-        int columns = _wide ? 1 : Math.Max(1, Math.Min(_odoCells.Count, 2));
-        OdoGrid.Columns = columns;
-        OdoCard.Padding = _wide ? new Thickness(0) : new Thickness(0, 20, 0, 20);
-        Skeleton.SetLayout(OdoCard, _wide ? OdoWidePlan : OdoNarrowPlan);
+        Grid.SetRow(OdoCard, _wide ? 0 : 1);
+        Grid.SetColumn(OdoCard, _wide ? 2 : 1);
+        Grid.SetColumnSpan(OdoCard, _wide ? 1 : 2);
+        OdoCard.HorizontalAlignment = _wide ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+        OdoCard.Margin = new Thickness(_wide ? 0 : 20, _wide ? 0 : 20, 0, 0);
         for (int i = 0; i < _odoCells.Count; i++)
         {
             var cell = _odoCells[i];
-            cell.VerticalAlignment = VerticalAlignment.Stretch;
-            if (_wide)
-            {
-                cell.BorderThickness = new Thickness(0, i == 0 ? 0 : 1, 0, 0);
-                cell.Padding = new Thickness(12, 0, 12, 0);
-                cell.Margin = new Thickness(0);
-                ((StackPanel)cell.Child).VerticalAlignment = VerticalAlignment.Center;
-            }
-            else
-            {
-                cell.BorderThickness = new Thickness(i % columns == 0 ? 0 : 1, 0, 0, 0);
-                cell.Padding = new Thickness(24, 0, 24, 0);
-                cell.Margin = new Thickness(0, i >= columns ? 16 : 0, 0, 0);
-                ((StackPanel)cell.Child).VerticalAlignment = VerticalAlignment.Top;
-            }
-            // leituras centralizadas: a mesma folga à esquerda e à direita
-            var stack = (StackPanel)cell.Child;
-            stack.HorizontalAlignment = HorizontalAlignment.Center;
-            foreach (TextBlock t in stack.Children) { t.HorizontalAlignment = HorizontalAlignment.Center; t.TextAlignment = TextAlignment.Center; }
-            OdoGrid.Children.Add(cell);
+            cell.BorderThickness = new Thickness(i == 0 ? 0 : 1, 0, 0, 0);
+            cell.Padding = new Thickness(i == 0 ? 0 : 28, 0, 0, 0);
+            cell.Margin = new Thickness(i == 0 ? 0 : 28, 0, 0, 0);
         }
     }
 
 
-    /// <summary>Larga: odômetro ao lado da temperatura. Estreita: odômetro desce para uma faixa 2 × 2.</summary>
+    /// <summary>Larga: odômetro à direita do nome. Estreita: odômetro desce para baixo do nome e a vida útil estreita.</summary>
     private void DiskBody_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (!e.WidthChanged) return;
         bool wide = e.NewSize.Width >= 1320;
         if (wide == _wide && e.PreviousSize.Width > 0) return;
         _wide = wide;
-        RackColumn.Width = new GridLength(wide ? 300 : 260);
-        LifeColumn.Width = new GridLength(wide ? 370 : 330);
-        SpaceColumn.Width = new GridLength(wide ? 520 : 420);
-        // Larga: odômetro ao lado da temperatura e integridade na faixa de baixo. Estreita: odômetro desce em faixa 2 × 2 e a integridade fica por último.
-        Grid.SetColumnSpan(TempCard, wide ? 1 : 3);
-        Grid.SetRow(OdoCard, wide ? 2 : 4);
-        Grid.SetColumn(OdoCard, wide ? 4 : 0);
-        Grid.SetColumnSpan(OdoCard, wide ? 1 : 5);
-        Grid.SetRow(CheckCard, wide ? 4 : 6);
-        CheckGapRow.Height = new GridLength(wide ? 0 : 16);
+        LifeColumn.Width = new GridLength(wide ? 420 : 340);
         LayoutOdometer();
         LifeDial.MinHeight = wide ? 210 : 190;
     }

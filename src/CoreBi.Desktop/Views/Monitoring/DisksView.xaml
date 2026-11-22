@@ -14,13 +14,45 @@
         </Style>
 
         <!--
-            Baia do rack: o nome do disco, a letra da unidade em destaque (dois discos do mesmo modelo só se distinguem por ela)
-            e as características principais
+            Tecla de disco na faixa de cima (só com mais de um disco): a mesma tecla da bancada de teste (Benchmark), com o ícone
+            do armazenamento, o nome, a letra da unidade em destaque (dois discos do mesmo modelo só se distinguem por ela), o LED
+            do veredito e as características embaixo. A escolhida leva o sinal, como em toda escolha do app.
         -->
+        <Style x:Key="DiskKey" TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="6,0" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="face" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
+                                CornerRadius="{StaticResource RadiusInset}" Padding="14,12" SnapsToDevicePixels="True">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="face" Property="Background" Value="{DynamicResource Hover}" />
+                                <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalSoft}" />
+                                <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Signal}" />
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Focus}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <DataTemplate x:Key="DiskBay">
-            <Grid Margin="4,2,2,2">
+            <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="44" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
@@ -29,41 +61,20 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <!-- O disco no ícone do canal de armazenamento, o mesmo de Sistema e da Visão geral -->
-                <local:HwIcon Grid.RowSpan="2" Style="{StaticResource ChannelIcon}" local:Ui.Channel="Storage" Kind="storage" Width="30" Height="30" HorizontalAlignment="Left" VerticalAlignment="Center" />
-                <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                <!--
-                    Nome (Segoe 13,5) e letra (Bahnschrift 16) centrados na linha deixavam a base da letra 2 px acima da do nome
-                    (medido na captura de 1920 × 1032): 4 px de margem em cima descem a letra 2 px. O LED desce 1,5 px para o
-                    centro da altura das maiúsculas do nome.
-                -->
-                <TextBlock Grid.Column="2" Text="{Binding Letters}" Style="{StaticResource ReadoutText}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,4,0,0" />
-                <Ellipse Grid.Column="3" Style="{StaticResource DiskLed}" Margin="10,3,0,0" ToolTip="{Binding VerdictText}" />
-                <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Meta}" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                <local:HwIcon Grid.RowSpan="2" Style="{StaticResource ChannelIcon}" local:Ui.Channel="Storage" Kind="storage" Width="30" Height="30" VerticalAlignment="Center" Margin="0,0,12,0" />
+                <TextBlock Grid.Column="1" Text="{Binding Title}" FontFamily="{StaticResource LabelFont}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                <!-- Nome (DIN 14) e letra (Bahnschrift 16) no topo, com 1 px a mais na letra: as duas bases coincidem -->
+                <TextBlock Grid.Column="2" Text="{Binding Letters}" Style="{StaticResource ReadoutText}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,1,0,0" />
+                <Ellipse Grid.Column="3" Style="{StaticResource DiskLed}" Margin="10,1,0,0" ToolTip="{Binding VerdictText}" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Meta}" FontFamily="{StaticResource SmallFont}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
             </Grid>
         </DataTemplate>
 
-        <!-- Selo de especificação na placa do disco -->
-        <DataTemplate x:Key="SpecChip">
-            <Border Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{StaticResource RadiusPill}" Padding="9,2,9,3" Margin="0,0,6,6" ToolTip="{Binding Tip}">
-                <TextBlock FontSize="12" Typography.NumeralAlignment="Tabular">
-                    <Run Text="{Binding Key, Mode=OneWay}" Foreground="{DynamicResource Muted}" /><Run Text="{Binding Value, Mode=OneWay}" Foreground="{DynamicResource Fg}" FontWeight="SemiBold" />
-                </TextBlock>
-            </Border>
-        </DataTemplate>
-
-        <!-- Unidade (letra), só quando o disco tem mais de uma: nome e quanto está livre -->
+        <!-- Unidade (letra), só quando o disco tem mais de uma: nome e quanto está livre, lado a lado sob a barra do espaço -->
         <DataTemplate x:Key="VolumeRow">
-            <Grid Margin="0,0,0,6">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding Letter}" FontWeight="SemiBold" Margin="0,0,8,0" />
-                <TextBlock Grid.Column="1" Text="{Binding Label}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" />
-                <TextBlock Grid.Column="2" Text="{Binding Line}" Foreground="{DynamicResource Muted}" Style="{StaticResource Num}" Margin="12,0,0,0" />
-            </Grid>
+            <TextBlock Margin="0,0,28,0" Typography.NumeralAlignment="Tabular">
+                <Run Text="{Binding Letter, Mode=OneWay}" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" /><Run Text="  " /><Run Text="{Binding Label, Mode=OneWay}" Foreground="{DynamicResource Muted}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding Line, Mode=OneWay}" Foreground="{DynamicResource Muted}" />
+            </TextBlock>
         </DataTemplate>
 
         <!-- Linha da integridade: LED, o que é verificado e o valor lido. Saudável fica em tinta (o LED já diz que está bem);
@@ -112,16 +123,33 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Célula do odômetro: rótulo, leitura grande e uma linha de contexto -->
+        <!--
+            Leitura do odômetro na placa: rótulo, número grande e uma linha de contexto, separadas por fios como as leituras da
+            placa de Placa de vídeo (a primeira sem fio, LayoutOdometer)
+        -->
         <Style x:Key="OdoCell" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}" />
+            <Setter Property="BorderThickness" Value="1,0,0,0" />
+            <Setter Property="Padding" Value="28,0,0,0" />
+            <Setter Property="Margin" Value="28,0,0,0" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style x:Key="OdoLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+        </Style>
+        <Style x:Key="OdoValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
+            <Setter Property="FontSize" Value="38" />
+            <Setter Property="FontWeight" Value="Light" />
+            <Setter Property="Margin" Value="0,6,0,0" />
+        </Style>
+        <!-- Leitura do espaço, à direita da barra: rótulo e número, separados por fios -->
+        <Style x:Key="SpaceCell" TargetType="Border">
             <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
             <Setter Property="BorderThickness" Value="1,0,0,0" />
-            <Setter Property="Padding" Value="24,0" />
-        </Style>
-        <Style x:Key="OdoValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutLarge}">
-            <Setter Property="FontSize" Value="34" />
-            <Setter Property="Margin" Value="0,4,0,0" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Padding" Value="28,0,0,0" />
+            <Setter Property="Margin" Value="28,0,0,0" />
         </Style>
         <!-- Leituras do topo da temperatura: mesma altura de linha em bloco, para as três bases coincidirem -->
         <Style x:Key="TempValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
@@ -135,14 +163,16 @@
     </UserControl.Resources>
 
     <!--
-        Uma tela: com a janela maximizada tudo cabe sem rolar (os instrumentos ocupam a sobra de altura). À esquerda, o rack
-        com uma baia por disco; à direita, o disco escolhido: placa de identificação, vida útil, temperatura, odômetro e, numa faixa
-        discreta embaixo, a integridade. Em janelas menores o odômetro desce em faixa 2 × 2 e a página rola.
+        Uma tela: com a janela maximizada tudo cabe sem rolar (os instrumentos ocupam a sobra de altura). Em cima, só com mais de
+        um disco, a faixa de teclas com um disco por tecla. Embaixo, o disco escolhido na largura toda: o painel dele (a placa de
+        identificação com o odômetro e, sob ela, o espaço), vida útil e temperatura lado a lado e, numa faixa discreta, a
+        integridade. Em janelas menores o odômetro desce para baixo do nome e a página rola.
     -->
     <ScrollViewer x:Name="DiskScroll" VerticalScrollBarVisibility="Auto">
         <Grid MinHeight="{Binding ViewportHeight, ElementName=DiskScroll}">
             <Grid Style="{StaticResource PageGrid}">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
@@ -156,38 +186,29 @@
                     </StackPanel>
                 </local:PageHeaderPanel>
 
-                <Grid x:Name="DiskBody" Grid.Row="1" SizeChanged="DiskBody_SizeChanged">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition x:Name="RackColumn" Width="300" />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                <!--
+                    Discos instalados: uma tecla por disco, na largura toda e a 12 uma da outra (6 de cada lado, e a faixa recua 6 nas
+                    pontas para as teclas da beira irem até a borda dos painéis). Só existe com mais de um disco, como as pílulas de
+                    Placa de vídeo: com um disco só, a tecla repetiria a placa logo abaixo.
+                -->
+                <ListBox x:Name="DiskCards" Grid.Row="1" Margin="-6,0,-6,16" Padding="0" Background="Transparent" BorderThickness="0" Visibility="Collapsed"
+                         ItemTemplate="{StaticResource DiskBay}" ItemContainerStyle="{StaticResource DiskKey}"
+                         ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         SelectionChanged="DiskCards_SelectionChanged" AutomationProperties.Name="Discos instalados">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Rows="1" Loaded="RackGrid_Loaded" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                </ListBox>
 
-                    <!-- Rack: um disco por baia; embaixo, o conjunto e a fonte dos dados -->
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <Grid Margin="2,0,2,8">
-                            <!-- A contagem na mesma letra e tamanho do rótulo: as bases coincidem (em Segoe 12 ela ficava 2 px abaixo) -->
-                            <TextBlock Text="Instalados" Style="{StaticResource Label}" Margin="0" />
-                            <TextBlock x:Name="RackCount" Style="{StaticResource Label}" FontWeight="Normal" Margin="0" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
-                        </Grid>
-                        <!-- Sem o 1 px de recuo padrão da ListBox: a baia vai até a borda do rack e fica a 16 px do painel -->
-                        <ListBox x:Name="DiskCards" Grid.Row="1" Padding="0" ItemTemplate="{StaticResource DiskBay}" ItemContainerStyle="{StaticResource ListNavItem}"
-                                 ScrollViewer.VerticalScrollBarVisibility="Disabled" SelectionChanged="DiskCards_SelectionChanged" AutomationProperties.Name="Discos instalados" />
-                    </Grid>
-
+                <Grid x:Name="DiskBody" Grid.Row="2" SizeChanged="DiskBody_SizeChanged">
                     <!-- Disco escolhido -->
-                    <Grid x:Name="DiskPanel" Grid.Column="2" Visibility="Hidden">
+                    <Grid x:Name="DiskPanel" Visibility="Hidden">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition x:Name="LifeColumn" Width="370" />
+                            <ColumnDefinition x:Name="LifeColumn" Width="420" />
                             <ColumnDefinition Width="16" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition x:Name="OdoGap" Width="16" />
-                            <ColumnDefinition x:Name="OdoColumn" Width="170" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -195,74 +216,137 @@
                             <RowDefinition Height="*" />
                             <RowDefinition Height="16" />
                             <RowDefinition Height="Auto" />
-                            <RowDefinition x:Name="CheckGapRow" Height="0" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <!-- Placa de identificação: modelo, veredito, especificação e espaço por unidade -->
-                        <!-- Esqueleto de cada painel: a mesma planta do conteúdo (placa com as etiquetas e o espaço; mostrador e as três leituras; o termômetro, a escala e o gráfico; o odômetro; a faixa de integridade) -->
-                        <Border x:Name="DiskPlate" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}"
-                                local:Skeleton.Layout="col 0 54%; gap 2; row 28: h 240^18, - 12, btn 80^22; gap 12; row 24: btn 40^24, - 6, btn 52^24, - 6, btn 74^24, - 6, btn 96^24, - 6, btn 120^24, - 6, btn 104^24; col 58% 42%; row 24: s 64^14; gap 8; row 18: box *^16; gap 14; row 16: c 33%@0.3, c 33%@0.25, c 33%@0.22; gap 4; row 26: n 33%@0.34^20, n 33%@0.55^20, n 33%@0.5^20; end">
+                        <!--
+                            Painel do disco. Em cima, a placa de identificação no padrão de Sistema e Placa de vídeo (fundo Selected com o
+                            fundo claro do canal Storage e fio LineStrong): o ícone do disco de 44 px, o tipo e a conexão como sobretítulo
+                            na cor do canal, o modelo em DIN 30 com o selo do veredito, a especificação numa frase e, à direita, o
+                            odômetro (uso acumulado desde a fábrica). Embaixo, o espaço: a barra por unidade na largura que sobra e os
+                            três números à direita.
+                        -->
+                        <!-- Esqueleto: a placa (ícone, sobretítulo, modelo, frase e as quatro leituras do odômetro) e a faixa do espaço (título, barra e três leituras) -->
+                        <Border x:Name="DiskPlate" Grid.ColumnSpan="3" Style="{StaticResource CardBorder}" Padding="0"
+                                local:Skeleton.Layout="gap 20; col 24 44; row 92: box 44^44; col 88 36%; gap 2; row 16: c *@0.22; gap 4; row 40: h *@0.72^24; gap 7; row 18: t *@0.8; col 52% 46%; gap 12; row 16: c 22%@0.6, - 4%, c 22%@0.6, - 4%, c 22%@0.6, - 4%, c 22%@0.6; gap 6; row 46: n 22%@0.75^30, - 4%, n 22%@0.75^30, - 4%, n 22%@0.75^30, - 4%, n 22%@0.75^30; gap 6; row 14: c 22%@0.6, - 4%, c 22%@0.6, - 4%, c 22%@0.6, - 4%, c 22%@0.6; end; gap 20; line; gap 20; col 24 60%; row 22: s 64^14; gap 14; row 16: box *^16; col 66% 32%; gap 2; row 16: c 30%@0.6, - 5%, c 30%@0.5, - 5%, c 30%@0.5; gap 6; row 30: n 30%@0.7^22, - 5%, n 30%@0.8^22, - 5%, n 30%@0.8^22; end; gap 20">
                             <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition x:Name="SpaceColumn" Width="520" />
-                                </Grid.ColumnDefinitions>
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="*" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                <StackPanel>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock x:Name="DiskModel" FontFamily="{StaticResource DisplayFont}" FontSize="23" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                        <!-- Texto do selo na base do modelo, como em Saúde do PC: com 3 px em cima ficava 2 px acima; 7 o descem 2 -->
-                                        <Border x:Name="DiskBadge" Style="{StaticResource Badge}" Margin="12,7,0,0" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal">
-                                                <Ellipse Style="{StaticResource BadgeLed}" />
-                                                <TextBlock x:Name="DiskBadgeText" Style="{StaticResource BadgeText}" />
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Border x:Name="PlateBand" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" CornerRadius="{StaticResource RadiusPanelTop}" ClipToBounds="True">
+                                    <Grid>
+                                        <Border x:Name="PlateWash" Style="{StaticResource ChannelWash}" local:Ui.Channel="Storage" CornerRadius="{StaticResource RadiusPanelTop}" />
+                                        <Grid Margin="{StaticResource PanelPadding}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Storage" Kind="storage" Width="44" Height="44" VerticalAlignment="Center" />
+                                            <StackPanel Grid.Column="1" Margin="20,0,40,0" VerticalAlignment="Center">
+                                                <TextBlock x:Name="DiskKind" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Storage}" TextTrimming="CharacterEllipsis"
+                                                           Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
+                                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                    <TextBlock x:Name="DiskModel" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                    <!-- Texto do selo na base do modelo (DIN 30): 9 px em cima o descem até ela -->
+                                                    <Border x:Name="DiskBadge" Style="{StaticResource Badge}" Margin="14,9,0,0" VerticalAlignment="Center">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Ellipse Style="{StaticResource BadgeLed}" />
+                                                            <TextBlock x:Name="DiskBadgeText" Style="{StaticResource BadgeText}" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                                <!-- A especificação numa frase: chave em tom secundário e valor em tinta (DisksView.ShowSpecs) -->
+                                                <TextBlock x:Name="DiskSpecs" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,7,0,0" Background="Transparent" />
+                                                <Grid x:Name="DiskReasonRow" Margin="0,12,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock x:Name="DiskReasonIcon" Style="{StaticResource IconGlyph}" FontSize="14" VerticalAlignment="Top" Margin="0,2,8,0" />
+                                                    <TextBlock x:Name="DiskReasons" Grid.Column="1" Style="{StaticResource Body}" />
+                                                </Grid>
+                                            </StackPanel>
+                                            <!-- Odômetro: só o que o disco informa (LayoutOdometer põe as células presentes, a primeira sem fio) -->
+                                            <Border x:Name="OdoCard" Grid.Column="2" VerticalAlignment="Center">
+                                                <StackPanel x:Name="OdoGrid" Orientation="Horizontal">
+                                                    <Border x:Name="OdoCell0" Style="{StaticResource OdoCell}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="Tempo ligado" Style="{StaticResource OdoLabel}" />
+                                                            <TextBlock x:Name="OdoHours" Style="{StaticResource OdoValue}" />
+                                                            <TextBlock x:Name="OdoHoursNote" Style="{StaticResource StatSub}" Margin="0,4,0,0" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <Border x:Name="OdoCell1" Style="{StaticResource OdoCell}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="Ciclos liga/desliga" Style="{StaticResource OdoLabel}" />
+                                                            <TextBlock x:Name="OdoCycles" Style="{StaticResource OdoValue}" />
+                                                            <TextBlock x:Name="OdoCyclesNote" Style="{StaticResource StatSub}" Margin="0,4,0,0" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <Border x:Name="OdoCell2" Style="{StaticResource OdoCell}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="Total gravado" Style="{StaticResource OdoLabel}" />
+                                                            <TextBlock x:Name="OdoWritten" Style="{StaticResource OdoValue}" />
+                                                            <TextBlock x:Name="OdoWrittenNote" Style="{StaticResource StatSub}" Margin="0,4,0,0" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                    <Border x:Name="OdoCell3" Style="{StaticResource OdoCell}">
+                                                        <StackPanel>
+                                                            <TextBlock Text="Total lido" Style="{StaticResource OdoLabel}" />
+                                                            <TextBlock x:Name="OdoRead" Style="{StaticResource OdoValue}" />
+                                                            <TextBlock x:Name="OdoReadNote" Style="{StaticResource StatSub}" Margin="0,4,0,0" />
+                                                        </StackPanel>
+                                                    </Border>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Espaço: a barra por unidade, as unidades lado a lado embaixo (com mais de uma) e os três números à direita -->
+                                <Grid x:Name="DiskSpace" Grid.Row="1" Margin="{StaticResource PanelPadding}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Espaço" Style="{StaticResource SectionTitle}" />
+                                        <local:CapacityBar x:Name="DiskCapacity" Margin="0,14,0,0" />
+                                        <ItemsControl x:Name="DiskVolumes" ItemTemplate="{StaticResource VolumeRow}" Focusable="False" Margin="0,12,0,0"
+                                                      Visibility="{Binding HasItems, RelativeSource={RelativeSource Self}, Converter={StaticResource BoolVis}}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                                        <Border Style="{StaticResource SpaceCell}">
+                                            <StackPanel>
+                                                <TextBlock Text="Capacidade" Style="{StaticResource StatLabel}" />
+                                                <TextBlock x:Name="SpaceTotal" Style="{StaticResource LifeValue}" FontSize="24" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Style="{StaticResource SpaceCell}">
+                                            <StackPanel>
+                                                <TextBlock Text="Usado" Style="{StaticResource StatLabel}" />
+                                                <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" FontSize="24" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Style="{StaticResource SpaceCell}">
+                                            <StackPanel>
+                                                <TextBlock Text="Livre" Style="{StaticResource StatLabel}" />
+                                                <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" FontSize="24" />
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
-                                    <ItemsControl x:Name="DiskSpecs" ItemTemplate="{StaticResource SpecChip}" Margin="0,12,0,0" Focusable="False">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <WrapPanel />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                    </ItemsControl>
-                                </StackPanel>
-                                    <Grid Grid.Row="2" Margin="0,12,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock x:Name="DiskReasonIcon" Style="{StaticResource IconGlyph}" FontSize="14" VerticalAlignment="Top" Margin="0,2,8,0" />
-                                        <TextBlock x:Name="DiskReasons" Grid.Column="1" Style="{StaticResource Body}" />
-                                    </Grid>
                                 </Grid>
-                                <Border x:Name="SpaceDivider" Grid.Column="1" Width="1" Background="{DynamicResource Line}" Margin="24,0" />
-                                <StackPanel x:Name="DiskSpace" Grid.Column="2" VerticalAlignment="Center">
-                                    <TextBlock Text="Espaço" Style="{StaticResource SectionTitle}" />
-                                    <local:CapacityBar x:Name="DiskCapacity" Margin="0,16" />
-                                    <UniformGrid Columns="3">
-                                        <StackPanel>
-                                            <TextBlock Text="Capacidade" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="SpaceTotal" Style="{StaticResource LifeValue}" />
-                                        </StackPanel>
-                                        <StackPanel>
-                                            <TextBlock Text="Usado" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
-                                        </StackPanel>
-                                        <StackPanel>
-                                            <TextBlock Text="Livre" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" />
-                                        </StackPanel>
-                                    </UniformGrid>
-                                    <ItemsControl x:Name="DiskVolumes" ItemTemplate="{StaticResource VolumeRow}" Focusable="False" Margin="0,12,0,0" />
-                                </StackPanel>
                             </Grid>
                         </Border>
 
@@ -353,41 +437,10 @@
                             </Grid>
                         </Border>
 
-                        <!-- Odômetro: uso acumulado desde a fábrica -->
-                        <Border x:Name="OdoCard" Grid.Row="2" Grid.Column="4" Style="{StaticResource CardBorder}" Padding="0">
-                            <UniformGrid x:Name="OdoGrid" Columns="4">
-                                <Border x:Name="OdoCell0" Style="{StaticResource OdoCell}" BorderThickness="0">
-                                    <StackPanel>
-                                        <TextBlock Text="Tempo ligado" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="OdoHours" Style="{StaticResource OdoValue}" />
-                                        <TextBlock x:Name="OdoHoursNote" Style="{StaticResource Caption}" Margin="0,8,0,0" Typography.NumeralAlignment="Tabular" />
-                                    </StackPanel>
-                                </Border>
-                                <Border x:Name="OdoCell1" Style="{StaticResource OdoCell}">
-                                    <StackPanel>
-                                        <TextBlock Text="Ciclos liga/desliga" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="OdoCycles" Style="{StaticResource OdoValue}" />
-                                        <TextBlock x:Name="OdoCyclesNote" Style="{StaticResource Caption}" Margin="0,8,0,0" Typography.NumeralAlignment="Tabular" />
-                                    </StackPanel>
-                                </Border>
-                                <Border x:Name="OdoCell2" Style="{StaticResource OdoCell}">
-                                    <StackPanel>
-                                        <TextBlock Text="Total gravado" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="OdoWritten" Style="{StaticResource OdoValue}" />
-                                        <TextBlock x:Name="OdoWrittenNote" Style="{StaticResource Caption}" Margin="0,8,0,0" Typography.NumeralAlignment="Tabular" />
-                                    </StackPanel>
-                                </Border>
-                                <Border x:Name="OdoCell3" Style="{StaticResource OdoCell}">
-                                    <StackPanel>
-                                        <TextBlock Text="Total lido" Style="{StaticResource StatLabel}" />
-                                        <TextBlock x:Name="OdoRead" Style="{StaticResource OdoValue}" />
-                                        <TextBlock x:Name="OdoReadNote" Style="{StaticResource Caption}" Margin="0,8,0,0" Typography.NumeralAlignment="Tabular" />
-                                    </StackPanel>
-                                </Border>
-                            </UniformGrid>
-                        </Border>
+
+
                     <!-- Integridade: S.M.A.R.T. e contadores de erro, numa faixa discreta -->
-                        <Border x:Name="CheckCard" local:Skeleton.Layout="row 32: h 96^16, - 16, - *, dot 8, - 8, c 120@0.8, - 8, pill 56^20, - *, dot 8, - 8, c 120@0.8, - 8, pill 56^20, - *, dot 8, - 8, c 120@0.8, - 8, pill 56^20, - *, dot 8, - 8, c 120@0.8, - 8, pill 56^20" Grid.Row="4" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}" Padding="24,12">
+                        <Border x:Name="CheckCard" local:Skeleton.Layout="row 32: h 96^16, - 16, - *, dot 8, - 8, c 120@0.8, - 8, pill 56^20, - *, dot 8, - 8, c 120@0.8, - 8, pill 56^20, - *, dot 8, - 8, c 120@0.8, - 8, pill 56^20, - *, dot 8, - 8, c 120@0.8, - 8, pill 56^20" Grid.Row="4" Grid.ColumnSpan="3" Style="{StaticResource CardBorder}" Padding="24,12">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -404,7 +457,7 @@
                                 </ItemsControl>
                             </Grid>
                         </Border>
-                        </Grid>
+                    </Grid>
                 </Grid>
             </Grid>
         </Grid>

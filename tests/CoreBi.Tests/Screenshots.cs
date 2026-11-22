@@ -73,6 +73,8 @@ internal static partial class Program
                     else if (parts[0] == "PageSystem" && parts.Length == 2) { window.PageSystem.Select(parts[1]); Wait(800); }
                     // "PageSensors:cpu" escreve na busca (sem dar foco), para conferir o texto digitado dentro do campo
                     else if (parts[0] == "PageSensors" && parts.Length == 2) { window.PageSensors.SensorSearch.Text = parts[1]; Wait(800); }
+                    // "PageDisks:3" repete o disco em três teclas, para ver a faixa de discos num PC que só tem um
+                    else if (parts[0] == "PageDisks" && parts.Length == 2 && int.TryParse(parts[1], out int copies)) { window.PageDisks.PreviewRack(copies); Wait(800); }
                     Wait(600);
                     string file = Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-{theme}.png");
                     SaveWindow(window, file);
