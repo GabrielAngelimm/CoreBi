@@ -191,7 +191,7 @@ public partial class PowerView : UserControl
             if (value == null) return;
             var box = new StackPanel();
             box.Children.Add(new TextBlock { Text = label, Style = (Style)FindResource("StatLabel") });
-            var t = new TextBlock { Style = (Style)FindResource("ReadoutText"), FontSize = 21, Margin = new Thickness(0, 4, 0, 0) };
+            var t = new TextBlock { Style = (Style)FindResource("ReadoutText"), FontSize = 24, Margin = new Thickness(0, 4, 0, 0) };
             Readout(t, value, unit);
             box.Children.Add(t);
             BatteryStats.Children.Add(box);
@@ -624,7 +624,7 @@ public partial class PowerView : UserControl
         void Part(string value, string unit)
         {
             target.Inlines.Add(new Run(value));
-            var u = new Run(" " + unit + " ") { FontSize = 12.5 };
+            var u = new Run(" " + unit + " ") { FontSize = 13 };
             u.SetResourceReference(TextElement.ForegroundProperty, "Muted");
             u.SetResourceReference(TextElement.FontFamilyProperty, "UiFont");
             target.Inlines.Add(u);
