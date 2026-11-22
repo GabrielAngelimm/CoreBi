@@ -144,7 +144,7 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <!-- Cabeçalho de 34 px (CardHeader): o título e, à direita, de onde vem o resultado e o selo do veredito -->
-                        <Grid Style="{StaticResource CardHeader}" Margin="24,20,24,0">
+                        <Grid Style="{StaticResource CardHeader}" Margin="24,16,24,0">
                             <TextBlock Text="Diagnóstico de rede" Style="{StaticResource CardTitle}" />
                             <StackPanel x:Name="NetDiagTitle" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                 <TextBlock x:Name="NetMeta" Text="Ainda não testado nesta sessão" Style="{StaticResource Caption}" VerticalAlignment="Center" TextWrapping="NoWrap" />
@@ -279,7 +279,7 @@
                         <ColumnDefinition Width="340" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Style="{StaticResource CardBorder}" Padding="24,24,24,16">
+                    <Border Style="{StaticResource CardBorder}" Padding="24,16,24,16">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -348,7 +348,7 @@
                     </Border>
 
                     <!-- Esqueleto: as seis linhas da conexão espalhadas pela altura, nome à esquerda e valor à direita -->
-                    <Border x:Name="NetInfoCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,24,24,12" local:Skeleton.Top="40"
+                    <Border x:Name="NetInfoCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,16,24,12" local:Skeleton.Top="40"
                             local:Skeleton.Layout="spread 6: c *@0.5, t *@0.6&gt;">
                         <Grid>
                             <Grid.RowDefinitions>

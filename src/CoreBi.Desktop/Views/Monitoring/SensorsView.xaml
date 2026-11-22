@@ -256,7 +256,7 @@
             <!-- Índice: um item por componente, na altura toda da página (a base alinha com a do cartão ao lado); escolher um mostra só ele.
                  14 do cartão + 10 do item = 24, o recuo dos outros painéis; o fundo da seleção avança 10 para os lados. -->
             <!-- Esqueleto: os itens do índice, com o desenho e as duas linhas de cada um -->
-            <Border x:Name="IndexCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="14,24,14,12" local:Skeleton.Top="24"
+            <Border x:Name="IndexCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="14,20,14,12" local:Skeleton.Top="24"
                     local:Skeleton.Layout="gap 1; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Componentes" Style="{StaticResource Label}" Margin="10,0,10,8" />

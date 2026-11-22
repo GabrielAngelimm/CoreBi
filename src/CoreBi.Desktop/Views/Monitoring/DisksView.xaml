@@ -150,12 +150,19 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Margin" Value="16,0,0,0" />
         </Style>
-        <!-- Leitura do espaço, sob a barra na placa: rótulo e número, separados por fios (a primeira sem fio) -->
-        <Style x:Key="SpaceCell" TargetType="Border">
-            <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}" />
-            <Setter Property="BorderThickness" Value="1,0,0,0" />
-            <Setter Property="Padding" Value="24,0,0,0" />
-            <Setter Property="Margin" Value="24,0,0,0" />
+        <!--
+            Leitura do espaço, sob a barra na placa: três colunas iguais na largura toda da barra, cada leitura centrada na sua,
+            separadas por fios no tom das leituras da Placa de vídeo (Fg a 18 %: o LineStrong some sobre o fundo da placa)
+        -->
+        <Style x:Key="SpaceWire" TargetType="Border">
+            <Setter Property="Width" Value="1" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="Background" Value="{DynamicResource Fg}" />
+            <Setter Property="Opacity" Value="0.18" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+        <Style x:Key="SpaceCell" TargetType="StackPanel">
+            <Setter Property="HorizontalAlignment" Value="Center" />
         </Style>
         <!-- Leituras do topo da temperatura: mesma altura de linha em bloco, para as três bases coincidirem -->
         <Style x:Key="TempValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
@@ -263,7 +270,7 @@
                                             <TextBlock x:Name="DiskReasons" Grid.Column="1" Style="{StaticResource Body}" />
                                         </Grid>
                                     </StackPanel>
-                                    <Border x:Name="SpaceDivider" Grid.Column="2" Width="1" Background="{DynamicResource LineStrong}" Margin="0,0,32,0" />
+                                    <Border x:Name="SpaceDivider" Grid.Column="2" Width="1" Background="{DynamicResource Fg}" Opacity="0.18" SnapsToDevicePixels="True" Margin="0,0,32,0" />
                                     <!-- Espaço: a barra por unidade, as unidades lado a lado (com mais de uma) e os três números embaixo -->
                                     <StackPanel x:Name="DiskSpace" Grid.Column="3" VerticalAlignment="Center">
                                         <TextBlock Text="Espaço" Style="{StaticResource GroupTitle}" />
@@ -276,33 +283,34 @@
                                                 </ItemsPanelTemplate>
                                             </ItemsControl.ItemsPanel>
                                         </ItemsControl>
-                                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                            <Border Style="{StaticResource SpaceCell}" BorderThickness="0" Padding="0" Margin="0">
-                                                <StackPanel>
-                                                    <TextBlock Text="Capacidade" Style="{StaticResource StatLabel}" />
-                                                    <TextBlock x:Name="SpaceTotal" Style="{StaticResource LifeValue}" />
-                                                </StackPanel>
-                                            </Border>
-                                            <Border Style="{StaticResource SpaceCell}">
-                                                <StackPanel>
-                                                    <TextBlock Text="Usado" Style="{StaticResource StatLabel}" />
-                                                    <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
-                                                </StackPanel>
-                                            </Border>
-                                            <Border Style="{StaticResource SpaceCell}">
-                                                <StackPanel>
-                                                    <TextBlock Text="Livre" Style="{StaticResource StatLabel}" />
-                                                    <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" />
-                                                </StackPanel>
-                                            </Border>
-                                        </StackPanel>
+                                        <Grid Margin="0,14,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Style="{StaticResource SpaceCell}">
+                                                <TextBlock Text="Capacidade" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                                <TextBlock x:Name="SpaceTotal" Style="{StaticResource LifeValue}" HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                            <Border Grid.Column="1" Style="{StaticResource SpaceWire}" />
+                                            <StackPanel Grid.Column="1" Style="{StaticResource SpaceCell}">
+                                                <TextBlock Text="Usado" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                                <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                            <Border Grid.Column="2" Style="{StaticResource SpaceWire}" />
+                                            <StackPanel Grid.Column="2" Style="{StaticResource SpaceCell}">
+                                                <TextBlock Text="Livre" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                                <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                        </Grid>
                                     </StackPanel>
                                 </Grid>
                             </Grid>
                         </Border>
 
                         <!-- Vida útil -->
-                        <Border x:Name="LifeCard" local:Skeleton.Top="34" local:Skeleton.Layout="foot 30: n 94@0.22^20, n 94@0.22^20, n 94@0.22^20; foot 20: c 94@0.62, c 94@0.5, c 94@0.7; footgap 12; footline; footgap 12; center 280: arc *~" Grid.Row="2" Style="{StaticResource CardBorder}">
+                        <Border x:Name="LifeCard" local:Skeleton.Top="34" local:Skeleton.Layout="foot 30: n 94@0.22^20, n 94@0.22^20, n 94@0.22^20; foot 20: c 94@0.62, c 94@0.5, c 94@0.7; footgap 12; center 280: arc *~" Grid.Row="2" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -313,32 +321,26 @@
                                     <TextBlock Text="Vida útil" Style="{StaticResource CardTitle}" />
                                 </Grid>
                                 <local:LifeGauge x:Name="LifeDial" Grid.Row="1" MinHeight="210" Margin="0,10,0,8" Caption="restante" />
-                                <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="1.4*" />
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Margin="0,0,12,0">
-                                            <TextBlock Text="Desgaste" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeWear" Style="{StaticResource LifeValue}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" Margin="0,0,12,0">
-                                            <TextBlock Text="Reserva" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeSpare" Style="{StaticResource LifeValue}" />
-                                        </StackPanel>
-                                        <StackPanel x:Name="LifeEnduranceBox" Grid.Column="2">
-                                            <TextBlock Text="Resistência" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeEndurance" Style="{StaticResource LifeValue}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
+                                <!-- Leituras do pé: colunas iguais, cada uma centrada na sua, sem fio em cima (o mostrador já separa) -->
+                                <UniformGrid Grid.Row="2" Rows="1" Margin="0,4,0,0">
+                                    <StackPanel Style="{StaticResource SpaceCell}">
+                                        <TextBlock Text="Desgaste" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                        <TextBlock x:Name="LifeWear" Style="{StaticResource LifeValue}" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Style="{StaticResource SpaceCell}">
+                                        <TextBlock Text="Reserva" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                        <TextBlock x:Name="LifeSpare" Style="{StaticResource LifeValue}" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel x:Name="LifeEnduranceBox" Style="{StaticResource SpaceCell}">
+                                        <TextBlock Text="Resistência" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                        <TextBlock x:Name="LifeEndurance" Style="{StaticResource LifeValue}" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </UniformGrid>
                             </Grid>
                         </Border>
 
                         <!-- Temperatura -->
-                        <Border x:Name="TempCard" local:Skeleton.Top="34" local:Skeleton.Layout="gap 12; row 16: c 33%@0.16~, c 33%@0.18~, c 33%@0.28~; gap 6; row 44: n 33%@0.3^28~, n 33%@0.3^28~, n 33%@0.3^28~; gap 16; row 20: box *^18; gap 6; row 14: c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.2, c 10%@0.24; foot 38: c 92@0.95, - 20, s 150@0.95; footline; footgap 10; foot 16: - 44, c 44, - *, c 52~, - *, c 36>; footgap 4; gap 14; col 0 40; gap 6; spaced 4 14: c 32@0.9; col 44; rest: frame *; end" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
+                        <Border x:Name="TempCard" local:Skeleton.Top="34" local:Skeleton.Layout="gap 12; row 16: c 33%@0.16~, c 33%@0.18~, c 33%@0.28~; gap 6; row 44: n 33%@0.3^28~, n 33%@0.3^28~, n 33%@0.3^28~; gap 16; row 20: box *^18; gap 6; row 14: c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.2, c 10%@0.24; foot 38: c 92@0.95, - 20, s 150@0.95; footgap 10; foot 16: - 44, c 44, - *, c 52~, - *, c 36>; footgap 4; gap 14; col 0 40; gap 6; spaced 4 14: c 32@0.9; col 44; rest: frame *; end" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -384,13 +386,11 @@
                                 </Grid>
                                 <local:ThermalScale x:Name="TempScale" Grid.Row="2" Margin="0,16,0,0" />
                                 <local:TraceChart x:Name="TempTrace" Grid.Row="3" MinHeight="150" Margin="0,12,0,0" />
-                                <Border Grid.Row="4" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,12,0,0">
-                                    <!-- Rótulo e leitura na mesma letra e tamanho: as bases coincidem (a leitura em Segoe 13 ficava 3 px abaixo) -->
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Atividade agora" Style="{StaticResource StatLabel}" Margin="0,0,20,0" />
-                                        <TextBlock x:Name="DiskActivity" Style="{StaticResource StatLabel}" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" />
-                                    </StackPanel>
-                                </Border>
+                                <!-- Rótulo e leitura na mesma letra e tamanho (as bases coincidem), centrados no pé do gráfico, sem fio em cima -->
+                                <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+                                    <TextBlock Text="Atividade agora" Style="{StaticResource StatLabel}" Margin="0,0,20,0" />
+                                    <TextBlock x:Name="DiskActivity" Style="{StaticResource StatLabel}" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" />
+                                </StackPanel>
                             </Grid>
                         </Border>
 

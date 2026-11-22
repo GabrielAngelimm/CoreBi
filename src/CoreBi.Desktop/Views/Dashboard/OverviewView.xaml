@@ -178,9 +178,10 @@
                                                     </ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <StackPanel Margin="0,0,8,0">
-                                                                <TextBlock Text="{Binding Key}" Style="{StaticResource StatLabel}" />
-                                                                <TextBlock Text="{Binding Value}" Style="{StaticResource Num}" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" />
+                                                            <!-- Colunas iguais, cada leitura centrada na sua: o mesmo respiro à esquerda e à direita -->
+                                                            <StackPanel HorizontalAlignment="Center" Margin="4,0">
+                                                                <TextBlock Text="{Binding Key}" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                                                <TextBlock Text="{Binding Value}" Style="{StaticResource Num}" Margin="0,4,0,0" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                                             </StackPanel>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
@@ -299,7 +300,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="24,24,24,12">
+                    <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="24,16,24,12">
                         <DockPanel>
                             <Grid DockPanel.Dock="Top" Height="34" Margin="0,0,0,2">
                                 <TextBlock Text="Atividade recente" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />

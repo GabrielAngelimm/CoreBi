@@ -101,9 +101,13 @@
     <!-- Faixas presas à borda de um painel (a placa da Placa de vídeo, o pé do Gargalo): o raio do painel menos o fio -->
     <CornerRadius x:Key="RadiusPanelTop">15,15,0,0</CornerRadius>
     <CornerRadius x:Key="RadiusPanelBottom">0,0,15,15</CornerRadius>
-    <!-- Respiro padrão de um painel (24 nas laterais, 20 em cima e embaixo) -->
     <!-- Respiro do painel: o mesmo nos quatro lados -->
     <Thickness x:Key="PanelPadding">24</Thickness>
+    <!--
+        Respiro de um cartão que abre com a linha de título de 34 px (CardHeader): a DIN 18 centrada nessa linha deixa 8 px de
+        folga acima das maiúsculas, então em cima o recuo é 16 e a letra visível fica a 24 da borda, a mesma distância da esquerda.
+    -->
+    <Thickness x:Key="CardPadding">24,16,24,24</Thickness>
 
     <!-- ===================== Tipografia ===================== -->
     <!--
@@ -399,7 +403,7 @@
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="{StaticResource RadiusPanel}"/>
-        <Setter Property="Padding" Value="{StaticResource PanelPadding}"/>
+        <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
     <!-- Poço: área rebaixada dentro de um painel (lista curta, leitura secundária) -->
@@ -2199,11 +2203,11 @@
         encolhe à frase (Tag recebe a lista).
     -->
     <Style x:Key="TestLogCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
-        <Setter Property="Padding" Value="24,24,8,8"/>
+        <Setter Property="Padding" Value="24,16,8,8"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding Tag.HasItems, RelativeSource={RelativeSource Self}}" Value="False">
                 <Setter Property="VerticalAlignment" Value="Top"/>
-                <Setter Property="Padding" Value="24"/>
+                <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>

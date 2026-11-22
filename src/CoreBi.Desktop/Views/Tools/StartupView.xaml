@@ -90,7 +90,7 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <!-- Cabeçalho de 34 px (CardHeader), o mesmo de todos os painéis: título centrado e o botão auxiliar à direita -->
-                        <Grid Style="{StaticResource CardHeader}" Margin="8,8,8,0">
+                        <Grid Style="{StaticResource CardHeader}" Margin="8,0,8,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />

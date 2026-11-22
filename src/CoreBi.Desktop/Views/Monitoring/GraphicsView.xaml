@@ -116,7 +116,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Grid Style="{StaticResource CardHeader}" Margin="24,20,24,0">
+                <Grid Style="{StaticResource CardHeader}" Margin="24,16,24,0">
                     <TextBlock Text="Especificações" Style="{StaticResource CardTitle}" />
                 </Grid>
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Focusable="False" Margin="0,10,0,0">
