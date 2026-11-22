@@ -1366,7 +1366,9 @@
                             <TextBlock x:Name="ph" Grid.Column="1" Text="{Binding Path=(local:Ui.Placeholder), RelativeSource={RelativeSource TemplatedParent}}"
                                        Foreground="{DynamicResource Faint}" Margin="{TemplateBinding Padding}" Padding="2,0,0,0"
                                        VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" TextTrimming="CharacterEllipsis"/>
-                            <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                            <!-- Sem margem: o próprio TextBox já aplica o Padding dentro da área do texto (com margem ele contava duas vezes e o
+                                 texto digitado ficava 10 px à direita do texto de espera) -->
+                            <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1" VerticalAlignment="Center"/>
                             <TextBlock x:Name="sx" Grid.Column="2" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}"
                                        Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Margin="0,0,14,0"/>
                         </Grid>
@@ -1740,8 +1742,8 @@
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="local:Ui.Icon" Value="&#xE721;"/>
-        <!-- 9 depois da lupa (mais os 2 do cursor do WPF): o texto começa colado ao ícone, não 30 px adiante -->
-        <Setter Property="Padding" Value="9,0,16,3"/>
+        <!-- 7 depois da lupa (mais os 2 do cursor do WPF): o texto começa perto do ícone, não 30 px adiante -->
+        <Setter Property="Padding" Value="7,0,16,3"/>
     </Style>
     <!-- Busca dentro de um cartão: cabe na linha de 34 px do cabeçalho (CardHeader) -->
     <Style x:Key="CardSearch" TargetType="TextBox" BasedOn="{StaticResource SearchField}">
@@ -1811,12 +1813,12 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <RepeatButton Style="{StaticResource StepButton}" Content="&#xE738;" Command="{x:Static local:NumberField.Decrease}" ToolTip="Diminuir"/>
-                            <!-- A Bahnschrift assenta 1,5 px acima do centro: 3 em cima a trazem de volta -->
+                            <!-- A Bahnschrift assenta 1,5 px acima do centro: 3 em cima a trazem de volta. O °C, menor, sobe 2 para a linha de base do número -->
                             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,0">
                                 <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Bottom"/>
                                 <TextBlock x:Name="sx" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}"
                                            FontFamily="{StaticResource Readout}" FontSize="12" Foreground="{DynamicResource Muted}"
-                                           VerticalAlignment="Bottom" Margin="1,0,0,0"/>
+                                           VerticalAlignment="Bottom" Margin="1,0,0,2"/>
                             </StackPanel>
                             <RepeatButton Grid.Column="2" Style="{StaticResource StepButton}" Content="&#xE710;" Command="{x:Static local:NumberField.Increase}" ToolTip="Aumentar"/>
                         </Grid>
