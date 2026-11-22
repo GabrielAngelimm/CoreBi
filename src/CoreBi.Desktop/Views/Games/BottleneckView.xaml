@@ -207,9 +207,12 @@
                     </Grid>
 
                     <!-- As leituras que provam o veredito e, embaixo, o equilíbrio estimado pela tabela de desempenho -->
-                    <Border x:Name="BnSideCard" local:Skeleton.Shape="Text" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0">
+                    <Border x:Name="BnSideCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0">
                         <DockPanel>
-                            <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="{StaticResource PanelPadding}">
+                            <!-- Esqueleto só no equilíbrio, que espera os nomes da CPU e da placa de vídeo: os dois nomes, a régua, as três marcas e a frase -->
+                            <Border x:Name="BnBalanceCard" DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="{StaticResource PanelPadding}"
+                                    Background="{DynamicResource Surface}" CornerRadius="0,0,10,10" local:Skeleton.Top="24"
+                                    local:Skeleton.Layout="gap 14; row 18: t 45%@0.62, - 10%, t 45%@0.62&gt;; gap 10; row 24: box *^8; gap 4; row 16: c 20%@0.75, - 20%, c 20%@0.8, - 20%, c 20%@0.75&gt;; gap 14; row 20: t *@0.95; row 20: t *@0.55">
                                 <StackPanel>
                                     <TextBlock Text="Equilíbrio estimado" Style="{StaticResource SectionTitle}"
                                                ToolTip="Estimativa pela tabela de desempenho relativo de processadores e placas de vídeo do CoreBi, não uma medição. Cada jogo pesa diferente; as leituras ao vivo mostram o que acontece de fato." />

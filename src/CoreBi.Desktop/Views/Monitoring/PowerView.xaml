@@ -181,7 +181,9 @@
                     </Grid.RowDefinitions>
 
                     <!-- Alimentação -->
-                    <Border x:Name="FeedCard" Style="{StaticResource CardBorder}" Padding="0">
+                    <!-- Esqueletos com a planta de cada painel: fonte, planos e ajustes; tensões; o resumo da semana e as linhas dos dias -->
+                    <Border x:Name="FeedCard" Style="{StaticResource CardBorder}" Padding="0"
+                            local:Skeleton.Layout="gap 20; col 24 46; gap 3; row 38: box 38^38; col 84 70%; gap 2; row 24: h *@0.5^18; gap 2; row 16: c *@0.75; end; gap 17; line; gap 14; row 22: - 24, s 140^14; gap 6; rows 3 32: - 24, c 14@1^14, - 10, t *@0.4, - 24; gap 15; line; gap 17; row 22: - 24, s 140^14; gap 14; row 20: - 24, c *@0.4, c 40>, - 24; gap 4; row 10: - 24, box *^8, - 24; gap 9; lines 3 32: - 24, c *@0.45, t 90@0.9>, - 24">
                         <StackPanel>
                             <!-- Fonte: tomada ou bateria -->
                             <Border Style="{StaticResource FeedSection}" BorderThickness="0" Padding="24,20,24,16">
@@ -357,7 +359,8 @@
                     </Border>
 
                     <!-- Tensões -->
-                    <Border x:Name="VoltCard" Grid.Row="2" Style="{StaticResource CardBorder}">
+                    <Border x:Name="VoltCard" Grid.Row="2" Style="{StaticResource CardBorder}"
+                            local:Skeleton.Layout="row 24: h 90^16; gap 4; row 17: c 85%; gap 16; rows 4 32: c 30%@0.6, - 12, box *^10, - 12, t 60@0.8>; gap 4; line; gap 8; row 18: c 80; rows 4 24: c 150@0.6, box *^6, t 60@0.8>; gap 4; row 30: c 190@0.9">
                         <StackPanel>
                             <TextBlock Text="Tensões" Style="{StaticResource SectionTitle}" />
                             <TextBlock Text="Voltagem que chega a cada peça; fora da faixa usual, o valor fica âmbar." Style="{StaticResource Caption}" Margin="0,4,0,0" />
@@ -376,7 +379,8 @@
                     </Border>
 
                     <!-- Tempo ligado nos últimos 7 dias -->
-                    <Border x:Name="DaysCard" local:Skeleton.Shape="Block" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
+                    <Border x:Name="DaysCard" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}"
+                            local:Skeleton.Layout="row 24: h 260^16; gap 4; row 17: c 40%; gap 16; line; gap 18; row 16: c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4; gap 6; row 30: n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24; gap 18; line; gap 16; foot 18: - 64, c 14, - *, c 14, - *, c 18, - *, c 18, - *, c 18>; fill 25: c 44@0.8, - 20, box *^8, - 30, c 44@0.7>">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />

@@ -96,30 +96,21 @@ public partial class DriversView : UserControl
         _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
         try
         {
-            // Uma mensagem só durante a leitura inteira: o medidor conta as etapas, e o estado passa direto a "Lido às"
-            DrvSet("Lendo drivers instalados…", 0);
+            // Uma mensagem só durante a leitura inteira, sem medidor (é rápida): o estado passa direto a "Lido às"
+            DrvSet("Lendo drivers instalados…");
             var inv = await Task.Run(DriverInventory.ListInstalled);
             ShowInventory(inv);
             Skeleton.SetActive(DrvTableCard, false);
-            DrvSet("Lendo drivers instalados…", 0.2);
             _drvGpus = await Task.Run(DriverInventory.ReadGpus);
             _drvBoardInfo = await Task.Run(DriverInventory.ReadBoard);
             ShowBoard();
             Skeleton.SetActive(DrvBoardCard, false);
-            DrvSet("Lendo drivers instalados…", 0.4);
 
             bool studio = DrvStudio.IsChecked == true;
-            int i = 0;
-            foreach (var g in _drvGpus)
-            {
-                double at = 0.4 + 0.6 * i / Math.Max(1, _drvGpus.Count);
-                if (g.Vendor is "NVIDIA" or "AMD") DrvSet("Lendo drivers instalados…", at);
-                await GpuDriverLookup.CheckAsync(g, studio, _drvCts.Token);
-                i++;
-            }
+            foreach (var g in _drvGpus) await GpuDriverLookup.CheckAsync(g, studio, _drvCts.Token);
             if (_context.IsClosing) return;
             ShowGpus();
-            DrvSet($"Lido às {DateTime.Now:HH:mm}", 1);
+            DrvSet($"Lido às {DateTime.Now:HH:mm}");
         }
         catch (Exception ex) { DrvFail("Não foi possível ler os drivers", ex.Message); }
         finally

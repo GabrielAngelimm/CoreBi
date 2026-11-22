@@ -257,7 +257,9 @@
 
                     <!-- O botão fantasma no pé já tem 6 px de respiro interno: o painel desconta isso embaixo -->
                     <!-- Esqueleto abaixo do título até o registro de eventos do Windows responder (lido fora da janela) -->
-                    <Border x:Name="DashHealthCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="24,20,24,14" local:Skeleton.Top="34" local:Skeleton.Shape="Text">
+                    <!-- Esqueleto: os dois itens (ícone, título e explicação) e o atalho para os sensores -->
+                    <Border x:Name="DashHealthCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="24,20,24,14" local:Skeleton.Top="32"
+                            local:Skeleton.Layout="gap 10; row 19: c 22@0.55^12, s *@0.42; gap 2; row 17: - 22, c *@0.92; row 17: - 22, c *@0.5; gap 10; row 19: c 22@0.55^12, s *@0.38; gap 2; row 17: - 22, c *@0.85; gap 12; row 32: c 22@0.6^12, c 150@0.95">
                         <StackPanel>
                             <Grid Margin="0,0,0,6">
                                 <TextBlock Text="Saúde do PC" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />

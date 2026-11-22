@@ -251,7 +251,9 @@
 
             <!-- Índice: um item por componente, na altura toda da página (a base alinha com a do cartão ao lado); escolher um mostra só ele.
                  14 do cartão + 10 do item = 24, o recuo dos outros painéis; o fundo da seleção avança 10 para os lados. -->
-            <Border x:Name="IndexCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="14,20,14,12">
+            <!-- Esqueleto: os itens do índice, com o desenho e as duas linhas de cada um -->
+            <Border x:Name="IndexCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="14,20,14,12" local:Skeleton.Top="24"
+                    local:Skeleton.Layout="gap 1; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Componentes" Style="{StaticResource Label}" Margin="10,0,10,8" />
                     <ListBox x:Name="SensorIndex" ItemContainerStyle="{StaticResource IndexItem}" SelectionChanged="SensorIndex_Changed" HorizontalContentAlignment="Stretch">
@@ -295,7 +297,9 @@
 
             <!-- Um cartão só para todos os componentes. O cabeçalho do componente à vista fica fixo no topo e é trocado, ou empurrado
                  pelo seguinte, conforme a rolagem (ver SensorsView.UpdateSticky). -->
-            <Border x:Name="SensorCard" Grid.Row="1" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SensorCard_SizeChanged">
+            <!-- Esqueleto: cabeçalho do componente, a faixa de colunas e os grupos em duas metades, com as linhas de 32 -->
+            <Border x:Name="SensorCard" Grid.Row="1" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SensorCard_SizeChanged"
+                    local:Skeleton.Layout="gap 18; row 26: - 24, h 280^18, - *, c 12^8, - 30; gap 4; row 18: - 24, c 70, - 12, c 70, - *; gap 14; line; row 31: - 24, - *, c 74@0.4>, c 74@0.36>, c 74@0.48>, c 74@0.42>, - 45, - *, c 74@0.4>, c 74@0.36>, c 74@0.48>, c 74@0.42>, - 24; line; gap 12; row 30: - 24, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 3 32: - 24, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 45, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 24; gap 18; row 30: - 24, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 32: - 24, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 45, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 24">
                 <Grid>
                     <ScrollViewer x:Name="SensorScroll" VerticalScrollBarVisibility="Auto" ScrollChanged="SensorScroll_ScrollChanged">
                         <!-- A barra de rolagem começa abaixo do cabeçalho fixo (112 = 80 + 32) para o cabeçalho nunca cobrir a barra. O

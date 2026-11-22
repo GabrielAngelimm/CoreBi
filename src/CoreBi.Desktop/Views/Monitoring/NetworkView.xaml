@@ -344,7 +344,9 @@
                         </Grid>
                     </Border>
 
-                    <Border x:Name="NetInfoCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,20,24,12" local:Skeleton.Top="34">
+                    <!-- Esqueleto: as seis linhas da conexão espalhadas pela altura, nome à esquerda e valor à direita -->
+                    <Border x:Name="NetInfoCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,20,24,12" local:Skeleton.Top="36"
+                            local:Skeleton.Layout="spread 6: c *@0.5, t *@0.6&gt;">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />

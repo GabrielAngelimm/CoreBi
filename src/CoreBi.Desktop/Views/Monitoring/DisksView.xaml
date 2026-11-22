@@ -200,7 +200,9 @@
                         </Grid.RowDefinitions>
 
                         <!-- Placa de identificação: modelo, veredito, especificação e espaço por unidade -->
-                        <Border x:Name="DiskPlate" local:Skeleton.Shape="Text" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}">
+                        <!-- Esqueleto de cada painel: a mesma planta do conteúdo (placa com as etiquetas e o espaço; mostrador e as três leituras; o termômetro, a escala e o gráfico; o odômetro; a faixa de integridade) -->
+                        <Border x:Name="DiskPlate" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}"
+                                local:Skeleton.Layout="col 0 54%; gap 2; row 28: h 240^18, - 12, btn 80^22; gap 12; row 24: btn 40^24, - 6, btn 60^24, - 6, btn 74^24, - 6, btn 86^24; col 58% 42%; row 24: s 64^14; gap 8; row 18: box *^16; gap 14; row 16: c 33%@0.3, c 33%@0.25, c 33%@0.22; gap 4; row 26: n 33%@0.34^20, n 33%@0.55^20, n 33%@0.5^20; end">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -265,7 +267,7 @@
                         </Border>
 
                         <!-- Vida útil -->
-                        <Border x:Name="LifeCard" local:Skeleton.Shape="Text" Grid.Row="2" Style="{StaticResource CardBorder}">
+                        <Border x:Name="LifeCard" local:Skeleton.Top="34" local:Skeleton.Layout="foot 30: n 94@0.22^20, n 94@0.22^20, n 94@0.22^20; foot 20: c 94@0.62, c 94@0.5, c 94@0.7; footgap 12; footline; footgap 12; center 280: ring *~" Grid.Row="2" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -299,7 +301,7 @@
                         </Border>
 
                         <!-- Temperatura -->
-                        <Border x:Name="TempCard" local:Skeleton.Shape="Text" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
+                        <Border x:Name="TempCard" local:Skeleton.Top="34" local:Skeleton.Layout="gap 4; row 18: c 33%@0.16~, c 33%@0.18~, c 33%@0.28~; gap 30; row 30: n 33%@0.1^20~, h 33%@0.36^22~, n 33%@0.1^20~; gap 32; row 20: box *^18; gap 6; row 14: c 11%@0.15, c 11%@0.15, c 11%@0.15, c 11%@0.15, c 11%@0.15, c 11%@0.15, c 11%@0.15, c 11%@0.2, c 11%@0.25; foot 38: c 92@0.95, - 20, s 150@0.95; footline; footgap 10; foot 16: - 44, c 44, - *, c 52~, - *, c 36>; footgap 4; gap 14; rest: c 36@0.9^10, - 8, frame *" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -350,7 +352,7 @@
                         </Border>
 
                         <!-- Odômetro: uso acumulado desde a fábrica -->
-                        <Border x:Name="OdoCard" local:Skeleton.Shape="Text" Grid.Row="2" Grid.Column="4" Style="{StaticResource CardBorder}" Padding="0">
+                        <Border x:Name="OdoCard" local:Skeleton.Layout="pad 20 20 20 20; row 17: c 25%@0.5, c 25%@0.62, c 25%@0.52, c 25%@0.45; gap 6; row 36: n 25%@0.42^26, n 25%@0.3^26, n 25%@0.5^26, n 25%@0.5^26; gap 8; row 16: c 25%@0.6, c 25%@0.55, c 25%@0.5, c 25%@0.5" Grid.Row="2" Grid.Column="4" Style="{StaticResource CardBorder}" Padding="0">
                             <UniformGrid x:Name="OdoGrid" Columns="4">
                                 <Border x:Name="OdoCell0" Style="{StaticResource OdoCell}" BorderThickness="0">
                                     <StackPanel>
@@ -383,7 +385,7 @@
                             </UniformGrid>
                         </Border>
                     <!-- Integridade: S.M.A.R.T. e contadores de erro, numa faixa discreta -->
-                        <Border x:Name="CheckCard" local:Skeleton.RowHeight="28" Grid.Row="4" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}" Padding="24,12">
+                        <Border x:Name="CheckCard" local:Skeleton.Layout="row 32: h 96^16, - *, c 8^8, - 8, c 150, - 18, s 64, - 110, c 8^8, - 8, c 470, - 18, c 120" Grid.Row="4" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}" Padding="24,12">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />

@@ -27,6 +27,7 @@ public partial class SystemView : UserControl
     private Dictionary<string, Sheet> _sheets = new();
     private Sheet? _sheet;
     private string _selected = SystemSheets.Cpu;
+    private string _signature = "";
     private UniformGrid? _indexGrid;
     private ColumnsPanel? _columns;
 
@@ -109,8 +110,17 @@ public partial class SystemView : UserControl
         if (_inventory == null) return;
         var now = DateTime.Now;
         var (index, sheets) = SystemSheets.Build(_inventory, _context.Gpus, _drives, now, MemoryInfo.ReadSnapshot());
-        _sheets = sheets;
         Built = (index, sheets);
+        // Ao voltar à página, a ficha refeita quase sempre é igual à da tela: trocar as abas e os grupos por cópias idênticas
+        // fazia tudo piscar logo depois da entrada. Só troca o que mudou de verdade (espaço livre, memória em uso, uma placa nova)
+        string signature = System.Text.Json.JsonSerializer.Serialize(SystemReport.From(index, sheets));
+        if (signature == _signature && SysIndex.ItemsSource != null)
+        {
+            Skeleton.SetActive(SheetCard, false);
+            return;
+        }
+        _signature = signature;
+        _sheets = sheets;
         SysIndex.ItemsSource = index;
         SysIndex.SelectedItem = index.FirstOrDefault(i => i.Key == _selected) ?? index.FirstOrDefault();
         HeaderMotion.Say(SystemSub, null, $"{Environment.MachineName} · lido às {now:HH:mm}");

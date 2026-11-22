@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using CoreBi.Desktop.Services;
 using CoreBi.Engine.Games;
@@ -76,6 +77,7 @@ public partial class MainWindow : Window, ILiveMotionHost
         StateChanged += (_, _) => UpdateMaximizeChrome();
         WindowState = WindowState.Maximized;
         UpdateMaximizeChrome();
+        Loaded += (_, _) => ApplyUiScale(VisualTreeHelper.GetDpi(this));
 
         Closing += (_, e) =>
         {
@@ -276,6 +278,32 @@ public partial class MainWindow : Window, ILiveMotionHost
     private void Max_Click(object sender, RoutedEventArgs e)
         => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>
+    /// Tamanho fixo em pixels, qualquer que seja a escala do Windows: a interface foi desenhada em 1920 × 1032 a 100 %, e com
+    /// 125 % ou 150 % o Windows aumentaria tudo e a mesma tela cheia caberia em 1536 × 826, com as páginas trocando de arranjo e
+    /// rolando. A escala é desfeita até 80 % (125 % do Windows volta exatamente ao desenho; em 150 % a interface fica 20 % maior
+    /// que o desenho, com um arranjo mais estreito, para o texto não ficar miúdo). A 100 % não muda nada.
+    /// </summary>
+    private void ApplyUiScale(DpiScale dpi)
+    {
+        double scale = Math.Clamp(1 / Math.Max(1, dpi.DpiScaleX), 0.8, 1);
+        Root.LayoutTransform = scale == 1 ? Transform.Identity : new ScaleTransform(scale, scale);
+        // Texto encolhido junto com a interface: a medida "Display" (presa à grade de pixels no tamanho original) deixaria o
+        // espaçamento torto; a "Ideal" mede no tamanho em que o texto aparece
+        TextOptions.SetTextFormattingMode(this, scale == 1 ? TextFormattingMode.Display : TextFormattingMode.Ideal);
+        if (System.Windows.Shell.WindowChrome.GetWindowChrome(this) is { } chrome)
+        {
+            chrome.CaptionHeight = 52 * scale;
+            chrome.ResizeBorderThickness = new Thickness(6 * scale);
+        }
+    }
+
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        ApplyUiScale(newDpi);
+    }
 
     private void UpdateMaximizeChrome()
     {

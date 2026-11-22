@@ -132,7 +132,9 @@
                 </StackPanel>
             </local:PageHeaderPanel>
 
-            <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,20,12,8" local:Skeleton.Top="40" local:Skeleton.RowHeight="44">
+            <!-- Esqueleto: os cartões dos apps já estão montados; cada um ganha o contorno, o nome, o marcador e a descrição -->
+            <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,20,12,8" local:Skeleton.Top="44"
+                    local:Skeleton.ItemStyle="AppCard" local:Skeleton.ItemLayout="pad 16 13 14 14; row 20: s *@0.5, - 12, dot 18; gap 5; row 17: c *@0.92; row 17: c *@0.55">
                 <StackPanel>
                     <Grid Margin="0,0,12,16">
                         <Grid.ColumnDefinitions>
