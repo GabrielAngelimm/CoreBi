@@ -235,8 +235,9 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <!-- O título assenta no meio da linha de 34 px dos cabeçalhos de cartão (CardHeader): 7 em cima, e 10 de vão depois da linha -->
         <Style x:Key="HistoryTitle" TargetType="TextBlock" BasedOn="{StaticResource SectionTitle}">
-            <Setter Property="Margin" Value="0,0,16,16" />
+            <Setter Property="Margin" Value="0,7,16,17" />
             <Setter Property="HorizontalAlignment" Value="Left" />
         </Style>
         <Style x:Key="ConfigLabel" TargetType="TextBlock" BasedOn="{StaticResource Label}">

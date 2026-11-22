@@ -182,13 +182,14 @@
                                 medido, a nota da prévia. O estado mora aqui, e não numa faixa sob os cartões, para a página terminar na mesma
                                 linha que as outras.
                             -->
-                            <Grid>
+                            <!-- Cabeçalho de 34 px (CardHeader), na mesma altura do "O que mostrar" ao lado, que tem as pílulas -->
+                            <Grid Style="{StaticResource CardHeader}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Posição e tamanho" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                                <TextBlock Text="Posição e tamanho" Style="{StaticResource CardTitle}" />
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="24,0,0,0">
                                     <Ellipse x:Name="OvStatusDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
                                     <TextBlock x:Name="OvStatus" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="460" Style="{StaticResource Num}" VerticalAlignment="Center" />
@@ -308,13 +309,13 @@
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <Grid>
+                            <Grid Style="{StaticResource CardHeader}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="O que mostrar" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="0,0,16,0" />
-                                <Border Grid.Column="1" Style="{StaticResource SegmentGroup}" VerticalAlignment="Top">
+                                <TextBlock Text="O que mostrar" Style="{StaticResource CardTitle}" Margin="0,0,16,0" />
+                                <Border Grid.Column="1" Style="{StaticResource SegmentGroup}" VerticalAlignment="Center">
                                     <local:SlidingSelectionPanel x:Name="OvPresetPanel" Style="{StaticResource SegmentRail}">
                                         <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Essencial" Tag="default" Click="OvPreset_Click">
                                             <RadioButton.ToolTip>

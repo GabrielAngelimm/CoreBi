@@ -220,12 +220,14 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base -->
-                                <TextBlock Style="{StaticResource SectionTitle}" TextWrapping="NoWrap">
-                                    <Run Text="Windows Update" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="DrvWuCount"
-                                        FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
-                                        Typography.NumeralAlignment="Tabular" />
-                                </TextBlock>
+                                <!-- Título e contagem num TextBlock só, na linha de 34 px dos cabeçalhos de cartão -->
+                                <Grid Style="{StaticResource CardHeader}">
+                                    <TextBlock Style="{StaticResource CardTitle}">
+                                        <Run Text="Windows Update" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="DrvWuCount"
+                                            FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
+                                            Typography.NumeralAlignment="Tabular" />
+                                    </TextBlock>
+                                </Grid>
                                 <StackPanel x:Name="DrvWuEmpty" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="380" Margin="0,16,0,8">
                                     <TextBlock x:Name="DrvWuList" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextAlignment="Center"
                                                Text="Procura drivers certificados pela Microsoft para este PC." />
@@ -259,7 +261,7 @@
 
                     <!-- Drivers instalados: tabela agrupada por classe, com busca e filtro; o cabeçalho de colunas tem a geometria das linhas -->
                     <!-- Esqueleto: filtros, cabeçalho de colunas com a geometria da tabela, um grupo e as linhas (36) até o fim do painel -->
-                    <Border x:Name="DrvTableCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="16,20,16,8" local:Skeleton.Top="48"
+                    <Border x:Name="DrvTableCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="16,20,16,8" local:Skeleton.Top="34"
                             local:Skeleton.Layout="gap 14; row 28: - 8, pill 52, - 6, pill 62, - 6, pill 58, - 6, pill 70, - 6, pill 66, - 6, pill 60, - 6, pill 74, - 6, pill 56, - 6, pill 64; gap 2; row 32: - 8, c *@0.1, c 220@0.36, c 170@0.3, c 96@0.42&gt;, - 8; row 40: - 8, s 64, - *; rows 1 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 52, - *; lines 6 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 58, - *; lines 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -274,23 +276,20 @@
                                 embaixo do título. A busca filtra só esta tabela, então mora nela, à direita do título (no cabeçalho da página ela
                                 apertava a barra de ações, e o medidor abria em cima do subtítulo); o backup fica na barra de ações.
                             -->
-                            <Grid Margin="8,0,8,0">
+                            <!-- Cabeçalho de 34 px (CardHeader): título centrado e a busca à direita, na mesma altura das pílulas -->
+                            <Grid Style="{StaticResource CardHeader}" Margin="8,0,8,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBox x:Name="DrvSearch" Grid.Column="1" Style="{StaticResource SearchField}" Width="280" VerticalAlignment="Top" Margin="16,0,0,0"
+                                <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base (antes a contagem descia 1 px) -->
+                                <TextBlock Style="{StaticResource CardTitle}" ToolTip="Programas que deixam o Windows usar cada peça do computador.">
+                                    <Run Text="Drivers instalados" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="DrvCount"
+                                        FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
+                                        Typography.NumeralAlignment="Tabular" />
+                                </TextBlock>
+                                <TextBox x:Name="DrvSearch" Grid.Column="1" Style="{StaticResource CardSearch}" Width="280" Margin="16,0,0,0"
                                          local:Ui.Placeholder="Buscar dispositivo ou fabricante" TextChanged="DrvSearch_TextChanged" />
-                                <StackPanel Margin="0,6,0,0">
-                                    <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base (antes a contagem descia 1 px) -->
-                                    <TextBlock Style="{StaticResource SectionTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis">
-                                        <Run Text="Drivers instalados" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="DrvCount"
-                                            FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
-                                            Typography.NumeralAlignment="Tabular" />
-                                    </TextBlock>
-                                    <TextBlock Text="Programas que deixam o Windows usar cada peça do computador." Style="{StaticResource Caption}" Margin="0,2,0,0"
-                                               TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
-                                </StackPanel>
                             </Grid>
                             <WrapPanel x:Name="DrvChips" Grid.Row="1" Margin="8,14,8,0" />
                             <Grid x:Name="DrvHead" Grid.Row="2" Height="32" Margin="8,2,8,0">

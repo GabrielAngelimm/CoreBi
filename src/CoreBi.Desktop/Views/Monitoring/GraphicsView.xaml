@@ -142,15 +142,17 @@
         <!-- Ficha técnica: grupos chave/valor em colunas que dividem a largura; o painel tem a altura do conteúdo e rola por dentro se
              a janela for baixa -->
         <!-- Esqueleto: quatro colunas de grupo, cada uma com o título e as linhas chave/valor -->
-        <Border x:Name="GpuSpecCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="0" VerticalAlignment="Top" local:Skeleton.Top="50"
+        <Border x:Name="GpuSpecCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="0" VerticalAlignment="Top" local:Skeleton.Top="58"
                 local:Skeleton.Layout="pad 24 0 24 20; col 0 23.2%; row 28: s *@0.42; lines 9 34: c 42%@0.6, - 12, t *@0.7; col 25.6% 23.2%; row 28: s *@0.6; lines 8 34: c 42%@0.6, - 12, t *@0.7; gap 24; row 28: s *@0.4; rows 2 34: c 42%@0.6, - 12, t *@0.7; col 51.2% 23.2%; row 28: s *@0.3; lines 7 34: c 42%@0.6, - 12, t *@0.7; gap 24; row 28: s *@0.36; rows 2 34: c 42%@0.6, - 12, t *@0.7; col 76.8% 23.2%; row 28: s *@0.45; lines 8 34: c 42%@0.6, - 12, t *@0.7; gap 24; row 28: s *@0.36; rows 2 34: c 42%@0.6, - 12, t *@0.7; end">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <TextBlock Text="Especificações" Style="{StaticResource SectionTitle}" Margin="24,20,24,0" />
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Focusable="False" Margin="0,16,0,0">
+                <Grid Style="{StaticResource CardHeader}" Margin="24,20,24,0">
+                    <TextBlock Text="Especificações" Style="{StaticResource CardTitle}" />
+                </Grid>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Focusable="False" Margin="0,10,0,0">
                     <ItemsControl x:Name="GpuSections" ItemTemplate="{StaticResource GpuSection}" Margin="24,0,24,20" Focusable="False">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate><inv:ColumnsPanel Columns="4" ColumnGap="40" RowGap="24" Loaded="SpecColumns_Loaded" /></ItemsPanelTemplate>

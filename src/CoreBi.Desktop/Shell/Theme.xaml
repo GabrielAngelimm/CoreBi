@@ -137,6 +137,20 @@
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
+    <!--
+        Cabeçalho de cartão: a mesma linha de 34 px em todos os painéis do app (a altura das pílulas e do atalho redondo),
+        com o título centrado nela e, à direita, o filtro, a busca ou o atalho. Explicação do painel vai na dica do título,
+        nunca numa legenda embaixo dele.
+    -->
+    <Style x:Key="CardHeader" TargetType="Grid">
+        <Setter Property="Height" Value="34"/>
+    </Style>
+    <Style x:Key="CardTitle" TargetType="TextBlock" BasedOn="{StaticResource SectionTitle}">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
     <!-- Título de grupo dentro de uma ficha (Sensores, Sistema): um degrau abaixo do painel -->
     <Style x:Key="GroupTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
@@ -1710,6 +1724,12 @@
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="local:Ui.Icon" Value="&#xE721;"/>
+    </Style>
+    <!-- Busca dentro de um cartão: cabe na linha de 34 px do cabeçalho (CardHeader) -->
+    <Style x:Key="CardSearch" TargetType="TextBox" BasedOn="{StaticResource SearchField}">
+        <Setter Property="Height" Value="34"/>
+        <Setter Property="MinHeight" Value="34"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <!-- Grupo de controles que não são botões (interruptor e atalho do OverlayBi) na barra de ações: 40 px, o fio dos campos -->
     <Style x:Key="ActionGroup" TargetType="Border">

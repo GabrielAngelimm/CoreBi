@@ -274,8 +274,10 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <TextBlock Text="Vida útil" Style="{StaticResource SectionTitle}" />
-                                <local:LifeGauge x:Name="LifeDial" Grid.Row="1" MinHeight="210" Margin="0,16,0,8" Caption="restante" />
+                                <Grid Style="{StaticResource CardHeader}">
+                                    <TextBlock Text="Vida útil" Style="{StaticResource CardTitle}" />
+                                </Grid>
+                                <local:LifeGauge x:Name="LifeDial" Grid.Row="1" MinHeight="210" Margin="0,10,0,8" Caption="restante" />
                                 <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,12,0,0">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -301,7 +303,7 @@
                         </Border>
 
                         <!-- Temperatura -->
-                        <Border x:Name="TempCard" local:Skeleton.Top="34" local:Skeleton.Layout="gap 4; row 18: c 33%@0.16~, c 33%@0.18~, c 33%@0.28~; gap 30; row 30: n 33%@0.1^20~, h 33%@0.36^22~, n 33%@0.1^20~; gap 32; row 20: box *^18; gap 6; row 14: c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.2, c 10%@0.24; foot 38: c 92@0.95, - 20, s 150@0.95; footline; footgap 10; foot 16: - 44, c 44, - *, c 52~, - *, c 36>; footgap 4; gap 14; col 0 40; gap 6; spaced 4 14: c 32@0.9; col 44; rest: frame *; end" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
+                        <Border x:Name="TempCard" local:Skeleton.Top="34" local:Skeleton.Layout="gap 10; row 18: c 33%@0.16~, c 33%@0.18~, c 33%@0.28~; gap 30; row 30: n 33%@0.1^20~, h 33%@0.36^22~, n 33%@0.1^20~; gap 32; row 20: box *^18; gap 6; row 14: c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.16, c 10%@0.2, c 10%@0.24; foot 38: c 92@0.95, - 20, s 150@0.95; footline; footgap 10; foot 16: - 44, c 44, - *, c 52~, - *, c 36>; footgap 4; gap 14; col 0 40; gap 6; spaced 4 14: c 32@0.9; col 44; rest: frame *; end" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -310,10 +312,10 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <Grid>
-                                    <TextBlock Text="Temperatura" Style="{StaticResource SectionTitle}" />
-                                    <!-- Estado ao lado do título na mesma base dele (com 2 px em cima ficava 1 px abaixo) -->
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,0,0">
+                                <!-- Cabeçalho de 34 px (CardHeader): o título e, à direita, de onde vem a leitura -->
+                                <Grid Style="{StaticResource CardHeader}">
+                                    <TextBlock Text="Temperatura" Style="{StaticResource CardTitle}" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                         <Ellipse x:Name="TempLiveDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
                                         <TextBlock x:Name="TempLiveText" Style="{StaticResource Caption}" Typography.NumeralAlignment="Tabular" />
                                     </StackPanel>
@@ -322,7 +324,7 @@
                                     Três leituras com rótulo, na mesma linha de base: os três valores têm a mesma altura de linha
                                     (bloco de 76 px, fonte Bahnschrift nos três), então a base cai no mesmo ponto em todos.
                                 -->
-                                <Grid Grid.Row="1" Margin="0,16,0,0">
+                                <Grid Grid.Row="1" Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />

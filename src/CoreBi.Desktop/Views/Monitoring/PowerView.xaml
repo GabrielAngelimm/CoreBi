@@ -279,20 +279,21 @@
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <Grid Margin="24,20,24,0">
+                            <!-- Cabeçalho de 34 px (CardHeader), o mesmo de todos os painéis -->
+                            <Grid Style="{StaticResource CardHeader}" Margin="24,20,24,0">
                                 <!-- Título e duração da sessão num texto só: a legenda assenta na linha de base do título por construção -->
-                                <TextBlock Style="{StaticResource SectionTitle}" TextWrapping="NoWrap" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                <TextBlock Style="{StaticResource CardTitle}">
                                     <Run Text="Consumo" ToolTip="Processador e placa de vídeo, pelos sensores deles. O resto do PC (placa-mãe, memória, discos, ventoinhas) e a perda da fonte não são medidos." /><Run Text="   " /><Run x:Name="SessionAge" FontFamily="{StaticResource SmallFont}" FontSize="12" FontWeight="Normal" Foreground="{DynamicResource Muted}" />
                                 </TextBlock>
-                                <!-- "Ao vivo" na linha de base do título: a base do Bahnschrift 17 fica a 13 do topo e a da legenda a 12, daí 1 de
-                                     margem. O LED (centrado na caixa da legenda) desce 1, para o meio dele cair no meio da altura-x. -->
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,0,0">
-                                    <Ellipse x:Name="LiveDot" Style="{StaticResource StatusLed}" Margin="0,3,8,0" />
+                                <!-- "Ao vivo" centrado na linha, como o estado da Temperatura em Discos. O LED desce 1, para o meio dele
+                                     cair no meio da altura-x da legenda. -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Ellipse x:Name="LiveDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
                                     <TextBlock x:Name="LiveText" Text="Aguardando os sensores" Style="{StaticResource Caption}" />
                                 </StackPanel>
                             </Grid>
 
-                            <Grid Grid.Row="1" Margin="24,12,24,20">
+                            <Grid Grid.Row="1" Margin="24,8,24,20">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition x:Name="ReadoutColumn" Width="320" />
                                     <ColumnDefinition Width="32" />
@@ -380,19 +381,20 @@
 
                     <!-- Tempo ligado nos últimos 7 dias -->
                     <Border x:Name="DaysCard" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}"
-                            local:Skeleton.Layout="row 24: h 260^16; gap 8; line; gap 18; row 16: c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4; gap 6; row 30: n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24; gap 18; line; gap 16; foot 18: - 58, c 22, - *, c 22, - *, c 22, - *, c 22, - *, c 26, - 78; share 7: c 58@0.6, box *^8, - 12, c 66@0.6>">
+                            local:Skeleton.Layout="row 34: h 260^16; gap 10; line; gap 18; row 16: c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4; gap 6; row 30: n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24; gap 18; line; gap 16; foot 18: - 58, c 22, - *, c 22, - *, c 22, - *, c 22, - *, c 26, - 78; share 7: c 58@0.6, box *^8, - 12, c 66@0.6>">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Tempo ligado nos últimos 7 dias" Style="{StaticResource SectionTitle}" HorizontalAlignment="Left" ToolTip="Lido do registro de eventos do Windows." />
-                                <TextBlock x:Name="DaysCaption" Style="{StaticResource Caption}" Margin="0,4,0,0" Visibility="Collapsed" />
-                            </StackPanel>
+                            <!-- Cabeçalho de 34 px (CardHeader); o aviso de registro curto fica à direita, no lugar de uma legenda embaixo -->
+                            <Grid Style="{StaticResource CardHeader}">
+                                <TextBlock Text="Tempo ligado nos últimos 7 dias" Style="{StaticResource CardTitle}" ToolTip="Lido do registro de eventos do Windows." />
+                                <TextBlock x:Name="DaysCaption" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" TextWrapping="NoWrap" Visibility="Collapsed" />
+                            </Grid>
                             <!-- Mesma faixa do consumo: células de largura igual, texto à esquerda, fio entre elas, de ponta a ponta do cartão -->
-                            <Border x:Name="DaysSummary" Grid.Row="1" Margin="-24,16,-24,0" BorderBrush="{DynamicResource Line}" BorderThickness="0,1">
+                            <Border x:Name="DaysSummary" Grid.Row="1" Margin="-24,10,-24,0" BorderBrush="{DynamicResource Line}" BorderThickness="0,1">
                                 <UniformGrid x:Name="DaysCells" Rows="1">
                                     <Border Style="{StaticResource RulerCell}" BorderThickness="0">
                                         <StackPanel>

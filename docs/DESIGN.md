@@ -230,7 +230,8 @@ Todos em `Shell/Theme.xaml`; templates de dados compartilhados em `Shell/Feature
 | Remover em lista | Lixeira só com o glifo (`RowRemove`) | Inicialização (acende em vermelho sob o mouse) |
 | Navegação | `NavItem` em `SlidingSelectionPanel` (`NavRail`) | Barra lateral: fundo fixo `NavSel` que desliza até a página aberta, ícone aceso |
 | Opções exclusivas | `SegmentGroup` + `SegmentRail` + `Segment` | Resolução, duração, preset, métrica e intervalo do gráfico (poucas opções fixas); poço e tecla em pílula, 34 px; a tecla elevada desliza até a escolhida; o item marcado reserva a largura do negrito, então marcar não desloca os vizinhos |
-| Atalho de cartão | `CardLink` | Visão geral: círculo de 30 px com a seta no canto do título, leva à página do cartão (fio e seta no tom secundário; sob o mouse, fundo `Hover` e seta no sinal) |
+| Cabeçalho de cartão | `CardHeader` + `CardTitle` (`CardSearch` para a busca) | Todo painel do app: linha de 34 px (a altura das pílulas e do atalho redondo) com o título DIN 17 centrado e, à direita, filtro, busca de 34 px, estado ao vivo, legenda de marca ou o atalho. Explicação do painel vai na dica do título, nunca numa legenda embaixo; 10 a 14 px da linha ao conteúdo |
+| Atalho de cartão | `CardLink` | Visão geral e Tensões (Energia): círculo de 30 px com a seta no canto do título, leva à página do cartão (fio e seta no tom secundário; sob o mouse, fundo `Hover` e seta no sinal) |
 | Filtro gerado | `Chip` | Tipos de sensor, GPUs, unidades de disco (marcado = tingido de sinal) |
 | Escolha de teste | `TestTab` | Benchmark (ícone do componente testado, na cor dele, sem fundo; escolhida com fio `Signal` e fundo `SignalSoft`) |
 | Componente a carregar | `TestToggle` | Teste de carga (a mesma tecla, com a caixa de marcar à direita) |
