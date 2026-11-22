@@ -21,8 +21,8 @@
         <Style x:Key="ComponentColumn" TargetType="Border">
             <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
             <Setter Property="BorderThickness" Value="1,0,0,0" />
-            <!-- Recuo do painel; embaixo 10, que com os 10 da última leitura dão os 20 -->
-            <Setter Property="Padding" Value="24,20,24,10" />
+            <!-- Recuo do painel; embaixo 14, que com os 10 da última leitura dão os 24 -->
+            <Setter Property="Padding" Value="24,24,24,14" />
         </Style>
         <!-- Nome do componente no alto da coluna: só com duas ou mais colunas (com uma, a tecla marcada já diz qual é) -->
         <Style x:Key="ComponentHead" TargetType="StackPanel">

@@ -213,7 +213,7 @@
                             Windows Update: ocupa a sobra da coluna; a lista rola por dentro. Antes de procurar (ou sem nada novo), a área
                             mostra o que a busca faz e o botão dela no meio, em vez de um cartão alto e vazio.
                         -->
-                        <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="24,20,24,16">
+                        <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="24,24,24,16">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -261,7 +261,7 @@
 
                     <!-- Drivers instalados: tabela agrupada por classe, com busca e filtro; o cabeçalho de colunas tem a geometria das linhas -->
                     <!-- Esqueleto: filtros, cabeçalho de colunas com a geometria da tabela, um grupo e as linhas (36) até o fim do painel -->
-                    <Border x:Name="DrvTableCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="16,20,16,8" local:Skeleton.Top="34"
+                    <Border x:Name="DrvTableCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="16,24,16,8" local:Skeleton.Top="34"
                             local:Skeleton.Layout="gap 14; row 28: - 8, pill 52, - 6, pill 62, - 6, pill 58, - 6, pill 70, - 6, pill 66, - 6, pill 60, - 6, pill 74, - 6, pill 56, - 6, pill 64; gap 2; row 32: - 8, c *@0.1, c 220@0.36, c 170@0.3, c 96@0.42&gt;, - 8; row 40: - 8, s 64, - *; rows 1 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 52, - *; lines 6 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 58, - *; lines 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -271,8 +271,8 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <!--
-                                O título fica na mesma linha de base do de "Placa de vídeo", ao lado: lá a linha de 36 começa a 20 da borda e o
-                                título (caixa de 24) fica centrado nela, 6 abaixo; aqui o padding é 20 e o título desce 6. A frase de explicação fica
+                                O título fica na mesma linha de base do de "Placa de vídeo", ao lado: lá a linha de 36 começa a 24 da borda e o
+                                título (caixa de 24) fica centrado nela, 6 abaixo; aqui o padding é 24 e o título desce 6. A frase de explicação fica
                                 embaixo do título. A busca filtra só esta tabela, então mora nela, à direita do título (no cabeçalho da página ela
                                 apertava a barra de ações, e o medidor abria em cima do subtítulo); o backup fica na barra de ações.
                             -->

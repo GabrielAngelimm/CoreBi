@@ -299,7 +299,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="24,20,24,12">
+                    <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="24,24,24,12">
                         <DockPanel>
                             <Grid DockPanel.Dock="Top" Height="34" Margin="0,0,0,2">
                                 <TextBlock Text="Atividade recente" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
