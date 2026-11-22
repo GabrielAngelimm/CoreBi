@@ -2,8 +2,8 @@
     <!-- Texto corrido da página no corpo do app (14, Body); títulos, rótulos e legendas seguem os estilos da escala -->
     <UserControl.Resources>
         <!-- Seção do painel de alimentação: separadas por um fio, sem cartões dentro do cartão. Entre seções 16; a última termina a 24
-             da borda (PanelPadding) e a primeira começa a 16, como os cartões com título (CardPadding): a letra visível do
-             "Na tomada" fica a 24 da borda, na linha do título "Consumo" ao lado. -->
+             da borda (PanelPadding) e a primeira começa a 21, o recuo dos nomes em DIN 24: a letra visível do
+             "Na tomada" fica a 24 da borda, a mesma distância do título "Consumo" ao lado. -->
         <Style x:Key="FeedSection" TargetType="Border">
             <Setter Property="Padding" Value="24,16" />
             <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
@@ -233,10 +233,10 @@
                     <!-- Alimentação -->
                     <!-- Esqueletos com a planta de cada painel: fonte, planos e ajustes; tensões; o resumo da semana e as linhas dos dias -->
                     <Border x:Name="FeedCard" Style="{StaticResource CardBorder}" Padding="0"
-                            local:Skeleton.Layout="gap 16; col 24 46; gap 3; row 38: box 38^38; col 84 70%; gap 2; row 24: h *@0.5^18; gap 2; row 16: c *@0.75; end; gap 17; line; gap 14; row 22: - 24, s 140^14; gap 6; rows 3 32: - 24, c 14@1^14, - 10, t *@0.4, - 24; gap 15; line; gap 17; row 22: - 24, s 140^14; gap 14; row 20: - 24, c *@0.4, c 40>, - 24; gap 4; row 10: - 24, box *^8, - 24; gap 9; lines 3 32: - 24, c *@0.45, t 90@0.9>, - 24">
+                            local:Skeleton.Layout="gap 21; col 24 46; gap 3; row 38: box 38^38; col 84 70%; gap 2; row 24: h *@0.5^18; gap 2; row 16: c *@0.75; end; gap 17; line; gap 14; row 22: - 24, s 140^14; gap 6; rows 3 32: - 24, c 14@1^14, - 10, t *@0.4, - 24; gap 15; line; gap 17; row 22: - 24, s 140^14; gap 14; row 20: - 24, c *@0.4, c 40>, - 24; gap 4; row 10: - 24, box *^8, - 24; gap 9; lines 3 32: - 24, c *@0.45, t 90@0.9>, - 24">
                         <StackPanel>
                             <!-- Fonte: tomada ou bateria -->
-                            <Border Style="{StaticResource FeedSection}" BorderThickness="0" Padding="24,16,24,16">
+                            <Border Style="{StaticResource FeedSection}" BorderThickness="0" Padding="24,21,24,16">
                                 <StackPanel>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
