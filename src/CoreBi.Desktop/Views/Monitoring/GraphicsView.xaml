@@ -3,16 +3,19 @@
         <!-- Leitura ao vivo, na faixa da placa: rótulo, número de mostrador, medidor segmentado no canal Gpu (a fração da escala:
              100 %, o clock máximo, o limite de energia, a VRAM total) e o complemento (linha reservada, para as sete terem a mesma
              altura). Sem gráfico do último minuto: não dava para ler valor nenhum nele, e a ficha técnica ganha a altura que ele
-             ocupava. Separadas por fios, como eram as leituras da placa; a primeira não tem fio. -->
+             ocupava. Separadas por fios. -->
         <DataTemplate x:Key="GaugeTile">
-            <Border x:Name="cell" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1,0,0,0" Padding="18,0,0,0" Margin="18,0,0,0" ToolTip="{Binding Tip}" Background="Transparent">
-                <StackPanel>
+            <!-- Todas iguais: o fio à esquerda (também na primeira, que a separa da identificação) e 18 de cada lado, então os sete
+                 medidores têm a mesma largura. O fio é o texto em 18 %, que aparece nos dois temas sobre o fundo da faixa. -->
+            <Grid ToolTip="{Binding Tip}" Background="Transparent">
+                <Border Width="1" HorizontalAlignment="Left" Background="{DynamicResource Fg}" Opacity="0.18" SnapsToDevicePixels="True" />
+                <StackPanel Margin="18,0,18,0">
                     <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" />
                     <!-- Número e unidade no mesmo TextBlock: a mesma linha de base -->
                     <TextBlock x:Name="value" Margin="0,4,0,0" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" TextTrimming="CharacterEllipsis">
                         <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="32" FontWeight="Light" /><Run x:Name="gap" Text=" " FontFamily="{StaticResource LabelFont}" FontSize="18" /><Run Text="{Binding Unit, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" />
                     </TextBlock>
-                    <!-- Trilho neutro (o texto em 14 %, que aparece nos dois temas sobre o fundo da faixa) e o preenchimento cheio no canal -->
+                    <!-- Trilho neutro (o texto em 14 %) e o preenchimento cheio no canal -->
                     <Grid Height="8" Margin="0,7,0,0" OpacityMask="{StaticResource SegmentMask}">
                         <Border Background="{DynamicResource Fg}" Opacity="0.14" />
                         <Border x:Name="meter" Background="{DynamicResource Gpu}" RenderTransformOrigin="0,0.5">
@@ -23,13 +26,8 @@
                     </Grid>
                     <TextBlock Text="{Binding Sub}" Style="{StaticResource StatSub}" Height="16" Margin="0,7,0,0" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
-            </Border>
+            </Grid>
             <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding First}" Value="True">
-                    <Setter TargetName="cell" Property="BorderThickness" Value="0" />
-                    <Setter TargetName="cell" Property="Padding" Value="0" />
-                    <Setter TargetName="cell" Property="Margin" Value="0" />
-                </DataTrigger>
                 <DataTrigger Binding="{Binding Unit}" Value="">
                     <Setter TargetName="gap" Property="Text" Value="" />
                 </DataTrigger>
@@ -40,12 +38,13 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Leitura do driver na faixa de baixo: rótulo em cima (DIN 12,5, tom secundário) e valor embaixo (Segoe 13,5), cada uma
-             numa célula de largura fixa (UniformGrid), para o valor mudar sem empurrar as vizinhas para o lado -->
+        <!-- Leitura do driver na faixa de baixo: rótulo em cima (DIN 12,5, tom secundário) e valor embaixo (Segoe 13,5), centrados
+             cada um numa célula de mesma largura (UniformGrid): os itens ficam distribuídos por igual na faixa, e um valor que muda
+             não empurra os vizinhos -->
         <DataTemplate x:Key="FactCell">
-            <StackPanel Margin="0,0,16,0" ToolTip="{Binding Tip}" Background="Transparent">
-                <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" />
-                <TextBlock x:Name="value" Text="{Binding Value}" FontSize="13.5" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
+            <StackPanel HorizontalAlignment="Center" Margin="8,0" ToolTip="{Binding Tip}" Background="Transparent">
+                <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center" />
+                <TextBlock x:Name="value" Text="{Binding Value}" FontSize="13.5" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" HorizontalAlignment="Center" />
             </StackPanel>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding Warn}" Value="True">
@@ -109,7 +108,7 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Gpu" Kind="gpu" Width="44" Height="44" VerticalAlignment="Center" />
-                            <StackPanel Grid.Column="1" Margin="20,0,40,0" VerticalAlignment="Center" MaxWidth="420">
+                            <StackPanel Grid.Column="1" Margin="20,0,24,0" VerticalAlignment="Center" MaxWidth="420">
                                 <TextBlock x:Name="GpuVendor" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Gpu}" TextTrimming="CharacterEllipsis"
                                            Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
                                 <TextBlock x:Name="GpuName" Text="Lendo a placa de vídeo…" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />

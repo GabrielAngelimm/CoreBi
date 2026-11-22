@@ -25,18 +25,14 @@ internal static class GpuSheet
     private static string? V(Dictionary<string, string> d, string key) => d.TryGetValue(key, out var v) ? v : null;
 
     /// <summary>
-    /// Frase curta sob o nome: a memória e o driver ("8 GB GDDR6 · driver 621.24"), o que se confere primeiro numa placa. Chip e
-    /// arquitetura ficam na ficha (na faixa ao vivo, a frase longa disputava espaço com as leituras). Vazia sem nenhum dos dois.
+    /// Frase curta sob o nome: só a memória ("8 GB GDDR6"), o dado que se confere primeiro numa placa. Chip, arquitetura e driver
+    /// ficam na ficha (na faixa ao vivo, uma frase longa disputava espaço com as leituras). Vazia sem o tamanho.
     /// </summary>
     public static string Subtitle(Dictionary<string, string> d)
     {
-        static string Head(string v) => v.Split(" (")[0];
-        var parts = new List<string>();
-        string? size = V(d, "Tamanho") is { } t ? Head(t) : null;
-        string? type = V(d, "Tipo") is { } k && (k.StartsWith("GDDR") || k.StartsWith("HBM")) ? k : null;
-        if (size != null) parts.Add(type != null ? $"{size} {type}" : size);
-        if (V(d, "Versão do driver") is { } drv) parts.Add($"driver {Head(drv)}");
-        return string.Join(" · ", parts);
+        if (V(d, "Tamanho") is not { } t) return "";
+        string size = t.Split(" (")[0];
+        return V(d, "Tipo") is { } k && (k.StartsWith("GDDR") || k.StartsWith("HBM")) ? $"{size} {k}" : size;
     }
 
     /// <summary>livePcie: o driver informa o link PCIe em uso ao vivo (faixa do driver no painel ao vivo), então a ficha não o repete.</summary>
