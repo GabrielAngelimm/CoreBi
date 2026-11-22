@@ -430,6 +430,11 @@ public partial class DisksView : UserControl
 
     private List<Border> _odoCells = new();
 
+    // Esqueleto do odômetro nos dois arranjos: quatro leituras empilhadas e centradas (largo) ou 2 × 2 (estreito)
+    private const string OdoRead3 = "row 17: c *@0.62~; gap 4; row 40: n *@0.55^28~; gap 8; row 16: c *@0.7~";
+    private const string OdoWidePlan = "bands 4; pad 12 0 12 0; " + OdoRead3 + "; endbands";
+    private const string OdoNarrowPlan = "col 4% 42%; " + OdoRead3 + "; gap 16; " + OdoRead3 + "; col 54% 42%; " + OdoRead3 + "; gap 16; " + OdoRead3 + "; end";
+
     /// <summary>Larga: quatro leituras empilhadas na coluna à direita. Estreita: faixa 2 × 2 abaixo da temperatura.</summary>
     private void LayoutOdometer()
     {
@@ -442,6 +447,7 @@ public partial class DisksView : UserControl
         int columns = _wide ? 1 : Math.Max(1, Math.Min(_odoCells.Count, 2));
         OdoGrid.Columns = columns;
         OdoCard.Padding = _wide ? new Thickness(0) : new Thickness(0, 20, 0, 20);
+        Skeleton.SetLayout(OdoCard, _wide ? OdoWidePlan : OdoNarrowPlan);
         for (int i = 0; i < _odoCells.Count; i++)
         {
             var cell = _odoCells[i];

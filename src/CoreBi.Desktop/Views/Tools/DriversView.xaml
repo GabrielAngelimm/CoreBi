@@ -89,7 +89,7 @@
                         <!-- Placa de vídeo: uma ficha por placa; a ação vale para a primeira que tem download automático -->
                         <!-- Esqueleto: nome, Instalado e Mais recente lado a lado, a mensagem em duas linhas e os dois botões (a ficha de uma placa NVIDIA ou AMD) -->
                         <Border x:Name="DrvGpuCard" Style="{StaticResource CardBorder}" local:Skeleton.Top="36"
-                                local:Skeleton.Layout="gap 16; row 20: s 58%; gap 12; row 17: c *@0.3, - 16, c *@0.36; row 30: n *@0.78, - 16, n *@0.78; gap 12; row 20: t 96%; row 20: t 44%; gap 18; row 34: btn 162, - 8, btn 136">
+                                local:Skeleton.Layout="gap 16; row 20: s 58%; gap 12; row 17: c *@0.3, - 16, c *@0.36; row 30: n *@0.78, - 16, n *@0.78; row 16: - *, - 16, c *@0.24; gap 12; row 20: dot 8, - 9, t *@0.7; gap 18; row 34: btn 162, - 8, btn 136">
                             <StackPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -260,7 +260,7 @@
                     <!-- Drivers instalados: tabela agrupada por classe, com busca e filtro; o cabeçalho de colunas tem a geometria das linhas -->
                     <!-- Esqueleto: filtros, cabeçalho de colunas com a geometria da tabela, um grupo e as linhas (36) até o fim do painel -->
                     <Border x:Name="DrvTableCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="16,20,16,8" local:Skeleton.Top="48"
-                            local:Skeleton.Layout="gap 14; row 28: - 8, pill 82, - 6, pill 72, - 6, pill 66, - 6, pill 88; gap 2; row 32: - 8, c *@0.1, c 220@0.36, c 170@0.3, c 96@0.42&gt;, - 8; row 40: - 8, s 64, - *; lines 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8">
+                            local:Skeleton.Layout="gap 14; row 28: - 8, pill 52, - 6, pill 62, - 6, pill 58, - 6, pill 70, - 6, pill 66, - 6, pill 60, - 6, pill 74, - 6, pill 56, - 6, pill 64; gap 2; row 32: - 8, c *@0.1, c 220@0.36, c 170@0.3, c 96@0.42&gt;, - 8; row 40: - 8, s 64, - *; rows 1 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 52, - *; lines 6 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 58, - *; lines 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />

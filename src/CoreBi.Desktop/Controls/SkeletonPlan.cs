@@ -16,14 +16,15 @@ namespace CoreBi.Desktop;
 /// põem um fio ou um vão nessa pilha; <c>center 260: ...</c>: uma linha no meio do que sobra; <c>rest: ...</c>: uma linha com
 /// toda a altura que sobra;</item>
 /// <item><c>line</c>: um fio de 1 px na largura toda; <c>spread 6: ...</c>: seis linhas que dividem a altura que sobra, com o fio
-/// em cima de cada uma; <c>share 7: ...</c>: o mesmo, sem o fio;</item>
+/// em cima de cada uma; <c>share 7: ...</c>: o mesmo, sem o fio; <c>bands 4</c> … <c>endbands</c>: o trecho entre eles
+/// repetido em quatro faixas iguais do que sobra, centrado em cada uma, com o fio entre elas;</item>
 /// <item><c>pad 16 13 14 14</c>, só como primeiro comando: recua a área (esquerda, topo, direita, base);</item>
 /// <item><c>col 0 50%</c> … <c>col 50% 50%</c> … <c>end</c>: colunas lado a lado; cada <c>col</c> volta ao topo do bloco e
 /// <c>end</c> continua embaixo da mais alta.</item>
 /// </list>
 /// Célula: tipo e largura (px, % da área ou * para dividir a sobra), com <c>@0.6</c> para a barra ocupar 60 % da célula e
 /// <c>&gt;</c> para encostá-la à direita, <c>~</c> para centrá-la e <c>^20</c> para dar 20 px de altura à barra. Tipos: <c>t</c> texto, <c>c</c> legenda, <c>s</c> texto forte, <c>h</c> título,
-/// <c>n</c> número de mostrador, <c>box</c> área cheia (gráfico, instrumento), <c>btn</c> botão, <c>pill</c> filtro redondo, <c>dot</c> círculo, <c>ring</c> aro de mostrador, <c>frame</c> contorno de gráfico,
+/// <c>n</c> número de mostrador, <c>box</c> área cheia (gráfico, instrumento), <c>btn</c> botão, <c>pill</c> filtro redondo, <c>dot</c> círculo, <c>ring</c> aro de mostrador, <c>arc</c> mostrador de 3/4 de volta, <c>frame</c> contorno de gráfico,
 /// <c>-</c> vão. Barras de texto em célula * variam de largura linha a linha, como dados.
 /// </summary>
 public static class SkeletonPlan
@@ -45,11 +46,29 @@ public static class SkeletonPlan
             x = area.X; width = area.Width; y = area.Y;
         }
         double blockTop = y, blockBottom = y, bottom = area.Bottom;
-        int line = 0;
+        int line = 0, bands = 0;
+        List<string>? band = null;
         foreach (string raw in plan.Split(new[] { ';', '\n' }, StringSplitOptions.RemoveEmptyEntries))
         {
             string cmd = raw.Trim();
             if (cmd.Length == 0) continue;
+            if (band != null)
+            {
+                // Faixas: o trecho até endbands se repete em N faixas iguais da altura que sobra, centrado em cada uma, com o fio
+                // entre elas (leituras empilhadas, como o odômetro de Discos na janela larga)
+                if (cmd != "endbands") { band.Add(cmd); continue; }
+                string inner = string.Join(";", band);
+                double ih = Height(inner), each = Math.Max(0, bottom - y) / bands;
+                for (int i = 0; i < bands; i++)
+                {
+                    double top = y + i * each;
+                    if (i > 0) dc.DrawRectangle(bar, null, new Rect(x, Math.Round(top), width, 1));
+                    Draw(dc, inner, new Rect(x, top + Math.Max(0, (each - ih) / 2), width, ih + 1), bar, strong);
+                }
+                band = null;
+                y = bottom;
+                continue;
+            }
             if (y >= bottom) break;
             string[] head = cmd.Split(':', 2);
             string[] words = head[0].Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -64,6 +83,10 @@ public static class SkeletonPlan
                     continue;
                 case "footgap":
                     bottom -= Num(words[1]);
+                    continue;
+                case "bands":
+                    bands = Math.Max(1, (int)Num(words[1]));
+                    band = new List<string>();
                     continue;
                 case "footline":
                     bottom -= 1;
@@ -127,7 +150,10 @@ public static class SkeletonPlan
             if (words[0] == "row") { count = 1; h = Num(words[1]); }
             else if (words.Length >= 3) { count = (int)Num(words[1]); h = Num(words[2]); }
             else { count = int.MaxValue; h = Num(words[1]); } // fill: até o fim
-            for (int i = 0; i < count && y + h <= bottom + 0.5; i++, line++)
+            // Linhas fixas só entram inteiras; as que enchem o resto entram enquanto o meio da linha aparece (a lista corta a
+            // última pela metade, e o esqueleto também)
+            bool fill = count == int.MaxValue;
+            for (int i = 0; i < count && (fill ? y + h / 2 <= bottom : y + h <= bottom + 0.5); i++, line++)
             {
                 if (rules && i > 0) dc.DrawRectangle(bar, null, new Rect(x, Math.Round(y), width, 1));
                 Row(dc, cells, x, y, width, h, line, bar, strong);
@@ -182,6 +208,23 @@ public static class SkeletonPlan
                     dc.DrawRoundedRectangle(bar, null, new Rect(left, mid - bh / 2, w, bh), 6, 6);
                     break;
                 }
+            case "arc":
+                {
+                    // Mostrador de 3/4 de volta, aberto embaixo, como o de Vida útil
+                    double r = Math.Min(w, cell.Height) / 2 - 7;
+                    if (r <= 0) break;
+                    var center = new Point(left + w / 2, mid + r * 0.12);
+                    Point At(double deg) => new(center.X + r * Math.Cos(deg * Math.PI / 180), center.Y + r * Math.Sin(deg * Math.PI / 180));
+                    var arc = new StreamGeometry();
+                    using (var g = arc.Open())
+                    {
+                        g.BeginFigure(At(135), false, false);
+                        g.ArcTo(At(45), new Size(r, r), 0, true, SweepDirection.Clockwise, true, false);
+                    }
+                    arc.Freeze();
+                    dc.DrawGeometry(null, new Pen(bar, 14) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round }, arc);
+                    break;
+                }
             case "ring":
                 {
                     // Mostrador redondo: só o aro, grosso como o arco dos instrumentos
@@ -216,11 +259,14 @@ public static class SkeletonPlan
     public static double Height(string plan)
     {
         double y = 0, blockTop = 0, blockBottom = 0;
-        bool inBlock = false;
+        bool inBlock = false, inBands = false;
         foreach (string raw in plan.Split(new[] { ';', '\n' }, StringSplitOptions.RemoveEmptyEntries))
         {
             string cmd = raw.Trim();
             if (cmd.Length == 0) continue;
+            // Faixas enchem o que sobra, como fill: não contam na altura
+            if (cmd.StartsWith("bands ", StringComparison.Ordinal)) { inBands = true; continue; }
+            if (inBands) { inBands = cmd != "endbands"; continue; }
             string[] words = cmd.Split(':', 2)[0].Split(' ', StringSplitOptions.RemoveEmptyEntries);
             switch (words[0])
             {

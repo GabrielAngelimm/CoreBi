@@ -82,7 +82,7 @@
                 <!-- Tabela: as larguras das colunas são as mesmas no cabeçalho e nas linhas -->
                 <!-- Esqueleto: cabeçalho de colunas e linhas de 44 com o interruptor, o nome e as colunas da tabela -->
                 <Border x:Name="StartupCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="48"
-                        local:Skeleton.Layout="gap 10; row 32: - 8, - 56, c 3*@0.24, - 16, c 4*@0.24, - 16, c 216@0.26, - 16, c 5*@0.2, - 36, - 8; lines 44: - 8, pill 56@0.68^20, s 3*, - 16, t 4*, - 16, t 216, - 16, c 5*, - 36, - 8">
+                        local:Skeleton.Layout="gap 10; row 32: - 8, - 56, c 3*@0.24, - 16, c 4*@0.24, - 16, c 216@0.26, - 16, c 5*@0.2, - 36, - 8; lines 44: - 8, pill 56@0.68^20, s 3*, - 16, t 4*, - 16, t 216, - 16, c 5*, c 36@0.4^14~, - 8">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
