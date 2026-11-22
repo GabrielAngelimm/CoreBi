@@ -76,7 +76,12 @@ public partial class PowerView : UserControl
     internal PlanDetail? Plan { get; private set; }
     internal PowerHistory? History { get; private set; }
 
-    public PowerView() => InitializeComponent();
+    public PowerView()
+    {
+        InitializeComponent();
+        // Consumo ao vivo e tensões: apagam na entrada e acendem com a leitura nova logo depois (o tique pula a entrada)
+        PageMotion.RevealLive(this, () => { if (_context != null) ShowLive(); }, (UIElement)PowerCard.Child, RailRows, VoltRows);
+    }
 
     internal void Initialize(FeatureContext context)
     {

@@ -120,11 +120,26 @@ public static class PageMotion
     }
 
     /// <summary>
-    /// Roda <paramref name="work"/> depois que a entrada da página termina (ou já, se ela entrou há mais tempo ou sem animações),
-    /// com a interface livre: montagem pesada no meio da entrada engasgaria o movimento.
+    /// Leituras ao vivo de uma página (instrumentos, gráfico do consumo, tensões): a cada volta elas apagam durante a entrada e, logo
+    /// depois dela, recebem a leitura nova e acendem em 280 ms. Antes, o tique trocava os valores da visita anterior de uma vez, no
+    /// meio ou logo depois do movimento, e a página parecia saltar.
     /// </summary>
-    /// <summary>O mesmo que <see cref="AfterEntrance"/>, para esperar com await: a leitura corre durante a entrada e só o que
-    /// mexe na tela espera ela terminar.</summary>
+    public static void RevealLive(FrameworkElement page, Action sample, params UIElement[] live)
+    {
+        page.IsVisibleChanged += (_, _) =>
+        {
+            if (!page.IsVisible) return;
+            if (!Animate) { sample(); return; }
+            foreach (var e in live) e.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, TimeSpan.Zero));
+            AfterEntrance(page, () =>
+            {
+                if (page.IsVisible) sample();
+                var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+                foreach (var e in live) e.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(280)) { EasingFunction = ease });
+            });
+        };
+    }
+
     /// <summary>
     /// A página ainda está entrando (deslocamento e cascata dos painéis, ~450 ms): o tique de 1 s pula o redesenho dela nesse
     /// intervalo, para um gráfico refeito não cair no meio do movimento (a amostra continua sendo guardada).
@@ -132,6 +147,8 @@ public static class PageMotion
     public static bool IsEntering(FrameworkElement page) =>
         Animate && Environment.TickCount64 - (long)page.GetValue(EnteredAtProperty) < 450;
 
+    /// <summary>O mesmo que <see cref="AfterEntrance"/>, para esperar com await: a leitura corre durante a entrada e só o que
+    /// mexe na tela espera ela terminar.</summary>
     public static Task EntranceDone(FrameworkElement page)
     {
         var done = new TaskCompletionSource();
@@ -139,6 +156,10 @@ public static class PageMotion
         return done.Task;
     }
 
+    /// <summary>
+    /// Roda <paramref name="work"/> depois que a entrada da página termina (ou já, se ela entrou há mais tempo ou sem animações),
+    /// com a interface livre: montagem pesada no meio da entrada engasgaria o movimento.
+    /// </summary>
     public static void AfterEntrance(FrameworkElement page, Action work)
     {
         long left = Animate ? (long)PageShift.TotalMilliseconds - (Environment.TickCount64 - (long)page.GetValue(EnteredAtProperty)) : 0;
