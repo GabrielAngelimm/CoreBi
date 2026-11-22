@@ -285,8 +285,8 @@
                         </Border>
 
                         <!--
-                            Vida útil: o mostrador da vida restante em cima, com a sobra, e as três leituras no pé, na mesma faixa da
-                            Temperatura ao lado (terços iguais com fios entre eles, rótulo e mostrador de 34 centrados); sem fio em cima.
+                            Vida útil: o mostrador da vida restante em cima, com a sobra, e as três leituras no pé (terços iguais com fios
+                            entre eles, rótulo e mostrador de 34 alinhados à esquerda em posições fixas); sem fio em cima.
                         -->
                         <Border x:Name="LifeCard" local:Skeleton.Top="34" local:Skeleton.Layout="foot 44: n 33%@0.3^28~, n 33%@0.3^28~, n 33%@0.3^28~; foot 16: c 33%@0.16~, c 33%@0.18~, c 33%@0.28~; footgap 12; center 280: arc *~" Grid.Row="2" Style="{StaticResource CardBorder}">
                             <Grid>
@@ -298,26 +298,32 @@
                                 <Grid Style="{StaticResource CardHeader}">
                                     <TextBlock Text="Vida útil" Style="{StaticResource CardTitle}" />
                                 </Grid>
+                                <!--
+                                    Três terços iguais com fio entre eles; em cada um, rótulo e valor alinhados à esquerda num ponto fixo (o
+                                    primeiro no recuo do cartão, os outros 16 depois do fio), então as posições não mudam com o tamanho dos números
+                                -->
                                 <Grid Grid.Row="2" Margin="0,16,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock Text="Desgaste" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
-                                        <TextBlock x:Name="LifeWear" Style="{StaticResource TempValue}" HorizontalAlignment="Center" />
+                                    <StackPanel>
+                                        <TextBlock Text="Desgaste" Style="{StaticResource StatLabel}" />
+                                        <TextBlock x:Name="LifeWear" Style="{StaticResource TempValue}" />
                                     </StackPanel>
-                                    <Border Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="1,0">
-                                        <StackPanel HorizontalAlignment="Center">
-                                            <TextBlock Text="Reserva" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
-                                            <TextBlock x:Name="LifeSpare" Style="{StaticResource TempValue}" HorizontalAlignment="Center" />
+                                    <Border Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="16,0,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="Reserva" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="LifeSpare" Style="{StaticResource TempValue}" />
                                         </StackPanel>
                                     </Border>
-                                    <StackPanel x:Name="LifeEnduranceBox" Grid.Column="2" HorizontalAlignment="Center" Background="Transparent">
-                                        <TextBlock Text="Resistência" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
-                                        <TextBlock x:Name="LifeEndurance" Style="{StaticResource TempValue}" HorizontalAlignment="Center" />
-                                    </StackPanel>
+                                    <Border Grid.Column="2" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="16,0,0,0">
+                                        <StackPanel x:Name="LifeEnduranceBox" Background="Transparent">
+                                            <TextBlock Text="Resistência" Style="{StaticResource StatLabel}" />
+                                            <TextBlock x:Name="LifeEndurance" Style="{StaticResource TempValue}" TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
                                 <local:LifeGauge x:Name="LifeDial" Grid.Row="1" MinHeight="210" Margin="0,12,0,0" Caption="restante" />
                             </Grid>

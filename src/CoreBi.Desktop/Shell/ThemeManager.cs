@@ -62,6 +62,8 @@ public static class ThemeManager
         ("Virtual", "#7A5AC8", "#5B3FA6"),
         ("VirtualSoft", "#1E7A5AC8", "#145B3FA6"),
         ("Storage", "#4A82CC", "#1F5FA8"),
+        // Tom fundo do armazenamento: a marca do "usado" na legenda do Espaço, que não repete o azul aceso da barra logo acima
+        ("StorageDeep", "#2B5490", "#123E73"),
         ("StorageSoft", "#1A4A82CC", "#141F5FA8"),
         ("Board", "#C8A370", "#9A7430"),
         ("BoardSoft", "#1AC8A370", "#149A7430"),

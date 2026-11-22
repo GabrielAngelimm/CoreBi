@@ -298,7 +298,7 @@ public partial class DisksView : UserControl
         }
         if (swatch != null)
         {
-            // Legenda da barra: um gomo da mesma cor e forma do que a parte acende (ou deixa apagado) logo acima
+            // Legenda da barra: um gomo na forma dos da barra (o do usado num azul mais fundo, para não repetir a barra; o do livre, o apagado)
             var chip = new Border { Width = 4, Height = 12, CornerRadius = new CornerRadius(1), Margin = new Thickness(0, 0, 8, -1) };
             chip.SetResourceReference(Border.BackgroundProperty, swatch);
             target.Inlines.Add(new InlineUIContainer(chip) { BaselineAlignment = BaselineAlignment.Center });
@@ -351,7 +351,7 @@ public partial class DisksView : UserControl
         if (known)
         {
             // Usado e livre como a legenda da barra (o gomo aceso e o apagado), e a capacidade fecha a frase
-            PlatePart(SpaceLine, "Usado", Gb(used), "Storage");
+            PlatePart(SpaceLine, "Usado", Gb(used), "StorageDeep");
             PlatePart(SpaceLine, "Livre", Gb(free), "PlateTrack");
             PlatePart(SpaceLine, "Capacidade", Gb(total));
             var share = new Run($"{(double)used / total * 100:0} %");
