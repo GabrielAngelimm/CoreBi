@@ -42,7 +42,6 @@ public static class NumberField
     {
         if (d is not TextBox box || (bool)box.GetValue(HookedProperty)) return;
         box.SetValue(HookedProperty, true);
-        InputMethod.SetIsInputMethodEnabled(box, false);
         box.PreviewTextInput += (_, args) => args.Handled = !args.Text.All(char.IsAsciiDigit);
         DataObject.AddPastingHandler(box, OnPaste);
         box.PreviewKeyDown += OnKeyDown;

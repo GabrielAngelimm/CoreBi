@@ -283,11 +283,11 @@
         <Style x:Key="SheetLink" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Foreground" Value="{DynamicResource Fg}" />
-            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="face" CornerRadius="{StaticResource RadiusControl}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" Padding="12,8,12,8" SnapsToDevicePixels="True">
+                        <Border x:Name="face" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" Padding="16,8,16,8" SnapsToDevicePixels="True">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE9D9;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Signal}" VerticalAlignment="Center" />
                                 <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource LabelFont}" FontSize="13.5" FontWeight="SemiBold" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="8,0,0,1" />

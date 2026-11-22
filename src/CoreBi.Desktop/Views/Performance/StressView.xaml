@@ -296,7 +296,7 @@
                                     <Grid x:Name="CpuLimitRow">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="132" />
+                                            <ColumnDefinition Width="156" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Processador" VerticalAlignment="Center" />
                                         <TextBox x:Name="TempLimit" Grid.Column="1" Text="90" local:Ui.Suffix="°C" Style="{StaticResource NumberField}"
@@ -305,7 +305,7 @@
                                     <Grid x:Name="GpuLimitRow" Margin="0,8,0,0" Visibility="Collapsed">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="132" />
+                                            <ColumnDefinition Width="156" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Placa de vídeo" VerticalAlignment="Center" />
                                         <TextBox x:Name="GpuTempLimit" Grid.Column="1" Text="85" local:Ui.Suffix="°C" Style="{StaticResource NumberField}"

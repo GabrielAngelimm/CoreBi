@@ -6,11 +6,11 @@
             <Setter Property="Height" Value="32" />
             <Setter Property="Foreground" Value="{DynamicResource Faint}" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="Transparent" CornerRadius="{StaticResource RadiusControl}">
+                        <Border x:Name="b" Background="Transparent" CornerRadius="16">
                             <TextBlock Text="&#xE74D;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{TemplateBinding Foreground}" />
                         </Border>
                         <ControlTemplate.Triggers>
