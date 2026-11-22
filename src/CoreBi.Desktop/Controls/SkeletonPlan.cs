@@ -16,7 +16,7 @@ namespace CoreBi.Desktop;
 /// põem um fio ou um vão nessa pilha; <c>center 260: ...</c>: uma linha no meio do que sobra; <c>rest: ...</c>: uma linha com
 /// toda a altura que sobra;</item>
 /// <item><c>line</c>: um fio de 1 px na largura toda; <c>spread 6: ...</c>: seis linhas que dividem a altura que sobra, com o fio
-/// em cima de cada uma;</item>
+/// em cima de cada uma; <c>share 7: ...</c>: o mesmo, sem o fio;</item>
 /// <item><c>pad 16 13 14 14</c>, só como primeiro comando: recua a área (esquerda, topo, direita, base);</item>
 /// <item><c>col 0 50%</c> … <c>col 50% 50%</c> … <c>end</c>: colunas lado a lado; cada <c>col</c> volta ao topo do bloco e
 /// <c>end</c> continua embaixo da mais alta.</item>
@@ -107,14 +107,15 @@ public static class SkeletonPlan
                     Row(dc, cells, x, y, width, Math.Max(0, bottom - y), line++, bar, strong);
                     y = bottom;
                     continue;
-                case "spread":
+                case "spread" or "share":
                     {
-                        // N linhas que dividem a altura que sobra, cada uma com o fio em cima (lista espalhada, como a de Conexão)
+                        // N linhas que dividem a altura que sobra; spread põe o fio em cima de cada uma (lista espalhada, como a de
+                        // Conexão), share não (barras que se esticam, como os dias do tempo ligado)
                         int n = Math.Max(1, (int)Num(words[1]));
                         double each = Math.Max(0, bottom - y) / n;
                         for (int i = 0; i < n; i++, line++)
                         {
-                            dc.DrawRectangle(bar, null, new Rect(x, Math.Round(y), width, 1));
+                            if (words[0] == "spread") dc.DrawRectangle(bar, null, new Rect(x, Math.Round(y), width, 1));
                             Row(dc, cells, x, y, width, each, line, bar, strong);
                             y += each;
                         }
