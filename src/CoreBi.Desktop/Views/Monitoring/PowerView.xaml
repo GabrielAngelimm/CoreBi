@@ -360,10 +360,14 @@
 
                     <!-- Tensões -->
                     <Border x:Name="VoltCard" Grid.Row="2" Style="{StaticResource CardBorder}"
-                            local:Skeleton.Layout="row 24: h 90^16; gap 4; row 17: c 85%; row 17: c 12%; gap 6; row 26: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 10; rows 3 24: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 2; line; gap 7; row 18: c 80; rows 5 22: c 150@0.6, box *^6, t 72@0.8>; gap 2; row 30: c 190@0.9">
+                            local:Skeleton.Layout="row 34: h 90^16, - *, dot 30; gap 12; row 26: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 10; rows 3 24: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 2; line; gap 7; row 18: c 80; rows 5 22: c 150@0.6, box *^6, t 72@0.8>; gap 2; row 30: c 190@0.9">
                         <StackPanel>
-                            <TextBlock Text="Tensões" Style="{StaticResource SectionTitle}" />
-                            <TextBlock Text="Voltagem que chega a cada peça; fora da faixa usual, o valor fica âmbar." Style="{StaticResource Caption}" Margin="0,4,0,0" />
+                            <!-- Cabeçalho de 34 px, como na Visão geral: a explicação fica na dica do título e o atalho para Sensores é o círculo do canto -->
+                            <Grid Height="34">
+                                <TextBlock Text="Tensões" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                           ToolTip="Voltagem que chega a cada peça; fora da faixa usual, o valor fica âmbar." />
+                                <Button x:Name="VoltAll" Style="{StaticResource CardLink}" ToolTip="Todas as tensões em Sensores" Click="VoltAll_Click" />
+                            </Grid>
                             <!-- Linhas um pouco mais justas (12 em cima, 2 entre as réguas, 22 por componente): com as tensões da placa-mãe, os dois
                                  cartões de baixo cabem na tela cheia de 1920 × 1032 sem rolar -->
                             <ItemsControl x:Name="RailRows" ItemTemplate="{StaticResource RailRow}" Margin="0,12,0,0" Focusable="False" />
@@ -371,12 +375,6 @@
                             <TextBlock x:Name="VoltComponentsTitle" Text="Componentes" Style="{StaticResource Label}" Foreground="{DynamicResource Faint}" Margin="0,0,0,2" ToolTip="Tensões dos chips: variam com a carga, então a faixa clara mostra o mínimo e o máximo desde que o CoreBi abriu." />
                             <ItemsControl x:Name="VoltRows" ItemTemplate="{StaticResource VoltRow}" Focusable="False" />
                             <TextBlock x:Name="VoltEmpty" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="0,16,0,4" Visibility="Collapsed" />
-                            <Button x:Name="VoltAll" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="-10,2,0,-8" Click="VoltAll_Click">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock x:Name="VoltAllText" Text="Todas as tensões em Sensores" />
-                                    <TextBlock Text="&#xE76C;" FontFamily="{StaticResource Icons}" FontSize="10" VerticalAlignment="Center" Margin="8,1,0,0" />
-                                </StackPanel>
-                            </Button>
                         </StackPanel>
                     </Border>
 

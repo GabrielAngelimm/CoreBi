@@ -529,7 +529,7 @@ public partial class PowerView : UserControl
         VoltEmpty.Text = CpuSensorMessages.VoltagesEmpty(_monitor.IsOpen, problem);
         VoltEmpty.ToolTip = SensorMonitor.Explain(problem) is { Length: > 0 } why ? why : null;
         VoltAll.Visibility = map.Total > 0 ? Visibility.Visible : Visibility.Collapsed;
-        VoltAllText.Text = map.Total == 1 ? "A tensão em Sensores" : $"Todas as {map.Total} tensões em Sensores";
+        VoltAll.ToolTip = map.Total == 1 ? "A tensão em Sensores" : $"Todas as {map.Total} tensões em Sensores";
 
         bool shown = !_monitor.IsOpen || rails || comps;
         if (shown != _voltsShown) { _voltsShown = shown; Arrange(); }
