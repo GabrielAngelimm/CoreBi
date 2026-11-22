@@ -514,6 +514,8 @@ public partial class DisksView : UserControl
     {
         OdoCard.Visibility = _odoCells.Count == 0 || DiskCards.SelectedItem is not DiskBay { Disk: not null } ? Visibility.Collapsed : Visibility.Visible;
         SideInnerGapRow.Height = new GridLength(_wide && OdoCard.Visibility == Visibility.Visible ? 16 : 0);
+        // Sem o odômetro, a integridade desce até o pé da coluna
+        if (_wide) SideTopRow.Height = OdoCard.Visibility == Visibility.Visible ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
     }
 
 
@@ -539,6 +541,8 @@ public partial class DisksView : UserControl
         Grid.SetColumn(OdoCard, wide ? 0 : 2);
         SideInnerGap.Width = new GridLength(wide ? 0 : 16);
         SideInnerColumn.Width = wide ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+        // Lado a lado, os dois cartões dividem a mesma altura
+        SideTopRow.Height = wide ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
         LayoutOdometer();
         LifeDial.MinHeight = wide ? 210 : 190;
     }

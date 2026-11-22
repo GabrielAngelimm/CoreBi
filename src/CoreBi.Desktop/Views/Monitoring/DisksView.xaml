@@ -104,6 +104,7 @@
                     <Setter TargetName="row" Property="BorderThickness" Value="0" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding State}" Value="">
+                    <Setter TargetName="pill" Property="Margin" Value="0,-2,-8,0" />
                     <Setter TargetName="pill" Property="Background" Value="Transparent" />
                     <Setter TargetName="pill" Property="BorderBrush" Value="Transparent" />
                     <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Muted}" />
@@ -113,6 +114,7 @@
                     <Setter TargetName="pill" Property="Visibility" Value="Collapsed" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding State}" Value="Ok">
+                    <Setter TargetName="pill" Property="Margin" Value="0,-2,-8,0" />
                     <Setter TargetName="pill" Property="Background" Value="Transparent" />
                     <Setter TargetName="pill" Property="BorderBrush" Value="Transparent" />
                     <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Fg}" />
@@ -388,10 +390,11 @@
                                 <ColumnDefinition x:Name="SideInnerGap" Width="0" />
                                 <ColumnDefinition x:Name="SideInnerColumn" Width="0" />
                             </Grid.ColumnDefinitions>
+                            <!-- A integridade na altura da lista; o uso desde a fábrica fica com a sobra (os blocos crescem e centram a leitura) -->
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="*" />
+                                <RowDefinition x:Name="SideTopRow" Height="Auto" />
                                 <RowDefinition x:Name="SideInnerGapRow" Height="16" />
-                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
                             <!--
@@ -428,35 +431,35 @@
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
                                     <Grid Style="{StaticResource CardHeader}" Margin="4,0,4,0">
                                         <TextBlock Text="Uso desde a fábrica" Style="{StaticResource CardTitle}" />
                                     </Grid>
                                     <UniformGrid x:Name="OdoGrid" Grid.Row="1" Columns="2" Margin="0,6,0,0">
                                         <Border x:Name="OdoCell0" Style="{StaticResource OdoCell}">
-                                            <StackPanel>
+                                            <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Tempo ligado" Style="{StaticResource StatLabel}" />
                                                 <TextBlock x:Name="OdoHours" Style="{StaticResource OdoValue}" />
                                                 <TextBlock x:Name="OdoHoursNote" Style="{StaticResource StatSub}" Margin="0,4,0,0" />
                                             </StackPanel>
                                         </Border>
                                         <Border x:Name="OdoCell1" Style="{StaticResource OdoCell}">
-                                            <StackPanel>
+                                            <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Ciclos liga/desliga" Style="{StaticResource StatLabel}" />
                                                 <TextBlock x:Name="OdoCycles" Style="{StaticResource OdoValue}" />
                                                 <TextBlock x:Name="OdoCyclesNote" Style="{StaticResource StatSub}" Margin="0,4,0,0" />
                                             </StackPanel>
                                         </Border>
                                         <Border x:Name="OdoCell2" Style="{StaticResource OdoCell}">
-                                            <StackPanel>
+                                            <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Total gravado" Style="{StaticResource StatLabel}" />
                                                 <TextBlock x:Name="OdoWritten" Style="{StaticResource OdoValue}" />
                                                 <TextBlock x:Name="OdoWrittenNote" Style="{StaticResource StatSub}" Margin="0,4,0,0" />
                                             </StackPanel>
                                         </Border>
                                         <Border x:Name="OdoCell3" Style="{StaticResource OdoCell}">
-                                            <StackPanel>
+                                            <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Total lido" Style="{StaticResource StatLabel}" />
                                                 <TextBlock x:Name="OdoRead" Style="{StaticResource OdoValue}" />
                                                 <TextBlock x:Name="OdoReadNote" Style="{StaticResource StatSub}" Margin="0,4,0,0" />
