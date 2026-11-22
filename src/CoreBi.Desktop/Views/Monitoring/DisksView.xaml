@@ -300,21 +300,20 @@
                         </Border>
 
                         <!--
-                            Vida útil: as três leituras em cima, na mesma faixa e geometria das da Temperatura ao lado (terços iguais com fios,
-                            rótulo e mostrador de 34 centrados), para as duas linhas de números se alinharem de um cartão para o outro; o
-                            mostrador da vida restante ocupa o resto do cartão.
+                            Vida útil: o mostrador da vida restante em cima, com a sobra, e as três leituras no pé, na mesma faixa da
+                            Temperatura ao lado (terços iguais com fios entre eles, rótulo e mostrador de 34 centrados); sem fio em cima.
                         -->
-                        <Border x:Name="LifeCard" local:Skeleton.Top="34" local:Skeleton.Layout="gap 12; row 16: c 33%@0.16~, c 33%@0.18~, c 33%@0.28~; gap 6; row 44: n 33%@0.3^28~, n 33%@0.3^28~, n 33%@0.3^28~; gap 16; center 280: arc *~" Grid.Row="2" Style="{StaticResource CardBorder}">
+                        <Border x:Name="LifeCard" local:Skeleton.Top="34" local:Skeleton.Layout="foot 44: n 33%@0.3^28~, n 33%@0.3^28~, n 33%@0.3^28~; foot 16: c 33%@0.16~, c 33%@0.18~, c 33%@0.28~; footgap 12; center 280: arc *~" Grid.Row="2" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid Style="{StaticResource CardHeader}">
                                     <TextBlock Text="Vida útil" Style="{StaticResource CardTitle}" />
                                 </Grid>
-                                <Grid Grid.Row="1" Margin="0,12,0,0">
+                                <Grid Grid.Row="2" Margin="0,16,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
@@ -335,7 +334,7 @@
                                         <TextBlock x:Name="LifeEndurance" Style="{StaticResource TempValue}" HorizontalAlignment="Center" />
                                     </StackPanel>
                                 </Grid>
-                                <local:LifeGauge x:Name="LifeDial" Grid.Row="2" MinHeight="210" Margin="0,16,0,0" Caption="restante" />
+                                <local:LifeGauge x:Name="LifeDial" Grid.Row="1" MinHeight="210" Margin="0,12,0,0" Caption="restante" />
                             </Grid>
                         </Border>
 
