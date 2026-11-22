@@ -71,6 +71,8 @@ internal static partial class Program
                     bool report = parts[0] == "PageSystem" && parts.Length == 2 && parts[1] == "report";
                     if (report) { _ = window.PageSystem.ExportReportAsync(); Wait(900); }
                     else if (parts[0] == "PageSystem" && parts.Length == 2) { window.PageSystem.Select(parts[1]); Wait(800); }
+                    // "PageSensors:cpu" escreve na busca (sem dar foco), para conferir o texto digitado dentro do campo
+                    else if (parts[0] == "PageSensors" && parts.Length == 2) { window.PageSensors.SensorSearch.Text = parts[1]; Wait(800); }
                     Wait(600);
                     string file = Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-{theme}.png");
                     SaveWindow(window, file);
