@@ -29,6 +29,8 @@
     <!-- Fios -->
     <SolidColorBrush x:Key="Line" Color="#24282B"/>
     <SolidColorBrush x:Key="LineStrong" Color="#353A3D"/>
+    <!-- Fio e trilho sobre a placa (fundo Selected, que já é um tom acima do painel): o texto em transparência, que aparece nos -->
+    <!-- dois temas; no claro mais forte, porque o fundo claro da placa come o cinza -->
     <SolidColorBrush x:Key="PlateWire" Color="#2EE6EAEC"/>
     <SolidColorBrush x:Key="PlateTrack" Color="#24E6EAEC"/>
     <!-- Texto -->
