@@ -230,7 +230,13 @@ public partial class AppsView : UserControl
     private void Category_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not AppGroup group) return;
-        _category = _category == group.Name ? null : group.Name;
+        FilterCategory(_category == group.Name ? null : group.Name);
+    }
+
+    /// <summary>Escolhe a categoria como o clique no título (capturas de tela).</summary>
+    internal void FilterCategory(string? name)
+    {
+        _category = name;
         foreach (var g in _groups) g.Active = g.Name == _category;
         ApplyFilter();
     }

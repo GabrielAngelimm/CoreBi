@@ -82,6 +82,8 @@ internal static partial class Program
                             if (!a.Installed && (a.Kits & (CoreBi.Engine.Tools.Apps.AppKit.PostFormat | CoreBi.Engine.Tools.Apps.AppKit.Games)) != 0) a.Selected = true;
                         Wait(800);
                     }
+                    // "PageApps:Jogos" filtra pela categoria, como o clique no título dela (volta a todas depois da captura)
+                    else if (parts[0] == "PageApps" && parts.Length == 2) { window.PageApps.FilterCategory(parts[1]); Wait(800); }
                     Wait(600);
                     string file = Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-{theme}.png");
                     SaveWindow(window, file);
@@ -90,6 +92,7 @@ internal static partial class Program
                     if (typeof(MainWindow).GetField(parts[0], System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)?.GetValue(window) is UserControl { Content: ScrollViewer scroll })
                         Console.WriteLine($"  {parts[0]}: rolagem {scroll.ScrollableHeight:0} px");
                     if (report) { window.ReportLayer.Cancel(); Wait(300); continue; }
+                    if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] != "pack") window.PageApps.FilterCategory(null);
                     if (theme == themes[0]) SaveSkeletons(window, Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-skeleton.png"));
                 }
             }
