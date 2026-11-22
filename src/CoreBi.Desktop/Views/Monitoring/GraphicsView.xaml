@@ -1,53 +1,40 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.GraphicsView" xmlns:local="clr-namespace:CoreBi.Desktop" xmlns:inv="clr-namespace:CoreBi.Desktop.Features.Monitoring.Inventory">
     <UserControl.Resources>
-        <!-- Leitura da placa: rótulo e número grande, como na placa de Sistema; a primeira não tem fio à esquerda. Número e unidade
-             são Runs de um TextBlock só, então dividem a mesma linha de base (em dois TextBlocks alinhados embaixo, a unidade ficava
-             1 px abaixo do número). O espaço entre eles é um Run de espaço em 20 px (uns 5 px), que some sem unidade. -->
-        <DataTemplate x:Key="PlateReadout">
-            <Border x:Name="cell" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1,0,0,0" Padding="28,0,0,0" Margin="28,0,0,0" ToolTip="{Binding Tip}" Background="Transparent">
+        <!-- Leitura ao vivo, na faixa da placa: rótulo, número de mostrador, medidor segmentado no canal Gpu (a fração da escala:
+             100 %, o clock máximo, o limite de energia, a VRAM total) e o complemento (linha reservada, para as sete terem a mesma
+             altura). Sem gráfico do último minuto: não dava para ler valor nenhum nele, e a ficha técnica ganha a altura que ele
+             ocupava. Separadas por fios, como eram as leituras da placa; a primeira não tem fio. -->
+        <DataTemplate x:Key="GaugeTile">
+            <Border x:Name="cell" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1,0,0,0" Padding="18,0,0,0" Margin="18,0,0,0" ToolTip="{Binding Tip}" Background="Transparent">
                 <StackPanel>
-                    <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" />
-                    <TextBlock Margin="0,6,0,0" Typography.NumeralAlignment="Tabular">
-                        <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="38" FontWeight="Light" Foreground="{DynamicResource Fg}" /><Run x:Name="gap" Text=" " FontFamily="{StaticResource LabelFont}" FontSize="20" /><Run Text="{Binding Unit, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" />
+                    <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" />
+                    <!-- Número e unidade no mesmo TextBlock: a mesma linha de base -->
+                    <TextBlock x:Name="value" Margin="0,4,0,0" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" TextTrimming="CharacterEllipsis">
+                        <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="32" FontWeight="Light" /><Run x:Name="gap" Text=" " FontFamily="{StaticResource LabelFont}" FontSize="18" /><Run Text="{Binding Unit, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" />
                     </TextBlock>
+                    <Grid Height="6" Margin="0,6,0,0" OpacityMask="{StaticResource SegmentMask}">
+                        <Border Background="{DynamicResource LineStrong}" />
+                        <Border x:Name="meter" Background="{DynamicResource Gpu}" RenderTransformOrigin="0,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="{Binding Fraction}" />
+                            </Border.RenderTransform>
+                        </Border>
+                    </Grid>
+                    <TextBlock Text="{Binding Sub}" Style="{StaticResource StatSub}" Height="16" Margin="0,7,0,0" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding Unit}" Value="">
-                    <Setter TargetName="gap" Property="Text" Value="" />
-                </DataTrigger>
                 <DataTrigger Binding="{Binding First}" Value="True">
                     <Setter TargetName="cell" Property="BorderThickness" Value="0" />
                     <Setter TargetName="cell" Property="Padding" Value="0" />
                     <Setter TargetName="cell" Property="Margin" Value="0" />
-                </DataTrigger>
-            </DataTemplate.Triggers>
-        </DataTemplate>
-
-        <!-- Instrumento ao vivo: rótulo, leitura de mostrador, complemento (linha reservada, para os sete terem a mesma altura) e
-             o último minuto em área chapada no canal Gpu. Separados por fios, como as leituras da placa. -->
-        <DataTemplate x:Key="GaugeTile">
-            <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="20" ToolTip="{Binding Tip}" Background="Transparent">
-                <StackPanel>
-                    <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
-                    <!-- Número e unidade no mesmo TextBlock: a mesma linha de base (como na placa acima) -->
-                    <TextBlock x:Name="value" Margin="0,4,0,0" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular">
-                        <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="34" FontWeight="Light" /><Run x:Name="gap" Text=" " FontFamily="{StaticResource LabelFont}" FontSize="20" /><Run Text="{Binding Unit, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" />
-                    </TextBlock>
-                    <TextBlock Text="{Binding Sub}" Style="{StaticResource StatSub}" Height="16" />
-                    <local:GpuTrace Samples="{Binding Samples}" Max="{Binding Max}" Margin="0,12,0,0" ToolTip="Último minuto" />
-                </StackPanel>
-            </Border>
-            <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding First}" Value="True">
-                    <Setter TargetName="cell" Property="BorderThickness" Value="0" />
-                    <Setter TargetName="cell" Property="Padding" Value="24,20,20,20" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Unit}" Value="">
                     <Setter TargetName="gap" Property="Text" Value="" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Danger">
                     <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Danger}" />
+                    <Setter TargetName="meter" Property="Background" Value="{DynamicResource Danger}" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -75,60 +62,72 @@
         <local:PageHeaderPanel Style="{StaticResource PageHead}">
             <TextBlock Text="Placa de vídeo" Style="{StaticResource PageTitle}" />
             <TextBlock Text="Clocks, temperatura e memória da sua placa de vídeo, ao vivo." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
-            <!-- Uma pílula por placa, só quando há mais de uma (MainWindow.LoadGpu) -->
-            <WrapPanel x:Name="GpuChips" VerticalAlignment="Center" />
+            <!-- Barra de ações: uma pílula por placa, só quando há mais de uma (MainWindow.LoadGpu), e o atalho para os sensores da
+                 placa (saiu de baixo do nome para a placa de identificação ficar baixa) -->
+            <StackPanel Style="{StaticResource PageActions}">
+                <WrapPanel x:Name="GpuChips" VerticalAlignment="Center" Margin="0,0,10,0" />
+                <Button x:Name="GpuSensorsLink" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE9D9;" Content="Todos os sensores da placa" Click="GpuSensorsLink_Click" />
+            </StackPanel>
         </local:PageHeaderPanel>
 
-        <!-- O painel da placa: a identificação em cima e as leituras vivas embaixo -->
-        <!-- Esqueleto: a placa (desenho, fabricante, nome, subtítulo, atalho e as quatro leituras) e a faixa dos instrumentos ao vivo -->
+        <!-- O painel ao vivo: numa faixa só, a identificação da placa à esquerda e as leituras ao vivo à direita (abaixo de 1500 px
+             de largura, as leituras descem para uma segunda linha, GraphicsView.FitColumns); embaixo, as leituras do driver. Os números
+             fixos da placa (memória, núcleos, clocks, limite) ficam só na ficha técnica. -->
+        <!-- Esqueleto: o desenho, fabricante, nome e subtítulo, e as sete leituras com o medidor -->
         <Border x:Name="GpuPlateCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16"
-                local:Skeleton.Layout="gap 20; col 24 44; row 111: box 44^44; col 88 40%; row 16: c *@0.22; gap 2; row 40: h *@0.8^24; gap 7; row 18: t *@0.55; gap 4; row 28: c *@0.34; col 61% 37%; gap 18; row 16: c *@0.45, - 56, c *@0.45, - 56, c *@0.45, - 56, c *@0.45; gap 6; row 50: n *@0.7^30, - 56, n *@0.7^30, - 56, n *@0.7^30, - 56, n *@0.7^30; end; gap 20; line; gap 20; row 16: - 24, c *@0.5, - 40, c *@0.5, - 40, c *@0.5, - 40, c *@0.5, - 40, c *@0.5, - 40, c *@0.5, - 40, c *@0.5, - 20; gap 4; row 44: - 24, n *@0.62^28, - 40, n *@0.62^28, - 40, n *@0.62^28, - 40, n *@0.62^28, - 40, n *@0.62^28, - 40, n *@0.62^28, - 40, n *@0.62^28, - 20; row 16: - 24, c *@0.4, - 40, c *@0.4, - 40, c *@0.4, - 40, c *@0.4, - 40, c *@0.4, - 40, c *@0.4, - 40, c *@0.4, - 20; gap 12; row 40: - 24, box *, - 40, box *, - 40, box *, - 40, box *, - 40, box *, - 40, box *, - 40, box *, - 20; gap 20; line; gap 14; row 18: - 24, c 150@0.9, - 28, c 96@0.9, - 28, c 120@0.9, - 28, c 110@0.9, - 28, c 130@0.9, - 28, c 104@0.9, - *; gap 14">
+                local:Skeleton.Layout="gap 22; col 24 44; gap 22; row 44: box 44^44; col 88 22%; gap 4; row 16: c *@0.3; gap 4; row 38: h *@0.8^24; gap 4; row 18: t *@0.8; col 30% 68%; row 16: c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6; gap 4; row 38: n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26; gap 6; row 6: box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *; gap 7; row 16: c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7; end; gap 22; line; gap 14; row 18: - 24, c 140, - 32, c 120, - 32, c 150, - 32, c 110, - 32, c 110, - 32, c 120, - *">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <!-- Placa de identificação: fabricante na cor do canal, nome e as quatro leituras que resumem a placa -->
-                <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" CornerRadius="{StaticResource RadiusPanelTop}" ClipToBounds="True">
+                <!-- Faixa da placa: fundo Selected com o fundo claro do canal Gpu e fio LineStrong, como a placa de Sistema -->
+                <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" CornerRadius="{StaticResource RadiusPanelTop}" ClipToBounds="True">
+                    <!-- O fio de baixo só existe quando há a faixa do driver embaixo (sem ela, ficaria colado na borda do cartão) -->
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasItems, ElementName=GpuExtras}" Value="True">
+                                    <Setter Property="BorderThickness" Value="0,0,0,1" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
                     <Grid>
                         <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="Gpu" CornerRadius="{StaticResource RadiusPanelTop}" />
-                        <Grid Margin="{StaticResource PanelPadding}">
+                        <Grid x:Name="GpuBand" Margin="24,22" SizeChanged="GpuBand_SizeChanged">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition x:Name="GpuIdColumn" Width="Auto" />
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Gpu" Kind="gpu" Width="44" Height="44" VerticalAlignment="Center" />
-                            <StackPanel Grid.Column="1" Margin="20,0,40,0" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="1" Margin="20,0,40,0" VerticalAlignment="Center" MaxWidth="420">
                                 <TextBlock x:Name="GpuVendor" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Gpu}" TextTrimming="CharacterEllipsis"
                                            Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
                                 <TextBlock x:Name="GpuName" Text="Lendo a placa de vídeo…" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
-                                <TextBlock x:Name="GpuSubtitle" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,7,0,0"
+                                <TextBlock x:Name="GpuSubtitle" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,5,0,0"
                                            Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
-                                <!-- O atalho fica com o nome da placa (o texto alinha com o nome; o fundo do botão sobra à esquerda) -->
-                                <Button x:Name="GpuSensorsLink" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE9D9;" Content="Todos os sensores da placa" Click="GpuSensorsLink_Click" HorizontalAlignment="Left" Margin="-10,8,0,-6" />
                             </StackPanel>
-                            <ItemsControl x:Name="GpuReadouts" Grid.Column="2" VerticalAlignment="Center" ItemTemplate="{StaticResource PlateReadout}" Focusable="False">
+                            <!-- Leituras ao vivo, divididas por igual no que sobra da faixa; sem nenhum sensor, uma frase só no lugar delas -->
+                            <TextBlock x:Name="GpuNoSensors" Grid.Column="2" Visibility="Collapsed" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                       Text="Sem leituras ao vivo: o driver desta placa não informa uso, clock nem temperatura." />
+                            <ItemsControl x:Name="GpuGauges" Grid.Column="2" VerticalAlignment="Center" ItemTemplate="{StaticResource GaugeTile}" Focusable="False">
                                 <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                                    <ItemsPanelTemplate><UniformGrid Rows="1" Loaded="GaugeGrid_Loaded" /></ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                             </ItemsControl>
                         </Grid>
                     </Grid>
                 </Border>
 
-                <!-- Instrumentos ao vivo, um por grandeza, na largura toda; sem nenhum sensor, uma frase só no lugar deles -->
-                <TextBlock x:Name="GpuNoSensors" Grid.Row="1" Visibility="Collapsed" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="{StaticResource PanelPadding}"
-                           Text="Sem leituras ao vivo: o driver desta placa não informa uso, clock nem temperatura." />
-                <ItemsControl x:Name="GpuGauges" Grid.Row="1" ItemTemplate="{StaticResource GaugeTile}" Focusable="False" SizeChanged="GpuGauges_SizeChanged">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate><UniformGrid Rows="1" Loaded="GaugeGrid_Loaded" /></ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                </ItemsControl>
-
                 <!-- Leituras do driver (estado de desempenho, limitador...): a faixa só existe quando o driver as informa -->
-                <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="24,14"
+                <Border Grid.Row="1" Padding="24,14"
                         Visibility="{Binding HasItems, ElementName=GpuExtras, Converter={StaticResource BoolVis}}">
                     <ItemsControl x:Name="GpuExtras" ItemTemplate="{StaticResource FactCell}" VerticalAlignment="Center" Focusable="False">
                         <ItemsControl.ItemsPanel>
