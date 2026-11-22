@@ -41,7 +41,6 @@ public sealed class AppSettings
     public string? ReportFolder { get; set; }
     /// <summary>Partes que a pessoa desmarcou (chaves das fichas e do diagnóstico); vazio = tudo.</summary>
     public List<string> ReportSkip { get; set; } = new();
-    public bool ReportOpen { get; set; } = true;
 
     public static AppSettings Load()
     {

@@ -26,18 +26,18 @@ public sealed class ReportPart : ObservableObject
 }
 
 /// <summary>O que a janela devolve: as partes escolhidas, o formato e o arquivo.</summary>
-public sealed record ReportChoice(IReadOnlySet<string> Parts, string Format, string Path, bool Open);
+public sealed record ReportChoice(IReadOnlySet<string> Parts, string Format, string Path, bool Open = true);
 
 /// <summary>
 /// Janela de exportação do relatório, sobre o app (como a paleta Ctrl + K): o que entra (fichas e diagnóstico, em cartões de
-/// seleção), o formato (HTML, PDF ou JSON) e o arquivo (nome e pasta). Lembra a última escolha em AppSettings.
+/// seleção) e o formato (HTML, PDF ou JSON). Onde salvar vem depois, na janela do Windows, com o nome pronto e a última pasta.
+/// Lembra a última escolha em AppSettings.
 /// </summary>
 public partial class ReportDialog : UserControl
 {
     private TaskCompletionSource<ReportChoice?>? _pending;
     private List<ReportPart> _sheets = new();
     private List<ReportPart> _diag = new();
-    private string _folder = "";
     private string _format = "html";
     private AppSettings? _settings;
 
@@ -61,14 +61,6 @@ public partial class ReportDialog : UserControl
         SheetParts.ItemsSource = _sheets;
         DiagParts.ItemsSource = _diag;
 
-        _folder = settings.ReportFolder is { Length: > 0 } f && Directory.Exists(f)
-            ? f
-            : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        FolderRun.Text = _folder;
-        FolderText.ToolTip = _folder;
-        // Nome que se lê na pasta de downloads: o que é, de qual computador e de quando ("Relatório CoreBi · PC-ANGELIM · 22-11-2026 02h07")
-        FileName.Text = $"Relatório CoreBi · {Environment.MachineName} · {DateTime.Now:dd-MM-yyyy HH'h'mm}";
-        OpenAfter.IsChecked = settings.ReportOpen;
         (settings.ReportFormat switch { "pdf" => FmtPdf, "json" => FmtJson, _ => FmtHtml }).IsChecked = true;
         SetFormat(settings.ReportFormat);
         Refresh();
@@ -99,13 +91,6 @@ public partial class ReportDialog : UserControl
     private void SetFormat(string format)
     {
         _format = format is "pdf" or "json" ? format : "html";
-        Ui.SetSuffix(FileName, "." + _format);
-        FormatNote.Text = _format switch
-        {
-            "pdf" => "Folha A4 pronta para enviar ou imprimir.",
-            "json" => "Os dados em texto, para outros programas.",
-            _ => "Abre no navegador, com tema claro e escuro.",
-        };
     }
 
     /// <summary>Resumo do rodapé, o texto dos atalhos de seção e se dá para exportar.</summary>
@@ -117,10 +102,8 @@ public partial class ReportDialog : UserControl
         ToggleDiag.Visibility = _diag.Any(p => p.Available) ? Visibility.Visible : Visibility.Collapsed;
 
         bool any = sheets + diag > 0;
-        string name = CleanName(FileName.Text);
-        BtnExport.IsEnabled = any && name.Length > 0;
+        BtnExport.IsEnabled = any;
         Summary.Text = !any ? "Escolha pelo menos uma parte."
-            : name.Length == 0 ? "Dê um nome ao arquivo."
             : string.Join(" e ", new[]
             {
                 sheets > 0 ? $"{sheets} {(sheets == 1 ? "ficha" : "fichas")}" : null,
@@ -128,39 +111,34 @@ public partial class ReportDialog : UserControl
             }.Where(s => s != null)) + " no relatório";
     }
 
-    private static string CleanName(string text)
-    {
-        var bad = Path.GetInvalidFileNameChars();
-        string name = new string(text.Trim().Where(c => !bad.Contains(c)).ToArray()).Trim().TrimEnd('.');
-        // A extensão vem do formato; se a pessoa digitou uma, ela não dobra
-        foreach (var ext in new[] { ".html", ".htm", ".pdf", ".json" })
-            if (name.EndsWith(ext, StringComparison.OrdinalIgnoreCase)) name = name[..^ext.Length];
-        return name;
-    }
-
-    /// <summary>Caminho final: com o arquivo já existente, ganha " (2)", " (3)"… em vez de apagar o anterior.</summary>
-    private string TargetPath()
-    {
-        string name = CleanName(FileName.Text);
-        string path = Path.Combine(_folder, name + "." + _format);
-        for (int i = 2; File.Exists(path) && i < 1000; i++)
-            path = Path.Combine(_folder, $"{name} ({i}).{_format}");
-        return path;
-    }
-
     private void Export_Click(object sender, RoutedEventArgs e)
     {
         if (!BtnExport.IsEnabled) return;
+        // Onde salvar: a janela do Windows, só com o formato escolhido, o nome pronto e a pasta da última vez.
+        // Nome que se lê na pasta: o que é, de qual computador e de quando ("Relatório CoreBi · PC-ANGELIM · 22-11-2026 02h07")
+        string folder = _settings?.ReportFolder is { Length: > 0 } f && Directory.Exists(f) ? f : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        var save = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Salvar relatório",
+            Filter = _format switch { "pdf" => "PDF (A4)|*.pdf", "json" => "Dados (JSON)|*.json", _ => "Página para ler e imprimir (HTML)|*.html" },
+            DefaultExt = "." + _format,
+            AddExtension = true,
+            InitialDirectory = folder,
+            FileName = $"Relatório CoreBi · {Environment.MachineName} · {DateTime.Now:dd-MM-yyyy HH'h'mm}",
+        };
+        if (save.ShowDialog(Window.GetWindow(this)) != true) return;   // volta para a janela de exportação, com a escolha intacta
+        string path = save.FileName;
+        if (!path.EndsWith("." + _format, StringComparison.OrdinalIgnoreCase)) path += "." + _format;
+
         var parts = _sheets.Concat(_diag).Where(p => p.Included).Select(p => p.Key).ToHashSet(StringComparer.Ordinal);
         if (_settings != null)
         {
             _settings.ReportFormat = _format;
-            _settings.ReportFolder = _folder;
-            _settings.ReportOpen = OpenAfter.IsChecked == true;
+            _settings.ReportFolder = Path.GetDirectoryName(path);
             // Só o que estava à mão e ficou de fora: a rede sem teste não conta como desmarcada
             _settings.ReportSkip = _sheets.Concat(_diag).Where(p => p.Available && !p.Included).Select(p => p.Key).ToList();
         }
-        Close(new ReportChoice(parts, _format, TargetPath(), OpenAfter.IsChecked == true));
+        Close(new ReportChoice(parts, _format, path));
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => Close(null);
@@ -168,21 +146,10 @@ public partial class ReportDialog : UserControl
     /// <summary>Fecha sem exportar (Esc, clique fora, ou as capturas de tela dos testes).</summary>
     internal void Cancel() => Close(null);
 
-    private void Folder_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new Microsoft.Win32.OpenFolderDialog { Title = "Onde salvar o relatório", InitialDirectory = _folder };
-        if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;
-        _folder = dlg.FolderName;
-        FolderRun.Text = _folder;
-        FolderText.ToolTip = _folder;
-    }
-
     private void Format_Checked(object sender, RoutedEventArgs e)
     {
         if (sender is RadioButton { Tag: string format }) SetFormat(format);
     }
-
-    private void FileName_TextChanged(object sender, TextChangedEventArgs e) => Refresh();
 
     private void ToggleSheets_Click(object sender, RoutedEventArgs e) => ToggleAll(_sheets);
     private void ToggleDiag_Click(object sender, RoutedEventArgs e) => ToggleAll(_diag);
