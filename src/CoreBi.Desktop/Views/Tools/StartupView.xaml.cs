@@ -85,6 +85,24 @@ public partial class StartupView : UserControl
 
     private async void BtnStartupScan_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
 
+    // Chaves mudadas nesta sessão (nome → ligado): o estado conta todas, não só a última; mudar e desfazer tira da conta
+    private readonly Dictionary<string, (string Name, bool On)> _pending = new();
+
+    private void SayPending(StartupEntry item, bool turnOn)
+    {
+        string key = $"{item.Source}|{item.Name}|{item.Command}";
+        if (_pending.TryGetValue(key, out var before) && before.On != turnOn) _pending.Remove(key);
+        else _pending[key] = (item.Name, turnOn);
+        int on = _pending.Values.Count(p => p.On), off = _pending.Count - on;
+        if (_pending.Count == 0) { Say("Nada muda no próximo início"); return; }
+        static string Count(int n, string what) => n == 1 ? $"1 programa {what}" : $"{n} programas {what}s";
+        string summary = on > 0 && off > 0 ? $"{on} {(on == 1 ? "ligado" : "ligados")} e {off} {(off == 1 ? "desligado" : "desligados")}"
+            : on > 0 ? Count(on, "ligado") : Count(off, "desligado");
+        // A lista dos nomes vai na dica do estado (a linha mostra só a conta)
+        string names = string.Join("\n", _pending.Values.OrderBy(p => !p.On).ThenBy(p => p.Name).Select(p => $"{(p.On ? "Ligado" : "Desligado")}: {p.Name}"));
+        Say(summary + "\n" + names, NextBoot);
+    }
+
     internal async void StartupToggle_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not CheckBox { Tag: StartupEntry item } box) return;
@@ -94,7 +112,7 @@ public partial class StartupView : UserControl
         {
             _startup.SetEnabled(item, turnOn);
             item.Enabled = turnOn; // a linha já mostra o novo estado: a releitura encontra a mesma lista e não refaz nada
-            Say($"{item.Name} {(turnOn ? "ligado" : "desligado")}", NextBoot);
+            SayPending(item, turnOn);
         }
         catch (Exception ex) { Say($"Não foi possível mudar {item.Name}", ex.Message); }
         await ScanAsync(announce: false);

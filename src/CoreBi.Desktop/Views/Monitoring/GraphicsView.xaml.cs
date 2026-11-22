@@ -85,7 +85,8 @@ public partial class GraphicsView : UserControl
         // A página só consulta o driver quando está à vista: o CoreBi fica aberto em jogos.
         if (_selectedGpu == null || _gpuBoard == null || !IsVisible) return;
         SampleGpuBoard();
-        GpuExtras.ItemsSource = GpuSheet.Facts(_selectedGpu);
+        // A faixa do driver só troca quando um valor mudou: refazê-la a cada segundo pesava na entrada da página
+        Ui.SetItems(GpuExtras, GpuSheet.Facts(_selectedGpu));
     }
 
     private void SampleGpuBoard()
