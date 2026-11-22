@@ -79,13 +79,6 @@
             <Setter Property="LineHeight" Value="17" />
             <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
         </Style>
-        <!--
-            Campo do corte: o texto do campo ficava 3 px acima do rótulo e do °C (medido nas capturas; o preenchimento padrão do
-            campo tem 3 embaixo). Com os 3 em cima, o "90" desce 3 e as três bases coincidem.
-        -->
-        <Style x:Key="LimitBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="Padding" Value="10,3,10,0" />
-        </Style>
         <Style x:Key="ConfigLabel" TargetType="TextBlock" BasedOn="{StaticResource Label}">
             <Setter Property="Margin" Value="0,16,0,8" />
         </Style>
@@ -303,18 +296,20 @@
                                     <Grid x:Name="CpuLimitRow">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="104" />
+                                            <ColumnDefinition Width="132" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Processador" VerticalAlignment="Center" />
-                                        <TextBox x:Name="TempLimit" Grid.Column="1" Text="90" local:Ui.Suffix="°C" Style="{StaticResource LimitBox}" />
+                                        <TextBox x:Name="TempLimit" Grid.Column="1" Text="90" local:Ui.Suffix="°C" Style="{StaticResource NumberField}"
+                                                 local:NumberField.Minimum="40" local:NumberField.Maximum="110" ToolTip="De 40 a 110 °C" />
                                     </Grid>
                                     <Grid x:Name="GpuLimitRow" Margin="0,8,0,0" Visibility="Collapsed">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="104" />
+                                            <ColumnDefinition Width="132" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Placa de vídeo" VerticalAlignment="Center" />
-                                        <TextBox x:Name="GpuTempLimit" Grid.Column="1" Text="85" local:Ui.Suffix="°C" Style="{StaticResource LimitBox}" />
+                                        <TextBox x:Name="GpuTempLimit" Grid.Column="1" Text="85" local:Ui.Suffix="°C" Style="{StaticResource NumberField}"
+                                                 local:NumberField.Minimum="40" local:NumberField.Maximum="100" ToolTip="De 40 a 100 °C" />
                                     </Grid>
                                 </StackPanel>
                                 <StackPanel x:Name="RamSection" Style="{StaticResource TestSection}" Visibility="Collapsed">
