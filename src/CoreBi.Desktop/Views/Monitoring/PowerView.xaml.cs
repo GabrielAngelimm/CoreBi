@@ -69,7 +69,7 @@ public partial class PowerView : UserControl
     private FeatureContext _context = null!;
     private SensorMonitor _monitor => _context.Sensors;
     private bool _refreshing, _applyingPlan, _stacked, _dirty;
-    private bool _voltsShown = true, _previewing;
+    private bool _voltsShown = true;
     private double _heroSize = 88;
     private PowerPlan? _pendingPlan;
 
@@ -226,8 +226,6 @@ public partial class PowerView : UserControl
         RegSection.Visibility = p.Active == null ? Visibility.Collapsed : Visibility.Visible;
         if (previewing) RegSection.SetResourceReference(Border.BackgroundProperty, "Raised");
         else RegSection.ClearValue(Border.BackgroundProperty);
-        // Entrar na prévia (ou sair dela) acende a seção de leve, em vez de o fundo trocar seco
-        if (previewing != _previewing) { _previewing = previewing; HeaderMotion.Soften(RegSection); }
         // Título curto e de uma linha: o nome do plano já está na lista (marcado "novo plano"); um título longo quebrava e crescia o cartão
         RegTitle.Text = previewing ? "Prévia da troca" : "Ajustes do plano";
         RegCaption.Visibility = battery && !previewing ? Visibility.Visible : Visibility.Collapsed;
