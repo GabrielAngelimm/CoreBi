@@ -218,16 +218,24 @@ public partial class DisksView : UserControl
     /// Leitura da faixa de cima da temperatura: o número e "°C" colados (um espaço fino), a unidade em DIN na metade do
     /// tamanho, e o conjunto inteiro centrado no seu terço, como "Ideal" ao lado. Sem leitura, o travessão em tom apagado.
     /// </summary>
-    private static void ShowTempValue(TextBlock target, double? value)
+    private static void ShowTempValue(TextBlock target, double? value) =>
+        ShowMeasure(target, value is double v ? $"{v:0}" : null, "°C");
+
+    /// <summary>
+    /// Leitura de mostrador das faixas de Temperatura e Vida útil: o número e a unidade (metade do tamanho, DIN, tom secundário)
+    /// num bloco só, centrado inteiro na coluna. Sem valor, um travessão apagado.
+    /// </summary>
+    private static void ShowMeasure(TextBlock target, string? value, string unit)
     {
         target.Inlines.Clear();
         target.SetResourceReference(TextBlock.ForegroundProperty, value != null ? "Fg" : "Faint");
-        if (value is not double v) { target.Inlines.Add(new Run("—")); return; }
-        target.Inlines.Add(new Run($"{v:0}"));
-        var unit = new Run("\u2009°C") { FontSize = Math.Round(target.FontSize * 0.5) };
-        unit.SetResourceReference(TextElement.ForegroundProperty, "Muted");
-        unit.SetResourceReference(TextElement.FontFamilyProperty, "LabelFont");
-        target.Inlines.Add(unit);
+        if (value == null) { target.Inlines.Add(new Run("—")); return; }
+        target.Inlines.Add(new Run(value));
+        if (unit.Length == 0) return;
+        var run = new Run("\u2009" + unit) { FontSize = Math.Round(target.FontSize * 0.5) };
+        run.SetResourceReference(TextElement.ForegroundProperty, "Muted");
+        run.SetResourceReference(TextElement.FontFamilyProperty, "LabelFont");
+        target.Inlines.Add(run);
     }
 
 
@@ -357,20 +365,21 @@ public partial class DisksView : UserControl
     {
         LifeDial.Value = d.Wear is double w ? Math.Clamp(100 - w, 0, 100) : double.NaN;
         LifeDial.Caption = d.Wear != null ? "restante" : "não informada";
-        Readout(LifeWear, d.Wear is double wear ? $"{wear:0}" : "—", d.Wear != null ? "%" : "");
-        Readout(LifeSpare, d.AvailableSpare is double sp ? $"{sp:0}" : "—", d.AvailableSpare != null ? "%" : "");
+        ShowMeasure(LifeWear, d.Wear is double wear ? $"{wear:0}" : null, "%");
+        ShowMeasure(LifeSpare, d.AvailableSpare is double sp ? $"{sp:0}" : null, "%");
 
         // Resistência: quanto o SSD aguenta gravar até 100 % de desgaste, no ritmo medido até aqui (estimativa linear).
         if (d.Wear is double ww && ww >= 1 && d.WrittenGb is double gb)
         {
             var (value, unit) = SplitData(gb * 100 / ww, decimals: false);
-            Readout(LifeEndurance, "≈ " + value, unit);
-            LifeEnduranceBox.ToolTip = $"Estimativa linear: {SplitData(gb).Value} {SplitData(gb).Unit} gravados para {ww:0} % de desgaste. " +
+            // Sem o "≈" no mostrador (não cabe no terço a 34 px): a dica diz que é estimativa
+            ShowMeasure(LifeEndurance, value, unit);
+            LifeEnduranceBox.ToolTip = $"Estimativa linear (aproximada): {SplitData(gb).Value} {SplitData(gb).Unit} gravados para {ww:0} % de desgaste. " +
                                        "O fabricante informa a resistência real (TBW) na garantia.";
         }
         else
         {
-            Readout(LifeEndurance, "—", "");
+            ShowMeasure(LifeEndurance, null, "");
             LifeEnduranceBox.ToolTip = null;
         }
     }
@@ -511,14 +520,13 @@ public partial class DisksView : UserControl
     {
         for (int i = 0; i < _odoCells.Count; i++) _odoCells[i].BorderThickness = new Thickness(0, i == 0 ? 0 : 1, 0, 0);
         OdoCard.Visibility = _odoCells.Count == 0 || DiskCards.SelectedItem is not DiskBay { Disk: not null } ? Visibility.Collapsed : Visibility.Visible;
+        // O odômetro fica em cima (linha Auto) e a integridade com a sobra; sem odômetro, a integridade ocupa a coluna toda
         SideInnerGapRow.Height = new GridLength(_wide && OdoCard.Visibility == Visibility.Visible ? 16 : 0);
-        // Sem o odômetro, a integridade desce até o pé da coluna
-        if (_wide) SideTopRow.Height = OdoCard.Visibility == Visibility.Visible ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
     }
 
 
     /// <summary>
-    /// Larga: a coluna da saúde à direita da temperatura, com a integridade sobre o uso desde a fábrica. Estreita: a coluna desce
+    /// Larga: a coluna da saúde à direita da temperatura, com o uso desde a fábrica sobre a integridade. Estreita: a coluna desce
     /// para uma faixa na largura toda, com os dois cartões lado a lado, e a página rola.
     /// </summary>
     private void DiskBody_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -535,8 +543,9 @@ public partial class DisksView : UserControl
         Grid.SetRow(SideGrid, wide ? 2 : 4);
         Grid.SetColumn(SideGrid, wide ? 4 : 0);
         Grid.SetColumnSpan(SideGrid, wide ? 1 : 5);
-        Grid.SetRow(OdoCard, wide ? 2 : 0);
-        Grid.SetColumn(OdoCard, wide ? 0 : 2);
+        // Larga: odômetro em cima e integridade embaixo; estreita: lado a lado, odômetro à esquerda
+        Grid.SetRow(CheckCard, wide ? 2 : 0);
+        Grid.SetColumn(CheckCard, wide ? 0 : 2);
         SideInnerGap.Width = new GridLength(wide ? 0 : 16);
         SideInnerColumn.Width = wide ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         // Lado a lado, os dois cartões dividem a mesma altura
