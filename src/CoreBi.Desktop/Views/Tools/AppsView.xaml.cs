@@ -54,6 +54,16 @@ public partial class AppsView : UserControl
                 if (e.PropertyName == nameof(InstallableApp.Selected)) OnSelectedChanged(tile);
                 else if (e.PropertyName == nameof(InstallableApp.Installed)) { UpdateCounts(); ApplyFilter(); }
             };
+        foreach (var g in _groups)
+        {
+            var group = g;
+            foreach (var tile in group.Tiles)
+                tile.App.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName is nameof(InstallableApp.Selected) or nameof(InstallableApp.Installed)) group.Refresh();
+                };
+            group.Refresh();
+        }
         _package.CollectionChanged += (_, _) => RebuildPack();
         AppsCount.Text = _tiles.Count.ToString();
         LayoutColumns(force: true);
@@ -135,6 +145,8 @@ public partial class AppsView : UserControl
 
     private void OnSelectedChanged(AppTile tile)
     {
+        // Tirar do pacote apaga o que sobrou da última fila ("Falhou"); "Instalado agora" fica, porque é verdade
+        if (!tile.App.Selected && !_appsBusy && tile.Phase is AppPhase.Failed or AppPhase.Skipped) tile.Phase = AppPhase.Idle;
         if (tile.App.Selected && !_package.Contains(tile)) _package.Add(tile);
         else if (!tile.App.Selected && _package.Contains(tile) && !_appsBusy) _package.Remove(tile);
         UpdateInstallButton();
@@ -226,14 +238,23 @@ public partial class AppsView : UserControl
 
     private void AppsSearch_TextChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
 
-    /// <summary>O título da categoria filtra por ela; clicar de novo na mesma volta a todas.</summary>
+    /// <summary>O funil do título filtra pela categoria; o X (o mesmo botão) volta a todas.</summary>
     private void Category_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as FrameworkElement)?.DataContext is not AppGroup group) return;
         FilterCategory(_category == group.Name ? null : group.Name);
     }
 
-    /// <summary>Escolhe a categoria como o clique no título (capturas de tela).</summary>
+    /// <summary>O título da categoria marca todos os que faltam; com todos já no pacote, tira.</summary>
+    private void CategoryPick_Click(object sender, RoutedEventArgs e)
+    {
+        if (_appsBusy || (sender as FrameworkElement)?.DataContext is not AppGroup group) return;
+        var open = group.Tiles.Where(t => !t.App.Installed).ToList();
+        bool all = open.Count > 0 && open.All(t => t.App.Selected);
+        foreach (var t in open) t.App.Selected = !all;
+    }
+
+    /// <summary>Escolhe a categoria como o funil do título (capturas de tela).</summary>
     internal void FilterCategory(string? name)
     {
         _category = name;
@@ -379,13 +400,16 @@ public partial class AppsView : UserControl
     private async void BtnAppsInstall_Click(object sender, RoutedEventArgs e)
     {
         if (_appsBusy) { _appsStop = true; BtnAppsInstall.IsEnabled = false; Say("Parando depois do app atual…"); return; }
+        if (_installApps == null) return;
+        var sel = _package.Where(t => t.App.Selected && !t.App.Installed).ToList();
+        if (sel.Count == 0) { Say("Nenhum app marcado"); return; }
+        // Antes de começar, o pacote inteiro numa janela de confirmação, na ordem da fila
+        if (!await ConfirmAsync(sel)) return;
+        if (_appsBusy) return;
+
         using var workload = _context.Workloads.TryBegin(WorkloadOperations.InstallApps);
         if (workload == null) { Say("Termine a outra operação antes"); return; }
         using var critical = _context.BeginCriticalOperation("Aguarde a instalação terminar. Em Instalar apps, Parar encerra a fila depois do app atual.");
-        if (_installApps == null) return;
-
-        var sel = _package.Where(t => t.App.Selected && !t.App.Installed).ToList();
-        if (sel.Count == 0) { Say("Nenhum app marcado"); return; }
 
         _exportCts?.Cancel();
         foreach (var t in _tiles) t.Phase = AppPhase.Idle;
@@ -429,8 +453,10 @@ public partial class AppsView : UserControl
         }
         if (_context.IsClosing) return;
 
-        // Os instalados saem do pacote; os que falharam ou ficaram parados continuam marcados, para tentar de novo
+        // Os instalados saem do pacote; os que falharam ou ficaram parados continuam marcados, para tentar de novo. "Parado" só
+        // vale enquanto a fila para: terminada a parada, a linha volta ao normal, ainda no pacote. "Falhou" fica, com o motivo na dica.
         foreach (var tile in sel.Where(t => t.Phase == AppPhase.Done)) tile.App.Selected = false;
+        foreach (var tile in sel.Where(t => t.Phase is AppPhase.Skipped or AppPhase.Queued)) tile.Phase = AppPhase.Idle;
         var names = await Task.Run(AppInstaller.InstalledNames);
         var finished = new HashSet<string>(_wingetIds ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
         foreach (var tile in sel.Where(t => t.Phase == AppPhase.Done)) foreach (var p in tile.App.Packages) finished.Add(p.Id);
@@ -442,6 +468,17 @@ public partial class AppsView : UserControl
         if (_appsStop) Say($"Parado: {ok} de {sel.Count} instalados", failures);
         else if (ok == sel.Count) Say(ok == 1 ? "1 app instalado" : $"{ok} apps instalados");
         else Say($"{ok} de {sel.Count} instalados", failures);
+    }
+
+    /// <summary>A janela de confirmação sobre o app; sem ela (testes), confirma direto.</summary>
+    private Task<bool> ConfirmAsync(IReadOnlyList<AppTile> package) =>
+        (_context.Owner as MainWindow)?.InstallLayer is { } dialog ? dialog.AskAsync(package) : Task.FromResult(true);
+
+    /// <summary>Abre a confirmação com o pacote atual sem instalar nada (capturas de tela).</summary>
+    internal void PreviewConfirm()
+    {
+        var sel = _package.Where(t => t.App.Selected && !t.App.Installed).ToList();
+        if (sel.Count > 0) _ = ConfirmAsync(sel);
     }
 
     /// <summary>Durante a instalação, o catálogo, os kits e o filtro param; a faixa vira a fila, com o estado de cada app.</summary>
@@ -459,7 +496,7 @@ public partial class AppsView : UserControl
 
 public enum AppPhase { Idle, Queued, Installing, Done, Failed, Skipped }
 
-/// <summary>Uma categoria do catálogo: o título (que filtra por ela), a quantidade e as linhas.</summary>
+/// <summary>Uma categoria do catálogo: o título (que marca a categoria inteira), o filtro dela, a quantidade e as linhas.</summary>
 public sealed class AppGroup : ObservableObject
 {
     internal AppGroup(string name, List<AppTile> tiles) { Name = name; Tiles = tiles; }
@@ -468,11 +505,34 @@ public sealed class AppGroup : ObservableObject
     public int Count => Tiles.Count;
 
     private bool _active, _dimmed;
+    private string _pick = "none";
     /// <summary>A categoria escolhida no filtro.</summary>
     public bool Active { get => _active; set { if (Set(ref _active, value)) OnPropertyChanged(nameof(HeadTip)); } }
     /// <summary>Nenhuma linha dela entra no filtro: o título apaga junto.</summary>
     public bool Dimmed { get => _dimmed; set => Set(ref _dimmed, value); }
     public string HeadTip => Active ? "Voltar a todas as categorias" : $"Mostrar só {Name}";
+
+    /// <summary>O marcador do grupo: none (nada no pacote), some, all (todos que faltam) ou done (tudo já instalado).</summary>
+    public string Pick
+    {
+        get => _pick;
+        private set { if (Set(ref _pick, value)) { OnPropertyChanged(nameof(CanPick)); OnPropertyChanged(nameof(PickTip)); } }
+    }
+    public bool CanPick => Pick != "done";
+    public string PickTip => Pick switch
+    {
+        "done" => $"Tudo em {Name} já está instalado",
+        "all" => $"Tirar {Name} do pacote",
+        _ => $"Pôr todos de {Name} no pacote",
+    };
+
+    /// <summary>Recalcula o marcador depois de marcar, desmarcar ou instalar.</summary>
+    internal void Refresh()
+    {
+        var open = Tiles.Where(t => !t.App.Installed).ToList();
+        int picked = open.Count(t => t.App.Selected);
+        Pick = open.Count == 0 ? "done" : picked == open.Count ? "all" : picked > 0 ? "some" : "none";
+    }
 }
 
 /// <summary>Uma linha do catálogo e a ficha do pacote: o app, o ícone e o estado da instalação.</summary>

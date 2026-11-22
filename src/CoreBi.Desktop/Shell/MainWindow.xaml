@@ -296,6 +296,9 @@
 
             <!-- ================= Exportar relatório: o que entra, formato e onde salvar ================= -->
             <local:ReportDialog x:Name="ReportLayer" Grid.ColumnSpan="2" />
+
+            <!-- ================= Instalar apps: confirmação com o pacote inteiro ================= -->
+            <local:InstallConfirmDialog x:Name="InstallLayer" Grid.ColumnSpan="2" />
         </Grid>
     </Border>
 </Window>

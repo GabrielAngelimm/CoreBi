@@ -100,51 +100,92 @@
         </Style>
 
         <!--
-            Categoria: o título é também o filtro da categoria. Um clique acende só ela (título no sinal, fio de 2 px no sinal e um X
-            à direita para voltar a todas); o mesmo clique de novo, ou o X, volta a todas. Sob o mouse, o funil aparece à direita, para
-            dizer que o título filtra. Categoria sem nenhuma linha no filtro apaga o título junto.
+            Categoria, no estilo do Ninite: o título marca e desmarca a categoria inteira. À esquerda, o marcador do grupo, no mesmo
+            lugar dos marcadores das linhas: vazio (nada no pacote), com um traço (parte), cheio com o visto (todos que faltam) ou
+            verde-claro com o visto (já está tudo instalado, e o título não marca nada). Sob o mouse, o título vai para o sinal.
         -->
-        <Style x:Key="CategoryHead" TargetType="Button">
+        <Style x:Key="CategoryPick" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Focusable" Value="True" />
             <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
             <Setter Property="ToolTipService.InitialShowDelay" Value="600" />
+            <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid x:Name="root" Height="31" Background="Transparent" Margin="0,0,0,6">
-                            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" />
-                            <Border x:Name="accent" Height="2" VerticalAlignment="Bottom" Background="{DynamicResource Signal}" CornerRadius="1" Visibility="Hidden" />
-                            <Grid Margin="8,0,6,1">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                        <Border Background="Transparent" Padding="8,0,6,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border x:Name="dot" Width="20" Height="20" CornerRadius="10" BorderThickness="1.5" BorderBrush="{DynamicResource LineStrong}" VerticalAlignment="Center">
+                                    <TextBlock x:Name="mark" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource SignalFg}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+                                </Border>
+                                <TextBlock VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis">
                                     <Run x:Name="title" Text="{Binding Name, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold"
                                          Foreground="{DynamicResource Fg}" /><InlineUIContainer><Border Width="8" /></InlineUIContainer><Run
                                         Text="{Binding Count, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16"
                                         Foreground="{DynamicResource Faint}" Typography.NumeralAlignment="Tabular" />
                                 </TextBlock>
-                                <TextBlock x:Name="glyph" Grid.Column="1" Text="&#xE71C;" FontFamily="{StaticResource Icons}" FontSize="12" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource Faint}" Visibility="Hidden" />
-                            </Grid>
-                        </Grid>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Pick}" Value="some">
+                                <Setter TargetName="dot" Property="BorderThickness" Value="0" />
+                                <Setter TargetName="dot" Property="Background" Value="{DynamicResource Signal}" />
+                                <Setter TargetName="mark" Property="Text" Value="&#xE738;" />
+                                <Setter TargetName="mark" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Pick}" Value="all">
+                                <Setter TargetName="dot" Property="BorderThickness" Value="0" />
+                                <Setter TargetName="dot" Property="Background" Value="{DynamicResource Signal}" />
+                                <Setter TargetName="mark" Property="Text" Value="&#xE73E;" />
+                                <Setter TargetName="mark" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Pick}" Value="done">
+                                <Setter TargetName="dot" Property="BorderThickness" Value="0" />
+                                <Setter TargetName="dot" Property="Background" Value="{DynamicResource OkSoft}" />
+                                <Setter TargetName="mark" Property="Text" Value="&#xE73E;" />
+                                <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Ok}" />
+                                <Setter TargetName="mark" Property="Visibility" Value="Visible" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </DataTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="IsEnabled" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="title" Property="Foreground" Value="{DynamicResource Signal}" />
+                                <Setter TargetName="dot" Property="BorderBrush" Value="{DynamicResource Signal}" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!--
+            Filtro da categoria: um funil redondo à direita do título, que aparece sob o mouse. Escolhida, a categoria fica sozinha
+            acesa, o fio de baixo vira 2 px no sinal e o funil vira um X que volta a todas.
+        -->
+        <Style x:Key="CategoryFilter" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}" />
+            <Setter Property="ToolTipService.InitialShowDelay" Value="400" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" CornerRadius="14" Background="Transparent">
+                            <TextBlock x:Name="glyph" Text="&#xE71C;" FontFamily="{StaticResource Icons}" FontSize="12" Foreground="{DynamicResource Faint}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="glyph" Property="Visibility" Value="Visible" />
-                                <Setter TargetName="title" Property="Foreground" Value="{DynamicResource Signal}" />
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}" />
+                                <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Fg}" />
                             </Trigger>
                             <DataTrigger Binding="{Binding Active}" Value="True">
-                                <Setter TargetName="accent" Property="Visibility" Value="Visible" />
-                                <Setter TargetName="title" Property="Foreground" Value="{DynamicResource Signal}" />
-                                <Setter TargetName="glyph" Property="Visibility" Value="Visible" />
                                 <Setter TargetName="glyph" Property="Text" Value="&#xE711;" />
                                 <Setter TargetName="glyph" Property="FontSize" Value="11" />
                                 <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Signal}" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Dimmed}" Value="True">
-                                <Setter TargetName="root" Property="Opacity" Value="0.4" />
                             </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -153,7 +194,20 @@
         </Style>
         <DataTemplate x:Key="CategoryGroup">
             <StackPanel Margin="0,0,0,14">
-                <Button Style="{StaticResource CategoryHead}" Click="Category_Click" ToolTip="{Binding HeadTip}" AutomationProperties.Name="{Binding HeadTip}" />
+                <Grid x:Name="head" Height="31" Margin="0,0,0,6" Background="Transparent">
+                    <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" />
+                    <Border x:Name="accent" Height="2" VerticalAlignment="Bottom" Background="{DynamicResource Signal}" CornerRadius="1" Visibility="Hidden" />
+                    <Grid Margin="0,0,0,1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="pick" Style="{StaticResource CategoryPick}" HorizontalAlignment="Left" Click="CategoryPick_Click" IsEnabled="{Binding CanPick}"
+                                ToolTip="{Binding PickTip}" AutomationProperties.Name="{Binding PickTip}" />
+                        <Button x:Name="filter" Grid.Column="1" Style="{StaticResource CategoryFilter}" Click="Category_Click" Margin="0,0,2,0" Visibility="Hidden"
+                                ToolTip="{Binding HeadTip}" AutomationProperties.Name="{Binding HeadTip}" />
+                    </Grid>
+                </Grid>
                 <ItemsControl ItemsSource="{Binding Tiles}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -163,6 +217,18 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </StackPanel>
+            <DataTemplate.Triggers>
+                <Trigger SourceName="head" Property="IsMouseOver" Value="True">
+                    <Setter TargetName="filter" Property="Visibility" Value="Visible" />
+                </Trigger>
+                <DataTrigger Binding="{Binding Active}" Value="True">
+                    <Setter TargetName="accent" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="filter" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Dimmed}" Value="True">
+                    <Setter TargetName="head" Property="Opacity" Value="0.4" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
 
         <!-- Kit: pílula de marcar vários de uma vez; acesa quando todos os apps do kit que faltam já estão no pacote -->
@@ -368,7 +434,7 @@
 
                 <!-- Catálogo: kits e busca no cabeçalho (a legenda dos estados é o filtro do topo); as categorias em colunas (montadas no código) -->
                 <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,16,24,8" local:Skeleton.Top="34"
-                        local:Skeleton.Layout="gap 12; col 0 18.55%; row 31: - 8, s 40%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 20.36% 18.55%; row 31: - 8, s 44%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 40%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 5 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 40.72% 18.55%; row 31: - 8, s 44%; gap 6; rows 11 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 32%; gap 6; rows 4 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 61.08% 18.55%; row 31: - 8, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 32%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 81.44% 18.55%; row 31: - 8, s 46%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 50%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; end">
+                        local:Skeleton.Layout="gap 12; col 0 18.55%; row 31: - 8, dot 20, - 12, s 40%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 36%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 20.36% 18.55%; row 31: - 8, dot 20, - 12, s 44%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 40%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 36%; gap 6; rows 5 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 40.72% 18.55%; row 31: - 8, dot 20, - 12, s 44%; gap 6; rows 11 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 32%; gap 6; rows 4 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 61.08% 18.55%; row 31: - 8, dot 20, - 12, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 36%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 32%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 81.44% 18.55%; row 31: - 8, dot 20, - 12, s 46%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 50%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; end">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
