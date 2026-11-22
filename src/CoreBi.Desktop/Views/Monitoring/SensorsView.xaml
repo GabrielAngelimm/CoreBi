@@ -5,7 +5,7 @@
         <Style x:Key="ColHead" TargetType="TextBlock">
             <Setter Property="Margin" Value="0,1,0,-1" />
             <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Foreground" Value="{DynamicResource Faint}" />
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="VerticalAlignment" Value="Bottom" />
