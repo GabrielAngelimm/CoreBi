@@ -227,6 +227,8 @@ public partial class AppsView : UserControl
     /// <summary>O filtro e a busca só apagam as linhas que não interessam; nada sai do lugar.</summary>
     private void ApplyFilter()
     {
+        // "Todos" já nasce marcado: o Checked dele chega durante o InitializeComponent, antes de a busca existir
+        if (AppsSearch == null) return;
         string query = AppsSearch.Text.Trim();
         foreach (var tile in _tiles)
         {
