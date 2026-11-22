@@ -36,11 +36,10 @@ public partial class PowerView : UserControl
         private double _value = double.NaN, _min = double.NaN, _max = double.NaN;
         private string _valueText = "", _deviationText = "";
         private bool _off;
-        public RailItem(string title, double nominal, bool first) { Title = title; Nominal = nominal; First = first; }
+        public RailItem(string title, double nominal) { Title = title; Nominal = nominal; }
         public string Title { get; }
         public double Nominal { get; }
-        public bool First { get; }
-        public string Tip => $"Nominal {Nominal:0.0#} V. A especificação ATX aceita ±5 % ({Nominal * 0.95:0.00} a {Nominal * 1.05:0.00} V). A faixa embaixo é o que variou desde que o CoreBi abriu.";
+        public string Tip => $"Nominal {Nominal:0.0#} V. A especificação ATX aceita ±5 % ({Nominal * 0.95:0.00} a {Nominal * 1.05:0.00} V). O trecho mais claro da régua é a tolerância; a faixa embaixo é o que variou desde que o CoreBi abriu.";
         public double Value { get => _value; set => Set(ref _value, value); }
         public double Min { get => _min; set => Set(ref _min, value); }
         public double Max { get => _max; set => Set(ref _max, value); }
@@ -69,7 +68,7 @@ public partial class PowerView : UserControl
     private FeatureContext _context = null!;
     private SensorMonitor _monitor => _context.Sensors;
     private bool _refreshing, _applyingPlan, _stacked, _dirty;
-    private bool _voltsShown = true, _previewing;
+    private bool _voltsShown = true;
     private double _heroSize = 88;
     private PowerPlan? _pendingPlan;
 
@@ -226,8 +225,6 @@ public partial class PowerView : UserControl
         RegSection.Visibility = p.Active == null ? Visibility.Collapsed : Visibility.Visible;
         if (previewing) RegSection.SetResourceReference(Border.BackgroundProperty, "Raised");
         else RegSection.ClearValue(Border.BackgroundProperty);
-        // Entrar na prévia (ou sair dela) acende a seção de leve, em vez de o fundo trocar seco
-        if (previewing != _previewing) { _previewing = previewing; HeaderMotion.Soften(RegSection); }
         // Título curto e de uma linha: o nome do plano já está na lista (marcado "novo plano"); um título longo quebrava e crescia o cartão
         RegTitle.Text = previewing ? "Prévia da troca" : "Ajustes do plano";
         RegCaption.Visibility = battery && !previewing ? Visibility.Visible : Visibility.Collapsed;
@@ -506,7 +503,7 @@ public partial class PowerView : UserControl
         if (_rails.Count != map.Rails.Count || _rails.Zip(map.Rails).Any(p => p.First.Title != p.Second.Title))
         {
             _rails.Clear();
-            _rails.AddRange(map.Rails.Select((r, i) => new RailItem(r.Title, r.Nominal, i == 0)));
+            _rails.AddRange(map.Rails.Select(r => new RailItem(r.Title, r.Nominal)));
             RailRows.Items.Refresh();
         }
         for (int i = 0; i < _rails.Count; i++)
@@ -542,7 +539,9 @@ public partial class PowerView : UserControl
         VoltDivider.Visibility = rails && comps ? Visibility.Visible : Visibility.Collapsed;
         VoltComponentsTitle.Visibility = rails && comps ? Visibility.Visible : Visibility.Collapsed;
         VoltRows.Visibility = comps ? Visibility.Visible : Visibility.Collapsed;
-        VoltRows.Margin = new Thickness(0, rails ? 0 : 16, 0, 0);
+        // Cada grupo pega a sobra de altura na proporção das suas linhas: todas as linhas do cartão ficam da mesma altura
+        RailsRow.Height = new GridLength(Math.Max(_rails.Count, rails ? 1 : 0), rails ? GridUnitType.Star : GridUnitType.Pixel);
+        VoltsRow.Height = new GridLength(Math.Max(_volts.Count, 1), GridUnitType.Star);
         VoltEmpty.Visibility = rails || comps ? Visibility.Collapsed : Visibility.Visible;
         var problem = _monitor.IsOpen ? _monitor.DiagnoseCpuSensors() : SensorMonitor.CpuSensorProblem.None;
         VoltEmpty.Text = CpuSensorMessages.VoltagesEmpty(_monitor.IsOpen, problem);

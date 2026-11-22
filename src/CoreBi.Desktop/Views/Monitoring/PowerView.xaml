@@ -137,17 +137,25 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Trilho da fonte: nome, régua de tolerância, leitura e desvio do nominal -->
+        <!-- Linhas de Tensões: uma coluna de linhas de altura igual que se estica até o pé do grupo, cada linha centrada na sua faixa -->
+        <ItemsPanelTemplate x:Key="FillRows">
+            <UniformGrid Columns="1" />
+        </ItemsPanelTemplate>
+        <Style x:Key="CenteredRow" TargetType="ContentPresenter">
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- Trilho da fonte: nome, régua de tolerância, leitura e desvio do nominal (a tolerância fica na dica, sem legenda embaixo) -->
         <DataTemplate x:Key="RailRow">
-            <Grid Margin="0,0,0,2">
+            <Grid Margin="0,2">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="104" />
+                    <ColumnDefinition Width="120" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="76" />
                     <ColumnDefinition Width="50" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Top" Margin="0,1,0,0" />
-                <local:RailGauge Grid.Column="1" Nominal="{Binding Nominal}" Value="{Binding Value}" Min="{Binding Min}" Max="{Binding Max}" ShowScale="{Binding First}" VerticalAlignment="Top" Margin="0,2,0,0" ToolTip="{Binding Tip}" />
+                <local:RailGauge Grid.Column="1" Nominal="{Binding Nominal}" Value="{Binding Value}" Min="{Binding Min}" Max="{Binding Max}" VerticalAlignment="Top" Margin="0,2,0,0" ToolTip="{Binding Tip}" />
                 <!-- Nome, leitura e desvio na mesma linha de base (15 px abaixo do topo, o meio das maiúsculas no meio da régua): a
                      base fica a 14 do topo no Segoe 13, a 13 no Bahnschrift 17 e no Segoe 12, daí 1, 2 e 2 de margem em cima -->
                 <TextBlock x:Name="value" Grid.Column="2" Style="{StaticResource ReadoutText}" FontSize="17" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0">
@@ -165,7 +173,7 @@
 
         <!-- Tensão de componente: nome, posição na faixa usual e leitura -->
         <DataTemplate x:Key="VoltRow">
-            <Grid Height="22">
+            <Grid MinHeight="24">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="150" />
                     <ColumnDefinition Width="*" />
@@ -294,16 +302,18 @@
                             </Border>
 
                             <!-- Regulagem do plano ativo; ao escolher outro plano vira a prévia da troca, com Cancelar e Aplicar -->
-                            <Border x:Name="RegSection" Style="{StaticResource FeedSection}" Padding="24,16,24,24">
+                            <!-- Última seção, presa ao pé do cartão: o fundo elevado da prévia acompanha o canto arredondado do painel -->
+                            <Border x:Name="RegSection" Style="{StaticResource FeedSection}" Padding="24,16,24,24" CornerRadius="{StaticResource RadiusPanelBottom}">
                                 <StackPanel>
                                     <Grid MinHeight="28">
                                         <!-- Título e legenda na mesma linha de base, a 17 do topo: no Bahnschrift 17 a base fica a 13 do topo da caixa, na legenda
                                              (Segoe 12) a 12, daí 4 e 5 de margem em cima -->
                                         <TextBlock x:Name="RegTitle" Text="Ajustes do plano" Style="{StaticResource SectionTitle}" VerticalAlignment="Top" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,4,160,0" />
                                         <TextBlock x:Name="RegCaption" Text="na tomada · na bateria" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,0,0" Visibility="Collapsed" />
+                                        <!-- Botões de 28, a altura da linha do título: a prévia não pode crescer o cartão -->
                                         <StackPanel x:Name="PlanConfirm" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed">
-                                            <Button x:Name="PlanCancel" Content="Cancelar" Style="{StaticResource GhostButton}" MinHeight="30" Padding="12,3" FontSize="14" Click="PlanCancel_Click" />
-                                            <Button x:Name="PlanApply" Content="Aplicar" Style="{StaticResource PrimaryButton}" MinHeight="30" Padding="16,3" FontSize="14" Margin="6,0,0,0" Click="PlanApply_Click" />
+                                            <Button x:Name="PlanCancel" Content="Cancelar" Style="{StaticResource GhostButton}" MinHeight="28" Height="28" Padding="12,0" FontSize="14" Click="PlanCancel_Click" />
+                                            <Button x:Name="PlanApply" Content="Aplicar" Style="{StaticResource PrimaryButton}" MinHeight="28" Height="28" Padding="16,0" FontSize="14" Margin="6,0,0,0" Click="PlanApply_Click" />
                                         </StackPanel>
                                     </Grid>
                                     <StackPanel x:Name="ProcBox" Margin="0,10,0,8" ToolTip="Quanto da velocidade do processador o Windows pode usar: o mínimo vale mesmo em repouso (o trecho cheio da barra) e o máximo, com carga (até onde a barra vai).">
@@ -409,21 +419,34 @@
 
                     <!-- Tensões -->
                     <Border x:Name="VoltCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="{StaticResource CardPadding}"
-                            local:Skeleton.Layout="row 34: h 90^16, - *, dot 30; gap 12; row 26: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 10; rows 3 24: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 2; line; gap 7; row 18: c 80; rows 5 22: c 150@0.6, box *^6, t 72@0.8>; gap 2; row 30: c 190@0.9">
-                        <StackPanel>
+                            local:Skeleton.Layout="row 34: h 90^16, - *, dot 30; gap 12; rows 4 30: c 120@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 8; line; gap 12; row 18: c 80; rows 5 30: c 150@0.6, box *^6, t 72@0.8>">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
                             <!-- Cabeçalho de 34 px, como na Visão geral: a explicação fica na dica do título e o atalho para Sensores é o círculo do canto -->
                             <Grid Style="{StaticResource CardHeader}">
                                 <TextBlock Text="Tensões" Style="{StaticResource CardTitle}" ToolTip="Voltagem que chega a cada peça; fora da faixa usual, o valor fica âmbar." />
                                 <Button x:Name="VoltAll" Style="{StaticResource CardLink}" ToolTip="Todas as tensões em Sensores" Click="VoltAll_Click" />
                             </Grid>
-                            <!-- Linhas um pouco mais justas (12 em cima, 2 entre as réguas, 22 por componente): com as tensões da placa-mãe, os dois
-                                 cartões de baixo cabem na tela cheia de 1920 × 1032 sem rolar -->
-                            <ItemsControl x:Name="RailRows" ItemTemplate="{StaticResource RailRow}" Margin="0,12,0,0" Focusable="False" />
-                            <Border x:Name="VoltDivider" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Margin="0,2,0,6" />
-                            <TextBlock x:Name="VoltComponentsTitle" Text="Componentes" Style="{StaticResource Label}" Foreground="{DynamicResource Faint}" Margin="0,0,0,2" ToolTip="Tensões dos chips: variam com a carga, então a faixa clara mostra o mínimo e o máximo desde que o CoreBi abriu." />
-                            <ItemsControl x:Name="VoltRows" ItemTemplate="{StaticResource VoltRow}" Focusable="False" />
-                            <TextBlock x:Name="VoltEmpty" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="0,16,0,4" Visibility="Collapsed" />
-                        </StackPanel>
+                            <!-- As linhas ocupam o cartão até o pé: cada grupo divide a sobra de altura pelo número de linhas (estrela com o peso da
+                                 contagem, PowerView.ShowVoltages), então todas as linhas têm a mesma altura e o espaço vazio some. No aperto, cada
+                                 linha fica na altura mínima dela e os dois cartões de baixo ainda cabem em 1920 × 1032 sem rolar. -->
+                            <Grid Grid.Row="1" Margin="0,8,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition x:Name="RailsRow" Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition x:Name="VoltsRow" Height="*" />
+                                </Grid.RowDefinitions>
+                                <ItemsControl x:Name="RailRows" ItemTemplate="{StaticResource RailRow}" ItemsPanel="{StaticResource FillRows}" ItemContainerStyle="{StaticResource CenteredRow}" Focusable="False" />
+                                <Border x:Name="VoltDivider" Grid.Row="1" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Margin="0,8,0,12" />
+                                <TextBlock x:Name="VoltComponentsTitle" Grid.Row="2" Text="Componentes" Style="{StaticResource Label}" Margin="0,0,0,4" ToolTip="Tensões dos chips: variam com a carga, então a faixa clara mostra o mínimo e o máximo desde que o CoreBi abriu." />
+                                <ItemsControl x:Name="VoltRows" Grid.Row="3" ItemTemplate="{StaticResource VoltRow}" ItemsPanel="{StaticResource FillRows}" ItemContainerStyle="{StaticResource CenteredRow}" Focusable="False" />
+                                <TextBlock x:Name="VoltEmpty" Grid.Row="3" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="0,8,0,4" VerticalAlignment="Top" Visibility="Collapsed" />
+                            </Grid>
+                        </Grid>
                     </Border>
 
                     <!-- Tempo ligado nos últimos 7 dias -->
