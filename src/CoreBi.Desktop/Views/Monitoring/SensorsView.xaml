@@ -117,7 +117,7 @@
                 <StackPanel x:Name="head" Orientation="Horizontal" Margin="0,0,0,8">
                     <!-- Filete centrado na caixa do título: o meio dele cai no meio das maiúsculas (com 1 px a mais em cima ficava 1 abaixo) -->
                     <Border x:Name="mark" Width="3" Height="15" CornerRadius="1.5" Background="{DynamicResource Steel}" Margin="0,0,8,0" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding Title, Mode=OneWay}" Style="{StaticResource GroupTitle}" FontSize="16" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Title, Mode=OneWay}" Style="{StaticResource GroupTitle}" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding UnitText, Mode=OneWay}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="8,2,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource SensorLine}" Focusable="False" />
@@ -152,7 +152,7 @@
                         <!-- Nome e tipo com o mesmo respiro dos quatro lados: 24 da borda até a tinta em cima, embaixo e à esquerda (90 de
                              altura; centrado, o bloco ficava 1 px baixo, porque a DIN tem mais folga embaixo, daí os 2 de margem no pé) -->
                         <StackPanel VerticalAlignment="Center" Margin="0,0,0,2">
-                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="23" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" Style="{StaticResource TestPlateTitle}" />
                             <TextBlock FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" Typography.NumeralAlignment="Tabular">
                                 <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
                             </TextBlock>
