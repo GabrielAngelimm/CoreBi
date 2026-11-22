@@ -194,10 +194,10 @@ function Get-Installer([string]$Id) {
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
     # O instalador .exe costuma ter o ícone do app; se o pacote não tiver .exe, o winget escolhe o que tiver
     foreach ($type in @('exe', 'nullsoft', 'inno', 'burn', $null)) {
-        $args = @('download', '--id', $Id, '--exact', '--source', 'winget', '--download-directory', $dir,
+        $wingetArgs = @('download', '--id', $Id, '--exact', '--source', 'winget', '--download-directory', $dir,
                   '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity', '--skip-license')
-        if ($type) { $args += @('--installer-type', $type) }
-        & winget @args *> $null
+        if ($type) { $wingetArgs += @('--installer-type', $type) }
+        & winget @wingetArgs *> $null
         $file = Get-ChildItem -LiteralPath $dir -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -match '^\.(exe|msi|msix|msixbundle|appx|appxbundle|zip)$' } | Select-Object -First 1
         if ($file) { return $file.FullName }
     }
