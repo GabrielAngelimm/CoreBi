@@ -90,9 +90,9 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <!-- Placa de identificação: fabricante na cor do canal, nome e as quatro leituras que resumem a placa -->
-                <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" CornerRadius="9,9,0,0" ClipToBounds="True">
+                <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" CornerRadius="{StaticResource RadiusPanelTop}" ClipToBounds="True">
                     <Grid>
-                        <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="Gpu" CornerRadius="9,9,0,0" />
+                        <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="Gpu" CornerRadius="{StaticResource RadiusPanelTop}" />
                         <Grid Margin="{StaticResource PanelPadding}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />

@@ -319,7 +319,7 @@ public partial class OverviewView
         _hoverGpuText = Value();
         _hoverTip = new Border
         {
-            CornerRadius = new CornerRadius(8),
+            CornerRadius = (CornerRadius)FindResource("RadiusInset"),
             BorderThickness = new Thickness(1),
             Padding = new Thickness(12, 8, 12, 8),
             IsHitTestVisible = false,

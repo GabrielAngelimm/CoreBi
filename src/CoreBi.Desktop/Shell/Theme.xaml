@@ -88,6 +88,9 @@
     <CornerRadius x:Key="RadiusInset">8</CornerRadius>
     <CornerRadius x:Key="RadiusControl">7</CornerRadius>
     <CornerRadius x:Key="RadiusSmall">4</CornerRadius>
+    <!-- Faixas presas à borda de um painel (a placa da Placa de vídeo, o pé do Gargalo): o raio do painel menos o fio -->
+    <CornerRadius x:Key="RadiusPanelTop">9,9,0,0</CornerRadius>
+    <CornerRadius x:Key="RadiusPanelBottom">0,0,10,10</CornerRadius>
     <!-- Respiro padrão de um painel (24 nas laterais, 20 em cima e embaixo) -->
     <Thickness x:Key="PanelPadding">24,20</Thickness>
 
