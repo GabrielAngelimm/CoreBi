@@ -94,7 +94,7 @@
 
         <!-- Trilho da fonte: nome, régua de tolerância, leitura e desvio do nominal -->
         <DataTemplate x:Key="RailRow">
-            <Grid Margin="0,0,0,4">
+            <Grid Margin="0,0,0,2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="104" />
                     <ColumnDefinition Width="*" />
@@ -120,7 +120,7 @@
 
         <!-- Tensão de componente: nome, posição na faixa usual e leitura -->
         <DataTemplate x:Key="VoltRow">
-            <Grid Height="24">
+            <Grid Height="22">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="150" />
                     <ColumnDefinition Width="*" />
@@ -360,16 +360,18 @@
 
                     <!-- Tensões -->
                     <Border x:Name="VoltCard" Grid.Row="2" Style="{StaticResource CardBorder}"
-                            local:Skeleton.Layout="row 24: h 90^16; gap 4; row 17: c 85%; gap 16; rows 4 32: c 30%@0.6, - 12, box *^10, - 12, t 60@0.8>; gap 4; line; gap 8; row 18: c 80; rows 4 24: c 150@0.6, box *^6, t 60@0.8>; gap 4; row 30: c 190@0.9">
+                            local:Skeleton.Layout="row 24: h 90^16; gap 4; row 17: c 85%; gap 12; rows 4 32: c 30%@0.6, - 12, box *^10, - 12, t 60@0.8>; gap 2; line; gap 6; row 18: c 80; rows 4 22: c 150@0.6, box *^6, t 60@0.8>; gap 2; row 30: c 190@0.9">
                         <StackPanel>
                             <TextBlock Text="Tensões" Style="{StaticResource SectionTitle}" />
                             <TextBlock Text="Voltagem que chega a cada peça; fora da faixa usual, o valor fica âmbar." Style="{StaticResource Caption}" Margin="0,4,0,0" />
-                            <ItemsControl x:Name="RailRows" ItemTemplate="{StaticResource RailRow}" Margin="0,16,0,0" Focusable="False" />
-                            <Border x:Name="VoltDivider" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Margin="0,4,0,8" />
+                            <!-- Linhas um pouco mais justas (12 em cima, 2 entre as réguas, 22 por componente): com as tensões da placa-mãe, os dois
+                                 cartões de baixo cabem na tela cheia de 1920 × 1032 sem rolar -->
+                            <ItemsControl x:Name="RailRows" ItemTemplate="{StaticResource RailRow}" Margin="0,12,0,0" Focusable="False" />
+                            <Border x:Name="VoltDivider" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Margin="0,2,0,6" />
                             <TextBlock x:Name="VoltComponentsTitle" Text="Componentes" Style="{StaticResource Label}" Foreground="{DynamicResource Faint}" Margin="0,0,0,2" ToolTip="Tensões dos chips: variam com a carga, então a faixa clara mostra o mínimo e o máximo desde que o CoreBi abriu." />
                             <ItemsControl x:Name="VoltRows" ItemTemplate="{StaticResource VoltRow}" Focusable="False" />
                             <TextBlock x:Name="VoltEmpty" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="0,16,0,4" Visibility="Collapsed" />
-                            <Button x:Name="VoltAll" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="-10,4,0,-8" Click="VoltAll_Click">
+                            <Button x:Name="VoltAll" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="-10,2,0,-8" Click="VoltAll_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock x:Name="VoltAllText" Text="Todas as tensões em Sensores" />
                                     <TextBlock Text="&#xE76C;" FontFamily="{StaticResource Icons}" FontSize="10" VerticalAlignment="Center" Margin="8,1,0,0" />
@@ -380,7 +382,7 @@
 
                     <!-- Tempo ligado nos últimos 7 dias -->
                     <Border x:Name="DaysCard" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}"
-                            local:Skeleton.Layout="row 24: h 260^16; gap 4; row 17: c 40%; gap 16; line; gap 18; row 16: c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4; gap 6; row 30: n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24; gap 18; line; gap 16; foot 18: - 64, c 14, - *, c 14, - *, c 18, - *, c 18, - *, c 18>; fill 25: c 44@0.8, - 20, box *^8, - 30, c 44@0.7>">
+                            local:Skeleton.Layout="row 24: h 260^16; gap 4; row 17: c 40%; gap 16; line; gap 18; row 16: c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4, c 16.66%@0.4; gap 6; row 30: n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24, n 16.66%@0.22^24; gap 18; line; gap 16; foot 18: - 64, c 14, - *, c 14, - *, c 18, - *, c 18, - *, c 18>; fill 23: c 44@0.8, - 20, box *^8, - 30, c 44@0.7>">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />

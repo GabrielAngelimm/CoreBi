@@ -404,7 +404,7 @@ public sealed class UptimeChart : InstrumentBase
 
     private IReadOnlyList<Day> _days = Array.Empty<Day>();
     private int _hover = -1;
-    public const double MinRowHeight = 25, MaxRowHeight = 52, AxisHeight = 18;
+    public const double MinRowHeight = 23, MaxRowHeight = 52, AxisHeight = 18;
 
     /// <summary>As linhas dividem a altura que o painel der (entre o mínimo e o máximo); a altura que sobra fica embaixo.</summary>
     private double RowHeight => _days.Count == 0 ? MinRowHeight : Math.Clamp((ActualHeight - AxisHeight) / _days.Count, MinRowHeight, MaxRowHeight);
