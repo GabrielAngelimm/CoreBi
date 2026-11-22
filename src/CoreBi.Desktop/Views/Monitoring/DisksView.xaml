@@ -401,9 +401,9 @@
                                 <ColumnDefinition x:Name="SideInnerGap" Width="0" />
                                 <ColumnDefinition x:Name="SideInnerColumn" Width="0" />
                             </Grid.ColumnDefinitions>
-                            <!-- O uso desde a fábrica em cima, na altura dos blocos; a integridade fecha a coluna no canto de baixo e fica com a sobra -->
+                            <!-- O uso desde a fábrica em cima e a integridade no canto de baixo, cada um com metade da altura (DisksView.LayoutOdometer) -->
                             <Grid.RowDefinitions>
-                                <RowDefinition x:Name="SideTopRow" Height="Auto" />
+                                <RowDefinition x:Name="SideTopRow" Height="*" />
                                 <RowDefinition x:Name="SideInnerGapRow" Height="16" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
