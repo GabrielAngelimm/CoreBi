@@ -1,16 +1,13 @@
 using CoreBi.Engine.Monitoring.Graphics;
-using CoreBi.Engine.Monitoring.Inventory;
 
 namespace CoreBi.Desktop;
 
-public sealed record GpuReadout(string Label, string Value, string Unit, string? Tip, bool First);
 public sealed record GpuSpecRow(string Key, string Value, string? Note = null, string? Tip = null);
 public sealed record GpuSpecGroup(string Title, IReadOnlyList<GpuSpecRow> Rows);
-public sealed record GpuFact(string Label, string Value, bool Warn, string? Tip);
 
 /// <summary>
 /// Ficha técnica da página Placa de vídeo, montada a partir das seções do motor (GpuInfoCollector): rótulos curtos, nenhuma linha
-/// sem valor e nenhum dado repetido entre grupos. A placa de identificação resume (pode repetir um dado de um grupo).
+/// sem valor e nenhum dado repetido entre grupos. Os números fixos da placa (memória, núcleos, clocks, limite) ficam só aqui.
 /// </summary>
 internal static class GpuSheet
 {
@@ -26,63 +23,18 @@ internal static class GpuSheet
 
     private static string? V(Dictionary<string, string> d, string key) => d.TryGetValue(key, out var v) ? v : null;
 
-    /// <summary>"2475 MHz" → ("2475", "MHz"); sem espaço, a unidade fica vazia.</summary>
-    private static (string Value, string Unit) Split(string s)
-    {
-        int sp = s.LastIndexOf(' ');
-        return sp > 0 ? (s[..sp], s[(sp + 1)..]) : (s, "");
-    }
-
-    /// <summary>Chip, arquitetura e fabricante da placa, numa frase curta; vazio se o banco de especificações não conhece a GPU.</summary>
+    /// <summary>
+    /// Frase curta sob o nome: só a memória ("8 GB GDDR6"), o dado que se confere primeiro numa placa. Chip, arquitetura e driver
+    /// ficam na ficha (na faixa ao vivo, uma frase longa disputava espaço com as leituras). Vazia sem o tamanho.
+    /// </summary>
     public static string Subtitle(Dictionary<string, string> d)
     {
-        var parts = new List<string>();
-        if (V(d, "Chip") is { } chip) parts.Add($"chip {chip}");
-        if (V(d, "Arquitetura") is { } arch) parts.Add($"arquitetura {arch}");
-        if (V(d, "Fabricante da placa") is { } board) parts.Add($"placa {board}");
-        if (parts.Count == 0) return "";
-        string s = string.Join(", ", parts);
-        return char.ToUpperInvariant(s[0]) + s[1..];
+        if (V(d, "Tamanho") is not { } t) return "";
+        string size = t.Split(" (")[0];
+        return V(d, "Tipo") is { } k && (k.StartsWith("GDDR") || k.StartsWith("HBM")) ? $"{size} {k}" : size;
     }
 
-    public static List<GpuReadout> Readouts(GpuInfo g, Dictionary<string, string> d)
-    {
-        var list = new List<(string Label, string Value, string Unit, string? Tip)>();
-        if (g.DedicatedVramBytes > 0)
-        {
-            var (v, u) = Split(Fmt.Vram(g.DedicatedVramBytes));
-            string? type = V(d, "Tipo");
-            bool system = type?.StartsWith("Memória do sistema") == true;
-            string label = system ? "Memória dedicada" : type is { } t && (t.StartsWith("GDDR") || t.StartsWith("HBM")) ? $"Memória {t}" : "Memória";
-            list.Add((label, v, u, system ? type : null));
-        }
-        foreach (var key in new[] { "CUDA cores", "Stream processors" })
-            if (V(d, key) is { } cores) { list.Add((key, cores, "", "Os núcleos que desenham a imagem.")); break; }
-        if (V(d, "Boost (referência)") is { } boost)
-        {
-            var (v, u) = Split(boost);
-            list.Add(("Clock boost", v, u, "Valor de referência da fabricante do chip."));
-        }
-        else if (V(d, "Máximo (curva V/F)") is { } max)
-        {
-            var (v, u) = Split(max);
-            list.Add(("Clock máximo", v, u, "O mais alto da curva de tensão e frequência da placa."));
-        }
-        if (V(d, "Limite atual") is { } limit)
-        {
-            var (v, u) = Split(limit);
-            list.Add(("Limite de energia", v, u, "O máximo que a placa pode puxar agora."));
-        }
-        else if (V(d, "TDP (referência)") is { } tdp)
-        {
-            var (v, u) = Split(tdp);
-            list.Add(("TDP", v, u, "Consumo de referência da fabricante do chip."));
-        }
-        return list.Select((r, i) => new GpuReadout(r.Label, r.Value, r.Unit, r.Tip, i == 0)).ToList();
-    }
-
-    /// <summary>livePcie: o driver informa o link PCIe em uso ao vivo (faixa sob os instrumentos), então a ficha não o repete.</summary>
-    public static List<GpuSpecGroup> Groups(GpuInfo g, Dictionary<string, string> d, bool livePcie)
+    public static List<GpuSpecGroup> Groups(GpuInfo g, Dictionary<string, string> d)
     {
         var groups = new List<GpuSpecGroup>();
         void Group(string title, params GpuSpecRow?[] rows)
@@ -138,16 +90,15 @@ internal static class GpuSheet
             R("Máximo (curva V/F)", "Clock máximo", tip: "O mais alto da curva de tensão e frequência da placa."),
             R("Video engine máx.", "Clock de vídeo", "máximo"),
             R("TDP (referência)", "TDP", "referência"),
-            R("Limite atual", "Limite de energia", tip: "O máximo que a placa pode puxar agora."),
-            R("Limite padrão da placa", "Limite padrão"),
+            // Limite atual igual ao padrão da placa (o caso comum, sem ajuste): uma linha só, com a nota "padrão"
+            V(d, "Limite padrão da placa") == V(d, "Limite atual")
+                ? R("Limite atual", "Limite de energia", "padrão", "O máximo que a placa pode puxar agora. É o padrão da placa.")
+                : R("Limite atual", "Limite de energia", tip: "O máximo que a placa pode puxar agora."),
+            V(d, "Limite padrão da placa") == V(d, "Limite atual") ? null : R("Limite padrão da placa", "Limite padrão"),
             R("Faixa ajustável"));
 
-        Group("Barramento",
-            R("Interface"),
-            livePcie || V(d, "Em uso agora") is not { } now ? null
-                : new GpuSpecRow("Em uso", now.Split(" (")[0], null, "Em repouso a conexão cai para economizar energia e volta ao máximo em jogo."),
-            R("Localização"));
-
+        // O driver antes do barramento: na ficha em 4 colunas cada grupo entra na coluna mais curta, e nessa ordem as colunas
+        // ficam com alturas parecidas (o driver, longo, vai para baixo da memória; o barramento e as tecnologias, curtos, completam as outras).
         Group(V(d, "BIOS (VBIOS)") != null ? "Driver e BIOS" : "Driver",
             R("Versão do driver", "Versão"),
             R("Data do driver", "Data"),
@@ -156,39 +107,17 @@ internal static class GpuSheet
             R("Versão CUDA", "CUDA"),
             R("Compute capability"));
 
+        Group("Barramento",
+            R("Interface"),
+            V(d, "Em uso agora") is not { } now ? null
+                : new GpuSpecRow("Em uso", now.Split(" (")[0], null, "Em repouso a conexão cai para economizar energia e volta ao máximo em jogo."),
+            R("Localização"));
+
         Group("Tecnologias",
             R("DirectX"),
             V(d, "APIs") is { } apis ? new GpuSpecRow("APIs", apis.Replace(" · ", ", ")) : null,
             V(d, "Recursos da arquitetura") is { } feats ? new GpuSpecRow("Recursos", feats.Replace(" · ", ", ")) : null);
 
         return groups;
-    }
-
-    /// <summary>Leituras do driver (NVML) com rótulos curtos; o consumo sobre o limite já está no instrumento de consumo.</summary>
-    public static List<GpuFact> Facts(GpuInfo g)
-    {
-        var facts = new List<GpuFact>();
-        foreach (var (key, value) in g.LiveExtras())
-        {
-            switch (key)
-            {
-                case "Estado de desempenho":
-                    facts.Add(new(key, value, false, "P0 é o desempenho máximo; números maiores são estados de economia."));
-                    break;
-                case "PerfCap (limitador)":
-                    bool warn = value.Contains("Térmico") || value.Contains("HW slowdown") || value.Contains("Power brake");
-                    facts.Add(new("Limitador do clock", value, warn, "O que o driver diz que está segurando o clock agora."));
-                    break;
-                case "Consumo / limite":
-                    break;
-                case "PCIe em uso":
-                    facts.Add(new(key, value, false, "Em repouso a conexão cai para economizar energia e volta ao máximo em jogo."));
-                    break;
-                default:
-                    facts.Add(new(key, value, false, null));
-                    break;
-            }
-        }
-        return facts;
     }
 }

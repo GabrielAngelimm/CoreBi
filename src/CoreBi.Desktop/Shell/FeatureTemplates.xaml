@@ -21,22 +21,30 @@
         </DrawingBrush.Drawing>
     </DrawingBrush>
 
-    <!-- Ficha técnica da placa de vídeo: uma linha chave/valor, com o fio em cima (como as linhas da ficha de Sistema).
-         Linhas da mesma altura; a nota curta ("referência") fica ao lado do valor, num tom abaixo. -->
+    <!-- Ficha técnica da placa de vídeo: uma linha chave/valor com a geometria da ficha de Sistema (fio em cima, chave 44 %,
+         vão de 16, valor 56 %, letra de 13,5) para as duas fichas lerem igual. O mouse acende o fundo, que avança 10 px para os
+         lados. A nota curta ("referência") fica ao lado do valor, num tom abaixo. -->
     <DataTemplate x:Key="GpuSpecRow">
-        <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,8" Background="Transparent" ToolTip="{Binding Tip}">
-            <Grid>
+        <Grid x:Name="host" Margin="-10,0" Background="Transparent" ToolTip="{Binding Tip}">
+            <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="{StaticResource RadiusControl}" Opacity="0"/>
+            <Border Height="1" VerticalAlignment="Top" Margin="10,0" Background="{DynamicResource Line}" SnapsToDevicePixels="True"/>
+            <Grid Margin="10,8" TextElement.FontSize="13.5">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="42*"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="58*"/>
+                    <ColumnDefinition Width="44*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="56*"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding Key}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis"/>
                 <TextBlock Grid.Column="2" TextWrapping="Wrap" Typography.NumeralAlignment="Tabular">
                     <Run Text="{Binding Value, Mode=OneWay}" Foreground="{DynamicResource Fg}"/><Run Text="  "/><Run Text="{Binding Note, Mode=OneWay}" Foreground="{DynamicResource Muted}"/>
                 </TextBlock>
             </Grid>
-        </Border>
+        </Grid>
+        <DataTemplate.Triggers>
+            <Trigger SourceName="host" Property="IsMouseOver" Value="True">
+                <Setter TargetName="bg" Property="Opacity" Value="1"/>
+            </Trigger>
+        </DataTemplate.Triggers>
     </DataTemplate>
 
     <!-- Ficha técnica da placa de vídeo: um grupo (título de grupo e as linhas) -->

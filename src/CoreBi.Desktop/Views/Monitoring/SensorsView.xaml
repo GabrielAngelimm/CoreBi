@@ -1,7 +1,9 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.SensorsView" xmlns:local="clr-namespace:CoreBi.Desktop" xmlns:inv="clr-namespace:CoreBi.Desktop.Features.Monitoring.Inventory">
     <UserControl.Resources>
-        <!-- Cabeçalho das colunas de um grupo: miúdo e um tom abaixo, alinhado com os números (à direita) -->
+        <!-- Cabeçalho das colunas de um grupo: miúdo e um tom abaixo, alinhado com os números (à direita). Na faixa de 31 px a tinta
+             das maiúsculas ficava 10 px abaixo do fio de cima e 12 acima do de baixo; desce 1 para ficar 11 e 11. -->
         <Style x:Key="ColHead" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,1,0,-1" />
             <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="{DynamicResource Faint}" />
@@ -134,14 +136,14 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Cabeçalho de componente em duas faixas, de altura fixa (80 + 32), cada uma num tom: em cima, no tom mais forte, o nome em
+        <!-- Cabeçalho de componente em duas faixas, de altura fixa (90 + 32), cada uma num tom: em cima, no tom mais forte, o nome em
              destaque com o tipo e a quantidade de sensores embaixo; logo abaixo, num tom intermediário, os nomes das colunas. Os
              sensores ficam no fundo do cartão, o mais claro dos três. É o mesmo modelo no começo de cada
              bloco e no cabeçalho fixo do topo da rolagem, para a troca não dar salto. -->
         <DataTemplate x:Key="ComponentHeader">
             <StackPanel>
                 <!-- Fundo claro na cor do componente, uniforme, como a placa de Sistema -->
-                <Border Height="80" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True">
+                <Border Height="90" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True">
                     <Grid>
                     <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="{Binding Tone}" Margin="0,0,-12,0" />
                     <Grid Margin="24,0,18,0">
@@ -149,7 +151,9 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel VerticalAlignment="Center">
+                        <!-- Nome e tipo com o mesmo respiro dos quatro lados: 24 da borda até a tinta em cima, embaixo e à esquerda (90 de
+                             altura; centrado, o bloco ficava 1 px baixo, porque a DIN tem mais folga embaixo, daí os 2 de margem no pé) -->
+                        <StackPanel VerticalAlignment="Center" Margin="0,0,0,2">
                             <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="23" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                             <TextBlock FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" Typography.NumeralAlignment="Tabular">
                                 <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
@@ -299,10 +303,10 @@
                  pelo seguinte, conforme a rolagem (ver SensorsView.UpdateSticky). -->
             <!-- Esqueleto: cabeçalho do componente, a faixa de colunas e os grupos em duas metades, com as linhas de 32 -->
             <Border x:Name="SensorCard" Grid.Row="1" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SensorCard_SizeChanged"
-                    local:Skeleton.Layout="gap 18; row 26: - 24, h 280^18, - *, c 12^8, - 30; gap 4; row 18: - 24, c 70, - 12, c 70, - *; gap 14; line; row 31: - 24, - *, c 74@0.4>, c 74@0.36>, c 74@0.48>, c 74@0.42>, - 45, - *, c 74@0.4>, c 74@0.36>, c 74@0.48>, c 74@0.42>, - 24; line; gap 12; col 0 50%; row 30: - 24, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 2 32: - 24, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 22; gap 18; row 30: - 24, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 32: - 24, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 22; col 50% 50%; row 30: - 23, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 32: - 23, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 24; end">
+                    local:Skeleton.Layout="gap 23; row 26: - 24, h 280^18, - *, c 12^8, - 30; gap 4; row 18: - 24, c 70, - 12, c 70, - *; gap 19; line; row 31: - 24, - *, c 74@0.4>, c 74@0.36>, c 74@0.48>, c 74@0.42>, - 45, - *, c 74@0.4>, c 74@0.36>, c 74@0.48>, c 74@0.42>, - 24; line; gap 12; col 0 50%; row 30: - 24, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 2 32: - 24, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 22; gap 18; row 30: - 24, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 32: - 24, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 22; col 50% 50%; row 30: - 23, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 32: - 23, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 24; end">
                 <Grid>
                     <ScrollViewer x:Name="SensorScroll" VerticalScrollBarVisibility="Auto" ScrollChanged="SensorScroll_ScrollChanged">
-                        <!-- A barra de rolagem começa abaixo do cabeçalho fixo (112 = 80 + 32) para o cabeçalho nunca cobrir a barra. O
+                        <!-- A barra de rolagem começa abaixo do cabeçalho fixo (122 = 90 + 32) para o cabeçalho nunca cobrir a barra. O
                              conteúdo ocupa a largura toda e a barra passa por cima da margem direita (24 px): assim os cabeçalhos
                              de cada bloco terminam na mesma borda do cabeçalho fixo, com ou sem barra. -->
                         <ScrollViewer.Template>
@@ -313,7 +317,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" Grid.ColumnSpan="2" CanContentScroll="{TemplateBinding CanContentScroll}" />
-                                    <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Margin="0,116,2,4" Orientation="Vertical" Value="{TemplateBinding VerticalOffset}" Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+                                    <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1" Margin="0,126,2,4" Orientation="Vertical" Value="{TemplateBinding VerticalOffset}" Maximum="{TemplateBinding ScrollableHeight}" ViewportSize="{TemplateBinding ViewportHeight}" Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
                                 </Grid>
                             </ControlTemplate>
                         </ScrollViewer.Template>
@@ -331,7 +335,7 @@
                         </Grid.RenderTransform>
                         <!-- Fundo das duas faixas na largura toda; a barra de rolagem começa abaixo delas (modelo da rolagem acima), então nada fica escondido -->
                         <StackPanel>
-                            <Border Height="80" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" />
+                            <Border Height="90" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" />
                             <Border Height="32" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" SnapsToDevicePixels="True" />
                         </StackPanel>
                         <ContentControl x:Name="StickyHeader" ContentTemplate="{StaticResource ComponentHeader}" Focusable="False" />
