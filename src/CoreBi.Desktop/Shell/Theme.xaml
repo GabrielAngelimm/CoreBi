@@ -85,8 +85,8 @@
     <!-- ===================== Forma ===================== -->
     <!-- Raios por hierarquia: painel > poço > controle > selo. Pílulas (filtros) são inteiramente redondas. -->
     <CornerRadius x:Key="RadiusPanel">16</CornerRadius>
-    <CornerRadius x:Key="RadiusInset">12</CornerRadius>
-    <CornerRadius x:Key="RadiusControl">10</CornerRadius>
+    <CornerRadius x:Key="RadiusInset">14</CornerRadius>
+    <CornerRadius x:Key="RadiusControl">12</CornerRadius>
     <CornerRadius x:Key="RadiusSmall">6</CornerRadius>
     <!-- Faixas presas à borda de um painel (a placa da Placa de vídeo, o pé do Gargalo): o raio do painel menos o fio -->
     <CornerRadius x:Key="RadiusPanelTop">15,15,0,0</CornerRadius>
@@ -267,7 +267,7 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Border Margin="-3" BorderBrush="{DynamicResource Focus}" BorderThickness="2" CornerRadius="13" SnapsToDevicePixels="True"/>
+                    <Border Margin="-3" BorderBrush="{DynamicResource Focus}" BorderThickness="2" CornerRadius="15" SnapsToDevicePixels="True"/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -907,7 +907,7 @@
     <!-- Trilho da navegação: um destaque só, tingido de sinal, que desliza até a página aberta -->
     <Style x:Key="NavRail" TargetType="local:SlidingSelectionPanel">
         <Setter Property="Highlight" Value="{DynamicResource NavSel}"/>
-        <Setter Property="HighlightRadius" Value="10"/>
+        <Setter Property="HighlightRadius" Value="12"/>
     </Style>
 
     <Style x:Key="NavHeader" TargetType="TextBlock">
