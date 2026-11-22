@@ -120,24 +120,13 @@ public static class PageMotion
     }
 
     /// <summary>
-    /// Leituras ao vivo de uma página (instrumentos, gráfico do consumo, tensões): a cada volta elas apagam durante a entrada e, logo
-    /// depois dela, recebem a leitura nova e acendem em 280 ms. Antes, o tique trocava os valores da visita anterior de uma vez, no
-    /// meio ou logo depois do movimento, e a página parecia saltar.
+    /// Leituras ao vivo de uma página (instrumentos, gráfico do consumo, tensões): a leitura nova entra no instante em que a página
+    /// aparece, antes do primeiro quadro, e sobe junto com os outros cartões na mesma cascata. Antes, o tique trocava os valores da
+    /// visita anterior de uma vez, logo depois do movimento, e só aquela área parecia saltar.
     /// </summary>
-    public static void RevealLive(FrameworkElement page, Action sample, params UIElement[] live)
+    public static void RevealLive(FrameworkElement page, Action sample)
     {
-        page.IsVisibleChanged += (_, _) =>
-        {
-            if (!page.IsVisible) return;
-            if (!Animate) { sample(); return; }
-            foreach (var e in live) e.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, TimeSpan.Zero));
-            AfterEntrance(page, () =>
-            {
-                if (page.IsVisible) sample();
-                var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-                foreach (var e in live) e.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(280)) { EasingFunction = ease });
-            });
-        };
+        page.IsVisibleChanged += (_, _) => { if (page.IsVisible) sample(); };
     }
 
     /// <summary>

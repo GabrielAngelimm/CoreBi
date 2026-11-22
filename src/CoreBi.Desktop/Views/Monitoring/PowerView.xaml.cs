@@ -79,8 +79,8 @@ public partial class PowerView : UserControl
     public PowerView()
     {
         InitializeComponent();
-        // Consumo ao vivo e tensões: apagam na entrada e acendem com a leitura nova logo depois (o tique pula a entrada)
-        PageMotion.RevealLive(this, () => { if (_context != null) ShowLive(); }, (UIElement)PowerCard.Child, RailRows, VoltRows);
+        // Consumo ao vivo e tensões: a leitura nova entra com a página, antes do primeiro quadro (o tique pula a entrada)
+        PageMotion.RevealLive(this, () => { if (_context != null) ShowLive(); });
     }
 
     internal void Initialize(FeatureContext context)

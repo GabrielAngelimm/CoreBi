@@ -22,8 +22,8 @@ public partial class GraphicsView : UserControl
         InitializeComponent();
         Skeleton.Set(true, GpuPlateCard, GpuSpecCard); // até a leitura da placa de vídeo, logo depois de o CoreBi abrir
         SizeChanged += (_, _) => FitColumns();
-        // Instrumentos e faixa do driver: apagam na entrada e acendem com a leitura nova logo depois (o tique pula a entrada)
-        PageMotion.RevealLive(this, () => { if (_selectedGpu != null) { SampleGpuBoard(); Ui.SetItems(GpuExtras, GpuSheet.Facts(_selectedGpu)); } }, GpuGauges, GpuExtras);
+        // Instrumentos e faixa do driver: a leitura nova entra com a página, antes do primeiro quadro (o tique pula a entrada)
+        PageMotion.RevealLive(this, () => { if (_selectedGpu != null) { SampleGpuBoard(); Ui.SetItems(GpuExtras, GpuSheet.Facts(_selectedGpu)); } });
         ((INotifyCollectionChanged)GpuSections.Items).CollectionChanged += (_, _) => FitColumns();
     }
 
