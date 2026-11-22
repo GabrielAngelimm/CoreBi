@@ -17,36 +17,57 @@ namespace CoreBi.Desktop.Features.Reports;
 /// <summary>Exporta o relatório completo do sistema em HTML, PDF (via Edge headless) ou JSON.</summary>
 internal static class ReportExportService
 {
-    public static async Task<string?> ExportInteractiveAsync(
+    /// <summary>Chaves das partes do diagnóstico na janela de exportação (as fichas usam as chaves de SystemSheets).</summary>
+    public const string Disks = "disks", Power = "power", Network = "network", Sensors = "sensors", Bench = "bench";
+
+    /// <summary>As partes que a janela oferece: as seis fichas, na ordem do relatório, e os blocos do diagnóstico.</summary>
+    public static (List<ReportPart> Sheets, List<ReportPart> Diagnostics) Parts(
+        FeatureContext context, (List<IndexItem> Index, Dictionary<string, Sheet> Sheets)? builtSheets, bool networkTested)
+    {
+        var sheets = new List<ReportPart>();
+        if (builtSheets is { } built)
+        {
+            foreach (var key in SystemReport.Order)
+            {
+                if (built.Index.FirstOrDefault(i => i.Key == key) is not { } item || !built.Sheets.ContainsKey(key)) continue;
+                sheets.Add(new ReportPart { Key = key, Title = item.Category, Caption = item.Name, Icon = item.Glyph, Channel = item.Channel, Tip = item.Tip });
+            }
+        }
+
+        int sensors = context.Sensors.Snapshot().Count;
+        int bench = context.Settings.BenchRecords.Count + context.Settings.BenchRuns.Count;
+        var diag = new List<ReportPart>
+        {
+            new() { Key = Disks, Title = "Saúde dos discos", Caption = "Vida útil, temperatura e erros", Icon = "storage", Channel = "Storage" },
+            new() { Key = Power, Title = "Bateria e energia", Caption = "Fonte, bateria e desgaste", Icon = "\uE7E8" },
+            new() { Key = Network, Title = "Teste de rede", Icon = "net", Channel = "Net", Available = networkTested,
+                    Caption = networkTested ? "O último teste desta sessão" : "Faça o teste em Rede antes" },
+            new() { Key = Sensors, Title = "Sensores", Icon = "\uE9D9", Available = sensors > 0,
+                    Caption = sensors > 0 ? $"{sensors} leituras, com mínimo e máximo" : "Nenhum sensor respondeu" },
+            new() { Key = Bench, Title = "Benchmarks e testes", Icon = "\uE8B9", Available = bench > 0,
+                    Caption = bench > 0 ? $"{bench} {(bench == 1 ? "resultado salvo" : "resultados salvos")}" : "Nenhum teste feito ainda" },
+        };
+        return (sheets, diag);
+    }
+
+    /// <summary>Gera o relatório com as partes escolhidas no arquivo escolhido; devolve o caminho salvo.</summary>
+    public static async Task<string> ExportAsync(
         FeatureContext context,
         (List<IndexItem> Index, Dictionary<string, Sheet> Sheets)? builtSheets,
         IReadOnlyList<InfoNode> systemNodes,
         IReadOnlyList<HealthCard>? networkResult,
+        ReportChoice choice,
         Action<string> onStatus)
     {
-        var dlg = new Microsoft.Win32.SaveFileDialog
-        {
-            Title = "Exportar relatório",
-            Filter = "Relatório para ler e imprimir (HTML)|*.html|Relatório em PDF (A4)|*.pdf|Dados (JSON)|*.json",
-            DefaultExt = ".html",
-            AddExtension = true,
-            FileName = $"CoreBi-{Environment.MachineName}-{DateTime.Now:yyyy-MM-dd-HHmm}",
-        };
-        if (dlg.ShowDialog(context.Owner) != true) return null;
-
-        string path = dlg.FileName;
-        string ext = Path.GetExtension(path).ToLowerInvariant();
-        // A extensão digitada manda; sem uma conhecida, vale o tipo escolhido na lista.
-        if (ext is not (".html" or ".htm" or ".pdf" or ".json"))
-        {
-            ext = dlg.FilterIndex switch { 2 => ".pdf", 3 => ".json", _ => ".html" };
-            path += ext;
-        }
-
-        onStatus(ext == ".pdf" ? "Gerando PDF…" : "Gerando relatório…");
+        string path = choice.Path;
+        string ext = choice.Format;
+        var parts = choice.Parts;
+        onStatus(ext == "pdf" ? "Gerando PDF…" : "Gerando relatório…");
 
         // Dados que vivem na interface são copiados aqui (thread da tela); a leitura dos discos roda em segundo plano.
+        // Só o que foi escolhido é lido: sem "Saúde dos discos", nem o SMART é consultado.
         var sensorsSnapshot = context.Sensors.Snapshot();
+        var index = builtSheets?.Index.Where(i => parts.Contains(i.Key)).ToList();
         var data = new ReportData
         {
             Date = DateTime.Now,
@@ -56,26 +77,39 @@ internal static class ReportExportService
             LogoBase64 = LoadLogoBase64("logo-dark.png"),
             LogoOnDarkBase64 = LoadLogoBase64("logo.png"),
             Dark = !ThemeManager.IsLight,
-            Sheets = builtSheets is { } built ? SystemReport.From(built.Index, built.Sheets) : new(),
-            System = systemNodes.Select(SystemReport.ToNode).Where(n => n != null).Cast<ReportNode>().ToList(),
-            Gpus = context.Gpus.Select(g => new ReportGpu(g.Name, g.Subtitle,
-                g.Sections.Select(SystemReport.ToNode).Where(n => n != null).Cast<ReportNode>().ToList())).ToList(),
-            Sensors = sensorsSnapshot.Select(s => new ReportSensor(s.Hardware, s.Category, s.Name, s.Value, s.Min, s.Max)).ToList(),
-            Benchmarks = BuildBenchList(context.Settings),
+            Sheets = builtSheets is { } built && index != null ? SystemReport.From(index, built.Sheets) : new(),
+            // A árvore bruta (só no JSON) acompanha as fichas; as placas de vídeo, a ficha delas
+            System = index is { Count: > 0 } ? systemNodes.Select(SystemReport.ToNode).Where(n => n != null).Cast<ReportNode>().ToList() : new(),
+            Gpus = parts.Contains(SystemSheets.Gpu)
+                ? context.Gpus.Select(g => new ReportGpu(g.Name, g.Subtitle,
+                    g.Sections.Select(SystemReport.ToNode).Where(n => n != null).Cast<ReportNode>().ToList())).ToList()
+                : new(),
+            Sensors = parts.Contains(Sensors)
+                ? sensorsSnapshot.Select(s => new ReportSensor(s.Hardware, s.Category, s.Name, s.Value, s.Min, s.Max)).ToList()
+                : new(),
+            Benchmarks = parts.Contains(Bench) ? BuildBenchList(context.Settings) : new(),
         };
 
-        var nvme = context.Sensors.NvmeLogs();
-        var disks = await Task.Run(() => DiskHealth.Read(sensorsSnapshot, nvme));
-        data.Disks.AddRange(disks.Select(d => new ReportFinding(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
-        var power = await Task.Run(() => BatteryInfo.Read(sensorsSnapshot));
-        data.Power.AddRange(power.Select(d => new ReportFinding(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
-        if (networkResult != null)
+        if (parts.Contains(Disks))
+        {
+            var nvme = context.Sensors.NvmeLogs();
+            var disks = await Task.Run(() => DiskHealth.Read(sensorsSnapshot, nvme));
+            data.Disks.AddRange(disks.Select(d => new ReportFinding(d.Title, d.Meta, d.VerdictText, d.Reasons, d.Metrics, ToneOf(d.Verdict))));
+        }
+        if (parts.Contains(Power))
+        {
+            var power = await Task.Run(() => BatteryInfo.Read(sensorsSnapshot));
+            data.Power.AddRange(power.Select(d => new ReportFinding(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
+        }
+        if (parts.Contains(Network) && networkResult != null)
             data.Network.AddRange(networkResult.Select(d => new ReportFinding(d.Title, d.Meta, d.VerdictText, string.Join(" ", d.Reasons), d.Metrics, ToneOf(d.Verdict))));
 
-        if (ext == ".pdf") await PdfPrinter.PrintAsync(ReportBuilder.Html(data), path, context.Lifetime);
-        else await File.WriteAllTextAsync(path, ext == ".json" ? ReportBuilder.Json(data) : ReportBuilder.Html(data), new UTF8Encoding(true), context.Lifetime);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        if (ext == "pdf") await PdfPrinter.PrintAsync(ReportBuilder.Html(data), path, context.Lifetime);
+        else await File.WriteAllTextAsync(path, ext == "json" ? ReportBuilder.Json(data) : ReportBuilder.Html(data), new UTF8Encoding(true), context.Lifetime);
 
-        try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); } catch { }
+        if (choice.Open)
+            try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); } catch { }
         return path;
     }
 

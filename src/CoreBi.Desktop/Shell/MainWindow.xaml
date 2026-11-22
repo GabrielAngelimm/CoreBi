@@ -293,6 +293,9 @@
                     </DockPanel>
                 </Border>
             </Grid>
+
+            <!-- ================= Exportar relatório: o que entra, formato e onde salvar ================= -->
+            <local:ReportDialog x:Name="ReportLayer" Grid.ColumnSpan="2" />
         </Grid>
     </Border>
 </Window>
