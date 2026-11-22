@@ -146,16 +146,19 @@
                     <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="{Binding Tone}" Margin="0,0,-12,0" />
                     <Grid Margin="24,0,18,0">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel VerticalAlignment="Center">
+                        <!-- O desenho do componente, sem fundo e na cor do canal, como na placa de vídeo, em Sistema e no índice ao lado -->
+                        <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Tone}" Kind="{Binding Glyph}" Width="36" Height="36" Margin="0,0,16,0" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="23" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                             <TextBlock FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" Typography.NumeralAlignment="Tabular">
                                 <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
                             </TextBlock>
                         </StackPanel>
-                        <Button x:Name="toggle" Grid.Column="1" Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="0" Margin="18,0,0,0" VerticalAlignment="Center" Click="Toggle_Click" ToolTip="Recolher" AutomationProperties.Name="Recolher ou expandir">
+                        <Button x:Name="toggle" Grid.Column="2" Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="0" Margin="18,0,0,0" VerticalAlignment="Center" Click="Toggle_Click" ToolTip="Recolher" AutomationProperties.Name="Recolher ou expandir">
                             <TextBlock x:Name="chev" Text="&#xE70E;" Style="{StaticResource IconGlyph}" FontSize="12" />
                         </Button>
                     </Grid>
@@ -299,7 +302,7 @@
                  pelo seguinte, conforme a rolagem (ver SensorsView.UpdateSticky). -->
             <!-- Esqueleto: cabeçalho do componente, a faixa de colunas e os grupos em duas metades, com as linhas de 32 -->
             <Border x:Name="SensorCard" Grid.Row="1" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SensorCard_SizeChanged"
-                    local:Skeleton.Layout="gap 18; row 26: - 24, h 280^18, - *, c 12^8, - 30; gap 4; row 18: - 24, c 70, - 12, c 70, - *; gap 14; line; row 31: - 24, - *, c 74@0.4>, c 74@0.36>, c 74@0.48>, c 74@0.42>, - 45, - *, c 74@0.4>, c 74@0.36>, c 74@0.48>, c 74@0.42>, - 24; line; gap 12; col 0 50%; row 30: - 24, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 2 32: - 24, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 22; gap 18; row 30: - 24, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 32: - 24, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 22; col 50% 50%; row 30: - 23, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 32: - 23, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 24; end">
+                    local:Skeleton.Layout="gap 18; col 24 36; gap 4; row 36: box 36^36; col 76 60%; row 26: h 280^18; gap 4; row 18: c 70, - 12, c 70, - *; end; gap 14; line; row 31: - 24, - *, c 74@0.4>, c 74@0.36>, c 74@0.48>, c 74@0.42>, - 45, - *, c 74@0.4>, c 74@0.36>, c 74@0.48>, c 74@0.42>, - 24; line; gap 12; col 0 50%; row 30: - 24, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 2 32: - 24, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 22; gap 18; row 30: - 24, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 32: - 24, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 22; col 50% 50%; row 30: - 23, c 3^16, - 9, s 44, - 8, c 28, - *; gap 4; lines 32: - 23, - 12, t *, s 74@0.6>, c 74@0.5>, c 74@0.5>, c 74@0.55>, - 24; end">
                 <Grid>
                     <ScrollViewer x:Name="SensorScroll" VerticalScrollBarVisibility="Auto" ScrollChanged="SensorScroll_ScrollChanged">
                         <!-- A barra de rolagem começa abaixo do cabeçalho fixo (112 = 80 + 32) para o cabeçalho nunca cobrir a barra. O
