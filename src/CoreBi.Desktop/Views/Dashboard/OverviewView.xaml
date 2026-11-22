@@ -92,22 +92,28 @@
                                 Leituras atuais por canal: o número grande e, embaixo, a marca e o nome do canal (a legenda do gráfico).
                                 Sem leitura o mostrador fica no travessão, e a dica diz por quê.
                             -->
-                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,12,0,14">
-                                <StackPanel Margin="0,0,56,0">
-                                    <TextBlock x:Name="DashChartValue" Text="—" Style="{StaticResource ReadoutHero}" />
-                                    <StackPanel Orientation="Horizontal" Margin="1,-2,0,0">
-                                        <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Cpu}" Margin="0,0,8,0" />
-                                        <TextBlock Text="Processador" Style="{StaticResource StatLabel}" />
-                                    </StackPanel>
+                            <!-- Grade: as duas legendas dividem a linha mesmo quando um lado está no travessão (de altura menor) -->
+                            <Grid DockPanel.Dock="Top" HorizontalAlignment="Left" Margin="0,12,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="96" />
+                                    <ColumnDefinition Width="56" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock x:Name="DashChartValue" Text="—" Style="{StaticResource ReadoutHero}" VerticalAlignment="Bottom" />
+                                <TextBlock x:Name="DashChartValue2" Grid.Column="2" Text="—" Style="{StaticResource ReadoutHero}" VerticalAlignment="Bottom" />
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="1,-2,0,0">
+                                    <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Cpu}" Margin="0,0,8,0" />
+                                    <TextBlock Text="Processador" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
-                                <StackPanel>
-                                    <TextBlock x:Name="DashChartValue2" Text="—" Style="{StaticResource ReadoutHero}" />
-                                    <StackPanel Orientation="Horizontal" Margin="1,-2,0,0">
-                                        <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Gpu}" Margin="0,0,8,0" />
-                                        <TextBlock Text="Placa de vídeo" Style="{StaticResource StatLabel}" />
-                                    </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Margin="1,-2,0,0">
+                                    <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Gpu}" Margin="0,0,8,0" />
+                                    <TextBlock Text="Placa de vídeo" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
-                            </StackPanel>
+                            </Grid>
                             <Canvas x:Name="DashChart" MinHeight="150" ClipToBounds="True" Background="Transparent" SizeChanged="DashChart_SizeChanged" MouseMove="DashChart_MouseMove" MouseLeave="DashChart_MouseLeave" />
                         </DockPanel>
                     </Border>

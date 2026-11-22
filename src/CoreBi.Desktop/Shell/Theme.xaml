@@ -815,12 +815,13 @@
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="GroupName" Value="Nav"/>
-        <Setter Property="Margin" Value="12,2"/>
+        <!-- 36 de altura e 38 de passo (eram 34 e 36): mais respiro, e o menu inteiro ainda cabe acima da central em 1920 × 1032 -->
+        <Setter Property="Margin" Value="12,1"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Grid Background="Transparent" Height="38">
+                    <Grid Background="Transparent" Height="36">
                         <Border x:Name="hover" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Hover}" Opacity="0"/>
                         <Border x:Name="sel" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource NavSel}" Opacity="0"/>
                         <Grid>

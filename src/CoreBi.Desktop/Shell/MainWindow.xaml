@@ -3,7 +3,7 @@
         <!-- Cabeçalho de grupo do menu, um pouco mais justo que o NavHeader padrão: com o aviso de sensores e a central à vista, os
              14 itens cabem sem rolar em 1920 × 1032 -->
         <Style x:Key="SideNavHeader" TargetType="TextBlock" BasedOn="{StaticResource NavHeader}">
-            <Setter Property="Margin" Value="24,14,0,4" />
+            <Setter Property="Margin" Value="24,12,0,4" />
         </Style>
         <!-- Central de monitoramento: a leitura do meio some sem sensor (nada de travessão sem rótulo), sem mudar a altura da linha;
              a fração da direita fica em travessão no tom Faint.
