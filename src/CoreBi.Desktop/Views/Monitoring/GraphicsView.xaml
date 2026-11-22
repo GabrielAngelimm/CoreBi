@@ -24,12 +24,16 @@
                             </Border.RenderTransform>
                         </Border>
                     </Grid>
-                    <TextBlock Text="{Binding Sub}" Style="{StaticResource StatSub}" Height="16" Margin="0,7,0,0" TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="sub" Text="{Binding Sub}" Style="{StaticResource StatSub}" Height="16" Margin="0,7,0,0" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
             </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding Unit}" Value="">
                     <Setter TargetName="gap" Property="Text" Value="" />
+                </DataTrigger>
+                <!-- Clock segurado pelo driver (calor ou proteção do hardware): só o aviso embaixo fica âmbar -->
+                <DataTrigger Binding="{Binding Tone}" Value="Warn">
+                    <Setter TargetName="sub" Property="Foreground" Value="{DynamicResource Warn}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Danger">
                     <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Danger}" />
@@ -38,20 +42,6 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Leitura do driver na faixa de baixo: rótulo em cima (DIN 12,5, tom secundário) e valor embaixo (Segoe 13,5), centrados
-             cada um numa célula de mesma largura (UniformGrid): os itens ficam distribuídos por igual na faixa, e um valor que muda
-             não empurra os vizinhos -->
-        <DataTemplate x:Key="FactCell">
-            <StackPanel HorizontalAlignment="Center" Margin="8,0" ToolTip="{Binding Tip}" Background="Transparent">
-                <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center" />
-                <TextBlock x:Name="value" Text="{Binding Value}" FontSize="13.5" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" HorizontalAlignment="Center" />
-            </StackPanel>
-            <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding Warn}" Value="True">
-                    <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Warn}" />
-                </DataTrigger>
-            </DataTemplate.Triggers>
-        </DataTemplate>
     </UserControl.Resources>
 
     <Grid Style="{StaticResource PageGrid}">
@@ -71,33 +61,19 @@
             </StackPanel>
         </local:PageHeaderPanel>
 
-        <!-- O painel ao vivo: numa faixa só, a identificação da placa à esquerda e as leituras ao vivo à direita (abaixo de 1500 px
-             de largura, as leituras descem para uma segunda linha, GraphicsView.FitColumns); embaixo, as leituras do driver. Os números
-             fixos da placa (memória, núcleos, clocks, limite) ficam só na ficha técnica. -->
+        <!-- O painel ao vivo: uma faixa só, com a identificação da placa à esquerda e as leituras ao vivo à direita (abaixo de 1500 px
+             de largura, as leituras descem para uma segunda linha, GraphicsView.FitColumns). Os números fixos da placa (memória,
+             núcleos, clocks, limite) ficam só na ficha técnica. As leituras de nicho do driver (estado P, controlador de memória,
+             NVENC/NVDEC, PCIe em uso) saíram; o limitador do clock só aparece quando segura a placa, sob o clock do núcleo. -->
         <!-- Esqueleto: o desenho, fabricante, nome e subtítulo, e as sete leituras com o medidor -->
         <Border x:Name="GpuPlateCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16"
-                local:Skeleton.Layout="gap 22; col 24 44; gap 22; row 44: box 44^44; col 88 22%; gap 4; row 16: c *@0.3; gap 4; row 38: h *@0.8^24; gap 4; row 18: t *@0.8; col 30% 68%; row 16: c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6; gap 4; row 38: n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26; gap 6; row 6: box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *; gap 7; row 16: c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7; end; gap 22; line; gap 14; row 16: - 24, c *@0.55, - 16, c *@0.55, - 16, c *@0.55, - 16, c *@0.55, - 16, c *@0.55, - 16, c *@0.55, - 24; gap 3; row 18: - 24, t *@0.35, - 16, t *@0.35, - 16, t *@0.35, - 16, t *@0.35, - 16, t *@0.35, - 16, t *@0.35, - 24; gap 16">
+                local:Skeleton.Layout="gap 28; col 28 44; gap 22; row 44: box 44^44; col 92 22%; gap 4; row 16: c *@0.3; gap 4; row 38: h *@0.8^24; gap 4; row 18: t *@0.8; col 30% 68%; row 16: c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6; gap 4; row 38: n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26; gap 6; row 6: box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *; gap 7; row 16: c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7; end; gap 28">
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <!-- Faixa da placa: fundo Selected com o fundo claro do canal Gpu e fio LineStrong, como a placa de Sistema -->
-                <Border Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}" CornerRadius="{StaticResource RadiusPanelTop}" ClipToBounds="True">
-                    <!-- O fio de baixo só existe quando há a faixa do driver embaixo (sem ela, ficaria colado na borda do cartão) -->
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="BorderThickness" Value="0" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding HasItems, ElementName=GpuExtras}" Value="True">
-                                    <Setter Property="BorderThickness" Value="0,0,0,1" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
+                <!-- Faixa da placa: fundo Selected com o fundo claro do canal Gpu, como a placa de Sistema, nos cantos do cartão -->
+                <Border Background="{DynamicResource Selected}" CornerRadius="{StaticResource RadiusPanel}" ClipToBounds="True">
                     <Grid>
-                        <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="Gpu" CornerRadius="{StaticResource RadiusPanelTop}" />
-                        <Grid x:Name="GpuBand" Margin="24,22" SizeChanged="GpuBand_SizeChanged">
+                        <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="Gpu" CornerRadius="{StaticResource RadiusPanel}" />
+                        <Grid x:Name="GpuBand" Margin="28,28" SizeChanged="GpuBand_SizeChanged">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition x:Name="GpuIdColumn" Width="Auto" />
@@ -127,15 +103,6 @@
                     </Grid>
                 </Border>
 
-                <!-- Leituras do driver (estado de desempenho, limitador...): a faixa só existe quando o driver as informa -->
-                <Border Grid.Row="1" Padding="24,14,24,16"
-                        Visibility="{Binding HasItems, ElementName=GpuExtras, Converter={StaticResource BoolVis}}">
-                    <ItemsControl x:Name="GpuExtras" ItemTemplate="{StaticResource FactCell}" VerticalAlignment="Center" Focusable="False">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                    </ItemsControl>
-                </Border>
             </Grid>
         </Border>
 

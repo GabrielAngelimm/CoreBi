@@ -4,7 +4,6 @@ namespace CoreBi.Desktop;
 
 public sealed record GpuSpecRow(string Key, string Value, string? Note = null, string? Tip = null);
 public sealed record GpuSpecGroup(string Title, IReadOnlyList<GpuSpecRow> Rows);
-public sealed record GpuFact(string Label, string Value, bool Warn, string? Tip);
 
 /// <summary>
 /// Ficha técnica da página Placa de vídeo, montada a partir das seções do motor (GpuInfoCollector): rótulos curtos, nenhuma linha
@@ -35,8 +34,7 @@ internal static class GpuSheet
         return V(d, "Tipo") is { } k && (k.StartsWith("GDDR") || k.StartsWith("HBM")) ? $"{size} {k}" : size;
     }
 
-    /// <summary>livePcie: o driver informa o link PCIe em uso ao vivo (faixa do driver no painel ao vivo), então a ficha não o repete.</summary>
-    public static List<GpuSpecGroup> Groups(GpuInfo g, Dictionary<string, string> d, bool livePcie)
+    public static List<GpuSpecGroup> Groups(GpuInfo g, Dictionary<string, string> d)
     {
         var groups = new List<GpuSpecGroup>();
         void Group(string title, params GpuSpecRow?[] rows)
@@ -111,7 +109,7 @@ internal static class GpuSheet
 
         Group("Barramento",
             R("Interface"),
-            livePcie || V(d, "Em uso agora") is not { } now ? null
+            V(d, "Em uso agora") is not { } now ? null
                 : new GpuSpecRow("Em uso", now.Split(" (")[0], null, "Em repouso a conexão cai para economizar energia e volta ao máximo em jogo."),
             R("Localização"));
 
@@ -121,33 +119,5 @@ internal static class GpuSheet
             V(d, "Recursos da arquitetura") is { } feats ? new GpuSpecRow("Recursos", feats.Replace(" · ", ", ")) : null);
 
         return groups;
-    }
-
-    /// <summary>Leituras do driver (NVML) com rótulos curtos; o consumo sobre o limite já está no instrumento de consumo.</summary>
-    public static List<GpuFact> Facts(GpuInfo g)
-    {
-        var facts = new List<GpuFact>();
-        foreach (var (key, value) in g.LiveExtras())
-        {
-            switch (key)
-            {
-                case "Estado de desempenho":
-                    facts.Add(new(key, value, false, "P0 é o desempenho máximo; números maiores são estados de economia."));
-                    break;
-                case "PerfCap (limitador)":
-                    bool warn = value.Contains("Térmico") || value.Contains("HW slowdown") || value.Contains("Power brake");
-                    facts.Add(new("Limitador do clock", value, warn, "O que o driver diz que está segurando o clock agora."));
-                    break;
-                case "Consumo / limite":
-                    break;
-                case "PCIe em uso":
-                    facts.Add(new(key, value, false, "Em repouso a conexão cai para economizar energia e volta ao máximo em jogo."));
-                    break;
-                default:
-                    facts.Add(new(key, value, false, null));
-                    break;
-            }
-        }
-        return facts;
     }
 }
