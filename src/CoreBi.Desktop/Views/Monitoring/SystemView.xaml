@@ -33,7 +33,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="face" Margin="4" CornerRadius="{StaticResource RadiusInset}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" SnapsToDevicePixels="True" Padding="12,12,14,12">
+                        <Border x:Name="face" Margin="6" CornerRadius="{StaticResource RadiusInset}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" SnapsToDevicePixels="True" Padding="12,12,14,12">
                             <DockPanel>
                                 <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Channel}" Kind="{Binding Glyph}" Width="32" Height="32" />
                                 <TextBlock x:Name="cat" Text="{Binding Category}" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,3,0,0" />
@@ -89,12 +89,13 @@
         </DataTemplate>
 
         <!-- Linha chave/valor: o fio fica sob o texto; o fundo do mouse avança 10 px para os lados. Clique copia o valor.
-             Tudo em texto: a explicação fica na dica; embaixo, em letra menor, só o que fazer numa linha âmbar. -->
+             Tudo em texto: a explicação fica na dica; embaixo, em letra menor, só o que fazer numa linha âmbar. A ficha é o
+             conteúdo da página, por isso em 13,5 (o corpo do app é 13), o mesmo degrau do subtítulo da página. -->
         <DataTemplate x:Key="SpecRowTemplate">
             <Grid x:Name="host" Margin="-10,0" Background="Transparent" Cursor="Hand" ToolTip="{Binding Hint}" MouseLeftButtonUp="SpecRow_Click">
                 <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="{StaticResource RadiusControl}" Opacity="0" />
                 <Border Height="1" VerticalAlignment="Top" Margin="10,0" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
-                <Grid Margin="10,8,8,8">
+                <Grid Margin="10,8,8,8" TextElement.FontSize="13.5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="44*" />
                         <ColumnDefinition Width="16" />
@@ -177,7 +178,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock x:Name="t" Text="{Binding Text}" FontFamily="{StaticResource LabelFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" Margin="0,0,14,6" ToolTip="Suportada" />
+                                <TextBlock x:Name="t" Text="{Binding Text}" FontFamily="{StaticResource LabelFont}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" Margin="0,0,14,6" ToolTip="Suportada" />
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding On}" Value="False">
                                         <Setter TargetName="t" Property="Foreground" Value="{DynamicResource Faint}" />
@@ -277,7 +278,8 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Leva às leituras ao vivo (outra página, por isso a seta): botão discreto logo depois do último grupo, com ícone de pulso -->
+        <!-- Leva às leituras ao vivo (outra página, por isso a seta): botão discreto no pé do painel, com ícone de pulso e a mesma face
+             das abas do índice (fundo do painel sobre a faixa um tom abaixo) -->
         <Style x:Key="SheetLink" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Foreground" Value="{DynamicResource Fg}" />
@@ -285,7 +287,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="face" CornerRadius="{StaticResource RadiusControl}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="Transparent" Padding="12,8,12,8" SnapsToDevicePixels="True">
+                        <Border x:Name="face" CornerRadius="{StaticResource RadiusControl}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" Padding="12,8,12,8" SnapsToDevicePixels="True">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE9D9;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Signal}" VerticalAlignment="Center" />
                                 <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource LabelFont}" FontSize="13.5" FontWeight="SemiBold" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="8,0,0,1" />
@@ -325,18 +327,19 @@
              de baixo pular a cada troca; as fichas longas (vários discos, quatro módulos de memória) rolam dentro dele. -->
         <!-- Esqueleto: as seis abas, a placa com as quatro leituras, os grupos em três colunas e o atalho no pé -->
         <Border x:Name="SheetCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SheetCard_SizeChanged"
-                local:Skeleton.Layout="gap 12; row 58: - 24, btn *^56, - 8, btn *^56, - 8, btn *^56, - 8, btn *^56, - 8, btn *^56, - 8, btn *^56, - 24; gap 11; line; gap 20; col 24 45%; row 18: c *@0.1; row 40: h *@0.42^24; gap 6; row 20: t *@0.5; col 72% 26%; gap 18; row 16: c *@0.55, - 24, c *@0.55, - 24, c *@0.55, - 24, c *@0.55; row 46: n *@0.5^30, - 24, n *@0.5^30, - 24, n *@0.6^30, - 24, n *@0.5^30; end; gap 20; line; gap 20; col 24 30.5%; row 22: s *@0.36; gap 6; lines 2 33: c 42%@0.55, t 58%@0.5; gap 24; row 22: s *@0.28; gap 6; lines 2 33: c 42%@0.55, t 58%@0.5; col 34.7% 30.5%; row 22: s *@0.3; gap 6; lines 6 33: c 42%@0.55, t 58%@0.5; col 67.9% 30.5%; row 22: s *@0.22; gap 6; lines 4 33: c 42%@0.55, t 58%@0.5; gap 24; row 22: s *@0.3; gap 6; row 30: c 40, - 14, c 30, - 14, c 34, - 14, c 36, - 14, c 50, - 14, c 50, - 14, c 38, - 14, c 44; end; foot 58: - 24, btn 400^34; footline">
+                local:Skeleton.Layout="gap 12; row 56: - 12, btn *^56, - 12, btn *^56, - 12, btn *^56, - 12, btn *^56, - 12, btn *^56, - 12, btn *^56, - 12; gap 11; line; gap 20; col 24 45%; row 18: c *@0.1; row 40: h *@0.42^24; gap 6; row 20: t *@0.5; col 72% 26%; gap 18; row 16: c *@0.55, - 24, c *@0.55, - 24, c *@0.55, - 24, c *@0.55; row 46: n *@0.5^30, - 24, n *@0.5^30, - 24, n *@0.6^30, - 24, n *@0.5^30; end; gap 20; line; gap 20; col 24 30.5%; row 22: s *@0.36; gap 6; lines 2 34: c 42%@0.55, t 58%@0.5; gap 24; row 22: s *@0.28; gap 6; lines 2 34: c 42%@0.55, t 58%@0.5; col 34.7% 30.5%; row 22: s *@0.3; gap 6; lines 6 34: c 42%@0.55, t 58%@0.5; col 67.9% 30.5%; row 22: s *@0.22; gap 6; lines 4 34: c 42%@0.55, t 58%@0.5; gap 24; row 22: s *@0.3; gap 6; row 30: c 40, - 14, c 30, - 14, c 34, - 14, c 36, - 14, c 50, - 14, c 50, - 14, c 38, - 14, c 44; end; foot 58: - 12, btn 400^34; footline">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <!-- Faixa do índice: tom intermediário (o mesmo da faixa de colunas de Sensores), para os botões se destacarem.
-                     20 + 4 da margem de cada aba = 24 nas laterais, a borda das abas alinha com a placa e a ficha (PanelPadding);
-                     em cima e embaixo fica 12 para a faixa não crescer, também na grade de 3 × 2 das janelas estreitas. -->
+                     6 da lista + 6 da margem de cada aba = 12 em todos os sentidos: da borda do painel às abas, em cima, embaixo e
+                     entre uma aba e outra, para o contorno das abas acompanhar o do painel. Também na grade de 3 × 2 das janelas
+                     estreitas. O atalho do pé repete os mesmos 12. -->
                 <Rectangle Fill="{DynamicResource Raised}" />
                 <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" />
-                <ListBox x:Name="SysIndex" ItemContainerStyle="{StaticResource IndexCell}" Margin="20,8" SelectionChanged="SysIndex_Changed"
+                <ListBox x:Name="SysIndex" ItemContainerStyle="{StaticResource IndexCell}" Margin="6" SelectionChanged="SysIndex_Changed"
                          KeyboardNavigation.DirectionalNavigation="Cycle">
                     <!-- Sem rolagem nem borda própria -->
                     <ListBox.Template>
@@ -400,8 +403,10 @@
                     </ScrollViewer>
 
                     <!-- Atalho para as leituras ao vivo: no pé do painel, à esquerda, no mesmo lugar em toda aba (o painel vai sempre até
-                         o pé da página), separado da ficha por um fio. A ficha rola por cima dele, nunca o empurra. -->
-                    <Border x:Name="SheetFooter" Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="24,12">
+                         o pé da página), separado da ficha por um fio. A ficha rola por cima dele, nunca o empurra. Faixa no mesmo tom
+                         da do índice e o botão a 12 da borda em cima, embaixo e à esquerda, como as abas: fecha o painel como a
+                         faixa de cima o abre. -->
+                    <Border x:Name="SheetFooter" Grid.Row="2" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="12">
                         <Button x:Name="SheetLink" Style="{StaticResource SheetLink}" HorizontalAlignment="Left" Click="SheetLink_Click" />
                     </Border>
                 </Grid>
