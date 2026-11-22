@@ -213,7 +213,7 @@
                     <Border x:Name="BnSideCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="0">
                         <DockPanel>
                             <!-- Esqueleto só no equilíbrio, que espera os nomes da CPU e da placa de vídeo: os dois nomes, a régua, as três marcas e a frase -->
-                            <Border x:Name="BnBalanceCard" DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="{StaticResource PanelPadding}"
+                            <Border x:Name="BnBalanceCard" DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="{StaticResource CardPadding}"
                                     Background="{DynamicResource Surface}" CornerRadius="{StaticResource RadiusPanelBottom}" local:Skeleton.Top="34"
                                     local:Skeleton.Layout="gap 10; row 18: t 45%@0.62, - 10%, t 45%@0.62&gt;; gap 10; row 24: box *^8; gap 4; row 16: c 20%@0.75, - 20%, c 20%@0.8, - 20%, c 20%@0.75&gt;; gap 14; row 20: t *@0.95; row 20: t *@0.55">
                                 <StackPanel>
@@ -250,7 +250,7 @@
                                 </StackPanel>
                             </Border>
                             <!-- Leituras em espaçamento fixo, de cima para baixo; a sobra fica entre elas e o equilíbrio, que fecha o painel -->
-                            <StackPanel Margin="24,20,24,14">
+                            <StackPanel Margin="24,16,24,14">
                                 <!-- Cabeçalho de 34 px (CardHeader); a legenda da marca de cada medidor fica à direita, como a de um gráfico -->
                                 <Grid Style="{StaticResource CardHeader}" Margin="0,0,0,10">
                                     <TextBlock Text="Leituras" Style="{StaticResource CardTitle}" />

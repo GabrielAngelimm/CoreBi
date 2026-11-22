@@ -134,7 +134,7 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <!-- Placa: o tempo decorrido de quanto à esquerda; à direita, na linha do rótulo, o estado (LED no sinal rodando, vermelho no corte) e o detalhe -->
-                            <Grid Margin="{StaticResource PanelPadding}">
+                            <Grid Margin="24,21,24,24">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -277,7 +277,7 @@
                             <RowDefinition Height="16" />
                             <RowDefinition Height="*" MinHeight="140" />
                         </Grid.RowDefinitions>
-                        <Border Style="{StaticResource CardBorder}">
+                        <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
                             <StackPanel>
                                 <StackPanel x:Name="StressDurationSection" Style="{StaticResource TestSection}">
                                     <TextBlock Text="Duração" Style="{StaticResource Label}" />

@@ -89,7 +89,7 @@
             </Border.RenderTransform>
             <DockPanel>
                 <!-- Título, fechar e uma frase só com o que fazer; o que fica de fora do relatório (séries, usuário) é a dica do título -->
-                <StackPanel DockPanel.Dock="Top" Margin="24,20,16,4">
+                <StackPanel DockPanel.Dock="Top" Margin="24,16,16,4">
                     <Grid Style="{StaticResource CardHeader}">
                         <TextBlock Text="Exportar relatório" Style="{StaticResource CardTitle}" Background="Transparent"
                                    ToolTip="Números de série e o nome do usuário ficam sempre de fora do relatório." />

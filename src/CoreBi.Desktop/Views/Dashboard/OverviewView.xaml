@@ -141,7 +141,7 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Style="{StaticResource CardBorder}" Margin="0,0,16,0">
+                                    <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}" Margin="0,0,16,0">
                                         <DockPanel>
                                             <Grid DockPanel.Dock="Top">
                                                 <Grid.ColumnDefinitions>
@@ -193,7 +193,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <Border x:Name="DashMemoryCard" Grid.Column="1" Style="{StaticResource CardBorder}">
+                        <Border x:Name="DashMemoryCard" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
