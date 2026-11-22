@@ -92,24 +92,26 @@
                                 Leituras atuais por canal: o número grande e, embaixo, a marca e o nome do canal (a legenda do gráfico).
                                 Sem leitura o mostrador fica no travessão, e a dica diz por quê.
                             -->
-                            <!-- Grade: as duas legendas dividem a linha mesmo quando um lado está no travessão (de altura menor) -->
-                            <Grid DockPanel.Dock="Top" HorizontalAlignment="Left" Margin="0,12,0,14">
+                            <!--
+                                Grade fixa: colunas de 200 e linha do número de 68, então trocar de métrica (°C, %, W) ou cair no
+                                travessão não move nada. Margens medidas na tinta: 28 px do título ao número e 28 da legenda ao gráfico.
+                            -->
+                            <Grid DockPanel.Dock="Top" HorizontalAlignment="Left" Margin="0,4,0,22">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" MinWidth="96" />
-                                    <ColumnDefinition Width="56" />
-                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="200" />
+                                    <ColumnDefinition Width="200" />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="68" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <TextBlock x:Name="DashChartValue" Text="—" Style="{StaticResource ReadoutHero}" VerticalAlignment="Bottom" />
-                                <TextBlock x:Name="DashChartValue2" Grid.Column="2" Text="—" Style="{StaticResource ReadoutHero}" VerticalAlignment="Bottom" />
+                                <TextBlock x:Name="DashChartValue2" Grid.Column="1" Text="—" Style="{StaticResource ReadoutHero}" VerticalAlignment="Bottom" />
                                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="1,-2,0,0">
                                     <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Cpu}" Margin="0,0,8,0" />
                                     <TextBlock Text="Processador" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
-                                <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Margin="1,-2,0,0">
+                                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="1,-2,0,0">
                                     <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Gpu}" Margin="0,0,8,0" />
                                     <TextBlock Text="Placa de vídeo" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
@@ -218,7 +220,8 @@
                                                             <TextBlock Text="{Binding Detail}" Style="{StaticResource StatSub}" />
                                                         </StackPanel>
                                                         <TextBlock Grid.Column="2" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="17" VerticalAlignment="Top" Margin="12,0,0,0" />
-                                                        <TextBlock Grid.Column="3" Text="&#xE76C;" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                                        <!-- Seta no meio da altura das maiúsculas da porcentagem (centrada na linha dupla ela ficava 10 px abaixo, medido) -->
+                                                        <TextBlock Grid.Column="3" Text="&#xE76C;" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Top" Margin="12,4,0,0" />
                                                     </Grid>
                                                 </Button>
                                             </DataTemplate>
@@ -260,12 +263,12 @@
 
                     <!--
                         Saúde do PC: cada item com o ícone do assunto (termômetro para os sensores, placa para os erros), que fica
-                        âmbar quando pede atenção, e o estado em texto curto com LED à direita do título. O atalho para os sensores
+                        âmbar quando pede atenção (o detalhe diz o quê). O atalho para os sensores
                         é o mesmo círculo dos outros cartões. Esqueleto abaixo do título até o registro de eventos do Windows
                         responder (lido fora da janela).
                     -->
                     <Border x:Name="DashHealthCard" Grid.Row="2" Style="{StaticResource CardBorder}" local:Skeleton.Top="34"
-                            local:Skeleton.Layout="gap 14; col 0 26; row 26: box 26; col 40; row 18: s *@0.45, c 64@0.8&gt;; row 17: c *@0.9; end; gap 14; col 0 26; row 26: box 26; col 40; row 18: s *@0.42, c 64@0.8&gt;; row 17: c *@0.85; end">
+                            local:Skeleton.Layout="gap 14; col 0 26; row 26: box 26; col 40; row 18: s *@0.45; row 17: c *@0.9; end; gap 14; col 0 26; row 26: box 26; col 40; row 18: s *@0.42; row 17: c *@0.85; end">
                         <StackPanel>
                             <Grid Height="34">
                                 <TextBlock Text="Saúde do PC" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
@@ -280,32 +283,14 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
                                             <local:HwIcon x:Name="icon" Style="{StaticResource ChannelIcon}" Kind="{Binding Icon}" Width="26" Height="26" Margin="0,-2,14,0" VerticalAlignment="Top" />
-                                            <Grid Grid.Column="1">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto" />
-                                                    <RowDefinition Height="Auto" />
-                                                </Grid.RowDefinitions>
+                                            <StackPanel Grid.Column="1">
                                                 <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                                <!-- Estado: LED e palavra curta, centrados na altura-x do título -->
-                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
-                                                    <Ellipse x:Name="led" Style="{StaticResource StatusLed}" Width="6" Height="6" Fill="{DynamicResource Warn}" Margin="0,1,7,0" />
-                                                    <TextBlock x:Name="state" Text="Atenção" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Warn}" />
-                                                </StackPanel>
-                                                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Detail}" Style="{StaticResource Caption}" Margin="0,3,0,0" />
-                                            </Grid>
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource Caption}" Margin="0,3,0,0" />
+                                            </StackPanel>
                                         </Grid>
                                         <DataTemplate.Triggers>
                                             <DataTrigger Binding="{Binding Ok}" Value="False">
                                                 <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource Warn}" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Ok}" Value="True">
-                                                <Setter TargetName="led" Property="Fill" Value="{DynamicResource Ok}" />
-                                                <Setter TargetName="state" Property="Text" Value="Normal" />
-                                                <Setter TargetName="state" Property="Foreground" Value="{DynamicResource Muted}" />
                                             </DataTrigger>
                                         </DataTemplate.Triggers>
                                     </DataTemplate>
