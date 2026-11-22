@@ -93,7 +93,7 @@ public partial class PowerView : UserControl
         _refreshing = true;
         _dirty = false;
         BtnEnergyRefresh.IsEnabled = false;
-        EnergyStatus.Text = "Lendo fonte e plano de energia…";
+        HeaderMotion.Say(EnergyStatus, null, "Lendo fonte e plano de energia…");
         bool first = Plan == null;
         if (first) Skeleton.Set(true, FeedCard, VoltCard, DaysCard); // primeira leitura: fonte, plano e histórico ainda vazios
         try
@@ -111,9 +111,9 @@ public partial class PowerView : UserControl
             ShowPlan(Plan);
             ShowHistory(History);
             ShowLive();
-            EnergyStatus.Text = $"Lido às {DateTime.Now:HH:mm}";
+            HeaderMotion.Say(EnergyStatus, null, $"Lido às {DateTime.Now:HH:mm}");
         }
-        catch (Exception ex) { if (!_context.IsClosing) EnergyStatus.Text = "Não foi possível ler a energia: " + ex.Message; }
+        catch (Exception ex) { if (!_context.IsClosing) HeaderMotion.Say(EnergyStatus, null, "Não foi possível ler a energia: " + ex.Message); }
         finally
         {
             _refreshing = false;
@@ -281,6 +281,7 @@ public partial class PowerView : UserControl
         if (_applyingPlan || _pendingPlan is not { } plan || Plan == null) return;
         _applyingPlan = true;
         PlanApply.IsEnabled = false;
+        HeaderMotion.Say(EnergyStatus, null, "Ativando o plano…");
         try
         {
             uint error = await Task.Run(() => PowerPlans.SetActive(plan.Id));
@@ -289,7 +290,7 @@ public partial class PowerView : UserControl
             Plan = await Task.Run(PowerPlans.Read);
             if (_context.IsClosing) return;
             ShowPlan(Plan);
-            EnergyStatus.Text = error == 0 ? $"Plano {PowerPlans.DisplayName(plan.Id, plan.Name)} ativado às {DateTime.Now:HH:mm}" : $"O Windows recusou a troca de plano (erro {error}).";
+            HeaderMotion.Say(EnergyStatus, null, error == 0 ? $"Plano {PowerPlans.DisplayName(plan.Id, plan.Name)} ativado às {DateTime.Now:HH:mm}" : $"O Windows recusou a troca de plano (erro {error}).");
         }
         finally { _applyingPlan = false; }
     }

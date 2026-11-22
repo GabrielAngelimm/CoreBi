@@ -16,15 +16,17 @@ internal static class ToolPage
     /// <summary>A tarefa parou sem terminar (erro, leitura sem etapas): o medidor apaga e fecha já.</summary>
     public static void EndProgress(Border fill) => HeaderMotion.EndProgress(fill);
 
-    /// <summary>Estado e detalhe da barra de ações; o texto inteiro fica na dica, porque a linha corta o que não cabe.</summary>
+    /// <summary>
+    /// Estado e detalhe da barra de ações, trocados com a transição de <see cref="HeaderMotion.Say"/> (a mensagem que termina em
+    /// reticências é a intermediária); o texto inteiro fica na dica, porque a linha corta o que não cabe.
+    /// </summary>
     public static void Say(TextBlock status, TextBlock detail, string text, string more = "")
     {
         // Só a primeira linha cabe no subtítulo; o resto (lista de falhas do Windows Update, por exemplo) fica na dica.
         string first = text.Split('\n')[0].Trim();
-        status.Text = first;
-        status.ToolTip = text.Contains('\n') || first.Length > 90 ? text : null;
-        detail.Text = more;
-        detail.ToolTip = more.Length > 50 ? more : null;
+        status.ToolTip = text.Contains('\n') || first.Length > 45 ? text : null;
+        HeaderMotion.Say(status, detail, first, more);
+        detail.ToolTip = more.Length > 28 ? more : null;
     }
 
     /// <summary>O cabeçalho de colunas recua a largura da barra de rolagem da lista, para as colunas ficarem alinhadas.</summary>

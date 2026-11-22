@@ -96,23 +96,24 @@ public partial class DriversView : UserControl
         _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
         try
         {
+            // Uma mensagem só durante a leitura inteira: o medidor conta as etapas, e o estado passa direto a "Lido às"
             DrvSet("Lendo drivers instalados…", 0);
             var inv = await Task.Run(DriverInventory.ListInstalled);
             ShowInventory(inv);
             Skeleton.SetActive(DrvTableCard, false);
-            DrvSet("Lendo placa de vídeo e placa-mãe…", 0.2);
+            DrvSet("Lendo drivers instalados…", 0.2);
             _drvGpus = await Task.Run(DriverInventory.ReadGpus);
             _drvBoardInfo = await Task.Run(DriverInventory.ReadBoard);
             ShowBoard();
             Skeleton.SetActive(DrvBoardCard, false);
-            DrvSet("Lendo placa de vídeo e placa-mãe…", 0.4);
+            DrvSet("Lendo drivers instalados…", 0.4);
 
             bool studio = DrvStudio.IsChecked == true;
             int i = 0;
             foreach (var g in _drvGpus)
             {
                 double at = 0.4 + 0.6 * i / Math.Max(1, _drvGpus.Count);
-                if (g.Vendor is "NVIDIA" or "AMD") DrvSet($"Consultando a {g.Vendor}…", at, g.GpuName);
+                if (g.Vendor is "NVIDIA" or "AMD") DrvSet("Lendo drivers instalados…", at);
                 await GpuDriverLookup.CheckAsync(g, studio, _drvCts.Token);
                 i++;
             }
@@ -298,14 +299,15 @@ public partial class DriversView : UserControl
     {
         if (_drvBusy) return;
         DrvBusy(true);
-        DrvSet("Procurando no Windows Update…", 0, "pode levar 1 minuto");
+        // Sem etapas para contar, o medidor não abre: só o estado, que passa de "Procurando…" ao resultado
+        DrvSet("Procurando no Windows Update…", null, "pode levar 1 minuto");
         try
         {
             _drvWu = await WindowsUpdateService.SearchAsync();
             DrvWuList.Text = "Nenhum driver novo.";
             ShowWu();
             DrvSet(_drvWu.Count == 0 ? "Nenhum driver novo no Windows Update"
-                 : _drvWu.Count == 1 ? "1 driver no Windows Update" : $"{_drvWu.Count} drivers no Windows Update", 1);
+                 : _drvWu.Count == 1 ? "1 driver no Windows Update" : $"{_drvWu.Count} drivers no Windows Update");
         }
         catch (Exception ex)
         {
@@ -329,11 +331,11 @@ public partial class DriversView : UserControl
         if (MessageBox.Show(_context.Owner, $"Instalar {what} do Windows Update? Pode ser preciso reiniciar.", "Drivers",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         DrvBusy(true);
-        DrvSet("Baixando drivers do Windows Update…", 0);
+        DrvSet("Baixando drivers do Windows Update…");
         try
         {
             string r = await WindowsUpdateService.InstallAsync(_drvWu, t => Dispatcher.BeginInvoke(new Action(() => DrvSet(t))));
-            DrvSet(r, 1);
+            DrvSet(r);
             _drvWu = new();
             ShowWu();
             DrvWuList.Text = r;
@@ -351,11 +353,11 @@ public partial class DriversView : UserControl
         if (_drvBusy) return;
         DrvBusy(true);
         _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
-        DrvSet("Exportando drivers…", 0);
+        DrvSet("Fazendo backup dos drivers…");
         try
         {
-            string r = await DriverBackup.ExportAsync(t => Dispatcher.BeginInvoke(new Action(() => DrvSet(t))), _drvCts.Token);
-            DrvSet(r, 1);
+            string r = await DriverBackup.ExportAsync(_ => { }, _drvCts.Token);
+            DrvSet(r);
         }
         catch (Exception ex) { DrvFail("Não foi possível fazer o backup", ex.Message); }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }

@@ -14,7 +14,9 @@ namespace CoreBi.Desktop;
 /// e a porcentagem conta junto com ela, quadro a quadro; ao chegar a 100 % ele fica cheio por um instante e então apaga e
 /// fecha a largura (300 ms), sem empurrar os botões, que ficam rentes à direita. Uma etapa nova que chega no meio da abertura não
 /// reinicia nada, e uma tarefa nova que começa enquanto ele fecha o faz voltar dali mesmo, sem saltar;</item>
-/// <item>um botão que troca de texto ou de cor (<see cref="Soften"/>) acende em 180 ms.</item>
+/// <item>um botão que troca de texto ou de cor (<see cref="Soften"/>) acende em 180 ms;</item>
+/// <item>o estado de uma tarefa (<see cref="Say"/>) passa da mensagem intermediária para a final numa troca suave, e a intermediária
+/// fica o bastante na tela para ser lida.</item>
 /// </list>
 /// Com "Mostrar animações no Windows" desligado tudo vai direto ao valor final.
 /// </summary>
@@ -53,7 +55,7 @@ public static class HeaderMotion
 
     private static void TextChanged(object? sender, EventArgs e)
     {
-        if (sender is not TextBlock text || string.IsNullOrEmpty(text.Text) || !Animate || !text.IsVisible) return;
+        if (_quiet || sender is not TextBlock text || string.IsNullOrEmpty(text.Text) || !Animate || !text.IsVisible) return;
         // Texto que muda várias vezes por segundo (o andamento do teste de rede) não acende a cada troca: piscaria
         long now = Environment.TickCount64;
         long last = (long)text.GetValue(SoftAtProperty);
@@ -68,6 +70,112 @@ public static class HeaderMotion
     {
         if (!Animate || !element.IsVisible) return;
         element.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0.6, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = EaseOut });
+    }
+
+    // ---------------- Mensagens: a intermediária vira a final ----------------
+
+    private sealed class Line
+    {
+        public long BusyAt;
+        public bool Busy;
+        public int Generation;
+        public bool Swapping;
+        public long SwapAt;
+        public string Text = "", More = "";
+        public System.Windows.Threading.DispatcherTimer? Timer;
+    }
+
+    private static readonly ConditionalWeakTable<TextBlock, Line> Lines = new();
+    private static readonly TimeSpan MinBusy = TimeSpan.FromMilliseconds(900);
+    private static readonly TimeSpan FadeOut = TimeSpan.FromMilliseconds(130);
+    private static readonly TimeSpan FadeIn = TimeSpan.FromMilliseconds(240);
+    private static bool _quiet;
+
+    /// <summary>
+    /// Troca o estado (e o detalhe ao lado) com uma transição: o texto atual apaga, o novo entra subindo 4 px e acendendo.
+    /// Uma mensagem intermediária ("Lendo drivers…", que termina em reticências) fica pelo menos 900 ms na tela: a final que chega
+    /// antes disso espera a vez, para a leitura rápida não virar uma piscada de "Lendo…" seguida de "Lido às". Mensagens que chegam
+    /// no meio de uma troca só atualizam o texto que vai entrar; a mais nova manda.
+    /// </summary>
+    public static void Say(TextBlock status, TextBlock? detail, string text, string more = "", bool? busy = null)
+    {
+        var line = Lines.GetValue(status, _ => new Line { Text = status.Text, More = detail?.Text ?? "" });
+        bool isBusy = busy ?? text.EndsWith('…');
+        line.Generation++;
+        line.Timer?.Stop();
+        line.Timer = null;
+        long now = Environment.TickCount64;
+        if (!isBusy && line.Busy && Animate && status.IsVisible)
+        {
+            var wait = MinBusy - TimeSpan.FromMilliseconds(now - line.BusyAt);
+            if (wait > TimeSpan.FromMilliseconds(30))
+            {
+                int generation = line.Generation;
+                var timer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Normal, status.Dispatcher) { Interval = wait };
+                timer.Tick += (_, _) =>
+                {
+                    timer.Stop();
+                    if (generation != line.Generation) return;
+                    line.Timer = null;
+                    line.Busy = false;
+                    Swap(status, detail, line, text, more);
+                };
+                line.Timer = timer;
+                timer.Start();
+                return;
+            }
+        }
+        if (isBusy && (!line.Busy || line.Text != text)) line.BusyAt = now;
+        line.Busy = isBusy;
+        Swap(status, detail, line, text, more);
+    }
+
+    private static void Set(TextBlock status, TextBlock? detail, string text, string more)
+    {
+        _quiet = true;
+        try
+        {
+            status.Text = text;
+            if (detail != null) detail.Text = more;
+        }
+        finally { _quiet = false; }
+    }
+
+    private static void Swap(TextBlock status, TextBlock? detail, Line line, string text, string more)
+    {
+        bool same = line.Text == text && line.More == more;
+        line.Text = text;
+        line.More = more;
+        // A troca em andamento já vai pôr o texto mais novo (se outra animação a substituiu e ela não terminou, recomeça)
+        if (line.Swapping && Environment.TickCount64 - line.SwapAt < 400) return;
+        if (same && status.Text == text && (detail == null || detail.Text == more)) return;
+        if (!Animate || !status.IsVisible || string.IsNullOrEmpty(status.Text))
+        {
+            Set(status, detail, text, more);
+            if (Animate && status.IsVisible) Enter(status, detail);
+            return;
+        }
+        line.Swapping = true;
+        line.SwapAt = Environment.TickCount64;
+        var fade = new DoubleAnimation(0, FadeOut) { EasingFunction = EaseInOut };
+        fade.Completed += (_, _) =>
+        {
+            line.Swapping = false;
+            Set(status, detail, line.Text, line.More);
+            Enter(status, detail);
+        };
+        status.BeginAnimation(UIElement.OpacityProperty, fade);
+        if (detail != null && !string.IsNullOrEmpty(detail.Text)) detail.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, FadeOut) { EasingFunction = EaseInOut });
+    }
+
+    private static void Enter(TextBlock status, TextBlock? detail)
+    {
+        foreach (var t in detail != null ? new[] { status, detail } : new[] { status })
+        {
+            if (t.RenderTransform is not TranslateTransform shift || shift.IsFrozen) t.RenderTransform = shift = new TranslateTransform();
+            shift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(4, 0, FadeIn) { EasingFunction = EaseOut });
+            t.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, FadeIn) { EasingFunction = EaseOut });
+        }
     }
 
     // ---------------- Medidor de progresso ----------------

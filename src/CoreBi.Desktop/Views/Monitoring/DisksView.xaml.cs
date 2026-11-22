@@ -66,7 +66,7 @@ public partial class DisksView : UserControl
         if (_refreshing || _context == null || _context.IsClosing) return;
         _refreshing = true;
         BtnDiskRefresh.IsEnabled = false;
-        DiskHealthStatus.Text = "Lendo os discos…";
+        HeaderMotion.Say(DiskHealthStatus, null, "Lendo os discos…");
         bool first = _readAt == default;
         if (first) Skeleton.Set(true, DiskPlate, LifeCard, TempCard, OdoCard, CheckCard); // primeira leitura: a ficha ainda não tem disco
         try
@@ -91,13 +91,13 @@ public partial class DisksView : UserControl
             int bad = cards.Count(c => c.Verdict is HealthVerdict.Warning or HealthVerdict.Critical);
             int unknown = cards.Count(c => c.Verdict == HealthVerdict.Unknown);
             string read = $"Lido às {_readAt:HH:mm}.";
-            DiskHealthStatus.Text = cards.Count == 0 ? "Nenhum disco encontrado."
+            HeaderMotion.Say(DiskHealthStatus, null, cards.Count == 0 ? "Nenhum disco encontrado."
                 : bad > 0 ? $"{(bad == 1 ? "1 disco precisa" : $"{bad} discos precisam")} de atenção. {read}"
                 : unknown > 0 ? $"{(unknown == 1 ? "1 disco" : $"{unknown} discos")} sem dados de saúde. {read}"
-                : $"Lido às {_readAt:HH:mm}";
+                : $"Lido às {_readAt:HH:mm}");
             DiskPanel.Visibility = cards.Count == 0 ? Visibility.Hidden : Visibility.Visible;
         }
-        catch (Exception ex) { if (!_context.IsClosing) DiskHealthStatus.Text = "Não foi possível ler os discos: " + ex.Message; }
+        catch (Exception ex) { if (!_context.IsClosing) HeaderMotion.Say(DiskHealthStatus, null, "Não foi possível ler os discos: " + ex.Message); }
         finally
         {
             _refreshing = false;

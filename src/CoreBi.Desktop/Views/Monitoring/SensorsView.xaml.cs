@@ -33,6 +33,7 @@ public partial class SensorsView : UserControl
     private string _chipKeys = "";
     private string _indexKeys = "";
     private DateTime _since = DateTime.Now;
+    private long _noticeUntil;        // aviso de "Estatísticas zeradas" na barra: até quando a contagem de sensores espera
     private IReadOnlyList<IndexEntry> _index = Array.Empty<IndexEntry>();
     private IReadOnlyList<SensorComponent> _cards = Array.Empty<SensorComponent>();
     private bool _syncing;
@@ -137,7 +138,10 @@ public partial class SensorsView : UserControl
         if (_monitor is not { IsOpen: true }) return;
         var live = _monitor.Rows.Where(r => r.HasReading).ToList();
         int components = live.Select(SensorBoard.KeyOf).Distinct().Count();
-        StatusText.Text = $"{live.Count} sensores em {components} componentes · atualizado às {DateTime.Now:HH:mm:ss}";
+        string status = $"{live.Count} sensores em {components} componentes · atualizado às {DateTime.Now:HH:mm:ss}";
+        // Depois de zerar, o aviso fica uns segundos; a contagem volta com a troca suave e então segue trocando seco a cada segundo
+        if (_noticeUntil == 0) StatusText.Text = status;
+        else if (Environment.TickCount64 >= _noticeUntil) { _noticeUntil = 0; HeaderMotion.Say(StatusText, null, status); }
         if (IsVisible && live.Count != _builtRows) Rebuild();
     }
 
@@ -335,9 +339,12 @@ public partial class SensorsView : UserControl
 
     private void BtnSensorsReset_Click(object sender, RoutedEventArgs e)
     {
+        HeaderMotion.Say(StatusText, null, "Zerando mínimo, média e máximo…");
         _monitor?.ResetStats();
         _since = DateTime.Now;
         UpdateStatsNote();
+        HeaderMotion.Say(StatusText, null, $"Estatísticas zeradas às {_since:HH:mm:ss}");
+        _noticeUntil = Environment.TickCount64 + 3800; // 0,9 s do intermediário + uns 3 s para ler o aviso
     }
 
     private void Toggle_Click(object sender, RoutedEventArgs e)

@@ -89,7 +89,7 @@ public partial class NetworkView : UserControl
         if (_context == null || _context.IsClosing) return;
         if (_running) { _cancellation?.Cancel(); return; }
         using var workload = _context.Workloads.TryBegin(WorkloadOperations.Network);
-        if (workload == null) { NetStatus.Text = "Termine o outro teste antes."; NetDetail.Text = ""; return; }
+        if (workload == null) { Say("Termine o outro teste antes."); return; }
         _running = true;
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
         _cancellation = cancellation;
@@ -117,21 +117,20 @@ public partial class NetworkView : UserControl
                 cancellation.Token, () =>
                 {
                     attempt++;
-                    NetStatus.Text = "Tentando outro servidor";
+                    Say("Tentando outro servidor");
                     SetProgress(0, animate: false);
                 });
             if (_context.IsClosing) return;
             LastResult = new[] { result.Card };
             DisplayResult(result);
-            NetDetail.Text = "";
             if (result.InterruptedPhase != null)
             {
-                NetStatus.Text = result.RetryAfterUtc != null ? "Aguardando o servidor" : "Teste incompleto";
+                Say(result.RetryAfterUtc != null ? "Aguardando o servidor" : "Teste incompleto");
                 SetProgress(result.InterruptedFraction, animate: false);
             }
             else
             {
-                NetStatus.Text = $"Concluído às {result.TestedAt:HH:mm:ss}";
+                Say($"Concluído às {result.TestedAt:HH:mm:ss}");
                 ShowStages(NetworkPhase.Done);
                 SetProgress(1, animate: true);
                 completed = true;
@@ -158,10 +157,12 @@ public partial class NetworkView : UserControl
         }
     }
 
+    /// <summary>Estado da barra de ações, com a troca suave de <see cref="HeaderMotion.Say"/>.</summary>
+    private void Say(string status, string detail = "") => HeaderMotion.Say(NetStatus, NetDetail, status, detail);
+
     private void Reset(string status, string detail)
     {
-        NetStatus.Text = status;
-        NetDetail.Text = detail;
+        Say(status, detail);
         SetProgress(0, animate: false);
         DisplayResult(null);
         NetMeta.Text = "Sem resultado";
@@ -169,8 +170,7 @@ public partial class NetworkView : UserControl
 
     private void ShowProgress(NetworkProgress p)
     {
-        NetStatus.Text = p.Text;
-        NetDetail.Text = ""; // a etapa está escrita sobre a barra
+        Say(p.Text); // o detalhe fica vazio: a etapa está escrita sobre a barra
         ShowStages(p.Phase);
         SetProgress(p.Fraction, animate: true);
         // Leituras parciais: só o que já foi medido; o restante continua com travessão.

@@ -59,7 +59,6 @@
                             <TextBlock x:Name="DrvDetail" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
                             <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
                         </DockPanel>
-                        <TextBox x:Name="DrvSearch" Style="{StaticResource SearchField}" local:Ui.Placeholder="Buscar dispositivo ou fabricante" Margin="0,0,10,0" TextChanged="DrvSearch_TextChanged" />
                         <Button x:Name="BtnDrvBackup" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE74E;" Content="Fazer backup" Margin="0,0,10,0"
                                 Click="BtnDrvBackup_Click" ToolTip="Exporta os drivers de terceiros para Documentos\CoreBi-Drivers, para reinstalar depois de formatar." />
                         <Button x:Name="BtnDrvScan" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler drivers de novo" Click="BtnDrvScan_Click"
@@ -266,9 +265,16 @@
                             <!--
                                 O título fica na mesma linha de base do de "Placa de vídeo", ao lado: lá a linha de 36 começa a 20 da borda e o
                                 título (caixa de 24) fica centrado nela, 6 abaixo; aqui o padding é 20 e o título desce 6. A frase de explicação fica
-                                embaixo do título; a busca e o backup ficam na barra de ações do cabeçalho da página.
+                                embaixo do título. A busca filtra só esta tabela, então mora nela, à direita do título (no cabeçalho da página ela
+                                apertava a barra de ações, e o medidor abria em cima do subtítulo); o backup fica na barra de ações.
                             -->
                             <Grid Margin="8,0,8,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="DrvSearch" Grid.Column="1" Style="{StaticResource SearchField}" Width="280" VerticalAlignment="Top" Margin="16,0,0,0"
+                                         local:Ui.Placeholder="Buscar dispositivo ou fabricante" TextChanged="DrvSearch_TextChanged" />
                                 <StackPanel Margin="0,6,0,0">
                                     <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base (antes a contagem descia 1 px) -->
                                     <TextBlock Style="{StaticResource SectionTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis">
