@@ -287,7 +287,7 @@ public partial class DisksView : UserControl
     /// (cortada com reticências) e inteira na dica, com a do tamanho.
     /// </summary>
     /// <summary>Uma parte das frases da placa: ponto apagado entre as partes, chave em tom secundário e valor em tinta.</summary>
-    private static void PlatePart(TextBlock target, string key, string value)
+    private static void PlatePart(TextBlock target, string key, string value, string? swatch = null)
     {
         if (value.Length == 0) return;
         if (target.Inlines.Count > 0)
@@ -295,6 +295,13 @@ public partial class DisksView : UserControl
             var sep = new Run("   ·   ");
             sep.SetResourceReference(TextElement.ForegroundProperty, "Faint");
             target.Inlines.Add(sep);
+        }
+        if (swatch != null)
+        {
+            // Legenda da barra: um gomo da mesma cor e forma do que a parte acende (ou deixa apagado) logo acima
+            var chip = new Border { Width = 4, Height = 12, CornerRadius = new CornerRadius(1), Margin = new Thickness(0, 0, 8, -1) };
+            chip.SetResourceReference(Border.BackgroundProperty, swatch);
+            target.Inlines.Add(new InlineUIContainer(chip) { BaselineAlignment = BaselineAlignment.Center });
         }
         if (key.Length > 0) target.Inlines.Add(new Run(key + " "));
         var v = new Run(value);
@@ -343,9 +350,10 @@ public partial class DisksView : UserControl
         SpaceShare.Inlines.Clear();
         if (known)
         {
+            // Usado e livre como a legenda da barra (o gomo aceso e o apagado), e a capacidade fecha a frase
+            PlatePart(SpaceLine, "Usado", Gb(used), "Storage");
+            PlatePart(SpaceLine, "Livre", Gb(free), "PlateTrack");
             PlatePart(SpaceLine, "Capacidade", Gb(total));
-            PlatePart(SpaceLine, "Usado", Gb(used));
-            PlatePart(SpaceLine, "Livre", Gb(free));
             var share = new Run($"{(double)used / total * 100:0} %");
             share.SetResourceReference(TextElement.ForegroundProperty, "Fg");
             SpaceShare.Inlines.Add(share);
