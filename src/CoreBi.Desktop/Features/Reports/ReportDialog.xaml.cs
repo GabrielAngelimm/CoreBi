@@ -93,7 +93,7 @@ public partial class ReportDialog : UserControl
         _format = format is "pdf" or "json" ? format : "html";
     }
 
-    /// <summary>Resumo do rodapé, o texto dos atalhos de seção e se dá para exportar.</summary>
+    /// <summary>O texto dos atalhos de seção e se dá para exportar.</summary>
     private void Refresh()
     {
         int sheets = _sheets.Count(p => p.Included), diag = _diag.Count(p => p.Included);
@@ -103,12 +103,7 @@ public partial class ReportDialog : UserControl
 
         bool any = sheets + diag > 0;
         BtnExport.IsEnabled = any;
-        Summary.Text = !any ? "Escolha pelo menos uma parte."
-            : string.Join(" e ", new[]
-            {
-                sheets > 0 ? $"{sheets} {(sheets == 1 ? "ficha" : "fichas")}" : null,
-                diag > 0 ? $"{diag} {(diag == 1 ? "parte" : "partes")} do diagnóstico" : null,
-            }.Where(s => s != null)) + " no relatório";
+        BtnExport.ToolTip = any ? null : "Escolha pelo menos uma parte";
     }
 
     private void Export_Click(object sender, RoutedEventArgs e)
