@@ -84,10 +84,13 @@
 
     <!-- ===================== Forma ===================== -->
     <!-- Raios por hierarquia: painel > poço > controle > selo. Pílulas (filtros) são inteiramente redondas. -->
-    <CornerRadius x:Key="RadiusPanel">10</CornerRadius>
-    <CornerRadius x:Key="RadiusInset">8</CornerRadius>
-    <CornerRadius x:Key="RadiusControl">7</CornerRadius>
-    <CornerRadius x:Key="RadiusSmall">4</CornerRadius>
+    <CornerRadius x:Key="RadiusPanel">16</CornerRadius>
+    <CornerRadius x:Key="RadiusInset">12</CornerRadius>
+    <CornerRadius x:Key="RadiusControl">10</CornerRadius>
+    <CornerRadius x:Key="RadiusSmall">6</CornerRadius>
+    <!-- Faixas presas à borda de um painel (a placa da Placa de vídeo, o pé do Gargalo): o raio do painel menos o fio -->
+    <CornerRadius x:Key="RadiusPanelTop">15,15,0,0</CornerRadius>
+    <CornerRadius x:Key="RadiusPanelBottom">0,0,16,16</CornerRadius>
     <!-- Respiro padrão de um painel (24 nas laterais, 20 em cima e embaixo) -->
     <Thickness x:Key="PanelPadding">24,20</Thickness>
 
@@ -250,7 +253,7 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Border Margin="-3" BorderBrush="{DynamicResource Focus}" BorderThickness="2" CornerRadius="9" SnapsToDevicePixels="True"/>
+                    <Border Margin="-3" BorderBrush="{DynamicResource Focus}" BorderThickness="2" CornerRadius="13" SnapsToDevicePixels="True"/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -673,6 +676,49 @@
         </Setter>
     </Style>
 
+    <!--
+        Atalho de um cartão para a página dele (Visão geral): um círculo de 30 px com a seta, no canto do título. Discreto em
+        repouso (fio e seta no tom secundário); sob o mouse o fundo e o fio sobem e a seta acende no sinal. Sem transição: os cartões
+        de Processador e Placa de vídeo são refeitos a cada leitura, e uma animação de entrada recomeçaria a cada segundo.
+    -->
+    <Style x:Key="CardLink" TargetType="Button">
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="Content" Value="&#xE72A;"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="FontFamily" Value="{StaticResource Icons}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="root">
+                        <Border x:Name="b" CornerRadius="15" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Background="Transparent" SnapsToDevicePixels="True"/>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="root" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform Y="1"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Barra de título -->
     <Style x:Key="CaptionButton" TargetType="Button">
         <Setter Property="Width" Value="46"/>
@@ -769,17 +815,18 @@
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="GroupName" Value="Nav"/>
+        <!-- 36 de altura e 38 de passo (eram 34 e 36): mais respiro, e o menu inteiro ainda cabe acima da central em 1920 × 1032 -->
         <Setter Property="Margin" Value="12,1"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Grid Background="Transparent" Height="34">
+                    <Grid Background="Transparent" Height="36">
                         <Border x:Name="hover" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Hover}" Opacity="0"/>
                         <Border x:Name="sel" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource NavSel}" Opacity="0"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="34"/>
+                                <ColumnDefinition Width="40"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <local:HwIcon x:Name="ic" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
@@ -787,7 +834,8 @@
                             <local:HwIcon x:Name="icOn" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
                                           Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0,0,0"
                                           Foreground="{DynamicResource Signal}" Opacity="0"/>
-                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="4,1,8,0"/>
+                            <!-- A DIN assenta 1,5 px acima do centro da caixa: 3 px em cima a descem até o meio do ícone -->
+                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="2,3,8,0"/>
                         </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -845,7 +893,7 @@
     <!-- Trilho da navegação: um destaque só, tingido de sinal, que desliza até a página aberta -->
     <Style x:Key="NavRail" TargetType="local:SlidingSelectionPanel">
         <Setter Property="Highlight" Value="{DynamicResource NavSel}"/>
-        <Setter Property="HighlightRadius" Value="7"/>
+        <Setter Property="HighlightRadius" Value="10"/>
     </Style>
 
     <Style x:Key="NavHeader" TargetType="TextBlock">
@@ -863,7 +911,7 @@
         <Setter Property="Background" Value="{DynamicResource Bg}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusInset}"/>
+        <Setter Property="CornerRadius" Value="17"/>
         <Setter Property="Padding" Value="3"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -873,7 +921,7 @@
         <Setter Property="Orientation" Value="Horizontal"/>
         <Setter Property="Highlight" Value="{DynamicResource Selected}"/>
         <Setter Property="HighlightBorder" Value="{DynamicResource LineStrong}"/>
-        <Setter Property="HighlightRadius" Value="5"/>
+        <Setter Property="HighlightRadius" Value="14"/>
     </Style>
     <Style x:Key="Segment" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
@@ -884,7 +932,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="5" Padding="12,6,12,3" MinHeight="26">
+                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="12,6,12,3" MinHeight="26">
                         <Grid>
                             <!-- Cópia invisível em seminegrito: o segmento já nasce com a largura do escolhido, então marcar um não desloca os vizinhos -->
                             <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Visibility="Hidden" HorizontalAlignment="Center"/>

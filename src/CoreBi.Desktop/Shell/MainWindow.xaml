@@ -3,7 +3,7 @@
         <!-- Cabeçalho de grupo do menu, um pouco mais justo que o NavHeader padrão: com o aviso de sensores e a central à vista, os
              14 itens cabem sem rolar em 1920 × 1032 -->
         <Style x:Key="SideNavHeader" TargetType="TextBlock" BasedOn="{StaticResource NavHeader}">
-            <Setter Property="Margin" Value="24,14,0,4" />
+            <Setter Property="Margin" Value="24,12,0,4" />
         </Style>
         <!-- Central de monitoramento: a leitura do meio some sem sensor (nada de travessão sem rótulo), sem mudar a altura da linha;
              a fração da direita fica em travessão no tom Faint.
@@ -242,7 +242,7 @@
 
             <!-- ================= Paleta de comandos (Ctrl + K) ================= -->
             <Grid x:Name="PaletteLayer" Grid.ColumnSpan="2" Visibility="Collapsed" Background="{DynamicResource Scrim}" MouseLeftButtonDown="PaletteScrim_MouseDown">
-                <Border x:Name="PalettePanel" Width="580" VerticalAlignment="Top" Margin="0,84,0,0" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="12" MouseLeftButtonDown="PalettePanel_MouseDown">
+                <Border x:Name="PalettePanel" Width="580" VerticalAlignment="Top" Margin="0,84,0,0" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="{StaticResource RadiusPanel}" MouseLeftButtonDown="PalettePanel_MouseDown">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="48" ShadowDepth="14" Direction="270" Opacity="0.45" Color="#000000" />
                     </Border.Effect>
