@@ -24,17 +24,19 @@ internal static class GpuSheet
 
     private static string? V(Dictionary<string, string> d, string key) => d.TryGetValue(key, out var v) ? v : null;
 
-    /// <summary>Chip, arquitetura e fabricante da placa, numa frase curta; vazio se o banco de especificações não conhece a GPU.</summary>
-    public static string Subtitle(Dictionary<string, string> d, string? vendor = null)
+    /// <summary>
+    /// Frase curta sob o nome: a memória e o driver ("8 GB GDDR6 · driver 621.24"), o que se confere primeiro numa placa. Chip e
+    /// arquitetura ficam na ficha (na faixa ao vivo, a frase longa disputava espaço com as leituras). Vazia sem nenhum dos dois.
+    /// </summary>
+    public static string Subtitle(Dictionary<string, string> d)
     {
+        static string Head(string v) => v.Split(" (")[0];
         var parts = new List<string>();
-        if (V(d, "Chip") is { } chip) parts.Add($"chip {chip}");
-        if (V(d, "Arquitetura") is { } arch) parts.Add($"arquitetura {arch}");
-        // A fabricante do chip já está em cima do nome; a da placa só entra quando é outra (ASUS, MSI...), não "placa NVIDIA" de novo
-        if (V(d, "Fabricante da placa") is { } board && !string.Equals(board, vendor, StringComparison.OrdinalIgnoreCase)) parts.Add($"placa {board}");
-        if (parts.Count == 0) return "";
-        string s = string.Join(", ", parts);
-        return char.ToUpperInvariant(s[0]) + s[1..];
+        string? size = V(d, "Tamanho") is { } t ? Head(t) : null;
+        string? type = V(d, "Tipo") is { } k && (k.StartsWith("GDDR") || k.StartsWith("HBM")) ? k : null;
+        if (size != null) parts.Add(type != null ? $"{size} {type}" : size);
+        if (V(d, "Versão do driver") is { } drv) parts.Add($"driver {Head(drv)}");
+        return string.Join(" · ", parts);
     }
 
     /// <summary>livePcie: o driver informa o link PCIe em uso ao vivo (faixa do driver no painel ao vivo), então a ficha não o repete.</summary>

@@ -12,8 +12,9 @@
                     <TextBlock x:Name="value" Margin="0,4,0,0" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" TextTrimming="CharacterEllipsis">
                         <Run Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="32" FontWeight="Light" /><Run x:Name="gap" Text=" " FontFamily="{StaticResource LabelFont}" FontSize="18" /><Run Text="{Binding Unit, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" />
                     </TextBlock>
-                    <Grid Height="6" Margin="0,6,0,0" OpacityMask="{StaticResource SegmentMask}">
-                        <Border Background="{DynamicResource LineStrong}" />
+                    <!-- Trilho neutro (o texto em 14 %, que aparece nos dois temas sobre o fundo da faixa) e o preenchimento cheio no canal -->
+                    <Grid Height="8" Margin="0,7,0,0" OpacityMask="{StaticResource SegmentMask}">
+                        <Border Background="{DynamicResource Fg}" Opacity="0.14" />
                         <Border x:Name="meter" Background="{DynamicResource Gpu}" RenderTransformOrigin="0,0.5">
                             <Border.RenderTransform>
                                 <ScaleTransform ScaleX="{Binding Fraction}" />
@@ -39,12 +40,13 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Leitura do driver na faixa de baixo: rótulo (DIN 12,5) e valor (Segoe 13) como Runs de um TextBlock só, para dividirem a
-             linha de base (em dois TextBlocks centrados, o valor ficava 3 px abaixo do rótulo); três espaços de 13 px ≈ 10 px entre eles -->
+        <!-- Leitura do driver na faixa de baixo: rótulo em cima (DIN 12,5, tom secundário) e valor embaixo (Segoe 13,5), cada uma
+             numa célula de largura fixa (UniformGrid), para o valor mudar sem empurrar as vizinhas para o lado -->
         <DataTemplate x:Key="FactCell">
-            <TextBlock Margin="0,0,32,0" FontSize="13" Typography.NumeralAlignment="Tabular" ToolTip="{Binding Tip}" Background="Transparent">
-                <Run Text="{Binding Label, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" /><Run Text="   " /><Run x:Name="value" Text="{Binding Value, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
-            </TextBlock>
+            <StackPanel Margin="0,0,16,0" ToolTip="{Binding Tip}" Background="Transparent">
+                <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="value" Text="{Binding Value}" FontSize="13.5" Foreground="{DynamicResource Fg}" Typography.NumeralAlignment="Tabular" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
+            </StackPanel>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding Warn}" Value="True">
                     <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Warn}" />
@@ -75,7 +77,7 @@
              fixos da placa (memória, núcleos, clocks, limite) ficam só na ficha técnica. -->
         <!-- Esqueleto: o desenho, fabricante, nome e subtítulo, e as sete leituras com o medidor -->
         <Border x:Name="GpuPlateCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16"
-                local:Skeleton.Layout="gap 22; col 24 44; gap 22; row 44: box 44^44; col 88 22%; gap 4; row 16: c *@0.3; gap 4; row 38: h *@0.8^24; gap 4; row 18: t *@0.8; col 30% 68%; row 16: c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6; gap 4; row 38: n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26; gap 6; row 6: box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *; gap 7; row 16: c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7; end; gap 22; line; gap 14; row 18: - 24, c 140, - 32, c 120, - 32, c 150, - 32, c 110, - 32, c 110, - 32, c 120, - *">
+                local:Skeleton.Layout="gap 22; col 24 44; gap 22; row 44: box 44^44; col 88 22%; gap 4; row 16: c *@0.3; gap 4; row 38: h *@0.8^24; gap 4; row 18: t *@0.8; col 30% 68%; row 16: c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6; gap 4; row 38: n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26; gap 6; row 6: box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *; gap 7; row 16: c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7; end; gap 22; line; gap 14; row 16: - 24, c *@0.55, - 16, c *@0.55, - 16, c *@0.55, - 16, c *@0.55, - 16, c *@0.55, - 16, c *@0.55, - 24; gap 3; row 18: - 24, t *@0.35, - 16, t *@0.35, - 16, t *@0.35, - 16, t *@0.35, - 16, t *@0.35, - 16, t *@0.35, - 24; gap 16">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -127,11 +129,11 @@
                 </Border>
 
                 <!-- Leituras do driver (estado de desempenho, limitador...): a faixa só existe quando o driver as informa -->
-                <Border Grid.Row="1" Padding="24,14"
+                <Border Grid.Row="1" Padding="24,14,24,16"
                         Visibility="{Binding HasItems, ElementName=GpuExtras, Converter={StaticResource BoolVis}}">
                     <ItemsControl x:Name="GpuExtras" ItemTemplate="{StaticResource FactCell}" VerticalAlignment="Center" Focusable="False">
                         <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                            <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
                 </Border>
