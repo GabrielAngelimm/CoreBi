@@ -203,7 +203,7 @@ public partial class DisksView : UserControl
         TempLiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, live ? "Signal" : "Faint");
         TempTrace.Samples = trace?.Temps.ToList() ?? new List<float?>();
         double? peak = trace?.Peak ?? d.TemperatureMax;
-        if (peak is double pk) Readout(TempPeak, $"{pk:0}", "°C");
+        if (peak is double pk) Readout(TempPeak, $"{pk:0}", "°C", balanced: true);
         else { TempPeak.Inlines.Clear(); TempPeak.Text = "—"; }
         TempPeak.SetResourceReference(TextBlock.ForegroundProperty, peak != null ? "Fg" : "Faint");
         DiskActivity.Text = trace?.Read == null && trace?.Write == null ? "Sem sensor de atividade"
@@ -216,7 +216,8 @@ public partial class DisksView : UserControl
     /// </summary>
     private void ShowTempNow(double? now)
     {
-        if (now is double v) Readout(TempNow, $"{v:0}", "°C");
+        // balanced: um "°C" invisível antes do número, para o número (e não o conjunto) ficar no centro do terço, como "Ideal"
+        if (now is double v) Readout(TempNow, $"{v:0}", "°C", balanced: true);
         else { TempNow.Inlines.Clear(); TempNow.Text = "—"; }
         TempNow.SetResourceReference(TextBlock.ForegroundProperty, now != null ? "Fg" : "Faint");
     }
