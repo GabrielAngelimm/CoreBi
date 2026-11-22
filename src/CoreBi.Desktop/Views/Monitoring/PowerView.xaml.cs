@@ -384,7 +384,7 @@ public partial class PowerView : UserControl
         // Tomada ↔ bateria: a próxima visita (ou esta, se aberta) relê tudo
         var (ac, _, _) = PowerStatus.Line();
         if (Snapshot != null && ac != _lastAc) { _lastAc = ac; _dirty = true; }
-        if (!IsVisible) return;
+        if (!IsVisible || PageMotion.IsEntering(this)) return;
         if (_dirty && !_refreshing) _ = RefreshAsync();
         ShowLive();
     }

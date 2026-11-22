@@ -125,6 +125,13 @@ public static class PageMotion
     /// </summary>
     /// <summary>O mesmo que <see cref="AfterEntrance"/>, para esperar com await: a leitura corre durante a entrada e só o que
     /// mexe na tela espera ela terminar.</summary>
+    /// <summary>
+    /// A página ainda está entrando (deslocamento e cascata dos painéis, ~450 ms): o tique de 1 s pula o redesenho dela nesse
+    /// intervalo, para um gráfico refeito não cair no meio do movimento (a amostra continua sendo guardada).
+    /// </summary>
+    public static bool IsEntering(FrameworkElement page) =>
+        Animate && Environment.TickCount64 - (long)page.GetValue(EnteredAtProperty) < 450;
+
     public static Task EntranceDone(FrameworkElement page)
     {
         var done = new TaskCompletionSource();

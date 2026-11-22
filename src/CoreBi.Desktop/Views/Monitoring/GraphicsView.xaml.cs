@@ -22,6 +22,9 @@ public partial class GraphicsView : UserControl
         InitializeComponent();
         Skeleton.Set(true, GpuPlateCard, GpuSpecCard); // até a leitura da placa de vídeo, logo depois de o CoreBi abrir
         SizeChanged += (_, _) => FitColumns();
+        // Ao voltar, os instrumentos ficaram com a última leitura da visita anterior: a leitura nova entra logo depois da entrada,
+        // sem esperar o tique (que pula a entrada)
+        IsVisibleChanged += (_, _) => { if (IsVisible) PageMotion.AfterEntrance(this, () => { if (IsVisible) SampleGpuBoard(); }); };
         ((INotifyCollectionChanged)GpuSections.Items).CollectionChanged += (_, _) => FitColumns();
     }
 
@@ -83,7 +86,7 @@ public partial class GraphicsView : UserControl
     internal void Tick()
     {
         // A página só consulta o driver quando está à vista: o CoreBi fica aberto em jogos.
-        if (_selectedGpu == null || _gpuBoard == null || !IsVisible) return;
+        if (_selectedGpu == null || _gpuBoard == null || !IsVisible || PageMotion.IsEntering(this)) return;
         SampleGpuBoard();
         // A faixa do driver só troca quando um valor mudou: refazê-la a cada segundo pesava na entrada da página
         Ui.SetItems(GpuExtras, GpuSheet.Facts(_selectedGpu));
