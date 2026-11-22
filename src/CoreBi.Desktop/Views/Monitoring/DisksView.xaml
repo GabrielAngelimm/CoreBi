@@ -150,13 +150,6 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Margin" Value="16,0,0,0" />
         </Style>
-        <!-- Fio entre as leituras do espaço, sob a barra na placa: PlateWire, porque o LineStrong some sobre o fundo da placa -->
-        <Style x:Key="SpaceWire" TargetType="Border">
-            <Setter Property="Width" Value="1" />
-            <Setter Property="Margin" Value="32,0" />
-            <Setter Property="Background" Value="{DynamicResource PlateWire}" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-        </Style>
         <!-- Leituras do topo da temperatura: mesma altura de linha em bloco, para as três bases coincidirem -->
         <Style x:Key="TempValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
             <Setter Property="FontSize" Value="34" />
@@ -263,11 +256,15 @@
                                             <TextBlock x:Name="DiskReasons" Grid.Column="1" Style="{StaticResource Body}" />
                                         </Grid>
                                     </StackPanel>
-                                    <!-- Só o vão entre a identificação e o espaço, sem fio: os fios ficam entre as três leituras do espaço -->
+                                    <!-- Só o vão entre a identificação e o espaço, sem fio -->
                                     <Border x:Name="SpaceDivider" Grid.Column="2" Width="0" Margin="0,0,32,0" />
-                                    <!-- Espaço: a barra por unidade, as unidades lado a lado (com mais de uma) e os três números embaixo -->
+                                    <!-- Espaço: a barra por unidade, as unidades lado a lado (com mais de uma) e a frase com os três números embaixo -->
                                     <StackPanel x:Name="DiskSpace" Grid.Column="3" VerticalAlignment="Center">
-                                        <TextBlock Text="Espaço" Style="{StaticResource GroupTitle}" />
+                                        <!-- Título e, à direita, quanto está em uso -->
+                                        <Grid>
+                                            <TextBlock Text="Espaço" Style="{StaticResource GroupTitle}" />
+                                            <TextBlock x:Name="SpaceShare" Style="{StaticResource StatLabel}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Typography.NumeralAlignment="Tabular" />
+                                        </Grid>
                                         <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,0" TrackBrush="{DynamicResource PlateTrack}" />
                                         <ItemsControl x:Name="DiskVolumes" ItemTemplate="{StaticResource VolumeRow}" Focusable="False" Margin="0,10,0,0"
                                                       Visibility="{Binding HasItems, RelativeSource={RelativeSource Self}, Converter={StaticResource BoolVis}}">
@@ -277,23 +274,11 @@
                                                 </ItemsPanelTemplate>
                                             </ItemsControl.ItemsPanel>
                                         </ItemsControl>
-                                        <!-- Alinhadas à esquerda, começando no início da barra, com fios entre elas (nunca antes da primeira) -->
-                                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                                            <StackPanel>
-                                                <TextBlock Text="Capacidade" Style="{StaticResource StatLabel}" />
-                                                <TextBlock x:Name="SpaceTotal" Style="{StaticResource LifeValue}" />
-                                            </StackPanel>
-                                            <Border Style="{StaticResource SpaceWire}" />
-                                            <StackPanel>
-                                                <TextBlock Text="Usado" Style="{StaticResource StatLabel}" />
-                                                <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
-                                            </StackPanel>
-                                            <Border Style="{StaticResource SpaceWire}" />
-                                            <StackPanel>
-                                                <TextBlock Text="Livre" Style="{StaticResource StatLabel}" />
-                                                <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" />
-                                            </StackPanel>
-                                        </StackPanel>
+                                        <!--
+                                            Capacidade, usado e livre numa frase sob a barra, no mesmo desenho da especificação sob o nome (chave em tom
+                                            secundário, valor em tinta, pontos entre as partes): os dois lados da placa falam a mesma língua
+                                        -->
+                                        <TextBlock x:Name="SpaceLine" Style="{StaticResource PlateText}" Margin="0,12,0,0" Typography.NumeralAlignment="Tabular" />
                                     </StackPanel>
                                 </Grid>
                             </Grid>

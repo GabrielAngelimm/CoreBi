@@ -286,29 +286,31 @@ public partial class DisksView : UserControl
     /// tom secundário e valor em tinta. A série, longa, vai por último
     /// (cortada com reticências) e inteira na dica, com a do tamanho.
     /// </summary>
+    /// <summary>Uma parte das frases da placa: ponto apagado entre as partes, chave em tom secundário e valor em tinta.</summary>
+    private static void PlatePart(TextBlock target, string key, string value)
+    {
+        if (value.Length == 0) return;
+        if (target.Inlines.Count > 0)
+        {
+            var sep = new Run("   ·   ");
+            sep.SetResourceReference(TextElement.ForegroundProperty, "Faint");
+            target.Inlines.Add(sep);
+        }
+        if (key.Length > 0) target.Inlines.Add(new Run(key + " "));
+        var v = new Run(value);
+        v.SetResourceReference(TextElement.ForegroundProperty, "Fg");
+        target.Inlines.Add(v);
+    }
+
     private void ShowSpecs(DiskDetail d)
     {
         DiskSpecs.Inlines.Clear();
-        void Part(string key, string value)
-        {
-            if (value.Length == 0) return;
-            if (DiskSpecs.Inlines.Count > 0)
-            {
-                var sep = new Run("   ·   ");
-                sep.SetResourceReference(TextElement.ForegroundProperty, "Faint");
-                DiskSpecs.Inlines.Add(sep);
-            }
-            if (key.Length > 0) DiskSpecs.Inlines.Add(new Run(key + " "));
-            var v = new Run(value);
-            v.SetResourceReference(TextElement.ForegroundProperty, "Fg");
-            DiskSpecs.Inlines.Add(v);
-        }
-        Part("", d.Kind);
-        Part("", d.Bus);
-        Part("", FmtSize(d.SizeBytes));
-        Part(d.Letters.Count > 1 ? "Unidades" : "Unidade", string.Join(" ", d.Letters));
-        Part("Firmware", d.Firmware);
-        Part("Série", d.Serial);
+        // Sem o tamanho: ele já está no Espaço, ao lado (a base do fabricante fica na dica)
+        PlatePart(DiskSpecs, "", d.Kind);
+        PlatePart(DiskSpecs, "", d.Bus);
+        PlatePart(DiskSpecs, d.Letters.Count > 1 ? "Unidades" : "Unidade", string.Join(" ", d.Letters));
+        PlatePart(DiskSpecs, "Firmware", d.Firmware);
+        PlatePart(DiskSpecs, "Série", d.Serial);
         var tips = new[] { SizeTip(d), d.Serial.Length > 0 ? "Série: " + d.Serial : null }.Where(t => t != null);
         DiskSpecs.ToolTip = tips.Any() ? string.Join("\n\n", tips) : null;
     }
@@ -336,24 +338,20 @@ public partial class DisksView : UserControl
 
         long total = mine.Sum(v => v.Total), free = mine.Sum(v => v.Free), used = total - free;
         bool known = total > 0;
-        void Gb(TextBlock target, long bytes, double? share = null)
+        string Gb(long bytes) => $"{bytes / 1073741824.0:N1} GB";
+        SpaceLine.Inlines.Clear();
+        SpaceShare.Inlines.Clear();
+        if (known)
         {
-            Readout(target, known ? $"{bytes / 1073741824.0:N1}" : "—", known ? "GB" : "");
-            if (share is not double pct || !known) return;
-            // "316,3 GB / 33 %": a barra separa os dois e a porcentagem usa a mesma fonte do valor
-            var slash = new Run("  /  ") { FontWeight = FontWeights.Light };
-            slash.SetResourceReference(TextElement.ForegroundProperty, "Faint");
-            target.Inlines.Add(slash);
-            target.Inlines.Add(new Run($"{pct:0}"));
-            var unit = new Run(" %") { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.4)) };
-            unit.SetResourceReference(TextElement.ForegroundProperty, "Muted");
-            unit.SetResourceReference(TextElement.FontFamilyProperty, "UiFont");
-            target.Inlines.Add(unit);
+            PlatePart(SpaceLine, "Capacidade", Gb(total));
+            PlatePart(SpaceLine, "Usado", Gb(used));
+            PlatePart(SpaceLine, "Livre", Gb(free));
+            var share = new Run($"{(double)used / total * 100:0} %");
+            share.SetResourceReference(TextElement.ForegroundProperty, "Fg");
+            SpaceShare.Inlines.Add(share);
+            SpaceShare.Inlines.Add(new Run(" em uso"));
         }
-        double freeShare = known ? (double)free / total * 100 : 0;
-        Gb(SpaceTotal, total);
-        Gb(SpaceUsed, used, 100 - freeShare);
-        Gb(SpaceFree, free, freeShare);
+        else SpaceLine.Inlines.Add(new Run("Sem unidade com letra neste disco"));
 
         Ui.SetItems(DiskVolumes, mine.Count > 1
             ? mine.Select(v => new VolumeRow(v.Letter, string.IsNullOrWhiteSpace(v.Label) ? v.FileSystem : v.Label,
