@@ -147,7 +147,7 @@
 
         <!-- Trilho da fonte: nome, régua de tolerância, leitura e desvio do nominal (a tolerância fica na dica, sem legenda embaixo) -->
         <DataTemplate x:Key="RailRow">
-            <Grid MinHeight="26">
+            <Grid Margin="0,2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="120" />
                     <ColumnDefinition Width="*" />
