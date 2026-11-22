@@ -206,23 +206,18 @@ function Get-Installer([string]$Id) {
 
 # Ícone de um .msi: a tabela Icon guarda o .ico (ou um .exe) que o Windows mostra em "Aplicativos instalados"
 function Get-MsiIconFile([string]$Msi) {
+    # Database.Export grava a tabela Icon e, numa subpasta Icon\, cada ícone como arquivo binário (sem passar por texto)
     $installer = New-Object -ComObject WindowsInstaller.Installer
     $db = $installer.GetType().InvokeMember('OpenDatabase', 'InvokeMethod', $null, $installer, @($Msi, 0))
-    $view = $db.GetType().InvokeMember('OpenView', 'InvokeMethod', $null, $db, @('SELECT `Name`, `Data` FROM `Icon`'))
-    $view.GetType().InvokeMember('Execute', 'InvokeMethod', $null, $view, $null)
-    $best = $null
-    while ($true) {
-        $record = $view.GetType().InvokeMember('Fetch', 'InvokeMethod', $null, $view, $null)
-        if (-not $record) { break }
-        $name = $record.GetType().InvokeMember('StringData', 'GetProperty', $null, $record, @(1))
-        $size = $record.GetType().InvokeMember('DataSize', 'GetProperty', $null, $record, @(2))
-        $bytes = $record.GetType().InvokeMember('ReadStream', 'InvokeMethod', $null, $record, @(2, $size, 1))
-        $target = Join-Path $Work ("msi-" + [guid]::NewGuid().ToString('N') + [IO.Path]::GetExtension($name))
-        if (-not [IO.Path]::GetExtension($name)) { $target += '.ico' }
-        [IO.File]::WriteAllBytes($target, [Text.Encoding]::Default.GetBytes($bytes))
-        if (-not $best -or (Get-Item $target).Length -gt (Get-Item $best).Length) { $best = $target }
-    }
-    return $best
+    $out = Join-Path $Work ("msi-" + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $out | Out-Null
+    try { $db.GetType().InvokeMember('Export', 'InvokeMethod', $null, $db, @('Icon', $out, 'Icon.idt')) | Out-Null }
+    catch { return $null }
+    $best = Get-ChildItem (Join-Path $out 'Icon') -File -ErrorAction SilentlyContinue | Sort-Object Length -Descending | Select-Object -First 1
+    if (-not $best) { return $null }
+    $ico = [IO.Path]::ChangeExtension($best.FullName, '.ico')
+    if ($best.Extension -notin '.ico', '.exe', '.dll') { Copy-Item $best.FullName $ico; return $ico }
+    return $best.FullName
 }
 
 # Logotipo de um .msix/.appx: o maior PNG de Square44x44Logo ou Square150x150Logo dentro do pacote
