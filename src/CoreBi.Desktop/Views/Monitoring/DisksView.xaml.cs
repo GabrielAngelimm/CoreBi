@@ -216,23 +216,9 @@ public partial class DisksView : UserControl
     /// </summary>
     private void ShowTempNow(double? now)
     {
-        TempNow.Inlines.Clear();
-        if (now is double v)
-        {
-            TempNow.FontSize = 64;
-            TempNow.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
-            TempNow.Inlines.Add(new Run($"{v:0}"));
-            var unit = new Run(" °C") { FontSize = 20 };
-            unit.SetResourceReference(TextElement.ForegroundProperty, "Muted");
-            unit.SetResourceReference(TextElement.FontFamilyProperty, "LabelFont");
-            TempNow.Inlines.Add(unit);
-        }
-        else
-        {
-            TempNow.FontSize = 28;
-            TempNow.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
-            TempNow.Inlines.Add(new Run("—"));
-        }
+        if (now is double v) Readout(TempNow, $"{v:0}", "°C");
+        else { TempNow.Inlines.Clear(); TempNow.Text = "—"; }
+        TempNow.SetResourceReference(TextBlock.ForegroundProperty, now != null ? "Fg" : "Faint");
     }
 
 
@@ -267,7 +253,6 @@ public partial class DisksView : UserControl
         // Erro de leitura: só a placa com o motivo
         var instruments = d == null ? Visibility.Collapsed : Visibility.Visible;
         foreach (var el in new UIElement[] { LifeCard, TempCard, SideGrid, DiskSpace, SpaceDivider }) el.Visibility = instruments;
-        DiskKind.Text = d == null ? "" : string.Join(" · ", new[] { d.Kind, d.Bus }.Where(s => s.Length > 0));
         if (d == null) { DiskSpecs.Inlines.Clear(); DiskSpecs.ToolTip = null; return; }
         ShowSpecs(d);
 
@@ -280,8 +265,8 @@ public partial class DisksView : UserControl
     }
 
     /// <summary>
-    /// A especificação numa frase sob o modelo, como em Placa de vídeo: "953,9 GB · Unidade C: · Firmware 3.2.F.83 · Série …",
-    /// chave em tom secundário e valor em tinta. O tipo e a conexão já estão no sobretítulo; a série, longa, vai por último
+    /// A especificação numa frase sob o modelo: "SSD · NVMe · 953,9 GB · Unidade C: · Firmware 3.2.F.83 · Série …", chave em
+    /// tom secundário e valor em tinta. A série, longa, vai por último
     /// (cortada com reticências) e inteira na dica, com a do tamanho.
     /// </summary>
     private void ShowSpecs(DiskDetail d)
@@ -301,6 +286,8 @@ public partial class DisksView : UserControl
             v.SetResourceReference(TextElement.ForegroundProperty, "Fg");
             DiskSpecs.Inlines.Add(v);
         }
+        Part("", d.Kind);
+        Part("", d.Bus);
         Part("", FmtSize(d.SizeBytes));
         Part(d.Letters.Count > 1 ? "Unidades" : "Unidade", string.Join(" ", d.Letters));
         Part("Firmware", d.Firmware);
@@ -394,12 +381,13 @@ public partial class DisksView : UserControl
         // Na faixa ideal fica em tinta: a cor só aparece quando a temperatura pede atenção
         (string text, string key) = t switch
         {
-            null => ("Sem leitura", "Faint"),
+            null => ("—", "Faint"),
             double v when v >= d.TempCritAt => ("Crítica", "Danger"),
             double v when v >= d.TempWarnAt => ("Alta", "Warn"),
-            _ => ("Na faixa ideal", "Fg"),
+            _ => ("Ideal", "Fg"),
         };
         TempState.Text = text;
+        TempState.ToolTip = t == null ? "Sem leitura de temperatura" : $"Ideal abaixo de {d.TempWarnAt:0} °C, alta a partir de {d.TempWarnAt:0} °C, crítica a partir de {d.TempCritAt:0} °C.";
         TempState.SetResourceReference(TextBlock.ForegroundProperty, key);
     }
 
@@ -512,6 +500,7 @@ public partial class DisksView : UserControl
     /// <summary>"Uso desde a fábrica" só existe quando o disco informa ao menos um valor (cada bloco ausente já foi recolhido).</summary>
     private void LayoutOdometer()
     {
+        for (int i = 0; i < _odoCells.Count; i++) _odoCells[i].BorderThickness = new Thickness(0, i == 0 ? 0 : 1, 0, 0);
         OdoCard.Visibility = _odoCells.Count == 0 || DiskCards.SelectedItem is not DiskBay { Disk: not null } ? Visibility.Collapsed : Visibility.Visible;
         SideInnerGapRow.Height = new GridLength(_wide && OdoCard.Visibility == Visibility.Visible ? 16 : 0);
         // Sem o odômetro, a integridade desce até o pé da coluna
