@@ -39,8 +39,8 @@ public sealed class AppSettings
     public string ReportFormat { get; set; } = "html";
     /// <summary>Pasta onde o último relatório foi salvo; null = Documentos.</summary>
     public string? ReportFolder { get; set; }
-    /// <summary>Partes que a pessoa desmarcou (chaves das fichas e do diagnóstico); vazio = tudo.</summary>
-    public List<string> ReportSkip { get; set; } = new();
+    /// <summary>Abrir o relatório logo depois de salvar.</summary>
+    public bool ReportOpen { get; set; } = true;
 
     public static AppSettings Load()
     {
@@ -83,6 +83,5 @@ public sealed class AppSettings
         OverlayOpacity = OverlayMetrics.NormalizeOpacity(OverlayOpacity);
         OverlayItems = OverlayMetrics.NormalizeItems(OverlayItems);
         ReportFormat = ReportFormat is "html" or "pdf" or "json" ? ReportFormat : "html";
-        ReportSkip = (ReportSkip ?? new()).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().Take(32).ToList();
     }
 }

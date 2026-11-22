@@ -31,18 +31,23 @@
                 <TranslateTransform x:Name="PanelShift" />
             </Border.RenderTransform>
             <DockPanel>
-                <!-- Título e fechar; o que fica de fora do relatório (séries, usuário) é a dica do título -->
-                <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}" Margin="24,20,16,4">
-                    <TextBlock Text="Exportar relatório" Style="{StaticResource CardTitle}" Background="Transparent"
-                               ToolTip="Números de série e o nome do usuário ficam sempre de fora do relatório." />
-                    <Button Style="{StaticResource IconButton}" Content="&#xE8BB;" HorizontalAlignment="Right" Click="Cancel_Click" ToolTip="Fechar (Esc)" />
-                </Grid>
+                <!-- Título, fechar e uma frase só com o que fazer; o que fica de fora do relatório (séries, usuário) é a dica do título -->
+                <StackPanel DockPanel.Dock="Top" Margin="24,20,16,4">
+                    <Grid Style="{StaticResource CardHeader}">
+                        <TextBlock Text="Exportar relatório" Style="{StaticResource CardTitle}" Background="Transparent"
+                                   ToolTip="Números de série e o nome do usuário ficam sempre de fora do relatório." />
+                        <Button Style="{StaticResource IconButton}" Content="&#xE8BB;" HorizontalAlignment="Right" Click="Cancel_Click" ToolTip="Fechar (Esc)" />
+                    </Grid>
+                    <TextBlock Text="Uma ficha do seu computador para guardar ou enviar. Marque o que entra, escolha o formato e exporte." Style="{StaticResource Caption}" Margin="0,0,8,0" />
+                </StackPanel>
 
-                <!-- Rodapé numa linha só: o formato à esquerda, Cancelar e Exportar à direita. Onde salvar vem depois do
+                <!-- Rodapé numa linha só: o formato e "abrir depois" à esquerda, Cancelar e Exportar à direita. Onde salvar vem depois do
                      Exportar, na janela do Windows, já com o nome e a última pasta. -->
                 <Border DockPanel.Dock="Bottom" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" CornerRadius="{StaticResource RadiusPanelBottom}" Padding="24,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
@@ -53,7 +58,9 @@
                                 <RadioButton x:Name="FmtJson" Style="{StaticResource Segment}" GroupName="ReportFormat" Content="JSON" Tag="json" Checked="Format_Checked" ToolTip="Os dados em texto, para outros programas" />
                             </local:SlidingSelectionPanel>
                         </Border>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <!-- Abrir o arquivo ao terminar: discreto, ao lado do formato; a escolha fica salva -->
+                        <CheckBox x:Name="OpenAfter" Grid.Column="1" Style="{StaticResource Switch}" Content="Abrir depois de salvar" VerticalAlignment="Center" Margin="20,0,0,0" Foreground="{DynamicResource Muted}" />
+                        <StackPanel Grid.Column="3" Orientation="Horizontal">
                             <Button Style="{StaticResource SecondaryButton}" Content="Cancelar" Click="Cancel_Click" Margin="0,0,10,0" />
                             <Button x:Name="BtnExport" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE896;" Content="Exportar…" Width="140" ToolTipService.ShowOnDisabled="True" Click="Export_Click" />
                         </StackPanel>

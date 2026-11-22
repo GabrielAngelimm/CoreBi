@@ -31,7 +31,7 @@ public sealed record ReportChoice(IReadOnlySet<string> Parts, string Format, str
 /// <summary>
 /// Janela de exportação do relatório, sobre o app (como a paleta Ctrl + K): o que entra (fichas e diagnóstico, em cartões de
 /// seleção) e o formato (HTML, PDF ou JSON). Onde salvar vem depois, na janela do Windows, com o nome pronto e a última pasta.
-/// Lembra a última escolha em AppSettings.
+/// Abre com tudo o que tem dado marcado; lembra o formato, a pasta e "abrir depois de salvar" em AppSettings.
 /// </summary>
 public partial class ReportDialog : UserControl
 {
@@ -50,17 +50,18 @@ public partial class ReportDialog : UserControl
         _pending = new TaskCompletionSource<ReportChoice?>();
         _settings = settings;
 
-        var skip = settings.ReportSkip.ToHashSet(StringComparer.Ordinal);
         _sheets = sheets.ToList();
         _diag = diagnostics.ToList();
         foreach (var p in _sheets.Concat(_diag))
         {
-            p.Included = p.Available && !skip.Contains(p.Key);
+            // Abre sempre com tudo o que tem dado marcado; o que não tem fica apagado
+            p.Included = p.Available;
             p.PropertyChanged += (_, _) => Refresh();
         }
         SheetParts.ItemsSource = _sheets;
         DiagParts.ItemsSource = _diag;
 
+        OpenAfter.IsChecked = settings.ReportOpen;
         (settings.ReportFormat switch { "pdf" => FmtPdf, "json" => FmtJson, _ => FmtHtml }).IsChecked = true;
         SetFormat(settings.ReportFormat);
         Refresh();
@@ -130,10 +131,9 @@ public partial class ReportDialog : UserControl
         {
             _settings.ReportFormat = _format;
             _settings.ReportFolder = Path.GetDirectoryName(path);
-            // Só o que estava à mão e ficou de fora: a rede sem teste não conta como desmarcada
-            _settings.ReportSkip = _sheets.Concat(_diag).Where(p => p.Available && !p.Included).Select(p => p.Key).ToList();
+            _settings.ReportOpen = OpenAfter.IsChecked == true;
         }
-        Close(new ReportChoice(parts, _format, path));
+        Close(new ReportChoice(parts, _format, path, OpenAfter.IsChecked == true));
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => Close(null);
