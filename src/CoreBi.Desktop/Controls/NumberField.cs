@@ -47,6 +47,8 @@ public static class NumberField
         box.PreviewKeyDown += OnKeyDown;
         box.TextChanged += (_, _) => Remember(box);
         box.LostKeyboardFocus += (_, _) => Normalize(box);
+        box.PreviewMouseLeftButtonDown += OnPillMouseDown;
+        box.GotKeyboardFocus += (_, _) => box.SelectAll();
         box.CommandBindings.Add(new CommandBinding(Increase, (_, _) => StepBy(box, 1), (_, a) => a.CanExecute = CanStep(box, 1)));
         box.CommandBindings.Add(new CommandBinding(Decrease, (_, _) => StepBy(box, -1), (_, a) => a.CanExecute = CanStep(box, -1)));
         Remember(box);
@@ -55,6 +57,19 @@ public static class NumberField
     private static void OnPaste(object sender, DataObjectPastingEventArgs e)
     {
         if (e.DataObject.GetData(DataFormats.UnicodeText) is not string text || !text.Trim().All(char.IsAsciiDigit)) e.CancelCommand();
+    }
+
+    // A área do texto tem só a largura do número: um clique fora dela, ainda dentro da pílula, dá o foco e seleciona o valor
+    // (os botões − e + passam direto; um clique no próprio número, já com foco, posiciona o cursor como sempre)
+    private static void OnPillMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        var box = (TextBox)sender;
+        for (var node = e.OriginalSource as DependencyObject; node != null && node != box; node = System.Windows.Media.VisualTreeHelper.GetParent(node))
+            if (node is System.Windows.Controls.Primitives.RepeatButton) return;
+        if (box.IsKeyboardFocusWithin) return;
+        box.Focus();
+        box.SelectAll();
+        e.Handled = true;
     }
 
     private static void OnKeyDown(object sender, KeyEventArgs e)

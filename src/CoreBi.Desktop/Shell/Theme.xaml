@@ -1806,8 +1806,8 @@
     </Style>
     <!--
         Campo de número (NumberField.Minimum/Maximum/Step): uma bolinha − à esquerda, a pílula do valor no meio e uma bolinha + à
-        direita, 6 px entre elas. O valor é digitável: a área do texto ocupa a metade esquerda da pílula inteira (alinhado à direita,
-        rente à unidade, que fica na metade direita), então o clique em qualquer ponto dela põe o cursor no número.
+        direita, 6 px entre elas. O valor é digitável: clicar em qualquer ponto da pílula (ou chegar nela pelo Tab) dá o foco ao número
+        e seleciona o valor, para digitar por cima.
     -->
     <Style x:Key="NumberField" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
         <Setter Property="Height" Value="34"/>
@@ -1816,7 +1816,6 @@
         <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
-        <Setter Property="TextAlignment" Value="Right"/>
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="Padding" Value="0"/>
@@ -1832,17 +1831,15 @@
                         <RepeatButton Style="{StaticResource StepButton}" Content="&#xE738;" Command="{x:Static local:NumberField.Decrease}" ToolTip="Diminuir"/>
                         <Border x:Name="b" Grid.Column="1" Margin="6,0" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="17" SnapsToDevicePixels="True" Cursor="IBeam">
-                            <!-- A Bahnschrift assenta 1,5 px acima do centro: 3 em cima a trazem de volta -->
-                            <Grid Margin="0,3,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="sx" Grid.Column="1" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}"
+                            <!-- A Bahnschrift assenta 1,5 px acima do centro: 3 em cima a trazem de volta. Número e unidade juntos no meio,
+                                 na mesma linha de base (o °C, menor, sobe 2); um clique em qualquer ponto da pílula põe o foco no número
+                                 e seleciona o valor (NumberField) -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,0">
+                                <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Bottom"/>
+                                <TextBlock x:Name="sx" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}"
                                            FontFamily="{StaticResource Readout}" FontSize="12" Foreground="{DynamicResource Muted}"
-                                           VerticalAlignment="Center" Margin="3,1,0,0"/>
-                            </Grid>
+                                           VerticalAlignment="Bottom" Margin="1,0,0,2"/>
+                            </StackPanel>
                         </Border>
                         <RepeatButton Grid.Column="2" Style="{StaticResource StepButton}" Content="&#xE710;" Command="{x:Static local:NumberField.Increase}" ToolTip="Aumentar"/>
                     </Grid>
