@@ -281,6 +281,27 @@ internal static partial class Program
             window.PageNet.DisplayResult(waiting);
             Require(window.PageNet.NetLinkLocalText.Text == "não medido" && window.PageNet.NetLinkWanText.Text == "não medido",
                 "A skipped ping was presented as a failed ping");
+            // Campo de número do corte por temperatura: aceita dígitos digitados, recusa letras e os botões − e + param na faixa
+            window.ShowPage("PageStress");
+            MeasurePage(window.PageStress, 1600, 900);
+            var limit = window.PageStress.TempLimit;
+            limit.Text = "";
+            foreach (string typed in new[] { "8", "x", "5" })
+            {
+                var composition = new System.Windows.Input.TextComposition(System.Windows.Input.InputManager.Current, limit, typed);
+                var preview = new System.Windows.Input.TextCompositionEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, composition)
+                { RoutedEvent = System.Windows.Input.TextCompositionManager.PreviewTextInputEvent };
+                limit.RaiseEvent(preview);
+                if (!preview.Handled)
+                    limit.RaiseEvent(new System.Windows.Input.TextCompositionEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, composition)
+                    { RoutedEvent = System.Windows.Input.TextCompositionManager.TextInputEvent });
+            }
+            Require(limit.Text == "85", $"Temperature field typing: '{limit.Text}'");
+            NumberField.Increase.Execute(null, limit);
+            Require(limit.Text == "86", $"Temperature field + step: '{limit.Text}'");
+            limit.Text = "110";
+            Require(!NumberField.Increase.CanExecute(null, limit) && NumberField.Decrease.CanExecute(null, limit), "Temperature field + did not stop at 110");
+            limit.Text = "90";
             window.NavBench.IsChecked = true; Require(window.PageBench.Visibility == Visibility.Visible, "Sidebar event did not navigate");
             Require(window.Title == "CoreBi", "Original title remained");
 

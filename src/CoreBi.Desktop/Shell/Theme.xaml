@@ -274,6 +274,16 @@
     </Style>
 
     <!-- ===================== Foco de teclado ===================== -->
+    <!-- Anel em pílula para botões e campos (raio de meia altura, que acompanha o botão em pílula a 3 px) -->
+    <Style x:Key="PillFocusRing">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border Margin="-3" BorderBrush="{DynamicResource Focus}" BorderThickness="2" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}" SnapsToDevicePixels="True"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
     <Style x:Key="FocusRing">
         <Setter Property="Control.Template">
             <Setter.Value>
@@ -489,9 +499,9 @@
     <ControlTemplate x:Key="ButtonTemplate" TargetType="Button">
         <Grid x:Name="root">
             <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource RadiusControl}" SnapsToDevicePixels="True"/>
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}" SnapsToDevicePixels="True"/>
             <Border x:Name="lit" Background="{Binding Path=(local:Ui.HoverFill), RelativeSource={RelativeSource TemplatedParent}}"
-                    CornerRadius="{StaticResource RadiusControl}" Opacity="0"/>
+                    CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}" Opacity="0"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" Margin="{TemplateBinding Padding}">
                 <TextBlock x:Name="ic" Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
                            Foreground="{Binding Path=(local:Ui.IconBrush), RelativeSource={RelativeSource TemplatedParent}}"
@@ -554,12 +564,12 @@
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
         <Setter Property="FontSize" Value="13.5"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Padding" Value="16,7"/>
+        <Setter Property="Padding" Value="18,7"/>
         <Setter Property="MinHeight" Value="34"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
         <Setter Property="Template" Value="{StaticResource ButtonTemplate}"/>
     </Style>
 
@@ -582,13 +592,13 @@
     <Style x:Key="HeaderPrimary" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
         <Setter Property="Height" Value="40"/>
         <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Padding" Value="20,0"/>
+        <Setter Property="Padding" Value="22,0"/>
         <Setter Property="MinWidth" Value="172"/>
     </Style>
     <Style x:Key="HeaderSecondary" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
         <Setter Property="Height" Value="40"/>
         <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Padding" Value="18,0"/>
+        <Setter Property="Padding" Value="20,0"/>
     </Style>
 
     <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
@@ -656,7 +666,7 @@
     <Style x:Key="HeaderStop" TargetType="Button" BasedOn="{StaticResource StopButton}">
         <Setter Property="Height" Value="40"/>
         <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Padding" Value="20,0"/>
+        <Setter Property="Padding" Value="22,0"/>
         <Setter Property="MinWidth" Value="172"/>
     </Style>
 
@@ -680,11 +690,11 @@
         <Setter Property="FontFamily" Value="{StaticResource Icons}"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="{StaticResource RadiusControl}">
+                    <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -800,11 +810,11 @@
         <Setter Property="Width" Value="320"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="b" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{StaticResource RadiusControl}" Padding="10,0,5,0">
+                    <Border x:Name="b" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}" Padding="12,0,5,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -1751,33 +1761,40 @@
         <Setter Property="MinHeight" Value="34"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
-    <!-- Botão − e + do campo de número: círculo de 26 px que só ganha fundo sob o mouse; não pega o foco, para o cursor ficar onde está.
-         Segurar repete o passo. No limite da faixa o comando desliga e o botão apaga. -->
+    <!-- Botão − e + do campo de número: bolinha de 34 px (a altura do campo) com o fio e o fundo dos campos, como a seta dos cartões.
+         Não pega o foco, para o cursor ficar no campo; segurar repete o passo; no limite da faixa o comando desliga e a bolinha apaga. -->
     <Style x:Key="StepButton" TargetType="RepeatButton">
-        <Setter Property="Width" Value="26"/>
-        <Setter Property="Height" Value="26"/>
-        <Setter Property="Margin" Value="3,0"/>
+        <Setter Property="Width" Value="34"/>
+        <Setter Property="Height" Value="34"/>
         <Setter Property="Focusable" Value="False"/>
         <Setter Property="Delay" Value="400"/>
         <Setter Property="Interval" Value="90"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="FontFamily" Value="{StaticResource Icons}"/>
-        <Setter Property="FontSize" Value="10"/>
+        <Setter Property="FontSize" Value="11"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RepeatButton">
-                    <Border x:Name="b" CornerRadius="13" Background="Transparent" SnapsToDevicePixels="True">
+                    <Grid x:Name="root">
+                        <Border x:Name="b" CornerRadius="17" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1" SnapsToDevicePixels="True"/>
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
+                            <Setter TargetName="root" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform Y="1"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.35"/>
@@ -1788,8 +1805,9 @@
         </Setter>
     </Style>
     <!--
-        Campo de número (NumberField.Minimum/Maximum/Step): pílula de 34 px com − à esquerda, + à direita e o valor no meio, em
-        mostrador com a unidade (Ui.Suffix) logo depois, os dois na mesma linha de base. Só aceita dígitos; setas do teclado também andam.
+        Campo de número (NumberField.Minimum/Maximum/Step): uma bolinha − à esquerda, a pílula do valor no meio e uma bolinha + à
+        direita, 6 px entre elas. O valor é digitável: clicar em qualquer ponto da pílula (ou chegar nela pelo Tab) dá o foco ao número
+        e seleciona o valor, para digitar por cima.
     -->
     <Style x:Key="NumberField" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
         <Setter Property="Height" Value="34"/>
@@ -1804,37 +1822,39 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
-                    <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="17" SnapsToDevicePixels="True">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <RepeatButton Style="{StaticResource StepButton}" Content="&#xE738;" Command="{x:Static local:NumberField.Decrease}" ToolTip="Diminuir"/>
-                            <!-- A Bahnschrift assenta 1,5 px acima do centro: 3 em cima a trazem de volta. O °C, menor, sobe 2 para a linha de base do número -->
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <RepeatButton Style="{StaticResource StepButton}" Content="&#xE738;" Command="{x:Static local:NumberField.Decrease}" ToolTip="Diminuir"/>
+                        <Border x:Name="b" Grid.Column="1" Margin="6,0" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="17" SnapsToDevicePixels="True" Cursor="IBeam">
+                            <!-- A Bahnschrift assenta 1,5 px acima do centro: 3 em cima a trazem de volta. Número e unidade juntos no meio,
+                                 na mesma linha de base (o °C, menor, sobe 2); um clique em qualquer ponto da pílula põe o foco no número
+                                 e seleciona o valor (NumberField) -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,0">
                                 <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Bottom"/>
                                 <TextBlock x:Name="sx" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}"
                                            FontFamily="{StaticResource Readout}" FontSize="12" Foreground="{DynamicResource Muted}"
                                            VerticalAlignment="Bottom" Margin="1,0,0,2"/>
                             </StackPanel>
-                            <RepeatButton Grid.Column="2" Style="{StaticResource StepButton}" Content="&#xE710;" Command="{x:Static local:NumberField.Increase}" ToolTip="Aumentar"/>
-                        </Grid>
-                    </Border>
+                        </Border>
+                        <RepeatButton Grid.Column="2" Style="{StaticResource StepButton}" Content="&#xE710;" Command="{x:Static local:NumberField.Increase}" ToolTip="Aumentar"/>
+                    </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="local:Ui.Suffix" Value="">
                             <Setter TargetName="sx" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
-                        <Trigger Property="IsMouseOver" Value="True">
+                        <Trigger SourceName="b" Property="IsMouseOver" Value="True">
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.4"/>
+                            <Setter Property="Opacity" Value="0.4"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1847,8 +1867,8 @@
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}"/>
-        <Setter Property="Padding" Value="14,0"/>
+        <Setter Property="CornerRadius" Value="20"/>
+        <Setter Property="Padding" Value="18,0"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
     <!-- Cabeçalho de coluna de uma tabela feita à mão (linhas de altura fixa): DIN 12, um tom abaixo do conteúdo -->
