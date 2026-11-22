@@ -193,3 +193,37 @@ public sealed class PageHeaderPanel : System.Windows.Controls.Panel
         return final;
     }
 }
+
+/// <summary>
+/// Uma linha de leituras de ponta a ponta: a primeira encosta na esquerda, a última na direita e os vãos entre elas são iguais,
+/// então o respiro do texto até a borda do cartão é o mesmo dos dois lados (o recuo do cartão). Com um item só, ele fica à esquerda.
+/// </summary>
+public sealed class EdgeRowPanel : System.Windows.Controls.Panel
+{
+    protected override Size MeasureOverride(Size available)
+    {
+        double w = 0, h = 0;
+        foreach (UIElement child in InternalChildren)
+        {
+            child.Measure(new Size(double.PositiveInfinity, available.Height));
+            if (child.Visibility == Visibility.Collapsed) continue;
+            w += child.DesiredSize.Width;
+            h = Math.Max(h, child.DesiredSize.Height);
+        }
+        return new Size(double.IsInfinity(available.Width) ? w : Math.Min(w, available.Width), h);
+    }
+
+    protected override Size ArrangeOverride(Size final)
+    {
+        var visible = InternalChildren.Cast<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
+        double used = visible.Sum(c => c.DesiredSize.Width);
+        double gap = visible.Count > 1 ? Math.Max(0, final.Width - used) / (visible.Count - 1) : 0;
+        double x = 0;
+        foreach (var child in visible)
+        {
+            child.Arrange(new Rect(x, 0, child.DesiredSize.Width, final.Height));
+            x += child.DesiredSize.Width + gap;
+        }
+        return final;
+    }
+}

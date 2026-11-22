@@ -114,20 +114,20 @@ public sealed class ThermalScale : DiskInstrument
         dc.DrawRectangle(WarnBrush, null, new Rect(X(WarnAt) + 1, zoneY, Math.Max(0, X(CritAt) - X(WarnAt) - 2), 3));
         dc.DrawRectangle(DangerBrush, null, new Rect(X(CritAt) + 1, zoneY, Math.Max(0, w - X(CritAt) - 1), 3));
 
-        var marks = new[] { (At: WarnAt, Brush: WarnBrush), (At: CritAt, Brush: DangerBrush) }
-            .Where(m => !double.IsNaN(m.At) && m.At > lo && m.At < hi).ToList();
+        // Os números de atenção e crítica ficam no mesmo tom dos outros; a cor da faixa fica só no traço embaixo da barra
+        var marks = new[] { WarnAt, CritAt }.Where(at => !double.IsNaN(at) && at > lo && at < hi).ToList();
         double last = lo + Math.Floor((hi - lo) / 10 + 0.01) * 10;
         for (double v = lo; v <= hi + 0.1; v += 10)
         {
-            if (marks.Any(m => Math.Abs(X(m.At) - X(v)) < 26)) continue;
+            if (marks.Any(at => Math.Abs(X(at) - X(v)) < 26)) continue;
             var t = Text(v >= last - 0.1 ? $"{v:0} °C" : $"{v:0}", 11, FaintBrush);
             double x = v <= lo ? 0 : v >= hi ? w - t.Width : X(v) - t.Width / 2;
             dc.DrawText(t, new Point(x, zoneY + 8));
         }
-        foreach (var m in marks)
+        foreach (double at in marks)
         {
-            var t = Text($"{m.At:0}", 11, m.Brush);
-            dc.DrawText(t, new Point(Math.Clamp(X(m.At) - t.Width / 2, 0, w - t.Width), zoneY + 8));
+            var t = Text($"{at:0}", 11, FaintBrush);
+            dc.DrawText(t, new Point(Math.Clamp(X(at) - t.Width / 2, 0, w - t.Width), zoneY + 8));
         }
 
         if (known) dc.DrawRectangle(InkBrush, null, new Rect(X(Value) - 1, barTop - 4, 2, barH + 8));

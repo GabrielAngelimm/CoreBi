@@ -258,7 +258,7 @@ public static class Skeleton
             }
 
             // Painel sem recuo próprio (Padding 0, o conteúdo traz o dele): as barras ficam no recuo padrão dos painéis
-            var inset = pad == default ? new Thickness(24, 20, 24, 20) : default;
+            var inset = pad == default ? new Thickness(24) : default;
             double y0 = top + (top > 0 ? 8 : 0) + inset.Top;
             var area = new Rect(inset.Left, y0, Math.Max(0, w - inset.Left - inset.Right), Math.Max(0, h - y0 - inset.Bottom));
             if (area.Width < 24 || area.Height < 10) return;

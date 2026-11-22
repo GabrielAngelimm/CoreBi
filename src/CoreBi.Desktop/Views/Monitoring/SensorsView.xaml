@@ -5,7 +5,7 @@
         <Style x:Key="ColHead" TargetType="TextBlock">
             <Setter Property="Margin" Value="0,1,0,-1" />
             <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Foreground" Value="{DynamicResource Faint}" />
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="VerticalAlignment" Value="Bottom" />
@@ -119,8 +119,8 @@
                 <StackPanel x:Name="head" Orientation="Horizontal" Margin="0,0,0,8">
                     <!-- Filete centrado na caixa do título: o meio dele cai no meio das maiúsculas (com 1 px a mais em cima ficava 1 abaixo) -->
                     <Border x:Name="mark" Width="3" Height="15" CornerRadius="1.5" Background="{DynamicResource Steel}" Margin="0,0,8,0" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding Title, Mode=OneWay}" Style="{StaticResource GroupTitle}" FontSize="16" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding UnitText, Mode=OneWay}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="8,2,0,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Title, Mode=OneWay}" Style="{StaticResource GroupTitle}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding UnitText, Mode=OneWay}" FontSize="13" Foreground="{DynamicResource Muted}" Margin="8,2,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource SensorLine}" Focusable="False" />
             </StackPanel>
@@ -154,8 +154,8 @@
                         <!-- Nome e tipo com o mesmo respiro dos quatro lados: 24 da borda até a tinta em cima, embaixo e à esquerda (90 de
                              altura; centrado, o bloco ficava 1 px baixo, porque a DIN tem mais folga embaixo, daí os 2 de margem no pé) -->
                         <StackPanel VerticalAlignment="Center" Margin="0,0,0,2">
-                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" FontFamily="{StaticResource DisplayFont}" FontSize="23" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                            <TextBlock FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" Typography.NumeralAlignment="Tabular">
+                            <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" Style="{StaticResource TestPlateTitle}" />
+                            <TextBlock Style="{StaticResource PlateText}" Margin="0,4,0,0">
                                 <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
                             </TextBlock>
                         </StackPanel>
@@ -256,7 +256,7 @@
             <!-- Índice: um item por componente, na altura toda da página (a base alinha com a do cartão ao lado); escolher um mostra só ele.
                  14 do cartão + 10 do item = 24, o recuo dos outros painéis; o fundo da seleção avança 10 para os lados. -->
             <!-- Esqueleto: os itens do índice, com o desenho e as duas linhas de cada um -->
-            <Border x:Name="IndexCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="14,20,14,12" local:Skeleton.Top="24"
+            <Border x:Name="IndexCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="14,23,14,12" local:Skeleton.Top="24"
                     local:Skeleton.Layout="gap 1; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16; col 10 30; gap 13; row 30: box 30^30; col 52 70%; gap 11; row 17: s *@0.62; gap 2; row 16: c *@0.42; end; gap 16">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Componentes" Style="{StaticResource Label}" Margin="10,0,10,8" />
@@ -293,7 +293,7 @@
                                 <TranslateTransform Y="-2" />
                             </TextBlock.RenderTransform>
                         </TextBlock>
-                        <TextBlock Text="Filtrar por tipo de sensor" FontFamily="{StaticResource LabelFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
+                        <TextBlock Text="Filtrar por tipo de sensor" Style="{StaticResource Label}" Margin="0" />
                     </StackPanel>
                     <WrapPanel x:Name="CategoryChips" Margin="0,0,0,-6" />
                 </DockPanel>
