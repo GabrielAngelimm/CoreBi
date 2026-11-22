@@ -118,10 +118,10 @@
                         <TextBlock x:Name="AppsPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" />
                     </Grid>
                     <!-- Sem o winget não há como instalar: o atalho para atualizá-lo fica ao lado da ação principal -->
-                    <Button x:Name="BtnAppsStore" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE719;" Content="Abrir na Microsoft Store" Height="36"
+                    <Button x:Name="BtnAppsStore" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE719;" Content="Abrir na Microsoft Store"
                             Margin="0,0,10,0" Visibility="Collapsed" Click="BtnAppsStore_Click"
                             ToolTip="Abre o Instalador de Aplicativo, que traz o winget." />
-                    <Button x:Name="BtnAppsInstall" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE896;" Content="Instalar apps" MinWidth="164" Height="36"
+                    <Button x:Name="BtnAppsInstall" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE896;" Content="Instalar apps"
                             IsEnabled="False" Click="BtnAppsInstall_Click" ToolTipService.ShowOnDisabled="True"
                             ToolTip="Instala pelo winget, um app de cada vez e sem janelas: cada instalador vem do site oficial do fabricante e é conferido antes de abrir." />
                 </StackPanel>

@@ -55,9 +55,9 @@
                             <TextBlock x:Name="DrvPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" />
                         </Grid>
                         <TextBox x:Name="DrvSearch" Style="{StaticResource SearchField}" local:Ui.Placeholder="Buscar dispositivo ou fabricante" Margin="0,0,10,0" TextChanged="DrvSearch_TextChanged" />
-                        <Button x:Name="BtnDrvBackup" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE74E;" Content="Fazer backup" Height="36" Margin="0,0,10,0"
+                        <Button x:Name="BtnDrvBackup" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE74E;" Content="Fazer backup" Margin="0,0,10,0"
                                 Click="BtnDrvBackup_Click" ToolTip="Exporta os drivers de terceiros para Documentos\CoreBi-Drivers, para reinstalar depois de formatar." />
-                        <Button x:Name="BtnDrvScan" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler drivers de novo" Height="36" Click="BtnDrvScan_Click"
+                        <Button x:Name="BtnDrvScan" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler drivers de novo" Click="BtnDrvScan_Click"
                                 ToolTip="Lê de novo os drivers instalados, a placa de vídeo e a placa-mãe e consulta a versão mais recente na NVIDIA ou na AMD. Para atualizações do Windows, use Procurar atualizações." />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" local:PageHeaderPanel.Subtitle="True">

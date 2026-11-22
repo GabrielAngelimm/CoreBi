@@ -97,6 +97,7 @@ public partial class NetworkView : UserControl
         LastResult = null;
         DisplayResult(null);
         SetProgress(0, animate: false);
+        ShowStages(NetworkPhase.Latency);
         NetMeta.Text = "Medindo agora";
         try
         {
@@ -165,7 +166,8 @@ public partial class NetworkView : UserControl
     private void ShowProgress(NetworkProgress p)
     {
         NetStatus.Text = p.Text;
-        NetDetail.Text = StageText(p.Phase);
+        NetDetail.Text = ""; // a etapa está escrita sobre a barra
+        ShowStages(p.Phase);
         SetProgress(p.Fraction, animate: true);
         // Leituras parciais: só o que já foi medido; o restante continua com travessão.
         SetReadout(NetLatency, p.LatencyMs);
@@ -196,20 +198,27 @@ public partial class NetworkView : UserControl
         ShowTrack(_running);
     }
 
-    /// <summary>Barra e porcentagem só durante o teste; ocultas (sem mudar a altura do console) em repouso.</summary>
+    /// <summary>Barra, estações e porcentagem só durante o teste; ocultas (com o espaço reservado) em repouso.</summary>
     private void ShowTrack(bool on)
     {
         NetTrack.Visibility = NetPercentBox.Visibility = on ? Visibility.Visible : Visibility.Hidden;
     }
 
-    /// <summary>Etapa atual à direita do estado: "1 de 3 · Latência" (a barra tem um corte entre as três estações).</summary>
-    private static string StageText(NetworkPhase phase) => phase switch
+    /// <summary>
+    /// Pinta as três estações escritas sobre a barra: a da vez no sinal e em seminegrito, as já feitas no tom do texto e as que
+    /// faltam apagadas. Preparando, a primeira já acende; na análise e no fim, as três ficam feitas.
+    /// </summary>
+    private void ShowStages(NetworkPhase phase)
     {
-        NetworkPhase.Latency => "1 de 3 · Latência",
-        NetworkPhase.Download => "2 de 3 · Download",
-        NetworkPhase.Upload => "3 de 3 · Upload",
-        _ => "",
-    };
+        int current = phase switch { NetworkPhase.Latency => 1, NetworkPhase.Download => 2, NetworkPhase.Upload => 3, NetworkPhase.Analysis or NetworkPhase.Done => 4, _ => 1 };
+        TextBlock[] stages = [NetStage1, NetStage2, NetStage3];
+        for (int i = 0; i < stages.Length; i++)
+        {
+            int n = i + 1;
+            stages[i].SetResourceReference(TextBlock.ForegroundProperty, n == current ? "Signal" : n < current ? "Fg" : "Faint");
+            stages[i].FontWeight = n == current ? FontWeights.SemiBold : FontWeights.Normal;
+        }
+    }
 
     private static string Format(double v) => v.ToString(v >= 100 ? "0" : "0.#", PtBr);
 

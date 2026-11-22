@@ -69,7 +69,7 @@
                             </Grid>
                             <TextBlock x:Name="StartupPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" />
                         </Grid>
-                        <Button Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Height="36" Click="BtnStartupScan_Click"
+                        <Button Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnStartupScan_Click"
                                 ToolTip="Lê de novo as chaves Run do registro e as pastas Inicializar do usuário e de todos os usuários." />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" local:PageHeaderPanel.Subtitle="True">

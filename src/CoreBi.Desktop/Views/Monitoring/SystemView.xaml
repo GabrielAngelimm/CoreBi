@@ -313,7 +313,7 @@
         <local:PageHeaderPanel Style="{StaticResource PageHead}">
             <TextBlock Text="Sistema" Style="{StaticResource PageTitle}" />
             <StackPanel Style="{StaticResource PageActions}">
-                <Button x:Name="BtnReport" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE896;" Content="Exportar relatório" MinWidth="164" Height="36" Click="BtnReport_Click"
+                <Button x:Name="BtnReport" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE896;" Content="Exportar relatório" Click="BtnReport_Click"
                         ToolTip="Salva a ficha do computador em HTML, PDF (A4) ou JSON. Números de série e o nome do usuário ficam de fora." />
             </StackPanel>
             <TextBlock x:Name="SystemSub" Text="Lendo informações do sistema…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" local:PageHeaderPanel.Subtitle="True" />

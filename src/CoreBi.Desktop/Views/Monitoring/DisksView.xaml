@@ -150,7 +150,7 @@
                 <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Discos" Style="{StaticResource PageTitle}" />
                     <StackPanel Style="{StaticResource PageActions}">
-                        <Button x:Name="BtnDiskRefresh" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Height="36" Click="BtnDiskRefresh_Click" />
+                        <Button x:Name="BtnDiskRefresh" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnDiskRefresh_Click" />
                     </StackPanel>
                     <TextBlock x:Name="DiskHealthStatus" Text="Lendo os discos…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" local:PageHeaderPanel.Subtitle="True" />
                 </local:PageHeaderPanel>

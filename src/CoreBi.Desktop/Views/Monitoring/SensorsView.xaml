@@ -231,7 +231,7 @@
             <TextBlock Text="Sensores" Style="{StaticResource PageTitle}" />
             <StackPanel Style="{StaticResource PageActions}">
                 <TextBox x:Name="SensorSearch" Style="{StaticResource SearchField}" local:Ui.Placeholder="Buscar sensor ou componente" Margin="0,0,10,0" TextChanged="SensorSearch_Changed" />
-                <Button x:Name="BtnSensorsReset" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE777;" Content="Zerar estatísticas" Height="36" Click="BtnSensorsReset_Click" />
+                <Button x:Name="BtnSensorsReset" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE777;" Content="Zerar estatísticas" Click="BtnSensorsReset_Click" />
             </StackPanel>
             <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" local:PageHeaderPanel.Subtitle="True"
                        ToolTip="A leitura é a cada segundo e pausa durante o teste de placa de vídeo." />

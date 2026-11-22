@@ -112,7 +112,7 @@
     <!-- Título da página: a mesma voz da assinatura -->
     <Style x:Key="PageTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="32"/>
+        <Setter Property="FontSize" Value="36"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -273,11 +273,12 @@
         <Setter Property="Margin" Value="0,0,0,14"/>
     </Style>
     <!--
-        Cabeçalho de página, o mesmo em todas as telas (PageHeaderPanel): título à esquerda, subtítulo embaixo dele só com o estado
-        vivo ("Lido às 20:31") e, à direita, centrada na linha do título, a barra de ações (PageActions). Na barra, da esquerda
-        para a direita: o medidor de progresso da tarefa (TaskMeter, só durante ela, com o espaço reservado), a busca (SearchField)
-        e os botões, todos com 36 px e 10 entre si, a ação principal por último, na ponta. Nada de cartão em volta: o vão entre o
-        título e a barra é livre, e a barra nunca muda a altura do cabeçalho.
+        Cabeçalho de página, o mesmo em todas as telas (PageHeaderPanel): título à esquerda (DIN 36), o subtítulo só com o estado
+        vivo ("Lido às 20:31") embaixo dos botões, alinhado à direita, junto da ação que o produz; à direita, na linha do título,
+        a barra de ações (PageActions). Na barra, da esquerda para a direita: o medidor de progresso da tarefa (TaskMeter, só
+        durante ela, com o espaço reservado), a busca (SearchField) e os botões (HeaderSecondary, HeaderPrimary), todos com 40 px
+        e 10 entre si, a ação principal por último, na ponta. Nada de cartão em volta: o vão entre o título e a barra é livre.
+        Página sem botões leva o subtítulo embaixo do título.
     -->
     <Style x:Key="PageHead" TargetType="local:PageHeaderPanel">
         <Setter Property="Margin" Value="0,0,0,14"/>
@@ -506,6 +507,19 @@
         <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="local:Ui.HoverFill" Value="{DynamicResource Selected}"/>
+    </Style>
+
+    <!-- Botões da barra de ações do cabeçalho: 40 px e 14, um degrau acima dos botões dos painéis, para o cabeçalho ter presença -->
+    <Style x:Key="HeaderPrimary" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Padding" Value="20,0"/>
+        <Setter Property="MinWidth" Value="172"/>
+    </Style>
+    <Style x:Key="HeaderSecondary" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Padding" Value="18,0"/>
     </Style>
 
     <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
@@ -1606,18 +1620,19 @@
         <Setter Property="Margin" Value="10,0,0,1"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
     </Style>
-    <!-- Busca: o mesmo desenho em toda página (e o da paleta Ctrl + K no alto): fundo do painel, fio fino, lupa e 36 px -->
+    <!-- Busca: o mesmo desenho em toda página (e o da paleta Ctrl + K no alto): fundo do painel, fio fino, lupa e 40 px, a altura dos botões do cabeçalho -->
     <Style x:Key="SearchField" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-        <Setter Property="Width" Value="280"/>
-        <Setter Property="Height" Value="36"/>
-        <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="Width" Value="300"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="FontSize" Value="13.5"/>
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="local:Ui.Icon" Value="&#xE721;"/>
     </Style>
-    <!-- Grupo de controles que não são botões (interruptor e atalho do OverlayBi) na barra de ações: 36 px, o fio dos campos -->
+    <!-- Grupo de controles que não são botões (interruptor e atalho do OverlayBi) na barra de ações: 40 px, o fio dos campos -->
     <Style x:Key="ActionGroup" TargetType="Border">
-        <Setter Property="Height" Value="36"/>
+        <Setter Property="Height" Value="40"/>
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="BorderThickness" Value="1"/>
