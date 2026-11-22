@@ -75,6 +75,13 @@ internal static partial class Program
                     else if (parts[0] == "PageSensors" && parts.Length == 2) { window.PageSensors.SensorSearch.Text = parts[1]; Wait(800); }
                     // "PageDisks:3" repete o disco em três teclas, para ver a faixa de discos num PC que só tem um
                     else if (parts[0] == "PageDisks" && parts.Length == 2 && int.TryParse(parts[1], out int copies)) { window.PageDisks.PreviewRack(copies); Wait(800); }
+                    // "PageApps:pack" marca os kits Pós-formatação e Jogos (sem instalar nada), para ver o pacote e o filtro com apps
+                    else if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "pack")
+                    {
+                        foreach (var a in window.PageApps._installApps ?? [])
+                            if (!a.Installed && (a.Kits & (CoreBi.Engine.Tools.Apps.AppKit.PostFormat | CoreBi.Engine.Tools.Apps.AppKit.Games)) != 0) a.Selected = true;
+                        Wait(800);
+                    }
                     Wait(600);
                     string file = Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-{theme}.png");
                     SaveWindow(window, file);
