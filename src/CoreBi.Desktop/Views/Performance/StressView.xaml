@@ -361,7 +361,8 @@
                         </Border>
                         <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=StressLog}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Registro" Style="{StaticResource SectionTitle}" Margin="0,0,16,16" />
+                                <!-- No meio da linha de 34 px dos cabeçalhos de cartão, como o Histórico do Benchmark -->
+                                <TextBlock DockPanel.Dock="Top" Text="Registro" Style="{StaticResource SectionTitle}" Margin="0,7,16,17" />
                                 <TextBlock DockPanel.Dock="Top" Text="Nenhum teste nesta sessão." Style="{StaticResource LogEmpty}" />
                                 <ListBox x:Name="StressLog" FontFamily="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Faint}" ItemContainerStyle="{StaticResource PlainItem}"
                                          ScrollViewer.VerticalScrollBarVisibility="Auto" Focusable="False">

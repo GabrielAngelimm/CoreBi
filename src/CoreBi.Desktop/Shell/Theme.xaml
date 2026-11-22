@@ -83,14 +83,24 @@
     <!-- paleta:fim -->
 
     <!-- ===================== Forma ===================== -->
-    <!-- Raios por hierarquia: painel > poço > controle > selo. Pílulas (filtros) são inteiramente redondas. -->
+    <!--
+        Raios por hierarquia, quatro degraus: contêiner 16 > peça dentro do cartão 14 > controle 12 > pílula (inteiramente
+        redonda: filtros, segmentos, selos, interruptores, atalho redondo). Peça grande é proporcionalmente menos redonda
+        (cartão ~5 %, tecla de 58 px ~24 %, botão de 40 ~30 %), então tudo parece da mesma família.
+        Encaixe justo (vão menor que o raio) segue a regra dos cantos concêntricos, raio de dentro = raio de fora - vão:
+        tecla do segmento 14 no trilho de 17 com 3 de folga, anel de foco 15 em volta do controle de 12 a 3 px, faixa
+        presa à borda 15 dentro do fio do painel de 16. Com vão largo (os 20 a 24 do respiro do painel) o raio de dentro
+        é escolhido pelo tamanho da peça. RadiusSmall (6) fica só para teclas de atalho e caixas de marcar de 18 px.
+    -->
     <CornerRadius x:Key="RadiusPanel">16</CornerRadius>
-    <CornerRadius x:Key="RadiusInset">12</CornerRadius>
-    <CornerRadius x:Key="RadiusControl">10</CornerRadius>
+    <CornerRadius x:Key="RadiusInset">14</CornerRadius>
+    <CornerRadius x:Key="RadiusControl">12</CornerRadius>
     <CornerRadius x:Key="RadiusSmall">6</CornerRadius>
+    <!-- Selo e etiqueta (20 a 22 px de altura): meia altura, a mesma pílula dos filtros -->
+    <CornerRadius x:Key="RadiusPill">10</CornerRadius>
     <!-- Faixas presas à borda de um painel (a placa da Placa de vídeo, o pé do Gargalo): o raio do painel menos o fio -->
     <CornerRadius x:Key="RadiusPanelTop">15,15,0,0</CornerRadius>
-    <CornerRadius x:Key="RadiusPanelBottom">0,0,16,16</CornerRadius>
+    <CornerRadius x:Key="RadiusPanelBottom">0,0,15,15</CornerRadius>
     <!-- Respiro padrão de um painel (24 nas laterais, 20 em cima e embaixo) -->
     <Thickness x:Key="PanelPadding">24,20</Thickness>
 
@@ -136,6 +146,20 @@
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <!--
+        Cabeçalho de cartão: a mesma linha de 34 px em todos os painéis do app (a altura das pílulas e do atalho redondo),
+        com o título centrado nela e, à direita, o filtro, a busca ou o atalho. Explicação do painel vai na dica do título,
+        nunca numa legenda embaixo dele.
+    -->
+    <Style x:Key="CardHeader" TargetType="Grid">
+        <Setter Property="Height" Value="34"/>
+    </Style>
+    <Style x:Key="CardTitle" TargetType="TextBlock" BasedOn="{StaticResource SectionTitle}">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
     <!-- Título de grupo dentro de uma ficha (Sensores, Sistema): um degrau abaixo do painel -->
     <Style x:Key="GroupTitle" TargetType="TextBlock">
@@ -253,7 +277,7 @@
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Border Margin="-3" BorderBrush="{DynamicResource Focus}" BorderThickness="2" CornerRadius="13" SnapsToDevicePixels="True"/>
+                    <Border Margin="-3" BorderBrush="{DynamicResource Focus}" BorderThickness="2" CornerRadius="15" SnapsToDevicePixels="True"/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -414,8 +438,8 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}"/>
-        <Setter Property="Padding" Value="8,2,9,3"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusPill}"/>
+        <Setter Property="Padding" Value="9,2,10,3"/>
         <Setter Property="VerticalAlignment" Value="Top"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
@@ -893,7 +917,7 @@
     <!-- Trilho da navegação: um destaque só, tingido de sinal, que desliza até a página aberta -->
     <Style x:Key="NavRail" TargetType="local:SlidingSelectionPanel">
         <Setter Property="Highlight" Value="{DynamicResource NavSel}"/>
-        <Setter Property="HighlightRadius" Value="10"/>
+        <Setter Property="HighlightRadius" Value="12"/>
     </Style>
 
     <Style x:Key="NavHeader" TargetType="TextBlock">
@@ -1710,6 +1734,12 @@
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="local:Ui.Icon" Value="&#xE721;"/>
+    </Style>
+    <!-- Busca dentro de um cartão: cabe na linha de 34 px do cabeçalho (CardHeader) -->
+    <Style x:Key="CardSearch" TargetType="TextBox" BasedOn="{StaticResource SearchField}">
+        <Setter Property="Height" Value="34"/>
+        <Setter Property="MinHeight" Value="34"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <!-- Grupo de controles que não são botões (interruptor e atalho do OverlayBi) na barra de ações: 40 px, o fio dos campos -->
     <Style x:Key="ActionGroup" TargetType="Border">

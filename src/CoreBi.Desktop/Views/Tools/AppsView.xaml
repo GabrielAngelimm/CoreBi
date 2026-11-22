@@ -133,30 +133,27 @@
             </local:PageHeaderPanel>
 
             <!-- Esqueleto: os cartões dos apps já estão montados; cada um ganha o contorno, o nome, o marcador e a descrição -->
-            <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,20,12,8" local:Skeleton.Top="44"
+            <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,20,12,8" local:Skeleton.Top="34"
                     local:Skeleton.ItemStyle="AppCard" local:Skeleton.ItemLayout="pad 16 13 14 14; row 20: s *@0.5, - 12, c 58@0.9&gt;; gap 5; row 17: c *@0.92; row 17: c *@0.55">
                 <StackPanel>
-                    <Grid Margin="0,0,12,16">
+                    <!-- Cabeçalho de 34 px (CardHeader), o mesmo de todos os painéis; a explicação fica na dica do título -->
+                    <Grid Style="{StaticResource CardHeader}" Margin="0,0,12,14">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base (antes a contagem descia 1 px) -->
-                            <TextBlock Style="{StaticResource SectionTitle}" TextWrapping="NoWrap">
-                                <Run Text="Aplicativos" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="AppsCount"
-                                    FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
-                                    Typography.NumeralAlignment="Tabular" />
-                            </TextBlock>
-                            <TextBlock Text="Marque os programas e instale todos de uma vez, baixados do site oficial de cada um." Style="{StaticResource Caption}" Margin="0,2,0,0" />
-                        </StackPanel>
+                        <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base -->
+                        <TextBlock Style="{StaticResource CardTitle}" ToolTip="Marque os programas e instale todos de uma vez, baixados do site oficial de cada um.">
+                            <Run Text="Aplicativos" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="AppsCount"
+                                FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
+                                Typography.NumeralAlignment="Tabular" />
+                        </TextBlock>
                         <!--
-                            Um link só (o mesmo de "Abrir benchmark" da Visão geral: glifo no sinal), que diz o que vai fazer: marca os
-                            que faltam ou, com todos marcados, desmarca. Como lá, o botão de 32 sobe 4 para o centro dele cair no da linha
-                            do título (24); a margem negativa à direita alinha o texto com a borda dos cartões.
+                            Um link só, que diz o que vai fazer: marca os que faltam ou, com todos marcados, desmarca. Centrado na linha
+                            do cabeçalho; a margem negativa à direita alinha o texto com a borda dos cartões.
                         -->
                         <Button x:Name="BtnAppsToggleAll" Grid.Column="1" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE8B3;" Content="Marcar todos"
-                                VerticalAlignment="Top" Margin="0,-4,-10,0"
+                                VerticalAlignment="Center" Margin="0,0,-10,0"
                                 Click="BtnAppsToggleAll_Click" ToolTip="Marca os que ainda não estão instalados." />
                     </Grid>
                     <ItemsControl x:Name="AppsList" Focusable="False" SizeChanged="AppsList_SizeChanged">

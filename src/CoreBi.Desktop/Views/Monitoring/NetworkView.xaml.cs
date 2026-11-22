@@ -51,9 +51,7 @@ public partial class NetworkView : UserControl
         NetInstrument.MaxHeight = narrow ? 170 : 350;
         NetInstrument.Margin = narrow ? new Thickness(24, 0, 24, 6) : new Thickness(24, 4, 16, 8);
         NetInstrument.HorizontalAlignment = narrow ? HorizontalAlignment.Center : HorizontalAlignment.Left;
-        // Estreito, o nome da fonte do teste fica na mesma linha do título e a latência encolhe: a página continua numa tela só.
-        NetDiagTitle.Orientation = narrow ? Orientation.Horizontal : Orientation.Vertical;
-        NetMeta.Margin = narrow ? new Thickness(16, 4, 0, 0) : new Thickness(0, 4, 0, 0);
+        // A fonte do teste já fica na linha do título, à direita; estreito, só a latência encolhe: a página continua numa tela só.
 
         Grid.SetRow(NetMetricsPanel, narrow ? 1 : 0);
         Grid.SetColumn(NetMetricsPanel, narrow ? 0 : 1);

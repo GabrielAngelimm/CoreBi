@@ -81,7 +81,7 @@
 
                 <!-- Tabela: as larguras das colunas são as mesmas no cabeçalho e nas linhas -->
                 <!-- Esqueleto: cabeçalho de colunas e linhas de 44 com o interruptor, o nome e as colunas da tabela -->
-                <Border x:Name="StartupCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="48"
+                <Border x:Name="StartupCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="38"
                         local:Skeleton.Layout="gap 10; row 32: - 8, - 56, c 3*@0.24, - 16, c 4*@0.24, - 16, c 5*@0.2, - 36, - 8; lines 44: - 8, pill 56@0.68^20, s 3*, - 16, t 4*, - 16, c 5*, c 36@0.4^14~, - 8">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -89,29 +89,24 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <!-- O título fica a 20 da borda do painel (16 do padding e 4 aqui), na mesma altura do de Instalar apps -->
-                        <Grid Margin="8,4,8,0">
+                        <!-- Cabeçalho de 34 px (CardHeader), o mesmo de todos os painéis: título centrado e o botão auxiliar à direita -->
+                        <Grid Style="{StaticResource CardHeader}" Margin="8,4,8,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <!--
-                                    Título, quantos são e quantos estão desligados ("24  21 desligados") num TextBlock só: os Runs de
-                                    fontes e tamanhos diferentes ficam na mesma linha de base (antes, em três TextBlocks centrados, a
-                                    contagem descia 1 px e o texto 2 px). Os vãos de 10 px são caixas vazias, sem altura.
-                                -->
-                                <TextBlock Style="{StaticResource SectionTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis">
-                                    <Run Text="Programas de inicialização" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="StartupCount"
-                                        FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
-                                        Typography.NumeralAlignment="Tabular" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="StartupOff"
-                                        FontFamily="{StaticResource SmallFont}" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource Muted}" />
-                                </TextBlock>
-                                <TextBlock Text="Programas que abrem junto com o Windows. Desligue os que não usa." Style="{StaticResource Caption}" Margin="0,2,0,0" />
-                            </StackPanel>
-                            <!-- Como "Abrir benchmark" na Visão geral: o botão de 32 sobe 4 para o centro dele cair no da linha do título (24) -->
+                            <!--
+                                Título, quantos são e quantos estão desligados ("24  21 desligados") num TextBlock só: os Runs de
+                                fontes e tamanhos diferentes ficam na mesma linha de base. Os vãos de 10 px são caixas vazias, sem altura.
+                            -->
+                            <TextBlock Style="{StaticResource CardTitle}" ToolTip="Programas que abrem junto com o Windows. Desligue os que não usa.">
+                                <Run Text="Programas de inicialização" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="StartupCount"
+                                    FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
+                                    Typography.NumeralAlignment="Tabular" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="StartupOff"
+                                    FontFamily="{StaticResource SmallFont}" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource Muted}" />
+                            </TextBlock>
                             <Button x:Name="BtnStartupRestore" Grid.Column="1" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE7A7;" Content="Restaurar removidos"
-                                    VerticalAlignment="Top" Margin="0,-4,0,0" Visibility="Collapsed" Click="BtnStartupRestore_Click"
+                                    VerticalAlignment="Center" Margin="0,0,-10,0" Visibility="Collapsed" Click="BtnStartupRestore_Click"
                                     ToolTip="Devolve à inicialização os programas removidos por aqui, do jeito que estavam (ligados ou desligados)." />
                         </Grid>
 
