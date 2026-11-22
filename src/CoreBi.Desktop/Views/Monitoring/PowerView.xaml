@@ -28,8 +28,10 @@
             <Setter Property="BorderThickness" Value="1,0,0,0" />
             <Setter Property="Padding" Value="24,16,16,16" />
         </Style>
-        <!-- Plano instalado: anel de seleção, nome e "em uso" no ativo (anel e ponto acesos no sinal, como um rádio ligado);
-             "novo" no escolhido que aguarda confirmação, em tinta. -->
+        <!-- Plano instalado: anel de seleção, nome e "em uso" no ativo (anel e ponto acesos no sinal, como um rádio ligado, sobre o
+             fundo da seleção); "novo plano" no escolhido que aguarda Aplicar, em tinta, com só o contorno da seleção (escolhido, ainda
+             não em uso). Fundo, contorno e ponto acendem e apagam em 160 ms: as linhas não são refeitas (PowerView.ShowPlan), então ao
+             aplicar a seleção passa de uma linha para a outra. -->
         <DataTemplate x:Key="PlanRow">
             <Button Style="{StaticResource RowButton}" Tag="{Binding}" Click="PlanRow_Click" AutomationProperties.Name="{Binding Name}">
                 <Grid Height="22">
@@ -38,12 +40,17 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <Border x:Name="sel" Grid.ColumnSpan="3" Margin="-8,-5" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Selected}" Visibility="Collapsed" />
+                    <Border x:Name="sel" Grid.ColumnSpan="3" Margin="-8,-5" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Selected}" Opacity="0" />
+                    <Border x:Name="pend" Grid.ColumnSpan="3" Margin="-8,-5" CornerRadius="{StaticResource RadiusControl}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" Opacity="0" />
                     <!-- Anel e textos centrados na linha de 22; o anel desce 1 (2 em cima) para o meio dele cair no meio da altura das
                          maiúsculas do nome, e "em uso" (Segoe 12 ao lado de Segoe 13,5) desce 1 para assentar na mesma linha de base -->
                     <Grid Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,2,0,0">
                         <Ellipse x:Name="ring" Stroke="{DynamicResource LineStrong}" StrokeThickness="1.5" />
-                        <Ellipse x:Name="dot" Width="6" Height="6" Fill="{DynamicResource Signal}" Visibility="Collapsed" />
+                        <Ellipse x:Name="dot" Width="6" Height="6" Fill="{DynamicResource Signal}" Opacity="0" RenderTransformOrigin="0.5,0.5">
+                            <Ellipse.RenderTransform>
+                                <ScaleTransform ScaleX="0.4" ScaleY="0.4" />
+                            </Ellipse.RenderTransform>
+                        </Ellipse>
                     </Grid>
                     <TextBlock x:Name="name" Grid.Column="1" Text="{Binding Name}" FontSize="13.5" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                     <TextBlock x:Name="used" Grid.Column="2" Text="em uso" FontSize="12" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="0,1,0,-1" Visibility="Collapsed" />
@@ -51,6 +58,20 @@
             </Button>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsPending}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="pend" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.16" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="pend" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.16" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.ExitActions>
                     <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Fg}" />
                     <Setter TargetName="used" Property="Text" Value="novo plano" />
                     <Setter TargetName="used" Property="Visibility" Value="Visible" />
@@ -58,9 +79,31 @@
                     <Setter TargetName="name" Property="Foreground" Value="{DynamicResource Fg}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsActive}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="sel" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.16" />
+                                <DoubleAnimation Storyboard.TargetName="dot" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.16" />
+                                <DoubleAnimation Storyboard.TargetName="dot" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.16">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                                <DoubleAnimation Storyboard.TargetName="dot" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.16">
+                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut" /></DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="sel" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.16" />
+                                <DoubleAnimation Storyboard.TargetName="dot" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12" />
+                                <DoubleAnimation Storyboard.TargetName="dot" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="0.4" Duration="0:0:0.12" />
+                                <DoubleAnimation Storyboard.TargetName="dot" Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="0.4" Duration="0:0:0.12" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.ExitActions>
                     <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Signal}" />
-                    <Setter TargetName="sel" Property="Visibility" Value="Visible" />
-                    <Setter TargetName="dot" Property="Visibility" Value="Visible" />
                     <Setter TargetName="used" Property="Visibility" Value="Visible" />
                     <Setter TargetName="name" Property="FontWeight" Value="SemiBold" />
                     <Setter TargetName="name" Property="Foreground" Value="{DynamicResource Fg}" />
@@ -159,7 +202,12 @@
                     <TextBlock Text="Energia" Style="{StaticResource PageTitle}" />
                     <TextBlock Text="De onde vem a energia, o plano em uso e quanto o PC consome." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                     <StackPanel Style="{StaticResource PageActions}">
-                        <TextBlock x:Name="EnergyStatus" Text="Lendo fonte e plano de energia…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" Typography.NumeralAlignment="Tabular" />
+                        <!-- Quando a página leu e, ao lado, há quanto tempo a sessão de consumo corre ("Lido às 01:05 · sessão de 12 min").
+                             A sessão muda a cada minuto sem acender: o brilho do estado fica para o que acabou de acontecer. -->
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0">
+                            <TextBlock x:Name="EnergyStatus" Text="Lendo fonte e plano de energia…" Style="{StaticResource PageStatus}" />
+                            <TextBlock x:Name="SessionAge" Style="{StaticResource PageStatus}" local:HeaderMotion.SoftText="False" Visibility="Collapsed" />
+                        </StackPanel>
                         <Button x:Name="BtnEnergyRefresh" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnEnergyRefresh_Click" />
                     </StackPanel>
                 </local:PageHeaderPanel>
@@ -281,10 +329,8 @@
                             </Grid.RowDefinitions>
                             <!-- Cabeçalho de 34 px (CardHeader), o mesmo de todos os painéis -->
                             <Grid Style="{StaticResource CardHeader}" Margin="24,20,24,0">
-                                <!-- Título e duração da sessão num texto só: a legenda assenta na linha de base do título por construção -->
-                                <TextBlock Style="{StaticResource CardTitle}">
-                                    <Run Text="Consumo" ToolTip="Processador e placa de vídeo, pelos sensores deles. O resto do PC (placa-mãe, memória, discos, ventoinhas) e a perda da fonte não são medidos." /><Run Text="   " /><Run x:Name="SessionAge" FontFamily="{StaticResource SmallFont}" FontSize="12" FontWeight="Normal" Foreground="{DynamicResource Muted}" />
-                                </TextBlock>
+                                <!-- A duração da sessão fica no cabeçalho da página, ao lado de "Lido às" -->
+                                <TextBlock Text="Consumo" Style="{StaticResource CardTitle}" ToolTip="Processador e placa de vídeo, pelos sensores deles. O resto do PC (placa-mãe, memória, discos, ventoinhas) e a perda da fonte não são medidos." />
                                 <!-- "Ao vivo" centrado na linha, como o estado da Temperatura em Discos. O LED desce 1, para o meio dele
                                      cair no meio da altura-x da legenda. -->
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -364,9 +410,8 @@
                             local:Skeleton.Layout="row 34: h 90^16, - *, dot 30; gap 12; row 26: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 10; rows 3 24: c 104@0.6, box *^10, t 76@0.7>, c 50@0.6>; gap 2; line; gap 7; row 18: c 80; rows 5 22: c 150@0.6, box *^6, t 72@0.8>; gap 2; row 30: c 190@0.9">
                         <StackPanel>
                             <!-- Cabeçalho de 34 px, como na Visão geral: a explicação fica na dica do título e o atalho para Sensores é o círculo do canto -->
-                            <Grid Height="34">
-                                <TextBlock Text="Tensões" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" HorizontalAlignment="Left"
-                                           ToolTip="Voltagem que chega a cada peça; fora da faixa usual, o valor fica âmbar." />
+                            <Grid Style="{StaticResource CardHeader}">
+                                <TextBlock Text="Tensões" Style="{StaticResource CardTitle}" ToolTip="Voltagem que chega a cada peça; fora da faixa usual, o valor fica âmbar." />
                                 <Button x:Name="VoltAll" Style="{StaticResource CardLink}" ToolTip="Todas as tensões em Sensores" Click="VoltAll_Click" />
                             </Grid>
                             <!-- Linhas um pouco mais justas (12 em cima, 2 entre as réguas, 22 por componente): com as tensões da placa-mãe, os dois

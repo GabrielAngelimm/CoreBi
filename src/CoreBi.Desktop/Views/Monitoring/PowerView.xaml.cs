@@ -19,7 +19,17 @@ public partial class PowerView : UserControl
     private const string ProcBaseTip = "Quanto da velocidade do processador o Windows pode usar: o mínimo vale mesmo em repouso (o trecho cheio da barra) e o máximo, com carga (até onde a barra vai).";
 
     public sealed record SettingItem(string Title, string Value, string? Tip, string BeforeText = "", bool Changed = false);
-    public sealed record PlanItem(Guid Id, string Name, bool IsActive, bool IsPending);
+
+    /// <summary>Plano na lista. Em uso e escolhido mudam no próprio item: a linha não é refeita, então a seleção desliza de uma para a outra.</summary>
+    public sealed class PlanItem : ObservableObject
+    {
+        private bool _isActive, _isPending;
+        public PlanItem(Guid id, string name, bool isActive, bool isPending) { Id = id; Name = name; _isActive = isActive; _isPending = isPending; }
+        public Guid Id { get; }
+        public string Name { get; }
+        public bool IsActive { get => _isActive; set => Set(ref _isActive, value); }
+        public bool IsPending { get => _isPending; set => Set(ref _isPending, value); }
+    }
 
     public sealed class RailItem : ObservableObject
     {
@@ -59,7 +69,7 @@ public partial class PowerView : UserControl
     private FeatureContext _context = null!;
     private SensorMonitor _monitor => _context.Sensors;
     private bool _refreshing, _applyingPlan, _stacked, _dirty;
-    private bool _voltsShown = true;
+    private bool _voltsShown = true, _previewing;
     private double _heroSize = 88;
     private PowerPlan? _pendingPlan;
 
@@ -204,14 +214,20 @@ public partial class PowerView : UserControl
         var preview = _pendingPlan is { } pp ? PowerPlans.ReadValues(pp.Id) : null;
         // Planos de fábrica num Windows em inglês ("Balanced") aparecem com o nome em português; o personalizado fica como está
         // Listas iguais às da tela ficam como estão: trocá-las refazia as linhas (e o plano marcado piscava) a cada volta à página
-        var plans = p.Plans.Select(x => new PlanItem(x.Id, PowerPlans.DisplayName(x.Id, x.Name), x.IsActive, x.Id == _pendingPlan?.Id)).ToList();
-        if (PlanList.ItemsSource is not IEnumerable<PlanItem> shownPlans || !shownPlans.SequenceEqual(plans)) PlanList.ItemsSource = plans;
+        // Mesmos planos na mesma ordem: só o em uso e o escolhido mudam nas linhas que já estão na tela (a seleção acende e apaga
+        // em vez de a lista ser refeita)
+        var plans = p.Plans.Select(x => (x.Id, Name: PowerPlans.DisplayName(x.Id, x.Name), x.IsActive, Pending: x.Id == _pendingPlan?.Id)).ToList();
+        if (PlanList.ItemsSource is List<PlanItem> shownPlans && shownPlans.Select(x => (x.Id, x.Name)).SequenceEqual(plans.Select(x => (x.Id, x.Name))))
+            for (int i = 0; i < plans.Count; i++) { shownPlans[i].IsActive = plans[i].IsActive; shownPlans[i].IsPending = plans[i].Pending; }
+        else PlanList.ItemsSource = plans.Select(x => new PlanItem(x.Id, x.Name, x.IsActive, x.Pending)).ToList();
 
         bool battery = Snapshot?.Batteries.Any(b => !b.IsUps) == true;
         bool previewing = preview != null;
         RegSection.Visibility = p.Active == null ? Visibility.Collapsed : Visibility.Visible;
         if (previewing) RegSection.SetResourceReference(Border.BackgroundProperty, "Raised");
         else RegSection.ClearValue(Border.BackgroundProperty);
+        // Entrar na prévia (ou sair dela) acende a seção de leve, em vez de o fundo trocar seco
+        if (previewing != _previewing) { _previewing = previewing; HeaderMotion.Soften(RegSection); }
         // Título curto e de uma linha: o nome do plano já está na lista (marcado "novo plano"); um título longo quebrava e crescia o cartão
         RegTitle.Text = previewing ? "Prévia da troca" : "Ajustes do plano";
         RegCaption.Visibility = battery && !previewing ? Visibility.Visible : Visibility.Collapsed;
@@ -461,13 +477,16 @@ public partial class PowerView : UserControl
             foreach (var cell in new[] { SessionEnergy, SessionAverage, SessionPeak }) Readout(cell, "—", "");
             AverageCell.ToolTip = PeakCell.ToolTip = EnergyCell.ToolTip = null;
             SessionAge.Text = "";
+            SessionAge.Visibility = Visibility.Collapsed;
             return;
         }
         // Sessão: desde que o CoreBi abriu; tudo é a soma processador + placa de vídeo, como a leitura grande
         var length = DateTime.Now - start;
         string span = length.TotalMinutes < 1 ? "menos de 1 min" : Hours(length, minutesWord: true);
-        SessionAge.Text = "sessão de " + span;
-        SessionAge.ToolTip = $"Desde que o CoreBi abriu, às {start:HH:mm}. Consumo médio, maior consumo e energia gasta valem para este período; o gráfico mostra só os últimos 5 minutos.";
+        // No cabeçalho, ao lado de "Lido às": quando a página leu e há quanto tempo o consumo está sendo somado
+        SessionAge.Text = " · sessão de " + span;
+        SessionAge.Visibility = Visibility.Visible;
+        SessionAge.ToolTip = $"Sessão de consumo: desde que o CoreBi abriu, às {start:HH:mm}. Consumo médio, maior consumo e energia gasta valem para este período; o gráfico mostra só os últimos 5 minutos.";
         Readout(SessionAverage, $"{_sumW / _countW:0}", "W");
         AverageCell.ToolTip = $"Consumo médio de processador + placa de vídeo desde {start:HH:mm} ({span}).";
         Readout(SessionPeak, $"{_peakW:0}", "W");
@@ -595,7 +614,8 @@ public partial class PowerView : UserControl
     private static void Readout(TextBlock target, string value, string unit) =>
         ReadoutFormat.Set(target, value, unit, unitRatio: 0.3, dimWhenDash: true);
 
-    /// <summary>"4 h 33 min" com as unidades menores; uso de menos de um minuto é "&lt; 1 min", não zero.</summary>
+    /// <summary>"4 h 03 min" com as unidades menores (minutos com dois dígitos depois das horas, como nas linhas dos dias); uso de
+    /// menos de um minuto é "&lt; 1 min", não zero.</summary>
     private static void Readout(TextBlock target, TimeSpan span)
     {
         target.Inlines.Clear();
@@ -610,7 +630,7 @@ public partial class PowerView : UserControl
             target.Inlines.Add(u);
         }
         if (h > 0) Part($"{h}", "h");
-        Part(h == 0 && m == 0 && span > TimeSpan.Zero ? "< 1" : $"{m}", "min");
+        Part(h == 0 && m == 0 && span > TimeSpan.Zero ? "< 1" : h > 0 ? $"{m:00}" : $"{m}", "min");
     }
 
     private static string Hours(TimeSpan t, bool minutesWord = false)
