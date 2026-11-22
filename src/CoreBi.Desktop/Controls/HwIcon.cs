@@ -8,7 +8,7 @@ namespace CoreBi.Desktop;
 /// <summary>
 /// Ícone de linha sem fundo, na cor do texto (Foreground herdado): as peças do computador desenhadas à mão numa malha de 24 × 24
 /// (traço de 1,5, pontas redondas) e, para o resto, o glifo da fonte de ícones do Windows. Kind é o nome de uma peça ("cpu",
-/// "gpu", "ram", "vram", "storage", "board", "net", "router", "desktop", "fan", "ramv") ou um glifo (um caractere da Segoe Fluent
+/// "gpu", "ram", "vram", "storage", "board", "net", "router", "desktop", "fan", "ramv", "temp") ou um glifo (um caractere da Segoe Fluent
 /// Icons). O tamanho é o Width e o Height; o desenho acompanha o menor deles.
 /// </summary>
 public sealed class HwIcon : Control
@@ -156,6 +156,8 @@ public sealed class HwIcon : Control
             ["router"] = new[] { Box(2.5, 13, 19, 7, 2), Line("M7,13 V6.5"), Line("M17,13 V6.5"), Dot(7, 16.5), Dot(10.5, 16.5) },
             ["desktop"] = new[] { Box(3, 4.5, 18, 11.5, 2), Line("M12,16 V19.5"), Line("M8,19.5 H16") },
             ["fan"] = fan.ToArray(),
+            // Termômetro: os sensores de temperatura (saúde do PC na Visão geral)
+            ["temp"] = new[] { Line("M10,13.9 V5 A2,2 0 0 1 14,5 V13.9 A4,4 0 1 1 10,13.9 Z"), Line("M12,9.5 V15"), Dot(12, 17.36, 1.75) },
         };
     }
 }

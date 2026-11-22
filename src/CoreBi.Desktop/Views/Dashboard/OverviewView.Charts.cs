@@ -75,16 +75,9 @@ public partial class OverviewView
         DashChartLabel.Text = $"{name} nos últimos {span}";
         DashChartValue.Text = cNow is float cv ? $"{cv:0.#}{unit}" : "—";
         DashChartValue2.Text = gNow is float gv ? $"{gv:0.#}{unit}" : "—";
-        DashChartValue.Visibility = cNow != null ? Visibility.Visible : Visibility.Collapsed;
-        DashChartValue2.Visibility = gNow != null ? Visibility.Visible : Visibility.Collapsed;
-
-        var firstC = data.Select(cpu).FirstOrDefault(v => v != null);
-        var cpuLoads = metric == "load" ? data.Select(cpu).Where(v => v != null).Select(v => (double)v!.Value).ToList() : null;
-        DashChartDelta.Text = cpuLoads is { Count: > 0 }
-            ? $"Processador em média {cpuLoads.Average():0.#} % no período"
-            : cNow is float a && firstC is float b
-            ? $"Processador {(a - b >= 0 ? "+" : "−")}{Math.Abs(a - b):0.#}{unit} no período"
-            : cNow == null && metric != "load" ? "Sem leitura do processador. Veja o aviso na barra lateral." : "Coletando as primeiras amostras…";
+        // Sem leitura o mostrador fica no travessão (nunca some: as duas legendas não trocam de lugar) e a dica diz por quê
+        DashChartValue.ToolTip = cNow == null && data.Count > 0 && metric != "load" ? "Sem leitura do processador. Veja o aviso na barra lateral." : null;
+        DashChartValue2.ToolTip = gNow == null && data.Count > 0 ? "Sem leitura da placa de vídeo." : null;
 
         var all = data.SelectMany(s => new[] { cpu(s), gpu(s) }).Where(v => v != null).Select(v => (double)v!.Value).ToList();
         double peak = all.Count > 0 ? all.Max() : 0;
@@ -214,7 +207,6 @@ public partial class OverviewView
         _hoverX = e.GetPosition(DashChart).X;
         DrawHover();
         if (!entering) return;
-        DashChartDelta.Text = "Pausado";
         if (_hoverTip is { Visibility: Visibility.Visible } tip)
             tip.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
     }

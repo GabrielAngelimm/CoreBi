@@ -11,7 +11,7 @@ using CoreBi.Engine.Persistence;
 
 namespace CoreBi.Desktop
 {
-    public sealed record DashComponent(string Icon, string Channel, string Name, string Model, string Target, Brush Meter,
+    public sealed record DashComponent(string Icon, string Channel, string Name, string Model, string Target, string LinkTip, Brush Meter,
                                        string Hero, string HeroUnit, double Fraction, IReadOnlyList<KeyValuePair<string, string>> Stats);
 
     public sealed record DashEvent(string Icon, string Title, string Detail, string Value, DateTime At, string Channel = "")
@@ -20,7 +20,7 @@ namespace CoreBi.Desktop
     }
 
     public sealed record DashRingItem(Brush Swatch, string Label, string Value, string Detail, string Target);
-    public sealed record DashCheck(string Title, string Detail, bool Ok);
+    public sealed record DashCheck(string Icon, string Title, string Detail, bool Ok);
 
     /// <summary>Atalho da atividade recente vazia: um teste que ainda não rodou.</summary>
     public sealed class DashStart
@@ -176,7 +176,7 @@ namespace CoreBi.Desktop.Views
             var cpuLoad = _context.Sensors.CpuLoad;
             var rows = new List<DashComponent>
             {
-                new("cpu", "Cpu", "Processador", HardwareNaming.ShortCpuName(_context.CpuName), "PageSystem:Processador", ThemeManager.Brush("Cpu"),
+                new("cpu", "Cpu", "Processador", HardwareNaming.ShortCpuName(_context.CpuName), "PageSystem:Processador", "Abrir o processador em Sistema", ThemeManager.Brush("Cpu"),
                     FormatReading(cpuLoad, "0", " %"), "em uso", (cpuLoad ?? 0) / 100.0,
                     new[]
                     {
@@ -189,7 +189,7 @@ namespace CoreBi.Desktop.Views
             if (_context.PrimaryGpu is { } gpu)
             {
                 var live = GpuMonitor.ReadLive(gpu, _context.Sensors.Snapshot());
-                rows.Add(new("gpu", "Gpu", "Placa de vídeo", HardwareNaming.ShortGpuName(gpu.Name), "PageGpu", ThemeManager.Brush("Gpu"),
+                rows.Add(new("gpu", "Gpu", "Placa de vídeo", HardwareNaming.ShortGpuName(gpu.Name), "PageGpu", "Abrir Placa de vídeo", ThemeManager.Brush("Gpu"),
                     FormatReading(live.LoadPct, "0", " %"), "em uso", (live.LoadPct ?? 0) / 100.0,
                     new[]
                     {
@@ -213,7 +213,7 @@ namespace CoreBi.Desktop.Views
                 pts.SetResourceReference(TextElement.FontFamilyProperty, "LabelFont");
                 pts.SetResourceReference(TextElement.ForegroundProperty, "Muted");
                 DashScore.Inlines.Add(pts);
-                DashScoreSub.Text = $"Medido em {runs[0].Date:dd/MM 'às' HH:mm}";
+                DashScoreSub.Text = $"Render de CPU multi-core · {runs[0].Date:dd/MM 'às' HH:mm}";
                 if (runs.Count > 1)
                 {
                     double d = runs[0].Multi!.Value - runs[1].Multi!.Value;
@@ -245,7 +245,7 @@ namespace CoreBi.Desktop.Views
         {
             if (_context == null) return;
             _healthAt = DateTime.Now;
-            static DashCheck Item(bool ok, string title, string okText, string badText) => new(title, ok ? okText : badText, ok);
+            static DashCheck Item(string icon, bool ok, string title, string okText, string badText) => new(icon, title, ok ? okText : badText, ok);
 
             // O registro de eventos do Windows leva ~100 ms para responder: é lido fora da janela, no máximo a cada minuto
             if ((_healthAt - _errorsAt).TotalSeconds > 60) ReadErrorsAsync();
@@ -256,22 +256,17 @@ namespace CoreBi.Desktop.Views
             if (_context.Sensors.IsOpen) // enquanto detecta o hardware, ainda não dá para saber
             {
                 var sensors = _context.Sensors.DiagnoseCpuSensors();
-                list.Add(Item(sensors == SensorMonitor.CpuSensorProblem.None, "Sensores da CPU",
+                list.Add(Item("temp", sensors == SensorMonitor.CpuSensorProblem.None, "Sensores da CPU",
                     "Temperatura e consumo disponíveis.", SensorMonitor.Explain(sensors).Split('.')[0] + "."));
             }
 
             static string Count(int n, string one, string many) => n == 1 ? $"1 {one}" : $"{n} {many}";
-            list.Add(Item(errs.Error == null && errs.Total == 0, "Erros de hardware",
+            list.Add(Item("board", errs.Error == null && errs.Total == 0, "Erros de hardware",
                 "Sem WHEA nem reinício da GPU em 7 dias.",
                 errs.Error != null ? "Não foi possível ler o registro do Windows."
                     : $"{Count(errs.Whea, "erro WHEA", "erros WHEA")} e {Count(errs.GpuResets, "reinício", "reinícios")} da GPU em 7 dias."));
 
-            DashHealth.ItemsSource = list;
-
-            int alerts = list.Count(c => !c.Ok);
-            DashHealthBadge.Visibility = list.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-            DashHealthBadgeText.Text = alerts == 0 ? "Tudo certo" : alerts == 1 ? "1 alerta" : $"{alerts} alertas";
-            Ui.SetTone(DashHealthBadge, alerts == 0 ? "Ok" : "Warn");
+            Ui.SetItems(DashHealth, list); // relida a cada minuto: só troca se mudou, para os itens não piscarem
         }
 
         private async void ReadErrorsAsync()

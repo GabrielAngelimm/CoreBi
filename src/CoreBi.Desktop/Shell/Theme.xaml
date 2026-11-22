@@ -673,6 +673,49 @@
         </Setter>
     </Style>
 
+    <!--
+        Atalho de um cartão para a página dele (Visão geral): um círculo de 30 px com a seta, no canto do título. Discreto em
+        repouso (fio e seta no tom secundário); sob o mouse o fundo e o fio sobem e a seta acende no sinal. Sem transição: os cartões
+        de Processador e Placa de vídeo são refeitos a cada leitura, e uma animação de entrada recomeçaria a cada segundo.
+    -->
+    <Style x:Key="CardLink" TargetType="Button">
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="Content" Value="&#xE72A;"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="FontFamily" Value="{StaticResource Icons}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="root">
+                        <Border x:Name="b" CornerRadius="15" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Background="Transparent" SnapsToDevicePixels="True"/>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="root" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform Y="1"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Barra de título -->
     <Style x:Key="CaptionButton" TargetType="Button">
         <Setter Property="Width" Value="46"/>
@@ -874,6 +917,14 @@
         <Setter Property="Highlight" Value="{DynamicResource Selected}"/>
         <Setter Property="HighlightBorder" Value="{DynamicResource LineStrong}"/>
         <Setter Property="HighlightRadius" Value="5"/>
+    </Style>
+    <!-- O mesmo controle em pílula (filtros do gráfico da Visão geral): poço e tecla inteiramente redondos, 32 px de altura -->
+    <Style x:Key="PillGroup" TargetType="Border" BasedOn="{StaticResource SegmentGroup}">
+        <Setter Property="CornerRadius" Value="16"/>
+        <Setter Property="Padding" Value="2"/>
+    </Style>
+    <Style x:Key="PillRail" TargetType="local:SlidingSelectionPanel" BasedOn="{StaticResource SegmentRail}">
+        <Setter Property="HighlightRadius" Value="13"/>
     </Style>
     <Style x:Key="Segment" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
