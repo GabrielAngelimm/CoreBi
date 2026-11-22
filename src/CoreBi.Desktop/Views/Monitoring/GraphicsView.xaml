@@ -87,8 +87,8 @@
                             <StackPanel Grid.Column="1" Margin="20,0,24,0" VerticalAlignment="Center" MaxWidth="420">
                                 <TextBlock x:Name="GpuVendor" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Gpu}" TextTrimming="CharacterEllipsis"
                                            Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
-                                <TextBlock x:Name="GpuName" Text="Lendo a placa de vídeo…" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
-                                <TextBlock x:Name="GpuSubtitle" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,5,0,0"
+                                <TextBlock x:Name="GpuName" Text="Lendo a placa de vídeo…" Style="{StaticResource PlateName}" Margin="0,4,0,0" />
+                                <TextBlock x:Name="GpuSubtitle" Style="{StaticResource PlateText}" Margin="0,5,0,0"
                                            Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
                             </StackPanel>
                             <!-- Leituras ao vivo, divididas por igual no que sobra da faixa; sem nenhum sensor, uma frase só no lugar delas -->

@@ -165,8 +165,9 @@
             <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
             <Setter Property="Margin" Value="0,6,0,0" />
         </Style>
+        <!-- Leitura média (espaço, desgaste, reserva): o tamanho do StatValue do app -->
         <Style x:Key="LifeValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
-            <Setter Property="FontSize" Value="21" />
+            <Setter Property="FontSize" Value="24" />
             <Setter Property="Margin" Value="0,3,0,0" />
         </Style>
     </UserControl.Resources>
@@ -279,19 +280,19 @@
                                             <Border Style="{StaticResource SpaceCell}" BorderThickness="0" Padding="0" Margin="0">
                                                 <StackPanel>
                                                     <TextBlock Text="Capacidade" Style="{StaticResource StatLabel}" />
-                                                    <TextBlock x:Name="SpaceTotal" Style="{StaticResource LifeValue}" FontSize="24" />
+                                                    <TextBlock x:Name="SpaceTotal" Style="{StaticResource LifeValue}" />
                                                 </StackPanel>
                                             </Border>
                                             <Border Style="{StaticResource SpaceCell}">
                                                 <StackPanel>
                                                     <TextBlock Text="Usado" Style="{StaticResource StatLabel}" />
-                                                    <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" FontSize="24" />
+                                                    <TextBlock x:Name="SpaceUsed" Style="{StaticResource LifeValue}" />
                                                 </StackPanel>
                                             </Border>
                                             <Border Style="{StaticResource SpaceCell}">
                                                 <StackPanel>
                                                     <TextBlock Text="Livre" Style="{StaticResource StatLabel}" />
-                                                    <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" FontSize="24" />
+                                                    <TextBlock x:Name="SpaceFree" Style="{StaticResource LifeValue}" />
                                                 </StackPanel>
                                             </Border>
                                         </StackPanel>
@@ -321,15 +322,15 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Margin="0,0,12,0">
                                             <TextBlock Text="Desgaste" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeWear" Style="{StaticResource LifeValue}" FontSize="23" />
+                                            <TextBlock x:Name="LifeWear" Style="{StaticResource LifeValue}" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" Margin="0,0,12,0">
                                             <TextBlock Text="Reserva" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeSpare" Style="{StaticResource LifeValue}" FontSize="23" />
+                                            <TextBlock x:Name="LifeSpare" Style="{StaticResource LifeValue}" />
                                         </StackPanel>
                                         <StackPanel x:Name="LifeEnduranceBox" Grid.Column="2">
                                             <TextBlock Text="Resistência" Style="{StaticResource StatLabel}" />
-                                            <TextBlock x:Name="LifeEndurance" Style="{StaticResource LifeValue}" FontSize="23" />
+                                            <TextBlock x:Name="LifeEndurance" Style="{StaticResource LifeValue}" />
                                         </StackPanel>
                                     </Grid>
                                 </Border>

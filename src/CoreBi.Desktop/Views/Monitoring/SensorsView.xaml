@@ -155,7 +155,7 @@
                              altura; centrado, o bloco ficava 1 px baixo, porque a DIN tem mais folga embaixo, daí os 2 de margem no pé) -->
                         <StackPanel VerticalAlignment="Center" Margin="0,0,0,2">
                             <TextBlock Text="{Binding Name}" ToolTip="{Binding Note}" Style="{StaticResource TestPlateTitle}" />
-                            <TextBlock FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" Typography.NumeralAlignment="Tabular">
+                            <TextBlock Style="{StaticResource PlateText}" Margin="0,4,0,0">
                                 <Run Text="{Binding Kind, Mode=OneWay}" /><Run Text="  ·  " Foreground="{DynamicResource Faint}" /><Run Text="{Binding CountText, Mode=OneWay}" Foreground="{DynamicResource Fg}" />
                             </TextBlock>
                         </StackPanel>
@@ -293,7 +293,7 @@
                                 <TranslateTransform Y="-2" />
                             </TextBlock.RenderTransform>
                         </TextBlock>
-                        <TextBlock Text="Filtrar por tipo de sensor" FontFamily="{StaticResource LabelFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
+                        <TextBlock Text="Filtrar por tipo de sensor" Style="{StaticResource Label}" Margin="0" />
                     </StackPanel>
                     <WrapPanel x:Name="CategoryChips" Margin="0,0,0,-6" />
                 </DockPanel>

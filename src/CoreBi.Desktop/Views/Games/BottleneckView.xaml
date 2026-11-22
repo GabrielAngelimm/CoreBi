@@ -129,7 +129,7 @@
                                      centrada na linha de 34 px dos cabeçalhos para assentar na mesma altura que "Leituras", no painel vizinho
                                      (MainWindow.SetLiveTitle). A manchete grande passa dos 34 e a linha cresce com ela. -->
                                 <Grid MinHeight="34">
-                                    <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" FontFamily="{StaticResource DisplayFont}" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" Style="{StaticResource SectionTitle}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" VerticalAlignment="Center" />
                                 </Grid>
                                 <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="720" HorizontalAlignment="Left" Margin="0,8,0,0" />
                                 <ItemsControl x:Name="BnFrameStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,24,0,0" Focusable="False" Visibility="Collapsed">

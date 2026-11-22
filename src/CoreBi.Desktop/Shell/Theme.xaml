@@ -102,7 +102,8 @@
     <CornerRadius x:Key="RadiusPanelTop">15,15,0,0</CornerRadius>
     <CornerRadius x:Key="RadiusPanelBottom">0,0,15,15</CornerRadius>
     <!-- Respiro padrão de um painel (24 nas laterais, 20 em cima e embaixo) -->
-    <Thickness x:Key="PanelPadding">24,20</Thickness>
+    <!-- Respiro do painel: o mesmo nos quatro lados -->
+    <Thickness x:Key="PanelPadding">24</Thickness>
 
     <!-- ===================== Tipografia ===================== -->
     <!--
