@@ -241,17 +241,21 @@ public partial class SystemView : UserControl
 
     internal async Task ExportReportAsync()
     {
+        if ((_context.Owner as MainWindow)?.ReportLayer is not { } dialog) return;
+        var network = _networkResult();
+        var (sheetParts, diagParts) = ReportExportService.Parts(_context, Built, network != null);
+        var choice = await dialog.AskAsync(_context.Settings, sheetParts, diagParts);
+        if (choice == null) return;
+        _context.SaveSettings();
+
         BtnReport.IsEnabled = false;
         try
         {
-            string? path = await ReportExportService.ExportInteractiveAsync(
-                _context, Built, Nodes, _networkResult(), status => HeaderMotion.Say(SystemSub, null, status));
+            string path = await ReportExportService.ExportAsync(
+                _context, Built, Nodes, network, choice, status => HeaderMotion.Say(SystemSub, null, status));
             // O estado conta o andamento ("Gerando PDF…") e termina no nome do arquivo; o caminho inteiro fica na dica
-            if (path != null)
-            {
-                SystemSub.ToolTip = path;
-                HeaderMotion.Say(SystemSub, null, $"Relatório salvo: {System.IO.Path.GetFileName(path)}");
-            }
+            SystemSub.ToolTip = path;
+            HeaderMotion.Say(SystemSub, null, $"Relatório salvo: {System.IO.Path.GetFileName(path)}");
         }
         catch (Exception ex)
         {

@@ -23,7 +23,7 @@ internal static class ReportHtmlRenderer
 
         sb.Append($"<!doctype html><html lang=\"pt-BR\" data-theme=\"{(d.Dark ? "dark" : "light")}\"><head><meta charset=\"utf-8\">");
         sb.Append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"color-scheme\" content=\"light dark\">");
-        sb.Append($"<title>{E(d.Machine)} · Relatório do sistema</title><style>{ReportAssets.Css}");
+        sb.Append($"<title>Relatório CoreBi · {E(d.Machine)} · {E(d.Date.ToString("dd/MM/yyyy", ByteFormat.PtBr))}</title><style>{ReportAssets.Css}");
         // Cabeçalho e rodapé de cada folha impressa (navegadores Chromium; os outros só ignoram).
         sb.Append($"@page{{@top-left{{content:\"CoreBi · Relatório do sistema\"}}@top-right{{content:\"{CssText(d.Machine)}\"}}");
         sb.Append($"@bottom-left{{content:\"Gerado em {CssText(date)}\"}}@bottom-right{{content:\"Página \" counter(page) \" de \" counter(pages)}}}}");
@@ -44,14 +44,40 @@ internal static class ReportHtmlRenderer
             .Select(s => s.Title).Where(t => t.Length > 0 && t != "—");
         sb.Append($"<p class=\"lead\">{string.Join("<i>·</i>", headline.Select(E))}</p></div>");
 
-        if (d.Sheets.Count > 0)
+        // O diagnóstico que entrou, na ordem em que aparece: título, página de onde vem, cor e o que ele resume
+        var diag = new List<(string Title, string Page, string Channel, string Spec)>();
+        if (d.Disks.Count > 0) diag.Add(("Saúde dos discos", "Discos", "storage", Count(d.Disks.Count, "disco", "discos")));
+        if (d.Power.Count > 0) diag.Add(("Bateria e energia", "Energia", "steel", d.Power[0].Verdict.Length > 0 ? HardwareNaming.Sentence(d.Power[0].Verdict) : Count(d.Power.Count, "item", "itens")));
+        if (d.Network.Count > 0) diag.Add(("Teste de rede", "Rede", "net", Count(d.Network.Count, "medida", "medidas")));
+        if (d.Sensors.Count > 0) diag.Add(("Sensores", "Sensores", "steel", Count(d.Sensors.Count, "leitura", "leituras")));
+        if (d.Benchmarks.Count > 0) diag.Add(("Benchmarks e testes", "Benchmarks", "steel", Count(d.Benchmarks.Count, "resultado", "resultados")));
+
+        // Sumário: tudo o que o relatório traz, numerado. As fichas em três colunas; o diagnóstico numa fila própria, mais
+        // compacta, que se divide pela largura (até cinco), para nenhuma linha ficar com um cartão sozinho.
+        if (d.Sheets.Count + diag.Count > 0)
         {
             sb.Append("<nav class=\"summary\" aria-label=\"Sumário\">");
-            for (int i = 0; i < d.Sheets.Count; i++)
+            if (d.Sheets.Count > 0)
             {
-                var s = d.Sheets[i];
-                sb.Append($"<a href=\"#s{i + 1}\" class=\"c-{Channel(s.Channel)}\"><span class=\"n\">{i + 1}</span><span class=\"cat\">{E(s.Category)}</span>");
-                sb.Append($"<span class=\"name\">{E(s.Title)}</span><span class=\"spec\">{E(s.Summary)}</span></a>");
+                sb.Append("<div class=\"sum-grid\">");
+                for (int i = 0; i < d.Sheets.Count; i++)
+                {
+                    var s = d.Sheets[i];
+                    sb.Append($"<a href=\"#s{i + 1}\" class=\"c-{Channel(s.Channel)}\"><span class=\"n\">{i + 1:00}</span><span class=\"cat\">{E(s.Category)}</span>");
+                    sb.Append($"<span class=\"name\">{E(s.Title)}</span><span class=\"spec\">{E(s.Summary)}</span></a>");
+                }
+                sb.Append("</div>");
+            }
+            if (diag.Count > 0)
+            {
+                sb.Append($"<p class=\"sum-label\">Diagnóstico</p><div class=\"sum-grid diag\" style=\"--n:{diag.Count}\">");
+                for (int i = 0; i < diag.Count; i++)
+                {
+                    int k = d.Sheets.Count + i + 1;
+                    sb.Append($"<a href=\"#s{k}\" class=\"c-{Channel(diag[i].Channel)}\"><span class=\"n\">{k:00}</span><span class=\"cat\">{E(diag[i].Page)}</span>");
+                    sb.Append($"<span class=\"name\">{E(diag[i].Title)}</span><span class=\"spec\">{E(diag[i].Spec)}</span></a>");
+                }
+                sb.Append("</div>");
             }
             sb.Append("</nav>");
         }
@@ -59,8 +85,12 @@ internal static class ReportHtmlRenderer
         for (int i = 0; i < d.Sheets.Count; i++) RenderSheet(sb, d.Sheets[i], i + 1);
 
         int n = d.Sheets.Count;
-        bool any = d.Disks.Count + d.Power.Count + d.Network.Count + d.Sensors.Count + d.Benchmarks.Count > 0;
-        if (any) sb.Append("<div class=\"part\"><p class=\"part-title\">Diagnóstico</p><p>Estado lido no momento da exportação, nas páginas Discos, Energia, Rede, Sensores e Benchmarks.</p></div>");
+        if (diag.Count > 0)
+        {
+            var pages = diag.Select(x => x.Page).ToList();
+            string from = pages.Count == 1 ? pages[0] : string.Join(", ", pages.Take(pages.Count - 1)) + " e " + pages[^1];
+            sb.Append($"<div class=\"part\"><p class=\"part-title\">Diagnóstico</p><p>Estado lido no momento da exportação, {(pages.Count == 1 ? "na página" : "nas páginas")} {E(from)}.</p></div>");
+        }
         if (d.Disks.Count > 0) RenderFindings(sb, ++n, "Saúde dos discos", "storage", d.Disks);
         if (d.Power.Count > 0) RenderFindings(sb, ++n, "Bateria e energia", "steel", d.Power);
         if (d.Network.Count > 0) RenderFindings(sb, ++n, "Teste de rede", "net", d.Network);
@@ -76,8 +106,10 @@ internal static class ReportHtmlRenderer
         return sb.ToString();
     }
 
+    private static string Count(int n, string one, string many) => $"{n.ToString("N0", ByteFormat.PtBr)} {(n == 1 ? one : many)}";
+
     private static void RenderHead(StringBuilder sb, int number, string title) =>
-        sb.Append($"<div class=\"head\"><span class=\"n\">{number}</span><h2>{E(title)}</h2></div>");
+        sb.Append($"<div class=\"head\"><span class=\"n\">{number:00}</span><h2>{E(title)}</h2></div>");
 
     private static void RenderSheet(StringBuilder sb, ReportSheet s, int number)
     {
@@ -161,7 +193,7 @@ internal static class ReportHtmlRenderer
 
     private static void RenderFindings(StringBuilder sb, int number, string title, string channel, List<ReportFinding> items)
     {
-        sb.Append($"<section class=\"sheet c-{Channel(channel)}\">");
+        sb.Append($"<section class=\"sheet c-{Channel(channel)}\" id=\"s{number}\">");
         RenderHead(sb, number, title);
         sb.Append("<div class=\"findings\">");
         foreach (var x in items)
@@ -184,7 +216,7 @@ internal static class ReportHtmlRenderer
 
     private static void RenderSensors(StringBuilder sb, int number, List<ReportSensor> sensors)
     {
-        sb.Append("<section class=\"sheet c-steel\">");
+        sb.Append($"<section class=\"sheet c-steel\" id=\"s{number}\">");
         RenderHead(sb, number, "Sensores");
         sb.Append("<p class=\"intro\">Leitura no momento da exportação. Mínimo e máximo contam desde que o CoreBi abriu ou desde a última vez que as estatísticas foram zeradas.</p>");
         foreach (var hw in sensors.GroupBy(s => s.Hardware))
@@ -204,7 +236,7 @@ internal static class ReportHtmlRenderer
 
     private static void RenderBenchmarks(StringBuilder sb, int number, List<ReportBench> list)
     {
-        sb.Append("<section class=\"sheet c-steel\">");
+        sb.Append($"<section class=\"sheet c-steel\" id=\"s{number}\">");
         RenderHead(sb, number, "Benchmarks e testes");
         sb.Append("<div class=\"group wide\"><table class=\"bench\"><thead><tr><th>Data</th><th>Teste</th><th>Resultado</th></tr></thead><tbody>");
         foreach (var b in list)

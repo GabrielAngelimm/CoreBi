@@ -722,7 +722,12 @@
                 <ControlTemplate TargetType="Button">
                     <Grid x:Name="root">
                         <Border x:Name="b" CornerRadius="15" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Background="Transparent" SnapsToDevicePixels="True"/>
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <!-- Seta na diagonal, para cima e para a direita: aponta o canto do cartão e diz "abre outra página" -->
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                            <ContentPresenter.RenderTransform>
+                                <RotateTransform Angle="-45"/>
+                            </ContentPresenter.RenderTransform>
+                        </ContentPresenter>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">

@@ -67,7 +67,10 @@ internal static partial class Program
                     nav.IsChecked = true;
                     Wait(parts[0] is "PageDisks" or "PageEnergy" or "PageSystem" ? 4000 : 2500);
                     if (parts[0] == "PageNet") ShowNetworkSample(window);
-                    if (parts[0] == "PageSystem" && parts.Length == 2) { window.PageSystem.Select(parts[1]); Wait(800); }
+                    // "PageSystem:report" abre a janela de exportação sobre a página (sem salvar nada) e fecha depois da captura
+                    bool report = parts[0] == "PageSystem" && parts.Length == 2 && parts[1] == "report";
+                    if (report) { _ = window.PageSystem.ExportReportAsync(); Wait(900); }
+                    else if (parts[0] == "PageSystem" && parts.Length == 2) { window.PageSystem.Select(parts[1]); Wait(800); }
                     Wait(600);
                     string file = Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-{theme}.png");
                     SaveWindow(window, file);
@@ -75,6 +78,7 @@ internal static partial class Program
                     // Quanto a página rola nesta janela (0 = cabe inteira): serve para conferir "tela cheia sem rolagem" em outro PC
                     if (typeof(MainWindow).GetField(parts[0], System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)?.GetValue(window) is UserControl { Content: ScrollViewer scroll })
                         Console.WriteLine($"  {parts[0]}: rolagem {scroll.ScrollableHeight:0} px");
+                    if (report) { window.ReportLayer.Cancel(); Wait(300); continue; }
                     if (theme == themes[0]) SaveSkeletons(window, Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-skeleton.png"));
                 }
             }

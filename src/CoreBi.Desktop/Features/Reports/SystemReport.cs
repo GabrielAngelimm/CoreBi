@@ -8,7 +8,7 @@ namespace CoreBi.Desktop.Features.Reports;
 /// <summary>Leva as fichas da página Sistema e a árvore de nós para o relatório, omitindo campos privados.</summary>
 internal static class SystemReport
 {
-    private static readonly string[] Order = { SystemSheets.Os, SystemSheets.Cpu, SystemSheets.Gpu, SystemSheets.Ram, SystemSheets.Board, SystemSheets.Storage };
+    internal static readonly string[] Order = { SystemSheets.Os, SystemSheets.Cpu, SystemSheets.Gpu, SystemSheets.Ram, SystemSheets.Board, SystemSheets.Storage };
 
     public static ReportNode? ToNode(InfoNode node)
     {

@@ -34,6 +34,14 @@ public sealed class AppSettings
     /// <summary>Controla a oferta única de "Nome do hardware" para seleções salvas anteriores.</summary>
     public bool OverlayNamesOffered { get; set; }
 
+    // Relatório: a última escolha da janela de exportação, para a próxima abrir igual.
+    /// <summary>Formato do relatório: "html", "pdf" ou "json".</summary>
+    public string ReportFormat { get; set; } = "html";
+    /// <summary>Pasta onde o último relatório foi salvo; null = Documentos.</summary>
+    public string? ReportFolder { get; set; }
+    /// <summary>Abrir o relatório logo depois de salvar.</summary>
+    public bool ReportOpen { get; set; } = true;
+
     public static AppSettings Load()
     {
         try
@@ -74,5 +82,6 @@ public sealed class AppSettings
         OverlayScale = OverlayMetrics.NormalizeScale(OverlayScale);
         OverlayOpacity = OverlayMetrics.NormalizeOpacity(OverlayOpacity);
         OverlayItems = OverlayMetrics.NormalizeItems(OverlayItems);
+        ReportFormat = ReportFormat is "html" or "pdf" or "json" ? ReportFormat : "html";
     }
 }
