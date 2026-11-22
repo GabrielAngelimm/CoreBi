@@ -79,8 +79,8 @@ public partial class AppsView : UserControl
         {
             AppsList.IsEnabled = false;
             BtnAppsInstall.IsEnabled = false;
+            // Leitura sem medidor, só a mensagem; o medidor fica para a instalação, que tem etapas
             Say("Lendo aplicativos instalados…");
-            ToolPage.SetProgress(AppsProgressFill, 0);
         }
         try
         {
@@ -107,13 +107,12 @@ public partial class AppsView : UserControl
             }
             _wingetAvailable = AppInstaller.WingetAvailable;
             BtnAppsStore.Visibility = _wingetAvailable ? Visibility.Collapsed : Visibility.Visible;
-            if (!quiet) ToolPage.SetProgress(AppsProgressFill, 1);
             int installed = _installApps.Count(a => a.Installed);
             if (_wingetAvailable) Say($"{installed} de {_installApps.Count} já instalados");
             else Say("winget não encontrado", "Atualize o Instalador de Aplicativo na Microsoft Store e abra esta página de novo.");
         }
-        catch (OperationCanceledException) { ToolPage.EndProgress(AppsProgressFill); }
-        catch (Exception ex) { DiagnosticLog.Write("apps.inventory", ex); Say("Não foi possível ler os apps instalados", ex.Message); ToolPage.EndProgress(AppsProgressFill); }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { DiagnosticLog.Write("apps.inventory", ex); Say("Não foi possível ler os apps instalados", ex.Message); }
         finally
         {
             _appsRefreshing = false;

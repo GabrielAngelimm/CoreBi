@@ -39,7 +39,8 @@ public partial class StartupView : UserControl
         _scanning = true;
         // Voltar à página relê em silêncio: sem "Lendo…" nem medidor, só a hora no fim (e a lista só muda se mudou)
         bool quiet = entering && StartupList.ItemsSource != null;
-        if (announce && !quiet) { Say("Lendo programas…"); ToolPage.SetProgress(StartupProgressFill, 0); }
+        // Leitura sem medidor, só a mensagem que vira "Lido às" (como em Drivers); o medidor fica para restaurar, que tem etapas
+        if (announce && !quiet) Say("Lendo programas…");
         if (StartupList.ItemsSource == null) Skeleton.SetActive(StartupCard, true); // primeira leitura: a tabela ainda não tem o que mostrar
         List<StartupEntry> list;
         string backupError = "";
@@ -47,12 +48,11 @@ public partial class StartupView : UserControl
         {
             list = await Task.Run(_startup.List, _context.Lifetime);
             if (_context.IsClosing) return;
-            if (announce && !quiet) ToolPage.SetProgress(StartupProgressFill, 0.5);
             try { _removed = await Task.Run(() => _startup.Backups, _context.Lifetime); }
             catch (UnauthorizedAccessException) { _removed = Array.Empty<StartupBackup>(); backupError = "Os removidos só aparecem com o CoreBi aberto como administrador."; }
             catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); backupError = "Não foi possível ler os removidos: " + ex.Message; }
         }
-        catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); ToolPage.EndProgress(StartupProgressFill); _scanning = false; Skeleton.SetActive(StartupCard, false); return; }
+        catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); _scanning = false; Skeleton.SetActive(StartupCard, false); return; }
         if (entering) await PageMotion.EntranceDone(this);
         _scanning = false;
         Skeleton.SetActive(StartupCard, false);
@@ -66,7 +66,6 @@ public partial class StartupView : UserControl
         StartupOff.Text = OffText(list.Count, list.Count(e => !e.Enabled));
         if (announce)
         {
-            if (!quiet) ToolPage.SetProgress(StartupProgressFill, 1);
             Say($"Lido às {DateTime.Now:HH:mm}", backupError);
         }
         else if (backupError.Length > 0) StartupResult.Text = backupError;
