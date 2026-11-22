@@ -27,6 +27,8 @@ public partial class AppsView : UserControl
     private readonly ObservableCollection<AppTile> _package = new();
     private bool _wingetAvailable, _syncingKits;
     private string _view = "all";
+    /// <summary>Categoria escolhida pelo título (nula: todas).</summary>
+    private string? _category;
 
     // Geometria das colunas: largura mínima de uma coluna, o vão entre elas e as alturas que entram na divisão
     private const double MinColumn = 250, ColumnGap = 28, GroupHead = 37, RowHeight = 32, GroupGap = 14;
@@ -201,7 +203,7 @@ public partial class AppsView : UserControl
     {
         if (_installApps == null || _syncingKits) return;
         _syncingKits = true;
-        foreach (var chip in new[] { KitPost, KitGames, KitWork })
+        foreach (var chip in new[] { KitPost, KitGames, KitWork, KitCreator, KitDev })
         {
             if (!Enum.TryParse<AppKit>(chip.Tag as string, out var kit)) continue;
             var apps = _installApps.Where(a => a.Kits.HasFlag(kit)).ToList();
@@ -224,7 +226,19 @@ public partial class AppsView : UserControl
 
     private void AppsSearch_TextChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
 
-    /// <summary>O filtro e a busca só apagam as linhas que não interessam; nada sai do lugar.</summary>
+    /// <summary>O título da categoria filtra por ela; clicar de novo na mesma volta a todas.</summary>
+    private void Category_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not AppGroup group) return;
+        _category = _category == group.Name ? null : group.Name;
+        foreach (var g in _groups) g.Active = g.Name == _category;
+        ApplyFilter();
+    }
+
+    /// <summary>
+    /// Estado (o filtro do topo), categoria (o título clicado) e busca se somam; o que não entra só apaga, nada sai do lugar. O
+    /// título de uma categoria sem nenhuma linha acesa apaga junto.
+    /// </summary>
     private void ApplyFilter()
     {
         // "Todos" já nasce marcado: o Checked dele chega durante o InitializeComponent, antes de a busca existir
@@ -234,16 +248,19 @@ public partial class AppsView : UserControl
         {
             bool view = _view switch
             {
+                "available" => !tile.App.Installed,
                 "pack" => tile.App.Selected && !tile.App.Installed,
                 "installed" => tile.App.Installed,
                 _ => true,
             };
+            bool category = _category == null || tile.App.Category == _category;
             bool match = query.Length == 0
                 || tile.App.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)
                 || tile.App.Category.Contains(query, StringComparison.CurrentCultureIgnoreCase)
                 || tile.App.Description.Contains(query, StringComparison.CurrentCultureIgnoreCase);
-            tile.Dimmed = !(view && match);
+            tile.Dimmed = !(view && category && match);
         }
+        foreach (var g in _groups) g.Dimmed = g.Tiles.All(t => t.Dimmed);
     }
 
     private void UpdateCounts()
@@ -251,6 +268,7 @@ public partial class AppsView : UserControl
         if (_installApps == null) return;
         int pack = _installApps.Count(a => a.Selected && !a.Installed), installed = _installApps.Count(a => a.Installed);
         ViewAll.Content = $"Todos  {_installApps.Count}";
+        ViewAvailable.Content = $"Disponíveis  {_installApps.Count - installed}";
         ViewPack.Content = $"No pacote  {pack}";
         ViewInstalled.Content = $"Instalados  {installed}";
     }
@@ -435,13 +453,20 @@ public partial class AppsView : UserControl
 
 public enum AppPhase { Idle, Queued, Installing, Done, Failed, Skipped }
 
-/// <summary>Uma categoria do catálogo: o título, a quantidade e as linhas.</summary>
-public sealed class AppGroup
+/// <summary>Uma categoria do catálogo: o título (que filtra por ela), a quantidade e as linhas.</summary>
+public sealed class AppGroup : ObservableObject
 {
     internal AppGroup(string name, List<AppTile> tiles) { Name = name; Tiles = tiles; }
     public string Name { get; }
     public List<AppTile> Tiles { get; }
     public int Count => Tiles.Count;
+
+    private bool _active, _dimmed;
+    /// <summary>A categoria escolhida no filtro.</summary>
+    public bool Active { get => _active; set { if (Set(ref _active, value)) OnPropertyChanged(nameof(HeadTip)); } }
+    /// <summary>Nenhuma linha dela entra no filtro: o título apaga junto.</summary>
+    public bool Dimmed { get => _dimmed; set => Set(ref _dimmed, value); }
+    public string HeadTip => Active ? "Voltar a todas as categorias" : $"Mostrar só {Name}";
 }
 
 /// <summary>Uma linha do catálogo e a ficha do pacote: o app, o ícone e o estado da instalação.</summary>

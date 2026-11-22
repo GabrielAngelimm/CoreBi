@@ -12,6 +12,8 @@ public enum AppKit
     PostFormat = 1,
     Games = 2,
     Work = 4,
+    Creator = 8,
+    Dev = 16,
 }
 
 /// <summary>

@@ -16,7 +16,7 @@ public static class AppCatalog
         "Periféricos", "Criação", "Utilitários", "Segurança", "Desenvolvimento", "Componentes",
     };
 
-    private const AppKit Post = AppKit.PostFormat, Games = AppKit.Games, Work = AppKit.Work;
+    private const AppKit Post = AppKit.PostFormat, Games = AppKit.Games, Work = AppKit.Work, Creator = AppKit.Creator, Dev = AppKit.Dev;
 
     /// <summary>Pacote cujo nome no registro começa com <paramref name="displayPrefix"/>.</summary>
     private static AppPackage P(string id, string? displayPrefix) => new(id, displayPrefix == null ? null : "^" + Regex.Escape(displayPrefix));
@@ -53,7 +53,7 @@ public static class AppCatalog
         App("Comunicação", "Microsoft Teams", "teams", "Reuniões e chat do trabalho ou escola.", Work, P("Microsoft.Teams", null)),
         App("Comunicação", "Slack", "slack", "Chat de equipes por canais.", 0, P("SlackTechnologies.Slack", "Slack")),
 
-        App("Gravação e live", "OBS Studio", "obs", "Grava e transmite a tela e os jogos.", Games, P("OBSProject.OBSStudio", "OBS Studio")),
+        App("Gravação e live", "OBS Studio", "obs", "Grava e transmite a tela e os jogos.", Games | Creator, P("OBSProject.OBSStudio", "OBS Studio")),
         App("Gravação e live", "Streamlabs", "streamlabs", "Transmissão com alertas e temas prontos.", 0, P("Streamlabs.Streamlabs", "Streamlabs")),
         App("Gravação e live", "Lightshot", "lightshot", "Captura de tela rápida no Print Screen.", 0, P("Skillbrains.Lightshot", "Lightshot")),
 
@@ -66,7 +66,7 @@ public static class AppCatalog
         App("Produtividade", "LibreOffice", "libreoffice", "Textos, planilhas e slides, grátis.", Work, P("TheDocumentFoundation.LibreOffice", "LibreOffice")),
         App("Produtividade", "Acrobat Reader", "acrobat", "Lê, assina e preenche PDFs.", Work, P("Adobe.Acrobat.Reader.64-bit", "Adobe Acrobat")),
         App("Produtividade", "Notion", "notion", "Notas, tarefas e wikis.", 0, P("Notion.Notion", "Notion")),
-        App("Produtividade", "Notepad++", "notepadpp", "Editor de texto e código.", 0, P("Notepad++.Notepad++", "Notepad++")),
+        App("Produtividade", "Notepad++", "notepadpp", "Editor de texto e código.", Dev, P("Notepad++.Notepad++", "Notepad++")),
         App("Produtividade", "Google Drive", "googledrive", "Seus arquivos do Drive no Explorer.", Work, P("Google.GoogleDrive", "Google Drive")),
         App("Produtividade", "Dropbox", "dropbox", "Arquivos na nuvem e sincronizados.", 0, P("Dropbox.Dropbox", "Dropbox")),
         App("Produtividade", "Evernote", "evernote", "Notas e anotações na nuvem.", 0, P("Evernote.Evernote", "Evernote")),
@@ -80,12 +80,12 @@ public static class AppCatalog
         App("Periféricos", "Corsair iCUE", "icue", "Luzes, ventoinhas e periféricos Corsair.", 0, P("Corsair.iCUE.5", "iCUE")),
         App("Periféricos", "SteelSeries GG", "steelseries", "Periféricos SteelSeries e Sonar.", 0, P("SteelSeries.GG", "SteelSeries GG")),
 
-        App("Criação", "GIMP", "gimp", "Edição de imagens gratuita.", 0, P("GIMP.GIMP.3", "GIMP")),
+        App("Criação", "GIMP", "gimp", "Edição de imagens gratuita.", Creator, P("GIMP.GIMP.3", "GIMP")),
         App("Criação", "Blender", "blender", "Modelagem, animação e render 3D.", 0, P("BlenderFoundation.Blender", "Blender")),
-        App("Criação", "CapCut", "capcut", "Edição de vídeo para redes sociais.", 0, P("ByteDance.CapCut", "CapCut")),
-        App("Criação", "Audacity", "audacity", "Grava e edita áudio.", 0, P("Audacity.Audacity", "Audacity")),
+        App("Criação", "CapCut", "capcut", "Edição de vídeo para redes sociais.", Creator, P("ByteDance.CapCut", "CapCut")),
+        App("Criação", "Audacity", "audacity", "Grava e edita áudio.", Creator, P("Audacity.Audacity", "Audacity")),
         App("Criação", "Figma", "figma", "Design de interfaces em equipe.", 0, P("Figma.Figma", "Figma")),
-        App("Criação", "Canva", "canva", "Artes e posts com modelos prontos.", 0, P("Canva.Canva", "Canva")),
+        App("Criação", "Canva", "canva", "Artes e posts com modelos prontos.", Creator, P("Canva.Canva", "Canva")),
 
         App("Utilitários", "7-Zip", "7zip", "Compactador gratuito para zip, rar e 7z.", Post, P("7zip.7zip", "7-Zip")),
         App("Utilitários", "WinRAR", "winrar", "Compactador clássico, pago após o teste.", 0, P("RARLab.WinRAR", "WinRAR")),
@@ -98,11 +98,11 @@ public static class AppCatalog
         App("Segurança", "Proton VPN", "protonvpn", "VPN com plano grátis sem limite.", 0, P("Proton.ProtonVPN", "Proton VPN")),
         App("Segurança", "Malwarebytes", "malwarebytes", "Segunda opinião contra vírus.", 0, P("Malwarebytes.Malwarebytes", "Malwarebytes")),
 
-        App("Desenvolvimento", "VS Code", "vscode", "Editor de código da Microsoft.", 0, P("Microsoft.VisualStudioCode", "Microsoft Visual Studio Code")),
-        App("Desenvolvimento", "Git", "git", "Controle de versão.", 0, R("Git.Git", @"^Git( version|$)")),
-        App("Desenvolvimento", "GitHub Desktop", "githubdesktop", "Git com janela, sem terminal.", 0, R("GitHub.GitHubDesktop", @"^GitHub Desktop$")),
-        App("Desenvolvimento", "Python", "python", "Linguagem Python 3.14.", 0, P("Python.Python.3.14", "Python 3.14")),
-        App("Desenvolvimento", "Node.js LTS", "nodejs", "JavaScript fora do navegador.", 0, P("OpenJS.NodeJS.LTS", "Node.js")),
+        App("Desenvolvimento", "VS Code", "vscode", "Editor de código da Microsoft.", Dev, P("Microsoft.VisualStudioCode", "Microsoft Visual Studio Code")),
+        App("Desenvolvimento", "Git", "git", "Controle de versão.", Dev, R("Git.Git", @"^Git( version|$)")),
+        App("Desenvolvimento", "GitHub Desktop", "githubdesktop", "Git com janela, sem terminal.", Dev, R("GitHub.GitHubDesktop", @"^GitHub Desktop$")),
+        App("Desenvolvimento", "Python", "python", "Linguagem Python 3.14.", Dev, P("Python.Python.3.14", "Python 3.14")),
+        App("Desenvolvimento", "Node.js LTS", "nodejs", "JavaScript fora do navegador.", Dev, P("OpenJS.NodeJS.LTS", "Node.js")),
         App("Desenvolvimento", "Docker Desktop", "docker", "Containers.", 0, P("Docker.DockerDesktop", "Docker Desktop")),
         App("Desenvolvimento", "Sublime Text", "sublime", "Editor de código leve.", 0, P("SublimeHQ.SublimeText.4", "Sublime Text")),
 

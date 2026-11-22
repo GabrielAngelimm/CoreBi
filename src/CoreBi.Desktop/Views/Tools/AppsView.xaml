@@ -99,15 +99,61 @@
             </Setter>
         </Style>
 
-        <!-- Categoria: título de grupo com a quantidade em mostrador, fio embaixo e as linhas -->
+        <!--
+            Categoria: o título é também o filtro da categoria. Um clique acende só ela (título no sinal, fio de 2 px no sinal e um X
+            à direita para voltar a todas); o mesmo clique de novo, ou o X, volta a todas. Sob o mouse, o funil aparece à direita, para
+            dizer que o título filtra. Categoria sem nenhuma linha no filtro apaga o título junto.
+        -->
+        <Style x:Key="CategoryHead" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="ToolTipService.InitialShowDelay" Value="600" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="root" Height="31" Background="Transparent" Margin="0,0,0,6">
+                            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" />
+                            <Border x:Name="accent" Height="2" VerticalAlignment="Bottom" Background="{DynamicResource Signal}" CornerRadius="1" Visibility="Hidden" />
+                            <Grid Margin="8,0,6,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                    <Run x:Name="title" Text="{Binding Name, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold"
+                                         Foreground="{DynamicResource Fg}" /><InlineUIContainer><Border Width="8" /></InlineUIContainer><Run
+                                        Text="{Binding Count, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16"
+                                        Foreground="{DynamicResource Faint}" Typography.NumeralAlignment="Tabular" />
+                                </TextBlock>
+                                <TextBlock x:Name="glyph" Grid.Column="1" Text="&#xE71C;" FontFamily="{StaticResource Icons}" FontSize="12" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource Faint}" Visibility="Hidden" />
+                            </Grid>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="glyph" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="title" Property="Foreground" Value="{DynamicResource Signal}" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding Active}" Value="True">
+                                <Setter TargetName="accent" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="title" Property="Foreground" Value="{DynamicResource Signal}" />
+                                <Setter TargetName="glyph" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="glyph" Property="Text" Value="&#xE711;" />
+                                <Setter TargetName="glyph" Property="FontSize" Value="11" />
+                                <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Signal}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Dimmed}" Value="True">
+                                <Setter TargetName="root" Property="Opacity" Value="0.4" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <DataTemplate x:Key="CategoryGroup">
             <StackPanel Margin="0,0,0,14">
-                <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Height="31" Padding="8,0,0,0" Margin="0,0,0,6">
-                    <TextBlock VerticalAlignment="Center">
-                        <Run Text="{Binding Name, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" /><InlineUIContainer><Border Width="8" /></InlineUIContainer><Run
-                            Text="{Binding Count, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16" Foreground="{DynamicResource Faint}" Typography.NumeralAlignment="Tabular" />
-                    </TextBlock>
-                </Border>
+                <Button Style="{StaticResource CategoryHead}" Click="Category_Click" ToolTip="{Binding HeadTip}" AutomationProperties.Name="{Binding HeadTip}" />
                 <ItemsControl ItemsSource="{Binding Tiles}" Focusable="False">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -154,13 +200,68 @@
             </Setter>
         </Style>
 
-        <!-- Marcadores da legenda: os mesmos da linha, em 16 px -->
-        <Style x:Key="LegendDot" TargetType="Border">
-            <Setter Property="Width" Value="16" />
-            <Setter Property="Height" Value="16" />
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,0,7,0" />
+        <!--
+            Filtro de estado: os segmentos de "Segment" com o marcador que a linha usa para aquele estado antes do nome. O filtro é
+            também a legenda: Disponíveis (aro vazio), No pacote (cheio no sinal, com o visto) e Instalados (verde-claro com o visto).
+            "Todos" não tem marcador. A largura nasce com o texto em seminegrito, como em "Segment", para nada andar ao escolher.
+        -->
+        <Style x:Key="StateSegment" TargetType="RadioButton" BasedOn="{StaticResource Segment}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="12,5,12,3" MinHeight="26">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Border x:Name="dot" Width="14" Height="14" CornerRadius="7" Margin="0,-2,7,0" VerticalAlignment="Center" Visibility="Collapsed"
+                                        BorderThickness="1.5" BorderBrush="{DynamicResource LineStrong}">
+                                    <TextBlock x:Name="mark" Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="8" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Visibility="Collapsed" />
+                                </Border>
+                                <Grid>
+                                    <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Visibility="Hidden" HorizontalAlignment="Center" />
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Tag" Value="available">
+                                <Setter TargetName="dot" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="Tag" Value="pack">
+                                <Setter TargetName="dot" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="dot" Property="BorderThickness" Value="0" />
+                                <Setter TargetName="dot" Property="Background" Value="{DynamicResource Signal}" />
+                                <Setter TargetName="mark" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource SignalFg}" />
+                            </Trigger>
+                            <Trigger Property="Tag" Value="installed">
+                                <Setter TargetName="dot" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="dot" Property="BorderThickness" Value="0" />
+                                <Setter TargetName="dot" Property="Background" Value="{DynamicResource OkSoft}" />
+                                <Setter TargetName="mark" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Ok}" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="True" />
+                                    <Condition Property="local:Ui.SlidingGroup" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}" />
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="b" Property="Opacity" Value="0.45" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!--
@@ -246,13 +347,16 @@
                         <Button x:Name="BtnAppsStore" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE719;" Content="Abrir na Microsoft Store"
                                 Margin="0,0,10,0" Visibility="Collapsed" Click="BtnAppsStore_Click"
                                 ToolTip="Abre o Instalador de Aplicativo, que traz o winget." />
-                        <!-- Filtro: acende só o que interessa e apaga o resto, sem tirar nada do lugar -->
+                        <!-- Filtro por estado, que é também a legenda das linhas: acende só o que interessa e apaga o resto, sem tirar nada do lugar -->
                         <Border x:Name="AppsViewGroup" Style="{StaticResource SegmentGroup}" Margin="0,0,10,0">
                             <local:SlidingSelectionPanel Style="{StaticResource SegmentRail}" ToggleButton.Checked="AppsView_Checked">
-                                <RadioButton x:Name="ViewAll" Style="{StaticResource Segment}" GroupName="AppsView" Content="Todos" Tag="all" IsChecked="True" />
-                                <RadioButton x:Name="ViewPack" Style="{StaticResource Segment}" GroupName="AppsView" Content="No pacote" Tag="pack"
+                                <RadioButton x:Name="ViewAll" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="Todos" Tag="all" IsChecked="True"
+                                             ToolTip="Mostra o catálogo inteiro." />
+                                <RadioButton x:Name="ViewAvailable" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="Disponíveis" Tag="available"
+                                             ToolTip="Acende só os apps que ainda não estão neste PC." />
+                                <RadioButton x:Name="ViewPack" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="No pacote" Tag="pack"
                                              ToolTip="Acende só os apps marcados para instalar." />
-                                <RadioButton x:Name="ViewInstalled" Style="{StaticResource Segment}" GroupName="AppsView" Content="Instalados" Tag="installed"
+                                <RadioButton x:Name="ViewInstalled" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="Instalados" Tag="installed"
                                              ToolTip="Acende só os apps que já estão neste PC." />
                             </local:SlidingSelectionPanel>
                         </Border>
@@ -262,7 +366,7 @@
                     </StackPanel>
                 </local:PageHeaderPanel>
 
-                <!-- Catálogo: legenda dos três estados, kits e busca no cabeçalho; as categorias em colunas (montadas no código) -->
+                <!-- Catálogo: kits e busca no cabeçalho (a legenda dos estados é o filtro do topo); as categorias em colunas (montadas no código) -->
                 <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,16,24,8" local:Skeleton.Top="34"
                         local:Skeleton.Layout="gap 12; col 0 18.55%; row 31: - 8, s 40%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 20.36% 18.55%; row 31: - 8, s 44%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 40%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 5 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 40.72% 18.55%; row 31: - 8, s 44%; gap 6; rows 11 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 32%; gap 6; rows 4 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 61.08% 18.55%; row 31: - 8, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 32%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 81.44% 18.55%; row 31: - 8, s 46%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 50%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; end">
                     <Grid>
@@ -283,24 +387,13 @@
                                     FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16" FontWeight="Normal" Foreground="{DynamicResource Faint}"
                                     Typography.NumeralAlignment="Tabular" />
                             </TextBlock>
-                            <!-- Legenda: os três estados de uma linha, com os mesmos marcadores -->
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="28,1,0,0">
-                                <Border Style="{StaticResource LegendDot}" BorderThickness="1.5" BorderBrush="{DynamicResource LineStrong}" />
-                                <TextBlock Text="Disponível" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,20,0" />
-                                <Border Style="{StaticResource LegendDot}" Background="{DynamicResource Signal}">
-                                    <TextBlock Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="8" Foreground="{DynamicResource SignalFg}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                </Border>
-                                <TextBlock Text="No pacote" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="0,0,20,0" />
-                                <Border Style="{StaticResource LegendDot}" Background="{DynamicResource OkSoft}">
-                                    <TextBlock Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="8" Foreground="{DynamicResource Ok}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                </Border>
-                                <TextBlock Text="Já instalado" Style="{StaticResource Caption}" VerticalAlignment="Center" />
-                            </StackPanel>
                             <!-- Kits: marcam de uma vez os apps de um uso comum (o que já está instalado fica de fora) -->
                             <StackPanel x:Name="AppsKits" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                <CheckBox x:Name="KitPost" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE72C;" Content="Pós-formatação" Tag="PostFormat" Click="Kit_Click" />
+                                <CheckBox x:Name="KitPost" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE977;" Content="Pós-formatação" Tag="PostFormat" Click="Kit_Click" />
                                 <CheckBox x:Name="KitGames" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE7FC;" Content="Jogos" Tag="Games" Click="Kit_Click" />
                                 <CheckBox x:Name="KitWork" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE821;" Content="Trabalho" Tag="Work" Click="Kit_Click" />
+                                <CheckBox x:Name="KitCreator" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE714;" Content="Criador" Tag="Creator" Click="Kit_Click" />
+                                <CheckBox x:Name="KitDev" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE943;" Content="Programação" Tag="Dev" Click="Kit_Click" />
                             </StackPanel>
                             <TextBox x:Name="AppsSearch" Grid.Column="3" Style="{StaticResource CardSearch}" Width="260" Margin="16,0,0,0"
                                      local:Ui.Placeholder="Procurar app" TextChanged="AppsSearch_TextChanged" />

@@ -168,7 +168,8 @@ internal static partial class Program
             Require(ids.Distinct(StringComparer.OrdinalIgnoreCase).Count() == ids.Count, "Pacote repetido no catálogo");
             foreach (string id in ids) AppInstaller.BuildArguments(id); // "+" (Notepad++, VCRedist 2015+) passa; espaço e opções não
             Require(apps.All(a => AppCatalog.Categories.Contains(a.Category) && a.Icon.Length > 0 && a.Description.Length > 0), "Cartão sem categoria, ícone ou descrição");
-            Require(apps.Count(a => a.Kits.HasFlag(AppKit.PostFormat)) >= 5 && apps.Any(a => a.Kits.HasFlag(AppKit.Games)) && apps.Any(a => a.Kits.HasFlag(AppKit.Work)), "Kit vazio");
+            Require(apps.Count(a => a.Kits.HasFlag(AppKit.PostFormat)) >= 5 && apps.Any(a => a.Kits.HasFlag(AppKit.Games)) && apps.Any(a => a.Kits.HasFlag(AppKit.Work))
+                && apps.Count(a => a.Kits.HasFlag(AppKit.Creator)) >= 4 && apps.Count(a => a.Kits.HasFlag(AppKit.Dev)) >= 4, "Kit vazio");
             var vc = apps.Single(a => a.Name == "Visual C++ antigos");
             Require(vc.Packages.Count == 10, "Visual C++ antigos sem os dez pacotes");
             Require(AppInstaller.IsInstalled(vc.Packages[1], new[] { "Microsoft Visual C++ 2005 Redistributable" })
