@@ -246,13 +246,18 @@ public partial class DisksView : UserControl
         var card = bay.Card;
         var d = card.Disk;
         DiskModel.Text = card.Title;
-        DiskBadgeText.Text = bay.VerdictText;
         string tone = bay.State;
-        Ui.SetTone(DiskBadge, tone);
-        // Saudável é silencioso: o selo já diz "Saudável" (a ressalva das leituras disponíveis fica na dica dele). Atenção,
-        // crítico e "sem dados" ganham a linha com o motivo no pé da placa.
+        // Saudável é silencioso: sem selo na placa, só "Sem problemas" em tinta com o LED verde no cabeçalho da Integridade (a
+        // ressalva das leituras disponíveis fica na dica). Atenção, crítico e "sem dados" viram selo na cor ali e ganham a linha
+        // com o motivo sob a frase da placa.
         bool healthy = card.Verdict == HealthVerdict.Good;
-        DiskBadge.ToolTip = healthy ? "Nenhum problema encontrado nas leituras disponíveis." : null;
+        DiskBadgeText.Text = bay.VerdictText;
+        Ui.SetTone(DiskBadge, tone);
+        DiskBadge.Visibility = healthy ? Visibility.Collapsed : Visibility.Visible;
+        VerdictQuiet.Visibility = healthy ? Visibility.Visible : Visibility.Collapsed;
+        VerdictText.Text = "Sem problemas";
+        VerdictLed.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "Ok");
+        VerdictQuiet.ToolTip = "Nenhum problema encontrado nas leituras disponíveis.";
         DiskReasons.Text = healthy ? "" : card.Reasons;
         DiskReasonRow.Visibility = healthy || card.Reasons.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         DiskReasonIcon.Text = healthy ? "\uE73E" : card.Verdict == HealthVerdict.Unknown ? "\uE946" : "\uE7BA";
@@ -261,10 +266,7 @@ public partial class DisksView : UserControl
 
         // Erro de leitura: só a placa com o motivo
         var instruments = d == null ? Visibility.Collapsed : Visibility.Visible;
-        foreach (var el in new UIElement[] { LifeCard, TempCard, CheckCard, OdoCard, DiskSpace }) el.Visibility = instruments;
-        // Sem o espaço embaixo, a placa é o painel inteiro: cantos de baixo redondos e sem o fio que a separava dele
-        PlateBand.CornerRadius = PlateWash.CornerRadius = d == null ? new CornerRadius(15) : (CornerRadius)FindResource("RadiusPanelTop");
-        PlateBand.BorderThickness = new Thickness(0, 0, 0, d == null ? 0 : 1);
+        foreach (var el in new UIElement[] { LifeCard, TempCard, SideGrid, DiskSpace, SpaceDivider }) el.Visibility = instruments;
         DiskKind.Text = d == null ? "" : string.Join(" · ", new[] { d.Kind, d.Bus }.Where(s => s.Length > 0));
         if (d == null) { DiskSpecs.Inlines.Clear(); DiskSpecs.ToolTip = null; return; }
         ShowSpecs(d);
@@ -507,36 +509,36 @@ public partial class DisksView : UserControl
 
     private List<Border> _odoCells = new();
 
-    /// <summary>
-    /// O odômetro fica na placa: larga, à direita do nome; estreita, numa linha embaixo dele. A primeira célula presente não
-    /// tem fio à esquerda (como a primeira leitura da placa de Placa de vídeo). Sem nenhuma, some.
-    /// </summary>
+    /// <summary>"Uso desde a fábrica" só existe quando o disco informa ao menos um valor (cada bloco ausente já foi recolhido).</summary>
     private void LayoutOdometer()
     {
         OdoCard.Visibility = _odoCells.Count == 0 || DiskCards.SelectedItem is not DiskBay { Disk: not null } ? Visibility.Collapsed : Visibility.Visible;
-        Grid.SetRow(OdoCard, _wide ? 0 : 1);
-        Grid.SetColumn(OdoCard, _wide ? 2 : 1);
-        Grid.SetColumnSpan(OdoCard, _wide ? 1 : 2);
-        OdoCard.HorizontalAlignment = _wide ? HorizontalAlignment.Right : HorizontalAlignment.Left;
-        OdoCard.Margin = new Thickness(_wide ? 0 : 20, _wide ? 0 : 20, 0, 0);
-        for (int i = 0; i < _odoCells.Count; i++)
-        {
-            var cell = _odoCells[i];
-            cell.BorderThickness = new Thickness(i == 0 ? 0 : 1, 0, 0, 0);
-            cell.Padding = new Thickness(i == 0 ? 0 : 28, 0, 0, 0);
-            cell.Margin = new Thickness(i == 0 ? 0 : 28, 0, 0, 0);
-        }
+        SideInnerGapRow.Height = new GridLength(_wide && OdoCard.Visibility == Visibility.Visible ? 16 : 0);
     }
 
 
-    /// <summary>Larga: odômetro à direita do nome. Estreita: odômetro desce para baixo do nome e a vida útil estreita.</summary>
+    /// <summary>
+    /// Larga: a coluna da saúde à direita da temperatura, com a integridade sobre o uso desde a fábrica. Estreita: a coluna desce
+    /// para uma faixa na largura toda, com os dois cartões lado a lado, e a página rola.
+    /// </summary>
     private void DiskBody_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (!e.WidthChanged) return;
         bool wide = e.NewSize.Width >= 1320;
         if (wide == _wide && e.PreviousSize.Width > 0) return;
         _wide = wide;
-        LifeColumn.Width = new GridLength(wide ? 420 : 340);
+        LifeColumn.Width = new GridLength(wide ? 400 : 340);
+        SpaceColumn.Width = new GridLength(wide ? 600 : 420);
+        SideColumn.Width = new GridLength(wide ? 400 : 0);
+        SideGap.Width = new GridLength(wide ? 16 : 0);
+        SideGapRow.Height = new GridLength(wide ? 0 : 16);
+        Grid.SetRow(SideGrid, wide ? 2 : 4);
+        Grid.SetColumn(SideGrid, wide ? 4 : 0);
+        Grid.SetColumnSpan(SideGrid, wide ? 1 : 5);
+        Grid.SetRow(OdoCard, wide ? 2 : 0);
+        Grid.SetColumn(OdoCard, wide ? 0 : 2);
+        SideInnerGap.Width = new GridLength(wide ? 0 : 16);
+        SideInnerColumn.Width = wide ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         LayoutOdometer();
         LifeDial.MinHeight = wide ? 210 : 190;
     }
