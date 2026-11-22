@@ -259,8 +259,8 @@
                     <RowDefinition Height="16" />
                     <RowDefinition Height="*" MinHeight="560" />
                 </Grid.RowDefinitions>
-                <!-- Sem subtítulo: 9 embaixo (e não 14), para o primeiro painel ficar a 20 do pé do título, o mesmo respiro da busca ao título -->
-                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
+                <!-- Sem subtítulo: 17 embaixo (e não 22), para o primeiro painel ficar a 28 do pé do título, como nas páginas com subtítulo -->
+                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
                     <TextBlock Text="Benchmark" Style="{StaticResource PageTitle}" />
                 </local:PageHeaderPanel>
 

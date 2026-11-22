@@ -310,7 +310,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
+        <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
             <TextBlock Text="Sistema" Style="{StaticResource PageTitle}" />
             <StackPanel Style="{StaticResource PageActions}">
                 <TextBlock x:Name="SystemSub" Text="Lendo informações do sistema…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" Typography.NumeralAlignment="Tabular" />

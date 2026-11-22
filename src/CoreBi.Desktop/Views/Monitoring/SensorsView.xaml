@@ -227,7 +227,7 @@
         </Grid.RowDefinitions>
         <!-- Cabeçalho padrão: busca e "Zerar estatísticas" na barra de ações. A dica do botão diz desde quando as estatísticas contam
              (SensorsView.UpdateStatsNote). -->
-        <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
+        <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
             <TextBlock Text="Sensores" Style="{StaticResource PageTitle}" />
             <StackPanel Style="{StaticResource PageActions}">
                 <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" Typography.NumeralAlignment="Tabular"

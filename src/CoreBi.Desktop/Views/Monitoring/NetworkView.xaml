@@ -72,13 +72,9 @@
                 <!-- Cabeçalho padrão (PageHeaderPanel), o mesmo de Ferramentas: o estado do teste no subtítulo, com a etapa ao lado ("2 de 3 ·
                      Download"), e na barra de ações o medidor (com cortes nas três estações, nas frações do motor, e a porcentagem), que só
                      aparece durante o teste, e a ação principal. -->
-                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
                     <TextBlock Text="Rede" Style="{StaticResource PageTitle}" />
                     <StackPanel Style="{StaticResource PageActions}">
-                        <StackPanel Style="{StaticResource PageStatusBox}">
-                            <TextBlock x:Name="NetStatus" Text="Pronto para testar" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" />
-                            <TextBlock x:Name="NetDetail" Style="{StaticResource PageDetail}" />
-                        </StackPanel>
                         <!--
                             Medidor do teste: as três estações escritas em cima de cada trecho da barra (a da vez acesa no sinal, as feitas no tom do
                             texto, as que faltam apagadas), a barra de 6 px com os cortes nas frações do motor (NetworkTest.LatencyEnd e DownloadEnd)
@@ -131,6 +127,10 @@
                                 <Run x:Name="NetPercent" /><Run Text="&#x2009;%" FontFamily="{StaticResource LabelFont}" FontStretch="Normal" FontWeight="Normal" FontSize="13" Foreground="{DynamicResource Muted}" />
                             </TextBlock>
                         </Grid>
+                        <StackPanel Style="{StaticResource PageStatusBox}">
+                            <TextBlock x:Name="NetStatus" Text="Pronto para testar" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" />
+                            <TextBlock x:Name="NetDetail" Style="{StaticResource PageDetail}" />
+                        </StackPanel>
                         <Button x:Name="BtnNetTest" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE768;" Content="Testar a rede" Click="BtnNetTest_Click"
                                 ToolTip="Envia pings ao roteador e aos DNS 1.1.1.1 e 8.8.8.8 e transfere dados para medir a velocidade. O consumo pode chegar a centenas de MB." />
                     </StackPanel>

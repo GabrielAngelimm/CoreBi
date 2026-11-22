@@ -147,7 +147,7 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
                     <TextBlock Text="Discos" Style="{StaticResource PageTitle}" />
                     <StackPanel Style="{StaticResource PageActions}">
                         <TextBlock x:Name="DiskHealthStatus" Text="Lendo os discos…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" Typography.NumeralAlignment="Tabular" />

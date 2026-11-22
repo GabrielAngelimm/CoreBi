@@ -280,8 +280,9 @@
         Nada de cartão em volta: o vão entre o título e a barra é livre. Só um texto de explicação (Visão geral, OverlayBi) fica
         embaixo do título, como subtítulo.
     -->
+    <!-- 22 embaixo (28 medidos nas letras do subtítulo até o primeiro painel); sem subtítulo, 17 local, os mesmos 28 do pé do título -->
     <Style x:Key="PageHead" TargetType="local:PageHeaderPanel">
-        <Setter Property="Margin" Value="0,0,0,14"/>
+        <Setter Property="Margin" Value="0,0,0,22"/>
     </Style>
     <Style x:Key="PageActions" TargetType="StackPanel">
         <Setter Property="Orientation" Value="Horizontal"/>
