@@ -220,8 +220,8 @@
                                                             <TextBlock Text="{Binding Detail}" Style="{StaticResource StatSub}" />
                                                         </StackPanel>
                                                         <TextBlock Grid.Column="2" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="17" VerticalAlignment="Top" Margin="12,0,0,0" />
-                                                        <!-- Seta no meio da altura das maiúsculas da porcentagem (centrada na linha dupla ela ficava 10 px abaixo, medido) -->
-                                                        <TextBlock Grid.Column="3" Text="&#xE76C;" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Top" Margin="12,4,0,0" />
+                                                        <!-- Seta no meio da altura das maiúsculas da porcentagem (centrada na linha dupla ela ficava 10 px abaixo; medido na tinta) -->
+                                                        <TextBlock Grid.Column="3" Text="&#xE76C;" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Top" Margin="12,3,0,0" />
                                                     </Grid>
                                                 </Button>
                                             </DataTemplate>
