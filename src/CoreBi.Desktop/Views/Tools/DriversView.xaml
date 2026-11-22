@@ -197,9 +197,9 @@
                                     -->
                                     <TextBlock Grid.ColumnSpan="2" Style="{StaticResource Num}" FontSize="13" LineHeight="18" LineStackingStrategy="BlockLineHeight"
                                                TextTrimming="CharacterEllipsis" VerticalAlignment="Center">
-                                        <Run Text="BIOS" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" /><InlineUIContainer><Border Width="12" /></InlineUIContainer><Run x:Name="DrvBoardBios" />
+                                        <Run Text="BIOS" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" /><InlineUIContainer><Border Width="12" /></InlineUIContainer><Run x:Name="DrvBoardBios" />
                                     </TextBlock>
-                                    <TextBlock x:Name="DrvBoardBiosDate" Grid.Column="2" Style="{StaticResource Num}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="12,0,0,0"
+                                    <TextBlock x:Name="DrvBoardBiosDate" Grid.Column="2" Style="{StaticResource Num}" FontSize="13" Foreground="{DynamicResource Muted}" Margin="12,0,0,0"
                                                LineHeight="18" LineStackingStrategy="BlockLineHeight" VerticalAlignment="Center" />
                                 </Grid>
                                 <Button x:Name="BtnDrvBoardPage" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE8A7;" Content="Suporte do fabricante" Margin="0,16,0,0"
@@ -224,7 +224,7 @@
                                 <Grid Style="{StaticResource CardHeader}">
                                     <TextBlock Style="{StaticResource CardTitle}">
                                         <Run Text="Windows Update" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="DrvWuCount"
-                                            FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
+                                            FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16" FontWeight="Normal" Foreground="{DynamicResource Faint}"
                                             Typography.NumeralAlignment="Tabular" />
                                     </TextBlock>
                                 </Grid>
@@ -285,7 +285,7 @@
                                 <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base (antes a contagem descia 1 px) -->
                                 <TextBlock Style="{StaticResource CardTitle}" ToolTip="Programas que deixam o Windows usar cada peça do computador.">
                                     <Run Text="Drivers instalados" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="DrvCount"
-                                        FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
+                                        FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16" FontWeight="Normal" Foreground="{DynamicResource Faint}"
                                         Typography.NumeralAlignment="Tabular" />
                                 </TextBlock>
                                 <TextBox x:Name="DrvSearch" Grid.Column="1" Style="{StaticResource CardSearch}" Width="280" Margin="16,0,0,0"

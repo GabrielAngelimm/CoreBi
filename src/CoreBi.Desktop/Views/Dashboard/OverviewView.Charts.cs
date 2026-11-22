@@ -108,7 +108,7 @@ public partial class OverviewView
         {
             double y = Y(v);
             DashChart.Children.Add(new Line { X1 = left, X2 = w, Y1 = y, Y2 = y, Stroke = line, StrokeThickness = 1, SnapsToDevicePixels = true });
-            var lbl = new TextBlock { Text = $"{v:0}{unit}", FontSize = 11, Foreground = faint, FontFamily = readout };
+            var lbl = new TextBlock { Text = $"{v:0}{unit}", FontSize = 12, Foreground = faint, FontFamily = readout };
             Canvas.SetLeft(lbl, 0);
             Canvas.SetTop(lbl, y - 8);
             DashChart.Children.Add(lbl);
@@ -124,7 +124,7 @@ public partial class OverviewView
         string[] xs = { $"−{span}", mid, "agora" };
         for (int k = 0; k < 3; k++)
         {
-            var t = new TextBlock { Text = xs[k], FontSize = 11, Foreground = faint, FontFamily = readout };
+            var t = new TextBlock { Text = xs[k], FontSize = 12, Foreground = faint, FontFamily = readout };
             t.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             Canvas.SetLeft(t, Math.Clamp(left + plotW * k / 2 - t.DesiredSize.Width / 2, left, w - t.DesiredSize.Width));
             Canvas.SetTop(t, h - 16);
@@ -312,7 +312,7 @@ public partial class OverviewView
             row.Children.Add(value);
             return row;
         }
-        _hoverTime = new TextBlock { FontSize = 11.5 };
+        _hoverTime = new TextBlock { FontSize = 12 };
         _hoverTime.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
         _hoverTime.SetValue(Typography.NumeralAlignmentProperty, FontNumeralAlignment.Tabular);
         _hoverCpuText = Value();

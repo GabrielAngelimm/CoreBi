@@ -120,7 +120,7 @@
                     <!-- Filete centrado na caixa do título: o meio dele cai no meio das maiúsculas (com 1 px a mais em cima ficava 1 abaixo) -->
                     <Border x:Name="mark" Width="3" Height="15" CornerRadius="1.5" Background="{DynamicResource Steel}" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="{Binding Title, Mode=OneWay}" Style="{StaticResource GroupTitle}" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding UnitText, Mode=OneWay}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="8,2,0,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding UnitText, Mode=OneWay}" FontSize="13" Foreground="{DynamicResource Muted}" Margin="8,2,0,0" VerticalAlignment="Center" />
                 </StackPanel>
                 <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource SensorLine}" Focusable="False" />
             </StackPanel>

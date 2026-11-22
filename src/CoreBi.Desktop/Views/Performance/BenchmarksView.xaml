@@ -134,7 +134,7 @@
         <DataTemplate x:Key="LiveCell">
             <StackPanel Style="{StaticResource PlateLive}" Background="Transparent" ToolTip="{Binding Tip}">
                 <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
-                <TextBlock Style="{StaticResource TestLiveValue}"><Run Text="{Binding Value, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Unit, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontStretch="Normal" FontSize="12.5" Foreground="{DynamicResource Muted}" /></TextBlock>
+                <TextBlock Style="{StaticResource TestLiveValue}"><Run Text="{Binding Value, Mode=OneWay}" /><Run Text=" " /><Run Text="{Binding Unit, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontStretch="Normal" FontSize="13" Foreground="{DynamicResource Muted}" /></TextBlock>
             </StackPanel>
         </DataTemplate>
         <ItemsPanelTemplate x:Key="LivePanel">

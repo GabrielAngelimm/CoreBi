@@ -64,7 +64,7 @@
         <DataTemplate x:Key="ReadoutCell">
             <Border x:Name="cell" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1,0,0,0" Padding="28,0,0,0" Margin="28,0,0,0" ToolTip="{Binding Tip}" Background="Transparent">
                 <StackPanel>
-                    <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" Foreground="{DynamicResource Muted}" />
+                    <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" />
                     <!-- Número e unidade num texto só, para a unidade assentar na linha de base do número (em dois blocos ela ficava 1 px abaixo).
                          UnitSuffix já traz o espaço antes da unidade e fica vazio sem ela. -->
                     <TextBlock x:Name="num" Style="{StaticResource ReadoutText}" FontSize="38" FontWeight="Light" Margin="0,6,0,0">
@@ -95,7 +95,7 @@
             <Grid x:Name="host" Margin="-10,0" Background="Transparent" Cursor="Hand" ToolTip="{Binding Hint}" MouseLeftButtonUp="SpecRow_Click">
                 <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="{StaticResource RadiusControl}" Opacity="0" />
                 <Border Height="1" VerticalAlignment="Top" Margin="10,0" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
-                <Grid Margin="10,8,8,8" TextElement.FontSize="13.5">
+                <Grid Margin="10,8,8,8" TextElement.FontSize="14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="44*" />
                         <ColumnDefinition Width="16" />
@@ -164,7 +164,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
+                                <TextBlock Text="{Binding}" FontFamily="{StaticResource LabelFont}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -178,7 +178,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock x:Name="t" Text="{Binding Text}" FontFamily="{StaticResource LabelFont}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" Margin="0,0,14,6" ToolTip="Suportada" />
+                                <TextBlock x:Name="t" Text="{Binding Text}" FontFamily="{StaticResource LabelFont}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" Margin="0,0,14,6" ToolTip="Suportada" />
                                 <DataTemplate.Triggers>
                                     <DataTrigger Binding="{Binding On}" Value="False">
                                         <Setter TargetName="t" Property="Foreground" Value="{DynamicResource Faint}" />
@@ -214,7 +214,7 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel>
                         <TextBlock Text="{Binding Title}" Style="{StaticResource ItemTitle}" TextTrimming="None" TextWrapping="Wrap" />
-                        <TextBlock Text="{Binding Meta}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Meta}" FontSize="13" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="0,4,0,0">
                         <ItemsControl ItemsSource="{Binding Volumes}" Height="10">
@@ -248,9 +248,9 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding Letter}" FontSize="12.5" FontWeight="SemiBold" />
-                                        <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Grid.Column="2" Text="{Binding Line}" FontSize="12.5" Foreground="{DynamicResource Muted}" Typography.NumeralAlignment="Tabular" Margin="12,0,0,0" />
+                                        <TextBlock Text="{Binding Letter}" FontSize="13" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="13" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Line}" FontSize="13" Foreground="{DynamicResource Muted}" Typography.NumeralAlignment="Tabular" Margin="12,0,0,0" />
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -259,14 +259,14 @@
                     <StackPanel Grid.Column="4" HorizontalAlignment="Right">
                         <!-- Tamanho e unidade num texto só: a unidade assenta na linha de base do número -->
                         <TextBlock Style="{StaticResource ReadoutText}" FontSize="26" FontWeight="Light" HorizontalAlignment="Right">
-                            <Run Text="{Binding Size, Mode=OneWay}" /><Run Text="{Binding UnitSuffix, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="12.5" FontWeight="Normal" FontStretch="Normal" Foreground="{DynamicResource Muted}" />
+                            <Run Text="{Binding Size, Mode=OneWay}" /><Run Text="{Binding UnitSuffix, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="13" FontWeight="Normal" FontStretch="Normal" Foreground="{DynamicResource Muted}" />
                         </TextBlock>
-                        <TextBlock Text="{Binding Free}" FontSize="12.5" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" Margin="0,6,0,0"
+                        <TextBlock Text="{Binding Free}" FontSize="13" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" Margin="0,6,0,0"
                                    Visibility="{Binding Free, Converter={StaticResource NotEmptyVis}}" />
                         <!-- Saúde que o Windows informa para o disco -->
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0" Visibility="{Binding Health, Converter={StaticResource NotEmptyVis}}"
                                     ToolTip="Estado que o Windows informa. Detalhes de vida útil e temperatura em Discos.">
-                            <TextBlock Text="{Binding Health}" FontSize="12.5" Foreground="{DynamicResource Fg}" />
+                            <TextBlock Text="{Binding Health}" FontSize="13" Foreground="{DynamicResource Fg}" />
                         </StackPanel>
                     </StackPanel>
                 </Grid>
@@ -290,7 +290,7 @@
                         <Border x:Name="face" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" Padding="16,8,16,8" SnapsToDevicePixels="True">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE9D9;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Signal}" VerticalAlignment="Center" />
-                                <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource LabelFont}" FontSize="13.5" FontWeight="SemiBold" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="8,0,0,1" />
+                                <TextBlock Text="{TemplateBinding Content}" FontFamily="{StaticResource LabelFont}" FontSize="14" FontWeight="SemiBold" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="8,0,0,1" />
                                 <TextBlock x:Name="arrow" Text="&#xE76C;" Style="{StaticResource IconGlyph}" FontSize="10" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="10,1,0,0" />
                             </StackPanel>
                         </Border>

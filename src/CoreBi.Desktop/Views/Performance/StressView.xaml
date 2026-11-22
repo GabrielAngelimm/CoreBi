@@ -359,7 +359,7 @@
                                 <!-- No meio da linha de 34 px dos cabeçalhos de cartão, como o Histórico do Benchmark -->
                                 <TextBlock DockPanel.Dock="Top" Text="Registro" Style="{StaticResource SectionTitle}" Margin="0,7,16,17" />
                                 <TextBlock DockPanel.Dock="Top" Text="Nenhum teste nesta sessão." Style="{StaticResource LogEmpty}" />
-                                <ListBox x:Name="StressLog" FontFamily="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Faint}" ItemContainerStyle="{StaticResource PlainItem}"
+                                <ListBox x:Name="StressLog" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}" ItemContainerStyle="{StaticResource PlainItem}"
                                          ScrollViewer.VerticalScrollBarVisibility="Auto" Focusable="False">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>

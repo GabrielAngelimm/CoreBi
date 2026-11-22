@@ -127,7 +127,7 @@
     <!-- Título da página: a mesma voz da assinatura -->
     <Style x:Key="PageTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="36"/>
+        <Setter Property="FontSize" Value="40"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -144,7 +144,7 @@
     <!-- Título de painel -->
     <Style x:Key="SectionTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="17"/>
+        <Setter Property="FontSize" Value="18"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -164,15 +164,15 @@
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
     <!--
-        Escala de texto (a mesma em todas as páginas, para a letra não crescer e encolher na troca de tela; ver DESIGN.md):
-        PageTitle 36 · PlateName 30 (o nome na placa de identificação) · TestPlateTitle 24 (a peça na bancada) · SectionTitle e
-        CardTitle 17 (painel) · GroupTitle 15 (grupo, nó, seção dentro do painel) · ItemTitle 14 (nome numa lista ou tecla) ·
-        PageSubtitle, PageStatus e PlateText 14 · Body 13,5 · StatLabel e Label 13 · Caption 12,5 · StatSub e Footnote 12.
+        Escala de texto (a mesma em todas as páginas; base na rampa do Windows 11/Fluent 2, corpo 14/20 e legenda 12/16; ver DESIGN.md):
+        PageTitle 40 · PlateName 28 (o nome na placa de identificação) · TestPlateTitle 24 (a peça na bancada) · SectionTitle e
+        CardTitle 18 (painel) · GroupTitle 16 (grupo, nó, seção dentro do painel) · ItemTitle 14 seminegrito (nome numa lista ou tecla) ·
+        Body, PageSubtitle, PageStatus, PlateText e botões 14 · StatLabel, Label e cabeçalho de tabela 13 (DIN) · Caption, StatSub e Footnote 12.
     -->
     <!-- Nome na placa de identificação (Sistema, Placa de vídeo, Discos) -->
     <Style x:Key="PlateName" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="30"/>
+        <Setter Property="FontSize" Value="28"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -195,7 +195,7 @@
     <!-- Título de grupo dentro de uma ficha ou painel (Sensores, Sistema, nós de Rede, Drivers): um degrau abaixo do painel -->
     <Style x:Key="GroupTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontSize" Value="16"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -211,7 +211,7 @@
     </Style>
     <Style x:Key="Caption" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SmallFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="12"/>
         <Setter Property="LineHeight" Value="17"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -227,7 +227,7 @@
         <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
     <Style x:Key="Body" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="LineHeight" Value="20"/>
@@ -592,7 +592,7 @@
 
     <Style x:Key="ButtonBase" TargetType="Button">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Padding" Value="18,7"/>
         <Setter Property="MinHeight" Value="34"/>
@@ -1156,7 +1156,7 @@
     <Style x:Key="ThemeToggle" TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
@@ -1778,7 +1778,7 @@
         <Setter Property="Width" Value="300"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="MinHeight" Value="40"/>
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="local:Ui.Icon" Value="&#xE721;"/>
@@ -1904,7 +1904,7 @@
     <!-- Cabeçalho de coluna de uma tabela feita à mão (linhas de altura fixa): DIN 12, um tom abaixo do conteúdo -->
     <Style x:Key="TableHead" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -1913,7 +1913,7 @@
     <Style x:Key="TitleCount" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
         <Setter Property="FontStretch" Value="SemiCondensed"/>
-        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontSize" Value="16"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
         <Setter Property="VerticalAlignment" Value="Center"/>

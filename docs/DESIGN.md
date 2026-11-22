@@ -153,33 +153,31 @@ Duas vozes: a do instrumento e a do conteúdo.
 
 | Papel | Família | Onde |
 | --- | --- | --- |
-| Estrutura | Bahnschrift (DIN 1451, a letra de placas e mostradores e da assinatura CoreBi) | Título da página (`PageTitle`, 36 seminegrito), título de painel (`SectionTitle`, 17), título de grupo (`GroupTitle`, 15), nomes em destaque (`PlateName` 30 na placa de Sistema, Placa de vídeo e Discos; `TestPlateTitle` 24 para a peça em Sensores, Benchmark, Teste de carga e o resultado do Gargalo), nome de item numa lista ou tecla (`ItemTitle`, 14), navegação (14) e os cabeçalhos dela (12), botões (13,5 seminegrito), rótulos de leitura (`StatLabel` e `Label`, 13), segmentos e filtros (13), selos, teclas de atalho e cabeçalhos de coluna (`LabelFont`) |
+| Estrutura | Bahnschrift (DIN 1451, a letra de placas e mostradores e da assinatura CoreBi) | Título da página (`PageTitle`, 40 seminegrito), título de painel (`SectionTitle`, 18), título de grupo (`GroupTitle`, 16), nomes em destaque (`PlateName` 28 na placa de Sistema, Placa de vídeo e Discos; `TestPlateTitle` 24 para a peça em Sensores, Benchmark, Teste de carga e o resultado do Gargalo), nome de item numa lista ou tecla (`ItemTitle`, 14), navegação (14) e os cabeçalhos dela (12), botões (14 seminegrito), rótulos de leitura (`StatLabel` e `Label`, 13), segmentos e filtros (13), selos, teclas de atalho e cabeçalhos de coluna (`LabelFont`) |
 | Mostrador | Bahnschrift SemiCondensed, algarismos tabulares | Leituras (`ReadoutText` 22, `ReadoutLarge` 38, `ReadoutHero` 54), eixos de gráfico, overlay |
 | Conteúdo | Segoe UI Variable Text | Nomes, valores em texto, descrições e campos (13; `Body` com 20 de entrelinha) |
-| Texto pequeno | Segoe UI Variable Small (o tamanho óptico feito para letra miúda) | Legendas (`Caption` 12,5/17), notas (`Footnote` 12/16), subtextos (`StatSub` 12) |
+| Texto pequeno | Segoe UI Variable Small (o tamanho óptico feito para letra miúda) | Legendas (`Caption` 12/17), notas (`Footnote` 12/17), subtextos (`StatSub` 12) |
 | Código | Cascadia Mono | Registro do teste de carga e linhas de comando da Inicialização |
 
-Hierarquia de uma tela: título da página (DIN 36) → título de painel (DIN 17) → rótulo (DIN 13, `Muted`) → valor (mostrador ou Segoe 13,5 em `Fg`) → nota (Segoe Small 12, `Faint`). A estrutura fala a língua do instrumento e o conteúdo fica na letra de leitura do Windows, então título, rótulo e botão nunca se confundem com o dado. Números em texto comum usam `Typography.NumeralAlignment="Tabular"` (estilo `Num`) para não "dançar" quando o valor muda. Rótulos são curtos e em caixa de frase; não há rótulos em caixa alta. Botões dizem exatamente o que acontece ("Iniciar teste", "Exportar relatório", "Ler novamente").
+Hierarquia de uma tela: título da página (DIN 40) → título de painel (DIN 18) → rótulo (DIN 13, `Muted`) → valor (mostrador ou Segoe 14 em `Fg`) → nota (Segoe Small 12, `Faint`). A estrutura fala a língua do instrumento e o conteúdo fica na letra de leitura do Windows, então título, rótulo e botão nunca se confundem com o dado. Números em texto comum usam `Typography.NumeralAlignment="Tabular"` (estilo `Num`) para não "dançar" quando o valor muda. Rótulos são curtos e em caixa de frase; não há rótulos em caixa alta. Botões dizem exatamente o que acontece ("Iniciar teste", "Exportar relatório", "Ler novamente").
 
 **Centralização vertical.** A Bahnschrift assenta cerca de 1,5 px acima do centro da caixa de linha do WPF, então os controles com texto DIN compensam no preenchimento (filtros, opções em pílula, segmentos, teclas de atalho, o item de menu e a aba de Sistema), e os campos de texto (Segoe) sobem 1,5 px. O desvio foi medido nas capturas (`--shots`) em todos os controles de uma lista e fica em ±1 px (centro do corpo da letra contra o centro da caixa).
 
-**Escala única de texto.** Cada papel tem um estilo em `Theme.xaml`, e as páginas usam o estilo em vez de repetir o tamanho, para a letra não crescer e encolher na troca de uma tela para outra:
+**Escala única de texto.** Cada papel tem um estilo em `Theme.xaml`, e as páginas usam o estilo em vez de repetir o tamanho, para a letra não crescer e encolher na troca de uma tela para outra. A base é a rampa do Windows 11 (Fluent 2: legenda 12/16, corpo 14/20, corpo grande 18/24, título 28/36, título grande 40/52), porque a Segoe UI Variable foi desenhada para esses tamanhos e é a letra do sistema em que o CoreBi roda. Em cima dela, dois ajustes do instrumento: rótulos em DIN 13 (a DIN é condensada e some a 12) e um degrau de 16 para grupos dentro do painel. São oito degraus, cada um pelo menos 1 px acima do anterior no corpo e uns 20 % acima nos títulos, para a hierarquia ler pelo tamanho e pelo peso, nunca por meio ponto:
 
 | Papel | Estilo | Tamanho |
 | --- | --- | --- |
-| Título da página | `PageTitle` | 36 DIN seminegrito |
-| Nome na placa de identificação | `PlateName` | 30 DIN seminegrito |
+| Título da página | `PageTitle` | 40 DIN seminegrito (título grande do Fluent) |
+| Nome na placa de identificação | `PlateName` | 28 DIN seminegrito (título do Fluent) |
 | Peça em teste ou em destaque num painel | `TestPlateTitle` | 24 DIN seminegrito |
-| Título de painel ou cartão | `SectionTitle`, `CardTitle` | 17 DIN seminegrito |
-| Grupo, nó ou seção dentro de um painel | `GroupTitle` | 15 DIN seminegrito |
+| Título de painel ou cartão | `SectionTitle`, `CardTitle` | 18 DIN seminegrito (corpo grande do Fluent) |
+| Grupo, nó ou seção dentro de um painel | `GroupTitle` | 16 DIN seminegrito |
 | Nome de item numa lista ou tecla | `ItemTitle` | 14 DIN seminegrito |
-| Subtítulo da página, estado do cabeçalho, frase da placa | `PageSubtitle`, `PageStatus`, `PlateText` | 14 Segoe |
-| Texto corrido | `Body` | 13,5 Segoe |
-| Rótulo de leitura ou de grupo | `StatLabel`, `Label` | 13 DIN |
-| Legenda | `Caption` | 12,5 Segoe |
-| Nota e linha de contexto | `StatSub`, `Footnote` | 12 Segoe |
+| Texto, subtítulo da página, estado do cabeçalho, frase da placa, botões | `Body`, `PageSubtitle`, `PageStatus`, `PlateText` | 14/20 Segoe (corpo do Fluent) |
+| Rótulo de leitura, de grupo ou de coluna | `StatLabel`, `Label`, `TableHead` | 13 DIN |
+| Legenda, nota e linha de contexto | `Caption`, `StatSub`, `Footnote` | 12 Segoe Small (legenda do Fluent) |
 
-Leituras de mostrador seguem a sua própria escala (`ReadoutHero` 54, `ReadoutLarge` 38, instrumentos 34, `StatValue` 24, `ReadoutText` 22), e a unidade fica em DIN na metade do tamanho do número.
+Nada de texto abaixo de 12 (só ícones e as teclas de atalho). Leituras de mostrador seguem a sua própria escala (`ReadoutHero` 54, `ReadoutLarge` 38, instrumentos 34, `StatValue` 24, `ReadoutText` 22), e a unidade fica em DIN na metade do tamanho do número. O overlay de jogo e o aviso flutuante têm a escala do HUD, fora desta.
 
 ## Ícones
 

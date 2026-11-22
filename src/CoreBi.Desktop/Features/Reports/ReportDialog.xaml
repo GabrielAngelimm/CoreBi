@@ -30,7 +30,7 @@
                                               local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
                                               Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}" />
                                 <ContentPresenter x:Name="cp" Grid.Column="2" VerticalAlignment="Center" TextElement.FontFamily="{StaticResource LabelFont}"
-                                                  TextElement.FontSize="13.5" TextElement.FontWeight="SemiBold" TextElement.Foreground="{DynamicResource Muted}" />
+                                                  TextElement.FontSize="14" TextElement.FontWeight="SemiBold" TextElement.Foreground="{DynamicResource Muted}" />
                                 <TextBlock x:Name="cap" Grid.Column="3" Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}" Margin="16,0,0,0"
                                            FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right"
                                            VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />

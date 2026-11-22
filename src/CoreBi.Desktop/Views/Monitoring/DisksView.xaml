@@ -66,7 +66,7 @@
                 <!-- Nome (DIN 14) e letra (Bahnschrift 16) no topo, com 1 px a mais na letra: as duas bases coincidem -->
                 <TextBlock Grid.Column="2" Text="{Binding Letters}" Style="{StaticResource ReadoutText}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,1,0,0" />
                 <Ellipse Grid.Column="3" Style="{StaticResource DiskLed}" Margin="10,1,0,0" ToolTip="{Binding VerdictText}" />
-                <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Meta}" FontFamily="{StaticResource SmallFont}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Meta}" FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
             </Grid>
         </DataTemplate>
 
@@ -94,7 +94,7 @@
                     <Ellipse Style="{StaticResource DiskLed}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0,5,0,0" />
                     <TextBlock Grid.Column="1" Text="{Binding Title}" Style="{StaticResource StatLabel}" TextWrapping="Wrap" Margin="0,0,12,0" VerticalAlignment="Top" />
                     <Border x:Name="pill" Grid.Column="2" Style="{StaticResource Badge}" VerticalAlignment="Top" Padding="8,1,8,2" Margin="0,-2,0,0">
-                        <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource BadgeText}" FontSize="12.5" Typography.NumeralAlignment="Tabular" />
+                        <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource BadgeText}" FontSize="13" Typography.NumeralAlignment="Tabular" />
                     </Border>
                 </Grid>
             </Border>

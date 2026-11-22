@@ -209,7 +209,7 @@ namespace CoreBi.Desktop.Views
             {
                 DashScore.Text = "";
                 DashScore.Inlines.Add(new Run($"{runs[0].Multi:N0}"));
-                var pts = new Run("\u2002pts") { FontSize = 12.5, FontStretch = FontStretches.Normal, FontWeight = FontWeights.Normal };
+                var pts = new Run("\u2002pts") { FontSize = 13, FontStretch = FontStretches.Normal, FontWeight = FontWeights.Normal };
                 pts.SetResourceReference(TextElement.FontFamilyProperty, "LabelFont");
                 pts.SetResourceReference(TextElement.ForegroundProperty, "Muted");
                 DashScore.Inlines.Add(pts);
