@@ -64,23 +64,23 @@
                     <!-- Instrumento principal: osciloscópio de dois canais -->
                     <Border Style="{StaticResource CardBorder}" MinHeight="330">
                         <DockPanel>
-                            <!-- Cabeçalho de 32 px, igual em todos os cartões: o título centrado na linha e, à direita, os filtros em pílula -->
-                            <Grid DockPanel.Dock="Top" Height="32">
+                            <!-- Cabeçalho de 34 px, igual em todos os cartões: o título centrado na linha e, à direita, os filtros em pílula -->
+                            <Grid DockPanel.Dock="Top" Height="34">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock x:Name="DashChartLabel" Text="Temperatura" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <Border Style="{StaticResource PillGroup}" Margin="0,0,8,0">
-                                        <local:SlidingSelectionPanel x:Name="DashMetricPanel" Style="{StaticResource PillRail}">
+                                    <Border Style="{StaticResource SegmentGroup}" Margin="0,0,8,0">
+                                        <local:SlidingSelectionPanel x:Name="DashMetricPanel" Style="{StaticResource SegmentRail}">
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashMetric" Content="Temperatura" Tag="temp" IsChecked="True" Checked="DashOption_Checked" />
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashMetric" Content="Carga" Tag="load" Checked="DashOption_Checked" />
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashMetric" Content="Consumo" Tag="power" Checked="DashOption_Checked" />
                                         </local:SlidingSelectionPanel>
                                     </Border>
-                                    <Border Style="{StaticResource PillGroup}">
-                                        <local:SlidingSelectionPanel x:Name="DashRangePanel" Style="{StaticResource PillRail}">
+                                    <Border Style="{StaticResource SegmentGroup}">
+                                        <local:SlidingSelectionPanel x:Name="DashRangePanel" Style="{StaticResource SegmentRail}">
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashRange" Content="1 min" Tag="60" Checked="DashOption_Checked" />
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashRange" Content="5 min" Tag="300" IsChecked="True" Checked="DashOption_Checked" />
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashRange" Content="15 min" Tag="900" Checked="DashOption_Checked" />
@@ -236,7 +236,7 @@
 
                     <Border Style="{StaticResource CardBorder}">
                         <StackPanel>
-                            <Grid Height="32">
+                            <Grid Height="34">
                                 <TextBlock Text="Benchmark" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                                 <Button Style="{StaticResource CardLink}" ToolTip="Abrir Benchmark" Click="DashBench_Click" />
                             </Grid>
@@ -258,10 +258,10 @@
                         é o mesmo círculo dos outros cartões. Esqueleto abaixo do título até o registro de eventos do Windows
                         responder (lido fora da janela).
                     -->
-                    <Border x:Name="DashHealthCard" Grid.Row="2" Style="{StaticResource CardBorder}" local:Skeleton.Top="32"
+                    <Border x:Name="DashHealthCard" Grid.Row="2" Style="{StaticResource CardBorder}" local:Skeleton.Top="34"
                             local:Skeleton.Layout="gap 14; col 0 26; row 26: box 26; col 40; row 18: s *@0.45, c 64@0.8&gt;; row 17: c *@0.9; end; gap 14; col 0 26; row 26: box 26; col 40; row 18: s *@0.42, c 64@0.8&gt;; row 17: c *@0.85; end">
                         <StackPanel>
-                            <Grid Height="32">
+                            <Grid Height="34">
                                 <TextBlock Text="Saúde do PC" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                                 <Button Style="{StaticResource CardLink}" ToolTip="Ver todos os sensores" Click="DashSensors_Click" />
                             </Grid>
@@ -310,7 +310,7 @@
 
                     <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="24,20,24,12">
                         <DockPanel>
-                            <Grid DockPanel.Dock="Top" Height="32" Margin="0,0,0,2">
+                            <Grid DockPanel.Dock="Top" Height="34" Margin="0,0,0,2">
                                 <TextBlock Text="Atividade recente" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
                                 <!-- Ação centrada na altura das maiúsculas do título (a DIN assenta 1,5 px acima do centro da caixa) -->
                                 <Button x:Name="DashEventsMore" Style="{StaticResource GhostButton}" Content="Ver histórico" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-10,0" Visibility="Collapsed" Click="DashEventsMore_Click" />

@@ -26,7 +26,7 @@ public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
     public Brush? HighlightBorder { get => (Brush?)GetValue(HighlightBorderProperty); set => SetValue(HighlightBorderProperty, value); }
 
     public static readonly DependencyProperty HighlightRadiusProperty = DependencyProperty.Register(
-        nameof(HighlightRadius), typeof(double), typeof(SlidingSelectionPanel), new FrameworkPropertyMetadata(7.0, FrameworkPropertyMetadataOptions.AffectsRender));
+        nameof(HighlightRadius), typeof(double), typeof(SlidingSelectionPanel), new FrameworkPropertyMetadata(10.0, FrameworkPropertyMetadataOptions.AffectsRender));
     public double HighlightRadius { get => (double)GetValue(HighlightRadiusProperty); set => SetValue(HighlightRadiusProperty, value); }
 
     // Onde o destaque está agora (animado) e o quanto aparece

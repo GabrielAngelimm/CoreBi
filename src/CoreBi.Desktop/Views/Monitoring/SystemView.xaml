@@ -92,7 +92,7 @@
              Tudo em texto: a explicação fica na dica; embaixo, em letra menor, só o que fazer numa linha âmbar. -->
         <DataTemplate x:Key="SpecRowTemplate">
             <Grid x:Name="host" Margin="-10,0" Background="Transparent" Cursor="Hand" ToolTip="{Binding Hint}" MouseLeftButtonUp="SpecRow_Click">
-                <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="6" Opacity="0" />
+                <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="{StaticResource RadiusControl}" Opacity="0" />
                 <Border Height="1" VerticalAlignment="Top" Margin="10,0" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
                 <Grid Margin="10,8,8,8">
                     <Grid.ColumnDefinitions>

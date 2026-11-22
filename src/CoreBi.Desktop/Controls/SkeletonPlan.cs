@@ -203,7 +203,7 @@ public static class SkeletonPlan
             case "box":
                 {
                     double th = c.Tall > 0 ? c.Tall : cell.Height;
-                    dc.DrawRoundedRectangle(bar, null, new Rect(left, mid - th / 2, w, th), 8, 8);
+                    dc.DrawRoundedRectangle(bar, null, new Rect(left, mid - th / 2, w, th), 10, 10);
                     break;
                 }
             case "pill":
@@ -215,7 +215,7 @@ public static class SkeletonPlan
             case "btn":
                 {
                     double bh = c.Tall > 0 ? c.Tall : Math.Min(cell.Height, 40);
-                    dc.DrawRoundedRectangle(bar, null, new Rect(left, mid - bh / 2, w, bh), 6, 6);
+                    dc.DrawRoundedRectangle(bar, null, new Rect(left, mid - bh / 2, w, bh), 10, 10);
                     break;
                 }
             case "arc":

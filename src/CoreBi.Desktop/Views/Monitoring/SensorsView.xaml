@@ -55,7 +55,7 @@
              "Núcleo mais exigido" diz qual núcleo é, na hora (SensorLine_ToolTipOpening). -->
         <DataTemplate x:Key="SensorLine">
             <Grid x:Name="host" Margin="-8,0" Background="Transparent" ToolTip="{Binding Tip}" ToolTipOpening="SensorLine_ToolTipOpening">
-                <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="6" Opacity="0" />
+                <Border x:Name="bg" Background="{DynamicResource Hover}" CornerRadius="{StaticResource RadiusControl}" Opacity="0" />
                 <Border Height="1" VerticalAlignment="Top" Margin="8,0" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
                 <Grid Margin="8,0" Height="32">
                     <Grid.ColumnDefinitions>
