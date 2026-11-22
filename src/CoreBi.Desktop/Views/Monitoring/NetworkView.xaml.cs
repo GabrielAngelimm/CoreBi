@@ -21,7 +21,6 @@ public partial class NetworkView : UserControl
     private NetworkResult? _result;
     private CancellationTokenSource? _cancellation;
     private bool _running;
-    private bool? _narrowHeader;
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
     public NetworkView()
@@ -31,9 +30,6 @@ public partial class NetworkView : UserControl
     }
 
     internal void Initialize(FeatureContext context) => _context = context;
-
-    private void NetHeader_SizeChanged(object sender, SizeChangedEventArgs e)
-        => _narrowHeader = ToolPage.PlaceConsole(NetHeader, NetConsole, _narrowHeader);
 
     // Larguras do painel de diagnóstico: abaixo de NarrowDiag a latência e as grandezas de apoio descem para uma faixa sob o
     // instrumento (a latência à esquerda e as quatro grandezas em fila); abaixo de CompactDiag a faixa não comporta cinco
@@ -93,7 +89,7 @@ public partial class NetworkView : UserControl
         if (_context == null || _context.IsClosing) return;
         if (_running) { _cancellation?.Cancel(); return; }
         using var workload = _context.Workloads.TryBegin(WorkloadOperations.Network);
-        if (workload == null) { NetStatus.Text = "Termine o outro teste antes."; NetDetail.Text = ""; return; }
+        if (workload == null) { Say("Termine o outro teste antes."); return; }
         _running = true;
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
         _cancellation = cancellation;
@@ -101,7 +97,9 @@ public partial class NetworkView : UserControl
         LastResult = null;
         DisplayResult(null);
         SetProgress(0, animate: false);
+        ShowStages(NetworkPhase.Latency);
         NetMeta.Text = "Medindo agora";
+        bool completed = false;
         try
         {
             int attempt = 0;
@@ -119,22 +117,23 @@ public partial class NetworkView : UserControl
                 cancellation.Token, () =>
                 {
                     attempt++;
-                    NetStatus.Text = "Tentando outro servidor";
+                    Say("Tentando outro servidor");
                     SetProgress(0, animate: false);
                 });
             if (_context.IsClosing) return;
             LastResult = new[] { result.Card };
             DisplayResult(result);
-            NetDetail.Text = "";
             if (result.InterruptedPhase != null)
             {
-                NetStatus.Text = result.RetryAfterUtc != null ? "Aguardando o servidor" : "Teste incompleto";
+                Say(result.RetryAfterUtc != null ? "Aguardando o servidor" : "Teste incompleto");
                 SetProgress(result.InterruptedFraction, animate: false);
             }
             else
             {
-                NetStatus.Text = $"Concluído às {result.TestedAt:HH:mm:ss}";
+                Say($"Concluído às {result.TestedAt:HH:mm:ss}");
+                ShowStages(NetworkPhase.Done);
                 SetProgress(1, animate: true);
+                completed = true;
             }
         }
         catch (OperationCanceledException)
@@ -152,25 +151,27 @@ public partial class NetworkView : UserControl
             if (!_context.IsClosing)
             {
                 Ui.SetRunning(BtnNetTest, false, LastResult != null ? "Testar de novo" : "Testar a rede");
-                ShowTrack(false);
+                // Concluído, o medidor já segura o 100 % e fecha sozinho; parado no meio, fecha agora
+                if (!completed) HeaderMotion.EndProgress(NetProgressFill);
             }
         }
     }
 
+    /// <summary>Estado da barra de ações, com a troca suave de <see cref="HeaderMotion.Say"/>.</summary>
+    private void Say(string status, string detail = "") => HeaderMotion.Say(NetStatus, NetDetail, status, detail);
+
     private void Reset(string status, string detail)
     {
-        NetStatus.Text = status;
-        NetDetail.Text = detail;
+        Say(status, detail);
         SetProgress(0, animate: false);
         DisplayResult(null);
         NetMeta.Text = "Sem resultado";
     }
 
-
     private void ShowProgress(NetworkProgress p)
     {
-        NetStatus.Text = p.Text;
-        NetDetail.Text = StageText(p.Phase);
+        Say(p.Text); // o detalhe fica vazio: a etapa está escrita sobre a barra
+        ShowStages(p.Phase);
         SetProgress(p.Fraction, animate: true);
         // Leituras parciais: só o que já foi medido; o restante continua com travessão.
         SetReadout(NetLatency, p.LatencyMs);
@@ -181,41 +182,30 @@ public partial class NetworkView : UserControl
     }
 
     /// <summary>
-    /// A barra só anda quando o motor informa trabalho feito, e cada passo desliza até o novo valor com desaceleração
-    /// (sem animação contínua). Recomeço e "Mostrar animações no Windows" desligado vão direto ao valor.
+    /// A barra só anda quando o motor informa trabalho feito; o movimento (abrir, deslizar, contar a porcentagem, segurar o
+    /// 100 % e fechar) é o de todo medidor de cabeçalho (<see cref="HeaderMotion"/>). Sem animate, vai direto ao valor.
     /// </summary>
     private void SetProgress(double fraction, bool animate)
     {
-        fraction = Math.Clamp(fraction, 0, 1);
-        if (!animate || !SystemParameters.ClientAreaAnimation || fraction < NetProgress.ScaleX)
-        {
-            NetProgress.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-            NetProgress.ScaleX = fraction;
-        }
-        else
-        {
-            NetProgress.BeginAnimation(ScaleTransform.ScaleXProperty,
-                new DoubleAnimation(fraction, TimeSpan.FromMilliseconds(400)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
-        }
-        NetPercent.Text = (fraction * 100).ToString("0", PtBr);
-        ShowTrack(_running);
+        if (!animate) { NetProgress.BeginAnimation(ScaleTransform.ScaleXProperty, null); NetProgress.ScaleX = 0; }
+        HeaderMotion.SetProgress(NetProgressFill, fraction);
     }
 
-    /// <summary>Barra e porcentagem só durante o teste; ocultas (sem mudar a altura do console) em repouso.</summary>
-    private void ShowTrack(bool on)
+    /// <summary>
+    /// Pinta as três estações escritas sobre a barra: a da vez no sinal e em seminegrito, as já feitas no tom do texto e as que
+    /// faltam apagadas. Preparando, a primeira já acende; na análise e no fim, as três ficam feitas.
+    /// </summary>
+    private void ShowStages(NetworkPhase phase)
     {
-        NetTrack.Visibility = NetPercentBox.Visibility = on ? Visibility.Visible : Visibility.Hidden;
+        int current = phase switch { NetworkPhase.Latency => 1, NetworkPhase.Download => 2, NetworkPhase.Upload => 3, NetworkPhase.Analysis or NetworkPhase.Done => 4, _ => 1 };
+        TextBlock[] stages = [NetStage1, NetStage2, NetStage3];
+        for (int i = 0; i < stages.Length; i++)
+        {
+            int n = i + 1;
+            stages[i].SetResourceReference(TextBlock.ForegroundProperty, n == current ? "Signal" : n < current ? "Fg" : "Faint");
+            stages[i].FontWeight = n == current ? FontWeights.SemiBold : FontWeights.Normal;
+        }
     }
-
-    /// <summary>Etapa atual à direita do estado: "1 de 3 · Latência" (a barra tem um corte entre as três estações).</summary>
-    private static string StageText(NetworkPhase phase) => phase switch
-    {
-        NetworkPhase.Latency => "1 de 3 · Latência",
-        NetworkPhase.Download => "2 de 3 · Download",
-        NetworkPhase.Upload => "3 de 3 · Upload",
-        _ => "",
-    };
-
 
     private static string Format(double v) => v.ToString(v >= 100 ? "0" : "0.#", PtBr);
 
@@ -364,7 +354,6 @@ public partial class NetworkView : UserControl
         caption.Text = text;
     }
 
-
     private async void NetworkView_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (!IsVisible || _running || _result != null || _context == null || _context.IsClosing) return;
@@ -420,7 +409,6 @@ public partial class NetworkView : UserControl
             || kind.StartsWith(value, StringComparison.OrdinalIgnoreCase);
     }
 
-
     // Dois arcos de 136° espelhados (esquerda = download, direita = upload), de baixo (1 Mbps) para cima (1 Gbps), em escala
     // logarítmica: cada década ocupa um terço do arco. Segmentos na proporção 70/30 dos medidores do app.
     private const double DialCx = 160, DialCy = 130, DialR1 = 121, DialR2 = 138, DialGap = 22;
@@ -474,7 +462,6 @@ public partial class NetworkView : UserControl
         onPath.SetResourceReference(Shape.FillProperty, channel);
         NetDial.Children.Add(onPath);
     }
-
 
     private void NetTrace_SizeChanged(object sender, SizeChangedEventArgs e) => DrawTrace();
 

@@ -15,7 +15,7 @@ public static class DriverBackup
             new[] { "/export-driver", "*", folder }, token).ConfigureAwait(false);
         int count = Directory.GetDirectories(folder).Length;
         return result.ExitCode == 0
-            ? $"Exportação concluída: {count} pastas em {folder}"
-            : $"Exportação incompleta (código 0x{result.ExitCode:X8}). {count} pastas em {folder}.";
+            ? $"Backup salvo: {count} drivers em Documentos\\CoreBi-Drivers\n{folder}"
+            : $"Backup incompleto (código 0x{result.ExitCode:X8}): {count} drivers salvos\n{folder}";
     }
 }

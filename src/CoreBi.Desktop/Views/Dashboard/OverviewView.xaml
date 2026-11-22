@@ -49,12 +49,10 @@
                     <ColumnDefinition Width="364" />
                 </Grid.ColumnDefinitions>
 
-                <Grid Grid.ColumnSpan="3" Style="{StaticResource PageHeader}">
-                    <StackPanel>
-                        <TextBlock Text="Visão geral" Style="{StaticResource PageTitle}" />
-                        <TextBlock x:Name="DashMachine" Text="Leituras ao vivo do processador, da placa de vídeo, da memória e do disco do sistema." Style="{StaticResource PageSubtitle}" />
-                    </StackPanel>
-                </Grid>
+                <local:PageHeaderPanel Grid.ColumnSpan="3" Style="{StaticResource PageHead}">
+                    <TextBlock Text="Visão geral" Style="{StaticResource PageTitle}" />
+                    <TextBlock x:Name="DashMachine" Text="Leituras ao vivo deste computador." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                </local:PageHeaderPanel>
 
                 <!-- Coluna da esquerda: o gráfico ocupa a sobra, os componentes ficam embaixo -->
                 <Grid Grid.Row="1">
@@ -259,7 +257,9 @@
 
                     <!-- O botão fantasma no pé já tem 6 px de respiro interno: o painel desconta isso embaixo -->
                     <!-- Esqueleto abaixo do título até o registro de eventos do Windows responder (lido fora da janela) -->
-                    <Border x:Name="DashHealthCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="24,20,24,14" local:Skeleton.Top="34" local:Skeleton.Shape="Text">
+                    <!-- Esqueleto: os dois itens (ícone, título e explicação) e o atalho para os sensores -->
+                    <Border x:Name="DashHealthCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="24,20,24,14" local:Skeleton.Top="32"
+                            local:Skeleton.Layout="gap 10; row 19: c 22@0.55^12, s *@0.42; gap 2; row 17: - 22, c *@0.92; gap 4; row 19: c 22@0.55^12, s *@0.38; gap 2; row 17: - 22, c *@0.85; gap 7; row 32: c 22@0.6^12, c 150@0.95">
                         <StackPanel>
                             <Grid Margin="0,0,0,6">
                                 <TextBlock Text="Saúde do PC" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />

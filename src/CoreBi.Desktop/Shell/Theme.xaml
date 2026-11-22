@@ -112,7 +112,7 @@
     <!-- Título da página: a mesma voz da assinatura -->
     <Style x:Key="PageTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="32"/>
+        <Setter Property="FontSize" Value="36"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -271,6 +271,56 @@
     </Style>
     <Style x:Key="PageHeader" TargetType="Grid">
         <Setter Property="Margin" Value="0,0,0,14"/>
+    </Style>
+    <!--
+        Cabeçalho de página, o mesmo em todas as telas (PageHeaderPanel): título à esquerda (DIN 36) e, à direita, na linha do
+        título, a barra de ações (PageActions). Na barra, da esquerda para a direita: o estado vivo ("Lido às 20:31", PageStatus,
+        com o detalhe um tom abaixo, PageDetail), o medidor de progresso da tarefa (TaskMeter, só durante ela), a busca
+        (SearchField) e os botões (HeaderSecondary, HeaderPrimary), todos com 40 px e 10 entre si, a ação principal na ponta.
+        Nada de cartão em volta: o vão entre o título e a barra é livre. Só um texto de explicação (Visão geral, OverlayBi) fica
+        embaixo do título, como subtítulo.
+    -->
+    <!-- 22 embaixo (28 medidos nas letras do subtítulo até o primeiro painel); sem subtítulo, 17 local, os mesmos 28 do pé do título -->
+    <Style x:Key="PageHead" TargetType="local:PageHeaderPanel">
+        <Setter Property="Margin" Value="0,0,0,22"/>
+    </Style>
+    <Style x:Key="PageActions" TargetType="StackPanel">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <!-- Estado vivo na barra de ações, à esquerda dos botões, na mesma linha: o que acabou de acontecer ("Lido às 20:31") -->
+    <Style x:Key="PageStatus" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="MaxWidth" Value="520"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,0,2"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+        <!-- Texto novo acende em 200 ms, em vez de trocar seco -->
+        <Setter Property="local:HeaderMotion.SoftText" Value="True"/>
+    </Style>
+    <!-- Segunda parte do estado: o detalhe curto, um tom abaixo -->
+    <Style x:Key="PageDetail" TargetType="TextBlock" BasedOn="{StaticResource PageStatus}">
+        <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+        <Setter Property="MaxWidth" Value="240"/>
+        <Setter Property="Margin" Value="12,0,0,2"/>
+        <Style.Triggers>
+            <Trigger Property="Text" Value="">
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!--
+        Vaga do estado na barra, de largura fixa e com o texto rente à direita: o estado muda de tamanho a cada etapa, e numa caixa
+        que acompanhasse o texto o medidor à esquerda dela pularia de lugar a cada troca. 20 até o que vem depois.
+    -->
+    <Style x:Key="PageStatusSlot" TargetType="DockPanel">
+        <Setter Property="Width" Value="420"/>
+        <Setter Property="LastChildFill" Value="True"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,20,0"/>
     </Style>
     <!--
         Painel: agrupa um instrumento. Sem sombra nem degradê: a profundidade vem do tom (bancada → painel → elevado) e do fio
@@ -452,8 +502,22 @@
                     </Setter.Value>
                 </Setter>
             </Trigger>
+            <!-- Desligar e religar (enquanto uma tarefa corre) apaga e acende em 160 ms, sem piscar -->
             <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="root" Property="Opacity" Value="0.4"/>
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="root" Storyboard.TargetProperty="Opacity" To="0.4" Duration="0:0:0.16"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="root" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.16"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
@@ -484,6 +548,19 @@
         <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="local:Ui.HoverFill" Value="{DynamicResource Selected}"/>
+    </Style>
+
+    <!-- Botões da barra de ações do cabeçalho: 40 px e 14, um degrau acima dos botões dos painéis, para o cabeçalho ter presença -->
+    <Style x:Key="HeaderPrimary" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Padding" Value="20,0"/>
+        <Setter Property="MinWidth" Value="172"/>
+    </Style>
+    <Style x:Key="HeaderSecondary" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Padding" Value="18,0"/>
     </Style>
 
     <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
@@ -545,6 +622,14 @@
         <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
         <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
         <Setter Property="local:Ui.HoverFill" Value="{DynamicResource DangerSoft}"/>
+    </Style>
+
+    <!-- Parar uma tarefa de cabeçalho (Testar a rede, Instalar apps): o mesmo tamanho do HeaderPrimary, para o botão não pular -->
+    <Style x:Key="HeaderStop" TargetType="Button" BasedOn="{StaticResource StopButton}">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Padding" Value="20,0"/>
+        <Setter Property="MinWidth" Value="172"/>
     </Style>
 
     <!-- Ação destrutiva discreta dentro de listas (remover) -->
@@ -1034,6 +1119,8 @@
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <!-- O deslize é do clique (Ui.SwitchMotion); o estado vem dos setters, sem animar quando a linha nasce ou é recriada -->
+        <Setter Property="local:Ui.SwitchMotion" Value="True"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -1063,26 +1150,8 @@
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="knob" Property="Fill" Value="{DynamicResource SignalFg}"/>
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="slide" Storyboard.TargetProperty="X" To="18" Duration="0:0:0.2">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="slide" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.2">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
+                            <Setter TargetName="knob" Property="HorizontalAlignment" Value="Right"/>
+                            <Setter TargetName="on" Property="Opacity" Value="1"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="root" Property="Opacity" Value="0.4"/>
@@ -1564,28 +1633,45 @@
 
     <!-- rodada-unslop: ferramentas início -->
     <!--
-        Console de tarefa (Inicialização, Instalar apps, Drivers): fica ao lado do título, rente ao topo do cabeçalho, com o botão
-        da tarefa (36 px), o estado em uma linha, um detalhe curto à direita e a barra contínua no sinal, que só aparece durante
-        uma tarefa e só avança quando ela informa trabalho feito. Com 62 px de altura, o primeiro painel começa na mesma linha
-        das páginas com título e subtítulo.
+        Medidor de progresso de uma tarefa, na barra de ações do cabeçalho (Inicialização, Instalar apps, Drivers, Rede): o trilho
+        contínuo no sinal e a porcentagem à direita. Só aparece durante a tarefa (os botões, rentes à direita, não andam; o estado
+        abre espaço à esquerda), avança quando ela informa trabalho feito e, ao terminar, apaga em 300 ms (ToolPage.SetProgress).
     -->
-    <Style x:Key="TaskConsole" TargetType="Border" BasedOn="{StaticResource CardBorder}">
-        <Setter Property="Padding" Value="12,12,22,12"/>
+    <Style x:Key="TaskMeter" TargetType="Grid">
+        <Setter Property="Width" Value="220"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Visibility" Value="Collapsed"/>
+        <Setter Property="Margin" Value="0,0,18,0"/>
     </Style>
-    <Style x:Key="TaskStatus" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
+    <Style x:Key="TaskPercent" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-        <Setter Property="TextWrapping" Value="NoWrap"/>
-        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="MinWidth" Value="44"/>
+        <Setter Property="TextAlignment" Value="Right"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="10,0,0,1"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
     </Style>
-    <Style x:Key="TaskDetail" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
-        <Setter Property="TextWrapping" Value="NoWrap"/>
-        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-        <Setter Property="HorizontalAlignment" Value="Right"/>
-        <Setter Property="Margin" Value="16,0,0,0"/>
-        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    <!-- Busca: o mesmo desenho em toda página (e o da paleta Ctrl + K no alto): fundo do painel, fio fino, lupa e 40 px, a altura dos botões do cabeçalho -->
+    <Style x:Key="SearchField" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="Width" Value="300"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="local:Ui.Icon" Value="&#xE721;"/>
+    </Style>
+    <!-- Grupo de controles que não são botões (interruptor e atalho do OverlayBi) na barra de ações: 40 px, o fio dos campos -->
+    <Style x:Key="ActionGroup" TargetType="Border">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}"/>
+        <Setter Property="Padding" Value="14,0"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
     <!-- Cabeçalho de coluna de uma tabela feita à mão (linhas de altura fixa): DIN 12, um tom abaixo do conteúdo -->
     <Style x:Key="TableHead" TargetType="TextBlock">

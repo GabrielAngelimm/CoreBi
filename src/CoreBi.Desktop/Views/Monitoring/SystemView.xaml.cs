@@ -27,6 +27,7 @@ public partial class SystemView : UserControl
     private Dictionary<string, Sheet> _sheets = new();
     private Sheet? _sheet;
     private string _selected = SystemSheets.Cpu;
+    private string _signature = "";
     private UniformGrid? _indexGrid;
     private ColumnsPanel? _columns;
 
@@ -68,7 +69,7 @@ public partial class SystemView : UserControl
         }
         catch (Exception ex)
         {
-            SystemSub.Text = $"Não foi possível ler as informações do sistema: {ex.Message}";
+            HeaderMotion.Say(SystemSub, null, $"Não foi possível ler as informações do sistema: {ex.Message}");
             Skeleton.SetActive(SheetCard, false);
         }
     }
@@ -109,11 +110,20 @@ public partial class SystemView : UserControl
         if (_inventory == null) return;
         var now = DateTime.Now;
         var (index, sheets) = SystemSheets.Build(_inventory, _context.Gpus, _drives, now, MemoryInfo.ReadSnapshot());
-        _sheets = sheets;
         Built = (index, sheets);
+        // Ao voltar à página, a ficha refeita quase sempre é igual à da tela: trocar as abas e os grupos por cópias idênticas
+        // fazia tudo piscar logo depois da entrada. Só troca o que mudou de verdade (espaço livre, memória em uso, uma placa nova)
+        string signature = System.Text.Json.JsonSerializer.Serialize(SystemReport.From(index, sheets));
+        if (signature == _signature && SysIndex.ItemsSource != null)
+        {
+            Skeleton.SetActive(SheetCard, false);
+            return;
+        }
+        _signature = signature;
+        _sheets = sheets;
         SysIndex.ItemsSource = index;
         SysIndex.SelectedItem = index.FirstOrDefault(i => i.Key == _selected) ?? index.FirstOrDefault();
-        SystemSub.Text = $"{Environment.MachineName} · lido às {now:HH:mm}";
+        HeaderMotion.Say(SystemSub, null, $"{Environment.MachineName} · lido às {now:HH:mm}");
         Skeleton.SetActive(SheetCard, false);
     }
 
@@ -235,16 +245,21 @@ public partial class SystemView : UserControl
         try
         {
             string? path = await ReportExportService.ExportInteractiveAsync(
-                _context, Built, Nodes, _networkResult(), status => BtnReport.Content = status);
-            if (path != null) SystemSub.Text = $"Relatório salvo em {path}";
+                _context, Built, Nodes, _networkResult(), status => HeaderMotion.Say(SystemSub, null, status));
+            // O estado conta o andamento ("Gerando PDF…") e termina no nome do arquivo; o caminho inteiro fica na dica
+            if (path != null)
+            {
+                SystemSub.ToolTip = path;
+                HeaderMotion.Say(SystemSub, null, $"Relatório salvo: {System.IO.Path.GetFileName(path)}");
+            }
         }
         catch (Exception ex)
         {
+            HeaderMotion.Say(SystemSub, null, "O relatório não foi gerado");
             MessageBox.Show(_context.Owner, "Não foi possível gerar o relatório:\n" + ex.Message, "CoreBi", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {
-            BtnReport.Content = "Exportar relatório";
             BtnReport.IsEnabled = true;
         }
     }

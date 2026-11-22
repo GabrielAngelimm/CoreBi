@@ -8,4 +8,11 @@
       </requestedPrivileges>
     </security>
   </trustInfo>
+  <!-- Nítido em qualquer escala e ao passar a janela para um monitor de outra escala (sem isso o Windows estica a imagem) -->
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, PerMonitor</dpiAwareness>
+    </windowsSettings>
+  </application>
 </assembly>

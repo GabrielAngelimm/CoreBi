@@ -72,6 +72,10 @@ internal static partial class Program
                     string file = Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-{theme}.png");
                     SaveWindow(window, file);
                     Console.WriteLine(file);
+                    // Quanto a página rola nesta janela (0 = cabe inteira): serve para conferir "tela cheia sem rolagem" em outro PC
+                    if (typeof(MainWindow).GetField(parts[0], System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)?.GetValue(window) is UserControl { Content: ScrollViewer scroll })
+                        Console.WriteLine($"  {parts[0]}: rolagem {scroll.ScrollableHeight:0} px");
+                    if (theme == themes[0]) SaveSkeletons(window, Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-skeleton.png"));
                 }
             }
             return 0;
@@ -110,6 +114,31 @@ internal static partial class Program
         };
         window.PageNet.DisplayResult(sample);
         Wait(400);
+    }
+
+    /// <summary>
+    /// O mesmo quadro com os esqueletos da página ligados por cima dos dados, para comparar a planta de cada painel com o
+    /// conteúdo de verdade (o esqueleto tem que cair nas mesmas linhas).
+    /// </summary>
+    private static void SaveSkeletons(MainWindow window, string file)
+    {
+        var panels = new List<Border>();
+        void Walk(DependencyObject node)
+        {
+            if (node is Border b && b.IsVisible && (b.ReadLocalValue(Skeleton.LayoutProperty) != DependencyProperty.UnsetValue
+                || b.ReadLocalValue(Skeleton.ShapeProperty) != DependencyProperty.UnsetValue || b.ReadLocalValue(Skeleton.TopProperty) != DependencyProperty.UnsetValue
+                || b.ReadLocalValue(Skeleton.RowHeightProperty) != DependencyProperty.UnsetValue))
+                panels.Add(b);
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) Walk(VisualTreeHelper.GetChild(node, i));
+        }
+        Walk(window);
+        if (panels.Count == 0) return;
+        Skeleton.Set(true, panels.ToArray());
+        Wait(150);
+        SaveWindow(window, file);
+        Console.WriteLine(file);
+        Skeleton.Set(false, panels.ToArray());
+        Wait(300);
     }
 
     private static void SaveWindow(MainWindow window, string file)

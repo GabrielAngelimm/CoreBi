@@ -259,10 +259,10 @@
                     <RowDefinition Height="16" />
                     <RowDefinition Height="*" MinHeight="560" />
                 </Grid.RowDefinitions>
-                <!-- Sem subtítulo: 9 embaixo (e não 14), para o primeiro painel ficar a 20 do pé do título, o mesmo respiro da busca ao título -->
-                <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,9">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Benchmark" Style="{StaticResource PageTitle}" />
-                </Grid>
+                    <TextBlock Text="Mede o desempenho de cada peça com o mesmo teste em qualquer PC." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                </local:PageHeaderPanel>
 
                 <!-- Escolha do teste: uma tecla por teste, agrupadas pelo componente que medem -->
                 <UniformGrid x:Name="BenchTestPanel" Grid.Row="1" Rows="1" Margin="-6">

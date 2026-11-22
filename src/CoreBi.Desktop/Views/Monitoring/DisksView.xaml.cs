@@ -24,7 +24,7 @@ public partial class DisksView : UserControl
             Temperature = d?.Temperature;
         }
 
-        public DiskHealthCard Card { get; }
+        public DiskHealthCard Card { get; set; }
         public DiskDetail? Disk => Card.Disk;
         public string Title => Card.Title;
         public string Meta { get; }
@@ -61,13 +61,16 @@ public partial class DisksView : UserControl
 
     private async void BtnDiskRefresh_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
 
-    internal async Task RefreshAsync()
+    internal async Task RefreshAsync(bool entering = false)
     {
         if (_refreshing || _context == null || _context.IsClosing) return;
         _refreshing = true;
-        BtnDiskRefresh.IsEnabled = false;
-        DiskHealthStatus.Text = "Lendo os discos…";
-        bool first = _readAt == default;
+        bool first = _readAt == default, quiet = entering && !first;
+        if (!quiet)
+        {
+            BtnDiskRefresh.IsEnabled = false;
+            HeaderMotion.Say(DiskHealthStatus, null, "Lendo os discos…");
+        }
         if (first) Skeleton.Set(true, DiskPlate, LifeCard, TempCard, OdoCard, CheckCard); // primeira leitura: a ficha ainda não tem disco
         try
         {
@@ -77,27 +80,40 @@ public partial class DisksView : UserControl
             var cards = await cardsTask;
             List<DriveCard> drives;
             try { drives = await drivesTask; } catch { drives = new(); }
+            if (entering) await PageMotion.EntranceDone(this);
             if (_context.IsClosing) return;
             _readAt = DateTime.Now;
             _drives = drives;
             _context.Drives = drives;
             int keep = (DiskCards.SelectedItem as DiskBay)?.Card.Index ?? -1;
-            _bays = cards.Select(c => new DiskBay(c)).ToList();
-            DiskCards.ItemsSource = _bays;
-            DiskCards.SelectedItem = _bays.FirstOrDefault(b => b.Card.Index == keep) ?? _bays.FirstOrDefault();
+            var bays = cards.Select(c => new DiskBay(c)).ToList();
+            // O mesmo rack da tela (mesmos discos, nomes, selos e unidades): os compartimentos ficam e só a ficha do escolhido
+            // é reescrita; trocar a lista refazia o rack e a seleção a cada volta à página
+            static string Key(DiskBay b) => $"{b.Card.Index}|{b.Title}|{b.Meta}|{b.Letters}|{b.VerdictText}";
+            if (_bays.Count > 0 && _bays.Select(Key).SequenceEqual(bays.Select(Key)))
+            {
+                for (int i = 0; i < bays.Count; i++) { _bays[i].Card = bays[i].Card; _bays[i].Temperature = bays[i].Temperature; }
+                if (DiskCards.SelectedItem is DiskBay shown) ShowDisk(shown);
+            }
+            else
+            {
+                _bays = bays;
+                DiskCards.ItemsSource = _bays;
+                DiskCards.SelectedItem = _bays.FirstOrDefault(b => b.Card.Index == keep) ?? _bays.FirstOrDefault();
+            }
             RackCount.Text = _bays.Count.ToString();
 
             // Uma coisa por vez: o que pede atenção, quando há; senão só a hora da leitura (a contagem fica no rack)
             int bad = cards.Count(c => c.Verdict is HealthVerdict.Warning or HealthVerdict.Critical);
             int unknown = cards.Count(c => c.Verdict == HealthVerdict.Unknown);
             string read = $"Lido às {_readAt:HH:mm}.";
-            DiskHealthStatus.Text = cards.Count == 0 ? "Nenhum disco encontrado."
+            HeaderMotion.Say(DiskHealthStatus, null, cards.Count == 0 ? "Nenhum disco encontrado."
                 : bad > 0 ? $"{(bad == 1 ? "1 disco precisa" : $"{bad} discos precisam")} de atenção. {read}"
                 : unknown > 0 ? $"{(unknown == 1 ? "1 disco" : $"{unknown} discos")} sem dados de saúde. {read}"
-                : $"Lido às {_readAt:HH:mm}";
+                : $"Lido às {_readAt:HH:mm}");
             DiskPanel.Visibility = cards.Count == 0 ? Visibility.Hidden : Visibility.Visible;
         }
-        catch (Exception ex) { if (!_context.IsClosing) DiskHealthStatus.Text = "Não foi possível ler os discos: " + ex.Message; }
+        catch (Exception ex) { if (!_context.IsClosing) HeaderMotion.Say(DiskHealthStatus, null, "Não foi possível ler os discos: " + ex.Message); }
         finally
         {
             _refreshing = false;
@@ -221,7 +237,7 @@ public partial class DisksView : UserControl
         Spec("Unidades ", string.Join(" ", d.Letters));
         Spec("Série ", d.Serial);
         Spec("Firmware ", d.Firmware);
-        DiskSpecs.ItemsSource = specs;
+        Ui.SetItems(DiskSpecs, specs);
 
         ShowSpace(d);
         ShowLife(d);
@@ -273,10 +289,10 @@ public partial class DisksView : UserControl
         Gb(SpaceUsed, used, 100 - freeShare);
         Gb(SpaceFree, free, freeShare);
 
-        DiskVolumes.ItemsSource = mine.Count > 1
+        Ui.SetItems(DiskVolumes, mine.Count > 1
             ? mine.Select(v => new VolumeRow(v.Letter, string.IsNullOrWhiteSpace(v.Label) ? v.FileSystem : v.Label,
                 $"{DriveCard.Fmt(v.Free)} livres de {DriveCard.Fmt(v.Total)}")).ToList()
-            : null;
+            : null);
     }
 
     private void ShowLife(DiskDetail d)
@@ -379,7 +395,7 @@ public partial class DisksView : UserControl
             rows.Add(Count("Erros de escrita", d.WriteErrors));
             rows.Add(Count("Erros não corrigidos", uncorrected));
         }
-        DiskChecks.ItemsSource = GroupUnknown(rows);
+        Ui.SetItems(DiskChecks, GroupUnknown(rows));
     }
 
     /// <summary>
@@ -430,6 +446,11 @@ public partial class DisksView : UserControl
 
     private List<Border> _odoCells = new();
 
+    // Esqueleto do odômetro nos dois arranjos: quatro leituras empilhadas e centradas (largo) ou 2 × 2 (estreito)
+    private const string OdoRead3 = "row 17: c *@0.62~; gap 4; row 40: n *@0.55^28~; gap 8; row 16: c *@0.7~";
+    private const string OdoWidePlan = "bands 4; pad 12 0 12 0; " + OdoRead3 + "; endbands";
+    private const string OdoNarrowPlan = "col 4% 42%; " + OdoRead3 + "; gap 16; " + OdoRead3 + "; col 54% 42%; " + OdoRead3 + "; gap 16; " + OdoRead3 + "; end";
+
     /// <summary>Larga: quatro leituras empilhadas na coluna à direita. Estreita: faixa 2 × 2 abaixo da temperatura.</summary>
     private void LayoutOdometer()
     {
@@ -442,6 +463,7 @@ public partial class DisksView : UserControl
         int columns = _wide ? 1 : Math.Max(1, Math.Min(_odoCells.Count, 2));
         OdoGrid.Columns = columns;
         OdoCard.Padding = _wide ? new Thickness(0) : new Thickness(0, 20, 0, 20);
+        Skeleton.SetLayout(OdoCard, _wide ? OdoWidePlan : OdoNarrowPlan);
         for (int i = 0; i < _odoCells.Count; i++)
         {
             var cell = _odoCells[i];

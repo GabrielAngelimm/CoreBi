@@ -76,7 +76,12 @@ public partial class PowerView : UserControl
     internal PlanDetail? Plan { get; private set; }
     internal PowerHistory? History { get; private set; }
 
-    public PowerView() => InitializeComponent();
+    public PowerView()
+    {
+        InitializeComponent();
+        // Consumo ao vivo e tensões: a leitura nova entra com a página, antes do primeiro quadro (o tique pula a entrada)
+        PageMotion.RevealLive(this, () => { if (_context != null) ShowLive(); });
+    }
 
     internal void Initialize(FeatureContext context)
     {
@@ -87,14 +92,17 @@ public partial class PowerView : UserControl
 
     private async void BtnEnergyRefresh_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
 
-    internal async Task RefreshAsync()
+    internal async Task RefreshAsync(bool entering = false)
     {
         if (_refreshing || _context == null || _context.IsClosing) return;
         _refreshing = true;
         _dirty = false;
-        BtnEnergyRefresh.IsEnabled = false;
-        EnergyStatus.Text = "Lendo fonte e plano de energia…";
-        bool first = Plan == null;
+        bool first = Plan == null, quiet = entering && !first;
+        if (!quiet)
+        {
+            BtnEnergyRefresh.IsEnabled = false;
+            HeaderMotion.Say(EnergyStatus, null, "Lendo fonte e plano de energia…");
+        }
         if (first) Skeleton.Set(true, FeedCard, VoltCard, DaysCard); // primeira leitura: fonte, plano e histórico ainda vazios
         try
         {
@@ -102,6 +110,7 @@ public partial class PowerView : UserControl
             var plan = Task.Run(PowerPlans.Read);
             var history = Task.Run(() => PowerHistoryReader.Read());
             await Task.WhenAll(power, plan, history);
+            if (entering) await PageMotion.EntranceDone(this);
             if (_context.IsClosing) return;
             Snapshot = power.Result;
             Plan = plan.Result;
@@ -111,9 +120,9 @@ public partial class PowerView : UserControl
             ShowPlan(Plan);
             ShowHistory(History);
             ShowLive();
-            EnergyStatus.Text = $"Lido às {DateTime.Now:HH:mm}";
+            HeaderMotion.Say(EnergyStatus, null, $"Lido às {DateTime.Now:HH:mm}");
         }
-        catch (Exception ex) { if (!_context.IsClosing) EnergyStatus.Text = "Não foi possível ler a energia: " + ex.Message; }
+        catch (Exception ex) { if (!_context.IsClosing) HeaderMotion.Say(EnergyStatus, null, "Não foi possível ler a energia: " + ex.Message); }
         finally
         {
             _refreshing = false;
@@ -194,7 +203,9 @@ public partial class PowerView : UserControl
         if (_pendingPlan is { } pending && (p.Plans.All(x => x.Id != pending.Id) || p.Active?.Id == pending.Id)) _pendingPlan = null;
         var preview = _pendingPlan is { } pp ? PowerPlans.ReadValues(pp.Id) : null;
         // Planos de fábrica num Windows em inglês ("Balanced") aparecem com o nome em português; o personalizado fica como está
-        PlanList.ItemsSource = p.Plans.Select(x => new PlanItem(x.Id, PowerPlans.DisplayName(x.Id, x.Name), x.IsActive, x.Id == _pendingPlan?.Id)).ToList();
+        // Listas iguais às da tela ficam como estão: trocá-las refazia as linhas (e o plano marcado piscava) a cada volta à página
+        var plans = p.Plans.Select(x => new PlanItem(x.Id, PowerPlans.DisplayName(x.Id, x.Name), x.IsActive, x.Id == _pendingPlan?.Id)).ToList();
+        if (PlanList.ItemsSource is not IEnumerable<PlanItem> shownPlans || !shownPlans.SequenceEqual(plans)) PlanList.ItemsSource = plans;
 
         bool battery = Snapshot?.Batteries.Any(b => !b.IsUps) == true;
         bool previewing = preview != null;
@@ -244,12 +255,13 @@ public partial class PowerView : UserControl
         // O turbo é "Agressivo" em todos os planos de fábrica, então só ganha uma linha quando alguém o mudou (aqui ou no plano escolhido)
         bool OffDefault(PlanValues v) => v.Settings.Any(x => x.Key == "boost" && (x.Ac != "Agressivo" || x.Dc != "Agressivo"));
         bool showBoost = OffDefault(now) || (preview != null && OffDefault(preview));
-        PlanSettings.ItemsSource = shown.Settings.Where(s => s.Key != "boost" || showBoost).Select(s =>
+        var settings = shown.Settings.Where(s => s.Key != "boost" || showBoost).Select(s =>
         {
             string before = now.Settings.FirstOrDefault(x => x.Key == s.Key) is { } cur ? Text(cur) : "";
             bool changed = previewing && before.Length > 0 && before != Text(s);
             return new SettingItem(s.Title, Text(s), SettingTip(s.Key), changed ? before + "  →" : "", changed);
         }).ToList();
+        if (PlanSettings.ItemsSource is not IEnumerable<SettingItem> shownSettings || !shownSettings.SequenceEqual(settings)) PlanSettings.ItemsSource = settings;
     }
 
     private static string? SettingTip(string key) => key switch
@@ -281,6 +293,7 @@ public partial class PowerView : UserControl
         if (_applyingPlan || _pendingPlan is not { } plan || Plan == null) return;
         _applyingPlan = true;
         PlanApply.IsEnabled = false;
+        HeaderMotion.Say(EnergyStatus, null, "Ativando o plano…");
         try
         {
             uint error = await Task.Run(() => PowerPlans.SetActive(plan.Id));
@@ -289,7 +302,7 @@ public partial class PowerView : UserControl
             Plan = await Task.Run(PowerPlans.Read);
             if (_context.IsClosing) return;
             ShowPlan(Plan);
-            EnergyStatus.Text = error == 0 ? $"Plano {PowerPlans.DisplayName(plan.Id, plan.Name)} ativado às {DateTime.Now:HH:mm}" : $"O Windows recusou a troca de plano (erro {error}).";
+            HeaderMotion.Say(EnergyStatus, null, error == 0 ? $"Plano {PowerPlans.DisplayName(plan.Id, plan.Name)} ativado às {DateTime.Now:HH:mm}" : $"O Windows recusou a troca de plano (erro {error}).");
         }
         finally { _applyingPlan = false; }
     }
@@ -376,7 +389,7 @@ public partial class PowerView : UserControl
         // Tomada ↔ bateria: a próxima visita (ou esta, se aberta) relê tudo
         var (ac, _, _) = PowerStatus.Line();
         if (Snapshot != null && ac != _lastAc) { _lastAc = ac; _dirty = true; }
-        if (!IsVisible) return;
+        if (!IsVisible || PageMotion.IsEntering(this)) return;
         if (_dirty && !_refreshing) _ = RefreshAsync();
         ShowLive();
     }

@@ -9,7 +9,7 @@ namespace CoreBi.Desktop;
 /// <summary>
 /// Entrada das páginas, igual em todas: a página aparece no mesmo instante do clique, com 170 ms de opacidade e 230 ms de
 /// deslocamento curto (10 px), e os painéis dela acendem em sequência, 30 ms um depois do outro (no máximo sete), na ordem
-/// de leitura. Trabalho pesado de montagem espera a entrada terminar (<see cref="AfterEntrance"/>) para não engasgar o
+/// de leitura, subindo 6 px enquanto acendem. Trabalho pesado de montagem espera a entrada terminar (<see cref="AfterEntrance"/>) para não engasgar o
 /// movimento; até lá, os painéis que dependem dele mostram o esqueleto (<see cref="Skeleton"/>).
 /// Respeita "Mostrar animações no Windows": sem animações, a página só aparece.
 /// </summary>
@@ -18,6 +18,8 @@ public static class PageMotion
     public static readonly TimeSpan PageFade = TimeSpan.FromMilliseconds(170);
     public static readonly TimeSpan PageShift = TimeSpan.FromMilliseconds(230);
     private static readonly TimeSpan PanelFade = TimeSpan.FromMilliseconds(220);
+    private static readonly TimeSpan PanelShift = TimeSpan.FromMilliseconds(280);
+    private const double PanelRise = 6;
     private const int StaggerMs = 30;
     private const int MaxStaggered = 7;
 
@@ -62,7 +64,10 @@ public static class PageMotion
         });
     }
 
-    /// <summary>Um painel acende atrasado: começa invisível e chega à opacidade normal sem segurar o valor no fim.</summary>
+    /// <summary>
+    /// Um painel acende atrasado e sobe 6 px enquanto acende: começa invisível e chega à opacidade e ao lugar normais sem segurar
+    /// o valor no fim. A subida curta faz a página assentar em cascata, na ordem de leitura, em vez de só clarear.
+    /// </summary>
     private static void Stagger(UIElement panel, int index, IEasingFunction ease)
     {
         var delay = TimeSpan.FromMilliseconds(index * StaggerMs);
@@ -71,6 +76,15 @@ public static class PageMotion
         fade.KeyFrames.Add(new DiscreteDoubleKeyFrame(0, KeyTime.FromTimeSpan(delay)));
         fade.KeyFrames.Add(new EasingDoubleKeyFrame(1, KeyTime.FromTimeSpan(delay + PanelFade), ease));
         panel.BeginAnimation(UIElement.OpacityProperty, fade);
+        if (panel.RenderTransform is TranslateTransform { IsFrozen: false } || ReferenceEquals(panel.RenderTransform, Transform.Identity) || panel.RenderTransform == null)
+        {
+            if (panel.RenderTransform is not TranslateTransform rise || rise.IsFrozen) panel.RenderTransform = rise = new TranslateTransform();
+            var lift = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.Stop };
+            lift.KeyFrames.Add(new DiscreteDoubleKeyFrame(PanelRise, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+            lift.KeyFrames.Add(new DiscreteDoubleKeyFrame(PanelRise, KeyTime.FromTimeSpan(delay)));
+            lift.KeyFrames.Add(new EasingDoubleKeyFrame(0, KeyTime.FromTimeSpan(delay + PanelShift), ease));
+            rise.BeginAnimation(TranslateTransform.YProperty, lift);
+        }
     }
 
     /// <summary>
@@ -103,6 +117,32 @@ public static class PageMotion
         for (; style != null; style = style.BasedOn)
             if (ReferenceEquals(style, _card)) return true;
         return false;
+    }
+
+    /// <summary>
+    /// Leituras ao vivo de uma página (instrumentos, gráfico do consumo, tensões): a leitura nova entra no instante em que a página
+    /// aparece, antes do primeiro quadro, e sobe junto com os outros cartões na mesma cascata. Antes, o tique trocava os valores da
+    /// visita anterior de uma vez, logo depois do movimento, e só aquela área parecia saltar.
+    /// </summary>
+    public static void RevealLive(FrameworkElement page, Action sample)
+    {
+        page.IsVisibleChanged += (_, _) => { if (page.IsVisible) sample(); };
+    }
+
+    /// <summary>
+    /// A página ainda está entrando (deslocamento e cascata dos painéis, ~450 ms): o tique de 1 s pula o redesenho dela nesse
+    /// intervalo, para um gráfico refeito não cair no meio do movimento (a amostra continua sendo guardada).
+    /// </summary>
+    public static bool IsEntering(FrameworkElement page) =>
+        Animate && Environment.TickCount64 - (long)page.GetValue(EnteredAtProperty) < 450;
+
+    /// <summary>O mesmo que <see cref="AfterEntrance"/>, para esperar com await: a leitura corre durante a entrada e só o que
+    /// mexe na tela espera ela terminar.</summary>
+    public static Task EntranceDone(FrameworkElement page)
+    {
+        var done = new TaskCompletionSource();
+        AfterEntrance(page, () => done.TrySetResult());
+        return done.Task;
     }
 
     /// <summary>

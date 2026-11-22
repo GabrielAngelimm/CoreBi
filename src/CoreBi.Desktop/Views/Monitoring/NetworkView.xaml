@@ -10,6 +10,13 @@
         estreitas o console desce para baixo do título.
     -->
     <UserControl.Resources>
+        <!-- Nome de uma estação do teste sobre o trecho dela na barra (NetworkView.ShowStages pinta conforme a etapa) -->
+        <Style x:Key="NetStage" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource Faint}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
         <Style x:Key="NetReadout" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
             <Setter Property="FontSize" Value="96" />
             <Setter Property="FontWeight" Value="Light" />
@@ -62,54 +69,47 @@
                     <RowDefinition Height="*" MinHeight="250" />
                 </Grid.RowDefinitions>
 
-                <!-- Console ao lado do título: o topo dele fica na altura do topo das letras do título (5 abaixo da caixa) e o primeiro painel a 20 do pé dele -->
-                <Grid x:Name="NetHeader" Style="{StaticResource PageHeader}" Margin="0,0,0,20" SizeChanged="NetHeader_SizeChanged">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Rede" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
-
-                    <!--
-                        Console do teste, com o desenho do console de tarefa de Ferramentas (62 px): ação principal de 36 px, estado em
-                        uma linha com a etapa à direita ("2 de 3 · Download") e a barra contínua com as três estações, que só aparece
-                        durante o teste (oculta, sem mudar a altura, em repouso), assim como a porcentagem.
-                    -->
-                    <Border x:Name="NetConsole" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="12,12,22,12" Margin="40,5,0,0" Height="62" VerticalAlignment="Top">
-                        <Grid>
+                <!-- Cabeçalho padrão (PageHeaderPanel), o mesmo de Ferramentas: o estado do teste no subtítulo, com a etapa ao lado ("2 de 3 ·
+                     Download"), e na barra de ações o medidor (com cortes nas três estações, nas frações do motor, e a porcentagem), que só
+                     aparece durante o teste, e a ação principal. -->
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
+                    <TextBlock Text="Rede" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Velocidade, latência e estabilidade da sua conexão." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                    <StackPanel Style="{StaticResource PageActions}">
+                        <!--
+                            Medidor do teste: as três estações escritas em cima de cada trecho da barra (a da vez acesa no sinal, as feitas no tom do
+                            texto, as que faltam apagadas), a barra de 6 px com os cortes nas frações do motor (NetworkTest.LatencyEnd e DownloadEnd)
+                            e a porcentagem grande à direita. Só aparece durante o teste; parado, o espaço fica reservado.
+                        -->
+                        <Grid x:Name="NetTrack" Style="{StaticResource TaskMeter}" Width="400" Margin="0,0,22,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="96" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Button x:Name="BtnNetTest" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE768;" Content="Testar a rede"
-                                    MinWidth="164" Height="36" FontSize="14" VerticalAlignment="Center" Click="BtnNetTest_Click"
-                                    ToolTip="Envia pings ao roteador e aos DNS 1.1.1.1 e 8.8.8.8 e transfere dados para medir a velocidade. O consumo pode chegar a centenas de MB." />
-                            <!-- O estado fica centrado no console; o trilho, que só aparece durante o teste, corre rente ao pé -->
-                            <Grid Grid.Column="1" Margin="22,0,0,0">
-                                <!-- 4 px no pé sobem o estado 2 px: a base dele fica na do texto do botão ao lado (medido) -->
-                                <Grid VerticalAlignment="Center" Margin="0,0,0,4">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="NetStatus" Text="Pronto para testar" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-                                    <TextBlock x:Name="NetDetail" Grid.Column="1" Style="{StaticResource Caption}" Typography.NumeralAlignment="Tabular"
-                                               TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" HorizontalAlignment="Right" Margin="16,0,0,0" />
-                                </Grid>
-                                <Grid x:Name="NetTrack" Visibility="Hidden" VerticalAlignment="Bottom">
-                                    <Grid Style="{StaticResource ProgressTrack}">
-                                        <Border Style="{StaticResource ProgressFill}">
+                            <Grid VerticalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="33*" />
+                                    <ColumnDefinition Width="3" />
+                                    <ColumnDefinition Width="38*" />
+                                    <ColumnDefinition Width="3" />
+                                    <ColumnDefinition Width="29*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="NetStage1" Text="Latência" Style="{StaticResource NetStage}" />
+                                <TextBlock x:Name="NetStage2" Grid.Column="2" Text="Download" Style="{StaticResource NetStage}" />
+                                <TextBlock x:Name="NetStage3" Grid.Column="4" Text="Upload" Style="{StaticResource NetStage}" />
+                                <Grid Grid.Row="1" Grid.ColumnSpan="5" Margin="0,7,0,0">
+                                    <Grid Style="{StaticResource ProgressTrack}" Height="6">
+                                        <Border x:Name="NetProgressFill" Style="{StaticResource ProgressFill}">
                                             <Border.RenderTransform>
                                                 <ScaleTransform x:Name="NetProgress" ScaleX="0" />
                                             </Border.RenderTransform>
                                         </Border>
                                     </Grid>
-                                    <!-- Cortes entre as estações, na cor do painel; as frações são as do motor (NetworkTest.LatencyEnd e DownloadEnd) -->
+                                    <!-- Cortes entre as estações, na cor da página -->
                                     <Grid Margin="0,-1">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="33*" />
@@ -118,21 +118,22 @@
                                             <ColumnDefinition Width="3" />
                                             <ColumnDefinition Width="29*" />
                                         </Grid.ColumnDefinitions>
-                                        <Border Grid.Column="1" Background="{DynamicResource Surface}" />
-                                        <Border Grid.Column="3" Background="{DynamicResource Surface}" />
+                                        <Border Grid.Column="1" Background="{DynamicResource Bg}" />
+                                        <Border Grid.Column="3" Background="{DynamicResource Bg}" />
                                     </Grid>
                                 </Grid>
                             </Grid>
-                            <!-- Porcentagem só durante o teste: parado, nada aqui (nenhum travessão solto) -->
-                            <StackPanel x:Name="NetPercentBox" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Hidden">
-                                <!-- Número e "%" como Runs do mesmo TextBlock: a mesma linha de base por construção -->
-                                <TextBlock Style="{StaticResource ReadoutText}" FontSize="30" FontWeight="Light" LineHeight="36" LineStackingStrategy="BlockLineHeight">
-                                    <Run x:Name="NetPercent" /><Run Text="&#x2009;%" FontFamily="{StaticResource LabelFont}" FontStretch="Normal" FontWeight="Normal" FontSize="12.5" Foreground="{DynamicResource Muted}" />
-                                </TextBlock>
-                            </StackPanel>
+                            <!-- A porcentagem conta junto com a barra (HeaderMotion) -->
+                            <TextBlock x:Name="NetPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" FontSize="24" FontWeight="Light" MinWidth="72" Margin="16,0,0,0" />
                         </Grid>
-                    </Border>
-                </Grid>
+                        <DockPanel Style="{StaticResource PageStatusSlot}">
+                            <TextBlock x:Name="NetDetail" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
+                            <TextBlock x:Name="NetStatus" Text="Pronto para testar" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
+                        </DockPanel>
+                        <Button x:Name="BtnNetTest" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE768;" Content="Testar a rede" Click="BtnNetTest_Click"
+                                ToolTip="Envia pings ao roteador e aos DNS 1.1.1.1 e 8.8.8.8 e transfere dados para medir a velocidade. O consumo pode chegar a centenas de MB." />
+                    </StackPanel>
+                </local:PageHeaderPanel>
 
                 <!-- Diagnóstico: à esquerda o instrumento, à direita a latência e as grandezas de apoio (em janelas estreitas elas descem para uma faixa embaixo do instrumento) -->
                 <Border x:Name="NetDiagCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="NetDiagCard_SizeChanged">
@@ -343,7 +344,9 @@
                         </Grid>
                     </Border>
 
-                    <Border x:Name="NetInfoCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,20,24,12" local:Skeleton.Top="34">
+                    <!-- Esqueleto: as seis linhas da conexão espalhadas pela altura, nome à esquerda e valor à direita -->
+                    <Border x:Name="NetInfoCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,20,24,12" local:Skeleton.Top="36"
+                            local:Skeleton.Layout="spread 6: c *@0.5, t *@0.6&gt;">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />

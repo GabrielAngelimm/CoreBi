@@ -277,43 +277,6 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Exportar relatório: a ação principal da página, no sinal chapado como toda ação principal. Ícone solto e texto
-             seminegrito; o mouse clareia, o clique afunda 1 px e, enquanto gera, o botão esmaece e diz o que está fazendo. -->
-        <Style x:Key="ReportButton" TargetType="Button">
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Background" Value="{DynamicResource Signal}" />
-            <Setter Property="Foreground" Value="{DynamicResource SignalFg}" />
-            <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
-            <Setter Property="FontSize" Value="13.5" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="face" Background="{TemplateBinding Background}" CornerRadius="{StaticResource RadiusInset}" Padding="14,9,18,9" SnapsToDevicePixels="True">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE896;" Style="{StaticResource IconGlyph}" FontSize="19" Foreground="{TemplateBinding Foreground}" />
-                                <ContentPresenter VerticalAlignment="Center" Margin="10,0,0,2" TextElement.Foreground="{TemplateBinding Foreground}" />
-                            </StackPanel>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalHover}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="face" Property="Margin" Value="0,1,0,-1" />
-                                <Setter TargetName="face" Property="Background" Value="{DynamicResource Signal}" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="face" Property="Opacity" Value="0.55" />
-                                <Setter Property="Cursor" Value="Wait" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- Leva às leituras ao vivo (outra página, por isso a seta): botão discreto logo depois do último grupo, com ícone de pulso -->
         <Style x:Key="SheetLink" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
@@ -347,23 +310,22 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid Style="{StaticResource PageHeader}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <StackPanel>
-                <TextBlock Text="Sistema" Style="{StaticResource PageTitle}" />
-                <TextBlock x:Name="SystemSub" Text="Lendo informações do sistema…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
+        <local:PageHeaderPanel Style="{StaticResource PageHead}">
+            <TextBlock Text="Sistema" Style="{StaticResource PageTitle}" />
+            <TextBlock Text="A ficha completa do seu computador, peça por peça." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+            <StackPanel Style="{StaticResource PageActions}">
+                <TextBlock x:Name="SystemSub" Text="Lendo informações do sistema…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" Typography.NumeralAlignment="Tabular" />
+                <Button x:Name="BtnReport" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE896;" Content="Exportar relatório" Click="BtnReport_Click"
+                        ToolTip="Salva a ficha do computador em HTML, PDF (A4) ou JSON. Números de série e o nome do usuário ficam de fora." />
             </StackPanel>
-            <Button x:Name="BtnReport" Grid.Column="1" Style="{StaticResource ReportButton}" Content="Exportar relatório" VerticalAlignment="Center" Click="BtnReport_Click"
-                    ToolTip="Salva a ficha do computador em HTML, PDF (A4) ou JSON. Números de série e o nome do usuário ficam de fora." />
-        </Grid>
+        </local:PageHeaderPanel>
 
         <!-- Um painel só: o índice da máquina em cima e a ficha do componente escolhido embaixo. Vai até o pé da página em toda
              aba, de propósito: a ficha muda de altura de uma aba para outra, e um painel que encolhesse ao conteúdo faria a borda
              de baixo pular a cada troca; as fichas longas (vários discos, quatro módulos de memória) rolam dentro dele. -->
-        <Border x:Name="SheetCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SheetCard_SizeChanged">
+        <!-- Esqueleto: as seis abas, a placa com as quatro leituras, os grupos em três colunas e o atalho no pé -->
+        <Border x:Name="SheetCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" SizeChanged="SheetCard_SizeChanged"
+                local:Skeleton.Layout="gap 12; row 58: - 24, btn *^56, - 8, btn *^56, - 8, btn *^56, - 8, btn *^56, - 8, btn *^56, - 8, btn *^56, - 24; gap 11; line; gap 20; col 24 45%; row 18: c *@0.1; row 40: h *@0.42^24; gap 6; row 20: t *@0.5; col 72% 26%; gap 18; row 16: c *@0.55, - 24, c *@0.55, - 24, c *@0.55, - 24, c *@0.55; row 46: n *@0.5^30, - 24, n *@0.5^30, - 24, n *@0.6^30, - 24, n *@0.5^30; end; gap 20; line; gap 20; col 24 30.5%; row 22: s *@0.36; gap 6; lines 2 33: c 42%@0.55, t 58%@0.5; gap 24; row 22: s *@0.28; gap 6; lines 2 33: c 42%@0.55, t 58%@0.5; col 34.7% 30.5%; row 22: s *@0.3; gap 6; lines 6 33: c 42%@0.55, t 58%@0.5; col 67.9% 30.5%; row 22: s *@0.22; gap 6; lines 4 33: c 42%@0.55, t 58%@0.5; gap 24; row 22: s *@0.3; gap 6; row 30: c 40, - 14, c 30, - 14, c 34, - 14, c 36, - 14, c 50, - 14, c 50, - 14, c 38, - 14, c 44; end; foot 58: - 24, btn 400^34; footline">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -391,6 +353,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <!-- Placa: quem é o componente e as quatro leituras que o resumem. No tom mais forte, como o cabeçalho de
                          componente em Sensores (o botão escolhido usa o mesmo fundo), com o fundo claro da cor do componente. -->
@@ -416,8 +379,8 @@
                         </Grid>
                     </Border>
 
-                    <!-- Os dados na largura toda, em grupos que se distribuem em colunas; o atalho para as leituras ao vivo vem logo
-                         depois do último grupo, no fim da ficha, em vez de solto no pé do cartão. Recuo de 24 nas laterais, como
+                    <!-- Os dados na largura toda, em grupos que se distribuem em colunas; o atalho para as leituras ao vivo fica fixo no
+                         pé do painel, embaixo. Recuo de 24 nas laterais, como
                          a placa e as abas; em cima 12 + os 8 do título do grupo = 20 (PanelPadding). -->
                     <ScrollViewer x:Name="SpecScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" Focusable="False">
                         <StackPanel Margin="24,12,24,20">
@@ -433,11 +396,14 @@
                                     </Style>
                                 </ItemsControl.ItemContainerStyle>
                             </ItemsControl>
-                            <Border x:Name="SheetFooter" Margin="0,28,0,0">
-                                <Button x:Name="SheetLink" Style="{StaticResource SheetLink}" HorizontalAlignment="Left" Click="SheetLink_Click" />
-                            </Border>
                         </StackPanel>
                     </ScrollViewer>
+
+                    <!-- Atalho para as leituras ao vivo: no pé do painel, à esquerda, no mesmo lugar em toda aba (o painel vai sempre até
+                         o pé da página), separado da ficha por um fio. A ficha rola por cima dele, nunca o empurra. -->
+                    <Border x:Name="SheetFooter" Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="24,12">
+                        <Button x:Name="SheetLink" Style="{StaticResource SheetLink}" HorizontalAlignment="Left" Click="SheetLink_Click" />
+                    </Border>
                 </Grid>
             </Grid>
         </Border>

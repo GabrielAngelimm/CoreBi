@@ -19,10 +19,6 @@ public partial class AppsView : UserControl
     internal bool _appsBusy, _appsStop;
     private List<AppTile> _tiles = new();
     private bool _wingetAvailable;
-    private bool? _narrowHeader;
-
-    private void AppsHeader_SizeChanged(object sender, SizeChangedEventArgs e)
-        => _narrowHeader = ToolPage.PlaceConsole(AppsHeader, AppsConsole, _narrowHeader);
 
     /// <summary>Largura mínima de uma célula da grade (cartão e o vão de 12 px): o nome e o estado cabem na mesma linha.</summary>
     private const double MinCell = 220;
@@ -73,14 +69,19 @@ public partial class AppsView : UserControl
     }
 
     private bool _appsRefreshing;
-    internal async Task RefreshAsync()
+    internal async Task RefreshAsync(bool entering = false)
     {
         if (_appsBusy || _appsRefreshing || _context == null || _context.IsClosing) return;
         _appsRefreshing = true;
-        AppsList.IsEnabled = false;
-        BtnAppsInstall.IsEnabled = false;
-        Say("Lendo aplicativos instalados…");
-        ToolPage.SetProgress(AppsProgressFill, 0);
+        // Voltar à página relê em silêncio: os cartões não apagam, sem "Lendo…" nem medidor (as marcas só mudam se mudou algo)
+        bool quiet = entering && _installApps != null;
+        if (!quiet)
+        {
+            AppsList.IsEnabled = false;
+            BtnAppsInstall.IsEnabled = false;
+            // Leitura sem medidor, só a mensagem; o medidor fica para a instalação, que tem etapas
+            Say("Lendo aplicativos instalados…");
+        }
         try
         {
             bool first = _installApps == null;
@@ -96,6 +97,7 @@ public partial class AppsView : UserControl
                 UpdateColumns();
             }
             var names = await Task.Run(AppInstaller.InstalledNames, _context.Lifetime);
+            if (entering) await PageMotion.EntranceDone(this);
             if (_context.IsClosing) return;
             foreach (var app in _installApps)
             {
@@ -105,13 +107,12 @@ public partial class AppsView : UserControl
             }
             _wingetAvailable = AppInstaller.WingetAvailable;
             BtnAppsStore.Visibility = _wingetAvailable ? Visibility.Collapsed : Visibility.Visible;
-            ToolPage.SetProgress(AppsProgressFill, 1);
             int installed = _installApps.Count(a => a.Installed);
             if (_wingetAvailable) Say($"{installed} de {_installApps.Count} já instalados");
             else Say("winget não encontrado", "Atualize o Instalador de Aplicativo na Microsoft Store e abra esta página de novo.");
         }
-        catch (OperationCanceledException) { ToolPage.EndProgress(AppsProgressFill); }
-        catch (Exception ex) { DiagnosticLog.Write("apps.inventory", ex); Say("Não foi possível ler os apps instalados", ex.Message); ToolPage.EndProgress(AppsProgressFill); }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { DiagnosticLog.Write("apps.inventory", ex); Say("Não foi possível ler os apps instalados", ex.Message); }
         finally
         {
             _appsRefreshing = false;

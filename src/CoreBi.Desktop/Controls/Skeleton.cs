@@ -42,6 +42,27 @@ public static class Skeleton
     public static double GetTop(DependencyObject d) => (double)d.GetValue(TopProperty);
     public static void SetTop(DependencyObject d, double value) => d.SetValue(TopProperty, value);
 
+    /// <summary>
+    /// Planta do painel, desenhada no lugar das formas genéricas para o esqueleto ter a estrutura exata do conteúdo
+    /// (<see cref="SkeletonPlan"/>). Vazia, vale <see cref="ShapeProperty"/>.
+    /// </summary>
+    public static readonly DependencyProperty LayoutProperty = DependencyProperty.RegisterAttached(
+        "Layout", typeof(string), typeof(Skeleton), new FrameworkPropertyMetadata("", Redraw));
+    public static string GetLayout(DependencyObject d) => (string)d.GetValue(LayoutProperty);
+    public static void SetLayout(DependencyObject d, string value) => d.SetValue(LayoutProperty, value);
+
+    /// <summary>Chave do estilo dos itens que já existem sem dados (cartões); cada um ganha contorno e <see cref="ItemLayoutProperty"/>.</summary>
+    public static readonly DependencyProperty ItemStyleProperty = DependencyProperty.RegisterAttached(
+        "ItemStyle", typeof(string), typeof(Skeleton), new FrameworkPropertyMetadata("", Redraw));
+    public static string GetItemStyle(DependencyObject d) => (string)d.GetValue(ItemStyleProperty);
+    public static void SetItemStyle(DependencyObject d, string value) => d.SetValue(ItemStyleProperty, value);
+
+    /// <summary>Planta de dentro de cada item (<see cref="ItemStyleProperty"/>), com <c>pad</c> para o recuo dele.</summary>
+    public static readonly DependencyProperty ItemLayoutProperty = DependencyProperty.RegisterAttached(
+        "ItemLayout", typeof(string), typeof(Skeleton), new FrameworkPropertyMetadata("", Redraw));
+    public static string GetItemLayout(DependencyObject d) => (string)d.GetValue(ItemLayoutProperty);
+    public static void SetItemLayout(DependencyObject d, string value) => d.SetValue(ItemLayoutProperty, value);
+
     private static readonly DependencyProperty LayerProperty = DependencyProperty.RegisterAttached(
         "Layer", typeof(SkeletonLayer), typeof(Skeleton));
 
@@ -53,8 +74,12 @@ public static class Skeleton
 
     private static bool Animate => SystemParameters.ClientAreaAnimation;
 
-    private static void Redraw(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
-        (d.GetValue(LayerProperty) as SkeletonLayer)?.InvalidateVisual();
+    private static void Redraw(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d.GetValue(LayerProperty) is not SkeletonLayer layer) return;
+        layer.InvalidateMeasure();
+        layer.InvalidateVisual();
+    }
 
     private static void OnActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
@@ -100,6 +125,7 @@ public static class Skeleton
 
         private readonly Border _border;
         private int _version;
+        private AnimationClock? _pulse;
 
         public SkeletonLayer(Border border)
         {
@@ -118,15 +144,28 @@ public static class Skeleton
             Opacity = 1;
             Visibility = Visibility.Visible;
             IsHitTestVisible = true; // o conteúdo embaixo ainda não vale: nada de clicar no que não aparece
-            if (!Animate) return;
-            // Pulso lento (1 → 0,6 → 1, 1,8 s), depois de um instante parado: carregamento curto nem chega a pulsar
-            BeginAnimation(OpacityProperty, new DoubleAnimation(1, 0.6, TimeSpan.FromMilliseconds(900))
+            _pulse?.Controller?.Stop();
+            _pulse = null;
+            if (Animate)
             {
-                BeginTime = TimeSpan.FromMilliseconds(500),
-                AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever,
-                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
-            });
+                // Pulso lento (1 → 0,55 → 1, 1,8 s) só nas barras, depois de um instante parado: carregamento curto nem chega a
+                // pulsar. O fundo que cobre o conteúdo fica sempre opaco (pulsar a camada inteira deixava o conteúdo de baixo
+                // aparecer como um fantasma)
+                _pulse = new DoubleAnimation(1, 0.55, TimeSpan.FromMilliseconds(900))
+                {
+                    BeginTime = TimeSpan.FromMilliseconds(500),
+                    AutoReverse = true,
+                    RepeatBehavior = RepeatBehavior.Forever,
+                    EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut },
+                }.CreateClock();
+            }
+            InvalidateVisual();
+        }
+
+        private void StopPulse()
+        {
+            _pulse?.Controller?.Stop();
+            _pulse = null;
         }
 
         public void Hide(bool animate)
@@ -137,6 +176,7 @@ public static class Skeleton
             {
                 BeginAnimation(OpacityProperty, null);
                 Visibility = Visibility.Collapsed;
+                StopPulse();
                 return;
             }
             var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(200)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
@@ -145,8 +185,44 @@ public static class Skeleton
                 if (version != _version) return; // ligou de novo durante o fade
                 BeginAnimation(OpacityProperty, null);
                 Visibility = Visibility.Collapsed;
+                StopPulse();
             };
             BeginAnimation(OpacityProperty, fade);
+        }
+
+        /// <summary>
+        /// Com planta, a camada pede a altura dela: o painel ainda vazio (lista sem itens, ficha sem linhas) já fica do tamanho que
+        /// vai ter com os dados, e nada embaixo dele pula quando o esqueleto sai.
+        /// </summary>
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            string plan = GetLayout(_border);
+            return string.IsNullOrWhiteSpace(plan) ? default : new Size(0, GetTop(_border) + SkeletonPlan.Height(plan));
+        }
+
+        /// <summary>
+        /// Cada item já montado no estilo pedido (os cartões de Instalar apps existem antes de saber o que está instalado) ganha o
+        /// contorno dele e a planta de dentro, no lugar exato em que está.
+        /// </summary>
+        private void DrawItems(DrawingContext dc, string key, Brush bar, Brush strong)
+        {
+            if (_border.TryFindResource(key) is not Style style || ((Grid)Parent).Children[0] is not Visual content) return;
+            string plan = GetItemLayout(_border);
+            var outline = new Pen(bar, 1);
+            var stack = new Stack<DependencyObject>();
+            stack.Push(content);
+            while (stack.Count > 0)
+            {
+                var node = stack.Pop();
+                if (node is FrameworkElement { IsVisible: true } item && ReferenceEquals(item.Style, style))
+                {
+                    var bounds = item.TransformToVisual(this).TransformBounds(new Rect(item.RenderSize));
+                    dc.DrawRoundedRectangle(null, outline, new Rect(bounds.X + 0.5, bounds.Y + 0.5, Math.Max(0, bounds.Width - 1), Math.Max(0, bounds.Height - 1)), 6, 6);
+                    if (plan.Length > 0) SkeletonPlan.Draw(dc, plan, bounds, bar, strong);
+                    continue;
+                }
+                for (int i = VisualTreeHelper.GetChildrenCount(node) - 1; i >= 0; i--) stack.Push(VisualTreeHelper.GetChild(node, i));
+            }
         }
 
         protected override void OnRender(DrawingContext dc)
@@ -159,11 +235,27 @@ public static class Skeleton
             var strong = (Brush?)GetValue(StrongProperty) ?? Brushes.Gray;
             // A camada cobre também o recuo do painel (sem passar da moldura), para nada do conteúdo vazar pelas bordas
             var pad = _border.Padding;
-            var cover = new Rect(-pad.Left, top, w + pad.Left + pad.Right, Math.Max(0, h - top + pad.Bottom));
+            // Sem cabeçalho preservado (Top 0), cobre também o recuo de cima: o acento de um título (o "ú" de "últimos") passa do
+            // topo do conteúdo e vazava como um pontinho
+            double coverTop = top <= 0 ? -pad.Top : top;
+            var cover = new Rect(-pad.Left, coverTop, w + pad.Left + pad.Right, Math.Max(0, h - coverTop + pad.Bottom));
             dc.PushClip(new RectangleGeometry(new Rect(-pad.Left, -pad.Top, w + pad.Left + pad.Right, h + pad.Top + pad.Bottom),
                 Math.Max(0, _border.CornerRadius.BottomLeft - 1), Math.Max(0, _border.CornerRadius.BottomLeft - 1)));
             dc.DrawRectangle(fill, null, cover);
             dc.Pop();
+
+            string plan = GetLayout(_border), itemKey = GetItemStyle(_border);
+            if (!string.IsNullOrWhiteSpace(plan) || itemKey.Length > 0)
+            {
+                var box = new Rect(0, top, w, Math.Max(0, h - top));
+                dc.PushClip(new RectangleGeometry(new Rect(-pad.Left, top, w + pad.Left + pad.Right, Math.Max(0, h - top + pad.Bottom))));
+                dc.PushOpacity(1, _pulse);
+                if (!string.IsNullOrWhiteSpace(plan)) SkeletonPlan.Draw(dc, plan, box, bar, strong);
+                if (itemKey.Length > 0) DrawItems(dc, itemKey, bar, strong);
+                dc.Pop();
+                dc.Pop();
+                return;
+            }
 
             // Painel sem recuo próprio (Padding 0, o conteúdo traz o dele): as barras ficam no recuo padrão dos painéis
             var inset = pad == default ? new Thickness(24, 20, 24, 20) : default;
@@ -171,6 +263,7 @@ public static class Skeleton
             var area = new Rect(inset.Left, y0, Math.Max(0, w - inset.Left - inset.Right), Math.Max(0, h - y0 - inset.Bottom));
             if (area.Width < 24 || area.Height < 10) return;
             dc.PushClip(new RectangleGeometry(area));
+            dc.PushOpacity(1, _pulse);
             switch (GetShape(_border))
             {
                 case SkeletonShape.Block:
@@ -200,6 +293,7 @@ public static class Skeleton
                         break;
                     }
             }
+            dc.Pop();
             dc.Pop();
         }
     }
