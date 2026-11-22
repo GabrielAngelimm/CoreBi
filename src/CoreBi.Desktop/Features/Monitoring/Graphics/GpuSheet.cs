@@ -34,12 +34,13 @@ internal static class GpuSheet
     }
 
     /// <summary>Chip, arquitetura e fabricante da placa, numa frase curta; vazio se o banco de especificações não conhece a GPU.</summary>
-    public static string Subtitle(Dictionary<string, string> d)
+    public static string Subtitle(Dictionary<string, string> d, string? vendor = null)
     {
         var parts = new List<string>();
         if (V(d, "Chip") is { } chip) parts.Add($"chip {chip}");
         if (V(d, "Arquitetura") is { } arch) parts.Add($"arquitetura {arch}");
-        if (V(d, "Fabricante da placa") is { } board) parts.Add($"placa {board}");
+        // A fabricante do chip já está em cima do nome; a da placa só entra quando é outra (ASUS, MSI...), não "placa NVIDIA" de novo
+        if (V(d, "Fabricante da placa") is { } board && !string.Equals(board, vendor, StringComparison.OrdinalIgnoreCase)) parts.Add($"placa {board}");
         if (parts.Count == 0) return "";
         string s = string.Join(", ", parts);
         return char.ToUpperInvariant(s[0]) + s[1..];

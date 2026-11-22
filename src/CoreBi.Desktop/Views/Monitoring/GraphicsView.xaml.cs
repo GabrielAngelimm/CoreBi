@@ -59,7 +59,7 @@ public partial class GraphicsView : UserControl
         GpuVendor.Text = gpu.Vendor;
         GpuName.Text = HardwareNaming.ShortGpuName(gpu.Name);
         GpuName.ToolTip = gpu.Name;
-        GpuSubtitle.Text = GpuSheet.Subtitle(spec);
+        GpuSubtitle.Text = GpuSheet.Subtitle(spec, gpu.Vendor);
         GpuReadouts.ItemsSource = GpuSheet.Readouts(gpu, spec);
         var facts = GpuSheet.Facts(gpu);
         GpuSections.ItemsSource = GpuSheet.Groups(gpu, spec, livePcie: facts.Any(f => f.Label == "PCIe em uso"));
