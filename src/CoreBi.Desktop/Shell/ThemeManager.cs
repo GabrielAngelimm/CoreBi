@@ -31,6 +31,10 @@ public static class ThemeManager
         // Fios
         ("Line", "#24282B", "#DCE0E3"),
         ("LineStrong", "#353A3D", "#C4CACD"),
+        // Fio e trilho sobre a placa (fundo Selected, que já é um tom acima do painel): o texto em transparência, que aparece nos
+        // dois temas; no claro mais forte, porque o fundo claro da placa come o cinza
+        ("PlateWire", "#2EE6EAEC", "#47182228"),
+        ("PlateTrack", "#24E6EAEC", "#2E182228"),
         // Texto
         ("Fg", "#E6EAEC", "#182228"),
         ("Muted", "#A3AAAE", "#525D62"),

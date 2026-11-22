@@ -21,7 +21,7 @@
         <Style x:Key="DiskKey" TargetType="ListBoxItem">
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Margin" Value="6,0" />
+            <Setter Property="Margin" Value="8,0" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -152,13 +152,12 @@
         </Style>
         <!--
             Leitura do espaço, sob a barra na placa: três colunas iguais na largura toda da barra, cada leitura centrada na sua,
-            separadas por fios no tom das leituras da Placa de vídeo (Fg a 18 %: o LineStrong some sobre o fundo da placa)
+            separadas por fios no tom das leituras da Placa de vídeo (PlateWire: o LineStrong some sobre o fundo da placa)
         -->
         <Style x:Key="SpaceWire" TargetType="Border">
             <Setter Property="Width" Value="1" />
             <Setter Property="HorizontalAlignment" Value="Left" />
-            <Setter Property="Background" Value="{DynamicResource Fg}" />
-            <Setter Property="Opacity" Value="0.18" />
+            <Setter Property="Background" Value="{DynamicResource PlateWire}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
         </Style>
         <Style x:Key="SpaceCell" TargetType="StackPanel">
@@ -209,7 +208,7 @@
                     pontas para as teclas da beira irem até a borda dos painéis). Só existe com mais de um disco, como as pílulas de
                     Placa de vídeo: com um disco só, a tecla repetiria a placa logo abaixo.
                 -->
-                <ListBox x:Name="DiskCards" Grid.Row="1" Margin="-6,0,-6,16" Padding="0" Background="Transparent" BorderThickness="0" Visibility="Collapsed"
+                <ListBox x:Name="DiskCards" Grid.Row="1" Margin="-8,0,-8,16" Padding="0" Background="Transparent" BorderThickness="0" Visibility="Collapsed"
                          ItemTemplate="{StaticResource DiskBay}" ItemContainerStyle="{StaticResource DiskKey}"
                          ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          SelectionChanged="DiskCards_SelectionChanged" AutomationProperties.Name="Discos instalados">
@@ -270,11 +269,11 @@
                                             <TextBlock x:Name="DiskReasons" Grid.Column="1" Style="{StaticResource Body}" />
                                         </Grid>
                                     </StackPanel>
-                                    <Border x:Name="SpaceDivider" Grid.Column="2" Width="1" Background="{DynamicResource Fg}" Opacity="0.18" SnapsToDevicePixels="True" Margin="0,0,32,0" />
+                                    <Border x:Name="SpaceDivider" Grid.Column="2" Width="1" Background="{DynamicResource PlateWire}" SnapsToDevicePixels="True" Margin="0,0,32,0" />
                                     <!-- Espaço: a barra por unidade, as unidades lado a lado (com mais de uma) e os três números embaixo -->
                                     <StackPanel x:Name="DiskSpace" Grid.Column="3" VerticalAlignment="Center">
                                         <TextBlock Text="Espaço" Style="{StaticResource GroupTitle}" />
-                                        <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,0" />
+                                        <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,0" TrackBrush="{DynamicResource PlateTrack}" />
                                         <ItemsControl x:Name="DiskVolumes" ItemTemplate="{StaticResource VolumeRow}" Focusable="False" Margin="0,10,0,0"
                                                       Visibility="{Binding HasItems, RelativeSource={RelativeSource Self}, Converter={StaticResource BoolVis}}">
                                             <ItemsControl.ItemsPanel>

@@ -8,7 +8,7 @@
             <!-- Todas iguais: o fio à esquerda (também na primeira, que a separa da identificação) e 18 de cada lado, então os sete
                  medidores têm a mesma largura. O fio é o texto em 18 %, que aparece nos dois temas sobre o fundo da faixa. -->
             <Grid ToolTip="{Binding Tip}" Background="Transparent">
-                <Border Width="1" HorizontalAlignment="Left" Background="{DynamicResource Fg}" Opacity="0.18" SnapsToDevicePixels="True" />
+                <Border Width="1" HorizontalAlignment="Left" Background="{DynamicResource PlateWire}" SnapsToDevicePixels="True" />
                 <StackPanel Margin="18,0,18,0">
                     <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" />
                     <!-- Número e unidade no mesmo TextBlock: a mesma linha de base -->
@@ -17,7 +17,7 @@
                     </TextBlock>
                     <!-- Trilho neutro (o texto em 14 %) e o preenchimento cheio no canal -->
                     <Grid Height="8" Margin="0,7,0,0" OpacityMask="{StaticResource SegmentMask}">
-                        <Border Background="{DynamicResource Fg}" Opacity="0.14" />
+                        <Border Background="{DynamicResource PlateTrack}" />
                         <Border x:Name="meter" Background="{DynamicResource Gpu}" RenderTransformOrigin="0,0.5">
                             <Border.RenderTransform>
                                 <ScaleTransform ScaleX="{Binding Fraction}" />

@@ -108,12 +108,12 @@
                 </local:PageHeaderPanel>
 
                 <!-- O que carregar: uma tecla por componente, várias ao mesmo tempo -->
-                <UniformGrid Grid.Row="1" Rows="1" Margin="-6">
-                    <CheckBox x:Name="ChkCpu" Style="{StaticResource TestToggle}" Margin="6" Content="Processador" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Todos os núcleos" IsChecked="True"
+                <UniformGrid Grid.Row="1" Rows="1" Margin="-8">
+                    <CheckBox x:Name="ChkCpu" Style="{StaticResource TestToggle}" Margin="8" Content="Processador" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Todos os núcleos" IsChecked="True"
                               Checked="ChkCpu_Click" Unchecked="ChkCpu_Click" />
-                    <CheckBox x:Name="ChkRam" Style="{StaticResource TestToggle}" Margin="6" Content="Memória RAM" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="Procura erros de memória"
+                    <CheckBox x:Name="ChkRam" Style="{StaticResource TestToggle}" Margin="8" Content="Memória RAM" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="Procura erros de memória"
                               Checked="ChkRam_Click" Unchecked="ChkRam_Click" />
-                    <CheckBox x:Name="ChkGpu" Style="{StaticResource TestToggle}" Margin="6" Content="Placa de vídeo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Abre uma janela 3D"
+                    <CheckBox x:Name="ChkGpu" Style="{StaticResource TestToggle}" Margin="8" Content="Placa de vídeo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Abre uma janela 3D"
                               Checked="ChkGpu_Click" Unchecked="ChkGpu_Click" />
                 </UniformGrid>
 

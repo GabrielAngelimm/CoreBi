@@ -267,18 +267,18 @@
                 </local:PageHeaderPanel>
 
                 <!-- Escolha do teste: uma tecla por teste, agrupadas pelo componente que medem -->
-                <UniformGrid x:Name="BenchTestPanel" Grid.Row="1" Rows="1" Margin="-6">
-                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Render 3D" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Processador" Tag="render" IsChecked="True" Checked="BenchTest_Checked"
+                <UniformGrid x:Name="BenchTestPanel" Grid.Row="1" Rows="1" Margin="-8">
+                    <RadioButton Style="{StaticResource TestTab}" Margin="8" GroupName="BenchTest" Content="Render 3D" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Processador" Tag="render" IsChecked="True" Checked="BenchTest_Checked"
                                  ToolTip="Uma cena 3D renderizada por path tracing no processador, bloco a bloco, em todos os núcleos e em um núcleo só." />
-                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Simulação de jogo" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Processador" Tag="sim" Checked="BenchTest_Checked"
+                    <RadioButton Style="{StaticResource TestTab}" Margin="8" GroupName="BenchTest" Content="Simulação de jogo" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Processador" Tag="sim" Checked="BenchTest_Checked"
                                  ToolTip="Lógica, física, colisão e IA de 30 mil unidades. A nota é quantos quadros por segundo o processador aguenta." />
-                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Cena de jogo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Placa de vídeo" Tag="gpu" Checked="BenchTest_Checked"
+                    <RadioButton Style="{StaticResource TestTab}" Margin="8" GroupName="BenchTest" Content="Cena de jogo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Placa de vídeo" Tag="gpu" Checked="BenchTest_Checked"
                                  ToolTip="Sobrevoo de um vale em Direct3D 11 (terreno, 40 mil árvores, sombras, água e HDR), com trajeto e resolução fixos: o trabalho é o mesmo em qualquer PC." />
-                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Ray tracing" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Placa de vídeo" Tag="rt" Checked="BenchTest_Checked"
+                    <RadioButton Style="{StaticResource TestTab}" Margin="8" GroupName="BenchTest" Content="Ray tracing" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Placa de vídeo" Tag="rt" Checked="BenchTest_Checked"
                                  ToolTip="Ray tracing por hardware (DXR 1.1, Direct3D 12) nos núcleos de RT da placa: aquecimento e 3 passadas, com a nota pela mediana." />
-                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Memória" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="RAM e carregamento" Tag="mem" Checked="BenchTest_Checked"
+                    <RadioButton Style="{StaticResource TestTab}" Margin="8" GroupName="BenchTest" Content="Memória" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="RAM e carregamento" Tag="mem" Checked="BenchTest_Checked"
                                  ToolTip="Latência e banda da memória RAM e o tempo para carregar um mapa de jogo do disco." />
-                    <RadioButton Style="{StaticResource TestTab}" Margin="6" GroupName="BenchTest" Content="Disco" local:Ui.Icon="storage" local:Ui.Channel="Storage" local:Ui.Caption="Armazenamento" Tag="disk" Checked="BenchTest_Checked"
+                    <RadioButton Style="{StaticResource TestTab}" Margin="8" GroupName="BenchTest" Content="Disco" local:Ui.Icon="storage" local:Ui.Channel="Storage" local:Ui.Caption="Armazenamento" Tag="disk" Checked="BenchTest_Checked"
                                  ToolTip="Leitura e escrita sequenciais e aleatórias de 4 KB, direto no disco, sem o cache do Windows." />
                 </UniformGrid>
 
