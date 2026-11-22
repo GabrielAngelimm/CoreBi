@@ -169,7 +169,7 @@
                                 <TextBlock Grid.ColumnSpan="2" Text="CPU sem temperatura e consumo" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap" />
                                 <!-- Margem 3 em cima e 1 embaixo (e não 4 e 0): a mesma altura, mas a frase sobe 1 px e, numa linha só, assenta na mesma base
                                      que "Corrigir" (antes ficava 1 px abaixo) -->
-                                <TextBlock x:Name="CpuSensorWarnText" Grid.Row="1" Foreground="{DynamicResource Muted}" FontSize="11.5" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,3,8,1" />
+                                <TextBlock x:Name="CpuSensorWarnText" Grid.Row="1" Foreground="{DynamicResource Muted}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,3,8,1" />
                                 <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Corrigir" MinHeight="26" Padding="10,3" FontSize="12" VerticalAlignment="Center" Margin="0,4,0,0" Click="BtnFixCpuSensors_Click" />
                             </Grid>
                         </Border>
@@ -282,7 +282,7 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <local:HwIcon Kind="{Binding Icon}" Style="{StaticResource ListNavIcon}" Width="19" Height="19" HorizontalAlignment="Left" />
-                                            <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="13.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="14" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                             <TextBlock Grid.Column="2" Text="{Binding Section}" Foreground="{DynamicResource Faint}" FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0" />
                                         </Grid>
                                     </DataTemplate>

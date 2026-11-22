@@ -28,7 +28,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <!-- Nome numa linha só: "7-Zip" não quebra no hífen -->
-                                <TextBlock Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold"
+                                <TextBlock Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" FontFamily="{StaticResource LabelFont}" FontSize="14" FontWeight="SemiBold"
                                            TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                 <!--
                                     Marcador e estado sobem 1 px (margens -1 e 1, a caixa continua com 20): medido, o "Instalado" ficava com a
@@ -133,7 +133,7 @@
             </local:PageHeaderPanel>
 
             <!-- Esqueleto: os cartões dos apps já estão montados; cada um ganha o contorno, o nome, o marcador e a descrição -->
-            <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,20,12,8" local:Skeleton.Top="34"
+            <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,16,12,8" local:Skeleton.Top="34"
                     local:Skeleton.ItemStyle="AppCard" local:Skeleton.ItemLayout="pad 16 13 14 14; row 20: s *@0.5, - 12, c 58@0.9&gt;; gap 5; row 17: c *@0.92; row 17: c *@0.55">
                 <StackPanel>
                     <!-- Cabeçalho de 34 px (CardHeader), o mesmo de todos os painéis; a explicação fica na dica do título -->
@@ -145,7 +145,7 @@
                         <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base -->
                         <TextBlock Style="{StaticResource CardTitle}" ToolTip="Marque os programas e instale todos de uma vez, baixados do site oficial de cada um.">
                             <Run Text="Aplicativos" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="AppsCount"
-                                FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
+                                FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16" FontWeight="Normal" Foreground="{DynamicResource Faint}"
                                 Typography.NumeralAlignment="Tabular" />
                         </TextBlock>
                         <!--

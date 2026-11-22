@@ -144,7 +144,7 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <!-- Cabeçalho de 34 px (CardHeader): o título e, à direita, de onde vem o resultado e o selo do veredito -->
-                        <Grid Style="{StaticResource CardHeader}" Margin="24,20,24,0">
+                        <Grid Style="{StaticResource CardHeader}" Margin="24,16,24,0">
                             <TextBlock Text="Diagnóstico de rede" Style="{StaticResource CardTitle}" />
                             <StackPanel x:Name="NetDiagTitle" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                 <TextBlock x:Name="NetMeta" Text="Ainda não testado nesta sessão" Style="{StaticResource Caption}" VerticalAlignment="Center" TextWrapping="NoWrap" />
@@ -178,7 +178,7 @@
                                     <!-- Canal A: download -->
                                     <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                            <TextBlock Text="Download" Style="{StaticResource StatLabel}" FontSize="16" />
+                                            <TextBlock Text="Download" Style="{StaticResource StatLabel}" />
                                             <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource NetDown}" Margin="8,1,0,0" Width="16" Height="4" />
                                         </StackPanel>
                                         <TextBlock x:Name="NetDown" Text="—" Style="{StaticResource NetReadout}" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right" Margin="0,14,0,0" />
@@ -195,7 +195,7 @@
                                     <StackPanel Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="10,0,0,0">
                                         <StackPanel Orientation="Horizontal">
                                             <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource NetUp}" Margin="0,1,8,0" Width="16" Height="4" />
-                                            <TextBlock Text="Upload" Style="{StaticResource StatLabel}" FontSize="16" />
+                                            <TextBlock Text="Upload" Style="{StaticResource StatLabel}" />
                                         </StackPanel>
                                         <TextBlock x:Name="NetUp" Text="—" Style="{StaticResource NetReadout}" Foreground="{DynamicResource Faint}" Margin="0,14,0,0" />
                                     </StackPanel>
@@ -214,7 +214,7 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
                                     <StackPanel x:Name="NetHero" Grid.ColumnSpan="2" Background="Transparent" ToolTip="Tempo de ida e volta até a internet. Quanto menor, mais rápida a resposta em jogos e chamadas.">
-                                        <TextBlock Text="Latência" Style="{StaticResource StatLabel}" FontSize="13.5" />
+                                        <TextBlock Text="Latência" Style="{StaticResource StatLabel}" />
                                         <!-- Leitura e unidade como Runs do mesmo TextBlock: a mesma linha de base por construção (alinhada pelo pé
                                              com margem, a unidade ficava 3 px abaixo da base do número). O espaço médio a 14 px dá 7 px. -->
                                         <TextBlock x:Name="NetLatencyLine" Style="{StaticResource ReadoutText}" FontSize="64" FontWeight="Light" Margin="0,4,0,16">
@@ -279,7 +279,7 @@
                         <ColumnDefinition Width="340" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Style="{StaticResource CardBorder}" Padding="24,20,24,16">
+                    <Border Style="{StaticResource CardBorder}" Padding="24,16,24,16">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -299,7 +299,7 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Net" Kind="desktop" Width="40" Height="40" />
-                                    <TextBlock Text="Este PC" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                                    <TextBlock Text="Este PC" Style="{StaticResource GroupTitle}" HorizontalAlignment="Center" Margin="0,6,0,0" />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock x:Name="NetPcLink" Text="—" Style="{StaticResource NetNodeValue}" />
                                         <TextBlock x:Name="NetPcLinkUnit" Text="de link" Style="{StaticResource Unit}" Margin="4,0,0,3" />
@@ -313,7 +313,7 @@
                                 </Grid>
                                 <StackPanel Grid.Column="2">
                                     <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Net" Kind="router" Width="40" Height="40" />
-                                    <TextBlock Text="Roteador" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                                    <TextBlock Text="Roteador" Style="{StaticResource GroupTitle}" HorizontalAlignment="Center" Margin="0,6,0,0" />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock x:Name="NetRouterMs" Text="—" Style="{StaticResource NetNodeValue}" />
                                         <TextBlock Text="ms" Style="{StaticResource Unit}" Margin="4,0,0,3" />
@@ -327,7 +327,7 @@
                                 </Grid>
                                 <StackPanel Grid.Column="4">
                                     <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Net" Kind="&#xE774;" Width="40" Height="40" />
-                                    <TextBlock Text="Internet" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                                    <TextBlock Text="Internet" Style="{StaticResource GroupTitle}" HorizontalAlignment="Center" Margin="0,6,0,0" />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock x:Name="NetWanMs" Text="—" Style="{StaticResource NetNodeValue}" />
                                         <TextBlock Text="ms" Style="{StaticResource Unit}" Margin="4,0,0,3" />
@@ -348,7 +348,7 @@
                     </Border>
 
                     <!-- Esqueleto: as seis linhas da conexão espalhadas pela altura, nome à esquerda e valor à direita -->
-                    <Border x:Name="NetInfoCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,20,24,12" local:Skeleton.Top="40"
+                    <Border x:Name="NetInfoCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,16,24,12" local:Skeleton.Top="40"
                             local:Skeleton.Layout="spread 6: c *@0.5, t *@0.6&gt;">
                         <Grid>
                             <Grid.RowDefinitions>

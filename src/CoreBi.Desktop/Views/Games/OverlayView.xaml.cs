@@ -140,12 +140,12 @@ public partial class OverlayView : UserControl
             grid.Children.Add(glyph);
 
             var name = new StackPanel { Margin = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
-            var title = new TextBlock { Text = group, FontSize = 14.5, FontWeight = FontWeights.SemiBold, Padding = new Thickness(0, 6, 0, 0) };
+            var title = new TextBlock { Text = group, FontSize = 16, FontWeight = FontWeights.SemiBold, Padding = new Thickness(0, 6, 0, 0) };
             title.SetResourceReference(TextBlock.FontFamilyProperty, "LabelFont");
             name.Children.Add(title);
             if (meta.Full is { Length: > 0 } full)
             {
-                var sub = new TextBlock { Text = full, FontSize = 11.5, LineHeight = 15, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
+                var sub = new TextBlock { Text = full, FontSize = 12, LineHeight = 16, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
                 sub.SetResourceReference(TextBlock.FontFamilyProperty, "SmallFont");
                 sub.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
                 name.Children.Add(sub);

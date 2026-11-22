@@ -141,7 +141,7 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Style="{StaticResource CardBorder}" Margin="0,0,16,0">
+                                    <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}" Margin="0,0,16,0">
                                         <DockPanel>
                                             <Grid DockPanel.Dock="Top">
                                                 <Grid.ColumnDefinitions>
@@ -173,14 +173,15 @@
                                                 <ItemsControl ItemsSource="{Binding Stats}" Focusable="False">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
-                                                            <UniformGrid Rows="1" />
+                                                            <local:EdgeRowPanel />
                                                         </ItemsPanelTemplate>
                                                     </ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <StackPanel Margin="0,0,8,0">
-                                                                <TextBlock Text="{Binding Key}" Style="{StaticResource StatLabel}" />
-                                                                <TextBlock Text="{Binding Value}" Style="{StaticResource Num}" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" />
+                                                            <!-- De ponta a ponta (EdgeRowPanel): a primeira no recuo da esquerda, a última no da direita -->
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Key}" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                                                <TextBlock Text="{Binding Value}" Style="{StaticResource Num}" Margin="0,4,0,0" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                                             </StackPanel>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
@@ -192,7 +193,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <Border x:Name="DashMemoryCard" Grid.Column="1" Style="{StaticResource CardBorder}">
+                        <Border x:Name="DashMemoryCard" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -299,7 +300,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="24,20,24,12">
+                    <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="24,16,24,12">
                         <DockPanel>
                             <Grid DockPanel.Dock="Top" Height="34" Margin="0,0,0,2">
                                 <TextBlock Text="Atividade recente" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />

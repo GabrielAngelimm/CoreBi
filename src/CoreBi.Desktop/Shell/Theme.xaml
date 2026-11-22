@@ -29,6 +29,10 @@
     <!-- Fios -->
     <SolidColorBrush x:Key="Line" Color="#24282B"/>
     <SolidColorBrush x:Key="LineStrong" Color="#353A3D"/>
+    <!-- Fio e trilho sobre a placa (fundo Selected, que já é um tom acima do painel): o texto em transparência, que aparece nos -->
+    <!-- dois temas; no claro mais forte, porque o fundo claro da placa come o cinza -->
+    <SolidColorBrush x:Key="PlateWire" Color="#2EE6EAEC"/>
+    <SolidColorBrush x:Key="PlateTrack" Color="#24E6EAEC"/>
     <!-- Texto -->
     <SolidColorBrush x:Key="Fg" Color="#E6EAEC"/>
     <SolidColorBrush x:Key="Muted" Color="#A3AAAE"/>
@@ -56,6 +60,8 @@
     <SolidColorBrush x:Key="Virtual" Color="#7A5AC8"/>
     <SolidColorBrush x:Key="VirtualSoft" Color="#1E7A5AC8"/>
     <SolidColorBrush x:Key="Storage" Color="#4A82CC"/>
+    <!-- Tom fundo do armazenamento: a marca do "usado" na legenda do Espaço, que não repete o azul aceso da barra logo acima -->
+    <SolidColorBrush x:Key="StorageDeep" Color="#1E4278"/>
     <SolidColorBrush x:Key="StorageSoft" Color="#1A4A82CC"/>
     <SolidColorBrush x:Key="Board" Color="#C8A370"/>
     <SolidColorBrush x:Key="BoardSoft" Color="#1AC8A370"/>
@@ -101,8 +107,13 @@
     <!-- Faixas presas à borda de um painel (a placa da Placa de vídeo, o pé do Gargalo): o raio do painel menos o fio -->
     <CornerRadius x:Key="RadiusPanelTop">15,15,0,0</CornerRadius>
     <CornerRadius x:Key="RadiusPanelBottom">0,0,15,15</CornerRadius>
-    <!-- Respiro padrão de um painel (24 nas laterais, 20 em cima e embaixo) -->
-    <Thickness x:Key="PanelPadding">24,20</Thickness>
+    <!-- Respiro do painel: o mesmo nos quatro lados -->
+    <Thickness x:Key="PanelPadding">24</Thickness>
+    <!--
+        Respiro de um cartão que abre com a linha de título de 34 px (CardHeader): a DIN 18 centrada nessa linha deixa 8 px de
+        folga acima das maiúsculas, então em cima o recuo é 16 e a letra visível fica a 24 da borda, a mesma distância da esquerda.
+    -->
+    <Thickness x:Key="CardPadding">24,16,24,24</Thickness>
 
     <!-- ===================== Tipografia ===================== -->
     <!--
@@ -126,13 +137,13 @@
     <!-- Título da página: a mesma voz da assinatura -->
     <Style x:Key="PageTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="36"/>
+        <Setter Property="FontSize" Value="40"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
     <Style x:Key="PageSubtitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="LineHeight" Value="20"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -143,7 +154,7 @@
     <!-- Título de painel -->
     <Style x:Key="SectionTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="17"/>
+        <Setter Property="FontSize" Value="18"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -162,10 +173,39 @@
         <Setter Property="TextWrapping" Value="NoWrap"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
-    <!-- Título de grupo dentro de uma ficha (Sensores, Sistema): um degrau abaixo do painel -->
+    <!--
+        Escala de texto (a mesma em todas as páginas; base na rampa do Windows 11/Fluent 2, corpo 14/20 e legenda 12/16; ver DESIGN.md):
+        PageTitle 40 · PlateName 28 (o nome na placa de identificação) · TestPlateTitle 24 (a peça na bancada) · SectionTitle e
+        CardTitle 18 (painel) · GroupTitle 16 (grupo, nó, seção dentro do painel) · ItemTitle 14 seminegrito (nome numa lista ou tecla) ·
+        Body, PageSubtitle, PageStatus, PlateText e botões 14 · StatLabel, Label e cabeçalho de tabela 13 (DIN) · Caption, StatSub e Footnote 12.
+    -->
+    <!-- Nome na placa de identificação (Sistema, Placa de vídeo, Discos) -->
+    <Style x:Key="PlateName" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
+        <Setter Property="FontSize" Value="28"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <!-- A frase sob o nome da placa (especificação, resumo) -->
+    <Style x:Key="PlateText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <!-- Nome de um item numa lista ou tecla (disco, driver, unidade) -->
+    <Style x:Key="ItemTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <!-- Título de grupo dentro de uma ficha ou painel (Sensores, Sistema, nós de Rede, Drivers): um degrau abaixo do painel -->
     <Style x:Key="GroupTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="15.5"/>
+        <Setter Property="FontSize" Value="16"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -173,7 +213,7 @@
     <!-- Rótulo de grupo: frase curta, sem caixa alta, na letra da estrutura -->
     <Style x:Key="Label" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="Margin" Value="0,0,0,8"/>
@@ -189,15 +229,15 @@
     <!-- Nota de rodapé: fonte dos dados e limites da medição -->
     <Style x:Key="Footnote" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SmallFont}"/>
-        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontSize" Value="12"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
-        <Setter Property="LineHeight" Value="16"/>
+        <Setter Property="LineHeight" Value="17"/>
         <Setter Property="MaxWidth" Value="760"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
     <Style x:Key="Body" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="LineHeight" Value="20"/>
@@ -241,7 +281,7 @@
     </Style>
     <Style x:Key="Unit" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="VerticalAlignment" Value="Bottom"/>
         <Setter Property="Margin" Value="5,0,0,5"/>
@@ -249,7 +289,7 @@
     <!-- Rótulo de uma leitura (Temp., Clock, Desgaste): gravado no painel, na letra do instrumento -->
     <Style x:Key="StatLabel" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
@@ -260,7 +300,7 @@
     </Style>
     <Style x:Key="StatSub" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SmallFont}"/>
-        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontSize" Value="12"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="Margin" Value="0,2,0,0"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -328,7 +368,7 @@
     </Style>
     <!-- Estado vivo na barra de ações, à esquerda dos botões, na mesma linha: o que acabou de acontecer ("Lido às 20:31") -->
     <Style x:Key="PageStatus" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextWrapping" Value="NoWrap"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -369,7 +409,7 @@
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="{StaticResource RadiusPanel}"/>
-        <Setter Property="Padding" Value="{StaticResource PanelPadding}"/>
+        <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
     <!-- Poço: área rebaixada dentro de um painel (lista curta, leitura secundária) -->
@@ -562,7 +602,7 @@
 
     <Style x:Key="ButtonBase" TargetType="Button">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Padding" Value="18,7"/>
         <Setter Property="MinHeight" Value="34"/>
@@ -972,7 +1012,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="12,6,12,3" MinHeight="26">
+                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="12,5,12,3" MinHeight="26">
                         <Grid>
                             <!-- Cópia invisível em seminegrito: o segmento já nasce com a largura do escolhido, então marcar um não desloca os vizinhos -->
                             <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Visibility="Hidden" HorizontalAlignment="Center"/>
@@ -1053,9 +1093,9 @@
                             <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
                                           Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
                                           Width="30" Height="30" HorizontalAlignment="Left" Margin="-2,0,0,0"/>
-                            <ContentPresenter Margin="0,8,0,0" TextElement.FontWeight="SemiBold" TextElement.FontSize="13.5" TextElement.FontFamily="{StaticResource LabelFont}"/>
+                            <ContentPresenter Margin="0,8,0,0" TextElement.FontWeight="SemiBold" TextElement.FontSize="14" TextElement.FontFamily="{StaticResource LabelFont}"/>
                             <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                       Foreground="{DynamicResource Faint}" FontFamily="{StaticResource SmallFont}" FontSize="11.5" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                       Foreground="{DynamicResource Faint}" FontFamily="{StaticResource SmallFont}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                         </StackPanel>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -1126,7 +1166,7 @@
     <Style x:Key="ThemeToggle" TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
@@ -1270,9 +1310,9 @@
                                           Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
                                           Width="30" Height="30" VerticalAlignment="Center"/>
                             <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
-                                <ContentPresenter TextElement.FontWeight="SemiBold" TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="13.5"/>
+                                <ContentPresenter TextElement.FontWeight="SemiBold" TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="14"/>
                                 <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource SmallFont}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis"/>
+                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                             <Border x:Name="dot" Grid.Column="2" Width="18" Height="18" CornerRadius="9" BorderThickness="1.5"
                                     BorderBrush="{DynamicResource LineStrong}" VerticalAlignment="Center">
@@ -1748,7 +1788,7 @@
         <Setter Property="Width" Value="300"/>
         <Setter Property="Height" Value="40"/>
         <Setter Property="MinHeight" Value="40"/>
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="local:Ui.Icon" Value="&#xE721;"/>
@@ -1874,7 +1914,7 @@
     <!-- Cabeçalho de coluna de uma tabela feita à mão (linhas de altura fixa): DIN 12, um tom abaixo do conteúdo -->
     <Style x:Key="TableHead" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -1883,7 +1923,7 @@
     <Style x:Key="TitleCount" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
         <Setter Property="FontStretch" Value="SemiCondensed"/>
-        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontSize" Value="16"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -1936,7 +1976,7 @@
                                     </ContentPresenter.Resources>
                                 </ContentPresenter>
                                 <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource SmallFont}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -1980,7 +2020,7 @@
                             <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
                                 <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="14" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False"/>
                                 <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource SmallFont}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                             </StackPanel>
                             <Border x:Name="box" Grid.Column="2" Width="18" Height="18" CornerRadius="{StaticResource RadiusSmall}" BorderThickness="1.5"
                                     BorderBrush="{DynamicResource LineStrong}" VerticalAlignment="Center">
@@ -2169,11 +2209,11 @@
         encolhe à frase (Tag recebe a lista).
     -->
     <Style x:Key="TestLogCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
-        <Setter Property="Padding" Value="24,20,8,8"/>
+        <Setter Property="Padding" Value="24,16,8,8"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding Tag.HasItems, RelativeSource={RelativeSource Self}}" Value="False">
                 <Setter Property="VerticalAlignment" Value="Top"/>
-                <Setter Property="Padding" Value="24,20,24,20"/>
+                <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>

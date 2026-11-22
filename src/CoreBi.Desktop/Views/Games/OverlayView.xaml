@@ -192,7 +192,7 @@
                                 <TextBlock Text="Posição e tamanho" Style="{StaticResource CardTitle}" />
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="24,0,0,0">
                                     <Ellipse x:Name="OvStatusDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
-                                    <TextBlock x:Name="OvStatus" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="460" Style="{StaticResource Num}" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="OvStatus" FontSize="13" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="460" Style="{StaticResource Num}" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <!-- Estado real: sem jogo medido, o FPS da prévia é de exemplo (os sensores são ao vivo) -->
                                 <TextBlock x:Name="OvSampleNote" Grid.Column="2" Text="Prévia com FPS de exemplo" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="20,0,0,0"

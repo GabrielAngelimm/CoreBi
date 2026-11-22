@@ -313,7 +313,7 @@ public partial class SensorsView : UserControl
     {
         var text = new TextBlock();
         text.Inlines.Add(new System.Windows.Documents.Run(label));
-        var number = new System.Windows.Documents.Run("  " + count) { FontSize = 11.5 };
+        var number = new System.Windows.Documents.Run("  " + count) { FontSize = 12 };
         number.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Faint");
         text.Inlines.Add(number);
         System.Windows.Documents.Typography.SetNumeralAlignment(text, FontNumeralAlignment.Tabular);
