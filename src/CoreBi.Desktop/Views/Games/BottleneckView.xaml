@@ -168,7 +168,7 @@
                                     </StackPanel>
                                 </Grid>
                                 <StackPanel Grid.Row="1">
-                                    <TextBlock x:Name="BnSessionStatus" Style="{StaticResource Caption}" FontSize="13" Margin="0,16,0,0" Typography.NumeralAlignment="Tabular" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
+                                    <TextBlock x:Name="BnSessionStatus" Style="{StaticResource Caption}" Margin="0,16,0,0" Typography.NumeralAlignment="Tabular" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
                                     <Grid x:Name="BnSessionBar" Style="{StaticResource ProgressTrack}" Margin="0,10,0,0" Visibility="Collapsed">
                                         <Border Style="{StaticResource ProgressFill}">
                                             <Border.RenderTransform>
@@ -180,13 +180,13 @@
                                 <!-- Sem resultado (antes, durante, cancelada ou sem amostras): o que a análise pede e o que ela entrega, no estado vazio
                                      padrão (título DIN 15 em tinta, frase de 13 no tom secundário, centrados) -->
                                 <StackPanel x:Name="BnSessionEmpty" Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="460" Margin="0,24,0,0">
-                                    <TextBlock Text="A análise precisa de um jogo aberto" Style="{StaticResource GroupTitle}" FontSize="15" TextAlignment="Center" />
+                                    <TextBlock Text="A análise precisa de um jogo aberto" Style="{StaticResource GroupTitle}" TextAlignment="Center" />
                                     <TextBlock Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextAlignment="Center" Margin="0,8,0,0"
                                                Text="Deixe-o em primeiro plano até o fim. Depois, o CoreBi mostra por quanto tempo cada peça limitou o FPS." />
                                 </StackPanel>
                                 <StackPanel x:Name="BnResult" Grid.Row="2" Visibility="Collapsed" Margin="0,20,0,0">
                                     <Border Style="{StaticResource Divider}" Margin="0,0,0,20" />
-                                    <TextBlock x:Name="BnResultTitle" FontFamily="{StaticResource DisplayFont}" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="BnResultTitle" Style="{StaticResource TestPlateTitle}" TextTrimming="None" TextWrapping="Wrap" />
                                     <ItemsControl x:Name="BnResultStats" ItemTemplate="{StaticResource RulerCell}" Margin="0,18,0,0" Focusable="False">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
@@ -225,10 +225,10 @@
                                         <Grid>
                                             <StackPanel Orientation="Horizontal">
                                                 <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Cpu}" Margin="0,1,8,0" />
-                                                <TextBlock x:Name="BnCpuName" Style="{StaticResource Caption}" FontSize="13" Foreground="{DynamicResource Fg}" />
+                                                <TextBlock x:Name="BnCpuName" Style="{StaticResource Caption}" Foreground="{DynamicResource Fg}" />
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                                <TextBlock x:Name="BnGpuName" Style="{StaticResource Caption}" FontSize="13" Foreground="{DynamicResource Fg}" />
+                                                <TextBlock x:Name="BnGpuName" Style="{StaticResource Caption}" Foreground="{DynamicResource Fg}" />
                                                 <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Gpu}" Margin="8,1,0,0" />
                                             </StackPanel>
                                         </Grid>

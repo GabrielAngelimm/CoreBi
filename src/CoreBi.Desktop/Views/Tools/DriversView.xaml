@@ -112,7 +112,7 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel Margin="0,16,0,0">
-                                                <TextBlock Text="{Binding GpuName}" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding GpuName}" Style="{StaticResource GroupTitle}" />
                                                 <Grid Margin="0,12,0,0">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
@@ -183,7 +183,7 @@
                                     <TextBlock Grid.Column="1" Text="Placa-mãe" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="14,0,0,0" />
                                 </Grid>
                                 <!-- O modelo é o que identifica a placa; a BIOS vem embaixo, como uma linha de ficha, no tom do conteúdo -->
-                                <TextBlock x:Name="DrvBoard" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,16,0,0" />
+                                <TextBlock x:Name="DrvBoard" Style="{StaticResource GroupTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,16,0,0" />
                                 <TextBlock x:Name="DrvBoardMaker" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
                                 <Grid x:Name="DrvBiosBox" Margin="0,12,0,0" Visibility="Collapsed">
                                     <Grid.ColumnDefinitions>
@@ -312,7 +312,7 @@
                                                 <GroupStyle.HeaderTemplate>
                                                     <DataTemplate>
                                                         <StackPanel Orientation="Horizontal" Height="40" Margin="8,0">
-                                                            <TextBlock Text="{Binding Name}" FontFamily="{StaticResource LabelFont}" FontSize="13.5" FontWeight="SemiBold" VerticalAlignment="Bottom" Margin="0,0,0,8" />
+                                                            <TextBlock Text="{Binding Name}" Style="{StaticResource ItemTitle}" VerticalAlignment="Bottom" Margin="0,0,0,8" />
                                                             <TextBlock Text="{Binding ItemCount}" Style="{StaticResource Num}" FontSize="12" Foreground="{DynamicResource Faint}" VerticalAlignment="Bottom" Margin="8,0,0,9" />
                                                         </StackPanel>
                                                     </DataTemplate>

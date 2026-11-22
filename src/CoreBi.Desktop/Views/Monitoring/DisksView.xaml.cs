@@ -203,9 +203,7 @@ public partial class DisksView : UserControl
         TempLiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, live ? "Signal" : "Faint");
         TempTrace.Samples = trace?.Temps.ToList() ?? new List<float?>();
         double? peak = trace?.Peak ?? d.TemperatureMax;
-        if (peak is double pk) Readout(TempPeak, $"{pk:0}", "°C", balanced: true);
-        else { TempPeak.Inlines.Clear(); TempPeak.Text = "—"; }
-        TempPeak.SetResourceReference(TextBlock.ForegroundProperty, peak != null ? "Fg" : "Faint");
+        ShowTempValue(TempPeak, peak);
         DiskActivity.Text = trace?.Read == null && trace?.Write == null ? "Sem sensor de atividade"
             : $"Leitura {Rate(trace!.Read)}     Escrita {Rate(trace.Write)}";
     }
@@ -214,12 +212,22 @@ public partial class DisksView : UserControl
     /// Leitura grande com a unidade na mesma linha de base. Sem leitura, um travessão curto no tom apagado (o da Bahnschrift
     /// Light a 64 px viraria uma barra larga), na mesma altura de linha.
     /// </summary>
-    private void ShowTempNow(double? now)
+    private void ShowTempNow(double? now) => ShowTempValue(TempNow, now);
+
+    /// <summary>
+    /// Leitura da faixa de cima da temperatura: o número e "°C" colados (um espaço fino), a unidade em DIN na metade do
+    /// tamanho, e o conjunto inteiro centrado no seu terço, como "Ideal" ao lado. Sem leitura, o travessão em tom apagado.
+    /// </summary>
+    private static void ShowTempValue(TextBlock target, double? value)
     {
-        // balanced: um "°C" invisível antes do número, para o número (e não o conjunto) ficar no centro do terço, como "Ideal"
-        if (now is double v) Readout(TempNow, $"{v:0}", "°C", balanced: true);
-        else { TempNow.Inlines.Clear(); TempNow.Text = "—"; }
-        TempNow.SetResourceReference(TextBlock.ForegroundProperty, now != null ? "Fg" : "Faint");
+        target.Inlines.Clear();
+        target.SetResourceReference(TextBlock.ForegroundProperty, value != null ? "Fg" : "Faint");
+        if (value is not double v) { target.Inlines.Add(new Run("—")); return; }
+        target.Inlines.Add(new Run($"{v:0}"));
+        var unit = new Run("\u2009°C") { FontSize = Math.Round(target.FontSize * 0.5) };
+        unit.SetResourceReference(TextElement.ForegroundProperty, "Muted");
+        unit.SetResourceReference(TextElement.FontFamilyProperty, "LabelFont");
+        target.Inlines.Add(unit);
     }
 
 

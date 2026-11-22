@@ -62,7 +62,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <local:HwIcon Grid.RowSpan="2" Style="{StaticResource ChannelIcon}" local:Ui.Channel="Storage" Kind="storage" Width="30" Height="30" VerticalAlignment="Center" Margin="0,0,12,0" />
-                <TextBlock Grid.Column="1" Text="{Binding Title}" FontFamily="{StaticResource LabelFont}" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Text="{Binding Title}" Style="{StaticResource ItemTitle}" VerticalAlignment="Center" />
                 <!-- Nome (DIN 14) e letra (Bahnschrift 16) no topo, com 1 px a mais na letra: as duas bases coincidem -->
                 <TextBlock Grid.Column="2" Text="{Binding Letters}" Style="{StaticResource ReadoutText}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,1,0,0" />
                 <Ellipse Grid.Column="3" Style="{StaticResource DiskLed}" Margin="10,1,0,0" ToolTip="{Binding VerdictText}" />
@@ -250,9 +250,9 @@
                                     </Grid.ColumnDefinitions>
                                     <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Storage" Kind="storage" Width="44" Height="44" VerticalAlignment="Center" />
                                     <StackPanel Grid.Column="1" Margin="20,0,32,0" VerticalAlignment="Center">
-                                        <TextBlock x:Name="DiskModel" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock x:Name="DiskModel" Style="{StaticResource PlateName}" />
                                         <!-- A especificação numa frase: chave em tom secundário e valor em tinta (DisksView.ShowSpecs) -->
-                                        <TextBlock x:Name="DiskSpecs" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,8,0,0" Background="Transparent" />
+                                        <TextBlock x:Name="DiskSpecs" Style="{StaticResource PlateText}" Margin="0,8,0,0" Background="Transparent" />
                                         <Grid x:Name="DiskReasonRow" Margin="0,12,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
@@ -265,7 +265,7 @@
                                     <Border x:Name="SpaceDivider" Grid.Column="2" Width="1" Background="{DynamicResource LineStrong}" Margin="0,0,32,0" />
                                     <!-- Espaço: a barra por unidade, as unidades lado a lado (com mais de uma) e os três números embaixo -->
                                     <StackPanel x:Name="DiskSpace" Grid.Column="3" VerticalAlignment="Center">
-                                        <TextBlock Text="Espaço" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" />
+                                        <TextBlock Text="Espaço" Style="{StaticResource GroupTitle}" />
                                         <local:CapacityBar x:Name="DiskCapacity" Margin="0,12,0,0" />
                                         <ItemsControl x:Name="DiskVolumes" ItemTemplate="{StaticResource VolumeRow}" Focusable="False" Margin="0,10,0,0"
                                                       Visibility="{Binding HasItems, RelativeSource={RelativeSource Self}, Converter={StaticResource BoolVis}}">

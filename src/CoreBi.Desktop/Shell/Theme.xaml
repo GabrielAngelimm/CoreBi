@@ -162,10 +162,39 @@
         <Setter Property="TextWrapping" Value="NoWrap"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
-    <!-- Título de grupo dentro de uma ficha (Sensores, Sistema): um degrau abaixo do painel -->
+    <!--
+        Escala de texto (a mesma em todas as páginas, para a letra não crescer e encolher na troca de tela; ver DESIGN.md):
+        PageTitle 36 · PlateName 30 (o nome na placa de identificação) · TestPlateTitle 24 (a peça na bancada) · SectionTitle e
+        CardTitle 17 (painel) · GroupTitle 15 (grupo, nó, seção dentro do painel) · ItemTitle 14 (nome numa lista ou tecla) ·
+        PageSubtitle, PageStatus e PlateText 13,5 · Body 13 · StatLabel e Label 12,5 · Caption 12 · StatSub e Footnote 11,5.
+    -->
+    <!-- Nome na placa de identificação (Sistema, Placa de vídeo, Discos) -->
+    <Style x:Key="PlateName" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
+        <Setter Property="FontSize" Value="30"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <!-- A frase sob o nome da placa (especificação, resumo) -->
+    <Style x:Key="PlateText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <!-- Nome de um item numa lista ou tecla (disco, driver, unidade) -->
+    <Style x:Key="ItemTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <!-- Título de grupo dentro de uma ficha ou painel (Sensores, Sistema, nós de Rede, Drivers): um degrau abaixo do painel -->
     <Style x:Key="GroupTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="15.5"/>
+        <Setter Property="FontSize" Value="15"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>

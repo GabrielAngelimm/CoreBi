@@ -36,7 +36,7 @@
                         <Border x:Name="face" Margin="6" CornerRadius="{StaticResource RadiusInset}" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Surface}" SnapsToDevicePixels="True" Padding="12,12,14,12">
                             <DockPanel>
                                 <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Channel}" Kind="{Binding Glyph}" Width="32" Height="32" />
-                                <TextBlock x:Name="cat" Text="{Binding Category}" FontFamily="{StaticResource LabelFont}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,3,0,0" />
+                                <TextBlock x:Name="cat" Text="{Binding Category}" Style="{StaticResource GroupTitle}" Foreground="{DynamicResource Muted}" TextWrapping="NoWrap" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,3,0,0" />
                             </DockPanel>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -213,7 +213,7 @@
                         <ColumnDefinition Width="140" />
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource ItemTitle}" TextTrimming="None" TextWrapping="Wrap" />
                         <TextBlock Text="{Binding Meta}" FontSize="12.5" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="0,4,0,0">
@@ -370,8 +370,8 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel VerticalAlignment="Bottom" Margin="0,0,40,0">
                                 <TextBlock x:Name="SheetEyebrow" Style="{StaticResource PlateEyebrow}" TextTrimming="CharacterEllipsis" />
-                                <TextBlock x:Name="SheetTitle" FontFamily="{StaticResource DisplayFont}" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Fg}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
-                                <TextBlock x:Name="SheetSub" FontSize="13.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" Margin="0,8,0,0" />
+                                <TextBlock x:Name="SheetTitle" Style="{StaticResource PlateName}" Margin="0,4,0,0" />
+                                <TextBlock x:Name="SheetSub" Style="{StaticResource PlateText}" Margin="0,8,0,0" />
                             </StackPanel>
                             <ItemsControl x:Name="SheetReadouts" Grid.Column="1" VerticalAlignment="Bottom" ItemTemplate="{StaticResource ReadoutCell}">
                                 <ItemsControl.ItemsPanel>
