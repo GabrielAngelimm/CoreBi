@@ -72,8 +72,9 @@
                 <!-- Cabeçalho padrão (PageHeaderPanel), o mesmo de Ferramentas: o estado do teste no subtítulo, com a etapa ao lado ("2 de 3 ·
                      Download"), e na barra de ações o medidor (com cortes nas três estações, nas frações do motor, e a porcentagem), que só
                      aparece durante o teste, e a ação principal. -->
-                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Rede" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Velocidade, latência e estabilidade da sua conexão." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                     <StackPanel Style="{StaticResource PageActions}">
                         <!--
                             Medidor do teste: as três estações escritas em cima de cada trecho da barra (a da vez acesa no sinal, as feitas no tom do
@@ -102,7 +103,7 @@
                                 <TextBlock x:Name="NetStage3" Grid.Column="4" Text="Upload" Style="{StaticResource NetStage}" />
                                 <Grid Grid.Row="1" Grid.ColumnSpan="5" Margin="0,7,0,0">
                                     <Grid Style="{StaticResource ProgressTrack}" Height="6">
-                                        <Border Style="{StaticResource ProgressFill}">
+                                        <Border x:Name="NetProgressFill" Style="{StaticResource ProgressFill}">
                                             <Border.RenderTransform>
                                                 <ScaleTransform x:Name="NetProgress" ScaleX="0" />
                                             </Border.RenderTransform>
@@ -122,10 +123,8 @@
                                     </Grid>
                                 </Grid>
                             </Grid>
-                            <!-- Número e "%" como Runs do mesmo TextBlock: a mesma linha de base por construção -->
-                            <TextBlock x:Name="NetPercentBox" Grid.Column="1" Style="{StaticResource TaskPercent}" FontSize="26" FontWeight="Light" MinWidth="68" Margin="16,0,0,0">
-                                <Run x:Name="NetPercent" /><Run Text="&#x2009;%" FontFamily="{StaticResource LabelFont}" FontStretch="Normal" FontWeight="Normal" FontSize="13" Foreground="{DynamicResource Muted}" />
-                            </TextBlock>
+                            <!-- A porcentagem conta junto com a barra (HeaderMotion) -->
+                            <TextBlock x:Name="NetPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" FontSize="24" FontWeight="Light" MinWidth="72" Margin="16,0,0,0" />
                         </Grid>
                         <StackPanel Style="{StaticResource PageStatusBox}">
                             <TextBlock x:Name="NetStatus" Text="Pronto para testar" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" />

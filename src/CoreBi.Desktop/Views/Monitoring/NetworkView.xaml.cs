@@ -99,6 +99,7 @@ public partial class NetworkView : UserControl
         SetProgress(0, animate: false);
         ShowStages(NetworkPhase.Latency);
         NetMeta.Text = "Medindo agora";
+        bool completed = false;
         try
         {
             int attempt = 0;
@@ -131,7 +132,9 @@ public partial class NetworkView : UserControl
             else
             {
                 NetStatus.Text = $"Concluído às {result.TestedAt:HH:mm:ss}";
+                ShowStages(NetworkPhase.Done);
                 SetProgress(1, animate: true);
+                completed = true;
             }
         }
         catch (OperationCanceledException)
@@ -149,7 +152,8 @@ public partial class NetworkView : UserControl
             if (!_context.IsClosing)
             {
                 Ui.SetRunning(BtnNetTest, false, LastResult != null ? "Testar de novo" : "Testar a rede");
-                ShowTrack(false);
+                // Concluído, o medidor já segura o 100 % e fecha sozinho; parado no meio, fecha agora
+                if (!completed) HeaderMotion.EndProgress(NetProgressFill);
             }
         }
     }
@@ -178,30 +182,13 @@ public partial class NetworkView : UserControl
     }
 
     /// <summary>
-    /// A barra só anda quando o motor informa trabalho feito, e cada passo desliza até o novo valor com desaceleração
-    /// (sem animação contínua). Recomeço e "Mostrar animações no Windows" desligado vão direto ao valor.
+    /// A barra só anda quando o motor informa trabalho feito; o movimento (abrir, deslizar, contar a porcentagem, segurar o
+    /// 100 % e fechar) é o de todo medidor de cabeçalho (<see cref="HeaderMotion"/>). Sem animate, vai direto ao valor.
     /// </summary>
     private void SetProgress(double fraction, bool animate)
     {
-        fraction = Math.Clamp(fraction, 0, 1);
-        if (!animate || !SystemParameters.ClientAreaAnimation || fraction < NetProgress.ScaleX)
-        {
-            NetProgress.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-            NetProgress.ScaleX = fraction;
-        }
-        else
-        {
-            NetProgress.BeginAnimation(ScaleTransform.ScaleXProperty,
-                new DoubleAnimation(fraction, TimeSpan.FromMilliseconds(400)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
-        }
-        NetPercent.Text = (fraction * 100).ToString("0", PtBr);
-        ShowTrack(_running);
-    }
-
-    /// <summary>Barra, estações e porcentagem só durante o teste; ocultas (recolhidos) em repouso.</summary>
-    private void ShowTrack(bool on)
-    {
-        NetTrack.Visibility = NetPercentBox.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+        if (!animate) { NetProgress.BeginAnimation(ScaleTransform.ScaleXProperty, null); NetProgress.ScaleX = 0; }
+        HeaderMotion.SetProgress(NetProgressFill, fraction);
     }
 
     /// <summary>

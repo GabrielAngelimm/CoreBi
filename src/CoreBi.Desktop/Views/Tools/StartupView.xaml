@@ -52,8 +52,9 @@
                 </Grid.RowDefinitions>
 
                 <!-- Cabeçalho padrão (PageHeaderPanel): título, estado vivo embaixo e a barra de ações à direita, na linha do título -->
-                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Inicialização" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Escolha o que abre com o Windows e deixe o início mais rápido." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                     <StackPanel Style="{StaticResource PageActions}">
                         <Grid x:Name="StartupMeter" Style="{StaticResource TaskMeter}">
                             <Grid.ColumnDefinitions>

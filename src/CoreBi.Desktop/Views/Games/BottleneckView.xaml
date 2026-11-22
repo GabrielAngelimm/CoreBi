@@ -93,9 +93,9 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <!-- Sem subtítulo: 17 embaixo (e não 22), para o primeiro painel ficar a 28 do pé do título, como nas páginas com subtítulo -->
-                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Gargalo" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Descobre qual peça segura o FPS enquanto você joga." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                 </local:PageHeaderPanel>
 
                 <Grid Grid.Row="1">

@@ -72,9 +72,9 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <!-- Sem subtítulo: 17 embaixo (e não 22), para o primeiro painel ficar a 28 do pé do título, como nas páginas com subtítulo -->
-        <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
+        <local:PageHeaderPanel Style="{StaticResource PageHead}">
             <TextBlock Text="Placa de vídeo" Style="{StaticResource PageTitle}" />
+            <TextBlock Text="Clocks, temperatura e memória da sua placa de vídeo, ao vivo." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
             <!-- Uma pílula por placa, só quando há mais de uma (MainWindow.LoadGpu) -->
             <WrapPanel x:Name="GpuChips" VerticalAlignment="Center" />
         </local:PageHeaderPanel>

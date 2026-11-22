@@ -298,6 +298,8 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Margin" Value="0,0,0,2"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+        <!-- Texto novo acende em 200 ms, em vez de trocar seco -->
+        <Setter Property="local:HeaderMotion.SoftText" Value="True"/>
     </Style>
     <!-- Segunda parte do estado: o detalhe curto, um tom abaixo -->
     <Style x:Key="PageDetail" TargetType="TextBlock" BasedOn="{StaticResource PageStatus}">
@@ -602,6 +604,14 @@
         <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
         <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
         <Setter Property="local:Ui.HoverFill" Value="{DynamicResource DangerSoft}"/>
+    </Style>
+
+    <!-- Parar uma tarefa de cabeçalho (Testar a rede, Instalar apps): o mesmo tamanho do HeaderPrimary, para o botão não pular -->
+    <Style x:Key="HeaderStop" TargetType="Button" BasedOn="{StaticResource StopButton}">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Padding" Value="20,0"/>
+        <Setter Property="MinWidth" Value="172"/>
     </Style>
 
     <!-- Ação destrutiva discreta dentro de listas (remover) -->

@@ -155,8 +155,9 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Energia" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="De onde vem a energia, o plano em uso e quanto o PC consome." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                     <StackPanel Style="{StaticResource PageActions}">
                         <TextBlock x:Name="EnergyStatus" Text="Lendo fonte e plano de energia…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" Typography.NumeralAlignment="Tabular" />
                         <Button x:Name="BtnEnergyRefresh" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnEnergyRefresh_Click" />

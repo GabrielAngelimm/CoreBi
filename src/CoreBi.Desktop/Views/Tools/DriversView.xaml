@@ -37,8 +37,9 @@
                 </Grid.RowDefinitions>
 
                 <!-- Cabeçalho padrão (PageHeaderPanel): título, estado vivo embaixo e a barra de ações à direita, na linha do título -->
-                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Drivers" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Mantém em dia os drivers da placa de vídeo, da placa-mãe e do Windows." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                     <StackPanel Style="{StaticResource PageActions}">
                         <Grid x:Name="DrvMeter" Style="{StaticResource TaskMeter}">
                             <Grid.ColumnDefinitions>

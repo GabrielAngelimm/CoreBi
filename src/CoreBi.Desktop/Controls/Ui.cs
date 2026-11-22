@@ -79,10 +79,25 @@ public static class Ui
     /// </summary>
     public static void SetRunning(System.Windows.Controls.Button button, bool running, string idleText, string runningText = "Parar", string idleIcon = "\uE768")
     {
-        if (button.TryFindResource(running ? "StopButton" : "PrimaryButton") is Style style) button.Style = style;
+        // O estilo de repouso é o que o botão tinha na primeira chamada: um botão de cabeçalho (HeaderPrimary, 40 px) para no
+        // HeaderStop, do mesmo tamanho, e volta a ele, em vez de encolher para o PrimaryButton dos painéis.
+        if (button.GetValue(IdleStyleProperty) is not Style idle)
+        {
+            idle = button.Style ?? (Style)button.FindResource("PrimaryButton");
+            button.SetValue(IdleStyleProperty, idle);
+        }
+        bool header = button.TryFindResource("HeaderPrimary") is Style hp && ReferenceEquals(idle, hp);
+        var target = running ? button.TryFindResource(header ? "HeaderStop" : "StopButton") as Style : idle;
+        bool changed = !ReferenceEquals(button.Style, target) || !Equals(button.Content, running ? runningText : idleText);
+        if (target != null) button.Style = target;
         SetIcon(button, running ? "\uE71A" : idleIcon);
         button.Content = running ? runningText : idleText;
+        // A troca de texto e de cor acende em 180 ms, sem piscar
+        if (changed) HeaderMotion.Soften(button);
     }
+
+    private static readonly DependencyProperty IdleStyleProperty = DependencyProperty.RegisterAttached(
+        "IdleStyle", typeof(Style), typeof(Ui), new PropertyMetadata(null));
 
     /// <summary>
     /// Selo de veredito (estilo Badge com um LED e um texto dentro): tone é "Ok", "Warn", "Danger" ou "" (sem dados).

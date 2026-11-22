@@ -109,9 +109,9 @@
                     <RowDefinition Height="16" />
                     <RowDefinition Height="*" MinHeight="620" />
                 </Grid.RowDefinitions>
-                <!-- Sem subtítulo: 17 embaixo (e não 22), para o primeiro painel ficar a 28 do pé do título, como nas páginas com subtítulo -->
-                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,17">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Teste de carga" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Põe as peças no limite para conferir estabilidade e temperatura." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                 </local:PageHeaderPanel>
 
                 <!-- O que carregar: uma tecla por componente, várias ao mesmo tempo -->

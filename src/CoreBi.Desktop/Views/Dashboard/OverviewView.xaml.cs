@@ -237,8 +237,8 @@ namespace CoreBi.Desktop.Views
                 new KeyValuePair<string, string>("Cena de jogo (GPU)", Last("gpu")),
                 new KeyValuePair<string, string>("Simulação de jogo", Last("sim")),
             };
-            if (_context.CpuName.Length > 0 && _context.PrimaryGpu is { } gpu)
-                DashMachine.Text = $"Leituras ao vivo de {Environment.MachineName}: {HardwareNaming.ShortCpuName(_context.CpuName)} e {HardwareNaming.ShortGpuName(gpu.Name)}.";
+            // Só o nome do computador: as peças já estão nos cartões logo abaixo
+            DashMachine.Text = $"Leituras ao vivo de {Environment.MachineName}.";
         }
 
         private void UpdateHealth()
