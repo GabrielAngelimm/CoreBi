@@ -482,7 +482,7 @@ public partial class DisksView : UserControl
         {
             cell.Visibility = value == null ? Visibility.Collapsed : Visibility.Visible;
             if (value == null) return;
-            Readout(target, value, unit, balanced: true);
+            Readout(target, value, unit);
             cells.Add(cell);
         }
         Cell(OdoCell0, OdoHours, d.PowerOnHours is long h ? $"{h:N0}" : null, "h");
