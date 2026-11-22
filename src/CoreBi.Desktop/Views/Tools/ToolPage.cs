@@ -14,7 +14,7 @@ internal static class ToolPage
 {
     /// <summary>
     /// Leva a barra até a fração nova e mostra o medidor, que só existe durante uma tarefa: parado, a barra de ações não tem
-    /// linha nenhuma (o espaço fica reservado, para os botões não andarem). A porcentagem aparece quando há trabalho feito. Ao avançar desliza 400 ms com desaceleração; ao recomeçar
+    /// linha nenhuma (os botões, rentes à direita, não andam quando ele aparece). A porcentagem aparece quando há trabalho feito. Ao avançar desliza 400 ms com desaceleração; ao recomeçar
     /// (ou com "Mostrar animações no Windows" desligado) vai direto ao valor. Quando a tarefa termina, o trilho cheio apaga
     /// em 300 ms e some. Nada de animação contínua.
     /// </summary>
@@ -58,7 +58,7 @@ internal static class ToolPage
         scale.ScaleX = 0;
         track.BeginAnimation(UIElement.OpacityProperty, null);
         track.Opacity = 1;
-        track.Visibility = Visibility.Hidden;
+        track.Visibility = Visibility.Collapsed;
     }
 
     /// <summary>O medidor inteiro (trilho e porcentagem): o pai do trilho quando ele está num TaskMeter, senão o próprio trilho.</summary>

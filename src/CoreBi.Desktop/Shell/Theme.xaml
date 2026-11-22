@@ -273,12 +273,12 @@
         <Setter Property="Margin" Value="0,0,0,14"/>
     </Style>
     <!--
-        Cabeçalho de página, o mesmo em todas as telas (PageHeaderPanel): título à esquerda (DIN 36), o subtítulo só com o estado
-        vivo ("Lido às 20:31") embaixo dos botões, alinhado à direita, junto da ação que o produz; à direita, na linha do título,
-        a barra de ações (PageActions). Na barra, da esquerda para a direita: o medidor de progresso da tarefa (TaskMeter, só
-        durante ela, com o espaço reservado), a busca (SearchField) e os botões (HeaderSecondary, HeaderPrimary), todos com 40 px
-        e 10 entre si, a ação principal por último, na ponta. Nada de cartão em volta: o vão entre o título e a barra é livre.
-        Página sem botões leva o subtítulo embaixo do título.
+        Cabeçalho de página, o mesmo em todas as telas (PageHeaderPanel): título à esquerda (DIN 36) e, à direita, na linha do
+        título, a barra de ações (PageActions). Na barra, da esquerda para a direita: o estado vivo ("Lido às 20:31", PageStatus,
+        com o detalhe um tom abaixo, PageDetail), o medidor de progresso da tarefa (TaskMeter, só durante ela), a busca
+        (SearchField) e os botões (HeaderSecondary, HeaderPrimary), todos com 40 px e 10 entre si, a ação principal na ponta.
+        Nada de cartão em volta: o vão entre o título e a barra é livre. Só um texto de explicação (Visão geral, OverlayBi) fica
+        embaixo do título, como subtítulo.
     -->
     <Style x:Key="PageHead" TargetType="local:PageHeaderPanel">
         <Setter Property="Margin" Value="0,0,0,14"/>
@@ -287,13 +287,33 @@
         <Setter Property="Orientation" Value="Horizontal"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
-    <!-- Segunda parte do subtítulo: o detalhe curto do que acabou de acontecer, um tom abaixo do estado -->
-    <Style x:Key="PageDetail" TargetType="TextBlock" BasedOn="{StaticResource PageSubtitle}">
-        <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+    <!-- Estado vivo na barra de ações, à esquerda dos botões, na mesma linha: o que acabou de acontecer ("Lido às 20:31") -->
+    <Style x:Key="PageStatus" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextWrapping" Value="NoWrap"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-        <Setter Property="Margin" Value="14,3,0,0"/>
+        <Setter Property="MaxWidth" Value="520"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,0,2"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <!-- Segunda parte do estado: o detalhe curto, um tom abaixo -->
+    <Style x:Key="PageDetail" TargetType="TextBlock" BasedOn="{StaticResource PageStatus}">
+        <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+        <Setter Property="MaxWidth" Value="360"/>
+        <Setter Property="Margin" Value="12,0,0,2"/>
+        <Style.Triggers>
+            <Trigger Property="Text" Value="">
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!-- Caixa do estado na barra: 20 até o que vem depois (medidor, busca ou botão) -->
+    <Style x:Key="PageStatusBox" TargetType="StackPanel">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,20,0"/>
     </Style>
     <!--
         Painel: agrupa um instrumento. Sem sombra nem degradê: a profundidade vem do tom (bancada → painel → elevado) e do fio
@@ -1601,13 +1621,13 @@
     <!-- rodada-unslop: ferramentas início -->
     <!--
         Medidor de progresso de uma tarefa, na barra de ações do cabeçalho (Inicialização, Instalar apps, Drivers, Rede): o trilho
-        contínuo no sinal e a porcentagem à direita. Só aparece durante a tarefa (o espaço fica reservado, para os botões não
-        andarem), avança quando ela informa trabalho feito e, ao terminar, apaga em 300 ms (ToolPage.SetProgress).
+        contínuo no sinal e a porcentagem à direita. Só aparece durante a tarefa (os botões, rentes à direita, não andam; o estado
+        abre espaço à esquerda), avança quando ela informa trabalho feito e, ao terminar, apaga em 300 ms (ToolPage.SetProgress).
     -->
     <Style x:Key="TaskMeter" TargetType="Grid">
         <Setter Property="Width" Value="220"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Visibility" Value="Hidden"/>
+        <Setter Property="Visibility" Value="Collapsed"/>
         <Setter Property="Margin" Value="0,0,18,0"/>
     </Style>
     <Style x:Key="TaskPercent" TargetType="TextBlock">

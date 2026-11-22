@@ -100,9 +100,13 @@
             </Grid.RowDefinitions>
 
             <!-- Cabeçalho padrão (PageHeaderPanel): título, estado vivo embaixo e a barra de ações à direita, na linha do título -->
-            <local:PageHeaderPanel Style="{StaticResource PageHead}">
+            <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
                 <TextBlock Text="Instalar apps" Style="{StaticResource PageTitle}" />
                 <StackPanel Style="{StaticResource PageActions}">
+                    <StackPanel Style="{StaticResource PageStatusBox}">
+                        <TextBlock x:Name="AppsStatus" Text="Lendo aplicativos instalados…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" />
+                        <TextBlock x:Name="AppsDetail" Style="{StaticResource PageDetail}" />
+                    </StackPanel>
                     <Grid x:Name="AppsMeter" Style="{StaticResource TaskMeter}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -124,10 +128,6 @@
                     <Button x:Name="BtnAppsInstall" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE896;" Content="Instalar apps"
                             IsEnabled="False" Click="BtnAppsInstall_Click" ToolTipService.ShowOnDisabled="True"
                             ToolTip="Instala pelo winget, um app de cada vez e sem janelas: cada instalador vem do site oficial do fabricante e é conferido antes de abrir." />
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" local:PageHeaderPanel.Subtitle="True">
-                    <TextBlock x:Name="AppsStatus" Text="Lendo aplicativos instalados…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
-                    <TextBlock x:Name="AppsDetail" Style="{StaticResource PageDetail}" />
                 </StackPanel>
             </local:PageHeaderPanel>
 

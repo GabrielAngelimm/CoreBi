@@ -52,9 +52,13 @@
                 </Grid.RowDefinitions>
 
                 <!-- Cabeçalho padrão (PageHeaderPanel): título, estado vivo embaixo e a barra de ações à direita, na linha do título -->
-                <local:PageHeaderPanel Style="{StaticResource PageHead}">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
                     <TextBlock Text="Inicialização" Style="{StaticResource PageTitle}" />
                     <StackPanel Style="{StaticResource PageActions}">
+                        <StackPanel Style="{StaticResource PageStatusBox}">
+                            <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" />
+                            <TextBlock x:Name="StartupResult" Style="{StaticResource PageDetail}" />
+                        </StackPanel>
                         <Grid x:Name="StartupMeter" Style="{StaticResource TaskMeter}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -71,10 +75,6 @@
                         </Grid>
                         <Button Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnStartupScan_Click"
                                 ToolTip="Lê de novo as chaves Run do registro e as pastas Inicializar do usuário e de todos os usuários." />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" local:PageHeaderPanel.Subtitle="True">
-                        <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
-                        <TextBlock x:Name="StartupResult" Style="{StaticResource PageDetail}" />
                     </StackPanel>
                 </local:PageHeaderPanel>
 

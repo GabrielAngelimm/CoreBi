@@ -227,14 +227,14 @@
         </Grid.RowDefinitions>
         <!-- Cabeçalho padrão: busca e "Zerar estatísticas" na barra de ações. A dica do botão diz desde quando as estatísticas contam
              (SensorsView.UpdateStatsNote). -->
-        <local:PageHeaderPanel Style="{StaticResource PageHead}">
+        <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
             <TextBlock Text="Sensores" Style="{StaticResource PageTitle}" />
             <StackPanel Style="{StaticResource PageActions}">
+                <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" Typography.NumeralAlignment="Tabular"
+                           ToolTip="A leitura é a cada segundo e pausa durante o teste de placa de vídeo." />
                 <TextBox x:Name="SensorSearch" Style="{StaticResource SearchField}" local:Ui.Placeholder="Buscar sensor ou componente" Margin="0,0,10,0" TextChanged="SensorSearch_Changed" />
                 <Button x:Name="BtnSensorsReset" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE777;" Content="Zerar estatísticas" Click="BtnSensorsReset_Click" />
             </StackPanel>
-            <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" local:PageHeaderPanel.Subtitle="True"
-                       ToolTip="A leitura é a cada segundo e pausa durante o teste de placa de vídeo." />
         </local:PageHeaderPanel>
 
         <Grid x:Name="SensorBody" Grid.Row="1" SizeChanged="SensorBody_SizeChanged">

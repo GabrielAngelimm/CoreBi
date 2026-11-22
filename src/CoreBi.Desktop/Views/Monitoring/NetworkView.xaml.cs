@@ -198,10 +198,10 @@ public partial class NetworkView : UserControl
         ShowTrack(_running);
     }
 
-    /// <summary>Barra, estações e porcentagem só durante o teste; ocultas (com o espaço reservado) em repouso.</summary>
+    /// <summary>Barra, estações e porcentagem só durante o teste; ocultas (recolhidos) em repouso.</summary>
     private void ShowTrack(bool on)
     {
-        NetTrack.Visibility = NetPercentBox.Visibility = on ? Visibility.Visible : Visibility.Hidden;
+        NetTrack.Visibility = NetPercentBox.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>

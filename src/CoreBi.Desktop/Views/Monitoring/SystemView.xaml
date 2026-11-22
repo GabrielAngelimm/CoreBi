@@ -310,13 +310,13 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <local:PageHeaderPanel Style="{StaticResource PageHead}">
+        <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
             <TextBlock Text="Sistema" Style="{StaticResource PageTitle}" />
             <StackPanel Style="{StaticResource PageActions}">
+                <TextBlock x:Name="SystemSub" Text="Lendo informações do sistema…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" Typography.NumeralAlignment="Tabular" />
                 <Button x:Name="BtnReport" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE896;" Content="Exportar relatório" Click="BtnReport_Click"
                         ToolTip="Salva a ficha do computador em HTML, PDF (A4) ou JSON. Números de série e o nome do usuário ficam de fora." />
             </StackPanel>
-            <TextBlock x:Name="SystemSub" Text="Lendo informações do sistema…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" local:PageHeaderPanel.Subtitle="True" />
         </local:PageHeaderPanel>
 
         <!-- Um painel só: o índice da máquina em cima e a ficha do componente escolhido embaixo. Vai até o pé da página em toda

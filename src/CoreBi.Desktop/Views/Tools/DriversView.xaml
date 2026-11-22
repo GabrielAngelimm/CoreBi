@@ -37,9 +37,13 @@
                 </Grid.RowDefinitions>
 
                 <!-- Cabeçalho padrão (PageHeaderPanel): título, estado vivo embaixo e a barra de ações à direita, na linha do título -->
-                <local:PageHeaderPanel Style="{StaticResource PageHead}">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}" Margin="0,0,0,9">
                     <TextBlock Text="Drivers" Style="{StaticResource PageTitle}" />
                     <StackPanel Style="{StaticResource PageActions}">
+                        <StackPanel Style="{StaticResource PageStatusBox}">
+                            <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" />
+                            <TextBlock x:Name="DrvDetail" Style="{StaticResource PageDetail}" />
+                        </StackPanel>
                         <Grid x:Name="DrvMeter" Style="{StaticResource TaskMeter}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -59,10 +63,6 @@
                                 Click="BtnDrvBackup_Click" ToolTip="Exporta os drivers de terceiros para Documentos\CoreBi-Drivers, para reinstalar depois de formatar." />
                         <Button x:Name="BtnDrvScan" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler drivers de novo" Click="BtnDrvScan_Click"
                                 ToolTip="Lê de novo os drivers instalados, a placa de vídeo e a placa-mãe e consulta a versão mais recente na NVIDIA ou na AMD. Para atualizações do Windows, use Procurar atualizações." />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" local:PageHeaderPanel.Subtitle="True">
-                        <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource PageSubtitle}" Typography.NumeralAlignment="Tabular" />
-                        <TextBlock x:Name="DrvDetail" Style="{StaticResource PageDetail}" />
                     </StackPanel>
                 </local:PageHeaderPanel>
 
