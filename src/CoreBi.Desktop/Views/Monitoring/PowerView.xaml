@@ -428,7 +428,7 @@
 
                     <!-- Tempo ligado nos últimos 7 dias -->
                     <Border x:Name="DaysCard" Grid.Row="2" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="{StaticResource CardPadding}"
-                            local:Skeleton.Layout="row 34: h 260^16; gap 10; line; gap 18; row 16: c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4; gap 6; row 30: n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24; gap 18; line; gap 16; foot 18: - 58, c 22, - *, c 22, - *, c 22, - *, c 22, - *, c 26, - 78; share 7: c 58@0.6, box *^8, - 12, c 66@0.6>">
+                            local:Skeleton.Layout="row 34: h 260^16; gap 8; line; gap 18; row 16: c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4, c 20%@0.4; gap 6; row 30: n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24, n 20%@0.26^24; gap 18; line; gap 12; foot 18: - 58, c 22, - *, c 22, - *, c 22, - *, c 22, - *, c 26, - 78; share 7: c 58@0.6, box *^8, - 12, c 66@0.6>">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -441,7 +441,7 @@
                                 <TextBlock x:Name="DaysCaption" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" TextWrapping="NoWrap" Visibility="Collapsed" />
                             </Grid>
                             <!-- Mesma faixa do consumo: células de largura igual, texto à esquerda, fio entre elas, de ponta a ponta do cartão -->
-                            <Border x:Name="DaysSummary" Grid.Row="1" Margin="-24,10,-24,0" BorderBrush="{DynamicResource Line}" BorderThickness="0,1">
+                            <Border x:Name="DaysSummary" Grid.Row="1" Margin="-24,8,-24,0" BorderBrush="{DynamicResource Line}" BorderThickness="0,1">
                                 <UniformGrid x:Name="DaysCells" Rows="1">
                                     <Border Style="{StaticResource RulerCell}" BorderThickness="0">
                                         <StackPanel>
@@ -481,7 +481,7 @@
                                     </Border>
                                 </UniformGrid>
                             </Border>
-                            <local:UptimeChart x:Name="Uptime" Grid.Row="2" Margin="0,16,0,0" />
+                            <local:UptimeChart x:Name="Uptime" Grid.Row="2" Margin="0,12,0,0" />
                             <TextBlock x:Name="DaysEmpty" Grid.Row="2" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="0,16,0,0" Visibility="Collapsed" />
                         </Grid>
                     </Border>
