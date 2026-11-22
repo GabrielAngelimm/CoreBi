@@ -45,7 +45,7 @@
 
         <!-- Selo de especificação na placa do disco -->
         <DataTemplate x:Key="SpecChip">
-            <Border Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{StaticResource RadiusSmall}" Padding="8,2,8,3" Margin="0,0,6,6" ToolTip="{Binding Tip}">
+            <Border Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{StaticResource RadiusPill}" Padding="9,2,9,3" Margin="0,0,6,6" ToolTip="{Binding Tip}">
                 <TextBlock FontSize="12" Typography.NumeralAlignment="Tabular">
                     <Run Text="{Binding Key, Mode=OneWay}" Foreground="{DynamicResource Muted}" /><Run Text="{Binding Value, Mode=OneWay}" Foreground="{DynamicResource Fg}" FontWeight="SemiBold" />
                 </TextBlock>

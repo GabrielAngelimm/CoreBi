@@ -170,7 +170,7 @@ public static class Ui
 
     /// <summary>Raio dos painéis (RadiusPanel), para recortar cantos desenhados em código.</summary>
     public static double PanelRadius(FrameworkElement element) =>
-        element.TryFindResource("RadiusPanel") is CornerRadius r ? r.TopLeft : 10;
+        element.TryFindResource("RadiusPanel") is CornerRadius r ? r.TopLeft : 16;
 
     public static string? CheckedTag(System.Windows.Controls.Panel panel) =>
         panel.Children.OfType<System.Windows.Controls.RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;

@@ -83,14 +83,24 @@
     <!-- paleta:fim -->
 
     <!-- ===================== Forma ===================== -->
-    <!-- Raios por hierarquia: painel > poço > controle > selo. Pílulas (filtros) são inteiramente redondas. -->
+    <!--
+        Raios por hierarquia, quatro degraus: contêiner 16 > peça dentro do cartão 14 > controle 12 > pílula (inteiramente
+        redonda: filtros, segmentos, selos, interruptores, atalho redondo). Peça grande é proporcionalmente menos redonda
+        (cartão ~5 %, tecla de 58 px ~24 %, botão de 40 ~30 %), então tudo parece da mesma família.
+        Encaixe justo (vão menor que o raio) segue a regra dos cantos concêntricos, raio de dentro = raio de fora - vão:
+        tecla do segmento 14 no trilho de 17 com 3 de folga, anel de foco 15 em volta do controle de 12 a 3 px, faixa
+        presa à borda 15 dentro do fio do painel de 16. Com vão largo (os 20 a 24 do respiro do painel) o raio de dentro
+        é escolhido pelo tamanho da peça. RadiusSmall (6) fica só para teclas de atalho e caixas de marcar de 18 px.
+    -->
     <CornerRadius x:Key="RadiusPanel">16</CornerRadius>
     <CornerRadius x:Key="RadiusInset">14</CornerRadius>
     <CornerRadius x:Key="RadiusControl">12</CornerRadius>
     <CornerRadius x:Key="RadiusSmall">6</CornerRadius>
+    <!-- Selo e etiqueta (20 a 22 px de altura): meia altura, a mesma pílula dos filtros -->
+    <CornerRadius x:Key="RadiusPill">10</CornerRadius>
     <!-- Faixas presas à borda de um painel (a placa da Placa de vídeo, o pé do Gargalo): o raio do painel menos o fio -->
     <CornerRadius x:Key="RadiusPanelTop">15,15,0,0</CornerRadius>
-    <CornerRadius x:Key="RadiusPanelBottom">0,0,16,16</CornerRadius>
+    <CornerRadius x:Key="RadiusPanelBottom">0,0,15,15</CornerRadius>
     <!-- Respiro padrão de um painel (24 nas laterais, 20 em cima e embaixo) -->
     <Thickness x:Key="PanelPadding">24,20</Thickness>
 
@@ -428,8 +438,8 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}"/>
-        <Setter Property="Padding" Value="8,2,9,3"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusPill}"/>
+        <Setter Property="Padding" Value="9,2,10,3"/>
         <Setter Property="VerticalAlignment" Value="Top"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
