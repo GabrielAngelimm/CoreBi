@@ -1,19 +1,76 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.ReportDialog" xmlns:local="clr-namespace:CoreBi.Desktop"
              Visibility="Collapsed" Focusable="False" PreviewKeyDown="Dialog_PreviewKeyDown">
     <UserControl.Resources>
-        <!-- Uma parte do relatório: o cartão de seleção do app (ícone da peça na cor dela, nome, legenda e o visto no sinal) -->
+        <!--
+            Uma parte do relatório como linha de sumário, não como cartão: caixa de seleção quadrada, ícone da peça na cor dela,
+            nome e, à direita, o que leva. Desmarcada, a linha recua (ícone e nome esmaecem) em vez de ganhar contorno; marcada,
+            só a caixa acende no sinal. O mouse dá o fundo arredondado das linhas da ficha.
+        -->
+        <Style x:Key="PartRow" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="Margin" Value="-10,0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="b" Background="Transparent" CornerRadius="{StaticResource RadiusControl}" Padding="10,0" Height="40">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="box" Width="18" Height="18" CornerRadius="5" BorderThickness="1.5" BorderBrush="{DynamicResource LineStrong}"
+                                        Background="Transparent" VerticalAlignment="Center" SnapsToDevicePixels="True">
+                                    <TextBlock x:Name="mark" Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource SignalFg}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
+                                </Border>
+                                <local:HwIcon x:Name="icon" Grid.Column="1" Style="{StaticResource ChannelIcon}" Width="22" Height="22" Margin="14,0,10,0" VerticalAlignment="Center" Opacity="0.4"
+                                              local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
+                                              Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}" />
+                                <ContentPresenter x:Name="cp" Grid.Column="2" VerticalAlignment="Center" TextElement.FontFamily="{StaticResource LabelFont}"
+                                                  TextElement.FontSize="13.5" TextElement.FontWeight="SemiBold" TextElement.Foreground="{DynamicResource Muted}" />
+                                <TextBlock x:Name="cap" Grid.Column="3" Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}" Margin="16,0,0,0"
+                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" HorizontalAlignment="Right"
+                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}" />
+                                <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Faint}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="box" Property="Background" Value="{DynamicResource Signal}" />
+                                <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Signal}" />
+                                <Setter TargetName="mark" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="icon" Property="Opacity" Value="1" />
+                                <Setter TargetName="cp" Property="TextElement.Foreground" Value="{DynamicResource Fg}" />
+                                <Setter TargetName="cap" Property="Foreground" Value="{DynamicResource Muted}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Cursor" Value="Arrow" />
+                                <Setter TargetName="box" Property="Opacity" Value="0.5" />
+                                <Setter TargetName="icon" Property="Opacity" Value="0.25" />
+                                <Setter TargetName="cp" Property="Opacity" Value="0.6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <DataTemplate x:Key="PartTemplate">
-            <CheckBox Style="{StaticResource ToggleCard}" Content="{Binding Title}" local:Ui.Icon="{Binding Icon}" local:Ui.Channel="{Binding Channel}"
+            <CheckBox Style="{StaticResource PartRow}" Content="{Binding Title}" local:Ui.Icon="{Binding Icon}" local:Ui.Channel="{Binding Channel}"
                       local:Ui.Caption="{Binding Caption}" IsChecked="{Binding Included}" IsEnabled="{Binding Available}" ToolTip="{Binding Tip}"
-                      Margin="6" Height="58" />
+                      ToolTipService.ShowOnDisabled="True" />
         </DataTemplate>
-        <ItemsPanelTemplate x:Key="PartGrid">
-            <UniformGrid Columns="3" />
-        </ItemsPanelTemplate>
-        <!-- Cabeçalho de seção: rótulo à esquerda e, à direita, marcar ou desmarcar a seção inteira -->
-        <Style x:Key="SectionHead" TargetType="Grid">
-            <Setter Property="Height" Value="30" />
-            <Setter Property="Margin" Value="0,0,0,6" />
+        <!-- Cabeçalho de coluna: rótulo à esquerda, marcar ou desmarcar a coluna à direita, e um fio embaixo -->
+        <Style x:Key="SectionHead" TargetType="Border">
+            <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="Padding" Value="0,0,0,6" />
+            <Setter Property="Margin" Value="0,0,0,8" />
         </Style>
         <Style x:Key="SectionLabel" TargetType="TextBlock" BasedOn="{StaticResource Label}">
             <Setter Property="Margin" Value="0" />
@@ -22,7 +79,7 @@
     </UserControl.Resources>
 
     <Grid x:Name="Scrim" Background="{DynamicResource Scrim}" MouseLeftButtonDown="Scrim_MouseDown">
-        <Border x:Name="Panel" Width="760" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}"
+        <Border x:Name="Panel" Width="820" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}"
                 BorderThickness="1" CornerRadius="{StaticResource RadiusPanel}" MouseLeftButtonDown="Panel_MouseDown" RenderTransformOrigin="0.5,0.5">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="48" ShadowDepth="14" Direction="270" Opacity="0.45" Color="#000000" />
@@ -67,20 +124,32 @@
                     </Grid>
                 </Border>
 
-                <StackPanel Margin="18,8,18,20">
-                    <!-- Ficha do computador: as seis categorias de Sistema, com as mesmas cores e ícones das abas -->
-                    <Grid Style="{StaticResource SectionHead}" Margin="6,0,6,0">
-                        <TextBlock Text="Ficha do computador" Style="{StaticResource SectionLabel}" />
-                        <Button x:Name="ToggleSheets" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Click="ToggleSheets_Click" />
-                    </Grid>
-                    <ItemsControl x:Name="SheetParts" ItemTemplate="{StaticResource PartTemplate}" ItemsPanel="{StaticResource PartGrid}" Focusable="False" />
-
-                    <Grid Style="{StaticResource SectionHead}" Margin="6,16,6,0">
-                        <TextBlock Text="Diagnóstico" Style="{StaticResource SectionLabel}" />
-                        <Button x:Name="ToggleDiag" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Click="ToggleDiag_Click" />
-                    </Grid>
-                    <ItemsControl x:Name="DiagParts" ItemTemplate="{StaticResource PartTemplate}" ItemsPanel="{StaticResource PartGrid}" Focusable="False" />
-                </StackPanel>
+                <!-- Duas colunas, como o sumário do relatório: a ficha à esquerda, o diagnóstico à direita -->
+                <Grid Margin="24,14,24,18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="32" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <Border Style="{StaticResource SectionHead}">
+                            <Grid Height="30">
+                                <TextBlock Text="Ficha do computador" Style="{StaticResource SectionLabel}" />
+                                <Button x:Name="ToggleSheets" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Margin="0,0,-10,0" Click="ToggleSheets_Click" />
+                            </Grid>
+                        </Border>
+                        <ItemsControl x:Name="SheetParts" ItemTemplate="{StaticResource PartTemplate}" Focusable="False" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <Border Style="{StaticResource SectionHead}">
+                            <Grid Height="30">
+                                <TextBlock Text="Diagnóstico" Style="{StaticResource SectionLabel}" />
+                                <Button x:Name="ToggleDiag" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Margin="0,0,-10,0" Click="ToggleDiag_Click" />
+                            </Grid>
+                        </Border>
+                        <ItemsControl x:Name="DiagParts" ItemTemplate="{StaticResource PartTemplate}" Focusable="False" />
+                    </StackPanel>
+                </Grid>
             </DockPanel>
         </Border>
     </Grid>
