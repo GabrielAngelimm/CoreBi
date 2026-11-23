@@ -31,6 +31,10 @@ public static class ThemeManager
         // Fios
         ("Line", "#24282B", "#DCE0E3"),
         ("LineStrong", "#353A3D", "#C4CACD"),
+        // Fio e trilho sobre a placa (fundo Selected, que já é um tom acima do painel): o texto em transparência, que aparece nos
+        // dois temas; no claro mais forte, porque o fundo claro da placa come o cinza
+        ("PlateWire", "#2EE6EAEC", "#47182228"),
+        ("PlateTrack", "#24E6EAEC", "#2E182228"),
         // Texto
         ("Fg", "#E6EAEC", "#182228"),
         ("Muted", "#A3AAAE", "#525D62"),
@@ -58,6 +62,8 @@ public static class ThemeManager
         ("Virtual", "#7A5AC8", "#5B3FA6"),
         ("VirtualSoft", "#1E7A5AC8", "#145B3FA6"),
         ("Storage", "#4A82CC", "#1F5FA8"),
+        // Tom fundo do armazenamento: a marca do "usado" na legenda do Espaço, que não repete o azul aceso da barra logo acima
+        ("StorageDeep", "#1E4278", "#0B2E57"),
         ("StorageSoft", "#1A4A82CC", "#141F5FA8"),
         ("Board", "#C8A370", "#9A7430"),
         ("BoardSoft", "#1AC8A370", "#149A7430"),

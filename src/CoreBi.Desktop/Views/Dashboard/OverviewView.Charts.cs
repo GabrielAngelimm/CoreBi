@@ -75,16 +75,9 @@ public partial class OverviewView
         DashChartLabel.Text = $"{name} nos últimos {span}";
         DashChartValue.Text = cNow is float cv ? $"{cv:0.#}{unit}" : "—";
         DashChartValue2.Text = gNow is float gv ? $"{gv:0.#}{unit}" : "—";
-        DashChartValue.Visibility = cNow != null ? Visibility.Visible : Visibility.Collapsed;
-        DashChartValue2.Visibility = gNow != null ? Visibility.Visible : Visibility.Collapsed;
-
-        var firstC = data.Select(cpu).FirstOrDefault(v => v != null);
-        var cpuLoads = metric == "load" ? data.Select(cpu).Where(v => v != null).Select(v => (double)v!.Value).ToList() : null;
-        DashChartDelta.Text = cpuLoads is { Count: > 0 }
-            ? $"Processador em média {cpuLoads.Average():0.#} % no período"
-            : cNow is float a && firstC is float b
-            ? $"Processador {(a - b >= 0 ? "+" : "−")}{Math.Abs(a - b):0.#}{unit} no período"
-            : cNow == null && metric != "load" ? "Sem leitura do processador. Veja o aviso na barra lateral." : "Coletando as primeiras amostras…";
+        // Sem leitura o mostrador fica no travessão (nunca some: as duas legendas não trocam de lugar) e a dica diz por quê
+        DashChartValue.ToolTip = cNow == null && data.Count > 0 && metric != "load" ? "Sem leitura do processador. Veja o aviso na barra lateral." : null;
+        DashChartValue2.ToolTip = gNow == null && data.Count > 0 ? "Sem leitura da placa de vídeo." : null;
 
         var all = data.SelectMany(s => new[] { cpu(s), gpu(s) }).Where(v => v != null).Select(v => (double)v!.Value).ToList();
         double peak = all.Count > 0 ? all.Max() : 0;
@@ -115,7 +108,7 @@ public partial class OverviewView
         {
             double y = Y(v);
             DashChart.Children.Add(new Line { X1 = left, X2 = w, Y1 = y, Y2 = y, Stroke = line, StrokeThickness = 1, SnapsToDevicePixels = true });
-            var lbl = new TextBlock { Text = $"{v:0}{unit}", FontSize = 11, Foreground = faint, FontFamily = readout };
+            var lbl = new TextBlock { Text = $"{v:0}{unit}", FontSize = 12, Foreground = faint, FontFamily = readout };
             Canvas.SetLeft(lbl, 0);
             Canvas.SetTop(lbl, y - 8);
             DashChart.Children.Add(lbl);
@@ -131,7 +124,7 @@ public partial class OverviewView
         string[] xs = { $"−{span}", mid, "agora" };
         for (int k = 0; k < 3; k++)
         {
-            var t = new TextBlock { Text = xs[k], FontSize = 11, Foreground = faint, FontFamily = readout };
+            var t = new TextBlock { Text = xs[k], FontSize = 12, Foreground = faint, FontFamily = readout };
             t.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             Canvas.SetLeft(t, Math.Clamp(left + plotW * k / 2 - t.DesiredSize.Width / 2, left, w - t.DesiredSize.Width));
             Canvas.SetTop(t, h - 16);
@@ -214,7 +207,6 @@ public partial class OverviewView
         _hoverX = e.GetPosition(DashChart).X;
         DrawHover();
         if (!entering) return;
-        DashChartDelta.Text = "Pausado";
         if (_hoverTip is { Visibility: Visibility.Visible } tip)
             tip.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
     }
@@ -320,14 +312,14 @@ public partial class OverviewView
             row.Children.Add(value);
             return row;
         }
-        _hoverTime = new TextBlock { FontSize = 11.5 };
+        _hoverTime = new TextBlock { FontSize = 12 };
         _hoverTime.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
         _hoverTime.SetValue(Typography.NumeralAlignmentProperty, FontNumeralAlignment.Tabular);
         _hoverCpuText = Value();
         _hoverGpuText = Value();
         _hoverTip = new Border
         {
-            CornerRadius = new CornerRadius(8),
+            CornerRadius = (CornerRadius)FindResource("RadiusControl"), // a mesma das dicas
             BorderThickness = new Thickness(1),
             Padding = new Thickness(12, 8, 12, 8),
             IsHitTestVisible = false,
@@ -369,7 +361,10 @@ public partial class OverviewView
 
         _rings = rings.Select(r => (r.Frac, r.Channel)).ToList();
         DrawRings();
-        DashRingLegend.ItemsSource = rings.Select(r => r.Item).ToList();
+        // Relida a cada segundo: as linhas só são refeitas quando um valor muda, para não piscarem nem perderem o realce do mouse
+        Ui.SetItems(DashRingLegend, rings.Select(r => r.Item).ToList());
+        // Anéis só com RAM, VRAM e disco já lidos: um anel a mais surgindo depois empurraria a legenda
+        Skeleton.SetActive(DashMemoryCard, Warming(_context.HardwareRead && _context.SensorsRead && _context.Drives.Count > 0));
     }
 
     private void DrawRings()

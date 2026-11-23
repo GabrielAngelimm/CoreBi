@@ -103,7 +103,7 @@ internal static partial class Program
                 && PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211, "Intel(R) Wi-Fi 6 AX200 160MHz", "Wi-Fi"), "Physical network filter");
             return new { label = row.Label, avg = row.AvgNumber, diskLevel = hot.Level };
         });
-        Check("sensors: component order, memory split and component filter", () =>
+        Check("sensors: component order, Windows memory left out and component filter", () =>
         {
             SensorRow R(string id, HardwareType hw, string hwName, SensorType type, string name, float value)
             {
@@ -121,12 +121,11 @@ internal static partial class Program
             };
             var all = SensorBoard.Build(rows, null, null, "", new HashSet<string>());
             string[] order = all.Cards.Select(c => c.Name).ToArray();
-            Require(string.Join("|", order) == "Ryzen 7|RTX 4060 Ti|Netac NV7000|TUF B550|Asgard A|Asgard B|Ethernet|Memória física|Memória virtual", "Component order: " + string.Join("|", order));
-            Require(all.Cards[4].Kind == "Memória RAM · módulo 1 de 2" && all.Index[0].Id == null && all.Index.Count == 10, "Index or module label");
-            Require(all.Cards[8].Sections.SelectMany(s => s.Rows).All(r => r.Name.StartsWith("Virtual")) && all.Cards[7].Sections.SelectMany(s => s.Rows).All(r => !r.Name.StartsWith("Virtual")), "Memory not split");
+            Require(string.Join("|", order) == "Ryzen 7|RTX 4060 Ti|Netac NV7000|TUF B550|Asgard A|Asgard B|Ethernet", "Component order: " + string.Join("|", order));
+            Require(all.Cards[4].Kind == "Memória RAM · módulo 1 de 2" && all.Index[0].Id == null && all.Index.Count == 8, "Index or module label");
             Require(SensorBoard.Find(rows, "cpu") == "/cpu" && SensorBoard.Find(rows, "ram") == "/ram/dimm/0" && SensorBoard.Find(rows, "board") == "/mb" && SensorBoard.Find(rows, "x") == null, "Shortcut targets");
             var one = SensorBoard.Build(rows, "/ssd", null, "", new HashSet<string>());
-            Require(one.Cards.Count == 1 && one.Cards[0].Name == "Netac NV7000" && !one.Cards[0].CanCollapse && one.Filters.Count == 1 && one.Index.Count == 10, "Component filter");
+            Require(one.Cards.Count == 1 && one.Cards[0].Name == "Netac NV7000" && !one.Cards[0].CanCollapse && one.Filters.Count == 1 && one.Index.Count == 8, "Component filter");
             var fans = SensorBoard.Build(rows, null, "fan", "", new HashSet<string>());
             Require(fans.Cards.Count == 1 && fans.Cards[0].Name == "Ryzen 7", "Type filter");
             var stale = SensorBoard.Build(rows, "/gone", "fan", "", new HashSet<string>());
@@ -136,7 +135,7 @@ internal static partial class Program
                 R("/ram", HardwareType.Memory, "Total Memory", SensorType.Load, "Memory", 48), R("/ram", HardwareType.Memory, "Total Memory", SensorType.Data, "Memory Used", 15),
                 R("/vram", HardwareType.Memory, "Virtual Memory", SensorType.Load, "Memory", 41), R("/vram", HardwareType.Memory, "Virtual Memory", SensorType.Data, "Memory Used", 19),
             };
-            Require(string.Join("|", SensorBoard.Build(split, null, null, "", new HashSet<string>()).Cards.Select(c => c.Name)) == "Memória física|Memória virtual", "Memory in two hardware blocks");
+            Require(string.Join("|", SensorBoard.Build(split, null, null, "", new HashSet<string>()).Cards.Select(c => c.Name)) == "", "Windows memory in two hardware blocks still shown");
             return new { order, filters = all.Filters.Count };
         });
         Check("driver downloads: official HTTPS and exact publisher only", () =>
@@ -160,6 +159,43 @@ internal static partial class Program
             var args = AppInstaller.BuildArguments("7zip.7zip");
             Require(args.Contains("--source") && args.Contains("winget") && args.Contains("--exact"), "Source/package not constrained");
             Expect<ArgumentException>(() => AppInstaller.BuildArguments("7zip.7zip --source evil")); return new { noShell = true };
+        });
+        Check("Instalar apps: catálogo com IDs válidos, sem repetição, e categorias conhecidas", () =>
+        {
+            var apps = AppInstaller.Catalog();
+            var ids = apps.SelectMany(a => a.Packages).Select(p => p.Id).ToList();
+            Require(apps.Count == 73, $"Catálogo com {apps.Count} cartões");
+            Require(ids.Distinct(StringComparer.OrdinalIgnoreCase).Count() == ids.Count, "Pacote repetido no catálogo");
+            foreach (string id in ids) AppInstaller.BuildArguments(id); // "+" (Notepad++, VCRedist 2015+) passa; espaço e opções não
+            Require(apps.All(a => AppCatalog.Categories.Contains(a.Category) && a.Icon.Length > 0 && a.Description.Length > 0), "Cartão sem categoria, ícone ou descrição");
+            Require(apps.Count(a => a.Kits.HasFlag(AppKit.PostFormat)) >= 5 && apps.Any(a => a.Kits.HasFlag(AppKit.Games)) && apps.Any(a => a.Kits.HasFlag(AppKit.Work))
+                && apps.Count(a => a.Kits.HasFlag(AppKit.Creator)) >= 4 && apps.Count(a => a.Kits.HasFlag(AppKit.Dev)) >= 4, "Kit vazio");
+            var vc = apps.Single(a => a.Name == "Visual C++ antigos");
+            Require(vc.Packages.Count == 10, "Visual C++ antigos sem os dez pacotes");
+            Require(AppInstaller.IsInstalled(vc.Packages[1], new[] { "Microsoft Visual C++ 2005 Redistributable" })
+                    && !AppInstaller.IsInstalled(vc.Packages[1], new[] { "Microsoft Visual C++ 2005 Redistributable (x64)" }), "x86 e x64 de 2005 confundidos");
+            Require(!AppInstaller.IsInstalled(vc, new[] { "Microsoft Visual C++ 2005 Redistributable (x64)" }), "Cartão de vários pacotes contou com um só");
+            var teams = apps.Single(a => a.Name == "Microsoft Teams");
+            Require(!AppInstaller.IsInstalled(teams, new[] { "Microsoft Teams" }) && AppInstaller.IsInstalled(teams, Array.Empty<string>(), new HashSet<string> { "Microsoft.Teams" }),
+                    "MSIX deve contar só pelo ID do winget");
+            return new { cards = apps.Count, packages = ids.Count };
+        });
+        Check("Instalar apps: IDs do winget export", () =>
+        {
+            const string json = "{\"Sources\":[{\"Packages\":[{\"PackageIdentifier\":\"Valve.Steam\"},{\"PackageIdentifier\":\"Microsoft.VCRedist.2015+.x64\"}],\"SourceDetails\":{}}]}";
+            var ids = AppInstaller.ParseExport(json);
+            Require(ids.Count == 2 && ids.Contains("valve.steam") && ids.Contains("Microsoft.VCRedist.2015+.x64"), "Export mal lido");
+            Require(AppInstaller.ParseExport("{}").Count == 0, "Export vazio");
+            return new { ids = ids.Count };
+        });
+        Check("Instalar apps: categorias divididas em colunas que terminam quase juntas", () =>
+        {
+            // As 13 categorias do catálogo (cabeçalho 37 + 32 por linha + 14 de vão) em 5 colunas: a mais alta fica com 3 grupos
+            var rows = new[] { 6, 6, 3, 6, 3, 5, 11, 4, 6, 6, 3, 7, 7 };
+            var split = CoreBi.Desktop.Views.AppsView.Partition(rows.Select(r => 37.0 + r * 32 + 14).ToArray(), 5);
+            Require(split.Count == 5 && split.Sum() == rows.Length && split.All(n => n > 0), "Divisão inválida");
+            Require(CoreBi.Desktop.Views.AppsView.Partition(new[] { 1.0, 1.0 }, 5).Count == 2, "Mais colunas que grupos");
+            return new { split };
         });
         Check("processes: both pipes drain, output is bounded and quoting survives", () =>
         {

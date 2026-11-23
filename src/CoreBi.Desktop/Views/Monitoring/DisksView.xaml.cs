@@ -6,6 +6,7 @@ using CoreBi.Engine.Monitoring.Storage;
 using LibreHardwareMonitor.Hardware;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 
 namespace CoreBi.Desktop.Views;
@@ -24,7 +25,7 @@ public partial class DisksView : UserControl
             Temperature = d?.Temperature;
         }
 
-        public DiskHealthCard Card { get; }
+        public DiskHealthCard Card { get; set; }
         public DiskDetail? Disk => Card.Disk;
         public string Title => Card.Title;
         public string Meta { get; }
@@ -35,7 +36,6 @@ public partial class DisksView : UserControl
     }
 
     public sealed record DiskCheck(string Title, string Value, string State, string? Tip = null);
-    public sealed record SpecItem(string Key, string Value, string? Tip = null);
     public sealed record VolumeRow(string Letter, string Label, string Line);
 
     private sealed class DiskTrace
@@ -55,18 +55,28 @@ public partial class DisksView : UserControl
     private DateTime _readAt;
     private bool _wide = true;
 
-    public DisksView() => InitializeComponent();
+    public DisksView()
+    {
+        InitializeComponent();
+        // Esqueleto já no primeiro quadro: ligado só depois da entrada, o painel vazio aparecia por um instante e piscava
+        Skeleton.Set(true, DiskPlate, LifeCard, TempCard, CheckCard);
+    }
 
     internal void Initialize(FeatureContext context) => _context = context;
 
     private async void BtnDiskRefresh_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
 
-    internal async Task RefreshAsync()
+    internal async Task RefreshAsync(bool entering = false)
     {
         if (_refreshing || _context == null || _context.IsClosing) return;
         _refreshing = true;
-        BtnDiskRefresh.IsEnabled = false;
-        DiskHealthStatus.Text = "Lendo os discos…";
+        bool first = _readAt == default, quiet = entering && !first;
+        if (!quiet)
+        {
+            BtnDiskRefresh.IsEnabled = false;
+            HeaderMotion.Say(DiskHealthStatus, null, "Lendo os discos…");
+        }
+        if (first) Skeleton.Set(true, DiskPlate, LifeCard, TempCard, CheckCard); // primeira leitura: a ficha ainda não tem disco
         try
         {
             var sensors = _monitor.Snapshot();
@@ -75,34 +85,83 @@ public partial class DisksView : UserControl
             var cards = await cardsTask;
             List<DriveCard> drives;
             try { drives = await drivesTask; } catch { drives = new(); }
+            if (entering) await PageMotion.EntranceDone(this);
             if (_context.IsClosing) return;
             _readAt = DateTime.Now;
             _drives = drives;
             _context.Drives = drives;
             int keep = (DiskCards.SelectedItem as DiskBay)?.Card.Index ?? -1;
-            _bays = cards.Select(c => new DiskBay(c)).ToList();
-            DiskCards.ItemsSource = _bays;
-            DiskCards.SelectedItem = _bays.FirstOrDefault(b => b.Card.Index == keep) ?? _bays.FirstOrDefault();
-            RackCount.Text = _bays.Count.ToString();
+            var bays = cards.Select(c => new DiskBay(c)).ToList();
+            // O mesmo rack da tela (mesmos discos, nomes, selos e unidades): os compartimentos ficam e só a ficha do escolhido
+            // é reescrita; trocar a lista refazia o rack e a seleção a cada volta à página
+            static string Key(DiskBay b) => $"{b.Card.Index}|{b.Title}|{b.Meta}|{b.Letters}|{b.VerdictText}";
+            if (_bays.Count > 0 && _bays.Select(Key).SequenceEqual(bays.Select(Key)))
+            {
+                for (int i = 0; i < bays.Count; i++) { _bays[i].Card = bays[i].Card; _bays[i].Temperature = bays[i].Temperature; }
+                if (DiskCards.SelectedItem is DiskBay shown) ShowDisk(shown);
+            }
+            else
+            {
+                _bays = bays;
+                DiskCards.ItemsSource = _bays;
+                DiskCards.SelectedItem = _bays.FirstOrDefault(b => b.Card.Index == keep) ?? _bays.FirstOrDefault();
+            }
+            ShowRack();
 
             // Uma coisa por vez: o que pede atenção, quando há; senão só a hora da leitura (a contagem fica no rack)
             int bad = cards.Count(c => c.Verdict is HealthVerdict.Warning or HealthVerdict.Critical);
             int unknown = cards.Count(c => c.Verdict == HealthVerdict.Unknown);
             string read = $"Lido às {_readAt:HH:mm}.";
-            DiskHealthStatus.Text = cards.Count == 0 ? "Nenhum disco encontrado."
+            HeaderMotion.Say(DiskHealthStatus, null, cards.Count == 0 ? "Nenhum disco encontrado."
                 : bad > 0 ? $"{(bad == 1 ? "1 disco precisa" : $"{bad} discos precisam")} de atenção. {read}"
                 : unknown > 0 ? $"{(unknown == 1 ? "1 disco" : $"{unknown} discos")} sem dados de saúde. {read}"
-                : $"Lido às {_readAt:HH:mm}";
+                : $"Lido às {_readAt:HH:mm}");
             DiskPanel.Visibility = cards.Count == 0 ? Visibility.Hidden : Visibility.Visible;
         }
-        catch (Exception ex) { if (!_context.IsClosing) DiskHealthStatus.Text = "Não foi possível ler os discos: " + ex.Message; }
+        catch (Exception ex) { if (!_context.IsClosing) HeaderMotion.Say(DiskHealthStatus, null, "Não foi possível ler os discos: " + ex.Message); }
         finally
         {
             _refreshing = false;
+            if (first) Skeleton.Set(false, DiskPlate, LifeCard, TempCard, CheckCard);
             if (!_context.IsClosing) BtnDiskRefresh.IsEnabled = true;
         }
     }
 
+
+    private UniformGrid? _rackGrid;
+
+    private void RackGrid_Loaded(object sender, RoutedEventArgs e)
+    {
+        _rackGrid = (UniformGrid)sender;
+        ShowRack();
+    }
+
+    /// <summary>
+    /// A faixa de teclas só existe com mais de um disco (com um, a tecla repetiria a placa). As teclas dividem a largura em uma
+    /// fila; de seis discos em diante viram duas filas, para o nome não ficar cortado.
+    /// </summary>
+    private void ShowRack()
+    {
+        int n = _bays.Count;
+        DiskCards.Visibility = n > 1 ? Visibility.Visible : Visibility.Collapsed;
+        if (_rackGrid == null) return;
+        _rackGrid.Rows = n > 5 ? 2 : 1;
+        _rackGrid.Columns = n > 5 ? (n + 1) / 2 : Math.Max(1, n);
+    }
+
+    /// <summary>
+    /// Só para as capturas (CoreBi.Tests --shots "PageDisks:3"): repete o primeiro disco para ver a faixa de teclas num PC com
+    /// um disco só. Não é chamado pelo app; a próxima leitura volta aos discos reais.
+    /// </summary>
+    internal void PreviewRack(int count)
+    {
+        if (_bays.Count == 0 || count < 1) return;
+        var first = _bays[0].Card;
+        _bays = Enumerable.Range(0, count).Select(_ => new DiskBay(first)).ToList();
+        DiskCards.ItemsSource = _bays;
+        DiskCards.SelectedIndex = 0;
+        ShowRack();
+    }
 
     /// <summary>Guarda temperatura e taxas de cada disco do LibreHardwareMonitor; com a página aberta, atualiza as leituras.</summary>
     internal void Tick()
@@ -149,9 +208,7 @@ public partial class DisksView : UserControl
         TempLiveDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, live ? "Signal" : "Faint");
         TempTrace.Samples = trace?.Temps.ToList() ?? new List<float?>();
         double? peak = trace?.Peak ?? d.TemperatureMax;
-        if (peak is double pk) Readout(TempPeak, $"{pk:0}", "°C");
-        else { TempPeak.Inlines.Clear(); TempPeak.Text = "—"; }
-        TempPeak.SetResourceReference(TextBlock.ForegroundProperty, peak != null ? "Fg" : "Faint");
+        ShowTempValue(TempPeak, peak);
         DiskActivity.Text = trace?.Read == null && trace?.Write == null ? "Sem sensor de atividade"
             : $"Leitura {Rate(trace!.Read)}     Escrita {Rate(trace.Write)}";
     }
@@ -160,25 +217,30 @@ public partial class DisksView : UserControl
     /// Leitura grande com a unidade na mesma linha de base. Sem leitura, um travessão curto no tom apagado (o da Bahnschrift
     /// Light a 64 px viraria uma barra larga), na mesma altura de linha.
     /// </summary>
-    private void ShowTempNow(double? now)
+    private void ShowTempNow(double? now) => ShowTempValue(TempNow, now);
+
+    /// <summary>
+    /// Leitura da faixa de cima da temperatura: o número e "°C" colados (um espaço fino), a unidade em DIN na metade do
+    /// tamanho, e o conjunto inteiro centrado no seu terço, como "Ideal" ao lado. Sem leitura, o travessão em tom apagado.
+    /// </summary>
+    private static void ShowTempValue(TextBlock target, double? value) =>
+        ShowMeasure(target, value is double v ? $"{v:0}" : null, "°C");
+
+    /// <summary>
+    /// Leitura de mostrador das faixas de Temperatura e Vida útil: o número e a unidade (metade do tamanho, DIN, tom secundário)
+    /// num bloco só, centrado inteiro na coluna. Sem valor, um travessão apagado.
+    /// </summary>
+    private static void ShowMeasure(TextBlock target, string? value, string unit)
     {
-        TempNow.Inlines.Clear();
-        if (now is double v)
-        {
-            TempNow.FontSize = 64;
-            TempNow.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
-            TempNow.Inlines.Add(new Run($"{v:0}"));
-            var unit = new Run(" °C") { FontSize = 20 };
-            unit.SetResourceReference(TextElement.ForegroundProperty, "Muted");
-            unit.SetResourceReference(TextElement.FontFamilyProperty, "LabelFont");
-            TempNow.Inlines.Add(unit);
-        }
-        else
-        {
-            TempNow.FontSize = 28;
-            TempNow.SetResourceReference(TextBlock.ForegroundProperty, "Faint");
-            TempNow.Inlines.Add(new Run("—"));
-        }
+        target.Inlines.Clear();
+        target.SetResourceReference(TextBlock.ForegroundProperty, value != null ? "Fg" : "Faint");
+        if (value == null) { target.Inlines.Add(new Run("—")); return; }
+        target.Inlines.Add(new Run(value));
+        if (unit.Length == 0) return;
+        var run = new Run("\u2009" + unit) { FontSize = Math.Round(target.FontSize * 0.5) };
+        run.SetResourceReference(TextElement.ForegroundProperty, "Muted");
+        run.SetResourceReference(TextElement.FontFamilyProperty, "LabelFont");
+        target.Inlines.Add(run);
     }
 
 
@@ -192,33 +254,29 @@ public partial class DisksView : UserControl
         var card = bay.Card;
         var d = card.Disk;
         DiskModel.Text = card.Title;
-        DiskBadgeText.Text = bay.VerdictText;
         string tone = bay.State;
-        Ui.SetTone(DiskBadge, tone);
-        // Saudável é silencioso: o selo já diz "Saudável" (a ressalva das leituras disponíveis fica na dica dele). Atenção,
-        // crítico e "sem dados" ganham a linha com o motivo no pé da placa.
+        // Saudável é silencioso: sem selo na placa, só "Sem problemas" em tinta com o LED verde no cabeçalho da Integridade (a
+        // ressalva das leituras disponíveis fica na dica). Atenção, crítico e "sem dados" viram selo na cor ali e ganham a linha
+        // com o motivo sob a frase da placa.
         bool healthy = card.Verdict == HealthVerdict.Good;
-        DiskBadge.ToolTip = healthy ? "Nenhum problema encontrado nas leituras disponíveis." : null;
+        DiskBadgeText.Text = bay.VerdictText;
+        Ui.SetTone(DiskBadge, tone);
+        DiskBadge.Visibility = healthy ? Visibility.Collapsed : Visibility.Visible;
+        VerdictQuiet.Visibility = healthy ? Visibility.Visible : Visibility.Collapsed;
+        VerdictText.Text = "Sem problemas";
+        VerdictLed.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "Ok");
+        VerdictQuiet.ToolTip = "Nenhum problema encontrado nas leituras disponíveis.";
         DiskReasons.Text = healthy ? "" : card.Reasons;
-        DiskReasons.Visibility = DiskReasonIcon.Visibility = healthy ? Visibility.Collapsed : Visibility.Visible;
+        DiskReasonRow.Visibility = healthy || card.Reasons.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         DiskReasonIcon.Text = healthy ? "\uE73E" : card.Verdict == HealthVerdict.Unknown ? "\uE946" : "\uE7BA";
         DiskReasonIcon.SetResourceReference(TextBlock.ForegroundProperty, healthy ? "Muted" : tone.Length > 0 ? tone : "Faint");
         DiskReasons.SetResourceReference(TextBlock.ForegroundProperty, healthy ? "Muted" : "Fg");
 
         // Erro de leitura: só a placa com o motivo
         var instruments = d == null ? Visibility.Collapsed : Visibility.Visible;
-        foreach (var el in new UIElement[] { LifeCard, TempCard, CheckCard, OdoCard, DiskSpace, SpaceDivider }) el.Visibility = instruments;
-        if (d == null) { DiskSpecs.ItemsSource = null; return; }
-
-        var specs = new List<SpecItem>();
-        void Spec(string key, string value, string? tip = null) { if (value.Length > 0) specs.Add(new(key, value, tip)); }
-        Spec("", d.Kind);
-        Spec("", d.Bus);
-        Spec("", FmtSize(d.SizeBytes), SizeTip(d));
-        Spec("Unidades ", string.Join(" ", d.Letters));
-        Spec("Série ", d.Serial);
-        Spec("Firmware ", d.Firmware);
-        DiskSpecs.ItemsSource = specs;
+        foreach (var el in new UIElement[] { LifeCard, TempCard, SideGrid, DiskSpace, SpaceDivider }) el.Visibility = instruments;
+        if (d == null) { DiskSpecs.Inlines.Clear(); DiskSpecs.ToolTip = null; return; }
+        ShowSpecs(d);
 
         ShowSpace(d);
         ShowLife(d);
@@ -226,6 +284,47 @@ public partial class DisksView : UserControl
         ShowChecks(d);
         ShowOdometer(d);
         ShowLive();
+    }
+
+    /// <summary>
+    /// A especificação numa frase sob o modelo: "SSD · NVMe · 953,9 GB · Unidade C: · Firmware 3.2.F.83 · Série …", chave em
+    /// tom secundário e valor em tinta. A série, longa, vai por último
+    /// (cortada com reticências) e inteira na dica, com a do tamanho.
+    /// </summary>
+    /// <summary>Uma parte das frases da placa: ponto apagado entre as partes, chave em tom secundário e valor em tinta.</summary>
+    private static void PlatePart(TextBlock target, string key, string value, string? swatch = null)
+    {
+        if (value.Length == 0) return;
+        if (target.Inlines.Count > 0)
+        {
+            var sep = new Run("   ·   ");
+            sep.SetResourceReference(TextElement.ForegroundProperty, "Faint");
+            target.Inlines.Add(sep);
+        }
+        if (swatch != null)
+        {
+            // Legenda da barra: um gomo na forma dos da barra (o do usado num azul mais fundo, para não repetir a barra; o do livre, o apagado)
+            var chip = new Border { Width = 4, Height = 12, CornerRadius = new CornerRadius(1), Margin = new Thickness(0, 0, 8, -1) };
+            chip.SetResourceReference(Border.BackgroundProperty, swatch);
+            target.Inlines.Add(new InlineUIContainer(chip) { BaselineAlignment = BaselineAlignment.Center });
+        }
+        if (key.Length > 0) target.Inlines.Add(new Run(key + " "));
+        var v = new Run(value);
+        v.SetResourceReference(TextElement.ForegroundProperty, "Fg");
+        target.Inlines.Add(v);
+    }
+
+    private void ShowSpecs(DiskDetail d)
+    {
+        DiskSpecs.Inlines.Clear();
+        // Sem o tamanho: ele já está no Espaço, ao lado (a base do fabricante fica na dica)
+        PlatePart(DiskSpecs, "", d.Kind);
+        PlatePart(DiskSpecs, "", d.Bus);
+        PlatePart(DiskSpecs, d.Letters.Count > 1 ? "Unidades" : "Unidade", string.Join(" ", d.Letters));
+        PlatePart(DiskSpecs, "Firmware", d.Firmware);
+        PlatePart(DiskSpecs, "Série", d.Serial);
+        var tips = new[] { SizeTip(d), d.Serial.Length > 0 ? "Série: " + d.Serial : null }.Where(t => t != null);
+        DiskSpecs.ToolTip = tips.Any() ? string.Join("\n\n", tips) : null;
     }
 
     /// <summary>
@@ -251,49 +350,47 @@ public partial class DisksView : UserControl
 
         long total = mine.Sum(v => v.Total), free = mine.Sum(v => v.Free), used = total - free;
         bool known = total > 0;
-        void Gb(TextBlock target, long bytes, double? share = null)
+        string Gb(long bytes) => $"{bytes / 1073741824.0:N1} GB";
+        SpaceLine.Inlines.Clear();
+        SpaceShare.Inlines.Clear();
+        if (known)
         {
-            Readout(target, known ? $"{bytes / 1073741824.0:N1}" : "—", known ? "GB" : "");
-            if (share is not double pct || !known) return;
-            // "316,3 GB / 33 %": a barra separa os dois e a porcentagem usa a mesma fonte do valor
-            var slash = new Run("  /  ") { FontWeight = FontWeights.Light };
-            slash.SetResourceReference(TextElement.ForegroundProperty, "Faint");
-            target.Inlines.Add(slash);
-            target.Inlines.Add(new Run($"{pct:0}"));
-            var unit = new Run(" %") { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.4)) };
-            unit.SetResourceReference(TextElement.ForegroundProperty, "Muted");
-            unit.SetResourceReference(TextElement.FontFamilyProperty, "UiFont");
-            target.Inlines.Add(unit);
+            // Usado e livre como a legenda da barra (o gomo aceso e o apagado), e a capacidade fecha a frase
+            PlatePart(SpaceLine, "Usado", Gb(used), "StorageDeep");
+            PlatePart(SpaceLine, "Livre", Gb(free), "PlateTrack");
+            PlatePart(SpaceLine, "Capacidade", Gb(total));
+            var share = new Run($"{(double)used / total * 100:0} %");
+            share.SetResourceReference(TextElement.ForegroundProperty, "Fg");
+            SpaceShare.Inlines.Add(share);
+            SpaceShare.Inlines.Add(new Run(" em uso"));
         }
-        double freeShare = known ? (double)free / total * 100 : 0;
-        Gb(SpaceTotal, total);
-        Gb(SpaceUsed, used, 100 - freeShare);
-        Gb(SpaceFree, free, freeShare);
+        else SpaceLine.Inlines.Add(new Run("Sem unidade com letra neste disco"));
 
-        DiskVolumes.ItemsSource = mine.Count > 1
+        Ui.SetItems(DiskVolumes, mine.Count > 1
             ? mine.Select(v => new VolumeRow(v.Letter, string.IsNullOrWhiteSpace(v.Label) ? v.FileSystem : v.Label,
                 $"{DriveCard.Fmt(v.Free)} livres de {DriveCard.Fmt(v.Total)}")).ToList()
-            : null;
+            : null);
     }
 
     private void ShowLife(DiskDetail d)
     {
         LifeDial.Value = d.Wear is double w ? Math.Clamp(100 - w, 0, 100) : double.NaN;
         LifeDial.Caption = d.Wear != null ? "restante" : "não informada";
-        Readout(LifeWear, d.Wear is double wear ? $"{wear:0}" : "—", d.Wear != null ? "%" : "");
-        Readout(LifeSpare, d.AvailableSpare is double sp ? $"{sp:0}" : "—", d.AvailableSpare != null ? "%" : "");
+        ShowMeasure(LifeWear, d.Wear is double wear ? $"{wear:0}" : null, "%");
+        ShowMeasure(LifeSpare, d.AvailableSpare is double sp ? $"{sp:0}" : null, "%");
 
         // Resistência: quanto o SSD aguenta gravar até 100 % de desgaste, no ritmo medido até aqui (estimativa linear).
         if (d.Wear is double ww && ww >= 1 && d.WrittenGb is double gb)
         {
             var (value, unit) = SplitData(gb * 100 / ww, decimals: false);
-            Readout(LifeEndurance, "≈ " + value, unit);
-            LifeEnduranceBox.ToolTip = $"Estimativa linear: {SplitData(gb).Value} {SplitData(gb).Unit} gravados para {ww:0} % de desgaste. " +
+            // Sem o "≈" no mostrador (não cabe no terço a 34 px): a dica diz que é estimativa
+            ShowMeasure(LifeEndurance, value, unit);
+            LifeEnduranceBox.ToolTip = $"Estimativa linear (aproximada): {SplitData(gb).Value} {SplitData(gb).Unit} gravados para {ww:0} % de desgaste. " +
                                        "O fabricante informa a resistência real (TBW) na garantia.";
         }
         else
         {
-            Readout(LifeEndurance, "—", "");
+            ShowMeasure(LifeEndurance, null, "");
             LifeEnduranceBox.ToolTip = null;
         }
     }
@@ -313,12 +410,13 @@ public partial class DisksView : UserControl
         // Na faixa ideal fica em tinta: a cor só aparece quando a temperatura pede atenção
         (string text, string key) = t switch
         {
-            null => ("Sem leitura", "Faint"),
+            null => ("—", "Faint"),
             double v when v >= d.TempCritAt => ("Crítica", "Danger"),
             double v when v >= d.TempWarnAt => ("Alta", "Warn"),
-            _ => ("Na faixa ideal", "Fg"),
+            _ => ("Ideal", "Fg"),
         };
         TempState.Text = text;
+        TempState.ToolTip = t == null ? "Sem leitura de temperatura" : $"Ideal abaixo de {d.TempWarnAt:0} °C, alta a partir de {d.TempWarnAt:0} °C, crítica a partir de {d.TempCritAt:0} °C.";
         TempState.SetResourceReference(TextBlock.ForegroundProperty, key);
     }
 
@@ -376,7 +474,7 @@ public partial class DisksView : UserControl
             rows.Add(Count("Erros de escrita", d.WriteErrors));
             rows.Add(Count("Erros não corrigidos", uncorrected));
         }
-        DiskChecks.ItemsSource = GroupUnknown(rows);
+        Ui.SetItems(DiskChecks, GroupUnknown(rows));
     }
 
     /// <summary>
@@ -401,8 +499,9 @@ public partial class DisksView : UserControl
         var cells = new List<Border>();
         void Cell(Border cell, TextBlock target, string? value, string unit)
         {
+            cell.Visibility = value == null ? Visibility.Collapsed : Visibility.Visible;
             if (value == null) return;
-            Readout(target, value, unit, balanced: true);
+            Readout(target, value, unit);
             cells.Add(cell);
         }
         Cell(OdoCell0, OdoHours, d.PowerOnHours is long h ? $"{h:N0}" : null, "h");
@@ -427,62 +526,42 @@ public partial class DisksView : UserControl
 
     private List<Border> _odoCells = new();
 
-    /// <summary>Larga: quatro leituras empilhadas na coluna à direita. Estreita: faixa 2 × 2 abaixo da temperatura.</summary>
+    /// <summary>"Uso desde a fábrica" só existe quando o disco informa ao menos um valor (cada bloco ausente já foi recolhido).</summary>
     private void LayoutOdometer()
     {
+        for (int i = 0; i < _odoCells.Count; i++) _odoCells[i].BorderThickness = new Thickness(0, i == 0 ? 0 : 1, 0, 0);
         OdoCard.Visibility = _odoCells.Count == 0 || DiskCards.SelectedItem is not DiskBay { Disk: not null } ? Visibility.Collapsed : Visibility.Visible;
-        // Sem odômetro, a coluna dele some: vida útil e temperatura vão até a borda direita da placa, como o Espaço
+        // Larga: o odômetro em cima e a integridade embaixo dividem a altura da coluna ao meio (as linhas de cada um se espalham
+        // na sua metade); sem odômetro, a integridade ocupa a coluna toda. Estreita: lado a lado, na mesma linha
         bool odo = OdoCard.Visibility == Visibility.Visible;
-        OdoGap.Width = new GridLength(_wide && odo ? 16 : 0);
-        OdoColumn.Width = new GridLength(_wide && odo ? 170 : 0);
-        OdoGrid.Children.Clear();
-        int columns = _wide ? 1 : Math.Max(1, Math.Min(_odoCells.Count, 2));
-        OdoGrid.Columns = columns;
-        OdoCard.Padding = _wide ? new Thickness(0) : new Thickness(0, 20, 0, 20);
-        for (int i = 0; i < _odoCells.Count; i++)
-        {
-            var cell = _odoCells[i];
-            cell.VerticalAlignment = VerticalAlignment.Stretch;
-            if (_wide)
-            {
-                cell.BorderThickness = new Thickness(0, i == 0 ? 0 : 1, 0, 0);
-                cell.Padding = new Thickness(12, 0, 12, 0);
-                cell.Margin = new Thickness(0);
-                ((StackPanel)cell.Child).VerticalAlignment = VerticalAlignment.Center;
-            }
-            else
-            {
-                cell.BorderThickness = new Thickness(i % columns == 0 ? 0 : 1, 0, 0, 0);
-                cell.Padding = new Thickness(24, 0, 24, 0);
-                cell.Margin = new Thickness(0, i >= columns ? 16 : 0, 0, 0);
-                ((StackPanel)cell.Child).VerticalAlignment = VerticalAlignment.Top;
-            }
-            // leituras centralizadas: a mesma folga à esquerda e à direita
-            var stack = (StackPanel)cell.Child;
-            stack.HorizontalAlignment = HorizontalAlignment.Center;
-            foreach (TextBlock t in stack.Children) { t.HorizontalAlignment = HorizontalAlignment.Center; t.TextAlignment = TextAlignment.Center; }
-            OdoGrid.Children.Add(cell);
-        }
+        SideInnerGapRow.Height = new GridLength(_wide && odo ? 16 : 0);
+        SideTopRow.Height = !_wide || odo ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
     }
 
 
-    /// <summary>Larga: odômetro ao lado da temperatura. Estreita: odômetro desce para uma faixa 2 × 2.</summary>
+    /// <summary>
+    /// Larga: a coluna da saúde à direita da temperatura, com o uso desde a fábrica sobre a integridade. Estreita: a coluna desce
+    /// para uma faixa na largura toda, com os dois cartões lado a lado, e a página rola.
+    /// </summary>
     private void DiskBody_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (!e.WidthChanged) return;
         bool wide = e.NewSize.Width >= 1320;
         if (wide == _wide && e.PreviousSize.Width > 0) return;
         _wide = wide;
-        RackColumn.Width = new GridLength(wide ? 300 : 260);
-        LifeColumn.Width = new GridLength(wide ? 370 : 330);
-        SpaceColumn.Width = new GridLength(wide ? 520 : 420);
-        // Larga: odômetro ao lado da temperatura e integridade na faixa de baixo. Estreita: odômetro desce em faixa 2 × 2 e a integridade fica por último.
-        Grid.SetColumnSpan(TempCard, wide ? 1 : 3);
-        Grid.SetRow(OdoCard, wide ? 2 : 4);
-        Grid.SetColumn(OdoCard, wide ? 4 : 0);
-        Grid.SetColumnSpan(OdoCard, wide ? 1 : 5);
-        Grid.SetRow(CheckCard, wide ? 4 : 6);
-        CheckGapRow.Height = new GridLength(wide ? 0 : 16);
+        LifeColumn.Width = new GridLength(wide ? 400 : 340);
+        SpaceColumn.Width = new GridLength(wide ? 600 : 420);
+        SideColumn.Width = new GridLength(wide ? 400 : 0);
+        SideGap.Width = new GridLength(wide ? 16 : 0);
+        SideGapRow.Height = new GridLength(wide ? 0 : 16);
+        Grid.SetRow(SideGrid, wide ? 2 : 4);
+        Grid.SetColumn(SideGrid, wide ? 4 : 0);
+        Grid.SetColumnSpan(SideGrid, wide ? 1 : 5);
+        // Larga: odômetro em cima e integridade embaixo; estreita: lado a lado, odômetro à esquerda
+        Grid.SetRow(CheckCard, wide ? 2 : 0);
+        Grid.SetColumn(CheckCard, wide ? 0 : 2);
+        SideInnerGap.Width = new GridLength(wide ? 0 : 16);
+        SideInnerColumn.Width = wide ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         LayoutOdometer();
         LifeDial.MinHeight = wide ? 210 : 190;
     }

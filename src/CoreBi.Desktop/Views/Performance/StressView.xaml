@@ -21,8 +21,8 @@
         <Style x:Key="ComponentColumn" TargetType="Border">
             <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
             <Setter Property="BorderThickness" Value="1,0,0,0" />
-            <!-- Recuo do painel; embaixo 10, que com os 10 da última leitura dão os 20 -->
-            <Setter Property="Padding" Value="24,20,24,10" />
+            <!-- Recuo do painel; embaixo 14, que com os 10 da última leitura dão os 24 -->
+            <Setter Property="Padding" Value="24,24,24,14" />
         </Style>
         <!-- Nome do componente no alto da coluna: só com duas ou mais colunas (com uma, a tecla marcada já diz qual é) -->
         <Style x:Key="ComponentHead" TargetType="StackPanel">
@@ -79,13 +79,6 @@
             <Setter Property="LineHeight" Value="17" />
             <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
         </Style>
-        <!--
-            Campo do corte: o texto do campo ficava 3 px acima do rótulo e do °C (medido nas capturas; o preenchimento padrão do
-            campo tem 3 embaixo). Com os 3 em cima, o "90" desce 3 e as três bases coincidem.
-        -->
-        <Style x:Key="LimitBox" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-            <Setter Property="Padding" Value="10,3,10,0" />
-        </Style>
         <Style x:Key="ConfigLabel" TargetType="TextBlock" BasedOn="{StaticResource Label}">
             <Setter Property="Margin" Value="0,16,0,8" />
         </Style>
@@ -109,18 +102,18 @@
                     <RowDefinition Height="16" />
                     <RowDefinition Height="*" MinHeight="620" />
                 </Grid.RowDefinitions>
-                <!-- Sem subtítulo: 9 embaixo (e não 14), para o primeiro painel ficar a 20 do pé do título, o mesmo respiro da busca ao título -->
-                <Grid Style="{StaticResource PageHeader}" Margin="0,0,0,9">
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Teste de carga" Style="{StaticResource PageTitle}" />
-                </Grid>
+                    <TextBlock Text="Põe as peças no limite para conferir estabilidade e temperatura." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                </local:PageHeaderPanel>
 
                 <!-- O que carregar: uma tecla por componente, várias ao mesmo tempo -->
-                <UniformGrid Grid.Row="1" Rows="1" Margin="-6">
-                    <CheckBox x:Name="ChkCpu" Style="{StaticResource TestToggle}" Margin="6" Content="Processador" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Todos os núcleos" IsChecked="True"
+                <UniformGrid Grid.Row="1" Rows="1" Margin="-8">
+                    <CheckBox x:Name="ChkCpu" Style="{StaticResource TestToggle}" Margin="8" Content="Processador" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Todos os núcleos" IsChecked="True"
                               Checked="ChkCpu_Click" Unchecked="ChkCpu_Click" />
-                    <CheckBox x:Name="ChkRam" Style="{StaticResource TestToggle}" Margin="6" Content="Memória RAM" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="Procura erros de memória"
+                    <CheckBox x:Name="ChkRam" Style="{StaticResource TestToggle}" Margin="8" Content="Memória RAM" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="Procura erros de memória"
                               Checked="ChkRam_Click" Unchecked="ChkRam_Click" />
-                    <CheckBox x:Name="ChkGpu" Style="{StaticResource TestToggle}" Margin="6" Content="Placa de vídeo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Abre uma janela 3D"
+                    <CheckBox x:Name="ChkGpu" Style="{StaticResource TestToggle}" Margin="8" Content="Placa de vídeo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Abre uma janela 3D"
                               Checked="ChkGpu_Click" Unchecked="ChkGpu_Click" />
                 </UniformGrid>
 
@@ -141,7 +134,7 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
                             <!-- Placa: o tempo decorrido de quanto à esquerda; à direita, na linha do rótulo, o estado (LED no sinal rodando, vermelho no corte) e o detalhe -->
-                            <Grid Margin="{StaticResource PanelPadding}">
+                            <Grid Margin="24,21,24,24">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -284,7 +277,7 @@
                             <RowDefinition Height="16" />
                             <RowDefinition Height="*" MinHeight="140" />
                         </Grid.RowDefinitions>
-                        <Border Style="{StaticResource CardBorder}">
+                        <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
                             <StackPanel>
                                 <StackPanel x:Name="StressDurationSection" Style="{StaticResource TestSection}">
                                     <TextBlock Text="Duração" Style="{StaticResource Label}" />
@@ -303,18 +296,20 @@
                                     <Grid x:Name="CpuLimitRow">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="104" />
+                                            <ColumnDefinition Width="156" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Processador" VerticalAlignment="Center" />
-                                        <TextBox x:Name="TempLimit" Grid.Column="1" Text="90" local:Ui.Suffix="°C" Style="{StaticResource LimitBox}" />
+                                        <TextBox x:Name="TempLimit" Grid.Column="1" Text="90" local:Ui.Suffix="°C" Style="{StaticResource NumberField}"
+                                                 local:NumberField.Minimum="40" local:NumberField.Maximum="110" ToolTip="De 40 a 110 °C" />
                                     </Grid>
                                     <Grid x:Name="GpuLimitRow" Margin="0,8,0,0" Visibility="Collapsed">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="104" />
+                                            <ColumnDefinition Width="156" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Text="Placa de vídeo" VerticalAlignment="Center" />
-                                        <TextBox x:Name="GpuTempLimit" Grid.Column="1" Text="85" local:Ui.Suffix="°C" Style="{StaticResource LimitBox}" />
+                                        <TextBox x:Name="GpuTempLimit" Grid.Column="1" Text="85" local:Ui.Suffix="°C" Style="{StaticResource NumberField}"
+                                                 local:NumberField.Minimum="40" local:NumberField.Maximum="100" ToolTip="De 40 a 100 °C" />
                                     </Grid>
                                 </StackPanel>
                                 <StackPanel x:Name="RamSection" Style="{StaticResource TestSection}" Visibility="Collapsed">
@@ -361,9 +356,10 @@
                         </Border>
                         <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=StressLog}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Registro" Style="{StaticResource SectionTitle}" Margin="0,0,16,16" />
+                                <!-- No meio da linha de 34 px dos cabeçalhos de cartão, como o Histórico do Benchmark -->
+                                <TextBlock DockPanel.Dock="Top" Text="Registro" Style="{StaticResource SectionTitle}" Margin="0,7,16,17" />
                                 <TextBlock DockPanel.Dock="Top" Text="Nenhum teste nesta sessão." Style="{StaticResource LogEmpty}" />
-                                <ListBox x:Name="StressLog" FontFamily="{StaticResource Mono}" FontSize="11.5" Foreground="{DynamicResource Faint}" ItemContainerStyle="{StaticResource PlainItem}"
+                                <ListBox x:Name="StressLog" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}" ItemContainerStyle="{StaticResource PlainItem}"
                                          ScrollViewer.VerticalScrollBarVisibility="Auto" Focusable="False">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>

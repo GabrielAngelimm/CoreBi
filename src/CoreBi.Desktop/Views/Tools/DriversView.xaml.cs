@@ -14,7 +14,12 @@ namespace CoreBi.Desktop.Views;
 public partial class DriversView : UserControl
 {
     private FeatureContext _context = null!;
-    public DriversView() => InitializeComponent();
+    public DriversView()
+    {
+        InitializeComponent();
+        // Esqueleto já no primeiro quadro: ligado só depois da entrada, o painel vazio aparecia por um instante e piscava
+        Skeleton.Set(true, DrvGpuCard, DrvBoardCard, DrvTableCard);
+    }
     internal void Initialize(FeatureContext context) => _context = context;
     private bool RequireAdmin() => PermissionGuard.RequireAdmin(_context.Owner);
 
@@ -30,19 +35,17 @@ public partial class DriversView : UserControl
     private ICollectionView? _view;
     private string? _group;      // classe escolhida no filtro (null = todas)
     private string _query = "";
-    private bool? _narrowHeader;
     private bool? _narrowBody;
 
     internal void InitDriver()
     {
         if (_drvInit) return;
         _drvInit = true;
+        // Primeira leitura: esqueleto nos três painéis, cada um sai quando a parte dele chega
+        Skeleton.Set(true, DrvGpuCard, DrvBoardCard, DrvTableCard);
         BtnDrvScan_Click(this, new RoutedEventArgs());
     }
 
-
-    private void DrvHeader_SizeChanged(object sender, SizeChangedEventArgs e)
-        => _narrowHeader = ToolPage.PlaceConsole(DrvHeader, DrvConsole, _narrowHeader);
 
     /// <summary>Abaixo de 1180 px a tabela desce para baixo da coluna da esquerda (com altura própria) e a página rola.</summary>
     private void DrvBody_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -65,7 +68,6 @@ public partial class DriversView : UserControl
 
     private void DrvListScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
         => ToolPage.AlignHead(DrvListScroll, DrvHead, HeadMargin);
-
 
     internal void DrvSet(string text, double? frac = null, string detail = "")
     {
@@ -92,7 +94,6 @@ public partial class DriversView : UserControl
         BtnDrvWuInstall.IsEnabled = !busy && _drvWu.Count > 0;
     }
 
-
     internal async void BtnDrvScan_Click(object sender, RoutedEventArgs e)
     {
         if (_drvBusy) return;
@@ -100,30 +101,30 @@ public partial class DriversView : UserControl
         _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
         try
         {
-            DrvSet("Lendo drivers instalados…", 0);
+            // Uma mensagem só durante a leitura inteira, sem medidor (é rápida): o estado passa direto a "Lido às"
+            DrvSet("Lendo drivers instalados…");
             var inv = await Task.Run(DriverInventory.ListInstalled);
             ShowInventory(inv);
-            DrvSet("Lendo placa de vídeo e placa-mãe…", 0.2);
+            Skeleton.SetActive(DrvTableCard, false);
             _drvGpus = await Task.Run(DriverInventory.ReadGpus);
             _drvBoardInfo = await Task.Run(DriverInventory.ReadBoard);
             ShowBoard();
-            DrvSet("Lendo placa de vídeo e placa-mãe…", 0.4);
+            Skeleton.SetActive(DrvBoardCard, false);
 
             bool studio = DrvStudio.IsChecked == true;
-            int i = 0;
-            foreach (var g in _drvGpus)
-            {
-                double at = 0.4 + 0.6 * i / Math.Max(1, _drvGpus.Count);
-                if (g.Vendor is "NVIDIA" or "AMD") DrvSet($"Consultando a {g.Vendor}…", at, g.GpuName);
-                await GpuDriverLookup.CheckAsync(g, studio, _drvCts.Token);
-                i++;
-            }
+            foreach (var g in _drvGpus) await GpuDriverLookup.CheckAsync(g, studio, _drvCts.Token);
             if (_context.IsClosing) return;
             ShowGpus();
-            DrvSet($"Lido às {DateTime.Now:HH:mm}", 1);
+            DrvSet($"Lido às {DateTime.Now:HH:mm}");
         }
         catch (Exception ex) { DrvFail("Não foi possível ler os drivers", ex.Message); }
-        finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
+        finally
+        {
+            _drvCts?.Dispose();
+            _drvCts = null;
+            if (!_context.IsClosing) DrvBusy(false);
+            Skeleton.Set(false, DrvGpuCard, DrvBoardCard, DrvTableCard);
+        }
     }
 
     private void DrvStudio_Click(object sender, RoutedEventArgs e)
@@ -191,7 +192,6 @@ public partial class DriversView : UserControl
         DrvBoardNote.Visibility = known || b.Model.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
-
     private void ShowInventory(List<DriverRow> inventory)
     {
         _lines = inventory.Select(DriverLine.From).OrderBy(l => l.Order).ThenBy(l => l.Device, StringComparer.CurrentCultureIgnoreCase).ToList();
@@ -243,7 +243,6 @@ public partial class DriversView : UserControl
         DrvEmpty.Visibility = shown == 0 && _view != null ? Visibility.Visible : Visibility.Collapsed;
     }
 
-
     internal void BtnDrvGpuPage_Click(object sender, RoutedEventArgs e)
     {
         var g = _drvGpus.FirstOrDefault(x => x.OfficialPage.Length > 0 && x.Vendor != "Intel") ?? _drvGpus.FirstOrDefault(x => x.OfficialPage.Length > 0);
@@ -273,7 +272,7 @@ public partial class DriversView : UserControl
         try
         {
             string r = await DriverInstaller.DownloadAndLaunchAsync(g, (t, f) => Dispatcher.BeginInvoke(new Action(() =>
-                DrvSet(t, f, f > 0 && f < 1 ? (f * 100).ToString("0", PtBr) + " %" : ""))), _drvCts.Token);
+                DrvSet(t, f))), _drvCts.Token);
             DrvSet(r, 1);
         }
         catch (Exception ex) { DrvFail("Não foi possível instalar o driver", ex.Message); }
@@ -296,14 +295,15 @@ public partial class DriversView : UserControl
     {
         if (_drvBusy) return;
         DrvBusy(true);
-        DrvSet("Procurando no Windows Update…", 0, "pode levar 1 minuto");
+        // Sem etapas para contar, o medidor não abre: só o estado, que passa de "Procurando…" ao resultado
+        DrvSet("Procurando no Windows Update…", null, "pode levar 1 minuto");
         try
         {
             _drvWu = await WindowsUpdateService.SearchAsync();
             DrvWuList.Text = "Nenhum driver novo.";
             ShowWu();
             DrvSet(_drvWu.Count == 0 ? "Nenhum driver novo no Windows Update"
-                 : _drvWu.Count == 1 ? "1 driver no Windows Update" : $"{_drvWu.Count} drivers no Windows Update", 1);
+                 : _drvWu.Count == 1 ? "1 driver no Windows Update" : $"{_drvWu.Count} drivers no Windows Update");
         }
         catch (Exception ex)
         {
@@ -327,11 +327,11 @@ public partial class DriversView : UserControl
         if (MessageBox.Show(_context.Owner, $"Instalar {what} do Windows Update? Pode ser preciso reiniciar.", "Drivers",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         DrvBusy(true);
-        DrvSet("Baixando drivers do Windows Update…", 0);
+        DrvSet("Baixando drivers do Windows Update…");
         try
         {
             string r = await WindowsUpdateService.InstallAsync(_drvWu, t => Dispatcher.BeginInvoke(new Action(() => DrvSet(t))));
-            DrvSet(r, 1);
+            DrvSet(r);
             _drvWu = new();
             ShowWu();
             DrvWuList.Text = r;
@@ -349,11 +349,11 @@ public partial class DriversView : UserControl
         if (_drvBusy) return;
         DrvBusy(true);
         _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
-        DrvSet("Exportando drivers…", 0);
+        DrvSet("Fazendo backup dos drivers…");
         try
         {
-            string r = await DriverBackup.ExportAsync(t => Dispatcher.BeginInvoke(new Action(() => DrvSet(t))), _drvCts.Token);
-            DrvSet(r, 1);
+            string r = await DriverBackup.ExportAsync(_ => { }, _drvCts.Token);
+            DrvSet(r);
         }
         catch (Exception ex) { DrvFail("Não foi possível fazer o backup", ex.Message); }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }

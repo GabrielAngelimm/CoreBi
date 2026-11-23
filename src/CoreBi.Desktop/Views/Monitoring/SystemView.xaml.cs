@@ -27,13 +27,17 @@ public partial class SystemView : UserControl
     private Dictionary<string, Sheet> _sheets = new();
     private Sheet? _sheet;
     private string _selected = SystemSheets.Cpu;
+    private string _signature = "";
     private UniformGrid? _indexGrid;
     private ColumnsPanel? _columns;
 
     public SystemView()
     {
         InitializeComponent();
-        IsVisibleChanged += (_, _) => { if (IsVisible && _inventory != null) Rebuild(); };
+        // Ao abrir, as fichas são refeitas (espaço livre, memória em uso) depois da entrada da página, sem engasgar o movimento;
+        // antes da primeira leitura do sistema, o esqueleto ocupa o painel
+        Skeleton.SetActive(SheetCard, true);
+        IsVisibleChanged += (_, _) => { if (IsVisible && _inventory != null) PageMotion.AfterEntrance(this, Rebuild); };
     }
 
     internal void Initialize(FeatureContext context, Func<IReadOnlyList<HealthCard>?> networkResult)
@@ -63,7 +67,11 @@ public partial class SystemView : UserControl
             _context.Drives = _drives;
             Rebuild();
         }
-        catch (Exception ex) { SystemSub.Text = $"Não foi possível ler as informações do sistema: {ex.Message}"; }
+        catch (Exception ex)
+        {
+            HeaderMotion.Say(SystemSub, null, $"Não foi possível ler as informações do sistema: {ex.Message}");
+            Skeleton.SetActive(SheetCard, false);
+        }
     }
 
     /// <summary>Discos e unidades mudaram (pendrive, HD externo): relê só o armazenamento.</summary>
@@ -102,11 +110,21 @@ public partial class SystemView : UserControl
         if (_inventory == null) return;
         var now = DateTime.Now;
         var (index, sheets) = SystemSheets.Build(_inventory, _context.Gpus, _drives, now, MemoryInfo.ReadSnapshot());
-        _sheets = sheets;
         Built = (index, sheets);
+        // Ao voltar à página, a ficha refeita quase sempre é igual à da tela: trocar as abas e os grupos por cópias idênticas
+        // fazia tudo piscar logo depois da entrada. Só troca o que mudou de verdade (espaço livre, memória em uso, uma placa nova)
+        string signature = System.Text.Json.JsonSerializer.Serialize(SystemReport.From(index, sheets));
+        if (signature == _signature && SysIndex.ItemsSource != null)
+        {
+            Skeleton.SetActive(SheetCard, false);
+            return;
+        }
+        _signature = signature;
+        _sheets = sheets;
         SysIndex.ItemsSource = index;
         SysIndex.SelectedItem = index.FirstOrDefault(i => i.Key == _selected) ?? index.FirstOrDefault();
-        SystemSub.Text = $"{Environment.MachineName} · lido às {now:HH:mm}";
+        HeaderMotion.Say(SystemSub, null, $"{Environment.MachineName} · lido às {now:HH:mm}");
+        Skeleton.SetActive(SheetCard, false);
     }
 
     private void SysIndex_Changed(object sender, SelectionChangedEventArgs e)
@@ -223,20 +241,29 @@ public partial class SystemView : UserControl
 
     internal async Task ExportReportAsync()
     {
+        if ((_context.Owner as MainWindow)?.ReportLayer is not { } dialog) return;
+        var network = _networkResult();
+        var (sheetParts, diagParts) = ReportExportService.Parts(_context, Built, network != null);
+        var choice = await dialog.AskAsync(_context.Settings, sheetParts, diagParts);
+        if (choice == null) return;
+        _context.SaveSettings();
+
         BtnReport.IsEnabled = false;
         try
         {
-            string? path = await ReportExportService.ExportInteractiveAsync(
-                _context, Built, Nodes, _networkResult(), status => BtnReport.Content = status);
-            if (path != null) SystemSub.Text = $"Relatório salvo em {path}";
+            string path = await ReportExportService.ExportAsync(
+                _context, Built, Nodes, network, choice, status => HeaderMotion.Say(SystemSub, null, status));
+            // O estado conta o andamento ("Gerando PDF…") e termina no nome do arquivo; o caminho inteiro fica na dica
+            SystemSub.ToolTip = path;
+            HeaderMotion.Say(SystemSub, null, $"Relatório salvo: {System.IO.Path.GetFileName(path)}");
         }
         catch (Exception ex)
         {
+            HeaderMotion.Say(SystemSub, null, "O relatório não foi gerado");
             MessageBox.Show(_context.Owner, "Não foi possível gerar o relatório:\n" + ex.Message, "CoreBi", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {
-            BtnReport.Content = "Exportar relatório";
             BtnReport.IsEnabled = true;
         }
     }

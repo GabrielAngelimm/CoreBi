@@ -49,12 +49,10 @@
                     <ColumnDefinition Width="364" />
                 </Grid.ColumnDefinitions>
 
-                <Grid Grid.ColumnSpan="3" Style="{StaticResource PageHeader}">
-                    <StackPanel>
-                        <TextBlock Text="Visão geral" Style="{StaticResource PageTitle}" />
-                        <TextBlock x:Name="DashMachine" Text="Leituras ao vivo do processador, da placa de vídeo, da memória e do disco do sistema." Style="{StaticResource PageSubtitle}" />
-                    </StackPanel>
-                </Grid>
+                <local:PageHeaderPanel Grid.ColumnSpan="3" Style="{StaticResource PageHead}">
+                    <TextBlock Text="Visão geral" Style="{StaticResource PageTitle}" />
+                    <TextBlock x:Name="DashMachine" Text="Leituras ao vivo deste computador." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                </local:PageHeaderPanel>
 
                 <!-- Coluna da esquerda: o gráfico ocupa a sobra, os componentes ficam embaixo -->
                 <Grid Grid.Row="1">
@@ -63,19 +61,21 @@
                         <RowDefinition Height="16" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <!-- Instrumento principal: osciloscópio de dois canais -->
-                    <Border Style="{StaticResource CardBorder}" MinHeight="330">
+                    <!--
+                        Instrumento principal: osciloscópio de dois canais. Na abertura, até a primeira leitura dos sensores, o
+                        esqueleto fica abaixo do cabeçalho (título e filtros à vista): os dois mostradores, a legenda e a área do gráfico
+                    -->
+                    <Border x:Name="DashChartCard" Style="{StaticResource CardBorder}" MinHeight="330" local:Skeleton.Top="34"
+                            local:Skeleton.Layout="gap 18; row 50: n 104^34, - 96, n 104^34, - *; gap 4; row 18: dot 10, - 8, c 72, - 110, dot 10, - 8, c 86, - *; gap 26; rest: frame *">
                         <DockPanel>
-                            <Grid DockPanel.Dock="Top">
+                            <!-- Cabeçalho de 34 px, igual em todos os cartões: o título centrado na linha e, à direita, os filtros em pílula -->
+                            <Grid DockPanel.Dock="Top" Height="34">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock x:Name="DashChartLabel" Text="Temperatura" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock x:Name="DashChartDelta" Style="{StaticResource Caption}" Margin="0,4,0,0" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                <TextBlock x:Name="DashChartLabel" Text="Temperatura" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
                                     <Border Style="{StaticResource SegmentGroup}" Margin="0,0,8,0">
                                         <local:SlidingSelectionPanel x:Name="DashMetricPanel" Style="{StaticResource SegmentRail}">
                                             <RadioButton Style="{StaticResource Segment}" GroupName="DashMetric" Content="Temperatura" Tag="temp" IsChecked="True" Checked="DashOption_Checked" />
@@ -92,23 +92,34 @@
                                     </Border>
                                 </StackPanel>
                             </Grid>
-                            <!-- Leituras atuais por canal -->
-                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,16,0,8">
-                                <StackPanel Margin="0,0,40,0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Cpu}" Margin="0,0,8,0" />
-                                        <TextBlock Text="Processador" Style="{StaticResource StatLabel}" />
-                                    </StackPanel>
-                                    <TextBlock x:Name="DashChartValue" Text="—" Style="{StaticResource ReadoutHero}" Margin="0,4,0,0" />
+                            <!--
+                                Leituras atuais por canal: o número grande e, embaixo, a marca e o nome do canal (a legenda do gráfico).
+                                Sem leitura o mostrador fica no travessão, e a dica diz por quê.
+                            -->
+                            <!--
+                                Grade fixa: colunas de 200 e linha do número de 68, então trocar de métrica (°C, %, W) ou cair no
+                                travessão não move nada. Margens medidas na tinta: 28 px do título ao número e 28 da legenda ao gráfico.
+                            -->
+                            <Grid DockPanel.Dock="Top" HorizontalAlignment="Left" Margin="0,4,0,22">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200" />
+                                    <ColumnDefinition Width="200" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="68" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock x:Name="DashChartValue" Text="—" Style="{StaticResource ReadoutHero}" VerticalAlignment="Bottom" />
+                                <TextBlock x:Name="DashChartValue2" Grid.Column="1" Text="—" Style="{StaticResource ReadoutHero}" VerticalAlignment="Bottom" />
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="1,-2,0,0">
+                                    <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Cpu}" Margin="0,0,8,0" />
+                                    <TextBlock Text="Processador" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
-                                <StackPanel>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Gpu}" Margin="0,0,8,0" />
-                                        <TextBlock Text="Placa de vídeo" Style="{StaticResource StatLabel}" />
-                                    </StackPanel>
-                                    <TextBlock x:Name="DashChartValue2" Text="—" Style="{StaticResource ReadoutHero}" Foreground="{DynamicResource Muted}" Margin="0,4,0,0" />
+                                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="1,-2,0,0">
+                                    <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Gpu}" Margin="0,0,8,0" />
+                                    <TextBlock Text="Placa de vídeo" Style="{StaticResource StatLabel}" />
                                 </StackPanel>
-                            </StackPanel>
+                            </Grid>
                             <Canvas x:Name="DashChart" MinHeight="150" ClipToBounds="True" Background="Transparent" SizeChanged="DashChart_SizeChanged" MouseMove="DashChart_MouseMove" MouseLeave="DashChart_MouseLeave" />
                         </DockPanel>
                     </Border>
@@ -126,7 +137,8 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <ItemsControl x:Name="DashComponents" Focusable="False">
+                        <!-- Os dois cartões acendem juntos na cascata da entrada (PageMotion.Group) -->
+                        <ItemsControl x:Name="DashComponents" Focusable="False" local:PageMotion.Group="True">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <UniformGrid Columns="2" />
@@ -134,7 +146,10 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Style="{StaticResource CardBorder}" Margin="0,0,16,0">
+                                    <!-- Esqueleto até o nome e a primeira leitura: ícone, nome e modelo, atalho, leitura grande, medidor e as três grandezas -->
+                                    <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}" Margin="0,0,16,0"
+                                            local:Skeleton.Active="{Binding Loading}"
+                                            local:Skeleton.Layout="col 0 36; row 36: box 36^36; col 48 52%; gap 2; row 20: h *@0.55^15; gap 2; row 14: c *@0.8; col 0 100%; row 36: - *, dot 32&gt;; end; foot 20: n 54^13, - *, n 54^13, - *, n 54^13; footgap 4; foot 17: c 44, - *, c 44, - *, c 44; footgap 16; foot 6: box *^6; footgap 8; foot 46: n 118^30">
                                         <DockPanel>
                                             <Grid DockPanel.Dock="Top">
                                                 <Grid.ColumnDefinitions>
@@ -147,8 +162,7 @@
                                                     <TextBlock Text="{Binding Name}" Style="{StaticResource SectionTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
                                                     <TextBlock Text="{Binding Model}" Style="{StaticResource StatSub}" ToolTip="{Binding Model}" />
                                                 </StackPanel>
-                                                <!-- Seta centrada na altura das maiúsculas do nome: rente ao topo ela ficava 5,5 px abaixo (medido) -->
-                                                <Button Grid.Column="2" Style="{StaticResource IconButton}" Width="28" Height="28" FontSize="11" Content="&#xE76C;" Tag="{Binding Target}" Click="DashGo_Click" ToolTip="Abrir detalhes" VerticalAlignment="Top" Margin="0,-5,0,0" />
+                                                <Button Grid.Column="2" Style="{StaticResource CardLink}" Tag="{Binding Target}" Click="DashGo_Click" ToolTip="{Binding LinkTip}" />
                                             </Grid>
                                             <!-- Uso ao vivo: leitura grande, medidor segmentado e grandezas do componente -->
                                             <StackPanel Margin="0,16,0,0" VerticalAlignment="Bottom">
@@ -167,14 +181,15 @@
                                                 <ItemsControl ItemsSource="{Binding Stats}" Focusable="False">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
-                                                            <UniformGrid Rows="1" />
+                                                            <local:EdgeRowPanel />
                                                         </ItemsPanelTemplate>
                                                     </ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <StackPanel Margin="0,0,8,0">
-                                                                <TextBlock Text="{Binding Key}" Style="{StaticResource StatLabel}" />
-                                                                <TextBlock Text="{Binding Value}" Style="{StaticResource Num}" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" />
+                                                            <!-- De ponta a ponta (EdgeRowPanel): a primeira no recuo da esquerda, a última no da direita -->
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Key}" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                                                <TextBlock Text="{Binding Value}" Style="{StaticResource Num}" Margin="0,4,0,0" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                                             </StackPanel>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
@@ -186,7 +201,9 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <Border x:Name="DashMemoryCard" Grid.Column="1" Style="{StaticResource CardBorder}">
+                        <!-- Esqueleto na abertura até RAM, VRAM e disco estarem lidos: o aro, o título e as três linhas da legenda -->
+                        <Border x:Name="DashMemoryCard" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}"
+                                local:Skeleton.Layout="col 0 150; center 150: ring 150; col 174; row 24: h 50%^16; gap 8; share 3: dot 10, - 8, t *@0.7, - 12, n 40^14&gt;; end">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -214,7 +231,8 @@
                                                             <TextBlock Text="{Binding Detail}" Style="{StaticResource StatSub}" />
                                                         </StackPanel>
                                                         <TextBlock Grid.Column="2" Text="{Binding Value}" Style="{StaticResource ReadoutText}" FontSize="17" VerticalAlignment="Top" Margin="12,0,0,0" />
-                                                        <TextBlock Grid.Column="3" Text="&#xE76C;" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                                        <!-- Seta no meio da altura das maiúsculas da porcentagem (centrada na linha dupla ela ficava 10 px abaixo; medido na tinta) -->
+                                                        <TextBlock Grid.Column="3" Text="&#xE76C;" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Top" Margin="12,3,0,0" />
                                                     </Grid>
                                                 </Button>
                                             </DataTemplate>
@@ -238,70 +256,66 @@
 
                     <Border Style="{StaticResource CardBorder}">
                         <StackPanel>
-                            <Grid>
-                                <StackPanel>
-                                    <TextBlock Text="Desempenho" Style="{StaticResource SectionTitle}" />
-                                    <TextBlock Text="Render de CPU, multi-core" Style="{StaticResource Caption}" Margin="0,4,0,0" />
-                                </StackPanel>
-                                <!-- Ação centrada na altura das maiúsculas do título (com −4 ficava 2 px abaixo) -->
-                                <Button Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE768;" Content="Abrir benchmark" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-10,0" Click="DashBench_Click" />
+                            <Grid Height="34">
+                                <TextBlock Text="Benchmark" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                                <Button Style="{StaticResource CardLink}" ToolTip="Abrir Benchmark" Click="DashBench_Click" />
                             </Grid>
-                            <Grid Margin="0,12,0,0">
+                            <Grid Margin="0,8,0,0">
                                 <!-- A nota e o "pts" são Runs do mesmo TextBlock (montados no código): a mesma linha de base por construção -->
                                 <TextBlock x:Name="DashScore" Text="—" Style="{StaticResource ReadoutHero}" />
                                 <TextBlock x:Name="DashScoreDelta" Style="{StaticResource Caption}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,10" />
                             </Grid>
+                            <!-- O que a nota mede e quando, numa linha só (no lugar do subtítulo do cartão) -->
                             <TextBlock x:Name="DashScoreSub" Text="Nenhum teste ainda" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" />
                             <Border Style="{StaticResource Divider}" Margin="0,16,0,4" />
                             <ItemsControl x:Name="DashScores" ItemTemplate="{StaticResource DashScoreRow}" Focusable="False" />
                         </StackPanel>
                     </Border>
 
-                    <!-- O botão fantasma no pé já tem 6 px de respiro interno: o painel desconta isso embaixo -->
-                    <Border Grid.Row="2" Style="{StaticResource CardBorder}" Padding="24,20,24,14">
+                    <!--
+                        Saúde do PC: cada item com o ícone do assunto (termômetro para os sensores, placa para os erros), que fica
+                        âmbar quando pede atenção (o detalhe diz o quê). O atalho para os sensores
+                        é o mesmo círculo dos outros cartões. Esqueleto abaixo do título até o registro de eventos do Windows
+                        responder (lido fora da janela).
+                    -->
+                    <Border x:Name="DashHealthCard" Grid.Row="2" Style="{StaticResource CardBorder}" local:Skeleton.Top="34"
+                            local:Skeleton.Layout="gap 14; col 0 26; row 26: box 26; col 40; row 20: s *@0.45; gap 3; row 16: c *@0.9; end; gap 14; col 0 26; row 26: box 26; col 40; row 20: s *@0.42; gap 3; row 16: c *@0.85; end">
                         <StackPanel>
-                            <Grid Margin="0,0,0,6">
+                            <Grid Height="34">
                                 <TextBlock Text="Saúde do PC" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                                <Border x:Name="DashHealthBadge" Style="{StaticResource Badge}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Collapsed">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Ellipse Style="{StaticResource BadgeLed}" />
-                                        <TextBlock x:Name="DashHealthBadgeText" Style="{StaticResource BadgeText}" />
-                                    </StackPanel>
-                                </Border>
+                                <Button Style="{StaticResource CardLink}" ToolTip="Ver todos os sensores" Click="DashSensors_Click" />
                             </Grid>
                             <ItemsControl x:Name="DashHealth" Focusable="False">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="0,10,0,0">
+                                        <Grid Margin="0,14,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock x:Name="chk" Text="&#xE7BA;" FontFamily="{StaticResource Icons}" FontSize="12" Foreground="{DynamicResource Warn}" Width="22" Margin="0,3,10,0" VerticalAlignment="Top" />
+                                            <local:HwIcon x:Name="icon" Style="{StaticResource ChannelIcon}" Kind="{Binding Icon}" Width="26" Height="26" Margin="0,-2,14,0" VerticalAlignment="Top" />
                                             <StackPanel Grid.Column="1">
-                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource Caption}" Margin="0,3,0,0" />
                                             </StackPanel>
                                         </Grid>
                                         <DataTemplate.Triggers>
-                                            <DataTrigger Binding="{Binding Ok}" Value="True">
-                                                <Setter TargetName="chk" Property="Text" Value="&#xE73E;" />
-                                                <Setter TargetName="chk" Property="Foreground" Value="{DynamicResource Ok}" />
+                                            <DataTrigger Binding="{Binding Ok}" Value="False">
+                                                <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource Warn}" />
                                             </DataTrigger>
                                         </DataTemplate.Triggers>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                            <Button Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE9D9;" Content="Ver todos os sensores" HorizontalAlignment="Left" Margin="-10,12,0,0" Click="DashSensors_Click" />
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="24,20,24,12">
+                    <Border Grid.Row="4" Style="{StaticResource CardBorder}" Padding="24,16,24,12">
                         <DockPanel>
-                            <Grid DockPanel.Dock="Top" Margin="0,0,0,6">
+                            <Grid DockPanel.Dock="Top" Height="34" Margin="0,0,0,2">
                                 <TextBlock Text="Atividade recente" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
-                                <!-- Ação centrada na altura das maiúsculas do título: −8 em cima e −4 embaixo a sobem 2 px -->
-                                <Button x:Name="DashEventsMore" Style="{StaticResource GhostButton}" Content="Ver histórico" HorizontalAlignment="Right" Margin="0,-8,-10,-4" Visibility="Collapsed" Click="DashEventsMore_Click" />
+                                <!-- Ação centrada na altura das maiúsculas do título (a DIN assenta 1,5 px acima do centro da caixa) -->
+                                <Button x:Name="DashEventsMore" Style="{StaticResource GhostButton}" Content="Ver histórico" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-10,0" Visibility="Collapsed" Click="DashEventsMore_Click" />
                             </Grid>
                             <!-- O host não pede altura: a lista mostra só as linhas que cabem, sem esticar a página -->
                             <local:FitHost SizeChanged="DashEvents_SizeChanged">

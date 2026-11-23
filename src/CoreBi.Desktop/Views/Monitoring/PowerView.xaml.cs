@@ -19,18 +19,27 @@ public partial class PowerView : UserControl
     private const string ProcBaseTip = "Quanto da velocidade do processador o Windows pode usar: o mínimo vale mesmo em repouso (o trecho cheio da barra) e o máximo, com carga (até onde a barra vai).";
 
     public sealed record SettingItem(string Title, string Value, string? Tip, string BeforeText = "", bool Changed = false);
-    public sealed record PlanItem(Guid Id, string Name, bool IsActive, bool IsPending);
+
+    /// <summary>Plano na lista. Em uso e escolhido mudam no próprio item: a linha não é refeita, então a seleção desliza de uma para a outra.</summary>
+    public sealed class PlanItem : ObservableObject
+    {
+        private bool _isActive, _isPending;
+        public PlanItem(Guid id, string name, bool isActive, bool isPending) { Id = id; Name = name; _isActive = isActive; _isPending = isPending; }
+        public Guid Id { get; }
+        public string Name { get; }
+        public bool IsActive { get => _isActive; set => Set(ref _isActive, value); }
+        public bool IsPending { get => _isPending; set => Set(ref _isPending, value); }
+    }
 
     public sealed class RailItem : ObservableObject
     {
         private double _value = double.NaN, _min = double.NaN, _max = double.NaN;
         private string _valueText = "", _deviationText = "";
         private bool _off;
-        public RailItem(string title, double nominal, bool first) { Title = title; Nominal = nominal; First = first; }
+        public RailItem(string title, double nominal) { Title = title; Nominal = nominal; }
         public string Title { get; }
         public double Nominal { get; }
-        public bool First { get; }
-        public string Tip => $"Nominal {Nominal:0.0#} V. A especificação ATX aceita ±5 % ({Nominal * 0.95:0.00} a {Nominal * 1.05:0.00} V). A faixa embaixo é o que variou desde que o CoreBi abriu.";
+        public string Tip => $"Nominal {Nominal:0.0#} V. A especificação ATX aceita ±5 % ({Nominal * 0.95:0.00} a {Nominal * 1.05:0.00} V). O trecho mais claro da régua é a tolerância; a faixa embaixo é o que variou desde que o CoreBi abriu.";
         public double Value { get => _value; set => Set(ref _value, value); }
         public double Min { get => _min; set => Set(ref _min, value); }
         public double Max { get => _max; set => Set(ref _max, value); }
@@ -76,7 +85,14 @@ public partial class PowerView : UserControl
     internal PlanDetail? Plan { get; private set; }
     internal PowerHistory? History { get; private set; }
 
-    public PowerView() => InitializeComponent();
+    public PowerView()
+    {
+        InitializeComponent();
+        // Esqueleto já no primeiro quadro: ligado só depois da entrada, o painel vazio aparecia por um instante e piscava
+        Skeleton.Set(true, FeedCard, VoltCard, DaysCard);
+        // Consumo ao vivo e tensões: a leitura nova entra com a página, antes do primeiro quadro (o tique pula a entrada)
+        PageMotion.RevealLive(this, () => { if (_context != null) ShowLive(); });
+    }
 
     internal void Initialize(FeatureContext context)
     {
@@ -87,19 +103,25 @@ public partial class PowerView : UserControl
 
     private async void BtnEnergyRefresh_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
 
-    internal async Task RefreshAsync()
+    internal async Task RefreshAsync(bool entering = false)
     {
         if (_refreshing || _context == null || _context.IsClosing) return;
         _refreshing = true;
         _dirty = false;
-        BtnEnergyRefresh.IsEnabled = false;
-        EnergyStatus.Text = "Lendo fonte e plano de energia…";
+        bool first = Plan == null, quiet = entering && !first;
+        if (!quiet)
+        {
+            BtnEnergyRefresh.IsEnabled = false;
+            HeaderMotion.Say(EnergyStatus, null, "Lendo fonte e plano de energia…");
+        }
+        if (first) Skeleton.Set(true, FeedCard, VoltCard, DaysCard); // primeira leitura: fonte, plano e histórico ainda vazios
         try
         {
             var power = Task.Run(PowerStatus.Read);
             var plan = Task.Run(PowerPlans.Read);
             var history = Task.Run(() => PowerHistoryReader.Read());
             await Task.WhenAll(power, plan, history);
+            if (entering) await PageMotion.EntranceDone(this);
             if (_context.IsClosing) return;
             Snapshot = power.Result;
             Plan = plan.Result;
@@ -109,12 +131,13 @@ public partial class PowerView : UserControl
             ShowPlan(Plan);
             ShowHistory(History);
             ShowLive();
-            EnergyStatus.Text = $"Lido às {DateTime.Now:HH:mm}";
+            HeaderMotion.Say(EnergyStatus, null, $"Lido às {DateTime.Now:HH:mm}");
         }
-        catch (Exception ex) { if (!_context.IsClosing) EnergyStatus.Text = "Não foi possível ler a energia: " + ex.Message; }
+        catch (Exception ex) { if (!_context.IsClosing) HeaderMotion.Say(EnergyStatus, null, "Não foi possível ler a energia: " + ex.Message); }
         finally
         {
             _refreshing = false;
+            if (first) Skeleton.Set(false, FeedCard, VoltCard, DaysCard);
             if (!_context.IsClosing) BtnEnergyRefresh.IsEnabled = true;
         }
     }
@@ -169,7 +192,7 @@ public partial class PowerView : UserControl
             if (value == null) return;
             var box = new StackPanel();
             box.Children.Add(new TextBlock { Text = label, Style = (Style)FindResource("StatLabel") });
-            var t = new TextBlock { Style = (Style)FindResource("ReadoutText"), FontSize = 21, Margin = new Thickness(0, 4, 0, 0) };
+            var t = new TextBlock { Style = (Style)FindResource("ReadoutText"), FontSize = 24, Margin = new Thickness(0, 4, 0, 0) };
             Readout(t, value, unit);
             box.Children.Add(t);
             BatteryStats.Children.Add(box);
@@ -191,7 +214,13 @@ public partial class PowerView : UserControl
         if (_pendingPlan is { } pending && (p.Plans.All(x => x.Id != pending.Id) || p.Active?.Id == pending.Id)) _pendingPlan = null;
         var preview = _pendingPlan is { } pp ? PowerPlans.ReadValues(pp.Id) : null;
         // Planos de fábrica num Windows em inglês ("Balanced") aparecem com o nome em português; o personalizado fica como está
-        PlanList.ItemsSource = p.Plans.Select(x => new PlanItem(x.Id, PowerPlans.DisplayName(x.Id, x.Name), x.IsActive, x.Id == _pendingPlan?.Id)).ToList();
+        // Listas iguais às da tela ficam como estão: trocá-las refazia as linhas (e o plano marcado piscava) a cada volta à página
+        // Mesmos planos na mesma ordem: só o em uso e o escolhido mudam nas linhas que já estão na tela (a seleção acende e apaga
+        // em vez de a lista ser refeita)
+        var plans = p.Plans.Select(x => (x.Id, Name: PowerPlans.DisplayName(x.Id, x.Name), x.IsActive, Pending: x.Id == _pendingPlan?.Id)).ToList();
+        if (PlanList.ItemsSource is List<PlanItem> shownPlans && shownPlans.Select(x => (x.Id, x.Name)).SequenceEqual(plans.Select(x => (x.Id, x.Name))))
+            for (int i = 0; i < plans.Count; i++) { shownPlans[i].IsActive = plans[i].IsActive; shownPlans[i].IsPending = plans[i].Pending; }
+        else PlanList.ItemsSource = plans.Select(x => new PlanItem(x.Id, x.Name, x.IsActive, x.Pending)).ToList();
 
         bool battery = Snapshot?.Batteries.Any(b => !b.IsUps) == true;
         bool previewing = preview != null;
@@ -241,12 +270,13 @@ public partial class PowerView : UserControl
         // O turbo é "Agressivo" em todos os planos de fábrica, então só ganha uma linha quando alguém o mudou (aqui ou no plano escolhido)
         bool OffDefault(PlanValues v) => v.Settings.Any(x => x.Key == "boost" && (x.Ac != "Agressivo" || x.Dc != "Agressivo"));
         bool showBoost = OffDefault(now) || (preview != null && OffDefault(preview));
-        PlanSettings.ItemsSource = shown.Settings.Where(s => s.Key != "boost" || showBoost).Select(s =>
+        var settings = shown.Settings.Where(s => s.Key != "boost" || showBoost).Select(s =>
         {
             string before = now.Settings.FirstOrDefault(x => x.Key == s.Key) is { } cur ? Text(cur) : "";
             bool changed = previewing && before.Length > 0 && before != Text(s);
             return new SettingItem(s.Title, Text(s), SettingTip(s.Key), changed ? before + "  →" : "", changed);
         }).ToList();
+        if (PlanSettings.ItemsSource is not IEnumerable<SettingItem> shownSettings || !shownSettings.SequenceEqual(settings)) PlanSettings.ItemsSource = settings;
     }
 
     private static string? SettingTip(string key) => key switch
@@ -278,6 +308,7 @@ public partial class PowerView : UserControl
         if (_applyingPlan || _pendingPlan is not { } plan || Plan == null) return;
         _applyingPlan = true;
         PlanApply.IsEnabled = false;
+        HeaderMotion.Say(EnergyStatus, null, "Ativando o plano…");
         try
         {
             uint error = await Task.Run(() => PowerPlans.SetActive(plan.Id));
@@ -286,7 +317,7 @@ public partial class PowerView : UserControl
             Plan = await Task.Run(PowerPlans.Read);
             if (_context.IsClosing) return;
             ShowPlan(Plan);
-            EnergyStatus.Text = error == 0 ? $"Plano {PowerPlans.DisplayName(plan.Id, plan.Name)} ativado às {DateTime.Now:HH:mm}" : $"O Windows recusou a troca de plano (erro {error}).";
+            HeaderMotion.Say(EnergyStatus, null, error == 0 ? $"Plano {PowerPlans.DisplayName(plan.Id, plan.Name)} ativado às {DateTime.Now:HH:mm}" : $"O Windows recusou a troca de plano (erro {error}).");
         }
         finally { _applyingPlan = false; }
     }
@@ -373,7 +404,7 @@ public partial class PowerView : UserControl
         // Tomada ↔ bateria: a próxima visita (ou esta, se aberta) relê tudo
         var (ac, _, _) = PowerStatus.Line();
         if (Snapshot != null && ac != _lastAc) { _lastAc = ac; _dirty = true; }
-        if (!IsVisible) return;
+        if (!IsVisible || PageMotion.IsEntering(this)) return;
         if (_dirty && !_refreshing) _ = RefreshAsync();
         ShowLive();
     }
@@ -445,13 +476,16 @@ public partial class PowerView : UserControl
             foreach (var cell in new[] { SessionEnergy, SessionAverage, SessionPeak }) Readout(cell, "—", "");
             AverageCell.ToolTip = PeakCell.ToolTip = EnergyCell.ToolTip = null;
             SessionAge.Text = "";
+            SessionAge.Visibility = Visibility.Collapsed;
             return;
         }
         // Sessão: desde que o CoreBi abriu; tudo é a soma processador + placa de vídeo, como a leitura grande
         var length = DateTime.Now - start;
         string span = length.TotalMinutes < 1 ? "menos de 1 min" : Hours(length, minutesWord: true);
-        SessionAge.Text = "sessão de " + span;
-        SessionAge.ToolTip = $"Desde que o CoreBi abriu, às {start:HH:mm}. Consumo médio, maior consumo e energia gasta valem para este período; o gráfico mostra só os últimos 5 minutos.";
+        // No cabeçalho, ao lado de "Lido às": quando a página leu e há quanto tempo o consumo está sendo somado
+        SessionAge.Text = " · sessão de " + span;
+        SessionAge.Visibility = Visibility.Visible;
+        SessionAge.ToolTip = $"Sessão de consumo: desde que o CoreBi abriu, às {start:HH:mm}. Consumo médio, maior consumo e energia gasta valem para este período; o gráfico mostra só os últimos 5 minutos.";
         Readout(SessionAverage, $"{_sumW / _countW:0}", "W");
         AverageCell.ToolTip = $"Consumo médio de processador + placa de vídeo desde {start:HH:mm} ({span}).";
         Readout(SessionPeak, $"{_peakW:0}", "W");
@@ -471,7 +505,7 @@ public partial class PowerView : UserControl
         if (_rails.Count != map.Rails.Count || _rails.Zip(map.Rails).Any(p => p.First.Title != p.Second.Title))
         {
             _rails.Clear();
-            _rails.AddRange(map.Rails.Select((r, i) => new RailItem(r.Title, r.Nominal, i == 0)));
+            _rails.AddRange(map.Rails.Select(r => new RailItem(r.Title, r.Nominal)));
             RailRows.Items.Refresh();
         }
         for (int i = 0; i < _rails.Count; i++)
@@ -507,13 +541,15 @@ public partial class PowerView : UserControl
         VoltDivider.Visibility = rails && comps ? Visibility.Visible : Visibility.Collapsed;
         VoltComponentsTitle.Visibility = rails && comps ? Visibility.Visible : Visibility.Collapsed;
         VoltRows.Visibility = comps ? Visibility.Visible : Visibility.Collapsed;
-        VoltRows.Margin = new Thickness(0, rails ? 0 : 16, 0, 0);
+        // Cada grupo pega a sobra de altura na proporção das suas linhas: todas as linhas do cartão ficam da mesma altura
+        RailsRow.Height = new GridLength(Math.Max(_rails.Count, rails ? 1 : 0), rails ? GridUnitType.Star : GridUnitType.Pixel);
+        VoltsRow.Height = new GridLength(Math.Max(_volts.Count, 1), GridUnitType.Star);
         VoltEmpty.Visibility = rails || comps ? Visibility.Collapsed : Visibility.Visible;
         var problem = _monitor.IsOpen ? _monitor.DiagnoseCpuSensors() : SensorMonitor.CpuSensorProblem.None;
         VoltEmpty.Text = CpuSensorMessages.VoltagesEmpty(_monitor.IsOpen, problem);
         VoltEmpty.ToolTip = SensorMonitor.Explain(problem) is { Length: > 0 } why ? why : null;
         VoltAll.Visibility = map.Total > 0 ? Visibility.Visible : Visibility.Collapsed;
-        VoltAllText.Text = map.Total == 1 ? "A tensão em Sensores" : $"Todas as {map.Total} tensões em Sensores";
+        VoltAll.ToolTip = map.Total == 1 ? "A tensão em Sensores" : $"Todas as {map.Total} tensões em Sensores";
 
         bool shown = !_monitor.IsOpen || rails || comps;
         if (shown != _voltsShown) { _voltsShown = shown; Arrange(); }
@@ -579,7 +615,8 @@ public partial class PowerView : UserControl
     private static void Readout(TextBlock target, string value, string unit) =>
         ReadoutFormat.Set(target, value, unit, unitRatio: 0.3, dimWhenDash: true);
 
-    /// <summary>"4 h 33 min" com as unidades menores; uso de menos de um minuto é "&lt; 1 min", não zero.</summary>
+    /// <summary>"4 h 03 min" com as unidades menores (minutos com dois dígitos depois das horas, como nas linhas dos dias); uso de
+    /// menos de um minuto é "&lt; 1 min", não zero.</summary>
     private static void Readout(TextBlock target, TimeSpan span)
     {
         target.Inlines.Clear();
@@ -588,13 +625,13 @@ public partial class PowerView : UserControl
         void Part(string value, string unit)
         {
             target.Inlines.Add(new Run(value));
-            var u = new Run(" " + unit + " ") { FontSize = 12.5 };
+            var u = new Run(" " + unit + " ") { FontSize = 13 };
             u.SetResourceReference(TextElement.ForegroundProperty, "Muted");
             u.SetResourceReference(TextElement.FontFamilyProperty, "UiFont");
             target.Inlines.Add(u);
         }
         if (h > 0) Part($"{h}", "h");
-        Part(h == 0 && m == 0 && span > TimeSpan.Zero ? "< 1" : $"{m}", "min");
+        Part(h == 0 && m == 0 && span > TimeSpan.Zero ? "< 1" : h > 0 ? $"{m:00}" : $"{m}", "min");
     }
 
     private static string Hours(TimeSpan t, bool minutesWord = false)

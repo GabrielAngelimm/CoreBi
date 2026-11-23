@@ -6,11 +6,11 @@
             <Setter Property="Height" Value="32" />
             <Setter Property="Foreground" Value="{DynamicResource Faint}" />
             <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="Transparent" CornerRadius="{StaticResource RadiusControl}">
+                        <Border x:Name="b" Background="Transparent" CornerRadius="16">
                             <TextBlock Text="&#xE74D;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{TemplateBinding Foreground}" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -51,85 +51,62 @@
                     <RowDefinition Height="*" MinHeight="320" />
                 </Grid.RowDefinitions>
 
-                <!-- Console ao lado do título: o topo dele fica na altura do topo das letras do título (5 abaixo da caixa) e o primeiro painel a 20 do pé dele -->
-                <Grid x:Name="StartupHeader" Style="{StaticResource PageHeader}" Margin="0,0,0,20" SizeChanged="StartupHeader_SizeChanged">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Inicialização" Style="{StaticResource PageTitle}" VerticalAlignment="Top" />
-
-                    <Border x:Name="StartupConsole" Grid.Column="1" Style="{StaticResource TaskConsole}" Margin="40,5,0,0" Height="62" VerticalAlignment="Top">
-                        <Grid>
+                <!-- Cabeçalho padrão (PageHeaderPanel): título, estado vivo embaixo e a barra de ações à direita, na linha do título -->
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
+                    <TextBlock Text="Inicialização" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Escolha o que abre com o Windows e deixe o início mais rápido." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                    <StackPanel Style="{StaticResource PageActions}">
+                        <Grid x:Name="StartupMeter" Style="{StaticResource TaskMeter}">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Button Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" MinWidth="164" Height="36"
-                                    VerticalAlignment="Center" Click="BtnStartupScan_Click"
-                                    ToolTip="Lê de novo as chaves Run do registro e as pastas Inicializar do usuário e de todos os usuários." />
-                            <!-- O estado fica no meio da altura do console; o trilho, que só aparece durante a tarefa, corre rente ao pé -->
-                            <Grid Grid.Column="1" Margin="22,0,0,0">
-                                <!--
-                                    Estado (13) e detalhe (12) são a mesma Segoe: com a mesma caixa de 17 (BlockLineHeight) a base cai no
-                                    mesmo y nos dois. A margem de 2 embaixo sobe a linha 1 px, para a base coincidir com a do texto do botão
-                                    (medido: o estado ficava 1 px abaixo).
-                                -->
-                                <Grid VerticalAlignment="Center" Margin="0,0,0,2">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource TaskStatus}" LineHeight="17" LineStackingStrategy="BlockLineHeight" />
-                                    <TextBlock x:Name="StartupResult" Grid.Column="1" Style="{StaticResource TaskDetail}" LineHeight="17" LineStackingStrategy="BlockLineHeight" />
-                                </Grid>
-                                <Grid Style="{StaticResource ProgressTrack}" Visibility="Hidden" VerticalAlignment="Bottom">
-                                    <Border x:Name="StartupProgressFill" Style="{StaticResource ProgressFill}">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="StartupProgress" ScaleX="0" />
-                                        </Border.RenderTransform>
-                                    </Border>
-                                </Grid>
+                            <Grid Style="{StaticResource ProgressTrack}" VerticalAlignment="Center">
+                                <Border x:Name="StartupProgressFill" Style="{StaticResource ProgressFill}">
+                                    <Border.RenderTransform>
+                                        <ScaleTransform x:Name="StartupProgress" ScaleX="0" />
+                                    </Border.RenderTransform>
+                                </Border>
                             </Grid>
+                            <TextBlock x:Name="StartupPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" />
                         </Grid>
-                    </Border>
-                </Grid>
+                        <DockPanel Style="{StaticResource PageStatusSlot}">
+                            <TextBlock x:Name="StartupResult" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
+                            <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
+                        </DockPanel>
+                        <Button Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnStartupScan_Click"
+                                ToolTip="Lê de novo as chaves Run do registro e as pastas Inicializar do usuário e de todos os usuários." />
+                    </StackPanel>
+                </local:PageHeaderPanel>
 
                 <!-- Tabela: as larguras das colunas são as mesmas no cabeçalho e nas linhas -->
-                <Border Grid.Row="1" Style="{StaticResource CardBorder}" Padding="16,16,16,8">
+                <!-- Esqueleto: cabeçalho de colunas e linhas de 44 com o interruptor, o nome e as colunas da tabela -->
+                <Border x:Name="StartupCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="38"
+                        local:Skeleton.Layout="gap 10; row 32: - 8, - 56, c 3*@0.24, - 16, c 4*@0.24, - 16, c 5*@0.2, - 36, - 8; lines 44: - 8, pill 56@0.68^20, s 3*, - 16, t 4*, - 16, c 5*, c 36@0.4^14~, - 8">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <!-- O título fica a 20 da borda do painel (16 do padding e 4 aqui), na mesma altura do de Instalar apps -->
-                        <Grid Margin="8,4,8,0">
+                        <!-- Cabeçalho de 34 px (CardHeader), o mesmo de todos os painéis: título centrado e o botão auxiliar à direita -->
+                        <Grid Style="{StaticResource CardHeader}" Margin="8,0,8,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <!--
-                                    Título, quantos são e quantos estão desligados ("24  21 desligados") num TextBlock só: os Runs de
-                                    fontes e tamanhos diferentes ficam na mesma linha de base (antes, em três TextBlocks centrados, a
-                                    contagem descia 1 px e o texto 2 px). Os vãos de 10 px são caixas vazias, sem altura.
-                                -->
-                                <TextBlock Style="{StaticResource SectionTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis">
-                                    <Run Text="Programas de inicialização" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="StartupCount"
-                                        FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="15" FontWeight="Normal" Foreground="{DynamicResource Faint}"
-                                        Typography.NumeralAlignment="Tabular" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="StartupOff"
-                                        FontFamily="{StaticResource SmallFont}" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource Muted}" />
-                                </TextBlock>
-                                <TextBlock Text="Programas que abrem junto com o Windows. Desligue os que não usa." Style="{StaticResource Caption}" Margin="0,2,0,0" />
-                            </StackPanel>
-                            <!-- Como "Abrir benchmark" na Visão geral: o botão de 32 sobe 4 para o centro dele cair no da linha do título (24) -->
+                            <!--
+                                Título, quantos são e quantos estão desligados ("24  21 desligados") num TextBlock só: os Runs de
+                                fontes e tamanhos diferentes ficam na mesma linha de base. Os vãos de 10 px são caixas vazias, sem altura.
+                            -->
+                            <TextBlock Style="{StaticResource CardTitle}" ToolTip="Programas que abrem junto com o Windows. Desligue os que não usa.">
+                                <Run Text="Programas de inicialização" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="StartupCount"
+                                    FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16" FontWeight="Normal" Foreground="{DynamicResource Faint}"
+                                    Typography.NumeralAlignment="Tabular" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="StartupOff"
+                                    FontFamily="{StaticResource SmallFont}" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource Muted}" />
+                            </TextBlock>
                             <Button x:Name="BtnStartupRestore" Grid.Column="1" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE7A7;" Content="Restaurar removidos"
-                                    VerticalAlignment="Top" Margin="0,-4,0,0" Visibility="Collapsed" Click="BtnStartupRestore_Click"
+                                    VerticalAlignment="Center" Margin="0,0,-10,0" Visibility="Collapsed" Click="BtnStartupRestore_Click"
                                     ToolTip="Devolve à inicialização os programas removidos por aqui, do jeito que estavam (ligados ou desligados)." />
                         </Grid>
 
@@ -138,14 +115,12 @@
                                 <ColumnDefinition Width="56" />
                                 <ColumnDefinition Width="3*" MinWidth="160" />
                                 <ColumnDefinition Width="4*" MinWidth="140" />
-                                <ColumnDefinition Width="232" />
                                 <ColumnDefinition Width="5*" MinWidth="160" />
                                 <ColumnDefinition Width="36" />
                             </Grid.ColumnDefinitions>
                             <TextBlock Grid.Column="1" Text="Programa" Style="{StaticResource TableHead}" />
                             <TextBlock Grid.Column="2" Text="Descrição" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
-                            <TextBlock Grid.Column="3" Text="Origem" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
-                            <TextBlock Grid.Column="4" Text="Comando" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
+                            <TextBlock Grid.Column="3" Text="Comando" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
                         </Grid>
 
                         <ScrollViewer x:Name="StartupListScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" ScrollChanged="StartupListScroll_ScrollChanged">
@@ -159,7 +134,6 @@
                                                         <ColumnDefinition Width="56" />
                                                         <ColumnDefinition Width="3*" MinWidth="160" />
                                                         <ColumnDefinition Width="4*" MinWidth="140" />
-                                                        <ColumnDefinition Width="232" />
                                                         <ColumnDefinition Width="5*" MinWidth="160" />
                                                         <ColumnDefinition Width="36" />
                                                     </Grid.ColumnDefinitions>
@@ -180,11 +154,17 @@
                                                         </Border>
                                                     </Grid>
                                                     <TextBlock Grid.Column="2" Text="{Binding Detail}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,0,0,0" ToolTip="{Binding Detail}" />
-                                                    <TextBlock Grid.Column="3" Text="{Binding Source}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,0,0,0" ToolTip="{Binding Source}" />
                                                     <!-- Mono 12 centrado ficava com a base 2 px acima da Segoe 13 das outras colunas: 4 em cima o desce 2 -->
-                                                    <TextBlock Grid.Column="4" Text="{Binding Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
-                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,4,0,0" ToolTip="{Binding Command}" />
-                                                    <Button Grid.Column="5" Style="{StaticResource RowRemove}" Tag="{Binding}" Click="StartupRemove_Click" HorizontalAlignment="Right"
+                                                    <TextBlock Grid.Column="3" Text="{Binding Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
+                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,4,0,0">
+                                                        <!-- A origem (registro ou pasta Inicializar) saiu da tabela e fica na dica, junto do comando inteiro -->
+                                                        <TextBlock.ToolTip>
+                                                            <TextBlock>
+                                                                <Run Text="{Binding Command, Mode=OneWay}" /><LineBreak /><Run Text="{Binding Source, Mode=OneWay}" Foreground="{DynamicResource Muted}" />
+                                                            </TextBlock>
+                                                        </TextBlock.ToolTip>
+                                                    </TextBlock>
+                                                    <Button Grid.Column="4" Style="{StaticResource RowRemove}" Tag="{Binding}" Click="StartupRemove_Click" HorizontalAlignment="Right"
                                                             AutomationProperties.Name="Remover da inicialização"
                                                             ToolTip="Remover da inicialização. Sai da lista; dá para desfazer em Restaurar removidos." />
                                                 </Grid>

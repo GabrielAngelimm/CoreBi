@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Threading;
 using CoreBi.Desktop.Services;
 using CoreBi.Engine.Games;
@@ -32,6 +33,7 @@ public partial class MainWindow : Window, ILiveMotionHost
     private readonly DispatcherTimer _timer;
     private ToastWindow? _toast;
     private bool _sensorsHeldForBenchmark;
+    private bool _polling;
 
     public MainWindow()
     {
@@ -75,6 +77,7 @@ public partial class MainWindow : Window, ILiveMotionHost
         StateChanged += (_, _) => UpdateMaximizeChrome();
         WindowState = WindowState.Maximized;
         UpdateMaximizeChrome();
+        Loaded += (_, _) => ApplyUiScale(VisualTreeHelper.GetDpi(this));
 
         Closing += (_, e) =>
         {
@@ -156,7 +159,7 @@ public partial class MainWindow : Window, ILiveMotionHost
         return IntPtr.Zero;
     }
 
-    private void OnTelemetryTick(object? sender, EventArgs e)
+    private async void OnTelemetryTick(object? sender, EventArgs e)
     {
         // Durante benchmarks de GPU/disco as leituras de sensores (NVML/driver) ficam pausadas para não gerar engasgos no 1% low.
         if (_sensorsHeldForBenchmark)
@@ -166,7 +169,16 @@ public partial class MainWindow : Window, ILiveMotionHost
             return;
         }
 
-        _monitor.Refresh();
+        // A leitura dos sensores leva dezenas de ms (chips da placa-mãe, SMART, NVML): roda fora da janela, para a interface não
+        // congelar a cada segundo (a navegação e as animações engasgavam no tique). Se a anterior ainda não voltou, este tique pula.
+        if (_polling) return;
+        _polling = true;
+        SensorPoll? poll;
+        try { poll = await _monitor.PollAsync(); }
+        catch (Exception ex) { poll = null; DiagnosticLog.Write("sensors.poll", ex); }
+        finally { _polling = false; }
+        if (_context.IsClosing || _sensorsHeldForBenchmark) return;
+        if (poll != null) _monitor.Apply(poll);
         _gpuMonitor.UpdateLoads(_context.Gpus);
         PageSensors.Tick();
         UpdateSidebarTelemetry();
@@ -192,13 +204,17 @@ public partial class MainWindow : Window, ILiveMotionHost
             catch (Exception ex)
             {
                 PageSensors.SetStatus($"Sensores indisponíveis: {ex.Message}");
+                _context.SensorsRead = true;
+                PageDash.SensorsReady();
                 return;
             }
             if (_context.IsClosing) return;
-            _monitor.Refresh();
+            if (await _monitor.PollAsync() is { } poll && !_context.IsClosing) _monitor.Apply(poll); // primeira leitura também fora da janela
+            if (_context.IsClosing) return;
+            _context.SensorsRead = true;
             UpdateCpuSensorWarning();
             PageSensors.Populate();
-            PageDash.UpdateDashboard();
+            PageDash.SensorsReady();
         }
 
         async Task LoadGpuAndCpu()
@@ -216,6 +232,7 @@ public partial class MainWindow : Window, ILiveMotionHost
 
             _context.Gpus = gpus;
             _context.CpuName = cpuName;
+            _context.HardwareRead = true;
             PageGpu.PopulateGpus(gpus);
             PageSystem.RefreshHardware();
             PageBottleneck.RefreshHardware();
@@ -266,6 +283,32 @@ public partial class MainWindow : Window, ILiveMotionHost
         => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 
+    /// <summary>
+    /// Tamanho fixo em pixels, qualquer que seja a escala do Windows: a interface foi desenhada em 1920 × 1032 a 100 %, e com
+    /// 125 % ou 150 % o Windows aumentaria tudo e a mesma tela cheia caberia em 1536 × 826, com as páginas trocando de arranjo e
+    /// rolando. A escala é desfeita até 80 % (125 % do Windows volta exatamente ao desenho; em 150 % a interface fica 20 % maior
+    /// que o desenho, com um arranjo mais estreito, para o texto não ficar miúdo). A 100 % não muda nada.
+    /// </summary>
+    private void ApplyUiScale(DpiScale dpi)
+    {
+        double scale = Math.Clamp(1 / Math.Max(1, dpi.DpiScaleX), 0.8, 1);
+        Root.LayoutTransform = scale == 1 ? Transform.Identity : new ScaleTransform(scale, scale);
+        // Texto encolhido junto com a interface: a medida "Display" (presa à grade de pixels no tamanho original) deixaria o
+        // espaçamento torto; a "Ideal" mede no tamanho em que o texto aparece
+        TextOptions.SetTextFormattingMode(this, scale == 1 ? TextFormattingMode.Display : TextFormattingMode.Ideal);
+        if (System.Windows.Shell.WindowChrome.GetWindowChrome(this) is { } chrome)
+        {
+            chrome.CaptionHeight = 52 * scale;
+            chrome.ResizeBorderThickness = new Thickness(6 * scale);
+        }
+    }
+
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        ApplyUiScale(newDpi);
+    }
+
     private void UpdateMaximizeChrome()
     {
         bool max = WindowState == WindowState.Maximized;
@@ -286,6 +329,7 @@ public partial class MainWindow : Window, ILiveMotionHost
     private void SetBenchmarkIsolation(bool pauseSensors, bool suspendOverlay)
     {
         _sensorsHeldForBenchmark = pauseSensors;
+        if (pauseSensors) _monitor.WaitForPoll(); // uma leitura em andamento termina antes de o teste começar a medir
         PageOverlay.SuspendForBenchmark(suspendOverlay);
         SyncFrameMonitoring(); // a captura de quadros do overlay também para durante o teste
     }

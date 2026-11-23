@@ -134,21 +134,14 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- Cabeçalho: título à esquerda, interruptor e atalho à direita -->
-                <Grid Style="{StaticResource PageHeader}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="OverlayBi" Style="{StaticResource PageTitle}" />
-                        <TextBlock Text="FPS, frametime e sensores por cima do jogo." Style="{StaticResource PageSubtitle}" />
-                    </StackPanel>
-                    <Border Grid.Column="1" Style="{StaticResource CardBorder}" Padding="16,12" VerticalAlignment="Center" Margin="16,0,0,0">
-                        <StackPanel Orientation="Horizontal">
+                <!-- Cabeçalho padrão: o interruptor e o atalho ficam num grupo de 36 px na barra de ações, na linha do título -->
+                <local:PageHeaderPanel Style="{StaticResource PageHead}">
+                    <TextBlock Text="OverlayBi" Style="{StaticResource PageTitle}" />
+                    <Border Style="{StaticResource ActionGroup}" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <CheckBox x:Name="ChkOverlay" Style="{StaticResource Switch}" Content="Mostrar overlay" FontSize="14" FontWeight="SemiBold"
                                       Checked="ChkOverlay_Changed" Unchecked="ChkOverlay_Changed" />
-                            <Border Width="1" Height="22" Background="{DynamicResource Line}" Margin="16,0" />
+                            <Border Width="1" Height="20" Background="{DynamicResource Line}" Margin="16,0" />
                             <!-- A tecla é a letra O: na fonte da interface ela é redonda e não se confunde com o zero da DIN -->
                             <StackPanel Orientation="Horizontal" Background="Transparent" ToolTip="Ctrl + Shift + O (a letra O) liga e desliga o overlay de qualquer lugar, inclusive dentro do jogo.">
                                 <!--
@@ -162,7 +155,8 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-                </Grid>
+                    <TextBlock Text="FPS, frametime e sensores por cima do jogo." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                </local:PageHeaderPanel>
 
                 <!-- Meio: posição (com a prévia) e o que mostrar, lado a lado -->
                 <Grid x:Name="OvMain" Grid.Row="1" SizeChanged="OvMain_SizeChanged">
@@ -188,16 +182,17 @@
                                 medido, a nota da prévia. O estado mora aqui, e não numa faixa sob os cartões, para a página terminar na mesma
                                 linha que as outras.
                             -->
-                            <Grid>
+                            <!-- Cabeçalho de 34 px (CardHeader), na mesma altura do "O que mostrar" ao lado, que tem as pílulas -->
+                            <Grid Style="{StaticResource CardHeader}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Posição e tamanho" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />
+                                <TextBlock Text="Posição e tamanho" Style="{StaticResource CardTitle}" />
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="24,0,0,0">
                                     <Ellipse x:Name="OvStatusDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
-                                    <TextBlock x:Name="OvStatus" FontSize="12.5" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="460" Style="{StaticResource Num}" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="OvStatus" FontSize="13" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="460" Style="{StaticResource Num}" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <!-- Estado real: sem jogo medido, o FPS da prévia é de exemplo (os sensores são ao vivo) -->
                                 <TextBlock x:Name="OvSampleNote" Grid.Column="2" Text="Prévia com FPS de exemplo" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="20,0,0,0"
@@ -314,13 +309,13 @@
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <Grid>
+                            <Grid Style="{StaticResource CardHeader}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="O que mostrar" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="0,0,16,0" />
-                                <Border Grid.Column="1" Style="{StaticResource SegmentGroup}" VerticalAlignment="Top">
+                                <TextBlock Text="O que mostrar" Style="{StaticResource CardTitle}" Margin="0,0,16,0" />
+                                <Border Grid.Column="1" Style="{StaticResource SegmentGroup}" VerticalAlignment="Center">
                                     <local:SlidingSelectionPanel x:Name="OvPresetPanel" Style="{StaticResource SegmentRail}">
                                         <RadioButton Style="{StaticResource Segment}" GroupName="OvPreset" Content="Essencial" Tag="default" Click="OvPreset_Click">
                                             <RadioButton.ToolTip>

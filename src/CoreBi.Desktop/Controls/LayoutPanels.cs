@@ -106,6 +106,33 @@ public sealed class JustifyPanel : System.Windows.Controls.Panel
     }
 }
 
+/// <summary>
+/// Não pede altura: o filho é medido só no arranjo, com a altura que a página deu. Para uma lista que rola dentro do cartão
+/// numa linha "*" (o histórico de Rede): medida sem limite, ela pediria todas as linhas e faria a página rolar.
+/// </summary>
+public sealed class SpareHeightBox : System.Windows.Controls.Decorator
+{
+    protected override Size MeasureOverride(Size constraint)
+    {
+        Child?.Measure(new Size(constraint.Width, 0));
+        return new Size(Child?.DesiredSize.Width ?? 0, 0);
+    }
+
+    // O filho é medido duas vezes por passada (sem altura aqui, com a altura toda no arranjo), então a altura desejada dele
+    // sempre "muda": o padrão pediria nova medida ao pai e a página entraria num laço de layout. Basta rearranjar.
+    protected override void OnChildDesiredSizeChanged(UIElement child) => InvalidateArrange();
+
+    protected override Size ArrangeOverride(Size arrangeSize)
+    {
+        if (Child != null)
+        {
+            Child.Measure(arrangeSize);
+            Child.Arrange(new Rect(arrangeSize));
+        }
+        return arrangeSize;
+    }
+}
+
 /// <summary>Grid que não pede altura aos filhos: ocupa só o espaço que sobra, para a lista decidir quantas linhas cabem.</summary>
 public sealed class FitHost : System.Windows.Controls.Grid
 {
@@ -113,5 +140,194 @@ public sealed class FitHost : System.Windows.Controls.Grid
     {
         base.MeasureOverride(new Size(constraint.Width, double.PositiveInfinity));
         return new Size(double.IsInfinity(constraint.Width) ? 0 : constraint.Width, 0);
+    }
+}
+
+/// <summary>
+/// Cabeçalho de página, o mesmo em todas as telas. O primeiro filho é o título, o segundo (opcional) a barra de ações (com o
+/// estado vivo à esquerda dos botões, na mesma linha), e o filho marcado com <see cref="SubtitleProperty"/> (opcional, em qualquer
+/// posição) o subtítulo de explicação, embaixo do título. A barra fica à direita, centrada na linha do título, e nunca muda a
+/// altura do cabeçalho. Quando ela não cabe ao lado do título, desce para baixo do cabeçalho, encostada à esquerda.
+/// </summary>
+public sealed class PageHeaderPanel : System.Windows.Controls.Panel
+{
+    /// <summary>Menor vão entre o título e a barra de ações; abaixo dele a barra desce.</summary>
+    public double Gap { get; set; } = 40;
+
+    /// <summary>Vão acima da barra quando ela desce para baixo do cabeçalho.</summary>
+    public double WrapGap { get; set; } = 16;
+
+    public static readonly DependencyProperty SubtitleProperty = DependencyProperty.RegisterAttached("Subtitle", typeof(bool), typeof(PageHeaderPanel),
+        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsParentMeasure));
+    public static bool GetSubtitle(UIElement e) => (bool)e.GetValue(SubtitleProperty);
+    public static void SetSubtitle(UIElement e, bool value) => e.SetValue(SubtitleProperty, value);
+
+    private bool _wide = true;
+
+    private (UIElement? Title, UIElement? Bar, UIElement? Sub) Parts()
+    {
+        UIElement? title = null, bar = null, sub = null;
+        foreach (UIElement child in InternalChildren)
+        {
+            if (GetSubtitle(child)) sub ??= child;
+            else if (title == null) title = child;
+            else bar ??= child;
+        }
+        return (title, bar, sub);
+    }
+
+    private static Size Desired(UIElement? e) => e?.DesiredSize ?? default;
+
+    protected override Size MeasureOverride(Size available)
+    {
+        var (title, bar, sub) = Parts();
+        var free = new Size(double.PositiveInfinity, double.PositiveInfinity);
+        bar?.Measure(free);
+        title?.Measure(free);
+        Size t = Desired(title), b = Desired(bar);
+        bool hasBar = b.Width > 0;
+        _wide = !hasBar || double.IsInfinity(available.Width) || t.Width + Gap + b.Width <= available.Width;
+        if (_wide && hasBar && !double.IsInfinity(available.Width))
+            title?.Measure(new Size(Math.Max(0, available.Width - b.Width - Gap), double.PositiveInfinity));
+        sub?.Measure(new Size(available.Width, double.PositiveInfinity));
+        t = Desired(title);
+        Size s = Desired(sub);
+
+        double width = _wide ? Math.Max(t.Width + (hasBar ? Gap + b.Width : 0), s.Width) : Math.Max(Math.Max(t.Width, b.Width), s.Width);
+        // Descida: a barra não tem a folga que a fonte deixa embaixo das letras, então ganha 6 para o primeiro painel ficar a 20 dela
+        double height = _wide ? Math.Max(t.Height, b.Height) + s.Height : t.Height + s.Height + (hasBar ? WrapGap + b.Height + 6 : 0);
+        return new Size(double.IsInfinity(available.Width) ? width : Math.Min(width, available.Width), height);
+    }
+
+    protected override Size ArrangeOverride(Size final)
+    {
+        var (title, bar, sub) = Parts();
+        Size t = Desired(title), b = Desired(bar), s = Desired(sub);
+        if (_wide)
+        {
+            double row = Math.Max(t.Height, b.Height);
+            double titleW = b.Width > 0 ? Math.Max(0, final.Width - b.Width - Gap) : final.Width;
+            title?.Arrange(new Rect(0, (row - t.Height) / 2, Math.Min(titleW, t.Width), t.Height));
+            bar?.Arrange(new Rect(Math.Max(0, final.Width - b.Width), (row - b.Height) / 2, b.Width, b.Height));
+            sub?.Arrange(new Rect(0, row, final.Width, s.Height));
+        }
+        else
+        {
+            title?.Arrange(new Rect(0, 0, Math.Min(final.Width, t.Width), t.Height));
+            sub?.Arrange(new Rect(0, t.Height, final.Width, s.Height));
+            bar?.Arrange(new Rect(0, t.Height + s.Height + WrapGap, Math.Min(final.Width, b.Width), b.Height));
+        }
+        return final;
+    }
+}
+
+/// <summary>
+/// Uma linha de leituras de ponta a ponta: a primeira encosta na esquerda, a última na direita e os vãos entre elas são iguais,
+/// então o respiro do texto até a borda do cartão é o mesmo dos dois lados (o recuo do cartão). Com um item só, ele fica à esquerda.
+/// </summary>
+public sealed class EdgeRowPanel : System.Windows.Controls.Panel
+{
+    protected override Size MeasureOverride(Size available)
+    {
+        double w = 0, h = 0;
+        foreach (UIElement child in InternalChildren)
+        {
+            child.Measure(new Size(double.PositiveInfinity, available.Height));
+            if (child.Visibility == Visibility.Collapsed) continue;
+            w += child.DesiredSize.Width;
+            h = Math.Max(h, child.DesiredSize.Height);
+        }
+        return new Size(double.IsInfinity(available.Width) ? w : Math.Min(w, available.Width), h);
+    }
+
+    protected override Size ArrangeOverride(Size final)
+    {
+        var visible = InternalChildren.Cast<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
+        double used = visible.Sum(c => c.DesiredSize.Width);
+        double gap = visible.Count > 1 ? Math.Max(0, final.Width - used) / (visible.Count - 1) : 0;
+        double x = 0;
+        foreach (var child in visible)
+        {
+            child.Arrange(new Rect(x, 0, child.DesiredSize.Width, final.Height));
+            x += child.DesiredSize.Width + gap;
+        }
+        return final;
+    }
+}
+
+/// <summary>
+/// Fila de fichas numa linha só (a faixa "No pacote" de Instalar apps): põe as fichas da esquerda para a direita enquanto couberem
+/// e, quando não cabem todas, o último filho (o indicador "+N") logo depois da última que coube. <see cref="HiddenCount"/> diz
+/// quantas ficaram de fora, para o indicador mostrar. Pede só a largura usada, então o que vem depois fica colado à fila.
+/// </summary>
+public sealed class OverflowStrip : System.Windows.Controls.Panel
+{
+    public static readonly DependencyProperty SpacingProperty = DependencyProperty.Register(
+        nameof(Spacing), typeof(double), typeof(OverflowStrip), new FrameworkPropertyMetadata(8.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
+    public double Spacing { get => (double)GetValue(SpacingProperty); set => SetValue(SpacingProperty, value); }
+
+    public static readonly DependencyProperty HiddenCountProperty = DependencyProperty.Register(
+        nameof(HiddenCount), typeof(int), typeof(OverflowStrip), new PropertyMetadata(0));
+    /// <summary>Fichas que não couberam (o indicador mostra "+N").</summary>
+    public int HiddenCount { get => (int)GetValue(HiddenCountProperty); private set => SetValue(HiddenCountProperty, value); }
+
+    private int _shown;
+
+    // O que fica de fora é posto além da borda e cortado aqui (arranjar com tamanho zero ainda deixaria o desenho vazar)
+    public OverflowStrip() => ClipToBounds = true;
+
+    private static void Hide(UIElement child, Size final) =>
+        child.Arrange(new Rect(final.Width + 10000, 0, child.DesiredSize.Width, child.DesiredSize.Height));
+
+    protected override Size MeasureOverride(Size available)
+    {
+        int n = InternalChildren.Count - 1;
+        if (n < 0) return default;
+        var any = new Size(double.PositiveInfinity, available.Height);
+        foreach (UIElement child in InternalChildren) child.Measure(any);
+        var indicator = InternalChildren[n];
+        double used = 0, height = 0;
+        int shown = 0;
+        for (; shown < n; shown++)
+        {
+            var size = InternalChildren[shown].DesiredSize;
+            double next = used + (shown > 0 ? Spacing : 0) + size.Width;
+            // Se esta não é a última, precisa sobrar lugar para o indicador
+            double reserve = shown < n - 1 ? Spacing + indicator.DesiredSize.Width : 0;
+            if (next + reserve > available.Width && !(shown == n - 1 && next <= available.Width)) break;
+            used = next;
+            height = Math.Max(height, size.Height);
+        }
+        _shown = shown;
+        int hidden = n - shown;
+        if (HiddenCount != hidden) HiddenCount = hidden;
+        if (hidden > 0)
+        {
+            used += (shown > 0 ? Spacing : 0) + indicator.DesiredSize.Width;
+            height = Math.Max(height, indicator.DesiredSize.Height);
+        }
+        return new Size(used, height);
+    }
+
+    protected override Size ArrangeOverride(Size final)
+    {
+        int n = InternalChildren.Count - 1;
+        double x = 0;
+        for (int i = 0; i < n; i++)
+        {
+            var child = InternalChildren[i];
+            if (i >= _shown) { Hide(child, final); continue; }
+            var size = child.DesiredSize;
+            child.Arrange(new Rect(x, (final.Height - size.Height) / 2, size.Width, size.Height));
+            x += size.Width + Spacing;
+        }
+        if (n >= 0)
+        {
+            var indicator = InternalChildren[n];
+            if (n - _shown > 0)
+                indicator.Arrange(new Rect(x, (final.Height - indicator.DesiredSize.Height) / 2, indicator.DesiredSize.Width, indicator.DesiredSize.Height));
+            else Hide(indicator, final);
+        }
+        return final;
     }
 }

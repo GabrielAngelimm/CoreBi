@@ -8,7 +8,8 @@ namespace CoreBi.Desktop.Views;
 /// <summary>
 /// Monitor de hardware: componentes em cartões, sensores agrupados por tipo com atual, mínimo, média e máximo.
 /// O índice é um filtro: "Visão geral" mostra todos os componentes na ordem de uso e escolher um deles mostra só ele.
-/// Os cartões só existem com a página à vista; escondida, ela solta as linhas e não gasta nada a cada leitura.
+/// Os cartões são montados aos poucos (um por vez, com a interface livre entre eles) e, com a página escondida por mais de um
+/// minuto, soltos: escondida ela não gasta nada a cada leitura, e quem só foi a outra página e voltou não espera a montagem.
 /// </summary>
 public partial class SensorsView : UserControl
 {
@@ -21,7 +22,7 @@ public partial class SensorsView : UserControl
         DependencyProperty.Register(nameof(StatsNote), typeof(string), typeof(SensorsView), new PropertyMetadata(""));
     public string StatsNote { get => (string)GetValue(StatsNoteProperty); set => SetValue(StatsNoteProperty, value); }
 
-    private const double HeaderHeight = 112;  // altura do cabeçalho de componente: 80 + 32 (ComponentHeader no XAML)
+    private const double HeaderHeight = 122;  // altura do cabeçalho de componente: 90 + 32 (ComponentHeader no XAML)
 
     private SensorMonitor? _monitor;
     private string? _component;       // componente escolhido no índice (null = visão geral)
@@ -32,17 +33,21 @@ public partial class SensorsView : UserControl
     private string _chipKeys = "";
     private string _indexKeys = "";
     private DateTime _since = DateTime.Now;
+    private long _noticeUntil;        // aviso de "Estatísticas zeradas" na barra: até quando a contagem de sensores espera
     private IReadOnlyList<IndexEntry> _index = Array.Empty<IndexEntry>();
     private IReadOnlyList<SensorComponent> _cards = Array.Empty<SensorComponent>();
     private bool _syncing;
     private string? _pending;         // componente pedido por um atalho de outra página, aplicado quando houver leitura
     private Window? _hostWindow;
+    private int _buildVersion;        // montagem progressiva em andamento (uma nova cancela a anterior)
+    private readonly System.Windows.Threading.DispatcherTimer _releaseTimer = new() { Interval = TimeSpan.FromSeconds(60) };
 
     public SensorsView()
     {
         InitializeComponent();
         UpdateStatsNote();
-        IsVisibleChanged += (_, _) => { if (IsVisible) Rebuild(); else Release(); };
+        IsVisibleChanged += (_, _) => OnVisibleChanged();
+        _releaseTimer.Tick += (_, _) => { _releaseTimer.Stop(); if (!IsVisible) Release(); };
         // A busca solta o foco (cursor e seleção) com um clique em qualquer lugar fora dela, como um campo de busca comum
         Focusable = true;
         FocusVisualStyle = null;
@@ -57,6 +62,33 @@ public partial class SensorsView : UserControl
             if (_hostWindow != null) _hostWindow.PreviewMouseDown -= Window_PreviewMouseDown;
             _hostWindow = null;
         };
+    }
+
+    /// <summary>
+    /// À vista: com os cartões ainda montados, nada a fazer (a leitura de 1 s mantém tudo atualizado); senão o esqueleto ocupa o
+    /// índice e o cartão e a montagem começa quando a entrada da página termina. Escondida: solta tudo depois de um minuto.
+    /// </summary>
+    private void OnVisibleChanged()
+    {
+        if (!IsVisible)
+        {
+            _releaseTimer.Start();
+            return;
+        }
+        _releaseTimer.Stop();
+        if (_cards.Count > 0 && SensorCards.ItemsSource != null)
+        {
+            Dispatcher.BeginInvoke(UpdateSticky, System.Windows.Threading.DispatcherPriority.Loaded);
+            return;
+        }
+        ShowSkeleton(true);
+        PageMotion.AfterEntrance(this, Rebuild);
+    }
+
+    private void ShowSkeleton(bool on)
+    {
+        Skeleton.SetActive(SensorCard, on);
+        Skeleton.SetActive(IndexCard, on);
     }
 
     private void Window_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -106,7 +138,10 @@ public partial class SensorsView : UserControl
         if (_monitor is not { IsOpen: true }) return;
         var live = _monitor.Rows.Where(r => r.HasReading).ToList();
         int components = live.Select(SensorBoard.KeyOf).Distinct().Count();
-        StatusText.Text = $"{live.Count} sensores em {components} componentes · atualizado às {DateTime.Now:HH:mm:ss}";
+        string status = $"{live.Count} sensores em {components} componentes · atualizado às {DateTime.Now:HH:mm:ss}";
+        // Depois de zerar, o aviso fica uns segundos; a contagem volta com a troca suave e então segue trocando seco a cada segundo
+        if (_noticeUntil == 0) StatusText.Text = status;
+        else if (Environment.TickCount64 >= _noticeUntil) { _noticeUntil = 0; HeaderMotion.Say(StatusText, null, status); }
         if (IsVisible && live.Count != _builtRows) Rebuild();
     }
 
@@ -114,7 +149,8 @@ public partial class SensorsView : UserControl
     {
         if (_monitor is not { IsOpen: true })
         {
-            ShowEmpty("Detectando o hardware…", "Os sensores aparecem assim que a leitura do hardware terminar.");
+            // Hardware ainda em detecção: o esqueleto fica até a primeira leitura (Populate)
+            ShowSkeleton(true);
             return;
         }
         if (!IsVisible) return;
@@ -134,9 +170,22 @@ public partial class SensorsView : UserControl
         _syncing = false;
         double offset = SensorScroll.VerticalOffset;
         _cards = layout.Cards;
-        SensorCards.ItemsSource = layout.Cards;
-        SensorScroll.ScrollToVerticalOffset(offset);
+        int version = ++_buildVersion;
+        if (offset > 0 || layout.Cards.Count <= 1)
+        {
+            // Rolado no meio da lista (o hardware mudou com a página aberta): monta tudo de uma vez para manter a posição
+            SensorCards.ItemsSource = layout.Cards;
+            SensorScroll.ScrollToVerticalOffset(offset);
+        }
+        else
+        {
+            // Um cartão por vez, com a interface livre entre eles: o primeiro aparece logo e os de baixo entram fora da vista
+            var shown = new System.Collections.ObjectModel.ObservableCollection<SensorComponent> { layout.Cards[0] };
+            SensorCards.ItemsSource = shown;
+            AppendCards(layout.Cards, shown, 1, version);
+        }
         Dispatcher.BeginInvoke(UpdateSticky, System.Windows.Threading.DispatcherPriority.Loaded);
+        ShowSkeleton(false);
 
         if (layout.Cards.Count == 0)
             ShowEmpty("Nenhum sensor encontrado", _search.Length > 0 ? $"Nada corresponde a “{_search}” neste filtro." : "Este tipo de sensor não existe neste componente.");
@@ -144,8 +193,20 @@ public partial class SensorsView : UserControl
         UpdateStatsNote();
     }
 
+    private void AppendCards(IReadOnlyList<SensorComponent> cards, System.Collections.ObjectModel.ObservableCollection<SensorComponent> shown, int next, int version)
+    {
+        if (next >= cards.Count) return;
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
+        {
+            if (version != _buildVersion || !ReferenceEquals(SensorCards.ItemsSource, shown)) return;
+            shown.Add(cards[next]);
+            AppendCards(cards, shown, next + 1, version);
+        });
+    }
+
     private void Release()
     {
+        _buildVersion++;
         SensorCards.ItemsSource = null;
         SensorIndex.ItemsSource = null;
         _cards = Array.Empty<SensorComponent>();
@@ -252,7 +313,7 @@ public partial class SensorsView : UserControl
     {
         var text = new TextBlock();
         text.Inlines.Add(new System.Windows.Documents.Run(label));
-        var number = new System.Windows.Documents.Run("  " + count) { FontSize = 11.5 };
+        var number = new System.Windows.Documents.Run("  " + count) { FontSize = 12 };
         number.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Faint");
         text.Inlines.Add(number);
         System.Windows.Documents.Typography.SetNumeralAlignment(text, FontNumeralAlignment.Tabular);
@@ -278,9 +339,12 @@ public partial class SensorsView : UserControl
 
     private void BtnSensorsReset_Click(object sender, RoutedEventArgs e)
     {
+        HeaderMotion.Say(StatusText, null, "Zerando mínimo, média e máximo…");
         _monitor?.ResetStats();
         _since = DateTime.Now;
         UpdateStatsNote();
+        HeaderMotion.Say(StatusText, null, $"Estatísticas zeradas às {_since:HH:mm:ss}");
+        _noticeUntil = Environment.TickCount64 + 3800; // 0,9 s do intermediário + uns 3 s para ler o aviso
     }
 
     private void Toggle_Click(object sender, RoutedEventArgs e)

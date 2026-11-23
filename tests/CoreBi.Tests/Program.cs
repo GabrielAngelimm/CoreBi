@@ -42,7 +42,7 @@ internal static partial class Program
     {
         var watch = Stopwatch.StartNew();
         try { var details = test(); Results.Add(new { name, status = "PASS", elapsedMs = watch.ElapsedMilliseconds, details }); Console.WriteLine("PASS " + name); }
-        catch (Exception ex) { Failures++; Results.Add(new { name, status = "FAIL", error = ex.ToString() }); Console.WriteLine("FAIL " + name + ": " + ex.Message); }
+        catch (Exception ex) { Failures++; Results.Add(new { name, status = "FAIL", error = ex.ToString() }); Console.WriteLine("FAIL " + name + ": " + ex.Message + (ex.GetBaseException() is { } inner && inner != ex ? " -> " + inner.GetType().Name + ": " + inner.Message : "")); }
     }
     private static void Skip(string name, string reason)
     {
@@ -56,6 +56,8 @@ internal static partial class Program
         if (args.FirstOrDefault() == "--process-fixture") return ProcessFixture(args);
         if (args.FirstOrDefault() == "--report") return RealReport(args.Length > 1 ? args[1] : "report");
         if (args.FirstOrDefault() == "--shots") return Shots(args);
+        if (args.FirstOrDefault() == "--nav-timing") return NavTiming(args);
+        if (args.FirstOrDefault() == "--motion") return Motion(args);
         string[] modes = { "--overlay-telemetry", "--bench", "--hardware", "--startup", "--integrations" };
         if (args.FirstOrDefault(a => a.StartsWith("--", StringComparison.Ordinal) && !modes.Contains(a)) is { } unknown)
         {
@@ -280,6 +282,27 @@ internal static partial class Program
             window.PageNet.DisplayResult(waiting);
             Require(window.PageNet.NetLinkLocalText.Text == "não medido" && window.PageNet.NetLinkWanText.Text == "não medido",
                 "A skipped ping was presented as a failed ping");
+            // Campo de número do corte por temperatura: aceita dígitos digitados, recusa letras e os botões − e + param na faixa
+            window.ShowPage("PageStress");
+            MeasurePage(window.PageStress, 1600, 900);
+            var limit = window.PageStress.TempLimit;
+            limit.Text = "";
+            foreach (string typed in new[] { "8", "x", "5" })
+            {
+                var composition = new System.Windows.Input.TextComposition(System.Windows.Input.InputManager.Current, limit, typed);
+                var preview = new System.Windows.Input.TextCompositionEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, composition)
+                { RoutedEvent = System.Windows.Input.TextCompositionManager.PreviewTextInputEvent };
+                limit.RaiseEvent(preview);
+                if (!preview.Handled)
+                    limit.RaiseEvent(new System.Windows.Input.TextCompositionEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, composition)
+                    { RoutedEvent = System.Windows.Input.TextCompositionManager.TextInputEvent });
+            }
+            Require(limit.Text == "85", $"Temperature field typing: '{limit.Text}'");
+            NumberField.Increase.Execute(null, limit);
+            Require(limit.Text == "86", $"Temperature field + step: '{limit.Text}'");
+            limit.Text = "110";
+            Require(!NumberField.Increase.CanExecute(null, limit) && NumberField.Decrease.CanExecute(null, limit), "Temperature field + did not stop at 110");
+            limit.Text = "90";
             window.NavBench.IsChecked = true; Require(window.PageBench.Visibility == Visibility.Visible, "Sidebar event did not navigate");
             Require(window.Title == "CoreBi", "Original title remained");
 

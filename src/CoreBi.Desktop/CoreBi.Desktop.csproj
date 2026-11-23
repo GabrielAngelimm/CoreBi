@@ -13,6 +13,7 @@
   <ItemGroup>
     <Resource Include="Assets/*.png"/>
     <Resource Include="Assets/*.ico"/>
+    <Resource Include="Assets/Apps/*.png"/>
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="CoreBi.Tests"/>

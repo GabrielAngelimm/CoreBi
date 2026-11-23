@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:CoreBi.Desktop">
 
@@ -29,6 +29,10 @@
     <!-- Fios -->
     <SolidColorBrush x:Key="Line" Color="#24282B"/>
     <SolidColorBrush x:Key="LineStrong" Color="#353A3D"/>
+    <!-- Fio e trilho sobre a placa (fundo Selected, que já é um tom acima do painel): o texto em transparência, que aparece nos -->
+    <!-- dois temas; no claro mais forte, porque o fundo claro da placa come o cinza -->
+    <SolidColorBrush x:Key="PlateWire" Color="#2EE6EAEC"/>
+    <SolidColorBrush x:Key="PlateTrack" Color="#24E6EAEC"/>
     <!-- Texto -->
     <SolidColorBrush x:Key="Fg" Color="#E6EAEC"/>
     <SolidColorBrush x:Key="Muted" Color="#A3AAAE"/>
@@ -56,6 +60,8 @@
     <SolidColorBrush x:Key="Virtual" Color="#7A5AC8"/>
     <SolidColorBrush x:Key="VirtualSoft" Color="#1E7A5AC8"/>
     <SolidColorBrush x:Key="Storage" Color="#4A82CC"/>
+    <!-- Tom fundo do armazenamento: a marca do "usado" na legenda do Espaço, que não repete o azul aceso da barra logo acima -->
+    <SolidColorBrush x:Key="StorageDeep" Color="#1E4278"/>
     <SolidColorBrush x:Key="StorageSoft" Color="#1A4A82CC"/>
     <SolidColorBrush x:Key="Board" Color="#C8A370"/>
     <SolidColorBrush x:Key="BoardSoft" Color="#1AC8A370"/>
@@ -83,13 +89,31 @@
     <!-- paleta:fim -->
 
     <!-- ===================== Forma ===================== -->
-    <!-- Raios por hierarquia: painel > poço > controle > selo. Pílulas (filtros) são inteiramente redondas. -->
-    <CornerRadius x:Key="RadiusPanel">10</CornerRadius>
-    <CornerRadius x:Key="RadiusInset">8</CornerRadius>
-    <CornerRadius x:Key="RadiusControl">7</CornerRadius>
-    <CornerRadius x:Key="RadiusSmall">4</CornerRadius>
-    <!-- Respiro padrão de um painel (24 nas laterais, 20 em cima e embaixo) -->
-    <Thickness x:Key="PanelPadding">24,20</Thickness>
+    <!--
+        Raios por hierarquia, quatro degraus: contêiner 16 > peça dentro do cartão 14 > controle 12 > pílula (inteiramente
+        redonda: filtros, segmentos, selos, interruptores, atalho redondo). Peça grande é proporcionalmente menos redonda
+        (cartão ~5 %, tecla de 58 px ~24 %, botão de 40 ~30 %), então tudo parece da mesma família.
+        Encaixe justo (vão menor que o raio) segue a regra dos cantos concêntricos, raio de dentro = raio de fora - vão:
+        tecla do segmento 14 no trilho de 17 com 3 de folga, anel de foco 15 em volta do controle de 12 a 3 px, faixa
+        presa à borda 15 dentro do fio do painel de 16. Com vão largo (os 20 a 24 do respiro do painel) o raio de dentro
+        é escolhido pelo tamanho da peça. RadiusSmall (6) fica só para teclas de atalho e caixas de marcar de 18 px.
+    -->
+    <CornerRadius x:Key="RadiusPanel">16</CornerRadius>
+    <CornerRadius x:Key="RadiusInset">14</CornerRadius>
+    <CornerRadius x:Key="RadiusControl">12</CornerRadius>
+    <CornerRadius x:Key="RadiusSmall">6</CornerRadius>
+    <!-- Selo e etiqueta (20 a 22 px de altura): meia altura, a mesma pílula dos filtros -->
+    <CornerRadius x:Key="RadiusPill">10</CornerRadius>
+    <!-- Faixas presas à borda de um painel (a placa da Placa de vídeo, o pé do Gargalo): o raio do painel menos o fio -->
+    <CornerRadius x:Key="RadiusPanelTop">15,15,0,0</CornerRadius>
+    <CornerRadius x:Key="RadiusPanelBottom">0,0,15,15</CornerRadius>
+    <!-- Respiro do painel: o mesmo nos quatro lados -->
+    <Thickness x:Key="PanelPadding">24</Thickness>
+    <!--
+        Respiro de um cartão que abre com a linha de título de 34 px (CardHeader): a DIN 18 centrada nessa linha deixa 8 px de
+        folga acima das maiúsculas, então em cima o recuo é 16 e a letra visível fica a 24 da borda, a mesma distância da esquerda.
+    -->
+    <Thickness x:Key="CardPadding">24,16,24,24</Thickness>
 
     <!-- ===================== Tipografia ===================== -->
     <!--
@@ -108,17 +132,18 @@
     <BooleanToVisibilityConverter x:Key="BoolVis"/>
     <local:StringNotEmptyConverter x:Key="NotEmptyVis"/>
     <local:SentenceCaseConverter x:Key="Sentence"/>
+    <local:PillRadiusConverter x:Key="PillRadius"/>
 
     <!-- Título da página: a mesma voz da assinatura -->
     <Style x:Key="PageTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="32"/>
+        <Setter Property="FontSize" Value="40"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
     <Style x:Key="PageSubtitle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="LineHeight" Value="20"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -129,15 +154,58 @@
     <!-- Título de painel -->
     <Style x:Key="SectionTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="17"/>
+        <Setter Property="FontSize" Value="18"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
-    <!-- Título de grupo dentro de uma ficha (Sensores, Sistema): um degrau abaixo do painel -->
+    <!--
+        Cabeçalho de cartão: a mesma linha de 34 px em todos os painéis do app (a altura das pílulas e do atalho redondo),
+        com o título centrado nela e, à direita, o filtro, a busca ou o atalho. Explicação do painel vai na dica do título,
+        nunca numa legenda embaixo dele.
+    -->
+    <Style x:Key="CardHeader" TargetType="Grid">
+        <Setter Property="Height" Value="34"/>
+    </Style>
+    <Style x:Key="CardTitle" TargetType="TextBlock" BasedOn="{StaticResource SectionTitle}">
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <!--
+        Escala de texto (a mesma em todas as páginas; base na rampa do Windows 11/Fluent 2, corpo 14/20 e legenda 12/16; ver DESIGN.md):
+        PageTitle 40 · PlateName 28 (o nome na placa de identificação) · TestPlateTitle 24 (a peça na bancada) · SectionTitle e
+        CardTitle 18 (painel) · GroupTitle 16 (grupo, nó, seção dentro do painel) · ItemTitle 14 seminegrito (nome numa lista ou tecla) ·
+        Body, PageSubtitle, PageStatus, PlateText e botões 14 · StatLabel, Label e cabeçalho de tabela 13 (DIN) · Caption, StatSub e Footnote 12.
+    -->
+    <!-- Nome na placa de identificação (Sistema, Placa de vídeo, Discos) -->
+    <Style x:Key="PlateName" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
+        <Setter Property="FontSize" Value="28"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <!-- A frase sob o nome da placa (especificação, resumo) -->
+    <Style x:Key="PlateText" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+    </Style>
+    <!-- Nome de um item numa lista ou tecla (disco, driver, unidade) -->
+    <Style x:Key="ItemTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+    <!-- Título de grupo dentro de uma ficha ou painel (Sensores, Sistema, nós de Rede, Drivers): um degrau abaixo do painel -->
     <Style x:Key="GroupTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
-        <Setter Property="FontSize" Value="15.5"/>
+        <Setter Property="FontSize" Value="16"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
@@ -145,7 +213,7 @@
     <!-- Rótulo de grupo: frase curta, sem caixa alta, na letra da estrutura -->
     <Style x:Key="Label" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="Margin" Value="0,0,0,8"/>
@@ -161,15 +229,15 @@
     <!-- Nota de rodapé: fonte dos dados e limites da medição -->
     <Style x:Key="Footnote" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SmallFont}"/>
-        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontSize" Value="12"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
-        <Setter Property="LineHeight" Value="16"/>
+        <Setter Property="LineHeight" Value="17"/>
         <Setter Property="MaxWidth" Value="760"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
     </Style>
     <Style x:Key="Body" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextWrapping" Value="Wrap"/>
         <Setter Property="LineHeight" Value="20"/>
@@ -192,7 +260,8 @@
             <!-- Sem leitura: o travessão da Bahnschrift Light vira uma barra larga; encolhe e fica um tom abaixo, na mesma altura de linha -->
             <Trigger Property="Text" Value="—">
                 <Setter Property="FontSize" Value="24"/>
-                <Setter Property="LineHeight" Value="48"/>
+                <!-- 46, a altura da linha da Bahnschrift 38 com algarismos: com 48 o cartão crescia 2 px no travessão e encolhia na primeira leitura -->
+                <Setter Property="LineHeight" Value="46"/>
                 <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
                 <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
             </Trigger>
@@ -213,7 +282,7 @@
     </Style>
     <Style x:Key="Unit" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="VerticalAlignment" Value="Bottom"/>
         <Setter Property="Margin" Value="5,0,0,5"/>
@@ -221,7 +290,7 @@
     <!-- Rótulo de uma leitura (Temp., Clock, Desgaste): gravado no painel, na letra do instrumento -->
     <Style x:Key="StatLabel" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
@@ -232,7 +301,7 @@
     </Style>
     <Style x:Key="StatSub" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource SmallFont}"/>
-        <Setter Property="FontSize" Value="11.5"/>
+        <Setter Property="FontSize" Value="12"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="Margin" Value="0,2,0,0"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -246,11 +315,21 @@
     </Style>
 
     <!-- ===================== Foco de teclado ===================== -->
+    <!-- Anel em pílula para botões e campos (raio de meia altura, que acompanha o botão em pílula a 3 px) -->
+    <Style x:Key="PillFocusRing">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border Margin="-3" BorderBrush="{DynamicResource Focus}" BorderThickness="2" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}" SnapsToDevicePixels="True"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
     <Style x:Key="FocusRing">
         <Setter Property="Control.Template">
             <Setter.Value>
                 <ControlTemplate>
-                    <Border Margin="-3" BorderBrush="{DynamicResource Focus}" BorderThickness="2" CornerRadius="9" SnapsToDevicePixels="True"/>
+                    <Border Margin="-3" BorderBrush="{DynamicResource Focus}" BorderThickness="2" CornerRadius="15" SnapsToDevicePixels="True"/>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -273,6 +352,56 @@
         <Setter Property="Margin" Value="0,0,0,14"/>
     </Style>
     <!--
+        Cabeçalho de página, o mesmo em todas as telas (PageHeaderPanel): título à esquerda (DIN 36) e, à direita, na linha do
+        título, a barra de ações (PageActions). Na barra, da esquerda para a direita: o estado vivo ("Lido às 20:31", PageStatus,
+        com o detalhe um tom abaixo, PageDetail), o medidor de progresso da tarefa (TaskMeter, só durante ela), a busca
+        (SearchField) e os botões (HeaderSecondary, HeaderPrimary), todos com 40 px e 10 entre si, a ação principal na ponta.
+        Nada de cartão em volta: o vão entre o título e a barra é livre. Só um texto de explicação (Visão geral, OverlayBi) fica
+        embaixo do título, como subtítulo.
+    -->
+    <!-- 22 embaixo (28 medidos nas letras do subtítulo até o primeiro painel); sem subtítulo, 17 local, os mesmos 28 do pé do título -->
+    <Style x:Key="PageHead" TargetType="local:PageHeaderPanel">
+        <Setter Property="Margin" Value="0,0,0,22"/>
+    </Style>
+    <Style x:Key="PageActions" TargetType="StackPanel">
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <!-- Estado vivo na barra de ações, à esquerda dos botões, na mesma linha: o que acabou de acontecer ("Lido às 20:31") -->
+    <Style x:Key="PageStatus" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="TextWrapping" Value="NoWrap"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="MaxWidth" Value="520"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,0,2"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+        <!-- Texto novo acende em 200 ms, em vez de trocar seco -->
+        <Setter Property="local:HeaderMotion.SoftText" Value="True"/>
+    </Style>
+    <!-- Segunda parte do estado: o detalhe curto, um tom abaixo -->
+    <Style x:Key="PageDetail" TargetType="TextBlock" BasedOn="{StaticResource PageStatus}">
+        <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
+        <Setter Property="MaxWidth" Value="240"/>
+        <Setter Property="Margin" Value="12,0,0,2"/>
+        <Style.Triggers>
+            <Trigger Property="Text" Value="">
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+    <!--
+        Vaga do estado na barra, de largura fixa e com o texto rente à direita: o estado muda de tamanho a cada etapa, e numa caixa
+        que acompanhasse o texto o medidor à esquerda dela pularia de lugar a cada troca. 20 até o que vem depois.
+    -->
+    <Style x:Key="PageStatusSlot" TargetType="DockPanel">
+        <Setter Property="Width" Value="420"/>
+        <Setter Property="LastChildFill" Value="True"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,20,0"/>
+    </Style>
+    <!--
         Painel: agrupa um instrumento. Sem sombra nem degradê: a profundidade vem do tom (bancada → painel → elevado) e do fio
         de cima é mais claro que o de baixo, como um módulo de alumínio).
     -->
@@ -281,7 +410,7 @@
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="{StaticResource RadiusPanel}"/>
-        <Setter Property="Padding" Value="{StaticResource PanelPadding}"/>
+        <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
     <!-- Poço: área rebaixada dentro de um painel (lista curta, leitura secundária) -->
@@ -361,8 +490,8 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}"/>
-        <Setter Property="Padding" Value="8,2,9,3"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusPill}"/>
+        <Setter Property="Padding" Value="9,2,10,3"/>
         <Setter Property="VerticalAlignment" Value="Top"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
@@ -411,9 +540,9 @@
     <ControlTemplate x:Key="ButtonTemplate" TargetType="Button">
         <Grid x:Name="root">
             <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource RadiusControl}" SnapsToDevicePixels="True"/>
+                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}" SnapsToDevicePixels="True"/>
             <Border x:Name="lit" Background="{Binding Path=(local:Ui.HoverFill), RelativeSource={RelativeSource TemplatedParent}}"
-                    CornerRadius="{StaticResource RadiusControl}" Opacity="0"/>
+                    CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}" Opacity="0"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" Margin="{TemplateBinding Padding}">
                 <TextBlock x:Name="ic" Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
                            Foreground="{Binding Path=(local:Ui.IconBrush), RelativeSource={RelativeSource TemplatedParent}}"
@@ -452,22 +581,36 @@
                     </Setter.Value>
                 </Setter>
             </Trigger>
+            <!-- Desligar e religar (enquanto uma tarefa corre) apaga e acende em 160 ms, sem piscar -->
             <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="root" Property="Opacity" Value="0.4"/>
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="root" Storyboard.TargetProperty="Opacity" To="0.4" Duration="0:0:0.16"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="root" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.16"/>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.ExitActions>
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
     <Style x:Key="ButtonBase" TargetType="Button">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Padding" Value="16,7"/>
+        <Setter Property="Padding" Value="18,7"/>
         <Setter Property="MinHeight" Value="34"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
         <Setter Property="Template" Value="{StaticResource ButtonTemplate}"/>
     </Style>
 
@@ -484,6 +627,19 @@
         <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="local:Ui.HoverFill" Value="{DynamicResource Selected}"/>
+    </Style>
+
+    <!-- Botões da barra de ações do cabeçalho: 40 px e 14, um degrau acima dos botões dos painéis, para o cabeçalho ter presença -->
+    <Style x:Key="HeaderPrimary" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Padding" Value="22,0"/>
+        <Setter Property="MinWidth" Value="172"/>
+    </Style>
+    <Style x:Key="HeaderSecondary" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Padding" Value="20,0"/>
     </Style>
 
     <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource ButtonBase}">
@@ -547,6 +703,14 @@
         <Setter Property="local:Ui.HoverFill" Value="{DynamicResource DangerSoft}"/>
     </Style>
 
+    <!-- Parar uma tarefa de cabeçalho (Testar a rede, Instalar apps): o mesmo tamanho do HeaderPrimary, para o botão não pular -->
+    <Style x:Key="HeaderStop" TargetType="Button" BasedOn="{StaticResource StopButton}">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Padding" Value="22,0"/>
+        <Setter Property="MinWidth" Value="172"/>
+    </Style>
+
     <!-- Ação destrutiva discreta dentro de listas (remover) -->
     <Style x:Key="DangerGhostButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
         <Setter Property="local:Ui.HoverFill" Value="{DynamicResource DangerSoft}"/>
@@ -567,11 +731,11 @@
         <Setter Property="FontFamily" Value="{StaticResource Icons}"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="{StaticResource RadiusControl}">
+                    <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -581,6 +745,54 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="b" Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Atalho de um cartão para a página dele (Visão geral): um círculo de 30 px com a seta, no canto do título. Discreto em
+        repouso (fio e seta no tom secundário); sob o mouse o fundo e o fio sobem e a seta acende no sinal. Sem transição: os cartões
+        de Processador e Placa de vídeo são refeitos a cada leitura, e uma animação de entrada recomeçaria a cada segundo.
+    -->
+    <Style x:Key="CardLink" TargetType="Button">
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="Content" Value="&#xE72A;"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="FontFamily" Value="{StaticResource Icons}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="root">
+                        <Border x:Name="b" CornerRadius="15" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Background="Transparent" SnapsToDevicePixels="True"/>
+                        <!-- Seta na diagonal, para cima e para a direita: aponta o canto do cartão e diz "abre outra página" -->
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                            <ContentPresenter.RenderTransform>
+                                <RotateTransform Angle="-45"/>
+                            </ContentPresenter.RenderTransform>
+                        </ContentPresenter>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="root" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform Y="1"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -639,11 +851,11 @@
         <Setter Property="Width" Value="320"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="b" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{StaticResource RadiusControl}" Padding="10,0,5,0">
+                    <Border x:Name="b" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}" Padding="12,0,5,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -684,17 +896,18 @@
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="GroupName" Value="Nav"/>
+        <!-- 36 de altura e 38 de passo (eram 34 e 36): mais respiro, e o menu inteiro ainda cabe acima da central em 1920 × 1032 -->
         <Setter Property="Margin" Value="12,1"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Grid Background="Transparent" Height="34">
+                    <Grid Background="Transparent" Height="36">
                         <Border x:Name="hover" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Hover}" Opacity="0"/>
                         <Border x:Name="sel" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource NavSel}" Opacity="0"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="34"/>
+                                <ColumnDefinition Width="40"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <local:HwIcon x:Name="ic" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
@@ -702,7 +915,8 @@
                             <local:HwIcon x:Name="icOn" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
                                           Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0,0,0"
                                           Foreground="{DynamicResource Signal}" Opacity="0"/>
-                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="4,1,8,0"/>
+                            <!-- A DIN assenta 1,5 px acima do centro da caixa: 3 px em cima a descem até o meio do ícone -->
+                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="2,3,8,0"/>
                         </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -760,7 +974,7 @@
     <!-- Trilho da navegação: um destaque só, tingido de sinal, que desliza até a página aberta -->
     <Style x:Key="NavRail" TargetType="local:SlidingSelectionPanel">
         <Setter Property="Highlight" Value="{DynamicResource NavSel}"/>
-        <Setter Property="HighlightRadius" Value="7"/>
+        <Setter Property="HighlightRadius" Value="12"/>
     </Style>
 
     <Style x:Key="NavHeader" TargetType="TextBlock">
@@ -778,7 +992,7 @@
         <Setter Property="Background" Value="{DynamicResource Bg}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusInset}"/>
+        <Setter Property="CornerRadius" Value="17"/>
         <Setter Property="Padding" Value="3"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -788,7 +1002,7 @@
         <Setter Property="Orientation" Value="Horizontal"/>
         <Setter Property="Highlight" Value="{DynamicResource Selected}"/>
         <Setter Property="HighlightBorder" Value="{DynamicResource LineStrong}"/>
-        <Setter Property="HighlightRadius" Value="5"/>
+        <Setter Property="HighlightRadius" Value="14"/>
     </Style>
     <Style x:Key="Segment" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
@@ -799,7 +1013,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="5" Padding="12,6,12,3" MinHeight="26">
+                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="12,5,12,3" MinHeight="26">
                         <Grid>
                             <!-- Cópia invisível em seminegrito: o segmento já nasce com a largura do escolhido, então marcar um não desloca os vizinhos -->
                             <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Visibility="Hidden" HorizontalAlignment="Center"/>
@@ -880,9 +1094,9 @@
                             <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
                                           Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
                                           Width="30" Height="30" HorizontalAlignment="Left" Margin="-2,0,0,0"/>
-                            <ContentPresenter Margin="0,8,0,0" TextElement.FontWeight="SemiBold" TextElement.FontSize="13.5" TextElement.FontFamily="{StaticResource LabelFont}"/>
+                            <ContentPresenter Margin="0,8,0,0" TextElement.FontWeight="SemiBold" TextElement.FontSize="14" TextElement.FontFamily="{StaticResource LabelFont}"/>
                             <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                       Foreground="{DynamicResource Faint}" FontFamily="{StaticResource SmallFont}" FontSize="11.5" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                       Foreground="{DynamicResource Faint}" FontFamily="{StaticResource SmallFont}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                         </StackPanel>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -953,7 +1167,7 @@
     <Style x:Key="ThemeToggle" TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="13.5"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
@@ -1034,6 +1248,8 @@
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <!-- O deslize é do clique (Ui.SwitchMotion); o estado vem dos setters, sem animar quando a linha nasce ou é recriada -->
+        <Setter Property="local:Ui.SwitchMotion" Value="True"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -1063,26 +1279,8 @@
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="knob" Property="Fill" Value="{DynamicResource SignalFg}"/>
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="slide" Storyboard.TargetProperty="X" To="18" Duration="0:0:0.2">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="slide" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.2">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
+                            <Setter TargetName="knob" Property="HorizontalAlignment" Value="Right"/>
+                            <Setter TargetName="on" Property="Opacity" Value="1"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="root" Property="Opacity" Value="0.4"/>
@@ -1113,9 +1311,9 @@
                                           Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
                                           Width="30" Height="30" VerticalAlignment="Center"/>
                             <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
-                                <ContentPresenter TextElement.FontWeight="SemiBold" TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="13.5"/>
+                                <ContentPresenter TextElement.FontWeight="SemiBold" TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="14"/>
                                 <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource SmallFont}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis"/>
+                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                             <Border x:Name="dot" Grid.Column="2" Width="18" Height="18" CornerRadius="9" BorderThickness="1.5"
                                     BorderBrush="{DynamicResource LineStrong}" VerticalAlignment="Center">
@@ -1198,7 +1396,7 @@
         <Setter Property="SelectionBrush" Value="{DynamicResource Signal}"/>
         <Setter Property="SelectionOpacity" Value="0.3"/>
         <Setter Property="FontSize" Value="13"/>
-        <Setter Property="Padding" Value="10,0,10,3"/>
+        <Setter Property="Padding" Value="14,0,14,3"/>
         <Setter Property="MinHeight" Value="34"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -1206,7 +1404,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
                     <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource RadiusControl}" SnapsToDevicePixels="True">
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}" SnapsToDevicePixels="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -1214,14 +1412,16 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock x:Name="ic" Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                       FontFamily="{StaticResource Icons}" FontSize="12" Foreground="{DynamicResource Faint}"
-                                       VerticalAlignment="Center" Margin="11,0,0,0"/>
+                                       FontFamily="{StaticResource Icons}" FontSize="14" Foreground="{DynamicResource Muted}"
+                                       VerticalAlignment="Center" Margin="15,0,0,0"/>
                             <TextBlock x:Name="ph" Grid.Column="1" Text="{Binding Path=(local:Ui.Placeholder), RelativeSource={RelativeSource TemplatedParent}}"
                                        Foreground="{DynamicResource Faint}" Margin="{TemplateBinding Padding}" Padding="2,0,0,0"
                                        VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" TextTrimming="CharacterEllipsis"/>
-                            <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1" Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                            <!-- Sem margem: o próprio TextBox já aplica o Padding dentro da área do texto (com margem ele contava duas vezes e o
+                                 texto digitado ficava 10 px à direita do texto de espera) -->
+                            <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1" VerticalAlignment="Center"/>
                             <TextBlock x:Name="sx" Grid.Column="2" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}"
-                                       Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                       Foreground="{DynamicResource Muted}" FontSize="12" VerticalAlignment="Center" Margin="0,0,14,0"/>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -1564,33 +1764,158 @@
 
     <!-- rodada-unslop: ferramentas início -->
     <!--
-        Console de tarefa (Inicialização, Instalar apps, Drivers): fica ao lado do título, rente ao topo do cabeçalho, com o botão
-        da tarefa (36 px), o estado em uma linha, um detalhe curto à direita e a barra contínua no sinal, que só aparece durante
-        uma tarefa e só avança quando ela informa trabalho feito. Com 62 px de altura, o primeiro painel começa na mesma linha
-        das páginas com título e subtítulo.
+        Medidor de progresso de uma tarefa, na barra de ações do cabeçalho (Inicialização, Drivers, Rede): o trilho
+        contínuo no sinal e a porcentagem à direita. Só aparece durante a tarefa (os botões, rentes à direita, não andam; o estado
+        abre espaço à esquerda), avança quando ela informa trabalho feito e, ao terminar, apaga em 300 ms (ToolPage.SetProgress).
     -->
-    <Style x:Key="TaskConsole" TargetType="Border" BasedOn="{StaticResource CardBorder}">
-        <Setter Property="Padding" Value="12,12,22,12"/>
+    <Style x:Key="TaskMeter" TargetType="Grid">
+        <Setter Property="Width" Value="220"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Visibility" Value="Collapsed"/>
+        <Setter Property="Margin" Value="0,0,18,0"/>
     </Style>
-    <Style x:Key="TaskStatus" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
+    <Style x:Key="TaskPercent" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-        <Setter Property="TextWrapping" Value="NoWrap"/>
-        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Setter Property="MinWidth" Value="44"/>
+        <Setter Property="TextAlignment" Value="Right"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="10,0,0,1"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
     </Style>
-    <Style x:Key="TaskDetail" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
-        <Setter Property="TextWrapping" Value="NoWrap"/>
-        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-        <Setter Property="HorizontalAlignment" Value="Right"/>
-        <Setter Property="Margin" Value="16,0,0,0"/>
+    <!-- Busca: o mesmo desenho em toda página (e o da paleta Ctrl + K no alto): fundo do painel, fio fino, lupa e 40 px, a altura dos botões do cabeçalho -->
+    <Style x:Key="SearchField" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="Width" Value="300"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="local:Ui.Icon" Value="&#xE721;"/>
+        <!-- 7 depois da lupa (mais os 2 do cursor do WPF): o texto começa perto do ícone, não 30 px adiante -->
+        <Setter Property="Padding" Value="7,0,16,3"/>
+    </Style>
+    <!-- Busca dentro de um cartão: cabe na linha de 34 px do cabeçalho (CardHeader) -->
+    <Style x:Key="CardSearch" TargetType="TextBox" BasedOn="{StaticResource SearchField}">
+        <Setter Property="Height" Value="34"/>
+        <Setter Property="MinHeight" Value="34"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <!-- Botão − e + do campo de número: bolinha de 34 px (a altura do campo) com o fio e o fundo dos campos, como a seta dos cartões.
+         Não pega o foco, para o cursor ficar no campo; segurar repete o passo; no limite da faixa o comando desliga e a bolinha apaga. -->
+    <Style x:Key="StepButton" TargetType="RepeatButton">
+        <Setter Property="Width" Value="34"/>
+        <Setter Property="Height" Value="34"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Delay" Value="400"/>
+        <Setter Property="Interval" Value="90"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="FontFamily" Value="{StaticResource Icons}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Grid x:Name="root">
+                        <Border x:Name="b" CornerRadius="17" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1" SnapsToDevicePixels="True"/>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="root" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform Y="1"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.35"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!--
+        Campo de número (NumberField.Minimum/Maximum/Step): uma bolinha − à esquerda, a pílula do valor no meio e uma bolinha + à
+        direita, 6 px entre elas. O valor é digitável: clicar em qualquer ponto da pílula (ou chegar nela pelo Tab) dá o foco ao número
+        e seleciona o valor, para digitar por cima.
+    -->
+    <Style x:Key="NumberField" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+        <Setter Property="Height" Value="34"/>
+        <Setter Property="MinHeight" Value="34"/>
+        <Setter Property="MaxLength" Value="3"/>
+        <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
+        <Setter Property="FontSize" Value="14"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <RepeatButton Style="{StaticResource StepButton}" Content="&#xE738;" Command="{x:Static local:NumberField.Decrease}" ToolTip="Diminuir"/>
+                        <Border x:Name="b" Grid.Column="1" Margin="6,0" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="17" SnapsToDevicePixels="True" Cursor="IBeam">
+                            <!-- A Bahnschrift assenta 1,5 px acima do centro: 3 em cima a trazem de volta. Número e unidade juntos no meio,
+                                 na mesma linha de base (o °C, menor, sobe 2); um clique em qualquer ponto da pílula põe o foco no número
+                                 e seleciona o valor (NumberField) -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,0">
+                                <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Bottom"/>
+                                <TextBlock x:Name="sx" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontFamily="{StaticResource Readout}" FontSize="12" Foreground="{DynamicResource Muted}"
+                                           VerticalAlignment="Bottom" Margin="1,0,0,2"/>
+                            </StackPanel>
+                        </Border>
+                        <RepeatButton Grid.Column="2" Style="{StaticResource StepButton}" Content="&#xE710;" Command="{x:Static local:NumberField.Increase}" ToolTip="Aumentar"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="local:Ui.Suffix" Value="">
+                            <Setter TargetName="sx" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger SourceName="b" Property="IsMouseOver" Value="True">
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!-- Grupo de controles que não são botões (interruptor e atalho do OverlayBi) na barra de ações: 40 px, o fio dos campos -->
+    <Style x:Key="ActionGroup" TargetType="Border">
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="20"/>
+        <Setter Property="Padding" Value="18,0"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
     <!-- Cabeçalho de coluna de uma tabela feita à mão (linhas de altura fixa): DIN 12, um tom abaixo do conteúdo -->
     <Style x:Key="TableHead" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -1599,7 +1924,7 @@
     <Style x:Key="TitleCount" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
         <Setter Property="FontStretch" Value="SemiCondensed"/>
-        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontSize" Value="16"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -1652,7 +1977,7 @@
                                     </ContentPresenter.Resources>
                                 </ContentPresenter>
                                 <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource SmallFont}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -1696,7 +2021,7 @@
                             <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
                                 <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="14" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False"/>
                                 <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource SmallFont}" FontSize="11.5" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                             </StackPanel>
                             <Border x:Name="box" Grid.Column="2" Width="18" Height="18" CornerRadius="{StaticResource RadiusSmall}" BorderThickness="1.5"
                                     BorderBrush="{DynamicResource LineStrong}" VerticalAlignment="Center">
@@ -1885,11 +2210,11 @@
         encolhe à frase (Tag recebe a lista).
     -->
     <Style x:Key="TestLogCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
-        <Setter Property="Padding" Value="24,20,8,8"/>
+        <Setter Property="Padding" Value="24,16,8,8"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding Tag.HasItems, RelativeSource={RelativeSource Self}}" Value="False">
                 <Setter Property="VerticalAlignment" Value="Top"/>
-                <Setter Property="Padding" Value="24,20,24,20"/>
+                <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>

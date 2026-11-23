@@ -180,11 +180,11 @@ public sealed class PowerTrace : InstrumentBase
         if (s.Gpu != null) dc.DrawEllipse(SurfaceBrush, Stroke(GpuBrush, 2.5), new Point(px, y(Total(s))), 5.5, 5.5);
 
         string when = ChartScale.RelativeAgo(_samples.Count - 1 - nearest);
-        var time = Text(when, 11.5, FaintBrush, readout: false);
+        var time = Text(when, 12, FaintBrush, readout: false);
         var total = Text($"{Total(s):0.#} W", 16, InkBrush);
         var rows = new List<(Brush Dot, FormattedText Label, FormattedText Value)>();
-        if (s.Cpu is float cv) rows.Add((CpuBrush, Text("Processador", 12, MutedBrush, readout: false), Text($"{cv:0.#} W", 12.5, InkBrush)));
-        if (s.Gpu is float gv) rows.Add((GpuBrush, Text("Placa de vídeo", 12, MutedBrush, readout: false), Text($"{gv:0.#} W", 12.5, InkBrush)));
+        if (s.Cpu is float cv) rows.Add((CpuBrush, Text("Processador", 12, MutedBrush, readout: false), Text($"{cv:0.#} W", 13, InkBrush)));
+        if (s.Gpu is float gv) rows.Add((GpuBrush, Text("Placa de vídeo", 12, MutedBrush, readout: false), Text($"{gv:0.#} W", 13, InkBrush)));
         double labelW = rows.Count > 0 ? rows.Max(r => r.Label.Width) : 0, valueW = rows.Count > 0 ? rows.Max(r => r.Value.Width) : 0;
         double rowH = 18, bw = Math.Max(Math.Max(time.Width, total.Width), 14 + labelW + 14 + valueW) + 24;
         double bh = time.Height + total.Height + rows.Count * rowH + 18;
@@ -194,7 +194,7 @@ public sealed class PowerTrace : InstrumentBase
         dc.DrawText(time, new Point(bx + 12, by + 8));
         dc.DrawText(total, new Point(bx + 12, by + 8 + time.Height));
         double ry = by + 12 + time.Height + total.Height;
-        // Rótulo (Segoe 12) e valor (mostrador 12,5) na mesma linha de base; o traço do canal no meio da altura-x do rótulo
+        // Rótulo (Segoe 12) e valor (mostrador 13) na mesma linha de base; o traço do canal no meio da altura-x do rótulo
         double xh = XHeight(12, readout: false);
         foreach (var (dot, label, value) in rows)
         {
@@ -238,18 +238,15 @@ public sealed class RailGauge : InstrumentBase
     public static readonly DependencyProperty ValueProperty = Number(nameof(Value), typeof(RailGauge));
     public static readonly DependencyProperty MinProperty = Number(nameof(Min), typeof(RailGauge));
     public static readonly DependencyProperty MaxProperty = Number(nameof(Max), typeof(RailGauge));
-    public static readonly DependencyProperty ShowScaleProperty =
-        DependencyProperty.Register(nameof(ShowScale), typeof(bool), typeof(RailGauge), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.AffectsMeasure));
 
     public double Nominal { get => (double)GetValue(NominalProperty); set => SetValue(NominalProperty, value); }
     public double Value { get => (double)GetValue(ValueProperty); set => SetValue(ValueProperty, value); }
     public double Min { get => (double)GetValue(MinProperty); set => SetValue(MinProperty, value); }
     public double Max { get => (double)GetValue(MaxProperty); set => SetValue(MaxProperty, value); }
-    public bool ShowScale { get => (bool)GetValue(ShowScaleProperty); set => SetValue(ShowScaleProperty, value); }
 
     private const double Span = 0.10, Tol = CoreBi.Engine.Monitoring.Power.Rail.Tolerance;
 
-    protected override Size MeasureOverride(Size available) => new(0, ShowScale ? 30 : 18);
+    protected override Size MeasureOverride(Size available) => new(0, 18);
 
     protected override void OnRender(DrawingContext dc)
     {
@@ -271,12 +268,6 @@ public sealed class RailGauge : InstrumentBase
         {
             bool off = Math.Abs(Value / Nominal - 1) > Tol;
             dc.DrawRoundedRectangle(off ? WarnBrush : InkBrush, null, new Rect(X(Value) - 1.25, y0 - 3, 2.5, bh + 6), 1, 1);
-        }
-        if (!ShowScale) return;
-        foreach (var (v, label) in new[] { (Nominal * (1 - Tol), "−5 %"), (Nominal, "nominal"), (Nominal * (1 + Tol), "+5 %") })
-        {
-            var t = Text(label, 10.5, FaintBrush);
-            dc.DrawText(t, new Point(Math.Clamp(X(v) - t.Width / 2, 0, w - t.Width), y0 + bh + 7));
         }
     }
 }
@@ -404,7 +395,7 @@ public sealed class UptimeChart : InstrumentBase
 
     private IReadOnlyList<Day> _days = Array.Empty<Day>();
     private int _hover = -1;
-    public const double MinRowHeight = 25, MaxRowHeight = 52, AxisHeight = 18;
+    public const double MinRowHeight = 22, MaxRowHeight = 52, AxisHeight = 18;
 
     /// <summary>As linhas dividem a altura que o painel der (entre o mínimo e o máximo); a altura que sobra fica embaixo.</summary>
     private double RowHeight => _days.Count == 0 ? MinRowHeight : Math.Clamp((ActualHeight - AxisHeight) / _days.Count, MinRowHeight, MaxRowHeight);
