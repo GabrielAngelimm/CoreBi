@@ -156,7 +156,7 @@
             que resolve; vários avisos são vários tópicos, cada um no seu lugar.
         -->
         <Style x:Key="WhereRow" TargetType="Grid">
-            <Setter Property="Margin" Value="0,9,0,9" />
+            <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
         <Style x:Key="WhereLed" TargetType="Ellipse" BasedOn="{StaticResource StatusLed}">
             <Setter Property="Width" Value="8" />
@@ -406,17 +406,20 @@
                     <!-- Lado direito: o que mostrar (ocupa a sobra) e, embaixo, onde funciona -->
                     <Grid x:Name="OvSide" Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <!-- O que mostrar: um grupo por componente (nome à esquerda, itens em LED numa grade de três colunas), separados por um fio -->
+                        <!--
+                            O que mostrar: um grupo por componente (ícone, nome e legenda à esquerda, itens em três colunas), separados por um fio.
+                            O cartão termina no último grupo, com a mesma margem embaixo que em cima; a sobra de altura vai para "Onde funciona".
+                        -->
                         <Border x:Name="OvItemsCard" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid Style="{StaticResource CardHeader}">
                                     <Grid.ColumnDefinitions>
@@ -474,7 +477,7 @@
                                         </local:SlidingSelectionPanel>
                                     </Border>
                                 </Grid>
-                                <local:SpreadPanel x:Name="OvItemsPanel" Grid.Row="1" Margin="0,12,0,0" />
+                                <StackPanel x:Name="OvItemsPanel" Grid.Row="1" Margin="0,12,0,0" />
                             </Grid>
                         </Border>
 
@@ -484,11 +487,26 @@
                             Os sensores da CPU pedem administrador; o FPS vem dos eventos do Windows.
                         -->
                         <Border x:Name="OvWhereCard" Grid.Row="2" Style="{StaticResource CardBorder}">
-                            <StackPanel>
+                            <!--
+                                A sobra de altura vira vãos iguais: do título ao primeiro tópico e entre os tópicos (o fio fica no meio do vão).
+                                O último tópico encosta na margem de baixo do cartão (-4 px: a parte de baixo da linha de texto não tem tinta).
+                            -->
+                            <Grid Margin="0,0,0,-4">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" MinHeight="16" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" MinHeight="17" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" MinHeight="17" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" MinHeight="17" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <Grid Style="{StaticResource CardHeader}">
                                     <TextBlock Text="Onde funciona" Style="{StaticResource CardTitle}" />
                                 </Grid>
-                                <Grid Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="O overlay é uma janela do CoreBi por cima do jogo.">
+                                <Grid Grid.Row="2" Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="O overlay é uma janela do CoreBi por cima do jogo.">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
@@ -503,8 +521,8 @@
                                     <TextBlock Grid.Column="1" Text="Janela e tela cheia sem borda" Style="{StaticResource WhereName}" />
                                     <TextBlock Grid.Column="2" Text="Funciona" Style="{StaticResource WhereState}" />
                                 </Grid>
-                                <Border Style="{StaticResource Divider}" />
-                                <Grid Style="{StaticResource WhereRow}" Background="Transparent" x:Name="OvRtssRow" ToolTip="Em tela cheia exclusiva o Windows não deixa outra janela por cima do jogo: quem desenha o overlay é o RTSS, se estiver aberto.">
+                                <Border Grid.Row="3" Style="{StaticResource Divider}" VerticalAlignment="Center" />
+                                <Grid Grid.Row="4" Style="{StaticResource WhereRow}" Background="Transparent" x:Name="OvRtssRow" ToolTip="Em tela cheia exclusiva o Windows não deixa outra janela por cima do jogo: quem desenha o overlay é o RTSS, se estiver aberto.">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
@@ -521,8 +539,8 @@
                                     <TextBlock x:Name="OvRtssHint" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource WhereHint}" />
                                     <Button x:Name="OvRtssAction" Grid.Column="3" Grid.RowSpan="2" Style="{StaticResource WhereButton}" Click="OvReadyAction_Click" />
                                 </Grid>
-                                <Border Style="{StaticResource Divider}" />
-                                <Grid Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="Temperatura, clock e consumo da CPU.">
+                                <Border Grid.Row="5" Style="{StaticResource Divider}" VerticalAlignment="Center" />
+                                <Grid Grid.Row="6" Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="Temperatura, clock e consumo da CPU.">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
@@ -538,8 +556,8 @@
                                     <TextBlock x:Name="OvAdminState" Grid.Column="2" Text="Funciona" Style="{StaticResource WhereState}" />
                                     <TextBlock x:Name="OvAdminHint" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource WhereHint}" />
                                 </Grid>
-                                <Border Style="{StaticResource Divider}" />
-                                <Grid Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="O FPS vem dos eventos de apresentação do Windows (ETW): o CoreBi não injeta nada nem lê a memória do jogo.">
+                                <Border Grid.Row="7" Style="{StaticResource Divider}" VerticalAlignment="Center" />
+                                <Grid Grid.Row="8" Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="O FPS vem dos eventos de apresentação do Windows (ETW): o CoreBi não injeta nada nem lê a memória do jogo.">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
@@ -555,7 +573,7 @@
                                     <TextBlock x:Name="OvFpsState" Grid.Column="2" Text="Funciona" Style="{StaticResource WhereState}" />
                                     <TextBlock x:Name="OvFpsHint" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource WhereHint}" />
                                 </Grid>
-                            </StackPanel>
+                            </Grid>
                         </Border>
                     </Grid>
                 </Grid>

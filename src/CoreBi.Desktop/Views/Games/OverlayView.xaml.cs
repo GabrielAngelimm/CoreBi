@@ -40,12 +40,13 @@ public partial class OverlayView : UserControl
 
     /// <summary>
     /// Onde cada item fica na grade do seu grupo, coluna por coluna. As colunas têm o mesmo sentido em todos os grupos:
-    /// carga | clock | calor e energia; no FPS, taxa | tempo de quadro. VRAM, RAM e Outros são uma linha só.
+    /// carga | clock | calor e energia; no FPS, taxa | tempo de quadro. VRAM, RAM e Outros são uma linha só. A coluna mais curta é
+    /// a da direita, para a grade ler da esquerda para a direita e o vão ficar no fim (na GPU o consumo vai para a carga).
     /// </summary>
     private static readonly Dictionary<string, string[][]> ItemColumns = new()
     {
         ["FPS"] = new[] { new[] { "fps", "low1" }, new[] { "frametime", "graph" } },
-        ["GPU"] = new[] { new[] { "gpu_load", "gpu_fan" }, new[] { "gpu_clock", "gpu_memclock", "gpu_volt" }, new[] { "gpu_temp", "gpu_hotspot", "gpu_power" } },
+        ["GPU"] = new[] { new[] { "gpu_load", "gpu_fan", "gpu_power" }, new[] { "gpu_clock", "gpu_memclock", "gpu_volt" }, new[] { "gpu_temp", "gpu_hotspot" } },
         ["VRAM"] = new[] { new[] { "vram_used" }, new[] { "vram_pct" } },
         ["CPU"] = new[] { new[] { "cpu_load", "cpu_maxcore" }, new[] { "cpu_clock", "cpu_clockmax" }, new[] { "cpu_temp", "cpu_power" } },
         ["RAM"] = new[] { new[] { "ram_used" }, new[] { "ram_pct" } },
@@ -151,9 +152,8 @@ public partial class OverlayView : UserControl
     }
 
     /// <summary>
-    /// O que mostrar: um grupo por componente, com o nome e a legenda numa coluna à esquerda e os itens em LED numa grade de três
-    /// colunas. O painel espalha a sobra de altura entre os grupos; o fio de cada grupo fica no topo da sua faixa e o conteúdo no
-    /// meio, então o fio cai sempre a meio caminho entre dois grupos.
+    /// O que mostrar: um grupo por componente, com o ícone, o nome e a legenda numa coluna à esquerda e os itens em três colunas.
+    /// O fio de cada grupo fica no topo da sua faixa, com 8 px até o grupo de cima e até o seu; o cartão termina no último grupo.
     /// </summary>
     private void BuildPicker()
     {
@@ -172,7 +172,9 @@ public partial class OverlayView : UserControl
                 slot.Children.Add(rule);
             }
 
-            var row = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 8, 0, 8) };
+            // 8 px acima e abaixo de cada fio; o último grupo encosta na margem do cartão (-4 px: a legenda não tem tinta no pé da linha)
+            bool last = i == groups.Count - 1;
+            var row = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, i == 0 ? 0 : 8, 0, last ? -4 : 8) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
