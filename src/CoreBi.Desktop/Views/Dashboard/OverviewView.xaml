@@ -203,7 +203,7 @@
 
                         <!-- Esqueleto na abertura até RAM, VRAM e disco estarem lidos: o aro, o título e as três linhas da legenda -->
                         <Border x:Name="DashMemoryCard" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}"
-                                local:Skeleton.Layout="col 0 150; center 150: ring 150; col 174 *; row 24: h 50%^16; gap 8; share 3: dot 10, - 8, t *@0.7, - 12, n 40^14&gt;; end">
+                                local:Skeleton.Layout="col 0 150; center 150: ring 150; col 174; row 24: h 50%^16; gap 8; share 3: dot 10, - 8, t *@0.7, - 12, n 40^14&gt;; end">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
