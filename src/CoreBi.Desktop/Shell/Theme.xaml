@@ -988,12 +988,15 @@
     <!-- ===================== Seleção de opções ===================== -->
     <!-- Controle segmentado: um poço com teclas; a escolhida sobe (fundo elevado, fio e texto em tinta) e, num
          SlidingSelectionPanel, a tecla acesa desliza de uma opção para a outra -->
+    <!-- 34 de altura, a mesma dos botões no cartão (Iniciar análise): fio LineStrong como o deles e teclas de 28 com 2 de folga,
+         para o grupo ler do mesmo tamanho ao lado de um botão, e não como um poço menor -->
     <Style x:Key="SegmentGroup" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Bg}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="17"/>
-        <Setter Property="Padding" Value="3"/>
+        <Setter Property="Padding" Value="2"/>
+        <Setter Property="Height" Value="34"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
@@ -1014,7 +1017,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="{TemplateBinding Padding}" MinHeight="26">
+                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="{TemplateBinding Padding}" MinHeight="28">
                         <Grid>
                             <!-- Cópia invisível em seminegrito: o segmento já nasce com a largura do escolhido, então marcar um não desloca os vizinhos -->
                             <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Visibility="Hidden" HorizontalAlignment="Center"/>
@@ -1947,20 +1950,20 @@
 
     <!-- rodada-unslop: bancada de teste início -->
     <!--
-        Bancada de teste (Benchmark e Teste de carga): a mesma tecla horizontal escolhe o teste (TestTab, um por vez) e o que
-        carregar (TestToggle, vários). Ícone do componente na cor dele, sem fundo; nome na letra da estrutura e a peça embaixo.
-        No TestTab a escolhida leva o sinal (fio Signal e fundo SignalSoft, texto aceso), nunca a cor do componente; o TestToggle,
-        de escolha múltipla, tem o LED dos itens do OverlayBi (abaixo). Desligada, a tecla fica a meia opacidade.
+        Bancada de teste (Benchmark e Teste de carga): a mesma tecla grande escolhe o teste (TestTab, um por vez) e o que carregar
+        (TestToggle, vários). Ícone do componente de 36 na cor dele, sem fundo; nome em DIN 16 seminegrito na tinta e a peça
+        embaixo em 13; fio LineStrong, que firma sob o mouse, e um leve afundar no clique, para ler como botão. A escolhida leva o
+        sinal (fio Signal e fundo SignalSoft), nunca a cor do componente. Desligada, a tecla fica a 30 %.
     -->
     <Style x:Key="TestTab" TargetType="RadioButton">
-        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="face" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
-                            CornerRadius="{StaticResource RadiusInset}" Padding="14,12,14,12" SnapsToDevicePixels="True">
+                    <Border x:Name="face" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusInset}" Padding="16,15,16,15" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -1968,30 +1971,35 @@
                             </Grid.ColumnDefinitions>
                             <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
                                           Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Width="30" Height="30" VerticalAlignment="Center"/>
-                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-                                <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="14" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False">
+                                          Width="36" Height="36" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="16" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False">
                                     <ContentPresenter.Resources>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                                         </Style>
                                     </ContentPresenter.Resources>
                                 </ContentPresenter>
-                                <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                <TextBlock x:Name="caption" Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontSize="13" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="face" Property="Background" Value="{DynamicResource Hover}"/>
-                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Muted}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="face" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="0.985" ScaleY="0.985"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalSoft}"/>
                             <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Signal}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="face" Property="Opacity" Value="0.3"/>
@@ -2002,18 +2010,19 @@
         </Setter>
     </Style>
     <!--
-        Componente do Teste de carga (vários ao mesmo tempo), no desenho dos itens do OverlayBi: um LED à direita, apagado (anel)
-        ou aceso no sinal, e o contorno que firma quando a peça entra no teste. Sem fundo colorido: o ícone já tem a cor da peça.
+        Componente do Teste de carga (vários ao mesmo tempo): a mesma tecla grande do Benchmark (ícone de 36, nome em DIN 16 na
+        tinta, legenda 13) com a marca de escolha à direita, um anel vazio fora do teste e, dentro, um círculo no sinal com o visto,
+        que entra crescendo; a tecla escolhida ganha o fundo SignalSoft e o fio Signal, como a do Benchmark.
     -->
     <Style x:Key="TestToggle" TargetType="CheckBox">
-        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
-                    <Border x:Name="face" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
-                            CornerRadius="{StaticResource RadiusInset}" Padding="14,12,18,12" SnapsToDevicePixels="True">
+                    <Border x:Name="face" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusInset}" Padding="18,15,18,15" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -2022,26 +2031,65 @@
                             </Grid.ColumnDefinitions>
                             <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
                                           Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Width="30" Height="30" VerticalAlignment="Center"/>
-                            <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
-                                <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="14" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False"/>
+                                          Width="36" Height="36" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Margin="14,0,12,0" VerticalAlignment="Center">
+                                <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="16" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False"/>
                                 <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                           FontSize="13" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
                             </StackPanel>
-                            <Ellipse x:Name="led" Grid.Column="2" Width="10" Height="10" VerticalAlignment="Center" Stroke="{DynamicResource Faint}" StrokeThickness="1.5" Fill="Transparent"/>
+                            <!-- A marca de escolha: anel vazio fora do teste; dentro, círculo no sinal com o visto, que entra crescendo -->
+                            <Grid Grid.Column="2" Width="22" Height="22" VerticalAlignment="Center">
+                                <Ellipse x:Name="ring" Stroke="{DynamicResource LineStrong}" StrokeThickness="1.5" Fill="Transparent"/>
+                                <Grid x:Name="tick" Opacity="0" RenderTransformOrigin="0.5,0.5">
+                                    <Grid.RenderTransform>
+                                        <ScaleTransform x:Name="tickScale" ScaleX="0.6" ScaleY="0.6"/>
+                                    </Grid.RenderTransform>
+                                    <Ellipse Fill="{DynamicResource Signal}"/>
+                                    <TextBlock Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SignalFg}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Grid>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="face" Property="Background" Value="{DynamicResource Hover}"/>
-                            <Setter TargetName="led" Property="Stroke" Value="{DynamicResource Muted}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Muted}"/>
+                            <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Muted}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="face" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="0.985" ScaleY="0.985"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
-                            <Setter TargetName="led" Property="Fill" Value="{DynamicResource Signal}"/>
-                            <Setter TargetName="led" Property="Stroke" Value="{DynamicResource Signal}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalSoft}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Signal}"/>
+                            <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Signal}"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="tick" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="tickScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="tickScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="tick" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="tickScale" Storyboard.TargetProperty="ScaleX" To="0.6" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="tickScale" Storyboard.TargetProperty="ScaleY" To="0.6" Duration="0:0:0.12"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="face" Property="Opacity" Value="0.3"/>
@@ -2414,14 +2462,16 @@
     -->
     <Style x:Key="BenchHistoryCard" TargetType="Border" BasedOn="{StaticResource HistoryCard}">
         <Setter Property="Height" Value="340"/>
+        <!-- 31 da borda ao título e 31 do título à primeira linha, o mesmo par do histórico do Teste de carga (HistoryHeader) -->
+        <Setter Property="Padding" Value="24,24,8,8"/>
     </Style>
     <!--
-        Cabeçalho do histórico: a linha de 34 px dos cartões, com o título à esquerda e Limpar à direita, os dois no meio dela; 10
-        até a lista. Recua 16 à direita, o mesmo recuo da lista (que deixa lugar à barra de rolagem), para o botão alinhar com ela.
+        Cabeçalho do histórico: a linha de 34 px dos cartões, com o título à esquerda e Limpar à direita, os dois no meio dela; 12
+        até a lista, e o vão do fim do título ao começo da primeira linha fica igual ao da borda ao título (31). Recua 16 à direita, o mesmo recuo da lista (que deixa lugar à barra de rolagem), para o botão alinhar com ela.
     -->
     <Style x:Key="HistoryHeader" TargetType="Grid" BasedOn="{StaticResource CardHeader}">
         <Setter Property="DockPanel.Dock" Value="Top"/>
-        <Setter Property="Margin" Value="0,0,16,20"/>
+        <Setter Property="Margin" Value="0,0,16,12"/>
     </Style>
     <!--
         Limpar o histórico: a mesma pílula do Limpar de Instalar apps (fio tracejado LineStrong, lixeira e texto), com largura fixa

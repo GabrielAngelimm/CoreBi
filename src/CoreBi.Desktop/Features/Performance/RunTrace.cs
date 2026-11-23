@@ -28,6 +28,7 @@ public sealed class RunTrace : InstrumentBase
     public void Clear()
     {
         _samples.Clear();
+        _frozenCount = null;
         Note = "";
         InvalidateVisual();
     }
@@ -36,6 +37,7 @@ public sealed class RunTrace : InstrumentBase
     public void Load(IReadOnlyList<double>? values, string note)
     {
         _samples.Clear();
+        _frozenCount = null;
         if (values is { Count: >= 2 })
             for (int i = 0; i < values.Count; i++)
                 if (double.IsFinite(values[i]) && values[i] > 0) _samples.Add(new Point((double)i / (values.Count - 1), values[i]));
@@ -70,9 +72,13 @@ public sealed class RunTrace : InstrumentBase
         InvalidateVisual();
     }
 
+    // Com o mouse em cima, o traço congela no que já tinha (como os outros gráficos): os pontos novos entram ao tirar
+    private int? _frozenCount;
+
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
+        _frozenCount ??= _samples.Count;
         _hoverX = e.GetPosition(this).X;
         InvalidateVisual();
     }
@@ -81,6 +87,7 @@ public sealed class RunTrace : InstrumentBase
     {
         base.OnMouseLeave(e);
         _hoverX = null;
+        _frozenCount = null;
         InvalidateVisual();
     }
 
@@ -93,8 +100,9 @@ public sealed class RunTrace : InstrumentBase
         string note = Note ?? "";
         double top = note.Length > 0 ? 28 : 12;
         double plotW = w - left, plotH = h - top - bottom;
+        var samples = _frozenCount is int frozen && frozen <= _samples.Count ? _samples.GetRange(0, frozen) : _samples;
 
-        double peak = _samples.Count > 0 ? _samples.Max(p => p.Y) : 0;
+        double peak = samples.Count > 0 ? samples.Max(p => p.Y) : 0;
         double step = peak <= 40 ? 10 : peak <= 100 ? 20 : peak <= 250 ? 50 : peak <= 500 ? 100 : peak <= 1000 ? 200 : 500;
         double hi = Math.Max(step * 3, Math.Ceiling(peak * 1.12 / step) * step);
         double X(double p) => left + plotW * p;
@@ -119,7 +127,7 @@ public sealed class RunTrace : InstrumentBase
         dc.DrawText(start, new Point(left, h - start.Height + 2));
         dc.DrawText(end, new Point(w - end.Width, h - end.Height + 2));
 
-        if (_samples.Count < 2)
+        if (samples.Count < 2)
         {
             var t = Text(EmptyText, 13, MutedBrush, readout: false);
             t.MaxTextWidth = Math.Max(40, plotW - 40);
@@ -128,13 +136,13 @@ public sealed class RunTrace : InstrumentBase
             return;
         }
 
-        var points = _samples.Select(s => new Point(X(s.X), Y(s.Y))).ToList();
+        var points = samples.Select(s => new Point(X(s.X), Y(s.Y))).ToList();
         dc.DrawGeometry(Alpha(ChannelBrush, 0x30), null, CreateAreaGeometry(points, top + plotH));
         var pen = new Pen(ChannelBrush, 1.8) { LineJoin = PenLineJoin.Round };
         pen.Freeze();
         dc.DrawGeometry(null, pen, CreatePolylineGeometry(points));
 
-        double mean = _samples.Average(s => s.Y);
+        double mean = samples.Average(s => s.Y);
         double my = Math.Round(Y(mean)) + 0.5;
         dc.DrawLine(Stroke(MutedBrush, 1, new DashStyle(new double[] { 4, 3 }, 0)), new Point(left, my), new Point(points[^1].X, my));
         var label = Text($"média {mean:0} {Unit}".TrimEnd(), 12, MutedBrush);
@@ -143,11 +151,11 @@ public sealed class RunTrace : InstrumentBase
         dc.DrawText(label, new Point(lx, my - label.Height - 2));
 
         dc.DrawEllipse(SurfaceBrush, Stroke(ChannelBrush, 2), points[^1], 4, 4);
-        DrawHover(dc, w, top, plotH, points);
+        DrawHover(dc, w, top, plotH, samples, points);
     }
 
     /// <summary>A leitura sob o mouse, no desenho da dica dos gráficos de Discos e Energia: fio, ponto e caixa com o valor.</summary>
-    private void DrawHover(DrawingContext dc, double w, double top, double plotH, List<Point> points)
+    private void DrawHover(DrawingContext dc, double w, double top, double plotH, List<Point> samples, List<Point> points)
     {
         if (_hoverX is not double mx) return;
         int nearest = -1;
@@ -164,8 +172,8 @@ public sealed class RunTrace : InstrumentBase
         dc.DrawLine(Stroke(FaintBrush, 1, new DashStyle(new double[] { 3, 3 }, 0)), new Point(lx, top), new Point(lx, top + plotH));
         dc.DrawEllipse(SurfaceBrush, Stroke(ChannelBrush, 2.5), p, 5.5, 5.5);
 
-        var when = Text($"aos {_samples[nearest].X * 100:0} % da passada", 11.5, FaintBrush, readout: false);
-        var value = Text($"{_samples[nearest].Y:0} {Unit}".TrimEnd(), 16, InkBrush);
+        var when = Text($"aos {samples[nearest].X * 100:0} % da passada", 11.5, FaintBrush, readout: false);
+        var value = Text($"{samples[nearest].Y:0} {Unit}".TrimEnd(), 16, InkBrush);
         double bw = Math.Max(when.Width, value.Width) + 24, bh = when.Height + value.Height + 16;
         double bx = p.X + 14 + bw > w ? p.X - 14 - bw : p.X + 14;
         double by = Math.Clamp(p.Y - bh / 2, top, Math.Max(top, top + plotH - bh));

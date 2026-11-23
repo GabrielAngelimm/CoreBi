@@ -314,7 +314,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="12,5,12,3" MinHeight="26">
+                        <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="12,5,12,3" MinHeight="28">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Border x:Name="dot" Width="14" Height="14" CornerRadius="7" Margin="0,-2,7,0" VerticalAlignment="Center" Visibility="Collapsed"
                                         BorderThickness="1.5" BorderBrush="{DynamicResource LineStrong}">
@@ -465,8 +465,9 @@
                                 Margin="0,0,10,0" Visibility="Collapsed" Click="BtnAppsStore_Click"
                                 ToolTip="Abre o Instalador de Aplicativo, que traz o winget." />
                         <!-- Filtro por estado, que é também a legenda das linhas: acende só o que interessa e apaga o resto, sem tirar nada do lugar -->
-                        <Border x:Name="AppsViewGroup" Style="{StaticResource SegmentGroup}" Margin="0,0,10,0">
-                            <local:SlidingSelectionPanel Style="{StaticResource SegmentRail}" ToggleButton.Checked="AppsView_Checked"
+                        <!-- Na barra do cabeçalho, com a altura dos botões dela (40) -->
+                        <Border x:Name="AppsViewGroup" Style="{StaticResource SegmentGroup}" Height="40" CornerRadius="20" Margin="0,0,10,0">
+                            <local:SlidingSelectionPanel Style="{StaticResource SegmentRail}" HighlightRadius="17" ToggleButton.Checked="AppsView_Checked"
                                                          PreviewMouseLeftButtonDown="AppsView_PreviewMouseDown">
                                 <RadioButton x:Name="ViewAll" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="Todos" Tag="all" IsChecked="True"
                                              ToolTip="Mostra o catálogo inteiro." />

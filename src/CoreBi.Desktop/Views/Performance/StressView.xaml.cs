@@ -63,20 +63,6 @@ public partial class StressView : UserControl, IDisposable
         ShowHistory();
     }
 
-    /// <summary>Zerar painel: o resultado do último teste sai da placa e das colunas; o histórico guarda o teste.</summary>
-    private void BtnStressReset_Click(object sender, RoutedEventArgs e)
-    {
-        if (IsRunning || _demo) return;
-        _stressMaxTemp = 0;
-        _gpuMaxTemp = 0;
-        ResetStressReadings();
-        StressDurationChanged();
-        SetStatus("", aborted: false);
-        StDetail.Text = "";
-        StressHint.Text = "";
-        BtnStressReset.IsEnabled = false;
-    }
-
     private void BtnStress_Click(object sender, RoutedEventArgs e)
     {
         if (IsRunning) StopStress("Parado por você");
@@ -142,8 +128,16 @@ public partial class StressView : UserControl, IDisposable
     // Com o mouse em cima, o gráfico mostra o valor exato daquele segundo, como os gráficos da Visão geral e dos Discos
     private double? _hoverX;
 
+    // Com o mouse em cima, o gráfico congela (como na Visão geral): as leituras novas continuam chegando, mas só aparecem ao tirar
+    private List<double>? _frozenCpu, _frozenGpu;
+
     private void TempChart_MouseMove(object sender, MouseEventArgs e)
     {
+        if (_hoverX == null)
+        {
+            _frozenCpu = new List<double>(_tempHistory);
+            _frozenGpu = new List<double>(_gpuTempHistory);
+        }
         _hoverX = e.GetPosition(TempChart).X;
         DrawChart();
     }
@@ -151,6 +145,7 @@ public partial class StressView : UserControl, IDisposable
     private void TempChart_MouseLeave(object sender, MouseEventArgs e)
     {
         _hoverX = null;
+        _frozenCpu = _frozenGpu = null;
         DrawChart();
     }
 
@@ -292,7 +287,6 @@ public partial class StressView : UserControl, IDisposable
             }
 
             ResetStressReadings();
-            BtnStressReset.IsEnabled = false;
             SetStressControls(running: true);
             UpdateColumnStates();
             SetStatus("Rodando", aborted: false);
@@ -355,12 +349,6 @@ public partial class StressView : UserControl, IDisposable
         SetStressControls(running: false);
         UpdateColumnStates();
 
-        if (aborted) status = "Interrompido";
-        SetStatus(status, aborted);
-        // "Parado" e "Concluído" já dizem tudo; o motivo só aparece quando acrescenta algo (o corte, a janela fechada, a falha)
-        StDetail.Text = reason is "Parado por você" or "Tempo de teste concluído" ? "" : reason;
-        BtnStressReset.IsEnabled = true;
-
         var run = new StressRun
         {
             Date = DateTime.Now,
@@ -385,6 +373,27 @@ public partial class StressView : UserControl, IDisposable
             _context.SaveSettings();
         }
         ShowHistory();
+
+        // Encerrado, o cronômetro e a barra voltam ao início sozinhos, prontos para o próximo; o estado diz como terminou, com
+        // as mesmas palavras do histórico ("Parado aos 3:12"), e as máximas nas colunas ficam até o próximo teste começar
+        SetStatus(HistoryRow(run).Title, aborted);
+        // O motivo só aparece quando acrescenta algo (o corte, a janela fechada, a falha)
+        StDetail.Text = reason is "Parado por você" or "Tempo de teste concluído" ? "" : reason;
+        GlideProgressToZero();
+        StressDurationChanged();
+    }
+
+    /// <summary>A barra de progresso volta ao zero deslizando (240 ms), sem pular.</summary>
+    private void GlideProgressToZero()
+    {
+        if (StProgress.ScaleX <= 0) return;
+        var back = new System.Windows.Media.Animation.DoubleAnimation(StProgress.ScaleX, 0, TimeSpan.FromMilliseconds(240))
+        {
+            EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut },
+            FillBehavior = System.Windows.Media.Animation.FillBehavior.Stop,
+        };
+        StProgress.ScaleX = 0;
+        StProgress.BeginAnimation(ScaleTransform.ScaleXProperty, back);
     }
 
     private void ShowHistory(IEnumerable<StressRun>? runs = null)
@@ -646,8 +655,10 @@ public partial class StressView : UserControl, IDisposable
         // Só as linhas, os pontos de agora e os cortes tracejados na cor de cada peça: os nomes, as leituras e os valores dos
         // cortes ficam na legenda, em cima, então o gráfico não ganha rótulos sobrepostos com as três peças no teste.
         var series = new List<(List<double> Data, string Channel, byte Alpha)>();
-        if (showGpu && _gpuTempHistory.Count >= 2) series.Add((_gpuTempHistory, "Gpu", 0x1C));
-        if (showCpu && _tempHistory.Count >= 2) series.Add((_tempHistory, "Cpu", 0x22));
+        var cpuData = _frozenCpu ?? _tempHistory;
+        var gpuData = _frozenGpu ?? _gpuTempHistory;
+        if (showGpu && gpuData.Count >= 2) series.Add((gpuData, "Gpu", 0x1C));
+        if (showCpu && cpuData.Count >= 2) series.Add((cpuData, "Cpu", 0x22));
 
         double yMin = 20, yMax = Math.Max(110, Math.Max(_tempLimit, showGpu ? _gpuTempLimit : 0) + 10);
         var ticks = new List<(double Value, TextBlock Label)>();

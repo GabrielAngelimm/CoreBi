@@ -151,12 +151,6 @@
                 <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Teste de carga" Style="{StaticResource PageTitle}" />
                     <TextBlock Text="Põe as peças no limite para conferir estabilidade e temperatura." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
-                    <!-- Depois de um teste, o painel guarda o tempo e as máximas até você zerar (o teste continua no histórico) -->
-                    <StackPanel Style="{StaticResource PageActions}">
-                        <Button x:Name="BtnStressReset" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE777;" Content="Zerar painel" Click="BtnStressReset_Click"
-                                IsEnabled="False" ToolTipService.ShowOnDisabled="True"
-                                ToolTip="Volta o tempo, as máximas e o estado ao início, pronto para outro teste. O que terminou continua no histórico." />
-                    </StackPanel>
                 </local:PageHeaderPanel>
 
                 <!-- O que carregar: uma tecla por componente, várias ao mesmo tempo -->
@@ -379,7 +373,8 @@
                                 <!-- Histórico: rola por dentro; a sobra à direita é a da barra de rolagem -->
                                 <Border Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="1,1,0,0" Padding="24,24,8,8">
                                     <DockPanel>
-                                        <Grid DockPanel.Dock="Top" Height="30" Margin="0,0,16,20">
+                                        <!-- 31 da borda ao título e 31 do título à primeira linha, como no histórico do Benchmark -->
+                                        <Grid DockPanel.Dock="Top" Height="30" Margin="0,0,16,13">
                                             <TextBlock Text="Histórico" Style="{StaticResource Label}" Margin="0" VerticalAlignment="Center" Background="Transparent"
                                                        ToolTip="Os últimos 30 testes encerrados, o mais recente em cima." />
                                             <Button x:Name="StressHistoryClear" Style="{StaticResource HistoryClear}" Click="StressHistoryClear_Click" />
@@ -449,14 +444,19 @@
                                     <StackPanel x:Name="GpuResSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
                                         <TextBlock Text="Resolução da placa de vídeo" Style="{StaticResource ConfigName}" Background="Transparent"
                                                    ToolTip="O tamanho da janela 3D. Em janela, a temperatura continua à vista no CoreBi; em tela cheia, o corte por temperatura continua valendo." />
-                                        <Border Style="{StaticResource ConfigSegmentGroup}">
-                                            <local:SlidingSelectionPanel x:Name="GpuResPanel" Style="{StaticResource ConfigSegmentRail}">
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StGpuRes" Content="720p" Tag="0" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StGpuRes" Content="1080p" Tag="1" IsChecked="True" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StGpuRes" Content="1440p" Tag="2" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StGpuRes" Content="Tela cheia" Tag="3" ToolTip="No tamanho do monitor. Esc fecha a janela 3D." />
-                                            </local:SlidingSelectionPanel>
-                                        </Border>
+                                        <!-- Pílulas como as de baixo; "Tela cheia" ganha a coluna mais larga para não cortar -->
+                                        <Grid x:Name="GpuResPanel" Margin="-4,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="1.4*" />
+                                            </Grid.ColumnDefinitions>
+                                            <RadioButton Style="{StaticResource ConfigChip}" GroupName="StGpuRes" Content="720p" Tag="0" />
+                                            <RadioButton Grid.Column="1" Style="{StaticResource ConfigChip}" GroupName="StGpuRes" Content="1080p" Tag="1" IsChecked="True" />
+                                            <RadioButton Grid.Column="2" Style="{StaticResource ConfigChip}" GroupName="StGpuRes" Content="1440p" Tag="2" />
+                                            <RadioButton Grid.Column="3" Style="{StaticResource ConfigChip}" GroupName="StGpuRes" Content="Tela cheia" Tag="3" ToolTip="No tamanho do monitor. Esc fecha a janela 3D." />
+                                        </Grid>
                                     </StackPanel>
                                     <StackPanel x:Name="GpuMsaaSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
                                         <TextBlock Text="Anti-aliasing (MSAA)" Style="{StaticResource ConfigName}" Background="Transparent"
@@ -479,15 +479,13 @@
                                     <StackPanel x:Name="RamSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
                                         <TextBlock Text="RAM livre em teste" Style="{StaticResource ConfigName}" Background="Transparent"
                                                    ToolTip="Quanto da memória livre o teste separa para gravar e conferir." />
-                                        <Border Style="{StaticResource ConfigSegmentGroup}">
-                                            <local:SlidingSelectionPanel x:Name="RamPanel" Style="{StaticResource ConfigSegmentRail}">
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StRam" Content="40 %" Tag="0" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StRam" Content="50 %" Tag="1" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StRam" Content="60 %" Tag="2" IsChecked="True" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StRam" Content="70 %" Tag="3" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StRam" Content="80 %" Tag="4" />
-                                            </local:SlidingSelectionPanel>
-                                        </Border>
+                                        <UniformGrid x:Name="RamPanel" Rows="1" Margin="-4,0">
+                                            <RadioButton Style="{StaticResource ConfigChip}" GroupName="StRam" Content="40 %" Tag="0" />
+                                            <RadioButton Style="{StaticResource ConfigChip}" GroupName="StRam" Content="50 %" Tag="1" />
+                                            <RadioButton Style="{StaticResource ConfigChip}" GroupName="StRam" Content="60 %" Tag="2" IsChecked="True" />
+                                            <RadioButton Style="{StaticResource ConfigChip}" GroupName="StRam" Content="70 %" Tag="3" />
+                                            <RadioButton Style="{StaticResource ConfigChip}" GroupName="StRam" Content="80 %" Tag="4" />
+                                        </UniformGrid>
                                     </StackPanel>
                                 </local:ConfigStack>
                             </DockPanel>
