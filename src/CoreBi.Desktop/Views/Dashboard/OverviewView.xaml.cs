@@ -181,7 +181,7 @@ namespace CoreBi.Desktop.Views
         //   gpu:  "4.286 pts · 429 FPS · 1080p"
         //   sim:  "120 FPS · 1% low 95"
         //   mem:  "84 ns · 36 GB/s · mapa 0,19 s"
-        //   disk: "C: · 7.050/6.320 MB/s · 4K 14,6k IOPS" (até a 1.0.0, "MiB/s" com um pedido por vez)
+        //   disk: "C: · 7.050/6.320 MB/s · 4K 14,6k IOPS" (nas versões de teste, "MiB/s" com um pedido por vez)
         internal static DashEvent BenchEvent(BenchRecord r)
         {
             var parts = r.Summary.Split('·', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);

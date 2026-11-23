@@ -19,7 +19,7 @@ public sealed record DiskBenchResult(string Drive, long FileMb, double SeqReadMB
 /// </summary>
 /// <remarks>
 /// Por que 8 na fila: um SSD NVMe só chega à velocidade da caixa com vários pedidos em andamento. Com um pedido por vez
-/// (como era até a 1.0.0), cada bloco espera o anterior voltar e um NVMe de 7.000 MB/s para perto de 3.000.
+/// (como era nas versões de teste), cada bloco espera o anterior voltar e um NVMe de 7.000 MB/s para perto de 3.000.
 /// </remarks>
 public static class DiskBench
 {

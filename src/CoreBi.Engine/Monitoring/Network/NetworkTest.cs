@@ -19,7 +19,7 @@ public static class NetworkTest
     private const int PingCount = 30, PingIntervalMs = 200, TickMs = 200, RetryDelayMs = 400;
     private const int InitialUploadBytes = 64_000, MaximumUploadBytes = 25_000_000, DownloadRequestBytes = 50_000_000;
     private const int MaxConsecutiveFailures = 3;
-    // Teto de dados por teste. Com 350 MB (até a 1.0.0) uma conexão de 600 Mbps acabava o download em menos de 5 s,
+    // Teto de dados por teste. Com 350 MB (nas versões de teste) uma conexão de 600 Mbps acabava o download em menos de 5 s,
     // quase todo em subida do TCP; 1 GB dá a janela inteira até perto de 1 Gbps.
     internal const long DownloadBudgetBytes = 1_000_000_000, UploadBudgetBytes = 400_000_000;
 
