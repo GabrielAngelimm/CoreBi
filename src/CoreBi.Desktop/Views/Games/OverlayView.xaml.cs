@@ -427,7 +427,10 @@ public partial class OverlayView : UserControl
     {
         OvPreview.Update(f, lines, show, extra);
         FitScale();
-        OvSampleNote.Visibility = sample ? Visibility.Visible : Visibility.Collapsed;
+        // O subtítulo fica sempre, para o monitor não pular quando um jogo começa a ser medido
+        string note = sample ? "Clique num canto para mover a prévia. FPS de exemplo até um jogo abrir; sensores ao vivo." : "Clique num canto para mover a prévia. FPS e sensores ao vivo, do jogo aberto.";
+        if (OvSampleNote.Text != note) OvSampleNote.Text = note;
+        OvSampleNote.ToolTip = sample ? "Enquanto o CoreBi não mede um jogo, a prévia mostra 144 FPS de exemplo. Os sensores são lidos ao vivo." : null;
         OvLed.SetResourceReference(Shape.FillProperty, overlayOn ? "HudSignal" : "HudSep");
     }
 

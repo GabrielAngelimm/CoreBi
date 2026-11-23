@@ -239,7 +239,7 @@
                         <ColumnDefinition Width="2.4*" />
                     </Grid.ColumnDefinitions>
 
-                    <Border x:Name="OvPositionCard" Style="{StaticResource CardBorder}" local:Skeleton.Top="34"
+                    <Border x:Name="OvPositionCard" Style="{StaticResource CardBorder}" local:Skeleton.Top="46"
                             local:Skeleton.Layout="gap 16; foot 50: box *; footgap 16; rest: box *">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -248,26 +248,26 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <!--
-                                Título à esquerda; à direita, o estado da detecção de FPS (LED e uma linha, só quando há o que dizer) e, sem jogo
-                                medido, a nota da prévia. O estado mora aqui, e não numa faixa sob os cartões, para a página terminar na mesma
-                                linha que as outras.
+                                Título com o subtítulo embaixo (o texto auxiliar: de onde vem o FPS da prévia) e, à direita, o estado da detecção
+                                de FPS (LED e uma linha, só quando há o que dizer). O título fica na mesma linha de 34 px do "O que mostrar" ao lado;
+                                o subtítulo sobe 5 px para encostar nele como nas outras páginas (AppsView).
                             -->
-                            <!-- Cabeçalho de 34 px (CardHeader), na mesma altura do "O que mostrar" ao lado, que tem as pílulas -->
-                            <Grid Style="{StaticResource CardHeader}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Posição e tamanho" Style="{StaticResource CardTitle}" />
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="24,0,0,0">
-                                    <Ellipse x:Name="OvStatusDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
-                                    <TextBlock x:Name="OvStatus" FontSize="13" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="460" Style="{StaticResource Num}" VerticalAlignment="Center" />
-                                </StackPanel>
-                                <!-- Estado real: sem jogo medido, o FPS da prévia é de exemplo (os sensores são ao vivo) -->
-                                <TextBlock x:Name="OvSampleNote" Grid.Column="2" Text="Prévia com FPS de exemplo" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="20,0,0,0"
-                                           ToolTip="Enquanto o CoreBi não mede um jogo, a prévia mostra 144 FPS de exemplo. Os sensores são lidos ao vivo." Visibility="Collapsed" />
-                            </Grid>
+                            <StackPanel>
+                                <Grid Style="{StaticResource CardHeader}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Posição e tamanho" Style="{StaticResource CardTitle}" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="24,0,0,0">
+                                        <Ellipse x:Name="OvStatusDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />
+                                        <TextBlock x:Name="OvStatus" FontSize="13" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="460" Style="{StaticResource Num}" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock x:Name="OvSampleNote" Text="Clique num canto para mover a prévia. FPS de exemplo até um jogo abrir; sensores ao vivo." Style="{StaticResource Caption}" Margin="0,-5,0,0"
+                                           TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                           ToolTip="Enquanto o CoreBi não mede um jogo, a prévia mostra 144 FPS de exemplo. Os sensores são lidos ao vivo." />
+                            </StackPanel>
 
                             <!--
                                 Monitor: desenho fixo de 1000 × 712 (tela 16:9 de 984 × 554, bordas de 8 px, queixo com o LED, haste e base),
