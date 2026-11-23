@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -13,12 +14,15 @@ namespace CoreBi.Desktop;
 public sealed record DriverDialogCell(string Label, string Value, string? Tip, bool First);
 
 /// <summary>
-/// Janela de Fazer backup e Restaurar dos Drivers. O backup confirma a pasta onde salvar (trocável aqui mesmo); a restauração
-/// mostra o backup achado na pasta (quantos drivers, de quando, de qual PC) e só libera o botão quando há um. Esc, Voltar ou clique
-/// fora cancelam; Enter confirma.
+/// Janela de Fazer backup e Restaurar backup dos Drivers, do começo ao fim. Confirmar: o backup mostra a pasta onde salvar (trocável
+/// aqui mesmo); a restauração mostra o backup achado (quantos drivers, de quando, de qual PC) e só libera o botão quando há um.
+/// Depois do clique a janela não fecha: a placa vira o andamento (a contagem e a faixa de células, uma por driver) e, no fim, o
+/// resultado com o visto. Enquanto trabalha, Esc e o clique fora não fazem nada; o rodapé tem só Cancelar (ou Parar depois do atual).
 /// </summary>
 public partial class DriverBackupDialog : UserControl
 {
+    private enum Stage { Ask, Work, Done }
+
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
     private TaskCompletionSource<bool>? _pending;
     private bool _restore;
@@ -26,30 +30,31 @@ public partial class DriverBackupDialog : UserControl
     private DriverBackupInfo? _found;
     private int _count;
     private DriverBackupInfo? _last;
+    private Stage _stage;
+    private Action? _stop;
+    private string? _openPath;
+    private int _installed, _current, _failed;
 
     public DriverBackupDialog() => InitializeComponent();
 
-    /// <summary>Backup: a pasta onde salvar (o CoreBi cria uma pasta datada dentro dela). Devolve a pasta escolhida, ou null.</summary>
+    // ---------------- 1. Confirmar ----------------
+
+    /// <summary>
+    /// Backup: a pasta onde salvar (o CoreBi cria uma pasta datada dentro dela). Devolve a pasta escolhida, ou null; com a pasta,
+    /// a janela continua aberta, já no andamento.
+    /// </summary>
     public async Task<string?> AskBackupAsync(string folder, int count, DriverBackupInfo? last)
     {
         _restore = false;
         _folder = folder;
         _count = count;
         _last = last;
-        DialogTitle.Text = "Fazer backup dos drivers";
-        Lead.Text = "Guarda uma cópia dos drivers deste PC, para reinstalar tudo depois de formatar.";
-        FolderLabel.Text = "Onde salvar";
-        BtnFolder.Content = "Trocar";
-        BtnFolder.ToolTip = "Escolha outra pasta, de preferência em outro disco ou num pen drive.";
-        BtnConfirm.Content = "Fazer backup";
-        BtnConfirm.ToolTip = "Só copia: nada é instalado nem apagado. O CoreBi cria uma pasta nova, com a data, dentro da escolhida.";
-        SetIcon(BtnConfirm, "");
-        Order(folderFirst: false);
+        BackupTexts();
         ShowState();
         return await OpenAsync() ? _folder : null;
     }
 
-    /// <summary>Restaurar: o backup da pasta (ou o mais novo dentro dela). Devolve o backup escolhido, ou null.</summary>
+    /// <summary>Restaurar: o backup da pasta (ou o mais novo dentro dela). Devolve o backup escolhido, ou null; com ele, a janela segue aberta.</summary>
     public async Task<DriverBackupInfo?> AskRestoreAsync(string folder)
     {
         _restore = true;
@@ -60,16 +65,27 @@ public partial class DriverBackupDialog : UserControl
         return await OpenAsync() ? _found : null;
     }
 
-    private static void SetIcon(Button button, string glyph) => Ui.SetIcon(button, glyph);
+    private void BackupTexts()
+    {
+        SetStage(Stage.Ask);
+        DialogTitle.Text = "Fazer backup dos drivers";
+        Lead.Text = "Guarda uma cópia dos drivers deste PC, para reinstalar tudo depois de formatar.";
+        FolderLabel.Text = "Onde salvar";
+        BtnFolder.Content = "Trocar";
+        BtnFolder.ToolTip = "Escolha outra pasta, de preferência em outro disco ou num pen drive.";
+        BtnConfirm.Content = "Fazer backup";
+        BtnConfirm.ToolTip = "Só copia: nada é instalado nem apagado. O CoreBi cria uma pasta nova, com a data, dentro da escolhida.";
+        Order(folderFirst: false);
+    }
 
     private void RestoreTexts()
     {
-        DialogTitle.Text = "Restaurar drivers";
+        SetStage(Stage.Ask);
+        DialogTitle.Text = "Restaurar backup dos drivers";
         Lead.Text = "Reinstala os drivers de um backup do CoreBi.\nOnde você já tiver um driver mais novo, o Windows mantém o seu.";
         FolderLabel.Text = "Backup";
         BtnFolder.Content = "Escolher";
         BtnFolder.ToolTip = "Escolha a pasta do backup, ou a pasta que guarda vários (vale o mais novo).";
-        SetIcon(BtnConfirm, "");
         Order(folderFirst: true);
     }
 
@@ -113,12 +129,12 @@ public partial class DriverBackupDialog : UserControl
     }
 
     /// <summary>
-    /// O cartão da pasta: o nome em destaque, o disco e o caminho até ela embaixo, e a dica que lê o disco. No backup, a dica diz
-    /// se a pasta sobrevive a uma formatação (só fora do disco do Windows); na restauração, onde procurar.
+    /// O cartão da pasta: o nome em destaque, o disco e o caminho até ela embaixo, e a dica que lê o disco (só na confirmação). No
+    /// backup, a dica diz se a pasta sobrevive a uma formatação (só fora do disco do Windows); na restauração, onde procurar.
     /// </summary>
-    private void ShowFolder()
+    private void ShowFolder(string? shown = null)
     {
-        string path = (_restore && _found != null ? _found.Folder : _folder).TrimEnd(Path.DirectorySeparatorChar);
+        string path = (shown ?? (_restore && _found != null ? _found.Folder : _folder)).TrimEnd(Path.DirectorySeparatorChar);
         bool any = path.Length > 0;
         FolderName.Text = any ? Path.GetFileName(path) is { Length: > 0 } name ? name : path : "Nenhuma pasta escolhida";
         FolderName.SetResourceReference(TextBlock.ForegroundProperty, any ? "Fg" : "Faint");
@@ -127,6 +143,7 @@ public partial class DriverBackupDialog : UserControl
         FolderWhere.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
         FolderGlyph.SetResourceReference(TextBlock.ForegroundProperty, any ? "Storage" : "Faint");
 
+        if (_stage != Stage.Ask) { Hint.Visibility = Visibility.Collapsed; return; }
         if (_restore)
         {
             // Com o backup achado, a placa embaixo já responde; a dica só ajuda enquanto não há um
@@ -179,8 +196,194 @@ public partial class DriverBackupDialog : UserControl
             : days < 730 ? "há 1 ano" : $"há {days / 365} anos";
     }
 
+    // ---------------- 2. Trabalhando ----------------
+
+    /// <summary>
+    /// A janela muda para o andamento: os números dão lugar à contagem e à faixa, a frase de cima diz o que acontece e o rodapé
+    /// fica só com Cancelar (backup) ou Parar depois do atual (restauração). Quem roda a tarefa diz como parar em <see cref="OnStop"/>.
+    /// </summary>
+    private void BeginWork(int total)
+    {
+        _installed = _current = _failed = 0;
+        SetStage(Stage.Work);
+        WorkLabel.Text = _restore ? "Drivers devolvidos" : "Drivers copiados";
+        Strip.Reset(total);
+        SetCount(0, total);
+        Legend.Visibility = _restore ? Visibility.Visible : Visibility.Collapsed;
+        UpdateLegend();
+        if (_restore)
+        {
+            Lead.Text = "Criando um ponto de restauração do Windows, para desfazer se algo der errado. Pode levar até 1 minuto…";
+            BtnStop.Content = "Parar depois do atual";
+            BtnStop.ToolTip = "Termina o driver que está sendo instalado e para. O que já entrou continua instalado.";
+        }
+        else
+        {
+            Lead.Text = "Copiando os drivers para a pasta abaixo. Pode continuar usando o PC.";
+            BtnStop.Content = "Cancelar";
+            BtnStop.ToolTip = "Para a cópia e apaga a pasta pela metade.";
+        }
+        ShowFolder(_restore ? _found?.Folder : _folder);
+        CrossFade(WorkPane);
+    }
+
+    /// <summary>Quem roda a tarefa diz como parar (o botão do rodapé chama).</summary>
+    public void OnStop(Action stop) => _stop = stop;
+
+    /// <summary>Andamento: <paramref name="done"/> de <paramref name="total"/>; na restauração, o pacote da vez.</summary>
+    public void Progress(int done, int total, string? item = null)
+    {
+        if (_stage != Stage.Work) return;
+        if (total > 0 && total != Strip.Total) Strip.Reset(total);
+        Strip.SetDone(done);
+        SetCount(done, total);
+        if (_restore && item != null)
+        {
+            Strip.SetCurrent(done < total ? done : -1);
+            Lead.Text = done < total ? $"Devolvendo {item} ao Windows…" : "Terminando…";
+        }
+    }
+
+    /// <summary>O que aconteceu com o pacote da posição <paramref name="index"/>: pinta a célula e soma na legenda.</summary>
+    public void Mark(int index, DriverRestoreOutcome outcome)
+    {
+        if (_stage != Stage.Work) return;
+        Strip.Mark(index, outcome);
+        switch (outcome)
+        {
+            case DriverRestoreOutcome.Installed: _installed++; break;
+            case DriverRestoreOutcome.Current: _current++; break;
+            default: _failed++; break;
+        }
+        UpdateLegend();
+    }
+
+    private void SetCount(int done, int total)
+    {
+        WorkDone.Text = done.ToString(PtBr);
+        WorkOf.Text = total > 0 ? $" de {total.ToString(PtBr)}" : "";
+    }
+
+    private void UpdateLegend()
+    {
+        LegendInstalled.Text = _installed.ToString(PtBr);
+        LegendCurrent.Text = _current.ToString(PtBr);
+        LegendFailed.Text = _failed.ToString(PtBr);
+        LegendFailedItem.Visibility = _failed > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    // ---------------- 3. Pronto ----------------
+
+    /// <summary>Backup pronto: a faixa varre para o verde, o visto entra, a pasta nova aparece com o botão de abrir.</summary>
+    public void BackupDone(DriverBackupInfo info, string size)
+    {
+        if (Strip.Total != info.Count) Strip.Reset(info.Count);
+        Strip.SetDone(info.Count);
+        SetCount(info.Count, info.Count);
+        _openPath = info.Folder;
+        bool systemDisk = SameRoot(info.Folder, Environment.SystemDirectory);
+        Finish(ok: true, "Backup pronto",
+            $"{info.Count} drivers copiados ({size}). " + (systemDisk
+                ? "Antes de formatar, leve a pasta para outro disco ou um pen drive."
+                : "A pasta fica fora do disco do Windows e sobrevive à formatação."));
+        FolderLabel.Text = "Salvo em";
+        ShowFolder(info.Folder);
+    }
+
+    /// <summary>Restauração terminada (ou parada): as contas na legenda, o visto (ou o alerta) e o que falta fazer.</summary>
+    public void RestoreDone(DriverRestoreResult result, string restorePoint)
+    {
+        int done = result.Installed + result.Current + result.Failed.Count;
+        Strip.SetDone(done);
+        SetCount(done, result.Total);
+        string next = result.Reboot ? "Reinicie o PC para terminar de instalar." : "";
+        if (result.Canceled)
+            Finish(ok: result.Failed.Count == 0, "Restauração parada", $"Parou em {done} de {result.Total}. O que já entrou continua instalado. {next}".Trim(), sweep: false);
+        else if (result.Failed.Count > 0)
+            Finish(ok: false, "Restauração terminou com erros", $"{result.Failed.Count} não entraram (passe o mouse em Com erro para ver quais). {next}".Trim());
+        else
+            Finish(ok: true, "Drivers restaurados", result.Reboot ? "Tudo certo. " + next
+                : result.Installed == 0 ? "Este PC já tinha todos os drivers do backup." : "Tudo certo: os drivers do backup estão no Windows.");
+        LegendFailedItem.ToolTip = result.Failed.Count > 0 ? string.Join("\n", result.Failed) : null;
+        Lead.ToolTip = restorePoint.Length > 0 ? restorePoint : null;
+    }
+
+    /// <summary>A tarefa não terminou: a janela diz por quê, com o alerta, e fica só o Concluir.</summary>
+    public void Failed(string title, string why) => Finish(ok: false, title, why, sweep: false);
+
+    private void Finish(bool ok, string title, string lead, bool sweep = true)
+    {
+        SetStage(Stage.Done);
+        DialogTitle.Text = title;
+        Lead.Text = lead;
+        TitleMark.Text = ok ? "" : "";
+        TitleMark.SetResourceReference(TextBlock.ForegroundProperty, ok ? "Ok" : "Warn");
+        TitleMark.Visibility = Visibility.Visible;
+        if (sweep) Strip.Complete();
+        if (SystemParameters.ClientAreaAnimation && IsVisible)
+        {
+            var pop = new DoubleAnimation(0.4, 1, TimeSpan.FromMilliseconds(360)) { EasingFunction = new BackEase { Amplitude = 0.5, EasingMode = EasingMode.EaseOut } };
+            TitleMarkScale.BeginAnimation(ScaleTransform.ScaleXProperty, pop);
+            TitleMarkScale.BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+            TitleMark.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200)));
+        }
+        Dispatcher.BeginInvoke(() => { BtnDone.Focus(); Keyboard.Focus(BtnDone); }, System.Windows.Threading.DispatcherPriority.Input);
+    }
+
+    // ---------------- Momentos ----------------
+
+    /// <summary>Cada momento mostra só os seus botões e a sua placa.</summary>
+    private void SetStage(Stage stage)
+    {
+        _stage = stage;
+        bool ask = stage == Stage.Ask, work = stage == Stage.Work, done = stage == Stage.Done;
+        BtnBack.Visibility = ask ? Visibility.Visible : Visibility.Collapsed;
+        BtnConfirm.Visibility = ask ? Visibility.Visible : Visibility.Collapsed;
+        BtnStop.Visibility = work ? Visibility.Visible : Visibility.Collapsed;
+        BtnStop.IsEnabled = true;
+        BtnDone.Visibility = done ? Visibility.Visible : Visibility.Collapsed;
+        // Enquanto trabalha não há como fechar; o X guarda o lugar para o título não andar
+        BtnClose.Visibility = work ? Visibility.Hidden : Visibility.Visible;
+        AskPane.Visibility = ask ? Visibility.Visible : Visibility.Collapsed;
+        WorkPane.Visibility = ask ? Visibility.Collapsed : Visibility.Visible;
+        if (ask)
+        {
+            _openPath = null;
+            _stop = null;
+            TitleMark.Visibility = Visibility.Collapsed;
+            Lead.ToolTip = null;
+            LegendFailedItem.ToolTip = null;
+        }
+        else Hint.Visibility = Visibility.Collapsed;
+        // A pasta: trocar na confirmação, nada durante o trabalho, abrir quando o backup fica pronto
+        if (done && !_restore)
+        {
+            BtnFolder.Content = "Abrir";
+            BtnFolder.ToolTip = "Abre a pasta do backup no Explorador de Arquivos.";
+        }
+        BtnFolder.Visibility = ask || (done && !_restore) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static void CrossFade(UIElement element)
+    {
+        if (!SystemParameters.ClientAreaAnimation || !element.IsVisible) return;
+        element.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+    }
+
     private async void Folder_Click(object sender, RoutedEventArgs e)
     {
+        if (_stage == Stage.Done)
+        {
+            if (_openPath == null) return;
+            try
+            {
+                Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), $"\"{_openPath}\"")
+                { UseShellExecute = false })?.Dispose();
+            }
+            catch (Exception ex) { Lead.Text = "Não foi possível abrir a pasta: " + ex.Message; }
+            return;
+        }
+        if (_stage != Stage.Ask) return;
         string start = _folder.Length > 0 && Directory.Exists(_folder) ? _folder
             : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         var pick = new Microsoft.Win32.OpenFolderDialog
@@ -208,16 +411,28 @@ public partial class DriverBackupDialog : UserControl
         return _pending.Task;
     }
 
-    private void Close(bool confirmed)
+    /// <summary>Confirmou: a janela fica aberta e passa ao andamento; quem chamou começa a tarefa.</summary>
+    private void Confirm()
     {
-        Visibility = Visibility.Collapsed;
+        if (_stage != Stage.Ask || !BtnConfirm.IsEnabled) return;
+        BeginWork(_restore ? _found?.Count ?? 0 : _count);
         var pending = _pending;
         _pending = null;
-        pending?.TrySetResult(confirmed);
+        pending?.TrySetResult(true);
     }
 
-    /// <summary>Fecha sem fazer nada (Esc, clique fora, ou as capturas de tela dos testes).</summary>
-    internal void Cancel() => Close(false);
+    /// <summary>Fecha a janela (fora do trabalho, ou pelo código quando a tarefa terminou de outro jeito).</summary>
+    private void Close()
+    {
+        Visibility = Visibility.Collapsed;
+        _stop = null;
+        var pending = _pending;
+        _pending = null;
+        pending?.TrySetResult(false);
+    }
+
+    /// <summary>Fecha sem fazer nada (as capturas de tela dos testes, ou a tarefa cancelada).</summary>
+    internal void Cancel() => Close();
 
     /// <summary>Capturas dos testes: a janela de backup ou de restauração com dados de exemplo, sem esperar resposta.</summary>
     internal void Preview(bool restore, string folder, int count, DriverBackupInfo? backup)
@@ -238,15 +453,70 @@ public partial class DriverBackupDialog : UserControl
         _ = OpenAsync();
     }
 
-    private void Confirm_Click(object sender, RoutedEventArgs e) { if (BtnConfirm.IsEnabled) Close(true); }
-    private void Cancel_Click(object sender, RoutedEventArgs e) => Close(false);
+    /// <summary>
+    /// Capturas dos testes: o andamento (<paramref name="done"/> falso) ou o fim, com dados de exemplo, sem copiar nem instalar nada.
+    /// A restauração pinta a faixa com instalados, já em dia e um erro, para mostrar as três cores.
+    /// </summary>
+    internal void PreviewStage(bool restore, bool done, string root, DriverBackupInfo backup)
+    {
+        Preview(restore, restore ? backup.Folder : root, backup.Count, restore ? backup : null);
+        _pending = null;
+        int total = backup.Count;
+        BeginWork(total);
+        int upTo = done ? total : total * 3 / 5;
+        if (restore)
+        {
+            for (int i = 0; i < upTo; i++)
+                Mark(i, i == 23 ? DriverRestoreOutcome.Failed : i % 3 == 0 ? DriverRestoreOutcome.Installed : DriverRestoreOutcome.Current);
+            Strip.SetDone(upTo, animate: false);
+            SetCount(upTo, total);
+            if (!done)
+            {
+                Strip.SetCurrent(upTo);
+                Lead.Text = "Devolvendo nvhdci.inf ao Windows…";
+            }
+            else RestoreDone(new DriverRestoreResult(total, _installed, _current, new[] { "rtkvhd64.inf (código 2)" }, true, false), "");
+        }
+        else if (!done)
+        {
+            Strip.SetDone(upTo, animate: false);
+            SetCount(upTo, total);
+        }
+        else
+        {
+            string path = Path.Combine(root, $"Drivers {Environment.MachineName} {DateTime.Now:yyyy-MM-dd HH'h'mm}");
+            BackupDone(backup with { Folder = path, Created = DateTime.Now }, "1,7 GB");
+        }
+        if (done)
+        {
+            Strip.SetDone(upTo, animate: false);
+            Strip.Complete(animate: false);
+        }
+    }
+
+    private void Confirm_Click(object sender, RoutedEventArgs e) => Confirm();
+    private void Cancel_Click(object sender, RoutedEventArgs e) { if (_stage != Stage.Work) Close(); }
+    private void Done_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void Stop_Click(object sender, RoutedEventArgs e)
+    {
+        if (_stage != Stage.Work) return;
+        BtnStop.IsEnabled = false;
+        BtnStop.Content = _restore ? "Parando depois do atual…" : "Cancelando…";
+        _stop?.Invoke();
+    }
 
     private void Dialog_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape) { Close(false); e.Handled = true; }
-        else if (e.Key == Key.Enter && Keyboard.FocusedElement is not Button && BtnConfirm.IsEnabled) { Close(true); e.Handled = true; }
+        if (e.Key == Key.Escape) { if (_stage != Stage.Work) Close(); e.Handled = true; }
+        else if (e.Key == Key.Enter && Keyboard.FocusedElement is not Button)
+        {
+            if (_stage == Stage.Ask && BtnConfirm.IsEnabled) Confirm();
+            else if (_stage == Stage.Done) Close();
+            e.Handled = true;
+        }
     }
 
-    private void Scrim_MouseDown(object sender, MouseButtonEventArgs e) => Close(false);
+    private void Scrim_MouseDown(object sender, MouseButtonEventArgs e) { if (_stage != Stage.Work) Close(); }
     private void Panel_MouseDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
 }

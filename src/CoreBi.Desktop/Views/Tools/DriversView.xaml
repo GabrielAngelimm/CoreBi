@@ -25,6 +25,47 @@
             <Setter Property="Margin" Value="0,-2,8,2" />
         </Style>
         <!--
+            Copiar o nome do dispositivo: um círculo de 26 só com o glifo, que aparece quando o mouse entra na linha (ou o foco chega
+            pelo teclado) e acende sob o mouse. Depois do clique, o glifo vira um visto verde por um instante.
+        -->
+        <Style x:Key="DrvCopy" TargetType="Button">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Foreground" Value="{DynamicResource Faint}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="local:Ui.Icon" Value="&#xE8C8;" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}" />
+            <Setter Property="ToolTip" Value="Copiar o nome, para buscar o driver" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="Transparent" CornerRadius="13">
+                            <TextBlock Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}" Style="{StaticResource IconGlyph}" FontSize="13"
+                                       Foreground="{TemplateBinding Foreground}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}" />
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                            </Trigger>
+                            <Trigger Property="Tag" Value="copied">
+                                <Setter Property="Foreground" Value="{DynamicResource Ok}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter Property="Opacity" Value="1" />
+                </Trigger>
+                <Trigger Property="Tag" Value="copied">
+                    <Setter Property="Opacity" Value="1" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!--
             Placa de números dos cartões da esquerda: um painel embutido (tom Raised, cantos de 14) com duas leituras em colunas
             iguais, centradas, separadas por um fio vertical. É o que dá a cada cartão os três andares: quem é, os números e o que fazer.
         -->
@@ -121,11 +162,14 @@
                             <TextBlock x:Name="DrvDetail" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
                             <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
                         </DockPanel>
-                        <!-- Backup e restauração: cada um abre a janela que confirma (onde salvar / qual backup) antes de mexer em qualquer coisa -->
+                        <!--
+                            Backup e restauração: o par diz a mesma coisa dos dois lados ("Fazer backup" / "Restaurar backup"). Cada um abre a
+                            janela que confirma (onde salvar / qual backup), e o andamento e o resultado acontecem nela.
+                        -->
                         <Button x:Name="BtnDrvBackup" Style="{StaticResource HeaderSecondary}" Margin="0,0,10,0" local:Ui.Icon="&#xE74E;" Content="Fazer backup" Click="BtnDrvBackup_Click"
-                                ToolTip="Guarda uma cópia dos drivers das suas peças, para reinstalar tudo depois de formatar." />
-                        <Button x:Name="BtnDrvRestore" Style="{StaticResource HeaderSecondary}" Margin="0,0,10,0" local:Ui.Icon="&#xE777;" Content="Restaurar" Click="BtnDrvRestore_Click"
-                                ToolTip="Reinstala os drivers de um backup. O Windows só usa os que forem melhores que os atuais." />
+                                ToolTip="Guarda uma cópia dos drivers deste PC, para reinstalar tudo depois de formatar." />
+                        <Button x:Name="BtnDrvRestore" Style="{StaticResource HeaderSecondary}" Margin="0,0,10,0" local:Ui.Icon="&#xE777;" Content="Restaurar backup" Click="BtnDrvRestore_Click"
+                                ToolTip="Reinstala os drivers de um backup do CoreBi. Onde você já tiver um driver mais novo, o Windows mantém o seu." />
                         <Button x:Name="BtnDrvScan" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnDrvScan_Click"
                                 ToolTip="Lê tudo de novo e consulta a versão mais nova da placa de vídeo." />
                     </StackPanel>
@@ -404,7 +448,7 @@
                                         </ItemsControl.GroupStyle>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border Style="{StaticResource TableRow}" Height="36" Padding="8,0">
+                                                <Border x:Name="row" Style="{StaticResource TableRow}" Height="36" Padding="8,0">
                                                     <Grid VerticalAlignment="Center">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*" MinWidth="200" />
@@ -427,6 +471,7 @@
                                                                     VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed" ToolTip="{Binding Tip}">
                                                                 <TextBlock Text="{Binding Problem}" Style="{StaticResource BadgeText}" Foreground="{DynamicResource Warn}" />
                                                             </Border>
+                                                            <Button x:Name="copy" Grid.Column="2" Style="{StaticResource DrvCopy}" HorizontalAlignment="Left" Margin="6,0,0,0" Click="DrvCopy_Click" />
                                                         </Grid>
                                                         <TextBlock x:Name="vendor" Grid.Column="1" Text="{Binding Vendor}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Vendor}" Margin="16,0,0,0" />
                                                         <TextBlock x:Name="version" Grid.Column="2" Text="{Binding Version}" Style="{StaticResource Num}" TextTrimming="CharacterEllipsis" Margin="16,0,0,0" />
@@ -443,6 +488,9 @@
                                                     </Grid>
                                                 </Border>
                                                 <DataTemplate.Triggers>
+                                                    <Trigger SourceName="row" Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="copy" Property="Opacity" Value="1" />
+                                                    </Trigger>
                                                     <DataTrigger Binding="{Binding Signed}" Value="False">
                                                         <Setter TargetName="unsigned" Property="Visibility" Value="Visible" />
                                                     </DataTrigger>

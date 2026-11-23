@@ -218,12 +218,15 @@ public partial class DriversView : UserControl
         DrvBiosBox.Visibility = version.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         string brand = b.Brand.Length > 0 ? b.Brand : "fabricante";
-        BtnDrvBoardPage.Content = b.SupportIsModelPage ? $"Abrir no site da {brand}" : b.Brand == "Gigabyte" ? "Achar no site da Gigabyte" : $"Abrir o suporte da {brand}";
+        // Na Gigabyte o botão abre uma busca do Google (o link e o glifo dizem isso); nas outras, a página da própria marca
+        bool google = !b.SupportIsModelPage && b.Brand == "Gigabyte";
+        BtnDrvBoardPage.Content = b.SupportIsModelPage ? $"Abrir no site da {brand}" : google ? "Buscar o suporte no Google" : $"Abrir o suporte da {brand}";
+        Ui.SetIcon(BtnDrvBoardPage, google ? "\uE721" : "\uE8A7");
         BtnDrvBoardPage.ToolTip = b.SupportIsModelPage
             ? "Abre a página de suporte do seu modelo: drivers de chipset, áudio e rede, e as versões da BIOS."
-            : b.Brand == "Gigabyte"
-            ? "A Gigabyte tem uma página para cada revisão da placa (Rev. 1.0, 1.3...) e o Windows não diz qual é a sua.\n"
-              + "Abre a busca com as páginas do seu modelo no site da Gigabyte: escolha a revisão impressa na placa, perto dos slots."
+            : google
+            ? "A Gigabyte tem uma página para cada revisão da placa (Rev. 1.0, 1.3...), o Windows não diz qual é a sua e a busca do site\n"
+              + "deles não abre de fora. O Google, só no gigabyte.com, lista a página de suporte de cada revisão: escolha a impressa na placa."
             : "Abre a central de suporte do fabricante. Busque pelo modelo para achar os drivers e a BIOS.";
         BtnDrvBoardPage.Visibility = known ? Visibility.Visible : Visibility.Collapsed;
         DrvBoardNote.Visibility = known || b.Model.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
@@ -370,6 +373,29 @@ public partial class DriversView : UserControl
 
     internal void BtnDrvBoardPage_Click(object sender, RoutedEventArgs e) => ExternalLinks.OpenHttps(_drvBoardInfo.SupportUrl);
 
+    /// <summary>
+    /// Copia o nome do dispositivo (para colar numa busca). O glifo vira um visto verde e a dica diz "Copiado" por 1,4 s; a
+    /// área de transferência às vezes está presa por outro programa, então tenta de novo antes de desistir.
+    /// </summary>
+    internal async void DrvCopy_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: DriverLine line } button) return;
+        bool ok = false;
+        for (int attempt = 0; attempt < 3 && !ok; attempt++)
+        {
+            try { Clipboard.SetText(line.Device); ok = true; }
+            catch (System.Runtime.InteropServices.COMException) { await Task.Delay(60); }
+        }
+        if (!ok) return;
+        Ui.SetIcon(button, "\uE73E");
+        button.Tag = "copied";
+        button.ToolTip = "Copiado";
+        await Task.Delay(1400);
+        Ui.SetIcon(button, "\uE8C8");
+        button.ClearValue(TagProperty);
+        button.ClearValue(ToolTipProperty);
+    }
+
     internal async void BtnDrvInstall_Click(object sender, RoutedEventArgs e)
     {
         if (!RequireAdmin()) return;
@@ -494,26 +520,35 @@ public partial class DriversView : UserControl
         try { total = await count; } catch { total = 0; }
         string? root = await dialog.AskBackupAsync(BackupRoot(), total, last);
         if (root == null) return;
+        // Daqui em diante tudo acontece na própria janela (andamento, faixa e resultado); o cabeçalho só registra o fim
         using var workload = _context.Workloads.TryBegin(WorkloadOperations.DriverBackup);
-        if (workload == null) { DrvSet("Termine a outra operação antes"); return; }
+        if (workload == null) { dialog.Failed("Outra tarefa em andamento", "Termine a outra operação do CoreBi e tente de novo."); return; }
 
         DrvBusy(true);
-        _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
-        DrvSet("Copiando os drivers…", 0);
+        var cts = _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
+        dialog.OnStop(() => cts.Cancel());
         try
         {
             Directory.CreateDirectory(root);
             // O progresso conta os pacotes que o Windows já copiou contra o total, a cada 400 ms
             var info = await DriverBackup.ExportAsync(root, (done, all) => Dispatcher.BeginInvoke(new Action(() =>
-            {
-                if (all > 0) DrvSet($"Copiando os drivers… {Math.Min(done, all)} de {all}", Math.Min(1, (double)done / all));
-            })), _drvCts.Token);
+                dialog.Progress(Math.Min(done, Math.Max(all, done)), all))), cts.Token);
             _context.Settings.DriverBackupFolder = info.Folder;
             _context.SaveSettings();
-            DrvSet($"Backup salvo: {info.Count} drivers", 1, Size(info.Bytes));
+            dialog.BackupDone(info, Size(info.Bytes));
+            DrvSet($"Backup salvo às {DateTime.Now:HH:mm}", null, $"{info.Count} drivers · {Size(info.Bytes)}");
             DrvDetail.ToolTip = info.Folder;
         }
-        catch (Exception ex) { DrvFail("Não foi possível fazer o backup", ex.Message); }
+        catch (OperationCanceledException) when (!_context.IsClosing)
+        {
+            dialog.Cancel();
+            DrvSet("Backup cancelado", null, "nada foi guardado");
+        }
+        catch (Exception ex)
+        {
+            dialog.Failed("O backup não terminou", ex.Message);
+            DrvSet("Backup não concluído", null, ex.Message);
+        }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
     }
 
@@ -528,33 +563,39 @@ public partial class DriversView : UserControl
             : Directory.Exists(DriverBackup.DefaultRoot) ? DriverBackup.DefaultRoot : "";
         var info = await dialog.AskRestoreAsync(start);
         if (info == null) return;
+        // Como no backup, o andamento e o resultado ficam na janela; o cabeçalho só registra o fim
         using var workload = _context.Workloads.TryBegin(WorkloadOperations.DriverBackup);
-        if (workload == null) { DrvSet("Termine a outra operação antes"); return; }
+        if (workload == null) { dialog.Failed("Outra tarefa em andamento", "Termine a outra operação do CoreBi e tente de novo."); return; }
         using var critical = _context.BeginCriticalOperation("Aguarde a restauração dos drivers terminar.");
 
         DrvBusy(true);
-        _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
+        var cts = _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
+        // "Parar depois do atual": a restauração olha o pedido entre um pacote e outro, sem cortar o que está instalando
+        dialog.OnStop(() => cts.Cancel());
         try
         {
-            DrvSet("Criando ponto de restauração…", 0);
-            string point = await DriverBackup.RestorePointAsync(_drvCts.Token);
-            var result = await DriverBackup.RestoreAsync(info, (done, total, name) => Dispatcher.BeginInvoke(new Action(() =>
-                DrvSet($"Restaurando drivers… {Math.Min(done + 1, total)} de {total}", total > 0 ? (double)done / total : 0, name))), _drvCts.Token);
+            string point = await DriverBackup.RestorePointAsync(CancellationToken.None);
+            var result = await DriverBackup.RestoreAsync(info,
+                (done, total, name) => Dispatcher.BeginInvoke(new Action(() => dialog.Progress(done, total, name))), cts.Token,
+                (index, outcome) => Dispatcher.BeginInvoke(new Action(() => dialog.Mark(index, outcome))));
             _context.Settings.DriverBackupFolder = info.Folder;
             _context.SaveSettings();
+            // As marcas e o andamento chegam pela fila do despacho: o resultado entra depois deles
+            await Dispatcher.InvokeAsync(() => dialog.RestoreDone(result, point), System.Windows.Threading.DispatcherPriority.Background);
             string summary = result.Installed == 0 ? "Nenhum driver precisou ser instalado"
                 : result.Installed == 1 ? "1 driver instalado" : $"{result.Installed} drivers instalados";
-            string detail = (result.Current > 0 ? $"{result.Current} já em dia. " : "") + (result.Reboot ? "Reinicie o PC para terminar. " : "") + point;
-            if (result.Failed.Count > 0)
-            {
-                DrvFail($"{summary}, {result.Failed.Count} com erro", "Com erro:\n" + string.Join("\n", result.Failed));
-            }
-            else DrvSet(summary, 1, detail.Trim());
+            string detail = (result.Current > 0 ? $"{result.Current} já em dia. " : "") + (result.Reboot ? "Reinicie o PC para terminar." : "");
+            if (result.Failed.Count > 0) DrvSet($"{summary}, {result.Failed.Count} com erro", null, "Com erro:\n" + string.Join("\n", result.Failed));
+            else DrvSet(result.Canceled ? $"Restauração parada: {summary.ToLowerInvariant()}" : summary, null, detail.Trim());
             // Os drivers mudaram: a tabela e os dispositivos com problema relidos em silêncio
             ShowInventory(await Task.Run(DriverInventory.ListInstalled));
             ShowProblems(await Task.Run(DriverInventory.ReadProblems));
         }
-        catch (Exception ex) { DrvFail("Não foi possível restaurar os drivers", ex.Message); }
+        catch (Exception ex)
+        {
+            dialog.Failed("A restauração não terminou", ex.Message);
+            DrvSet("Restauração não concluída", null, ex.Message);
+        }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
     }
 
@@ -562,7 +603,8 @@ public partial class DriversView : UserControl
 
     /// <summary>
     /// "PageDriver:demo": quatro drivers achados no Windows Update; "searching": a busca em andamento; "backup" e "restore": as
-    /// janelas com dados de exemplo. Nada é procurado, copiado nem instalado; null volta ao normal.
+    /// janelas com dados de exemplo; "backup-work", "backup-done", "restore-work" e "restore-done": o andamento e o fim dentro
+    /// delas. Nada é procurado, copiado nem instalado; null volta ao normal.
     /// </summary>
     internal void PreviewDemo(string? mode)
     {
@@ -599,6 +641,14 @@ public partial class DriversView : UserControl
                 break;
             case "restore":
                 Dialog?.Preview(true, folder, 69, sample);
+                break;
+            case "backup-work":
+            case "backup-done":
+                Dialog?.PreviewStage(false, mode.EndsWith("done"), DriverBackup.DefaultRoot, sample);
+                break;
+            case "restore-work":
+            case "restore-done":
+                Dialog?.PreviewStage(true, mode.EndsWith("done"), DriverBackup.DefaultRoot, sample);
                 break;
         }
     }

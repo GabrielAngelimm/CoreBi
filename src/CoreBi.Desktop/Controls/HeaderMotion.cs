@@ -95,16 +95,24 @@ public static class HeaderMotion
     /// Troca o estado (e o detalhe ao lado) com uma transição: o texto atual apaga, o novo entra subindo 4 px e acendendo.
     /// Uma mensagem intermediária ("Lendo drivers…", que termina em reticências) fica pelo menos 900 ms na tela: a final que chega
     /// antes disso espera a vez, para a leitura rápida não virar uma piscada de "Lendo…" seguida de "Lido às". Mensagens que chegam
-    /// no meio de uma troca só atualizam o texto que vai entrar; a mais nova manda.
+    /// no meio de uma troca só atualizam o texto que vai entrar; a mais nova manda. O andamento de uma mesma etapa ("Baixando… 34 MiB",
+    /// "Baixando… 41 MiB") troca só o número, direto, sem apagar e acender a cada passo, que piscava.
     /// </summary>
     public static void Say(TextBlock status, TextBlock? detail, string text, string more = "", bool? busy = null)
     {
         var line = Lines.GetValue(status, _ => new Line { Text = status.Text, More = detail?.Text ?? "" });
-        bool isBusy = busy ?? text.EndsWith('…');
+        bool isBusy = busy ?? text.Contains('…');
         line.Generation++;
         line.Timer?.Stop();
         line.Timer = null;
         long now = Environment.TickCount64;
+        if (isBusy && line.Busy && !line.Swapping && status.Text == line.Text && Stem(line.Text) == Stem(text))
+        {
+            line.Text = text;
+            line.More = more;
+            Set(status, detail, text, more);
+            return;
+        }
         if (!isBusy && line.Busy && Animate && status.IsVisible)
         {
             var wait = MinBusy - TimeSpan.FromMilliseconds(now - line.BusyAt);
@@ -128,6 +136,13 @@ public static class HeaderMotion
         if (isBusy && (!line.Busy || line.Text != text)) line.BusyAt = now;
         line.Busy = isBusy;
         Swap(status, detail, line, text, more);
+    }
+
+    /// <summary>A etapa de uma mensagem de andamento: o texto até as reticências ("Copiando os drivers… 3 de 69" → "Copiando os drivers…").</summary>
+    internal static string Stem(string text)
+    {
+        int cut = text.IndexOf('…');
+        return cut < 0 ? text : text[..(cut + 1)];
     }
 
     private static void Set(TextBlock status, TextBlock? detail, string text, string more)

@@ -217,6 +217,14 @@ internal static partial class Program
                     && StartupEntry.OriginOf("Store", false) == "Microsoft Store", "Startup origins");
             return new { origins = true };
         });
+        Check("header: progress of one step keeps its stem", () =>
+        {
+            // O andamento de uma mesma etapa troca direto (sem piscar) porque o texto até as reticências não muda
+            Require(CoreBi.Desktop.HeaderMotion.Stem("Copiando os drivers… 3 de 69") == "Copiando os drivers…"
+                    && CoreBi.Desktop.HeaderMotion.Stem("Baixando… 41 MiB") == CoreBi.Desktop.HeaderMotion.Stem("Baixando… 34 MiB")
+                    && CoreBi.Desktop.HeaderMotion.Stem("Lido às 06:21") == "Lido às 06:21", "Header progress stem");
+            return new { stem = true };
+        });
 
         Check("drivers: backup folders, packages and device problem codes", () =>
         {

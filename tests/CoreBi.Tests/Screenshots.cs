@@ -91,7 +91,8 @@ internal static partial class Program
                     // "PageStartup:demo" mostra três removidos de exemplo no filtro Removidos (nada é lido nem salvo)
                     else if (parts[0] == "PageStartup" && parts.Length == 2) { window.PageStartup.PreviewDemo(parts[1]); Wait(900); }
                     // "PageDriver:demo" mostra drivers achados no Windows Update; "PageDriver:searching", a busca em andamento; "PageDriver:backup"
-                    // e "PageDriver:restore", as janelas de confirmação (nada é procurado, copiado nem instalado)
+                    // e "PageDriver:restore", as janelas de confirmação; ":backup-work", ":backup-done", ":restore-work" e ":restore-done", o
+                    // andamento e o fim dentro delas (nada é procurado, copiado nem instalado)
                     else if (parts[0] == "PageDriver" && parts.Length == 2) { window.PageDriver.PreviewDemo(parts[1]); Wait(900); }
                     Wait(600);
                     string file = Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-{theme}.png");

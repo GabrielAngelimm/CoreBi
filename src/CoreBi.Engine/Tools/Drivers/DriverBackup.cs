@@ -13,6 +13,9 @@ public sealed record DriverBackupInfo(string Folder, DateTime Created, string Co
 /// </summary>
 public sealed record DriverRestoreResult(int Total, int Installed, int Current, IReadOnlyList<string> Failed, bool Reboot, bool Canceled);
 
+/// <summary>O que aconteceu com um pacote na restauração: entrou em algum dispositivo, já estava em dia (ou sem dispositivo), ou falhou.</summary>
+public enum DriverRestoreOutcome { Installed, Current, Failed }
+
 /// <summary>
 /// Backup e restauração dos drivers de terceiros (os pacotes oem*.inf do repositório de drivers) com o pnputil do Windows.
 /// Exportar copia cada pacote numa subpasta; restaurar adiciona cada pacote de volta ao repositório e instala nos dispositivos
@@ -62,7 +65,14 @@ public static partial class DriverBackup
             await Task.WhenAny(run, Task.Delay(400, CancellationToken.None)).ConfigureAwait(false);
             progress(SafeCount(folder), total);
         }
-        var result = await run.ConfigureAwait(false);
+        ProcessResult result;
+        try { result = await run.ConfigureAwait(false); }
+        catch (OperationCanceledException)
+        {
+            // Cancelado no meio: a cópia pela metade não serve de backup e sairia como "o mais novo" na restauração
+            try { Directory.Delete(folder, recursive: true); } catch (Exception ex) { DiagnosticLog.Write("drivers.backup.cancel", ex); }
+            throw;
+        }
         int count = SafeCount(folder);
         if (count == 0)
         {
@@ -125,8 +135,11 @@ public static partial class DriverBackup
     /// <summary>
     /// Devolve os drivers do backup ao Windows, um pacote por vez (assim o código de cada um diz o que aconteceu):
     /// 0 = instalado em algum dispositivo, 259 = já em dia ou sem dispositivo neste PC, 3010 = instalado e falta reiniciar.
+    /// <paramref name="stop"/> só é olhado entre um pacote e outro: o pnputil que está instalando nunca é interrompido no meio.
+    /// <paramref name="outcome"/> diz o que aconteceu com cada pacote (pela posição), para a janela pintar a faixa.
     /// </summary>
-    public static async Task<DriverRestoreResult> RestoreAsync(DriverBackupInfo backup, Action<int, int, string> progress, CancellationToken token)
+    public static async Task<DriverRestoreResult> RestoreAsync(DriverBackupInfo backup, Action<int, int, string> progress, CancellationToken stop,
+        Action<int, DriverRestoreOutcome>? outcome = null)
     {
         var packages = Packages(backup.Folder);
         int installed = 0, current = 0, done = 0;
@@ -134,22 +147,23 @@ public static partial class DriverBackup
         var failed = new List<string>();
         foreach (string inf in packages)
         {
-            if (token.IsCancellationRequested) return new DriverRestoreResult(packages.Count, installed, current, failed, reboot, true);
+            if (stop.IsCancellationRequested) return new DriverRestoreResult(packages.Count, installed, current, failed, reboot, true);
             string name = PackageName(inf);
             progress(done, packages.Count, name);
+            DriverRestoreOutcome what;
             try
             {
-                var result = await ProcessRunner.RunAsync(PnpUtil, new[] { "/add-driver", inf, "/install" }, token).ConfigureAwait(false);
+                var result = await ProcessRunner.RunAsync(PnpUtil, new[] { "/add-driver", inf, "/install" }, CancellationToken.None).ConfigureAwait(false);
                 switch (result.ExitCode)
                 {
-                    case 0: installed++; break;
-                    case 259: current++; break;
-                    case 3010: installed++; reboot = true; break;
-                    default: failed.Add($"{name} (código {result.ExitCode})"); break;
+                    case 0: installed++; what = DriverRestoreOutcome.Installed; break;
+                    case 259: current++; what = DriverRestoreOutcome.Current; break;
+                    case 3010: installed++; reboot = true; what = DriverRestoreOutcome.Installed; break;
+                    default: failed.Add($"{name} (código {result.ExitCode})"); what = DriverRestoreOutcome.Failed; break;
                 }
             }
-            catch (OperationCanceledException) { return new DriverRestoreResult(packages.Count, installed, current, failed, reboot, true); }
-            catch (Exception ex) { failed.Add($"{name} ({ex.Message})"); }
+            catch (Exception ex) { failed.Add($"{name} ({ex.Message})"); what = DriverRestoreOutcome.Failed; }
+            outcome?.Invoke(done, what);
             progress(++done, packages.Count, name);
         }
         return new DriverRestoreResult(packages.Count, installed, current, failed, reboot, false);
