@@ -47,6 +47,9 @@ WizardStyle=modern dynamic windows11 includetitlebar
 DisableWelcomePage=no
 WizardImageFile=images\painel-*.png
 WizardImageBackColor=#0A0D0F
+; No modo escuro o Inno usa uma imagem própria se esta não for repetida: o painel já é escuro e serve aos dois
+WizardImageFileDynamicDark=images\painel-*.png
+WizardImageBackColorDynamicDark=#0A0D0F
 WizardSmallImageFile=images\simbolo-claro-*.png
 WizardSmallImageFileDynamicDark=images\simbolo-escuro-*.png
 

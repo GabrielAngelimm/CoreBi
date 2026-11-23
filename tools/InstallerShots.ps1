@@ -67,8 +67,10 @@ public static class InstallerWindow
             if (!IsWindowVisible(hwnd) || !IsWindowEnabled(hwnd)) return true;
             var text = new StringBuilder(128);
             GetWindowText(hwnd, text, text.Capacity);
-            if (text.Length == 0 || Other.IsMatch(text.ToString())) return true;
-            clicked = text.ToString();
+            // Sem o "&" do atalho de teclado, que pode cair no meio da palavra ("P&rocurar")
+            string label = text.ToString().Replace("&", "");
+            if (label.Length == 0 || Other.IsMatch(label)) return true;
+            clicked = label;
             // BN_CLICKED (0) para o pai, com o próprio botão no lParam: é como a VCL do Inno entrega o clique ao botão.
             // PostMessage, não SendMessage: se o clique abrir uma caixa de mensagem, o script não fica preso nela.
             PostMessage(GetParent(hwnd), 0x0111, IntPtr.Zero, hwnd);
