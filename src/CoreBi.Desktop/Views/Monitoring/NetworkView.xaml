@@ -352,19 +352,20 @@
 
                     <!-- Histórico: um teste por linha (quando, download, upload, latência), o mais recente em cima; o escolhido é o que o
                          diagnóstico mostra. Fica guardado em AppSettings.NetRuns e rola dentro do cartão. -->
-                    <Border x:Name="NetHistoryCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="24,16,16,16">
+                    <Border x:Name="NetHistoryCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="{StaticResource CardPadding}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-                            <Grid Style="{StaticResource CardHeader}" Margin="0,0,8,0">
+                            <Grid Style="{StaticResource CardHeader}">
                                 <TextBlock Text="Histórico" Style="{StaticResource CardTitle}" ToolTip="Os últimos 30 testes deste PC. Clique num deles para ver o diagnóstico daquele teste." />
                                 <TextBlock x:Name="NetHistoryCount" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                             </Grid>
-                            <!-- Cabeçalho da tabela nas mesmas colunas das linhas (10 px de recuo, o do conteúdo da linha) -->
-                            <Grid x:Name="NetHistoryHead" Grid.Row="1" Margin="10,12,18,4">
+                            <!-- Cabeçalho da tabela nas mesmas colunas das linhas, rente ao título: as linhas avançam 10 px para cada lado (o recuo do
+                                 conteúdo delas), então o fundo da escolhida sai da margem e o texto fica na linha do título e do pé do cartão -->
+                            <Grid x:Name="NetHistoryHead" Grid.Row="1" Margin="0,12,0,4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="68" />
@@ -376,12 +377,12 @@
                                 <TextBlock Grid.Column="2" Text="Upload" Style="{StaticResource TableHead}" HorizontalAlignment="Right" ToolTip="Em Mbps" />
                                 <TextBlock Grid.Column="3" Text="Latência" Style="{StaticResource TableHead}" HorizontalAlignment="Right" ToolTip="Até a internet, em ms" />
                             </Grid>
-                            <local:SpareHeightBox Grid.Row="2">
+                            <local:SpareHeightBox Grid.Row="2" Margin="-10,0,-10,0">
                                 <ListBox x:Name="NetHistory" ItemContainerStyle="{StaticResource ListNavItem}" Padding="0" Margin="0,0,0,0"
                                          ScrollViewer.VerticalScrollBarVisibility="Auto" SelectionChanged="NetHistory_SelectionChanged" Focusable="False">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
-                                            <Grid Margin="0,0,8,0">
+                                            <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="68" />
@@ -413,12 +414,12 @@
                                 </ListBox>
                             </local:SpareHeightBox>
                             <TextBlock x:Name="NetHistoryEmpty" Grid.Row="2" Text="Cada teste fica guardado aqui, para comparar com os próximos." Style="{StaticResource Caption}"
-                                       Foreground="{DynamicResource Faint}" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8,0,16,0" />
+                                       Foreground="{DynamicResource Faint}" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Grid>
                     </Border>
 
                     <!-- Esqueleto: as seis linhas da conexão espalhadas pela altura, nome à esquerda e valor à direita -->
-                    <Border x:Name="NetInfoCard" Grid.Column="4" Style="{StaticResource CardBorder}" Padding="24,16,24,12" local:Skeleton.Top="40"
+                    <Border x:Name="NetInfoCard" Grid.Column="4" Style="{StaticResource CardBorder}" Padding="{StaticResource CardPadding}" local:Skeleton.Top="40"
                             local:Skeleton.Layout="spread 6: c *@0.5, t *@0.6&gt;">
                         <Grid>
                             <Grid.RowDefinitions>
