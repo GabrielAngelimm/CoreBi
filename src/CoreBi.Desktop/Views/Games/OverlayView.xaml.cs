@@ -172,9 +172,9 @@ public partial class OverlayView : UserControl
                 slot.Children.Add(rule);
             }
 
-            // 8 px acima e abaixo de cada fio; o último grupo encosta na margem do cartão (-4 px: a legenda não tem tinta no pé da linha)
+            // 8 px acima e abaixo de cada fio; o último grupo encosta na margem do cartão (-2 px: medido, a legenda fica a 25 px do pé, como o título do topo)
             bool last = i == groups.Count - 1;
-            var row = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, i == 0 ? 0 : 8, 0, last ? -4 : 8) };
+            var row = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, i == 0 ? 0 : 8, 0, last ? -2 : 8) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 

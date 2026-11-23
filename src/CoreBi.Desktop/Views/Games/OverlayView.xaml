@@ -489,9 +489,10 @@
                         <Border x:Name="OvWhereCard" Grid.Row="2" Style="{StaticResource CardBorder}">
                             <!--
                                 A sobra de altura vira vãos iguais: do título ao primeiro tópico e entre os tópicos (o fio fica no meio do vão).
-                                O último tópico encosta na margem de baixo do cartão (-4 px: a parte de baixo da linha de texto não tem tinta).
+                                O último tópico encosta na margem de baixo do cartão (-3 px: a linha de base fica a 25 px do pé, como o título do
+                                topo). O cabeçalho sobe 8 px no vão: o título centrado na linha de 34 px deixa 11 px vazios embaixo.
                             -->
-                            <Grid Margin="0,0,0,-4">
+                            <Grid Margin="0,0,0,-3">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" MinHeight="16" />
@@ -503,7 +504,7 @@
                                     <RowDefinition Height="*" MinHeight="17" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <Grid Style="{StaticResource CardHeader}">
+                                <Grid Style="{StaticResource CardHeader}" Margin="0,0,0,-8">
                                     <TextBlock Text="Onde funciona" Style="{StaticResource CardTitle}" />
                                 </Grid>
                                 <Grid Grid.Row="2" Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="O overlay é uma janela do CoreBi por cima do jogo.">
