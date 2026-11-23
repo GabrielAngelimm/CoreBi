@@ -355,21 +355,33 @@
                                             VerticalAlignment="Center" Click="BtnDrvWuInstall_Click" IsEnabled="False" Visibility="Collapsed"
                                             ToolTip="Instala pelo próprio Windows Update. Pode pedir para reiniciar." />
                                 </Grid>
-                                <TextBlock x:Name="DrvWuList" Grid.Row="1" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextAlignment="Center"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,8,0,8" TextWrapping="Wrap"
-                                           Text="Drivers testados pela Microsoft para este PC." />
+                                <!-- Sem lista: o desenho diz o estado (procurar, em dia ou sem resposta) e a frase embaixo explica -->
+                                <StackPanel x:Name="DrvWuEmpty" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24,8,24,8">
+                                    <TextBlock x:Name="DrvWuGlyph" Text="&#xE895;" FontFamily="{StaticResource Icons}" FontSize="32" Foreground="{DynamicResource Faint}"
+                                               HorizontalAlignment="Center" Margin="0,0,0,12" />
+                                    <TextBlock x:Name="DrvWuList" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextAlignment="Center" TextWrapping="Wrap"
+                                               MaxWidth="340" Text="Procure para saber se a Microsoft tem drivers novos para as peças deste PC." />
+                                </StackPanel>
                                 <ScrollViewer x:Name="DrvWuScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0" Visibility="Collapsed">
                                     <ItemsControl x:Name="DrvWuItems" Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border Style="{StaticResource TableRow}" Height="36">
+                                                <!-- Fabricante e tipo à esquerda, a versão e o tamanho em colunas à direita; o título original do Windows na dica -->
+                                                <Border Style="{StaticResource TableRow}" Height="36" ToolTip="{Binding Title}">
                                                     <Grid VerticalAlignment="Center">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*" />
                                                             <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="56" />
                                                         </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}" />
-                                                        <TextBlock Grid.Column="1" Text="{Binding Size}" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" Margin="16,0,0,0" />
+                                                        <TextBlock TextTrimming="CharacterEllipsis" VerticalAlignment="Center">
+                                                            <Run Text="{Binding Maker, Mode=OneWay}" /><Run Text="{Binding KindGap, Mode=OneWay}" Foreground="{DynamicResource Faint}" /><Run
+                                                                Text="{Binding Kind, Mode=OneWay}" Foreground="{DynamicResource Muted}" />
+                                                        </TextBlock>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Version}" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" Margin="16,0,0,0"
+                                                                   VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="2" Text="{Binding Size}" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right"
+                                                                   VerticalAlignment="Center" />
                                                     </Grid>
                                                 </Border>
                                             </DataTemplate>
@@ -473,7 +485,7 @@
                                                             </Border>
                                                             <Button x:Name="copy" Grid.Column="2" Style="{StaticResource DrvCopy}" HorizontalAlignment="Left" Margin="6,0,0,0" Click="DrvCopy_Click" />
                                                         </Grid>
-                                                        <TextBlock x:Name="vendor" Grid.Column="1" Text="{Binding Vendor}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Vendor}" Margin="16,0,0,0"
+                                                        <TextBlock x:Name="vendor" Grid.Column="1" Text="{Binding Vendor}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" ToolTip="{Binding VendorTip}" Margin="16,0,0,0"
                                                                    VerticalAlignment="Center" />
                                                         <TextBlock x:Name="version" Grid.Column="2" Text="{Binding Version}" Style="{StaticResource Num}" TextTrimming="CharacterEllipsis" Margin="16,0,0,0" VerticalAlignment="Center" />
                                                         <TextBlock x:Name="date" Grid.Column="3" Text="{Binding Date}" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="{Binding DateTip}" />

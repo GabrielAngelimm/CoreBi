@@ -241,7 +241,7 @@
                                                                 <TextBlock Text="Arquivo ausente" Style="{StaticResource BadgeText}" Foreground="{DynamicResource Warn}" />
                                                             </Border>
                                                         </Grid>
-                                                        <TextBlock Grid.Column="3" Text="{Binding Entry.Publisher}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                        <TextBlock Grid.Column="3" Text="{Binding Publisher}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
                                                                    Margin="16,0,0,0" ToolTip="{Binding Entry.Publisher}" />
                                                         <!-- Mono 12 centrado ficava com a base 2 px acima da Segoe 14 das outras colunas: 4 em cima o desce 2 -->
                                                         <TextBlock Grid.Column="4" Text="{Binding Entry.Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
@@ -298,7 +298,7 @@
                                                                 Foreground="{DynamicResource Faint}" />
                                                         </TextBlock>
                                                         <TextBlock Grid.Column="3" Text="{Binding Publisher}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
-                                                                   Margin="16,0,0,0" ToolTip="{Binding Publisher}" />
+                                                                   Margin="16,0,0,0" ToolTip="{Binding PublisherTip}" />
                                                         <TextBlock Grid.Column="4" Text="{Binding Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
                                                                    TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,4,0,0" ToolTip="{Binding Command}" />
                                                         <TextBlock Grid.Column="5" Text="{Binding Origin}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"

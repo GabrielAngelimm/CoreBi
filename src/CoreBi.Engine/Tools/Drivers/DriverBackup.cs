@@ -148,7 +148,9 @@ public static partial class DriverBackup
         foreach (string inf in packages)
         {
             if (stop.IsCancellationRequested) return new DriverRestoreResult(packages.Count, installed, current, failed, reboot, true);
-            string name = PackageName(inf);
+            // Na tela, o pacote em palavras ("driver de som da NVIDIA"); na lista de erros, também o arquivo, para buscar
+            string name = DriverNames.Package(inf), file = Path.GetFileName(inf);
+            string Fail(string why) => name == file ? $"{file} ({why})" : $"{name} ({file}, {why})";
             progress(done, packages.Count, name);
             DriverRestoreOutcome what;
             try
@@ -159,10 +161,10 @@ public static partial class DriverBackup
                     case 0: installed++; what = DriverRestoreOutcome.Installed; break;
                     case 259: current++; what = DriverRestoreOutcome.Current; break;
                     case 3010: installed++; reboot = true; what = DriverRestoreOutcome.Installed; break;
-                    default: failed.Add($"{name} (código {result.ExitCode})"); what = DriverRestoreOutcome.Failed; break;
+                    default: failed.Add(Fail($"código {result.ExitCode}")); what = DriverRestoreOutcome.Failed; break;
                 }
             }
-            catch (Exception ex) { failed.Add($"{name} ({ex.Message})"); what = DriverRestoreOutcome.Failed; }
+            catch (Exception ex) { failed.Add(Fail(ex.Message)); what = DriverRestoreOutcome.Failed; }
             outcome?.Invoke(done, what);
             progress(++done, packages.Count, name);
         }
@@ -172,9 +174,6 @@ public static partial class DriverBackup
     /// <summary>Ponto de restauração antes de restaurar (até 60 s; o Windows cria no máximo um por dia).</summary>
     public static Task<string> RestorePointAsync(CancellationToken token) =>
         DriverInstaller.TryRestorePointAsync(token, "CoreBi - antes de restaurar drivers");
-
-    /// <summary>"nvlti.inf_amd64_6f3b…" → "nvlti.inf": o nome do pacote sem o sufixo que o repositório de drivers acrescenta.</summary>
-    private static string PackageName(string inf) => Path.GetFileName(inf);
 
     private static int SafeCount(string folder)
     {

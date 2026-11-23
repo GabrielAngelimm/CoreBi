@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Tools.Startup;
 
 namespace CoreBi.Desktop.Views;
@@ -24,6 +25,8 @@ public sealed class StartupRow(StartupEntry entry, ImageSource? icon)
         Entry.Name != Entry.Title ? "Entrada: " + Entry.Name : "",
         Entry.Detail.Length > 0 && Entry.Detail != Entry.Title ? Entry.Detail : "",
     }.Where(s => s.Length > 0));
+    /// <summary>A empresa sem a razão social ("Microsoft Corporation" → "Microsoft"); a dica mostra o nome inteiro.</summary>
+    public string Publisher => HardwareNaming.CompanyName(Entry.Publisher);
     public string CommandTip => Entry.Store ? "Tarefa de inicialização de um app da Microsoft Store.\n" + Entry.Command : Entry.Command + "\n" + Entry.Source;
     public string OriginTip => Entry.Origin switch
     {
@@ -41,7 +44,8 @@ public sealed class RemovedRow(StartupBackup backup, ImageSource? icon)
     public bool Glyph { get; } = FileIcons.IsGlyph(backup.IconPath);
     public string Title => Backup.DisplayName;
     public string When => Backup.RemovedAt is { } at ? "removido " + StartupView.Day(at) : "";
-    public string Publisher => Backup.Publisher ?? "";
+    public string Publisher => HardwareNaming.CompanyName(Backup.Publisher);
+    public string PublisherTip => Backup.Publisher ?? "";
     public string Command => Backup.Command ?? Backup.Original ?? "";
     public string Origin => StartupEntry.OriginOf(Backup.Kind, Backup.Machine);
 }

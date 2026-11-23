@@ -92,7 +92,7 @@ internal static partial class Program
                     else if (parts[0] == "PageStartup" && parts.Length == 2) { window.PageStartup.PreviewDemo(parts[1]); Wait(900); }
                     // "PageDriver:demo" mostra drivers achados no Windows Update; "PageDriver:searching", a busca em andamento; "PageDriver:backup"
                     // e "PageDriver:restore", as janelas de confirmação; ":backup-work", ":backup-done", ":restore-work" e ":restore-done", o
-                    // andamento e o fim dentro delas (nada é procurado, copiado nem instalado)
+                    // andamento e o fim dentro delas; ":gpu-confirm" e ":wu-confirm", as confirmações de instalar (nada é procurado, copiado nem instalado)
                     else if (parts[0] == "PageDriver" && parts.Length == 2) { window.PageDriver.PreviewDemo(parts[1]); Wait(900); }
                     // "PageBottleneck:demo" mostra um veredito ao vivo e uma análise de exemplo (nada é medido nem salvo)
                     else if (parts[0] == "PageBottleneck" && parts.Length == 2 && parts[1] == "demo") { window.PageBottleneck.PreviewDemo(true); Wait(1200); }

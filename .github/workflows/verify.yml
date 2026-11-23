@@ -34,7 +34,7 @@ jobs:
       - name: Capturas das páginas (claro e escuro)
         continue-on-error: true
         timeout-minutes: 6
-        run: dotnet run --project tests/CoreBi.Tests -c Release --no-build -- --shots artifacts/shots 6 "PageDash,PageSystem,PageSensors,PageGpu,PageDisks,PageEnergy,PageNet,PageOverlay,PageBottleneck,PageBench,PageStress,PageStartup,PageStartup:demo,PageApps,PageApps:pack,PageApps:confirm,PageApps:installing,PageApps:Jogos,PageDriver,PageDriver:demo,PageDriver:searching,PageDriver:backup,PageDriver:restore,PageDriver:backup-work,PageDriver:backup-done,PageDriver:restore-work,PageDriver:restore-done" dark,light
+        run: dotnet run --project tests/CoreBi.Tests -c Release --no-build -- --shots artifacts/shots 6 "PageDash,PageSystem,PageSensors,PageGpu,PageDisks,PageEnergy,PageNet,PageOverlay,PageBottleneck,PageBench,PageStress,PageStartup,PageStartup:demo,PageApps,PageApps:pack,PageApps:confirm,PageApps:installing,PageApps:Jogos,PageDriver,PageDriver:demo,PageDriver:searching,PageDriver:backup,PageDriver:restore,PageDriver:backup-work,PageDriver:backup-done,PageDriver:restore-work,PageDriver:restore-done,PageDriver:gpu-confirm,PageDriver:wu-confirm" dark,light
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         continue-on-error: true

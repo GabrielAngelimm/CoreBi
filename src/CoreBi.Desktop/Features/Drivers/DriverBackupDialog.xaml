@@ -20,7 +20,7 @@
             <Border.RenderTransform>
                 <TranslateTransform x:Name="PanelShift" />
             </Border.RenderTransform>
-            <DockPanel>
+            <DockPanel x:Name="PanelContent">
                 <StackPanel DockPanel.Dock="Top" Margin="24,16,16,0">
                     <Grid Style="{StaticResource CardHeader}">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">

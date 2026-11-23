@@ -257,6 +257,21 @@ internal static partial class Program
             Require(DriverInventory.MsiSlug("MAG B550 TOMAHAWK (MS-7C91)") == "MAG-B550-TOMAHAWK" && DriverInventory.AsrockPlatform("B550M Pro4") == "AMD"
                 && DriverInventory.AsrockPlatform("B660M Pro RS") == "Intel" && DriverInventory.AsrockPlatform("Fatal1ty") == null, "Board support page slugs");
             Require(DriverInventory.ProblemMeaning(28) == "Sem driver instalado" && DriverInventory.ProblemMeaning(999) == "Problema código 999", "Device problem text");
+            // Os nomes da tela: o pacote pelo [Version] do .inf, o título do Windows Update em colunas e a empresa sem a razão social
+            string inf = Path.Combine(folder.Path, "nvhdci.inf");
+            File.WriteAllText(inf, "; comentário\r\n[Version]\r\nSignature=\"$WINDOWS NT$\"\r\nClass=MEDIA\r\nProvider=%NVIDIA%\r\n[Strings]\r\nNVIDIA=\"NVIDIA Corporation\"\r\n[Strings.0416]\r\nNVIDIA=\"Outra\"\r\n",
+                System.Text.Encoding.Unicode);
+            string bare = Path.Combine(folder.Path, "x.inf");
+            File.WriteAllText(bare, "[Version]\nClass=Unknown\n");
+            Require(DriverNames.Package(inf) == "driver de som da NVIDIA" && DriverNames.Package(bare) == "x.inf"
+                    && DriverNames.Package(Path.Combine(folder.Path, "missing.inf")) == "missing.inf", "Backup package names");
+            Require(DriverNames.WindowsUpdate("Realtek Semiconductor Corp. - Extension - 10.0.26100.31") == ("Realtek Semiconductor", "Extensão", "10.0.26100.31")
+                    && DriverNames.WindowsUpdate("Intel - Bluetooth - 23.100.1.1").Kind == "Bluetooth"
+                    && DriverNames.WindowsUpdate("Atualização qualquer").Maker == "Atualização qualquer", "Windows Update titles");
+            Require(HardwareNaming.CompanyName("Epic Games, Inc") == "Epic Games" && HardwareNaming.CompanyName("GuangZhou FiiO Electronics Co.,Ltd") == "GuangZhou FiiO Electronics"
+                    && HardwareNaming.CompanyName("Anthropic, PBC") == "Anthropic" && HardwareNaming.CompanyName("Microsoft Windows") == "Microsoft Windows"
+                    && HardwareNaming.CompanyName("Thesycon Software Solutions GmbH & Co. KG") == "Thesycon Software Solutions" && HardwareNaming.CompanyName(null) == "",
+                "Company names");
             return new { packages = 2 };
         });
 

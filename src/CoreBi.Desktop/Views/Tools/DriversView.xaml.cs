@@ -1,4 +1,5 @@
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Performance;
 using CoreBi.Engine.Tools.Drivers;
 using System.ComponentModel;
@@ -396,6 +397,41 @@ public partial class DriversView : UserControl
         button.ClearValue(ToolTipProperty);
     }
 
+    /// <summary>
+    /// A confirmação de instalar o driver da placa, na janela do próprio app (a mesma do backup): o que acontece e, lado a lado, o
+    /// que está instalado, o que vem e o tamanho do download. Reinstalar a mesma versão não repete o número.
+    /// </summary>
+    private Task<bool> AskGpuInstall(GpuDriverStatus g)
+    {
+        if (Dialog is not { } dialog) return Task.FromResult(false);
+        bool amd = g.Vendor == "AMD", update = amd || g.UpdateAvailable;
+        string title = amd ? "Instalar o AMD Software" : g.UpdateAvailable ? "Atualizar o driver da NVIDIA" : "Reinstalar o driver da NVIDIA";
+        string lead = amd ? "O CoreBi baixa o instalador oficial da AMD e abre ele para você seguir."
+            : g.UpdateAvailable ? "O CoreBi baixa o instalador oficial da NVIDIA e abre ele. A tela pode piscar enquanto o driver troca."
+            : "Você já está com a versão mais nova. Reinstalar ajuda quando o driver dá problema: o CoreBi baixa o instalador oficial de novo e abre ele.";
+        string action = amd ? "Baixar e abrir" : g.UpdateAvailable ? $"Instalar {g.Latest}" : $"Reinstalar {g.Latest}";
+        const string tip = "O arquivo vem do servidor oficial e tem a assinatura conferida. Antes de abrir, o CoreBi pede ao Windows um ponto de restauração.";
+        var cells = new (string Label, string Value, string? Tip)[]
+        {
+            ("Instalado", g.Installed, null),
+            ("Mais recente", update ? g.Latest : "", null),
+            ("Download", g.SizeText, null),
+        };
+        return dialog.ConfirmAsync(title, lead, action, tip, cells.Where(c => c.Value.Length > 0).ToArray());
+    }
+
+    /// <summary>A confirmação de instalar a lista do Windows Update: quantos drivers e o tamanho do download.</summary>
+    private Task<bool> AskWuInstall()
+    {
+        if (Dialog is not { } dialog) return Task.FromResult(false);
+        string what = _drvWu.Count == 1 ? "1 driver" : $"{_drvWu.Count} drivers";
+        long bytes = _drvWu.Sum(w => Math.Max(0, w.SizeBytes));
+        return dialog.ConfirmAsync("Instalar do Windows Update",
+            "O próprio Windows Update baixa e instala os drivers da lista. No fim, ele pode pedir para reiniciar.",
+            $"Instalar {what}", "Nada além da lista é instalado.",
+            ("Drivers", _drvWu.Count.ToString(PtBr), null), ("Download", bytes > 0 ? Size(bytes) : "—", null));
+    }
+
     internal async void BtnDrvInstall_Click(object sender, RoutedEventArgs e)
     {
         if (!RequireAdmin()) return;
@@ -404,12 +440,7 @@ public partial class DriversView : UserControl
 
         var g = _drvGpus.FirstOrDefault(x => x.CanAutoInstall);
         if (g == null || _drvBusy) return;
-        string msg = g.Vendor == "AMD"
-            ? $"Baixar e abrir o instalador AMD Software {g.Latest}?\nO arquivo vem do servidor oficial da AMD."
-            : g.UpdateAvailable
-            ? $"Instalar o driver NVIDIA {g.Latest} ({g.SizeText})?\nO CoreBi baixa e abre o instalador oficial."
-            : $"Você já está com a versão {g.Installed}. Baixar e abrir o instalador {g.Latest} de novo, para reinstalar?";
-        if (MessageBox.Show(_context.Owner, msg, "Drivers", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (!await AskGpuInstall(g)) return;
 
         DrvBusy(true);
         _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
@@ -424,16 +455,27 @@ public partial class DriversView : UserControl
         finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
     }
 
-    private void ShowWu(string? note = null)
+    /// <summary>Início da conversa com o Windows Update: o que a busca faz, antes da primeira.</summary>
+    private const string WuIdle = "Procure para saber se a Microsoft tem drivers novos para as peças deste PC.";
+
+    /// <summary>
+    /// A lista do Windows Update ou, sem nada nela, o estado: o desenho de atualizar (ainda não procurou), o visto verde (tudo em
+    /// dia ou instalado) ou o alerta âmbar (sem resposta), com a frase embaixo.
+    /// </summary>
+    private void ShowWu(string? note = null, string tone = "idle")
     {
-        DrvWuItems.ItemsSource = _drvWu.Select(w => new WuLine(w.Title,
-            w.SizeBytes > 0 ? (w.SizeBytes / 1048576.0).ToString("0", PtBr) + " MB" : "")).ToList();
+        DrvWuItems.ItemsSource = _drvWu.Select(WuLine.From).ToList();
         DrvWuCount.Text = _drvWu.Count > 0 ? _drvWu.Count.ToString(PtBr) : "";
         BtnDrvWuInstall.Visibility = _drvWu.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         BtnDrvWuInstall.Content = _drvWu.Count == 1 ? "Instalar 1" : $"Instalar {_drvWu.Count}";
-        if (note != null) DrvWuList.Text = note;
-        DrvWuList.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-        DrvWuList.Visibility = _drvWu.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+        if (note != null)
+        {
+            DrvWuList.Text = note;
+            bool ok = tone == "ok", warn = tone == "warn";
+            DrvWuGlyph.Text = ok ? "\uE73E" : warn ? "\uE7BA" : "\uE895";
+            DrvWuGlyph.SetResourceReference(TextBlock.ForegroundProperty, ok ? "Ok" : warn ? "Warn" : "Faint");
+        }
+        DrvWuEmpty.Visibility = _drvWu.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
         DrvWuScroll.Visibility = _drvWu.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         UpdatePrimary();
     }
@@ -449,14 +491,14 @@ public partial class DriversView : UserControl
         try
         {
             _drvWu = await WindowsUpdateService.SearchAsync();
-            ShowWu($"Tudo em dia: nenhum driver novo às {DateTime.Now:HH:mm}.");
+            ShowWu($"Tudo em dia: nenhum driver novo às {DateTime.Now:HH:mm}.", "ok");
             DrvSet(_drvWu.Count == 0 ? "Nenhum driver novo no Windows Update"
                  : _drvWu.Count == 1 ? "1 driver no Windows Update" : $"{_drvWu.Count} drivers no Windows Update");
         }
         catch (Exception ex)
         {
             _drvWu = new();
-            ShowWu("Não deu para falar com o Windows Update agora.");
+            ShowWu("Não deu para falar com o Windows Update agora. Tente de novo em alguns minutos.", "warn");
             DrvFail("Não foi possível procurar no Windows Update", ex.Message);
         }
         finally { Searching(false); _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
@@ -466,7 +508,7 @@ public partial class DriversView : UserControl
     private void Searching(bool on)
     {
         BtnDrvWuSearch.Content = on ? "Procurando…" : "Procurar";
-        DrvWuList.Visibility = on ? Visibility.Hidden : _drvWu.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+        DrvWuEmpty.Visibility = on ? Visibility.Hidden : _drvWu.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
         Skeleton.SetActive(DrvWuCard, on);
     }
 
@@ -478,9 +520,7 @@ public partial class DriversView : UserControl
         using var critical = _context.BeginCriticalOperation("Aguarde a instalação de drivers do Windows Update terminar.");
 
         if (_drvBusy || _drvWu.Count == 0) return;
-        string what = _drvWu.Count == 1 ? "1 driver" : $"{_drvWu.Count} drivers";
-        if (MessageBox.Show(_context.Owner, $"Instalar {what} do Windows Update? Pode ser preciso reiniciar.", "Drivers",
-                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (!await AskWuInstall()) return;
         DrvBusy(true);
         DrvSet("Baixando drivers do Windows Update…");
         try
@@ -488,7 +528,7 @@ public partial class DriversView : UserControl
             string r = await WindowsUpdateService.InstallAsync(_drvWu, t => Dispatcher.BeginInvoke(new Action(() => DrvSet(t))));
             DrvSet(r);
             _drvWu = new();
-            ShowWu(r);
+            ShowWu(r, r.StartsWith("Instalação concluída", StringComparison.Ordinal) ? "ok" : "warn");
         }
         catch (Exception ex) { DrvFail("Não foi possível instalar pelo Windows Update", ex.Message); }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
@@ -541,7 +581,7 @@ public partial class DriversView : UserControl
         }
         catch (OperationCanceledException) when (!_context.IsClosing)
         {
-            dialog.Cancel();
+            dialog.Dismiss();
             DrvSet("Backup cancelado", null, "nada foi guardado");
         }
         catch (Exception ex)
@@ -604,7 +644,7 @@ public partial class DriversView : UserControl
     /// <summary>
     /// "PageDriver:demo": quatro drivers achados no Windows Update; "searching": a busca em andamento; "backup" e "restore": as
     /// janelas com dados de exemplo; "backup-work", "backup-done", "restore-work" e "restore-done": o andamento e o fim dentro
-    /// delas. Nada é procurado, copiado nem instalado; null volta ao normal.
+    /// delas; "gpu-confirm" e "wu-confirm", as confirmações de instalar. Nada é procurado, copiado nem instalado; null volta ao normal.
     /// </summary>
     internal void PreviewDemo(string? mode)
     {
@@ -613,7 +653,7 @@ public partial class DriversView : UserControl
             Dialog?.Cancel();
             Searching(false);
             _drvWu = new();
-            ShowWu("Drivers testados pela Microsoft para este PC.");
+            ShowWu(WuIdle);
             return;
         }
         string folder = Path.Combine(DriverBackup.DefaultRoot, $"Drivers {Environment.MachineName} 2026-11-20 21h14");
@@ -633,7 +673,7 @@ public partial class DriversView : UserControl
                 break;
             case "searching":
                 BtnDrvWuSearch.Content = "Procurando…";
-                DrvWuList.Visibility = Visibility.Hidden;
+                DrvWuEmpty.Visibility = Visibility.Hidden;
                 Skeleton.SetActive(DrvWuCard, true);
                 break;
             case "backup":
@@ -649,6 +689,13 @@ public partial class DriversView : UserControl
             case "restore-work":
             case "restore-done":
                 Dialog?.PreviewStage(true, mode.EndsWith("done"), DriverBackup.DefaultRoot, sample);
+                break;
+            case "gpu-confirm":
+                _ = AskGpuInstall(new GpuDriverStatus { Vendor = "NVIDIA", GpuName = "NVIDIA GeForce RTX 4060 Ti", Installed = "621.24", Latest = "623.10", SizeText = "1,04 GB" });
+                break;
+            case "wu-confirm":
+                PreviewDemo("demo");
+                _ = AskWuInstall();
                 break;
         }
     }
@@ -680,6 +727,8 @@ public sealed record DriverLine(string Device, string Vendor, string Version, st
     /// <summary>O que o Windows diz do dispositivo ("Sem driver instalado"); vazio numa linha de driver.</summary>
     public string Problem { get; init; } = "";
     public string? Tip { get; init; }
+    /// <summary>O fabricante como o Windows escreve (a coluna mostra sem a razão social).</summary>
+    public string? VendorTip { get; init; }
     public bool IsProblem => Problem.Length > 0;
 
     /// <summary>Dica da data: só nos drivers com a data padrão do Windows.</summary>
@@ -700,11 +749,23 @@ public sealed record DriverLine(string Device, string Vendor, string Version, st
         };
         // Versão ou data ausente chega como "—": a célula fica vazia em vez de mostrar o travessão.
         static string Value(string v) => v == "—" ? "" : v;
-        string vendor = StandardVendors.TryGetValue(r.Vendor.Trim(), out var pt) ? pt : r.Vendor;
-        return new DriverLine(r.Device, vendor, Value(r.Version), Value(r.Date), r.Signed, group, order);
+        // Os genéricos do Windows em português; os outros sem a razão social ("Mellanox Technologies Ltd." → "Mellanox Technologies")
+        string vendor = StandardVendors.TryGetValue(r.Vendor.Trim(), out var pt) ? pt : HardwareNaming.CompanyName(r.Vendor);
+        return new DriverLine(r.Device, vendor, Value(r.Version), Value(r.Date), r.Signed, group, order) { VendorTip = r.Vendor };
     }
 }
 
 
 /// <summary>Driver encontrado no Windows Update, com o tamanho já formatado.</summary>
-public sealed record WuLine(string Title, string Size);
+public sealed record WuLine(string Title, string Maker, string Kind, string Version, string Size)
+{
+    /// <summary>"Realtek Semiconductor Corp. - Extension - 10.0.1" vira o fabricante, o tipo em português e a versão em colunas.</summary>
+    internal static WuLine From(WuDriver w)
+    {
+        var (maker, kind, version) = DriverNames.WindowsUpdate(w.Title);
+        string size = w.SizeBytes <= 0 ? "" : w.SizeBytes < 1048576 ? "< 1 MB" : (w.SizeBytes / 1048576.0).ToString("0", CultureInfo.GetCultureInfo("pt-BR")) + " MB";
+        return new WuLine(w.Title, maker, kind, version, size);
+    }
+
+    public string KindGap => Kind.Length > 0 ? "  ·  " : "";
+}

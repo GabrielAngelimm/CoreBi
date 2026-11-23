@@ -34,6 +34,9 @@ public partial class DriverBackupDialog : UserControl
     private Action? _stop;
     private string? _openPath;
     private int _installed, _current, _failed;
+    /// <summary>Confirmação simples (reinstalar o driver da placa, instalar do Windows Update): só a placa de números, e fecha ao confirmar.</summary>
+    private bool _simple;
+    private bool _closing;
 
     public DriverBackupDialog() => InitializeComponent();
 
@@ -46,6 +49,7 @@ public partial class DriverBackupDialog : UserControl
     public async Task<string?> AskBackupAsync(string folder, int count, DriverBackupInfo? last)
     {
         _restore = false;
+        _simple = false;
         _folder = folder;
         _count = count;
         _last = last;
@@ -58,6 +62,7 @@ public partial class DriverBackupDialog : UserControl
     public async Task<DriverBackupInfo?> AskRestoreAsync(string folder)
     {
         _restore = true;
+        _simple = false;
         _folder = folder;
         _found = folder.Length > 0 ? await Task.Run(() => DriverBackup.Find(folder)) : null;
         RestoreTexts();
@@ -93,10 +98,32 @@ public partial class DriverBackupDialog : UserControl
     private void Order(bool folderFirst)
     {
         Body.Children.Clear();
+        FolderBlock.Visibility = Visibility.Visible;
         Body.Children.Add(folderFirst ? FolderBlock : Plate);
         Body.Children.Add(folderFirst ? Plate : FolderBlock);
         FolderBlock.Margin = new Thickness(0, folderFirst ? 0 : 20, 0, 0);
         Plate.Margin = new Thickness(0, folderFirst ? 20 : 0, 0, 0);
+    }
+
+    /// <summary>
+    /// Confirmação de uma ação da página na mesma moldura (no lugar da caixa de mensagem do Windows): título, a frase do que
+    /// acontece, a placa de números e o rodapé com Voltar e a ação. Devolve se confirmou; a janela fecha nos dois casos.
+    /// </summary>
+    public Task<bool> ConfirmAsync(string title, string lead, string action, string? actionTip, params (string Label, string Value, string? Tip)[] cells)
+    {
+        _simple = true;
+        _restore = false;
+        SetStage(Stage.Ask);
+        DialogTitle.Text = title;
+        Lead.Text = lead;
+        Body.Children.Clear();
+        Body.Children.Add(Plate);
+        Plate.Margin = new Thickness(0);
+        SetCells(cells);
+        BtnConfirm.Content = action;
+        BtnConfirm.ToolTip = actionTip;
+        BtnConfirm.IsEnabled = true;
+        return OpenAsync();
     }
 
     private void ShowState()
@@ -202,7 +229,9 @@ public partial class DriverBackupDialog : UserControl
     /// A janela muda para o andamento: os números dão lugar à contagem e à faixa, a frase de cima diz o que acontece e o rodapé
     /// fica só com Cancelar (backup) ou Parar depois do atual (restauração). Quem roda a tarefa diz como parar em <see cref="OnStop"/>.
     /// </summary>
-    private void BeginWork(int total)
+    private void BeginWork(int total) => Glide(() => StartWork(total));
+
+    private void StartWork(int total)
     {
         _installed = _current = _failed = 0;
         SetStage(Stage.Work);
@@ -242,7 +271,7 @@ public partial class DriverBackupDialog : UserControl
         if (_restore && item != null)
         {
             Strip.SetCurrent(done < total ? done : -1);
-            Lead.Text = done < total ? $"Devolvendo {item} ao Windows…" : "Terminando…";
+            Lead.Text = done < total ? $"Devolvendo {(item.StartsWith("driver ", StringComparison.Ordinal) ? "o " : "")}{item} ao Windows…" : "Terminando…";
         }
     }
 
@@ -284,12 +313,15 @@ public partial class DriverBackupDialog : UserControl
         SetCount(info.Count, info.Count);
         _openPath = info.Folder;
         bool systemDisk = SameRoot(info.Folder, Environment.SystemDirectory);
-        Finish(ok: true, "Backup pronto",
-            $"{info.Count} drivers copiados ({size}).\n" + (systemDisk
-                ? "Antes de formatar, leve a pasta para outro disco ou um pen drive."
-                : "A pasta fica fora do disco do Windows e sobrevive à formatação."));
-        FolderLabel.Text = "Salvo em";
-        ShowFolder(info.Folder);
+        Glide(() =>
+        {
+            Finish(ok: true, "Backup pronto",
+                $"{info.Count} drivers copiados ({size}).\n" + (systemDisk
+                    ? "Antes de formatar, leve a pasta para outro disco ou um pen drive."
+                    : "A pasta fica fora do disco do Windows e sobrevive à formatação."));
+            FolderLabel.Text = "Salvo em";
+            ShowFolder(info.Folder);
+        });
     }
 
     /// <summary>Restauração terminada (ou parada): as contas na legenda, o visto (ou o alerta) e o que falta fazer.</summary>
@@ -300,6 +332,13 @@ public partial class DriverBackupDialog : UserControl
         SetCount(done, result.Total);
         string next = result.Reboot ? "\nReinicie o PC para terminar de instalar." : "";
         int failed = result.Failed.Count;
+        Glide(() => RestoreFinish(result, failed, done, next));
+        LegendFailedItem.ToolTip = result.Failed.Count > 0 ? string.Join("\n", result.Failed) : null;
+        Lead.ToolTip = restorePoint.Length > 0 ? restorePoint : null;
+    }
+
+    private void RestoreFinish(DriverRestoreResult result, int failed, int done, string next)
+    {
         if (result.Canceled)
             Finish(ok: failed == 0, "Restauração parada", $"Parou em {done} de {result.Total}. O que já entrou continua instalado.{next}", sweep: false);
         else if (failed > 0)
@@ -307,12 +346,10 @@ public partial class DriverBackupDialog : UserControl
                 (failed == 1 ? "1 driver não entrou" : $"{failed} drivers não entraram") + " (passe o mouse em Com erro para ver)." + next);
         else
             Finish(ok: true, "Drivers restaurados", (result.Installed == 0 ? "Este PC já tinha todos os drivers do backup." : "Tudo certo: os drivers do backup estão no Windows.") + next);
-        LegendFailedItem.ToolTip = result.Failed.Count > 0 ? string.Join("\n", result.Failed) : null;
-        Lead.ToolTip = restorePoint.Length > 0 ? restorePoint : null;
     }
 
     /// <summary>A tarefa não terminou: a janela diz por quê, com o alerta, e fica só o Concluir.</summary>
-    public void Failed(string title, string why) => Finish(ok: false, title, why, sweep: false);
+    public void Failed(string title, string why) => Glide(() => Finish(ok: false, title, why, sweep: false));
 
     private void Finish(bool ok, string title, string lead, bool sweep = true)
     {
@@ -373,6 +410,30 @@ public partial class DriverBackupDialog : UserControl
         BtnFolder.Visibility = ask || (done && !_restore) ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// Troca de momento sem pulo: a moldura desliza da altura de antes até a nova (260 ms), centrada, em vez de saltar quando a
+    /// dica some ou a frase ganha uma linha. O conteúdo fica recortado na moldura enquanto ela anda.
+    /// </summary>
+    private void Glide(Action change)
+    {
+        if (!SystemParameters.ClientAreaAnimation || !Panel.IsVisible || Panel.ActualHeight <= 0) { change(); return; }
+        double from = Panel.ActualHeight;
+        change();
+        // A altura nova sai de um passo de layout síncrono, antes de qualquer quadro ser desenhado com ela
+        Panel.BeginAnimation(HeightProperty, null);
+        Panel.UpdateLayout();
+        double to = Panel.ActualHeight;
+        if (Math.Abs(to - from) < 1) return;
+        PanelContent.ClipToBounds = Body.ClipToBounds = true;
+        var glide = new DoubleAnimation(from, to, TimeSpan.FromMilliseconds(260))
+        {
+            EasingFunction = new QuinticEase { EasingMode = EasingMode.EaseOut },
+            FillBehavior = FillBehavior.Stop,
+        };
+        glide.Completed += (_, _) => PanelContent.ClipToBounds = Body.ClipToBounds = false;
+        Panel.BeginAnimation(HeightProperty, glide);
+    }
+
     private static void CrossFade(UIElement element)
     {
         if (!SystemParameters.ClientAreaAnimation || !element.IsVisible) return;
@@ -410,6 +471,8 @@ public partial class DriverBackupDialog : UserControl
     {
         _pending?.TrySetResult(false);
         _pending = new TaskCompletionSource<bool>();
+        _closing = false;
+        Panel.BeginAnimation(HeightProperty, null);
         Visibility = Visibility.Visible;
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
         Scrim.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
@@ -424,6 +487,7 @@ public partial class DriverBackupDialog : UserControl
     private void Confirm()
     {
         if (_stage != Stage.Ask || !BtnConfirm.IsEnabled) return;
+        if (_simple) { Close(confirmed: true); return; }
         BeginWork(_restore ? _found?.Count ?? 0 : _count);
         var pending = _pending;
         _pending = null;
@@ -431,17 +495,27 @@ public partial class DriverBackupDialog : UserControl
     }
 
     /// <summary>Fecha a janela (fora do trabalho, ou pelo código quando a tarefa terminou de outro jeito).</summary>
-    private void Close()
+    private void Close(bool confirmed = false, bool animate = true)
     {
-        Visibility = Visibility.Collapsed;
         _stop = null;
         var pending = _pending;
         _pending = null;
-        pending?.TrySetResult(false);
+        pending?.TrySetResult(confirmed);
+        if (!animate || !SystemParameters.ClientAreaAnimation || !IsVisible) { Visibility = Visibility.Collapsed; return; }
+        // Sai como entrou, mais rápido: a moldura desce 6 px e some com o fundo (120 ms); quem abrir de novo antes disso cancela a saída
+        _closing = true;
+        var ease = new CubicEase { EasingMode = EasingMode.EaseIn };
+        var fade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(120)) { EasingFunction = ease };
+        fade.Completed += (_, _) => { if (_closing) { _closing = false; Visibility = Visibility.Collapsed; } };
+        Scrim.BeginAnimation(OpacityProperty, fade);
+        PanelShift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(0, 6, TimeSpan.FromMilliseconds(120)) { EasingFunction = ease });
     }
 
-    /// <summary>Fecha sem fazer nada (as capturas de tela dos testes, ou a tarefa cancelada).</summary>
-    internal void Cancel() => Close();
+    /// <summary>Fecha na hora, sem a saída animada (as capturas de tela dos testes).</summary>
+    internal void Cancel() => Close(animate: false);
+
+    /// <summary>Fecha com a saída animada (a tarefa foi cancelada).</summary>
+    internal void Dismiss() => Close();
 
     /// <summary>Capturas dos testes: a janela de backup ou de restauração com dados de exemplo, sem esperar resposta.</summary>
     internal void Preview(bool restore, string folder, int count, DriverBackupInfo? backup)

@@ -71,7 +71,8 @@ public static class WindowsUpdateService
     internal static string Summarize(IReadOnlyList<Outcome> outcomes, bool reboot)
     {
         int ok = outcomes.Count(x => x.Code == OperationSucceeded && x.Error >= 0);
-        string text = ok == outcomes.Count ? $"Instalação concluída: {ok} driver(s)." : $"Instalação parcial: {ok} de {outcomes.Count} driver(s).";
+        string text = ok == outcomes.Count ? (ok == 1 ? "Instalação concluída: 1 driver." : $"Instalação concluída: {ok} drivers.")
+            : $"Instalação parcial: {ok} de {outcomes.Count} drivers.";
         foreach (var failed in outcomes.Where(x => x.Code != OperationSucceeded || x.Error < 0)) text += $"\n{failed.Title}: código {failed.Code}, HRESULT 0x{failed.Error:X8}.";
         return text + (reboot ? "\nReinicie o PC para finalizar." : "");
     }
