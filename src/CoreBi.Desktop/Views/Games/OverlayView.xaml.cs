@@ -149,7 +149,7 @@ public partial class OverlayView : UserControl
             string group = groups[i].Key;
             var items = groups[i].ToList();
             var meta = Groups.FirstOrDefault(g => g.Group == group);
-            var row = new Border { BorderThickness = new Thickness(0, 0, 0, i < groups.Count - 1 ? 1 : 0), Padding = new Thickness(0, 12, 0, 12) };
+            var row = new Border { BorderThickness = new Thickness(0, 0, 0, i < groups.Count - 1 ? 1 : 0), Padding = new Thickness(0, 10, 0, 10) };
             row.SetResourceReference(Border.BorderBrushProperty, "Line");
 
             var grid = new Grid { VerticalAlignment = VerticalAlignment.Center };
