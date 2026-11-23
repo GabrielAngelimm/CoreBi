@@ -23,6 +23,7 @@ public static class InstallerWindow
 {
     [StructLayout(LayoutKind.Sequential)] private struct Rect { public int Left, Top, Right, Bottom; }
     private delegate bool EnumProc(IntPtr hwnd, IntPtr data);
+    [DllImport("user32.dll")] private static extern bool EnumWindows(EnumProc callback, IntPtr data);
     [DllImport("user32.dll")] private static extern bool EnumChildWindows(IntPtr parent, EnumProc callback, IntPtr data);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(IntPtr hwnd, StringBuilder text, int max);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr hwnd, StringBuilder text, int max);
@@ -36,6 +37,22 @@ public static class InstallerWindow
 
     // O botão de avançar muda de nome a cada tela (Avançar, Instalar, Concluir); os outros botões têm nome fixo
     private static readonly Regex Other = new Regex("Voltar|Cancelar|Procurar|Back|Cancel|Browse", RegexOptions.IgnoreCase);
+
+    // O assistente roda num processo à parte (o .tmp que o setup extrai), então a janela é achada pela classe da VCL
+    public static IntPtr FindWizard()
+    {
+        IntPtr found = IntPtr.Zero;
+        EnumWindows((hwnd, data) =>
+        {
+            if (!IsWindowVisible(hwnd)) return true;
+            var name = new StringBuilder(64);
+            GetClassName(hwnd, name, name.Capacity);
+            if (name.ToString() != "TWizardForm") return true;
+            found = hwnd;
+            return false;
+        }, IntPtr.Zero);
+        return found;
+    }
 
     public static string ClickNext(IntPtr wizard)
     {
@@ -87,15 +104,16 @@ function Set-AppsTheme([bool]$Light) {
 }
 
 function Stop-Setup {
-    Get-Process | Where-Object { $_.ProcessName -like 'CoreBi-*-setup' } | Stop-Process -Force -ErrorAction SilentlyContinue
+    # O setup.exe e o .tmp que ele extrai e que mostra o assistente
+    Get-Process | Where-Object { $_.ProcessName -like 'CoreBi-*-setup*' } | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Milliseconds 800
 }
 
 function Wait-Wizard {
     $deadline = [DateTime]::UtcNow.AddSeconds(40)
     while ([DateTime]::UtcNow -lt $deadline) {
-        $p = Get-Process | Where-Object { $_.ProcessName -like 'CoreBi-*-setup' -and $_.MainWindowHandle -ne 0 } | Select-Object -First 1
-        if ($p) { Start-Sleep -Milliseconds 1500; return $p.MainWindowHandle }
+        $wizard = [InstallerWindow]::FindWizard()
+        if ($wizard -ne [IntPtr]::Zero) { Start-Sleep -Milliseconds 1500; return $wizard }
         Start-Sleep -Milliseconds 250
     }
     throw 'A janela do instalador não apareceu.'

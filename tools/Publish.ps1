@@ -12,7 +12,9 @@ try {
     # As DLLs nativas (WPF, DirectX, TraceEvent) ficam ao lado do CoreBi.exe, na pasta do programa, que só o
     # administrador altera. Extraídas pelo próprio executável elas iriam para o %TEMP% do usuário e seriam
     # carregadas de lá com elevação: um programa qualquer da mesma conta poderia trocá-las.
-    Invoke-CoreBiDotnet publish 'src/CoreBi.Desktop/CoreBi.Desktop.csproj' -c Release -r win-x64 --self-contained true '-p:PublishSingleFile=true' '-p:RestoreLockedMode=true' '-p:DebugType=None' '-p:DebugSymbols=false' -o $OutputDirectory
+    # ReadyToRun: o código do app já vai compilado para x64, então a janela abre sem esperar o JIT e o processador
+    # fica mais livre nos primeiros minutos (medido com --nav-timing no PC de testes).
+    Invoke-CoreBiDotnet publish 'src/CoreBi.Desktop/CoreBi.Desktop.csproj' -c Release -r win-x64 --self-contained true '-p:PublishSingleFile=true' '-p:PublishReadyToRun=true' '-p:RestoreLockedMode=true' '-p:DebugType=None' '-p:DebugSymbols=false' -o $OutputDirectory
     Move-Item -LiteralPath (Join-Path $OutputDirectory 'CoreBi.Desktop.exe') -Destination (Join-Path $OutputDirectory 'CoreBi.exe') -Force
     $licensesTarget = Join-Path $OutputDirectory 'licenses'
     if (Test-Path -LiteralPath $licensesTarget) { Remove-Item -LiteralPath $licensesTarget -Recurse -Force }
