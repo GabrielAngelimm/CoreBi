@@ -90,6 +90,8 @@ internal static partial class Program
                     else if (parts[0] == "PageApps" && parts.Length == 2) { window.PageApps.FilterCategory(parts[1]); Wait(800); }
                     // "PageBottleneck:demo" mostra um veredito ao vivo e uma análise de exemplo (nada é medido nem salvo)
                     else if (parts[0] == "PageBottleneck" && parts.Length == 2 && parts[1] == "demo") { window.PageBottleneck.PreviewDemo(true); Wait(1200); }
+                    // "PageBench:gpu" abre o teste pela tecla (render, sim, gpu, rt, mem, disk) e volta ao Render 3D depois da captura
+                    else if (parts[0] == "PageBench" && parts.Length == 2) { window.PageBench.SelectTest(parts[1]); Wait(900); }
                     // "PageStress:demo" mostra um teste do processador em andamento e um histórico de exemplo (nada roda nem é salvo)
                     else if (parts[0] == "PageStress" && parts.Length == 2 && parts[1] == "demo") { window.PageStress.PreviewDemo(true); Wait(900); }
                     Wait(600);
@@ -105,6 +107,7 @@ internal static partial class Program
                     if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] != "pack") window.PageApps.FilterCategory(null);
                     if (parts[0] == "PageBottleneck" && parts.Length == 2 && parts[1] == "demo") window.PageBottleneck.PreviewDemo(false);
                     if (parts[0] == "PageStress" && parts.Length == 2 && parts[1] == "demo") window.PageStress.PreviewDemo(false);
+                    if (parts[0] == "PageBench" && parts.Length == 2) window.PageBench.SelectTest("render");
                     if (theme == themes[0]) SaveSkeletons(window, Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-skeleton.png"));
                 }
             }
