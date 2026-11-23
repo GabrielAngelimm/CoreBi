@@ -73,7 +73,13 @@ def main():
     sums = ''.join(f'{sha256(OUT / name)}  {name}\n' for name in files)
     (OUT / 'SHA256SUMS.txt').write_text(sums, encoding='utf-8', newline='\n')
 
-    notes = f"""## Baixar
+    # O primeiro parágrafo da seção (o resumo da versão) abre as notas; o resto vai depois dos arquivos
+    intro, _, details = notes_body.partition('\n\n')
+    if intro.startswith(('#', '-')):
+        intro, details = '', notes_body
+    notes = f"""{intro}
+
+## Baixar
 
 | Arquivo | Para quê |
 | --- | --- |
@@ -89,9 +95,9 @@ Requer Windows 10 ou 11 de 64 bits e permissão de administrador. O instalador n
 
 ## O que tem nesta versão
 
-{notes_body}
+{details.strip()}
 """
-    (OUT / 'release-notes.md').write_text(notes, encoding='utf-8', newline='\n')
+    (OUT / 'release-notes.md').write_text(notes.lstrip(), encoding='utf-8', newline='\n')
     for name in files + ['SHA256SUMS.txt', 'release-notes.md']:
         print(f'{OUT / name}')
     return 0
