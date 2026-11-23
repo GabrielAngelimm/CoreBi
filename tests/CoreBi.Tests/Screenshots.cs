@@ -84,6 +84,8 @@ internal static partial class Program
                     }
                     // "PageApps:confirm" abre a confirmação com o pacote marcado antes (sem instalar) e fecha depois da captura
                     else if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "confirm") { window.PageApps.PreviewConfirm(); Wait(900); }
+                    // "PageApps:installing" mostra a fila no meio (um instalado, um instalando, o resto na fila), sem instalar nada
+                    else if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "installing") { window.PageApps.PreviewRun(true); Wait(900); }
                     // "PageApps:Jogos" filtra pela categoria, como o clique no título dela (volta a todas depois da captura)
                     else if (parts[0] == "PageApps" && parts.Length == 2) { window.PageApps.FilterCategory(parts[1]); Wait(800); }
                     Wait(600);
@@ -95,6 +97,7 @@ internal static partial class Program
                         Console.WriteLine($"  {parts[0]}: rolagem {scroll.ScrollableHeight:0} px");
                     if (report) { window.ReportLayer.Cancel(); Wait(300); continue; }
                     if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "confirm") { window.InstallLayer.Cancel(); Wait(300); continue; }
+                    if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "installing") window.PageApps.PreviewRun(false);
                     if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] != "pack") window.PageApps.FilterCategory(null);
                     if (theme == themes[0]) SaveSkeletons(window, Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-skeleton.png"));
                 }

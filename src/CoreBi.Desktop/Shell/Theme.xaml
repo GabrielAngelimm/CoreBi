@@ -1763,7 +1763,7 @@
 
     <!-- rodada-unslop: ferramentas início -->
     <!--
-        Medidor de progresso de uma tarefa, na barra de ações do cabeçalho (Inicialização, Instalar apps, Drivers, Rede): o trilho
+        Medidor de progresso de uma tarefa, na barra de ações do cabeçalho (Inicialização, Drivers, Rede): o trilho
         contínuo no sinal e a porcentagem à direita. Só aparece durante a tarefa (os botões, rentes à direita, não andam; o estado
         abre espaço à esquerda), avança quando ela informa trabalho feito e, ao terminar, apaga em 300 ms (ToolPage.SetProgress).
     -->

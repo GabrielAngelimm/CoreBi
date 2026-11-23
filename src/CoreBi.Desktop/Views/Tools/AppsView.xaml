@@ -22,7 +22,9 @@
 
         <!--
             Linha do catálogo (no estilo do Ninite): a linha inteira marca e desmarca. 30 px de altura com 1 px livre em cima e embaixo, para dois marcados seguidos não virarem um bloco só. Da esquerda para a direita: o marcador redondo,
-            o ícone, o nome e, à direita, o estado em texto curto quando há um ("Instalado", "Na fila", "Instalando…", "Falhou").
+            o ícone, o nome e, à direita, o estado em texto curto quando há um ("Instalado", "Na fila", "Instalando…", "Parado", "Falhou"). O estado é
+            sempre o de agora: "Instalando…" (com o arco girando no marcador) só durante a instalação do app, "Parado" só enquanto a
+            fila para, e ao fim da fila cada linha volta ao que é de fato, instalada ou disponível.
             Os três estados da legenda: disponível (marcador vazio), no pacote (marcador e realce no sinal, nome em seminegrito) e já
             instalado (marcador verde-claro com o visto, nome e ícone apagados, sem reagir ao mouse). Fora do filtro ou da busca, a
             linha some quase toda (Dimmed), mas fica no lugar: as colunas não andam.
@@ -49,6 +51,13 @@
                                     <TextBlock x:Name="mark" Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="10"
                                                Foreground="{DynamicResource SignalFg}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
                                 </Border>
+                                <!-- Instalando: um arco no sinal gira sobre o aro do marcador, no mesmo lugar -->
+                                <Ellipse x:Name="spin" Width="20" Height="20" StrokeThickness="2" Stroke="{DynamicResource Signal}" StrokeDashArray="9 100"
+                                         StrokeDashCap="Round" RenderTransformOrigin="0.5,0.5" VerticalAlignment="Center" Visibility="Collapsed">
+                                    <Ellipse.RenderTransform>
+                                        <RotateTransform />
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
                                 <Border x:Name="tile" Grid.Column="1" Style="{StaticResource AppIconTile}" HorizontalAlignment="Center">
                                     <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource AppIconContent}" Width="18" Height="18" />
                                 </Border>
@@ -79,6 +88,22 @@
                                 <Setter TargetName="tile" Property="Opacity" Value="0.55" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Tone}" Value="Signal">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard x:Name="spinning">
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="spin" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                             From="0" To="360" Duration="0:0:0.9" RepeatBehavior="Forever" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <StopStoryboard BeginStoryboardName="spinning" />
+                                </DataTrigger.ExitActions>
+                                <Setter TargetName="dot" Property="Background" Value="Transparent" />
+                                <Setter TargetName="dot" Property="BorderThickness" Value="2" />
+                                <Setter TargetName="dot" Property="BorderBrush" Value="{DynamicResource Line}" />
+                                <Setter TargetName="mark" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="spin" Property="Visibility" Value="Visible" />
                                 <Setter TargetName="state" Property="Foreground" Value="{DynamicResource Signal}" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding Tone}" Value="Ok">
@@ -100,9 +125,8 @@
         </Style>
 
         <!--
-            Categoria, no estilo do Ninite: o título marca e desmarca a categoria inteira. À esquerda, o marcador do grupo, no mesmo
-            lugar dos marcadores das linhas: vazio (nada no pacote), com um traço (parte), cheio com o visto (todos que faltam) ou
-            verde-claro com o visto (já está tudo instalado, e o título não marca nada). Sob o mouse, o título vai para o sinal.
+            Categoria, no estilo do Ninite: o título, rente à esquerda (na linha dos marcadores das linhas), marca e desmarca a
+            categoria inteira. Sob o mouse ele vai para o sinal; com tudo já instalado, não reage.
         -->
         <Style x:Key="CategoryPick" TargetType="Button">
             <Setter Property="Cursor" Value="Hand" />
@@ -113,38 +137,15 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="Transparent" Padding="8,0,6,0">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Border x:Name="dot" Width="20" Height="20" CornerRadius="10" BorderThickness="1.5" BorderBrush="{DynamicResource LineStrong}" VerticalAlignment="Center">
-                                    <TextBlock x:Name="mark" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource SignalFg}"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
-                                </Border>
-                                <TextBlock VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis">
-                                    <Run x:Name="title" Text="{Binding Name, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold"
-                                         Foreground="{DynamicResource Fg}" /><InlineUIContainer><Border Width="8" /></InlineUIContainer><Run
-                                        Text="{Binding Count, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16"
-                                        Foreground="{DynamicResource Faint}" Typography.NumeralAlignment="Tabular" />
-                                </TextBlock>
-                            </StackPanel>
+                            <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
+                                <Run x:Name="title" Text="{Binding Name, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold"
+                                     Foreground="{DynamicResource Fg}" /><InlineUIContainer><Border Width="8" /></InlineUIContainer><Run
+                                    Text="{Binding Count, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16"
+                                    Foreground="{DynamicResource Faint}" Typography.NumeralAlignment="Tabular" />
+                            </TextBlock>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <DataTrigger Binding="{Binding Pick}" Value="some">
-                                <Setter TargetName="dot" Property="BorderThickness" Value="0" />
-                                <Setter TargetName="dot" Property="Background" Value="{DynamicResource Signal}" />
-                                <Setter TargetName="mark" Property="Text" Value="&#xE738;" />
-                                <Setter TargetName="mark" Property="Visibility" Value="Visible" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Pick}" Value="all">
-                                <Setter TargetName="dot" Property="BorderThickness" Value="0" />
-                                <Setter TargetName="dot" Property="Background" Value="{DynamicResource Signal}" />
-                                <Setter TargetName="mark" Property="Text" Value="&#xE73E;" />
-                                <Setter TargetName="mark" Property="Visibility" Value="Visible" />
-                            </DataTrigger>
                             <DataTrigger Binding="{Binding Pick}" Value="done">
-                                <Setter TargetName="dot" Property="BorderThickness" Value="0" />
-                                <Setter TargetName="dot" Property="Background" Value="{DynamicResource OkSoft}" />
-                                <Setter TargetName="mark" Property="Text" Value="&#xE73E;" />
-                                <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Ok}" />
-                                <Setter TargetName="mark" Property="Visibility" Value="Visible" />
                                 <Setter Property="Cursor" Value="Arrow" />
                             </DataTrigger>
                             <MultiTrigger>
@@ -153,7 +154,6 @@
                                     <Condition Property="IsEnabled" Value="True" />
                                 </MultiTrigger.Conditions>
                                 <Setter TargetName="title" Property="Foreground" Value="{DynamicResource Signal}" />
-                                <Setter TargetName="dot" Property="BorderBrush" Value="{DynamicResource Signal}" />
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -267,9 +267,49 @@
         </Style>
 
         <!--
+            Limpar: a mesma pílula dos kits, ao lado deles, com o fio tracejado de quem tira em vez de pôr. Sempre no lugar; sem nada
+            no pacote (ou durante a instalação), apaga e não reage.
+        -->
+        <Style x:Key="ClearChip" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}" />
+            <Setter Property="ToolTipService.ShowOnDisabled" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="b" Height="34" SnapsToDevicePixels="True">
+                            <Border x:Name="fill" CornerRadius="17" Background="Transparent" />
+                            <Rectangle RadiusX="17" RadiusY="17" Stroke="{DynamicResource LineStrong}" StrokeThickness="1" StrokeDashArray="3 2.5" />
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,15,0">
+                                <TextBlock x:Name="glyph" Text="&#xE894;" FontFamily="{StaticResource Icons}" FontSize="13" Foreground="{DynamicResource Faint}"
+                                           VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBlock x:Name="label" Text="{TemplateBinding Content}" Style="{StaticResource Body}" Foreground="{TemplateBinding Foreground}"
+                                           Margin="0,0,0,1" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="fill" Property="Background" Value="{DynamicResource Hover}" />
+                                <Setter TargetName="label" Property="Foreground" Value="{DynamicResource Fg}" />
+                                <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Danger}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="b" Property="Opacity" Value="0.45" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--
             Filtro de estado: os segmentos de "Segment" com o marcador que a linha usa para aquele estado antes do nome. O filtro é
             também a legenda: Disponíveis (aro vazio), No pacote (cheio no sinal, com o visto) e Instalados (verde-claro com o visto).
-            "Todos" não tem marcador. A largura nasce com o texto em seminegrito, como em "Segment", para nada andar ao escolher.
+            "Todos" não tem marcador. A quantidade vem depois do nome, nos números da página (Readout, um tom abaixo), numa vaga de dois
+            dígitos. A largura nasce com o texto em seminegrito, como em "Segment", para nada andar ao escolher. Clicar no segmento já
+            escolhido volta a "Todos" (escolhe e desfaz, como um filtro).
         -->
         <Style x:Key="StateSegment" TargetType="RadioButton" BasedOn="{StaticResource Segment}">
             <Setter Property="Template">
@@ -286,6 +326,9 @@
                                     <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Visibility="Hidden" HorizontalAlignment="Center" />
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Grid>
+                                <TextBlock x:Name="count" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}" FontFamily="{StaticResource Readout}"
+                                           FontStretch="SemiCondensed" FontSize="14" FontWeight="Normal" Foreground="{DynamicResource Faint}" Typography.NumeralAlignment="Tabular"
+                                           MinWidth="16" Margin="7,0,0,0" VerticalAlignment="Center" />
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -312,6 +355,7 @@
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter Property="Foreground" Value="{DynamicResource Fg}" />
                                 <Setter Property="FontWeight" Value="SemiBold" />
+                                <Setter TargetName="count" Property="Foreground" Value="{DynamicResource Muted}" />
                             </Trigger>
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
@@ -332,15 +376,24 @@
 
         <!--
             Ficha do pacote: ícone redondo, nome e, durante a instalação, o estado embaixo do nome; fora dela, o X que tira o app.
-            Instalado fica verde-claro sem contorno; a da vez leva o contorno no sinal.
+            Instalado fica verde-claro sem contorno; a da vez fica no sinal suave, com o arco girando em volta do ícone.
         -->
         <DataTemplate x:Key="PackChip">
             <Border x:Name="b" Height="44" CornerRadius="22" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Raised}"
                     Padding="5,0,6,0" SnapsToDevicePixels="True" ToolTip="{Binding Tip}">
                 <StackPanel Orientation="Horizontal">
-                    <Border Style="{StaticResource AppIconTile}" Width="34" Height="34" CornerRadius="17" VerticalAlignment="Center">
-                        <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource AppIconContent}" Width="20" Height="20" />
-                    </Border>
+                    <Grid Width="34" Height="34" VerticalAlignment="Center">
+                        <Border Style="{StaticResource AppIconTile}" Width="34" Height="34" CornerRadius="17">
+                            <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource AppIconContent}" Width="20" Height="20" />
+                        </Border>
+                        <!-- A da vez: um arco no sinal gira em volta do ícone -->
+                        <Ellipse x:Name="spin" Width="38" Height="38" Margin="-2" StrokeThickness="2" Stroke="{DynamicResource Signal}" StrokeDashArray="14 100"
+                                 StrokeDashCap="Round" RenderTransformOrigin="0.5,0.5" Visibility="Collapsed">
+                            <Ellipse.RenderTransform>
+                                <RotateTransform />
+                            </Ellipse.RenderTransform>
+                        </Ellipse>
+                    </Grid>
                     <StackPanel VerticalAlignment="Center" Margin="10,0,4,0">
                         <TextBlock Text="{Binding App.Name}" Style="{StaticResource ItemTitle}" />
                         <TextBlock x:Name="state" Text="{Binding StateText}" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}"
@@ -356,7 +409,20 @@
                     <Setter TargetName="b" Property="Padding" Value="5,0,16,0" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Signal">
-                    <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}" />
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="chipSpinning">
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="spin" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                 From="0" To="360" Duration="0:0:0.9" RepeatBehavior="Forever" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="chipSpinning" />
+                    </DataTrigger.ExitActions>
+                    <Setter TargetName="spin" Property="Visibility" Value="Visible" />
+                    <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalDeep}" />
+                    <Setter TargetName="b" Property="Background" Value="{DynamicResource SignalSoft}" />
                     <Setter TargetName="state" Property="Foreground" Value="{DynamicResource Signal}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Ok">
@@ -391,20 +457,6 @@
                     <TextBlock Text="Instalar apps" Style="{StaticResource PageTitle}" />
                     <TextBlock Text="Marque os programas e instale todos de uma vez, baixados da fonte oficial." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                     <StackPanel Style="{StaticResource PageActions}">
-                        <Grid x:Name="AppsMeter" Style="{StaticResource TaskMeter}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Grid Style="{StaticResource ProgressTrack}" VerticalAlignment="Center">
-                                <Border x:Name="AppsProgressFill" Style="{StaticResource ProgressFill}">
-                                    <Border.RenderTransform>
-                                        <ScaleTransform x:Name="AppsProgress" ScaleX="0" />
-                                    </Border.RenderTransform>
-                                </Border>
-                            </Grid>
-                            <TextBlock x:Name="AppsPercent" Grid.Column="1" Style="{StaticResource TaskPercent}" />
-                        </Grid>
                         <DockPanel Style="{StaticResource PageStatusSlot}">
                             <TextBlock x:Name="AppsDetail" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
                             <TextBlock x:Name="AppsStatus" Text="Lendo aplicativos instalados…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
@@ -415,15 +467,16 @@
                                 ToolTip="Abre o Instalador de Aplicativo, que traz o winget." />
                         <!-- Filtro por estado, que é também a legenda das linhas: acende só o que interessa e apaga o resto, sem tirar nada do lugar -->
                         <Border x:Name="AppsViewGroup" Style="{StaticResource SegmentGroup}" Margin="0,0,10,0">
-                            <local:SlidingSelectionPanel Style="{StaticResource SegmentRail}" ToggleButton.Checked="AppsView_Checked">
+                            <local:SlidingSelectionPanel Style="{StaticResource SegmentRail}" ToggleButton.Checked="AppsView_Checked"
+                                                         PreviewMouseLeftButtonDown="AppsView_PreviewMouseDown">
                                 <RadioButton x:Name="ViewAll" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="Todos" Tag="all" IsChecked="True"
                                              ToolTip="Mostra o catálogo inteiro." />
                                 <RadioButton x:Name="ViewAvailable" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="Disponíveis" Tag="available"
-                                             ToolTip="Acende só os apps que ainda não estão neste PC." />
+                                             ToolTip="Acende só os apps que ainda não estão neste PC. Clique de novo para voltar a todos." />
                                 <RadioButton x:Name="ViewPack" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="No pacote" Tag="pack"
-                                             ToolTip="Acende só os apps marcados para instalar." />
+                                             ToolTip="Acende só os apps marcados para instalar. Clique de novo para voltar a todos." />
                                 <RadioButton x:Name="ViewInstalled" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="Instalados" Tag="installed"
-                                             ToolTip="Acende só os apps que já estão neste PC." />
+                                             ToolTip="Acende só os apps que já estão neste PC. Clique de novo para voltar a todos." />
                             </local:SlidingSelectionPanel>
                         </Border>
                         <Button x:Name="BtnAppsInstall" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE896;" Content="Instalar apps"
@@ -434,7 +487,7 @@
 
                 <!-- Catálogo: kits e busca no cabeçalho (a legenda dos estados é o filtro do topo); as categorias em colunas (montadas no código) -->
                 <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,16,24,8" local:Skeleton.Top="34"
-                        local:Skeleton.Layout="gap 12; col 0 18.55%; row 31: - 8, dot 20, - 12, s 40%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 36%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 20.36% 18.55%; row 31: - 8, dot 20, - 12, s 44%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 40%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 36%; gap 6; rows 5 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 40.72% 18.55%; row 31: - 8, dot 20, - 12, s 44%; gap 6; rows 11 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 32%; gap 6; rows 4 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 61.08% 18.55%; row 31: - 8, dot 20, - 12, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 36%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 32%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 81.44% 18.55%; row 31: - 8, dot 20, - 12, s 46%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, dot 20, - 12, s 50%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; end">
+                        local:Skeleton.Layout="gap 12; col 0 18.55%; row 31: - 8, s 40%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 20.36% 18.55%; row 31: - 8, s 44%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 40%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 5 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 40.72% 18.55%; row 31: - 8, s 44%; gap 6; rows 11 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 32%; gap 6; rows 4 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 61.08% 18.55%; row 31: - 8, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 32%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 81.44% 18.55%; row 31: - 8, s 46%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 50%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; end">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -453,13 +506,16 @@
                                     FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16" FontWeight="Normal" Foreground="{DynamicResource Faint}"
                                     Typography.NumeralAlignment="Tabular" />
                             </TextBlock>
-                            <!-- Kits: marcam de uma vez os apps de um uso comum (o que já está instalado fica de fora) -->
+                            <!-- Kits: marcam de uma vez os apps de um uso comum (o que já está instalado fica de fora); Limpar, depois de um fio, esvazia o pacote -->
                             <StackPanel x:Name="AppsKits" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <CheckBox x:Name="KitPost" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE977;" Content="Pós-formatação" Tag="PostFormat" Click="Kit_Click" />
                                 <CheckBox x:Name="KitGames" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE7FC;" Content="Jogos" Tag="Games" Click="Kit_Click" />
                                 <CheckBox x:Name="KitWork" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE821;" Content="Trabalho" Tag="Work" Click="Kit_Click" />
                                 <CheckBox x:Name="KitCreator" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE714;" Content="Criador" Tag="Creator" Click="Kit_Click" />
                                 <CheckBox x:Name="KitDev" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE943;" Content="Programação" Tag="Dev" Click="Kit_Click" />
+                                <Border Width="1" Height="20" Background="{DynamicResource Line}" Margin="14,0,6,0" VerticalAlignment="Center" />
+                                <Button x:Name="BtnPackClear" Style="{StaticResource ClearChip}" Content="Limpar" Margin="8,0,0,0" IsEnabled="False"
+                                        Click="BtnPackClear_Click" ToolTip="Tira todos os apps do pacote." AutomationProperties.Name="Limpar o pacote" />
                             </StackPanel>
                             <TextBox x:Name="AppsSearch" Grid.Column="3" Style="{StaticResource CardSearch}" Width="260" Margin="16,0,0,0"
                                      local:Ui.Placeholder="Procurar app" TextChanged="AppsSearch_TextChanged" />
@@ -471,27 +527,51 @@
                     </Grid>
                 </Border>
 
-                <!-- Pacote: os marcados na ordem de instalação; durante a instalação, a fila com o estado de cada um -->
+                <!--
+                    Pacote: à esquerda a leitura (quantos apps, em número grande, e o que eles são agora), depois de um fio as fichas na ordem
+                    da fila. Durante a instalação a leitura conta os concluídos ("3 de 12") e a barra fina embaixo dela avança; nada no
+                    resto da página muda de lugar. Vazio, uma ficha tracejada explica como montar o pacote.
+                -->
                 <Border x:Name="AppsPack" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="24,0" Height="84" Margin="0,16,0,0">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200" />
+                            <ColumnDefinition Width="252" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Style="{StaticResource CardTitle}">
-                                <Run x:Name="PackTitle" Text="No pacote" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="PackCount"
-                                    FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16" FontWeight="Normal" Foreground="{DynamicResource Faint}"
-                                    Typography.NumeralAlignment="Tabular" />
-                            </TextBlock>
-                            <TextBlock x:Name="PackNote" Text="Na ordem em que vão instalar" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" Margin="0,2,0,0" />
-                        </StackPanel>
-                        <local:OverflowStrip x:Name="PackStrip" Grid.Column="1" Spacing="8" HorizontalAlignment="Left" VerticalAlignment="Center" />
-                        <TextBlock x:Name="PackEmpty" Grid.Column="1" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"
-                                   Text="Nada marcado ainda: marque apps no catálogo ou escolha um kit." />
-                        <Button x:Name="BtnPackClear" Grid.Column="2" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE894;" Content="Limpar"
-                                VerticalAlignment="Center" Margin="16,0,-10,0" Click="BtnPackClear_Click" ToolTip="Tira todos os apps do pacote." />
+                        <Grid VerticalAlignment="Center" Margin="0,0,24,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="PackCount" Text="0" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="34" Foreground="{DynamicResource Faint}"
+                                       Typography.NumeralAlignment="Tabular" MinWidth="40" TextAlignment="Left" VerticalAlignment="Center" Margin="0,0,14,2" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock x:Name="PackTitle" Text="apps no pacote" Style="{StaticResource ItemTitle}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock x:Name="PackNote" Text="Marque apps para montar" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}"
+                                           Margin="0,2,0,0" TextTrimming="CharacterEllipsis" local:HeaderMotion.SoftText="True" />
+                            </StackPanel>
+                        </Grid>
+                        <!-- Barra da fila, rente ao pé da leitura: só aparece durante a instalação -->
+                        <Grid x:Name="PackProgress" Style="{StaticResource ProgressTrack}" Height="3" VerticalAlignment="Bottom" Margin="0,0,24,13" Visibility="Collapsed">
+                            <Border x:Name="PackProgressFill" Style="{StaticResource ProgressFill}">
+                                <Border.RenderTransform>
+                                    <ScaleTransform ScaleX="0" />
+                                </Border.RenderTransform>
+                            </Border>
+                        </Grid>
+                        <Border Width="1" Height="44" Background="{DynamicResource Line}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        <local:OverflowStrip x:Name="PackStrip" Grid.Column="1" Spacing="8" Margin="24,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                        <Grid x:Name="PackEmpty" Grid.Column="1" Height="44" Margin="24,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <Rectangle RadiusX="22" RadiusY="22" Stroke="{DynamicResource LineStrong}" StrokeThickness="1" StrokeDashArray="3 2.5" SnapsToDevicePixels="True" />
+                            <StackPanel Orientation="Horizontal" Margin="8,0,20,0" VerticalAlignment="Center">
+                                <Border Width="30" Height="30" CornerRadius="15" Background="{DynamicResource Hover}" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="12" Foreground="{DynamicResource Muted}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="12,0,0,1"
+                                           Text="Marque apps no catálogo ou escolha um kit: eles entram aqui, na ordem em que vão instalar." />
+                            </StackPanel>
+                        </Grid>
                     </Grid>
                 </Border>
             </Grid>

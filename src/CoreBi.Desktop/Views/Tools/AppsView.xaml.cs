@@ -66,9 +66,30 @@ public partial class AppsView : UserControl
         }
         _package.CollectionChanged += (_, _) => RebuildPack();
         AppsCount.Text = _tiles.Count.ToString();
+        LockInstallWidth();
         LayoutColumns(force: true);
         RebuildPack();
     }
+
+    /// <summary>
+    /// O botão principal nasce com a largura do maior texto que ele vai ter ("Parar depois do atual"): trocar o texto ao começar
+    /// ou ao parar não empurra o filtro e o estado ao lado.
+    /// </summary>
+    private void LockInstallWidth()
+    {
+        var content = BtnAppsInstall.Content;
+        double width = 0;
+        foreach (var text in new[] { "Instalar 99 apps", StopText })
+        {
+            BtnAppsInstall.Content = text;
+            BtnAppsInstall.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            width = Math.Max(width, BtnAppsInstall.DesiredSize.Width);
+        }
+        BtnAppsInstall.Content = content;
+        if (width > 0) BtnAppsInstall.MinWidth = Math.Ceiling(width);
+    }
+
+    private const string StopText = "Parar depois do atual";
 
     private void AppsColumns_SizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -145,8 +166,6 @@ public partial class AppsView : UserControl
 
     private void OnSelectedChanged(AppTile tile)
     {
-        // Tirar do pacote apaga o que sobrou da última fila ("Falhou"); "Instalado agora" fica, porque é verdade
-        if (!tile.App.Selected && !_appsBusy && tile.Phase is AppPhase.Failed or AppPhase.Skipped) tile.Phase = AppPhase.Idle;
         if (tile.App.Selected && !_package.Contains(tile)) _package.Add(tile);
         else if (!tile.App.Selected && _package.Contains(tile) && !_appsBusy) _package.Remove(tile);
         UpdateInstallButton();
@@ -166,8 +185,31 @@ public partial class AppsView : UserControl
         bool empty = _package.Count == 0;
         PackEmpty.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
         PackStrip.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
-        BtnPackClear.Visibility = empty || _appsBusy ? Visibility.Hidden : Visibility.Visible;
-        PackCount.Text = empty ? "" : _package.Count.ToString();
+        BtnPackClear.IsEnabled = !empty && !_appsBusy;
+        UpdatePackHead();
+    }
+
+    private int _runDone, _runTotal;
+
+    /// <summary>
+    /// A leitura do pacote: fora da instalação, quantos apps estão nele; durante, quantos da fila já terminaram ("3 de 12") e o
+    /// que está acontecendo agora (instalando ou parando).
+    /// </summary>
+    private void UpdatePackHead()
+    {
+        if (_appsBusy)
+        {
+            PackCount.Text = _runDone.ToString();
+            PackCount.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
+            PackTitle.Text = $"de {_runTotal} concluídos";
+            PackNote.Text = _appsStop ? "Parando depois do app atual" : "Instalando um por vez, sem janelas";
+            return;
+        }
+        int n = _package.Count;
+        PackCount.Text = n.ToString();
+        PackCount.SetResourceReference(TextBlock.ForegroundProperty, n == 0 ? "Faint" : "Fg");
+        PackTitle.Text = n == 1 ? "app no pacote" : "apps no pacote";
+        PackNote.Text = n == 0 ? "Marque apps para montar" : "Instalam nesta ordem";
     }
 
     /// <summary>Indicador "+N" do fim da faixa, com a lista dos que não couberam na dica.</summary>
@@ -236,6 +278,21 @@ public partial class AppsView : UserControl
         if (e.OriginalSource is RadioButton { Tag: string view }) { _view = view; ApplyFilter(); }
     }
 
+    /// <summary>Clicar no filtro que já está escolhido desfaz a escolha: volta a "Todos".</summary>
+    private void AppsView_PreviewMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        for (var node = e.OriginalSource as DependencyObject; node != null && node != sender; node = VisualTreeHelper.GetParent(node))
+        {
+            if (node is not RadioButton segment) continue;
+            if (segment.IsChecked == true && segment != ViewAll && segment.IsEnabled)
+            {
+                ViewAll.IsChecked = true;
+                e.Handled = true;
+            }
+            return;
+        }
+    }
+
     private void AppsSearch_TextChanged(object sender, TextChangedEventArgs e) => ApplyFilter();
 
     /// <summary>O funil do título filtra pela categoria; o X (o mesmo botão) volta a todas.</summary>
@@ -294,10 +351,10 @@ public partial class AppsView : UserControl
     {
         if (_installApps == null) return;
         int pack = _installApps.Count(a => a.Selected && !a.Installed), installed = _installApps.Count(a => a.Installed);
-        ViewAll.Content = $"Todos  {_installApps.Count}";
-        ViewAvailable.Content = $"Disponíveis  {_installApps.Count - installed}";
-        ViewPack.Content = $"No pacote  {pack}";
-        ViewInstalled.Content = $"Instalados  {installed}";
+        Ui.SetSuffix(ViewAll, _installApps.Count.ToString());
+        Ui.SetSuffix(ViewAvailable, (_installApps.Count - installed).ToString());
+        Ui.SetSuffix(ViewPack, pack.ToString());
+        Ui.SetSuffix(ViewInstalled, installed.ToString());
     }
 
     /// <summary>O botão principal diz quantos apps vai instalar; sem nenhum marcado, fica desligado.</summary>
@@ -399,7 +456,16 @@ public partial class AppsView : UserControl
 
     private async void BtnAppsInstall_Click(object sender, RoutedEventArgs e)
     {
-        if (_appsBusy) { _appsStop = true; BtnAppsInstall.IsEnabled = false; Say("Parando depois do app atual…"); return; }
+        if (_appsBusy)
+        {
+            // Parar: o app da vez termina; os que esperavam mostram "Parado" só enquanto a fila para
+            _appsStop = true;
+            BtnAppsInstall.IsEnabled = false;
+            foreach (var t in _package.Where(t => t.Phase == AppPhase.Queued)) t.Phase = AppPhase.Skipped;
+            UpdatePackHead();
+            Say("Parando depois do app atual…");
+            return;
+        }
         if (_installApps == null) return;
         var sel = _package.Where(t => t.App.Selected && !t.App.Installed).ToList();
         if (sel.Count == 0) { Say("Nenhum app marcado"); return; }
@@ -413,13 +479,14 @@ public partial class AppsView : UserControl
 
         _exportCts?.Cancel();
         foreach (var t in _tiles) t.Phase = AppPhase.Idle;
-        _appsBusy = true; _appsStop = false;
-        SetBusy(true);
-        Ui.SetRunning(BtnAppsInstall, true, "Instalar apps", "Parar depois do atual", "");
+        _appsStop = false;
+        _runDone = 0; _runTotal = sel.Count;
         foreach (var t in sel) t.Phase = AppPhase.Queued;
+        SetBusy(true);
+        Ui.SetRunning(BtnAppsInstall, true, "Instalar apps", StopText, "\uE896");
         int ok = 0, done = 0;
         var failed = new List<string>();
-        ToolPage.SetProgress(AppsProgressFill, 0);
+        ToolPage.SetProgress(PackProgressFill, 0);
 
         try
         {
@@ -440,27 +507,29 @@ public partial class AppsView : UserControl
                 catch (OperationCanceledException) { throw; }
                 catch (Exception ex) { app.Status = $"Falhou: {ex.Message}"; tile.Phase = AppPhase.Failed; failed.Add(app.Name); }
                 done++;
-                ToolPage.SetProgress(AppsProgressFill, (double)done / sel.Count);
+                _runDone = done;
+                UpdatePackHead();
+                ToolPage.SetProgress(PackProgressFill, (double)done / sel.Count);
             }
         }
         catch (OperationCanceledException) { }
         finally
         {
-            _appsBusy = false;
-            if (done < sel.Count) ToolPage.EndProgress(AppsProgressFill);
-            Ui.SetRunning(BtnAppsInstall, false, "Instalar apps", idleIcon: "");
-            SetBusy(false);
+            if (done < sel.Count) ToolPage.EndProgress(PackProgressFill);
+            Ui.SetRunning(BtnAppsInstall, false, "Instalar apps", idleIcon: "\uE896");
         }
-        if (_context.IsClosing) return;
+        if (_context.IsClosing) { SetBusy(false); return; }
 
-        // Os instalados saem do pacote; os que falharam ou ficaram parados continuam marcados, para tentar de novo. "Parado" só
-        // vale enquanto a fila para: terminada a parada, a linha volta ao normal, ainda no pacote. "Falhou" fica, com o motivo na dica.
-        foreach (var tile in sel.Where(t => t.Phase == AppPhase.Done)) tile.App.Selected = false;
-        foreach (var tile in sel.Where(t => t.Phase is AppPhase.Skipped or AppPhase.Queued)) tile.Phase = AppPhase.Idle;
-        var names = await Task.Run(AppInstaller.InstalledNames);
+        // Fim da fila: cada linha volta ao que é de fato agora. Os instalados viram "Instalado" e saem do pacote; os que falharam
+        // ou ficaram parados voltam a disponíveis, ainda marcados, para tentar de novo (o que falhou fica no estado do cabeçalho).
+        HashSet<string> names;
+        try { names = await Task.Run(AppInstaller.InstalledNames); }
+        catch (Exception ex) { DiagnosticLog.Write("apps.inventory", ex); names = new HashSet<string>(); }
         var finished = new HashSet<string>(_wingetIds ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
         foreach (var tile in sel.Where(t => t.Phase == AppPhase.Done)) foreach (var p in tile.App.Packages) finished.Add(p.Id);
         _wingetIds = finished;
+        foreach (var tile in sel) tile.Phase = AppPhase.Idle;
+        SetBusy(false);
         Apply(names, finished);
         RebuildPack();
 
@@ -481,15 +550,42 @@ public partial class AppsView : UserControl
         if (sel.Count > 0) _ = ConfirmAsync(sel);
     }
 
-    /// <summary>Durante a instalação, o catálogo, os kits e o filtro param; a faixa vira a fila, com o estado de cada app.</summary>
+    /// <summary>Mostra a fila no meio (um instalado, um instalando, o resto na fila) sem instalar nada (capturas de tela).</summary>
+    internal void PreviewRun(bool on)
+    {
+        var sel = _package.Where(t => !t.App.Installed).ToList();
+        if (sel.Count == 0) return;
+        if (on)
+        {
+            _runTotal = sel.Count;
+            _runDone = 1;
+            for (int i = 0; i < sel.Count; i++) sel[i].Phase = i == 0 ? AppPhase.Done : i == 1 ? AppPhase.Installing : AppPhase.Queued;
+            SetBusy(true);
+            Ui.SetRunning(BtnAppsInstall, true, "Instalar apps", StopText, "\uE896");
+            Say($"Instalando {sel[Math.Min(1, sel.Count - 1)].App.Name}…", $"2 de {sel.Count}");
+            ToolPage.SetProgress(PackProgressFill, 1.0 / sel.Count);
+            return;
+        }
+        foreach (var t in sel) t.Phase = AppPhase.Idle;
+        ToolPage.EndProgress(PackProgressFill);
+        Ui.SetRunning(BtnAppsInstall, false, "Instalar apps", idleIcon: "\uE896");
+        SetBusy(false);
+        UpdateInstallButton();
+        Say($"Lido às {DateTime.Now:HH:mm}");
+    }
+
+    /// <summary>
+    /// Durante a instalação, o catálogo, os kits e o filtro param; a faixa vira a fila, com o estado de cada app, e a leitura do
+    /// pacote conta os concluídos. Nada muda de tamanho nem de lugar: o cabeçalho fica como está.
+    /// </summary>
     private void SetBusy(bool busy)
     {
+        _appsBusy = busy;
         AppsColumns.IsEnabled = !busy;
         AppsKits.IsEnabled = !busy;
         AppsViewGroup.IsEnabled = !busy;
-        PackTitle.Text = busy ? "Instalando" : "No pacote";
-        PackNote.Text = busy ? "Um por vez, sem janelas" : "Na ordem em que vão instalar";
-        BtnPackClear.Visibility = busy || _package.Count == 0 ? Visibility.Hidden : Visibility.Visible;
+        BtnPackClear.IsEnabled = !busy && _package.Count > 0;
+        UpdatePackHead();
         if (!busy) SyncKits();
     }
 }
@@ -544,7 +640,7 @@ public sealed class AppTile : ObservableObject
         Icon = AppIcons.Get(app.Icon);
         app.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(InstallableApp.Installed) or nameof(InstallableApp.Status)) Changed();
+            if (e.PropertyName == nameof(InstallableApp.Installed)) Changed();
         };
     }
 
@@ -553,15 +649,8 @@ public sealed class AppTile : ObservableObject
     public bool ShowMonogram => Icon == null;
     public string Monogram => App.Name.TrimStart('.', ' ').Substring(0, 1).ToUpperInvariant();
 
-    public string Tip
-    {
-        get
-        {
-            string ids = string.Join(", ", App.Packages.Select(p => p.Id));
-            string head = Phase == AppPhase.Failed && App.Status.Length > 0 ? App.Status : App.Description;
-            return $"{head}\nPacote winget: {ids}";
-        }
-    }
+    /// <summary>A dica do app: só o que ele é, em uma frase.</summary>
+    public string Tip => App.Description;
 
     private AppPhase _phase;
     public AppPhase Phase { get => _phase; set { if (_phase == value) return; _phase = value; Changed(); } }
@@ -575,7 +664,7 @@ public sealed class AppTile : ObservableObject
         AppPhase.Queued => "Na fila",
         AppPhase.Installing => "Instalando…",
         AppPhase.Skipped => "Parado",
-        AppPhase.Done => "Instalado agora",
+        AppPhase.Done => "Instalado",
         AppPhase.Failed => "Falhou",
         _ => App.Installed ? "Instalado" : "",
     };
@@ -592,7 +681,6 @@ public sealed class AppTile : ObservableObject
     {
         OnPropertyChanged(nameof(StateText));
         OnPropertyChanged(nameof(Tone));
-        OnPropertyChanged(nameof(Tip));
     }
 }
 
