@@ -16,7 +16,12 @@ namespace CoreBi.Desktop.Views;
 public partial class AppsView : UserControl
 {
     private FeatureContext _context = null!;
-    public AppsView() => InitializeComponent();
+    public AppsView()
+    {
+        // Altura das linhas do catálogo: 30 px até a página medir a área; depois esticam para encher o cartão (FitRows)
+        Resources["AppRowHeight"] = 30.0;
+        InitializeComponent();
+    }
     internal void Initialize(FeatureContext context) => _context = context;
 
     internal List<InstallableApp>? _installApps;
@@ -32,7 +37,7 @@ public partial class AppsView : UserControl
     private string? _category;
 
     // Geometria das colunas: largura mínima de uma coluna, o vão entre elas e as alturas que entram na divisão
-    private const double MinColumn = 250, ColumnGap = 28, GroupHead = 37, RowHeight = 32, GroupGap = 14;
+    private const double MinColumn = 250, ColumnGap = 28, GroupHead = 37, RowHeight = 32, MaxRowSlot = 40, GroupGap = 14;
 
     private void Say(string status, string detail = "") => ToolPage.Say(AppsStatus, AppsDetail, status, detail);
 
@@ -97,6 +102,28 @@ public partial class AppsView : UserControl
         if (e.WidthChanged) LayoutColumns();
     }
 
+    private void AppsListScroll_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (e.HeightChanged) FitRows();
+    }
+
+    private List<(int Groups, int Rows)> _columnShape = new();
+
+    /// <summary>
+    /// Estica as linhas (de 30 até 38 px) para a coluna mais alta terminar no pé do cartão: o vão embaixo das categorias fica igual
+    /// ao de cima, em vez de sobrar um bloco vazio. Sem altura para 30 px, as linhas ficam em 30 e o catálogo rola por dentro.
+    /// </summary>
+    private void FitRows()
+    {
+        double height = AppsListScroll.ActualHeight;
+        if (height <= 0 || _columnShape.Count == 0) return;
+        double slot = MaxRowSlot;
+        foreach (var (groups, rows) in _columnShape)
+            if (rows > 0) slot = Math.Min(slot, (height - groups * GroupHead - (groups - 1) * GroupGap) / rows);
+        slot = Math.Floor(Math.Clamp(slot, RowHeight, MaxRowSlot));
+        Resources["AppRowHeight"] = slot - 2;
+    }
+
     private int _columns;
 
     /// <summary>
@@ -119,16 +146,24 @@ public partial class AppsView : UserControl
         AppsColumns.Children.Clear();
         AppsColumns.ColumnDefinitions.Clear();
         int start = 0;
+        _columnShape = new();
         for (int c = 0; c < split.Count; c++)
         {
             if (c > 0) AppsColumns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(ColumnGap) });
             AppsColumns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             var stack = new StackPanel();
-            for (int i = start; i < start + split[c]; i++) stack.Children.Add(_groupViews[i]);
+            for (int i = start; i < start + split[c]; i++)
+            {
+                // A última categoria da coluna não leva o vão de baixo: o pé do cartão fica com a mesma folga do topo
+                _groupViews[i].Margin = new Thickness(0, 0, 0, i == start + split[c] - 1 ? -GroupGap : 0);
+                stack.Children.Add(_groupViews[i]);
+            }
+            _columnShape.Add((split[c], _groups.Skip(start).Take(split[c]).Sum(g => g.Tiles.Count)));
             start += split[c];
             Grid.SetColumn(stack, c * 2);
             AppsColumns.Children.Add(stack);
         }
+        FitRows();
     }
 
     /// <summary>Divide <paramref name="heights"/> em até <paramref name="parts"/> blocos contíguos minimizando o bloco mais alto.</summary>

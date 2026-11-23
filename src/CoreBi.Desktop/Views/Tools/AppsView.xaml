@@ -21,7 +21,7 @@
         </DataTemplate>
 
         <!--
-            Linha do catálogo (no estilo do Ninite): a linha inteira marca e desmarca. 30 px de altura com 1 px livre em cima e embaixo, para dois marcados seguidos não virarem um bloco só. Da esquerda para a direita: o marcador redondo,
+            Linha do catálogo (no estilo do Ninite): a linha inteira marca e desmarca. De 30 a 38 px de altura (AppRowHeight: o código estica as linhas até a coluna mais alta encostar no pé do cartão), com 1 px livre em cima e embaixo, para dois marcados seguidos não virarem um bloco só. Da esquerda para a direita: o marcador redondo,
             o ícone, o nome e, à direita, o estado em texto curto quando há um ("Instalado", "Na fila", "Instalando…", "Parado", "Falhou"). O estado é
             sempre o de agora: "Instalando…" (com o arco girando no marcador) só durante a instalação do app, "Parado" só enquanto a
             fila para, e ao fim da fila cada linha volta ao que é de fato, instalada ou disponível.
@@ -38,7 +38,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
-                        <Border x:Name="b" Height="30" Margin="0,1" Background="Transparent" CornerRadius="10" Padding="8,0,10,0" SnapsToDevicePixels="True">
+                        <Border x:Name="b" Height="{DynamicResource AppRowHeight}" Margin="0,1" Background="Transparent" CornerRadius="10" Padding="8,0,10,0" SnapsToDevicePixels="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="20" />
@@ -486,14 +486,14 @@
                 </local:PageHeaderPanel>
 
                 <!-- Catálogo: kits e busca no cabeçalho (a legenda dos estados é o filtro do topo); as categorias em colunas (montadas no código) -->
-                <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,16,24,8" local:Skeleton.Top="34"
-                        local:Skeleton.Layout="gap 12; col 0 18.55%; row 31: - 8, s 40%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 20.36% 18.55%; row 31: - 8, s 44%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 40%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 5 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 40.72% 18.55%; row 31: - 8, s 44%; gap 6; rows 11 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 32%; gap 6; rows 4 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 61.08% 18.55%; row 31: - 8, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 32%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 81.44% 18.55%; row 31: - 8, s 46%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 50%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; end">
+                <Border x:Name="AppsCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="24,16,24,16" local:Skeleton.Top="34"
+                        local:Skeleton.Layout="gap 20; col 0 18.55%; row 31: - 8, s 40%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 20.36% 18.55%; row 31: - 8, s 44%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 40%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 5 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 40.72% 18.55%; row 31: - 8, s 44%; gap 6; rows 11 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 32%; gap 6; rows 4 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 61.08% 18.55%; row 31: - 8, s 30%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 36%; gap 6; rows 6 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 32%; gap 6; rows 3 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; col 81.44% 18.55%; row 31: - 8, s 46%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; gap 14; row 31: - 8, s 50%; gap 6; rows 7 32: - 8, dot 20, - 14, c 26@1^26, - 10, t *@0.62, - 10; end">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <Grid Style="{StaticResource CardHeader}" Margin="0,0,0,12">
+                        <Grid Style="{StaticResource CardHeader}" Margin="0,0,0,20">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -521,7 +521,8 @@
                                      local:Ui.Placeholder="Procurar app" TextChanged="AppsSearch_TextChanged" />
                         </Grid>
                         <!-- Colunas de categorias: o código escolhe quantas cabem e divide as categorias inteiras entre elas -->
-                        <ScrollViewer x:Name="AppsListScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                        <ScrollViewer x:Name="AppsListScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False"
+                                      SizeChanged="AppsListScroll_SizeChanged">
                             <Grid x:Name="AppsColumns" SizeChanged="AppsColumns_SizeChanged" />
                         </ScrollViewer>
                     </Grid>
