@@ -277,7 +277,8 @@ public partial class OverlayView : UserControl
 
     /// <summary>Tamanho do tracejado de um canto livre (CornerZone): a prévia passa por ele antes de crescer.</summary>
     private static readonly Size ZoneSize = new(184, 104);
-    private static readonly TimeSpan MoveTime = TimeSpan.FromMilliseconds(320), GrowTime = TimeSpan.FromMilliseconds(300);
+    private static readonly TimeSpan MoveTime = TimeSpan.FromMilliseconds(420), GrowTime = TimeSpan.FromMilliseconds(300);
+    /// <summary>O deslize de um canto a outro: sai e chega devagar, sem mudar de tamanho no caminho.</summary>
     private static readonly IEasingFunction Travel = new CubicEase { EasingMode = EasingMode.EaseInOut };
     private double _scale = 1;
 
@@ -306,9 +307,8 @@ public partial class OverlayView : UserControl
         HideCoveredZones();
         if (!animate) return;
 
-        // A caixa já está no lugar e no tamanho finais; a transformação a leva de onde estava até lá. Ao trocar de canto, ela
-        // vai encolhida ao tamanho do tracejado até ele e então cresce até o tamanho escolhido, presa ao canto; ao trocar só o
-        // tamanho, cresce ou encolhe direto, presa ao canto.
+        // A caixa já está no lugar e no tamanho finais; a transformação a leva de onde estava até lá. Ao trocar de canto ela
+        // desliza direto até o novo canto, num movimento só e suave; ao trocar o tamanho, cresce ou encolhe presa ao canto.
         Rect to = new(OvPreviewHost.TranslatePoint(new Point(), OvScreen), OvPreviewHost.RenderSize);
         if (to.Width <= 0 || to.Height <= 0) return;
         bool right = corner.EndsWith('R'), bottom = corner.StartsWith('B');
@@ -316,30 +316,16 @@ public partial class OverlayView : UserControl
         Point Anchor(Rect r) => new(right ? r.Right : r.Left, bottom ? r.Bottom : r.Top);
         double startZoom = from.Width / to.Width;
         Vector startShift = Anchor(from) - Anchor(to);
+        var (time, ease) = moving ? (MoveTime, Travel) : (GrowTime, Glide);
+        void Run(Animatable target, DependencyProperty property, double start, double end) =>
+            target.BeginAnimation(property, new DoubleAnimation(start, end, time) { EasingFunction = ease, FillBehavior = FillBehavior.Stop });
+        Run(OvPreviewZoom, ScaleTransform.ScaleXProperty, startZoom, 1);
+        Run(OvPreviewZoom, ScaleTransform.ScaleYProperty, startZoom, 1);
         if (moving)
         {
-            double zoneZoom = Math.Min(1, Math.Min(ZoneSize.Width / to.Width, ZoneSize.Height / to.Height));
-            Animate2(OvPreviewZoom, ScaleTransform.ScaleXProperty, startZoom, zoneZoom, 1);
-            Animate2(OvPreviewZoom, ScaleTransform.ScaleYProperty, startZoom, zoneZoom, 1);
-            Animate2(OvPreviewShift, TranslateTransform.XProperty, startShift.X, 0, 0);
-            Animate2(OvPreviewShift, TranslateTransform.YProperty, startShift.Y, 0, 0);
+            Run(OvPreviewShift, TranslateTransform.XProperty, startShift.X, 0);
+            Run(OvPreviewShift, TranslateTransform.YProperty, startShift.Y, 0);
         }
-        else
-        {
-            var grow = new DoubleAnimation(startZoom, 1, GrowTime) { EasingFunction = Glide, FillBehavior = FillBehavior.Stop };
-            OvPreviewZoom.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
-            OvPreviewZoom.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
-        }
-    }
-
-    /// <summary>Duas etapas: vai de <paramref name="start"/> a <paramref name="mid"/> no deslize e daí a <paramref name="end"/> no crescimento.</summary>
-    private static void Animate2(Animatable target, DependencyProperty property, double start, double mid, double end)
-    {
-        var a = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.Stop };
-        a.KeyFrames.Add(new DiscreteDoubleKeyFrame(start, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        a.KeyFrames.Add(new EasingDoubleKeyFrame(mid, KeyTime.FromTimeSpan(MoveTime), Travel));
-        a.KeyFrames.Add(new EasingDoubleKeyFrame(end, KeyTime.FromTimeSpan(MoveTime + GrowTime), Glide));
-        target.BeginAnimation(property, a);
     }
 
     private void StopMotion()
@@ -355,8 +341,9 @@ public partial class OverlayView : UserControl
         OvPreviewHost.TransformToAncestor(OvScreen).TransformBounds(new Rect(OvPreviewHost.RenderSize));
 
     /// <summary>
-    /// A escala da prévia: a do tamanho escolhido, mas nunca maior que a tela desenhada (com "Tudo" no Grande a caixa passava da
-    /// borda e era cortada).
+    /// A escala da prévia: a do tamanho escolhido, mas só até onde a caixa não cobre nenhum outro tracejado (com "Tudo" no
+    /// Grande ela cobria). Só a prévia encolhe; o overlay de verdade mantém o tamanho escolhido. A caixa fica a 16 px da borda,
+    /// o contorno tracejado dela sai 5 px e sobram 8 px até o tracejado vizinho.
     /// </summary>
     private void FitScale()
     {
@@ -364,13 +351,17 @@ public partial class OverlayView : UserControl
         OvPreview.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         var natural = OvPreview.DesiredSize;
         if (natural.Width > 0 && natural.Height > 0)
-            target = Math.Min(target, Math.Min((OvScreen.Width - 32) / natural.Width, (OvScreen.Height - 32) / natural.Height));
+        {
+            double maxWidth = OvScreen.Width - 16 - ZoneSize.Width - 16 - 5 - 8;
+            double maxHeight = OvScreen.Height - 16 - ZoneSize.Height - 16 - 5 - 8;
+            target = Math.Min(target, Math.Min(maxWidth / natural.Width, maxHeight / natural.Height));
+        }
         if (Math.Abs(OvPreviewScale.ScaleX - target) > 0.0005) OvPreviewScale.ScaleX = OvPreviewScale.ScaleY = target;
     }
 
     private void OvPreviewHost_SizeChanged(object sender, SizeChangedEventArgs e) => HideCoveredZones();
 
-    /// <summary>Um tracejado que a prévia cobre (overlay grande, com muitos itens) some, para não ficar um por cima do outro.</summary>
+    /// <summary>Segurança: se a prévia ainda assim cobrir um tracejado (a escala limita antes), ele some em vez de ficar por baixo.</summary>
     private void HideCoveredZones()
     {
         // Pelo lugar de layout (alinhamento e tamanho), sem a transformação de um movimento em andamento

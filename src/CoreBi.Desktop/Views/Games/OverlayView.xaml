@@ -2,9 +2,9 @@
     <UserControl.Resources>
         <!--
             Canto da tela: cada quarto da tela do monitor é um botão. O canto livre mostra um contorno tracejado pequeno, de tamanho
-            fixo (o lugar onde o overlay pode ficar); sob o mouse ele acende no sinal com "Mover para cá". No clique a prévia vai até
-            ele, encolhida ao tamanho do tracejado, e então cresce até o tamanho escolhido (OverlayView.LayoutPreview). O canto
-            escolhido some e dá lugar à prévia; um canto que a prévia grande cobriria também some. As cores aqui são fixas, como no
+            fixo (o lugar onde o overlay pode ficar); sob o mouse ele acende no sinal com "Mover para cá". No clique a prévia desliza
+            direto até ele, sem mudar de tamanho (OverlayView.LayoutPreview). O canto escolhido some e dá lugar à prévia, que nunca
+            cobre os outros tracejados (a escala da prévia encolhe para caber). As cores aqui são fixas, como no
             overlay: a tela é um "jogo".
         -->
         <Style x:Key="CornerZone" TargetType="RadioButton">
