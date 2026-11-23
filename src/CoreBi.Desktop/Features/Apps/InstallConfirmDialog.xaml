@@ -67,7 +67,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="&#xEA18;" FontFamily="{StaticResource Icons}" FontSize="16" Foreground="{DynamicResource Ok}" VerticalAlignment="Center" Margin="0,0,10,0" />
                         <TextBlock Grid.Column="1" Style="{StaticResource Caption}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,20,0"
-                                   Text="Cada instalador vem do site oficial do fabricante, pelo winget, e é conferido antes de abrir." />
+                                   Text="Da fonte oficial, conferido antes de abrir." />
                         <StackPanel Grid.Column="2" Orientation="Horizontal">
                             <Button Style="{StaticResource SecondaryButton}" Content="Voltar" Click="Cancel_Click" Margin="0,0,10,0" ToolTip="Volta ao catálogo sem instalar (Esc)" />
                             <Button x:Name="BtnConfirm" Style="{StaticResource PrimaryButton}" local:Ui.Icon="&#xE896;" MinWidth="160" Click="Confirm_Click" />

@@ -455,7 +455,7 @@
                 <!-- Cabeçalho padrão (PageHeaderPanel): título, subtítulo e a barra de ações à direita, na linha do título -->
                 <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Instalar apps" Style="{StaticResource PageTitle}" />
-                    <TextBlock Text="Marque os programas e instale todos de uma vez, baixados da fonte oficial." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                    <TextBlock Text="Marque os apps e instale tudo de uma vez." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                     <StackPanel Style="{StaticResource PageActions}">
                         <DockPanel Style="{StaticResource PageStatusSlot}">
                             <TextBlock x:Name="AppsDetail" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
@@ -472,16 +472,16 @@
                                 <RadioButton x:Name="ViewAll" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="Todos" Tag="all" IsChecked="True"
                                              ToolTip="Mostra o catálogo inteiro." />
                                 <RadioButton x:Name="ViewAvailable" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="Disponíveis" Tag="available"
-                                             ToolTip="Acende só os apps que ainda não estão neste PC. Clique de novo para voltar a todos." />
+                                             ToolTip="Só os que faltam." />
                                 <RadioButton x:Name="ViewPack" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="No pacote" Tag="pack"
-                                             ToolTip="Acende só os apps marcados para instalar. Clique de novo para voltar a todos." />
+                                             ToolTip="Só os marcados." />
                                 <RadioButton x:Name="ViewInstalled" Style="{StaticResource StateSegment}" GroupName="AppsView" Content="Instalados" Tag="installed"
-                                             ToolTip="Acende só os apps que já estão neste PC. Clique de novo para voltar a todos." />
+                                             ToolTip="Só os instalados." />
                             </local:SlidingSelectionPanel>
                         </Border>
                         <Button x:Name="BtnAppsInstall" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE896;" Content="Instalar apps"
                                 IsEnabled="False" Click="BtnAppsInstall_Click" ToolTipService.ShowOnDisabled="True"
-                                ToolTip="Instala pelo winget, um app de cada vez e sem janelas: cada instalador vem do endereço oficial do fabricante e é conferido antes de abrir." />
+                                ToolTip="Instala um por vez, da fonte oficial." />
                     </StackPanel>
                 </local:PageHeaderPanel>
 
@@ -501,7 +501,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base -->
-                            <TextBlock Style="{StaticResource CardTitle}" ToolTip="Os apps que o CoreBi instala pelo winget. Pare o mouse num app para ver o que ele é.">
+                            <TextBlock Style="{StaticResource CardTitle}" ToolTip="Pare o mouse num app para ver o que ele é.">
                                 <Run Text="Catálogo" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="AppsCount"
                                     FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16" FontWeight="Normal" Foreground="{DynamicResource Faint}"
                                     Typography.NumeralAlignment="Tabular" />
@@ -572,7 +572,7 @@
                                                HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Border>
                                 <TextBlock Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="12,0,0,1"
-                                           Text="Marque apps no catálogo ou escolha um kit: eles entram aqui, na ordem em que vão instalar." />
+                                           Text="Marque apps ou escolha um kit." />
                             </StackPanel>
                         </Grid>
                     </Grid>
