@@ -2,7 +2,7 @@
              SizeChanged="View_SizeChanged">
     <!--
         Bancada de teste (a mesma composição do Teste de carga): as teclas do teste numa faixa em cima; embaixo, à esquerda, o
-        palco e, à direita, numa coluna de 330 px, a configuração com a ação principal e o histórico. O palco tem a placa (o que
+        palco e, à direita, numa coluna de 360 px, as configurações do teste (seções espalhadas na altura, o botão no pé) e o histórico, de altura fixa. O palco tem a placa (o que
         está sendo medido, as leituras ao vivo e o estado do teste), a barra de progresso no lugar do fio, a régua do resultado
         logo abaixo, com a nota no maior número da tela, e embaixo o visual do teste (a imagem ou o traço do FPS). O palco nunca
         abre vazio: a página mostra o último resultado de cada teste, a cena ou a formação do teste esmaecida com uma legenda, e a
@@ -261,19 +261,6 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        <!-- O título assenta no meio da linha de 34 px dos cabeçalhos de cartão (CardHeader): 7 em cima, e 10 de vão depois da linha -->
-        <Style x:Key="HistoryTitle" TargetType="TextBlock" BasedOn="{StaticResource SectionTitle}">
-            <Setter Property="Margin" Value="0,7,16,17" />
-            <Setter Property="HorizontalAlignment" Value="Left" />
-        </Style>
-        <Style x:Key="ConfigLabel" TargetType="TextBlock" BasedOn="{StaticResource Label}">
-            <Setter Property="Margin" Value="0,16,0,8" />
-        </Style>
-        <Style x:Key="StartButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-            <Setter Property="Height" Value="40" />
-            <Setter Property="Margin" Value="0,20,0,0" />
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
-        </Style>
     </UserControl.Resources>
 
     <ScrollViewer x:Name="BenchScroll" VerticalScrollBarVisibility="Auto">
@@ -312,7 +299,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="330" />
+                        <ColumnDefinition Width="360" />
                     </Grid.ColumnDefinitions>
                     <Border Style="{StaticResource StageCard}">
                         <Grid>
@@ -404,39 +391,45 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <!-- Esqueleto da primeira visita: a página espera o nome do processador e das outras peças (os outros cartões o acompanham) -->
-                        <Border x:Name="BenchConfigCard" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}"
-                                local:Skeleton.Layout="row 17: c 64; gap 8; row 36: pill 254^36; gap 16; row 17: c 64; gap 8; row 36: pill 234^36; gap 20; row 40: btn *^40">
-                            <StackPanel>
-                                <StackPanel x:Name="BenchOptions" Style="{StaticResource TestSection}">
-                                    <TextBlock Text="Núcleos" Style="{StaticResource Label}" />
-                                    <Border Style="{StaticResource SegmentGroup}">
-                                        <local:SlidingSelectionPanel x:Name="BenchModePanel" Style="{StaticResource SegmentRail}">
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="BenchMode" Content="Multi-core" Tag="mt" />
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="BenchMode" Content="Single-core" Tag="st" />
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="BenchMode" Content="Os dois" Tag="both" IsChecked="True" />
-                                        </local:SlidingSelectionPanel>
-                                    </Border>
-                                    <TextBlock Text="Duração" Style="{StaticResource ConfigLabel}" />
-                                    <Border Style="{StaticResource SegmentGroup}">
-                                        <local:SlidingSelectionPanel x:Name="BenchDurationPanel" Style="{StaticResource SegmentRail}">
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="BenchDur" Content="Uma passada" Tag="0" IsChecked="True" />
-                                            <RadioButton Style="{StaticResource Segment}" GroupName="BenchDur" Content="Mínimo de 10 min" Tag="10"
-                                                         ToolTip="Repete a cena até completar 10 minutos: mostra se o processador mantém o desempenho quente." />
-                                        </local:SlidingSelectionPanel>
-                                    </Border>
-                                </StackPanel>
-                                <Button x:Name="BtnBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnBench_Click" />
-                                <TextBlock x:Name="BenchHint" Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" Margin="0,10,0,0" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
-                            </StackPanel>
-                        </Border>
-                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=BenchHistory}">
+                        <Border Style="{StaticResource ConfigCard}" x:Name="BenchConfigCard" local:Skeleton.Layout="row 34: h 190; foot 42: btn *^42; bands 2; row 17: c 70; gap 10; row 42: pill *^42; endbands">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}"
+                                <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
+                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                </Grid>
+                                <StackPanel DockPanel.Dock="Bottom">
+                                <TextBlock x:Name="BenchHint" Style="{StaticResource ConfigHint}" />
+                                <Button x:Name="BtnBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnBench_Click" />
+                                </StackPanel>
+                                <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
+                                    <StackPanel x:Name="BenchOptions" Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Núcleos" Style="{StaticResource ConfigName}" ToolTip="Multi-core usa todos os núcleos ao mesmo tempo; single-core, um só. Os dois mede um depois do outro." />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="BenchModePanel" Style="{StaticResource ConfigSegmentRail}">
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="BenchMode" Content="Multi-core" Tag="mt" ToolTip="Todos os núcleos juntos" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="BenchMode" Content="Single-core" Tag="st" ToolTip="Um núcleo só" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="BenchMode" Content="Os dois" Tag="both" IsChecked="True" ToolTip="Todos os núcleos e depois um só" />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel x:Name="BenchDurationSection" Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Duração" Style="{StaticResource ConfigName}" ToolTip="Uma passada dá a nota; 10 minutos mostram se o processador perde desempenho quando esquenta." />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="BenchDurationPanel" Style="{StaticResource ConfigSegmentRail}">
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="BenchDur" Content="Uma passada" Tag="0" IsChecked="True" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="BenchDur" Content="10 min" Tag="10" ToolTip="Repete a cena até completar 10 minutos: mostra se o processador mantém o desempenho quente." />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </local:ConfigStack>
+                            </DockPanel>
+                        </Border>
+                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}"
                                            ToolTip="Cada barra compara com o melhor resultado com a mesma duração." />
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="BenchHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Cpu" />
@@ -451,7 +444,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="330" />
+                        <ColumnDefinition Width="360" />
                     </Grid.ColumnDefinitions>
                     <Border Style="{StaticResource StageCard}">
                         <Grid>
@@ -509,25 +502,38 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
-                            <StackPanel>
-                                <TextBlock Text="Duração" Style="{StaticResource Label}" />
-                                <Border Style="{StaticResource SegmentGroup}">
-                                    <local:SlidingSelectionPanel x:Name="SimDurPanel" Style="{StaticResource SegmentRail}">
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="SimDur" Content="20 s" Tag="20" IsChecked="True" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="SimDur" Content="60 s" Tag="60" />
-                                    </local:SlidingSelectionPanel>
-                                </Border>
-                                <Button x:Name="BtnSimBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnSimBench_Click" />
-                            </StackPanel>
-                        </Border>
-                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=SimHistory}">
+                        <Border Style="{StaticResource ConfigCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}" />
+                                <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
+                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                </Grid>
+                                <StackPanel DockPanel.Dock="Bottom">
+                                <Button x:Name="BtnSimBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnSimBench_Click" />
+                                </StackPanel>
+                                <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Duração" Style="{StaticResource ConfigName}" ToolTip="Mais tempo dá uma média mais estável." />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="SimDurPanel" Style="{StaticResource ConfigSegmentRail}">
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="SimDur" Content="20 s" Tag="20" IsChecked="True" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="SimDur" Content="60 s" Tag="60" />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="O que o teste faz" Style="{StaticResource ConfigName}" />
+                                        <TextBlock Text="Lógica, física, colisão e IA de 30 mil unidades num mapa. A nota é quantos quadros por segundo o processador aguenta, sem a placa de vídeo." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </local:ConfigStack>
+                            </DockPanel>
+                        </Border>
+                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}" />
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="SimHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Cpu" />
                                 </ScrollViewer>
@@ -541,7 +547,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="330" />
+                        <ColumnDefinition Width="360" />
                     </Grid.ColumnDefinitions>
                     <Border Style="{StaticResource StageCard}">
                         <Grid>
@@ -591,33 +597,44 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
-                            <StackPanel>
-                                <TextBlock Text="Resolução" Style="{StaticResource Label}" />
-                                <Border Style="{StaticResource SegmentGroup}">
-                                    <local:SlidingSelectionPanel x:Name="GbResPanel" Style="{StaticResource SegmentRail}">
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="GbRes" Content="1080p" Tag="1920x1080" IsChecked="True" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="GbRes" Content="1440p" Tag="2560x1440" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="GbRes" Content="4K" Tag="3840x2160" />
-                                    </local:SlidingSelectionPanel>
-                                </Border>
-                                <TextBlock Text="Duração" Style="{StaticResource ConfigLabel}" />
-                                <Border Style="{StaticResource SegmentGroup}">
-                                    <local:SlidingSelectionPanel x:Name="GbDurPanel" Style="{StaticResource SegmentRail}">
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="GbDur" Content="30 s" Tag="30" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="GbDur" Content="60 s" Tag="60" IsChecked="True" />
-                                    </local:SlidingSelectionPanel>
-                                </Border>
-                                <Button x:Name="BtnGpuBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnGpuBench_Click" />
-                            </StackPanel>
-                        </Border>
-                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=GbHistory}">
+                        <Border Style="{StaticResource ConfigCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}"
+                                <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
+                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                </Grid>
+                                <StackPanel DockPanel.Dock="Bottom">
+                                <Button x:Name="BtnGpuBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnGpuBench_Click" />
+                                </StackPanel>
+                                <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Resolução" Style="{StaticResource ConfigName}" ToolTip="Mais pixels pesam mais na placa de vídeo. Compare só resultados na mesma resolução." />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="GbResPanel" Style="{StaticResource ConfigSegmentRail}">
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="GbRes" Content="1080p" Tag="1920x1080" IsChecked="True" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="GbRes" Content="1440p" Tag="2560x1440" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="GbRes" Content="4K" Tag="3840x2160" />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Duração" Style="{StaticResource ConfigName}" ToolTip="O sobrevoo inteiro tem 60 s; 30 s mede só a primeira metade." />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="GbDurPanel" Style="{StaticResource ConfigSegmentRail}">
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="GbDur" Content="30 s" Tag="30" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="GbDur" Content="60 s" Tag="60" IsChecked="True" />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </local:ConfigStack>
+                            </DockPanel>
+                        </Border>
+                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}"
                                            ToolTip="Cada barra compara com o melhor resultado na mesma resolução." />
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="GbHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Gpu" />
@@ -632,7 +649,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="330" />
+                        <ColumnDefinition Width="360" />
                     </Grid.ColumnDefinitions>
                     <Border Style="{StaticResource StageCard}">
                         <Grid>
@@ -680,42 +697,55 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
-                            <StackPanel>
-                                <TextBlock Text="Resolução" Style="{StaticResource Label}" />
-                                <Border Style="{StaticResource SegmentGroup}">
-                                    <local:SlidingSelectionPanel x:Name="RtResPanel" Style="{StaticResource SegmentRail}">
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="RtRes" Content="1080p" Tag="1920x1080" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="RtRes" Content="1440p" Tag="2560x1440" IsChecked="True" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="RtRes" Content="4K" Tag="3840x2160" />
-                                    </local:SlidingSelectionPanel>
-                                </Border>
-                                <TextBlock Text="Preset" Style="{StaticResource ConfigLabel}" />
-                                <Border Style="{StaticResource SegmentGroup}">
-                                    <local:SlidingSelectionPanel x:Name="RtPresetPanel" Style="{StaticResource SegmentRail}">
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="RtPreset" Content="Normal" Tag="normal" ToolTip="2 amostras e 2 rebatidas por pixel" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="RtPreset" Content="Alta" Tag="alta" IsChecked="True" ToolTip="4 amostras e 3 rebatidas por pixel" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="RtPreset" Content="Extrema" Tag="extrema" ToolTip="8 amostras e 4 rebatidas por pixel" />
-                                    </local:SlidingSelectionPanel>
-                                </Border>
-                                <TextBlock Text="Modo" Style="{StaticResource ConfigLabel}" />
-                                <Border Style="{StaticResource SegmentGroup}">
-                                    <local:SlidingSelectionPanel x:Name="RtModePanel" Style="{StaticResource SegmentRail}">
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="RtMode" Content="Padrão" Tag="std" IsChecked="True" ToolTip="Aquece 20 s e mede 3 passadas de 30 s (cerca de 2 min). Use para comparar." />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="RtMode" Content="Rápido" Tag="quick" ToolTip="Aquece 5 s e mede 3 passadas de 10 s (cerca de 35 s). Só para uma ideia rápida." />
-                                    </local:SlidingSelectionPanel>
-                                </Border>
-                                <Button x:Name="BtnRtBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnRtBench_Click" ToolTipService.ShowOnDisabled="True"
-                                        ToolTip="Compare só resultados com a mesma resolução, o mesmo preset e o mesmo driver, com o PC na tomada e sem outros programas pesados abertos." />
-                            </StackPanel>
-                        </Border>
-                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=RtHistory}">
+                        <Border Style="{StaticResource ConfigCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}"
+                                <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
+                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                </Grid>
+                                <StackPanel DockPanel.Dock="Bottom">
+                                <Button x:Name="BtnRtBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnRtBench_Click" ToolTipService.ShowOnDisabled="True"
+                                        ToolTip="Compare só resultados com a mesma resolução, o mesmo preset e o mesmo driver, com o PC na tomada e sem outros programas pesados abertos." />
+                                </StackPanel>
+                                <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Resolução" Style="{StaticResource ConfigName}" />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="RtResPanel" Style="{StaticResource ConfigSegmentRail}">
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="RtRes" Content="1080p" Tag="1920x1080" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="RtRes" Content="1440p" Tag="2560x1440" IsChecked="True" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="RtRes" Content="4K" Tag="3840x2160" />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Preset" Style="{StaticResource ConfigName}" ToolTip="Quantos raios por pixel: mais amostras e rebatidas pesam mais nos núcleos de RT." />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="RtPresetPanel" Style="{StaticResource ConfigSegmentRail}">
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="RtPreset" Content="Normal" Tag="normal" ToolTip="2 amostras e 2 rebatidas por pixel" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="RtPreset" Content="Alta" Tag="alta" IsChecked="True" ToolTip="4 amostras e 3 rebatidas por pixel" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="RtPreset" Content="Extrema" Tag="extrema" ToolTip="8 amostras e 4 rebatidas por pixel" />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Modo" Style="{StaticResource ConfigName}" />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="RtModePanel" Style="{StaticResource ConfigSegmentRail}">
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="RtMode" Content="Padrão" Tag="std" IsChecked="True" ToolTip="Aquece 20 s e mede 3 passadas de 30 s (cerca de 2 min). Use para comparar." />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="RtMode" Content="Rápido" Tag="quick" ToolTip="Aquece 5 s e mede 3 passadas de 10 s (cerca de 35 s). Só para uma ideia rápida." />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </local:ConfigStack>
+                            </DockPanel>
+                        </Border>
+                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}"
                                            ToolTip="Cada barra compara com o melhor resultado no mesmo preset e na mesma resolução." />
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="RtHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Gpu" />
@@ -730,7 +760,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="330" />
+                        <ColumnDefinition Width="360" />
                     </Grid.ColumnDefinitions>
                     <Border Style="{StaticResource StageCard}">
                         <Grid>
@@ -770,20 +800,37 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
-                                           Text="Mede a RAM e simula o carregamento de um mapa: um pacote de 512 MB e mil arquivos de 64 KB na pasta temporária, lidos sem o cache do Windows e apagados no fim." />
-                                <Button x:Name="BtnMemBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnMemBench_Click" />
-                            </StackPanel>
-                        </Border>
-                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=MemHistory}">
+                        <Border Style="{StaticResource ConfigCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}" />
+                                <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
+                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                </Grid>
+                                <StackPanel DockPanel.Dock="Bottom">
+                                <Button x:Name="BtnMemBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnMemBench_Click" />
+                                </StackPanel>
+                                <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Memória RAM" Style="{StaticResource ConfigName}" />
+                                        <TextBlock Text="Latência e banda, com blocos maiores que o cache do processador: o que a RAM entrega de fato." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Carregamento" Style="{StaticResource ConfigName}" />
+                                        <TextBlock Text="Um pacote de 512 MB e mil arquivos de 64 KB na pasta temporária, lidos sem o cache do Windows e apagados no fim." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Ajustes" Style="{StaticResource ConfigName}" />
+                                        <TextBlock Text="Nenhum: o teste é o mesmo em qualquer PC, para os números se compararem." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </local:ConfigStack>
+                            </DockPanel>
+                        </Border>
+                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}" />
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="MemHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Memory" />
                                 </ScrollViewer>
@@ -797,7 +844,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="330" />
+                        <ColumnDefinition Width="360" />
                     </Grid.ColumnDefinitions>
                     <Border Style="{StaticResource StageCard}">
                         <Grid>
@@ -837,29 +884,42 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
-                            <StackPanel>
-                                <TextBlock Text="Unidade" Style="{StaticResource Label}" />
-                                <WrapPanel x:Name="DiskDrivePanel" Margin="0,0,0,-6" />
-                                <TextBlock Text="Tamanho do arquivo" Style="{StaticResource ConfigLabel}" />
-                                <Border Style="{StaticResource SegmentGroup}">
-                                    <local:SlidingSelectionPanel x:Name="DiskSizePanel" Style="{StaticResource SegmentRail}">
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="DiskSize" Content="512 MB" Tag="512" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="DiskSize" Content="1 GB" Tag="1024" IsChecked="True" />
-                                        <RadioButton Style="{StaticResource Segment}" GroupName="DiskSize" Content="4 GB" Tag="4096" />
-                                    </local:SlidingSelectionPanel>
-                                </Border>
-                                <Button x:Name="BtnDiskBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnDiskBench_Click"
-                                        ToolTip="Grava um arquivo temporário na unidade escolhida, mede sem o cache do Windows e apaga o arquivo no final. Feche outros programas pesados antes." />
-                            </StackPanel>
-                        </Border>
-                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=DiskHistory}">
+                        <Border Style="{StaticResource ConfigCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryTitle}"
+                                <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
+                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                </Grid>
+                                <StackPanel DockPanel.Dock="Bottom">
+                                <Button x:Name="BtnDiskBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnDiskBench_Click"
+                                        ToolTip="Grava um arquivo temporário na unidade escolhida, mede sem o cache do Windows e apaga o arquivo no final. Feche outros programas pesados antes." />
+                                </StackPanel>
+                                <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Unidade" Style="{StaticResource ConfigName}" ToolTip="Onde o arquivo de teste é gravado." />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="DiskDrivePanel" Style="{StaticResource ConfigSegmentRail}" />
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Style="{StaticResource ConfigSection}">
+                                        <TextBlock Text="Tamanho do arquivo" Style="{StaticResource ConfigName}" ToolTip="Arquivos maiores passam do cache do próprio disco e mostram a velocidade sustentada." />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="DiskSizePanel" Style="{StaticResource ConfigSegmentRail}">
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="DiskSize" Content="512 MB" Tag="512" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="DiskSize" Content="1 GB" Tag="1024" IsChecked="True" />
+                                            <RadioButton Style="{StaticResource ConfigSegment}" GroupName="DiskSize" Content="4 GB" Tag="4096" />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
+                                    </StackPanel>
+                                </local:ConfigStack>
+                            </DockPanel>
+                        </Border>
+                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}"
                                            ToolTip="Cada barra compara com o melhor resultado da mesma unidade." />
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="DiskHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Storage" />

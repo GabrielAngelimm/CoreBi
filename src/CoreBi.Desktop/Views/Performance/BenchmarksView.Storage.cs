@@ -34,7 +34,7 @@ public partial class BenchmarksView
                 Content = text,
                 Tag = root,
                 GroupName = "DiskDrive",
-                Style = (Style)FindResource("Chip"),
+                Style = (Style)FindResource("ConfigSegment"),
                 IsChecked = root == pick,
             };
             chip.Checked += (_, _) => UpdateDiskPlate();

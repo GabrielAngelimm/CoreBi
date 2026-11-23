@@ -10,41 +10,45 @@
             Medidor das leituras: rótulo (DIN 13) com o nome por extenso da sigla ao lado (legenda 12) e a leitura (mostrador 22) na
             mesma linha de base (os dois no topo; o rótulo termina num espaço na fonte e no tamanho da leitura, então as duas linhas
             têm a mesma subida), o medidor segmentado na cor do componente (trilho LineStrong, visível no tema claro) que desliza até
-            a leitura nova, a marca do limite que a classificação usa e uma linha de complemento sempre reservada. A leitura que
-            explica o veredito de agora acende o rótulo.
+            a leitura nova, a marca do limite que a classificação usa e a linha de complemento, sempre preenchida (o detalhe da
+            leitura ou, sem ele, o limite). Os seis dividem a altura em linhas iguais, com fio entre elas e o conteúdo no meio de
+            cada uma: o mesmo vão em todas. A leitura que explica o veredito acende o rótulo.
         -->
         <DataTemplate x:Key="LimitMeter">
-            <Grid ToolTip="{Binding Tip}" Background="Transparent" VerticalAlignment="Center">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <TextBlock x:Name="label" Style="{StaticResource StatLabel}" VerticalAlignment="Top" Margin="0,0,12,0">
-                    <Run Text="{Binding Label, Mode=OneWay}" /><Run x:Name="hint" Text="{Binding Hint, Mode=OneWay}" FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" /><Run Text=" " FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="22" />
-                </TextBlock>
-                <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource ReadoutText}" HorizontalAlignment="Right" VerticalAlignment="Top" />
-                <Grid Grid.Row="1" Height="8" Margin="0,8,0,0">
-                    <Grid OpacityMask="{StaticResource SegmentMask}">
-                        <Border Background="{DynamicResource LineStrong}" />
-                        <Border x:Name="fill" Background="{DynamicResource Steel}" RenderTransformOrigin="0,0.5">
-                            <Border.RenderTransform>
-                                <ScaleTransform ScaleX="0" local:Ui.Fill="{Binding Fraction}" />
-                            </Border.RenderTransform>
-                        </Border>
+            <Border x:Name="row" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Background="Transparent" ToolTip="{Binding Tip}">
+                <Grid VerticalAlignment="Center">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="label" Style="{StaticResource StatLabel}" VerticalAlignment="Top" Margin="0,0,12,0">
+                        <Run Text="{Binding Label, Mode=OneWay}" /><Run x:Name="hint" Text="{Binding Hint, Mode=OneWay}" FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" /><Run Text=" " FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="22" />
+                    </TextBlock>
+                    <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource ReadoutText}" HorizontalAlignment="Right" VerticalAlignment="Top" />
+                    <Grid Grid.Row="1" Height="8" Margin="0,8,0,0">
+                        <Grid OpacityMask="{StaticResource SegmentMask}">
+                            <Border Background="{DynamicResource LineStrong}" />
+                            <Border x:Name="fill" Background="{DynamicResource Steel}" RenderTransformOrigin="0,0.5">
+                                <Border.RenderTransform>
+                                    <ScaleTransform ScaleX="0" local:Ui.Fill="{Binding Fraction}" />
+                                </Border.RenderTransform>
+                            </Border>
+                        </Grid>
+                        <Grid Visibility="{Binding HasMark, Converter={StaticResource BoolVis}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="{Binding MarkLeft}" />
+                                <ColumnDefinition Width="2" />
+                                <ColumnDefinition Width="{Binding MarkRight}" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="1" Height="16" Margin="0,-4" Background="{DynamicResource Muted}" SnapsToDevicePixels="True" />
+                        </Grid>
                     </Grid>
-                    <Grid Visibility="{Binding HasMark, Converter={StaticResource BoolVis}}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="{Binding MarkLeft}" />
-                            <ColumnDefinition Width="2" />
-                            <ColumnDefinition Width="{Binding MarkRight}" />
-                        </Grid.ColumnDefinitions>
-                        <Border Grid.Column="1" Height="16" Margin="0,-4" Background="{DynamicResource Muted}" SnapsToDevicePixels="True" />
-                    </Grid>
+                    <TextBlock x:Name="sub" Grid.Row="2" Text="{Binding Sub}" Style="{StaticResource StatSub}" Height="17" Margin="0,6,0,0" TextTrimming="CharacterEllipsis" />
                 </Grid>
-                <TextBlock x:Name="sub" Grid.Row="2" Text="{Binding Sub}" Style="{StaticResource StatSub}" Height="17" Margin="0,6,0,0" />
-            </Grid>
+            </Border>
             <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding First}" Value="True"><Setter TargetName="row" Property="BorderThickness" Value="0" /></DataTrigger>
                 <DataTrigger Binding="{Binding Channel}" Value="Cpu"><Setter TargetName="fill" Property="Background" Value="{DynamicResource Cpu}" /></DataTrigger>
                 <DataTrigger Binding="{Binding Channel}" Value="Gpu"><Setter TargetName="fill" Property="Background" Value="{DynamicResource Gpu}" /></DataTrigger>
                 <DataTrigger Binding="{Binding Channel}" Value="Memory"><Setter TargetName="fill" Property="Background" Value="{DynamicResource Memory}" /></DataTrigger>
@@ -180,24 +184,22 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Margin="0,0,32,0">
                                     <TextBlock Style="{StaticResource StatLabel}" LineHeight="17" LineStackingStrategy="BlockLineHeight">
-                                        <Run Text="Agora" /><InlineUIContainer><Ellipse x:Name="BnLiveDot" Style="{StaticResource StatusLed}" Fill="{DynamicResource Signal}" Width="7" Height="7" Margin="14,0,8,1" Visibility="Collapsed"
-                                                     ToolTip="Medindo o FPS do programa em primeiro plano" /></InlineUIContainer><Run x:Name="BnLiveGame" Foreground="{DynamicResource Fg}" />
+                                        <Run x:Name="BnLiveLabel" Text="Agora" /><InlineUIContainer><Ellipse x:Name="BnLiveDot" Style="{StaticResource StatusLed}" Fill="{DynamicResource Signal}" Width="7" Height="7" Margin="14,0,8,1" Visibility="Collapsed" /></InlineUIContainer><Run x:Name="BnLiveGame" Foreground="{DynamicResource Fg}" /><Run x:Name="BnLiveAgo" Foreground="{DynamicResource Muted}" />
                                     </TextBlock>
                                     <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" Style="{StaticResource PlateName}" Foreground="{DynamicResource Muted}" Margin="0,8,0,0" />
-                                    <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="760" HorizontalAlignment="Left" Margin="0,6,0,0" MinHeight="60"
-                                               Text="Abra um jogo e deixe-o em primeiro plano: aqui aparece, segundo a segundo, qual peça limita o FPS." />
+                                    <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="760" HorizontalAlignment="Left" Margin="0,6,0,0" MinHeight="60" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                                    <StackPanel Style="{StaticResource FpsCell}" ToolTip="Quadros que o jogo entregou no último segundo.">
-                                        <TextBlock Text="FPS agora" Style="{StaticResource StatLabel}" />
+                                    <StackPanel x:Name="BnFpsCell" Style="{StaticResource FpsCell}" ToolTip="Quadros que o jogo entregou no último segundo.">
+                                        <TextBlock x:Name="BnFpsLabel" Text="FPS agora" Style="{StaticResource StatLabel}" />
                                         <TextBlock x:Name="BnFpsNow" Text="—" Style="{StaticResource ReadoutLarge}" Margin="0,4,0,0" />
-                                        <TextBlock Text="quadros por segundo" Style="{StaticResource StatSub}" />
+                                        <TextBlock x:Name="BnFpsSub" Text="quadros por segundo" Style="{StaticResource StatSub}" />
                                     </StackPanel>
                                     <Border BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="24,0,0,0">
                                         <StackPanel Style="{StaticResource FpsCell}" Width="140" ToolTip="O FPS dos quadros mais lentos (o pior 1 % dos últimos 10 s). Mostra as travadas que o FPS médio esconde.">
                                             <TextBlock Text="1% low" Style="{StaticResource StatLabel}" />
                                             <TextBlock x:Name="BnFpsLow" Text="—" Style="{StaticResource ReadoutLarge}" Margin="0,4,0,0" />
-                                            <TextBlock Text="os quadros mais lentos" Style="{StaticResource StatSub}" />
+                                            <TextBlock x:Name="BnLowSub" Text="os quadros mais lentos" Style="{StaticResource StatSub}" />
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
@@ -276,7 +278,7 @@
                             <!-- Esqueleto só no equilíbrio, que espera os nomes da CPU e da placa de vídeo: os dois nomes, a régua, as três marcas e a frase -->
                             <Border x:Name="BnBalanceCard" DockPanel.Dock="Bottom" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="{StaticResource CardPadding}"
                                     Background="{DynamicResource Surface}" CornerRadius="{StaticResource RadiusPanelBottom}" local:Skeleton.Top="34"
-                                    local:Skeleton.Layout="gap 12; row 18: t 45%@0.62, - 10%, t 45%@0.62&gt;; gap 10; row 24: box *^8; gap 4; row 17: c 20%@0.75, - 20%, c 20%@0.8, - 20%, c 20%@0.75&gt;; gap 14; row 20: t *@0.95; row 20: t *@0.55">
+                                    local:Skeleton.Layout="gap 12; row 18: t 45%@0.62, - 10%, t 45%@0.62&gt;; gap 8; row 24: box *^8; gap 4; row 17: c 20%@0.75, - 20%, c 20%@0.8, - 20%, c 20%@0.75&gt;; gap 12; row 20: t *@0.95; row 20: t *@0.55">
                                 <StackPanel>
                                     <Grid Style="{StaticResource CardHeader}">
                                         <TextBlock Text="Equilíbrio estimado" Style="{StaticResource CardTitle}" Background="Transparent"
@@ -294,7 +296,7 @@
                                             </StackPanel>
                                         </Grid>
                                         <!-- Régua logarítmica da razão GPU/CPU: centro = equilibrado -->
-                                        <Grid Height="24" Margin="0,10,0,4">
+                                        <Grid Height="24" Margin="0,8,0,4">
                                             <Border Height="8" Background="{DynamicResource LineStrong}" OpacityMask="{StaticResource SegmentMask}" VerticalAlignment="Center" />
                                             <Border Width="2" Height="16" Background="{DynamicResource Steel}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                             <Canvas x:Name="BnBalanceCanvas" SizeChanged="BnBalanceCanvas_SizeChanged">
@@ -307,14 +309,14 @@
                                             <TextBlock Text="Limita a CPU" Style="{StaticResource Footnote}" HorizontalAlignment="Right" />
                                         </Grid>
                                     </StackPanel>
-                                    <TextBlock x:Name="BnBalanceText" Style="{StaticResource Body}" Margin="0,14,0,0" />
+                                    <TextBlock x:Name="BnBalanceText" Style="{StaticResource Body}" Margin="0,12,0,0" />
                                 </StackPanel>
                             </Border>
                             <!-- Leituras: o título e a legenda da marca em cima; os seis medidores dividem a altura até o equilíbrio -->
-                            <DockPanel Margin="24,16,24,12">
+                            <DockPanel Margin="24,16,24,8">
                                 <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
-                                    <TextBlock Text="Leituras" Style="{StaticResource CardTitle}" Background="Transparent"
-                                               ToolTip="Lidas uma vez por segundo enquanto a página está à vista ou uma análise roda." />
+                                    <TextBlock x:Name="BnReadingsTitle" Text="Leituras" Style="{StaticResource CardTitle}" Background="Transparent"
+                                               ToolTip="Lidas uma vez por segundo enquanto a página está à vista ou uma análise roda. Fora do jogo, mostram as médias e as máximas dos últimos segundos dele." />
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Background="Transparent"
                                                 ToolTip="A marca em cada medidor é o ponto a partir do qual a peça passa a segurar o FPS.">
                                         <Border Width="2" Height="12" Background="{DynamicResource Muted}" VerticalAlignment="Center" SnapsToDevicePixels="True" />
@@ -323,7 +325,7 @@
                                 </Grid>
                                 <ItemsControl x:Name="BnMeters" ItemTemplate="{StaticResource LimitMeter}" Focusable="False" Margin="0,4,0,0">
                                     <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate><local:SpreadPanel /></ItemsPanelTemplate>
+                                        <ItemsPanelTemplate><UniformGrid Columns="1" /></ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                 </ItemsControl>
                             </DockPanel>

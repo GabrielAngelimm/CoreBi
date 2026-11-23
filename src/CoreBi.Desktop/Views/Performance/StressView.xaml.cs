@@ -5,6 +5,7 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Monitoring.Memory;
 using CoreBi.Engine.Monitoring.Sensors;
 using CoreBi.Engine.Performance;
 using CoreBi.Engine.Performance.Stress;
@@ -96,25 +97,35 @@ public partial class StressView : UserControl, IDisposable
         // O corte de temperatura do processador vale também para o teste só de RAM, que esquenta o processador.
         bool cpuSide = cpu || ram || !gpu;
         static Visibility Show(bool on) => on ? Visibility.Visible : Visibility.Collapsed;
-        CpuColumn.Visibility = Show(cpuSide);
-        RamColumn.Visibility = Show(ram);
-        GpuColumn.Visibility = Show(gpu);
-
-        bool first = true;
-        int columns = 0;
-        foreach (var col in new[] { CpuColumn, RamColumn, GpuColumn })
-        {
-            if (col.Visibility != Visibility.Visible) continue;
-            col.BorderThickness = first ? new Thickness(0) : new Thickness(1, 0, 0, 0);
-            first = false;
-            columns++;
-        }
-        CpuHead.Visibility = RamHead.Visibility = GpuHead.Visibility = Show(columns > 1);
         CpuLimitRow.Visibility = Show(cpuSide);
         GpuLimitRow.Visibility = Show(gpu);
-        GpuLimitRow.Margin = new Thickness(0, cpuSide ? 8 : 0, 0, 0);
         RamSection.Visibility = Show(ram);
         GpuOptions.Visibility = Show(gpu);
+        UpdateColumnStates();
+    }
+
+    /// <summary>
+    /// As três colunas ficam sempre na tela, do mesmo tamanho; muda só o estado: no teste (LED aceso), escolhida (anel) ou
+    /// fora do teste (a coluna um tom abaixo, com as leituras do sensor ainda ao vivo).
+    /// </summary>
+    private void UpdateColumnStates()
+    {
+        bool running = IsRunning || _demo;
+        bool cpu = running ? _runCpu : ChkCpu.IsChecked == true;
+        bool ram = running ? _runRam : ChkRam.IsChecked == true;
+        bool gpu = running ? _runGpu : ChkGpu.IsChecked == true;
+        SetColumn(CpuColumn, CpuLed, CpuState, cpu, running);
+        SetColumn(RamColumn, RamLed, RamState, ram, running);
+        SetColumn(GpuColumn, GpuLed, GpuState, gpu, running);
+    }
+
+    private static void SetColumn(Border column, Ellipse led, TextBlock state, bool on, bool running)
+    {
+        column.Opacity = on ? 1 : 0.5;
+        state.Text = !on ? "Fora do teste" : running ? "No teste" : "Escolhido";
+        if (on && running) led.SetResourceReference(Shape.FillProperty, "Signal");
+        else led.Fill = Brushes.Transparent;
+        led.SetResourceReference(Shape.StrokeProperty, on && running ? "Signal" : on ? "Muted" : "Faint");
     }
 
     internal void StartStress()
@@ -180,19 +191,17 @@ public partial class StressView : UserControl, IDisposable
 
             if (gpu)
             {
-                string res = Ui.CheckedTag(GpuResPanel) ?? "1920x1080";
-                int msaa = int.Parse(Ui.CheckedTag(GpuMsaaPanel) ?? "4", CultureInfo.InvariantCulture);
-                var intensity = (Ui.CheckedTag(GpuIntensityPanel) ?? "128,48").Split(',').Select(s => int.Parse(s, CultureInfo.InvariantCulture)).ToArray();
-                bool full = res == "full";
-                var size = full ? new[] { 0, 0 } : res.Split('x').Select(s => int.Parse(s, CultureInfo.InvariantCulture)).ToArray();
+                // Carga: largura, altura, anti-aliasing, camadas e iterações do shader, num ajuste só (sempre em janela, para a
+                // temperatura continuar à vista no CoreBi)
+                var load = (Ui.CheckedTag(GpuLoadPanel) ?? "1920,1080,4,128,48").Split(',').Select(s => int.Parse(s, CultureInfo.InvariantCulture)).ToArray();
                 _burn.Start(new GpuBurnSettings
                 {
-                    Fullscreen = full,
-                    Width = size[0],
-                    Height = size[1],
-                    Msaa = msaa,
-                    Shells = intensity[0],
-                    Iterations = intensity[1],
+                    Fullscreen = false,
+                    Width = load[0],
+                    Height = load[1],
+                    Msaa = load[2],
+                    Shells = load[3],
+                    Iterations = load[4],
                     AdapterName = _context.PrimaryGpu?.Name ?? "",
                 });
                 _gpuBurnOn = true;
@@ -200,6 +209,7 @@ public partial class StressView : UserControl, IDisposable
 
             ResetStressReadings();
             SetStressControls(running: true);
+            UpdateColumnStates();
             SetStatus("Rodando", aborted: false);
             StDetail.Text = minutes > 0 ? $"Termina às {_stressStart + _stressDuration:HH:mm}" : "Roda até você parar";
         }
@@ -230,7 +240,7 @@ public partial class StressView : UserControl, IDisposable
     {
         ShowStressTime(TimeSpan.Zero, _stressDuration);
         StProgress.ScaleX = 0;
-        StTempMax.Text = StGpuTempMax.Text = StFps.Text = StFpsAvg.Text = StRam.Text = StRamSize.Text = "";
+        StTempMax.Text = StGpuTempMax.Text = StFps.Text = StRam.Text = StRamSize.Text = "—";
         StRamErrors.Text = "—";
         StRamErrors.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
     }
@@ -258,6 +268,7 @@ public partial class StressView : UserControl, IDisposable
         var elapsed = DateTime.Now - _stressStart;
         _context?.RecordEvent("", "Teste de carga", aborted ? "Interrompido. " + reason : reason, elapsed.ToString(@"hh\:mm\:ss"), "");
         SetStressControls(running: false);
+        UpdateColumnStates();
 
         if (aborted) status = "Interrompido";
         SetStatus(status, aborted);
@@ -355,21 +366,25 @@ public partial class StressView : UserControl, IDisposable
             if (_gpuBurnOn && gt > _gpuMaxTemp) _gpuMaxTemp = gt;
         }
 
+        // Toda linha sempre com valor ou travessão: as colunas não mudam de tamanho nem de lugar.
         StTemp.Text = temp == null ? "—" : $"{temp:0.#}";
         // A leitura principal fica âmbar a 5 °C do corte.
-        StTemp.SetResourceReference(TextBlock.ForegroundProperty, _stress.Running && temp >= _tempLimit - 5 ? "Warn" : "Fg");
-        StTempMax.Text = _stressMaxTemp > 0 ? $"{_stressMaxTemp:0.#} °C" : "";
-        StClock.Text = _context.ReadCpuLive().AvgClockMHz is float clock ? $"{clock:0} MHz" : "";
-        StPower.Text = power == null ? "" : $"{power:0.#} W";
-        StLoad.Text = load == null ? "" : $"{load:0} %";
+        StTemp.SetResourceReference(TextBlock.ForegroundProperty, temp == null ? "Faint" : _stress.Running && temp >= _tempLimit - 5 ? "Warn" : "Fg");
+        StTempMax.Text = _stressMaxTemp > 0 ? $"{_stressMaxTemp:0.#} °C" : "—";
+        StClock.Text = _context.ReadCpuLive().AvgClockMHz is float clock ? $"{clock:0} MHz" : "—";
+        StPower.Text = power == null ? "—" : $"{power:0.#} W";
+        StLoad.Text = load == null ? "—" : $"{load:0} %";
 
         StGpuTemp.Text = gTemp == null ? "—" : $"{gTemp:0.#}";
-        StGpuTemp.SetResourceReference(TextBlock.ForegroundProperty, _gpuBurnOn && gTemp >= _gpuTempLimit - 5 ? "Warn" : "Fg");
-        StGpuTempMax.Text = _gpuMaxTemp > 0 ? $"{_gpuMaxTemp:0.#} °C" : "";
-        StGpuPower.Text = gPower == null ? "" : $"{gPower:0.#} W";
-        StGpuCap.Text = _context.PrimaryGpuPerfCap();
-        StFps.Text = _gpuBurnOn && _burn.Fps > 0 ? $"{_burn.Fps:0}" : "";
-        StFpsAvg.Text = _gpuBurnOn && _burn.AverageFps > 0 ? $"{_burn.AverageFps:0}" : "";
+        StGpuTemp.SetResourceReference(TextBlock.ForegroundProperty, gTemp == null ? "Faint" : _gpuBurnOn && gTemp >= _gpuTempLimit - 5 ? "Warn" : "Fg");
+        StGpuTempMax.Text = _gpuMaxTemp > 0 ? $"{_gpuMaxTemp:0.#} °C" : "—";
+        StGpuPower.Text = gPower == null ? "—" : $"{gPower:0.#} W";
+        StGpuCap.Text = _context.PrimaryGpuPerfCap() is { Length: > 0 } cap ? cap : "—";
+        StFps.Text = _gpuBurnOn && _burn.Fps > 0 ? $"{_burn.Fps:0} · {_burn.AverageFps:0}" : "—";
+
+        var memory = MemoryInfo.ReadPhysicalUsage();
+        StRamUse.Text = memory is { } m ? $"{m.UsedPercent:0} %" : "—";
+        StRamFree.Text = memory is { } f ? $"{f.Available / 1e9:0.0} GB" : "—";
 
         if (IsRunning)
         {
@@ -413,9 +428,13 @@ public partial class StressView : UserControl, IDisposable
     {
         _demo = on;
         _tempHistory.Clear();
+        _gpuTempHistory.Clear();
         Ui.SetRunning(BtnStress, on, "Iniciar teste");
         if (!on)
         {
+            ChkRam.IsChecked = ChkGpu.IsChecked = false;
+            ChkCpu.IsChecked = true;
+            UpdateColumnStates();
             ResetStressReadings();
             StressDurationChanged();
             SetStatus("Pronto", false);
@@ -445,6 +464,26 @@ public partial class StressView : UserControl, IDisposable
         StClock.Text = "4.410 MHz";
         StPower.Text = "118 W";
         StLoad.Text = "100 %";
+        // As três peças no teste, o caso mais cheio: placa de vídeo e memória também
+        (_runCpu, _runRam, _runGpu) = (true, true, true);
+        ChkRam.IsChecked = ChkGpu.IsChecked = true;
+        _gpuTempHistory.Clear();
+        for (int i = 0; i < HistoryLength; i++)
+        {
+            double g = i < 120 ? 39 + rng.NextDouble() * 1.5 : 74 - 33 * Math.Exp(-(i - 120) / 30.0) + rng.NextDouble() * 1.2;
+            _gpuTempHistory.Add(Math.Round(g, 1));
+        }
+        StGpuTemp.Text = $"{_gpuTempHistory[^1]:0.#}";
+        StGpuTempMax.Text = $"{_gpuTempHistory.Max():0.#} °C";
+        StGpuPower.Text = "182 W";
+        StFps.Text = "141 · 138";
+        StGpuCap.Text = "Energia";
+        StRamErrors.Text = "0";
+        StRam.Text = "37";
+        StRamSize.Text = "9,6 GB";
+        StRamUse.Text = "78 %";
+        StRamFree.Text = "6,8 GB";
+        UpdateColumnStates();
         var now = DateTime.Now;
         ShowHistory(new[]
         {
@@ -462,11 +501,12 @@ public partial class StressView : UserControl, IDisposable
     private void DrawChart()
     {
         TempChart.Children.Clear();
+        bool showGpu = ChkGpu.IsChecked == true;
+        bool showCpu = ChkCpu.IsChecked == true || ChkRam.IsChecked == true || !showGpu;
+        DrawLegend(showCpu, showGpu);
         double w = TempChart.ActualWidth, h = TempChart.ActualHeight;
         if (w < 160 || h < 60) return;
 
-        bool showGpu = ChkGpu.IsChecked == true;
-        bool showCpu = ChkCpu.IsChecked == true || ChkRam.IsChecked == true || !showGpu;
         var ui = (FontFamily)FindResource("UiFont");
         var readout = (FontFamily)FindResource("Readout");
         var faint = ThemeManager.Brush("Faint");
@@ -493,18 +533,17 @@ public partial class StressView : UserControl, IDisposable
             return ft.Baseline - tb.FontSize * 0.7 / 2;
         }
 
-        var series = new List<(List<double> Data, string Channel, byte Alpha, TextBlock Label)>();
-        if (showGpu && _gpuTempHistory.Count >= 2)
-            series.Add((_gpuTempHistory, "Gpu", 0x1C, Text($"Placa de vídeo {_gpuTempHistory[^1]:0} °C", ThemeManager.Brush("Gpu"), 12, ui)));
-        if (showCpu && _tempHistory.Count >= 2)
-            series.Add((_tempHistory, "Cpu", 0x22, Text($"Processador {_tempHistory[^1]:0} °C", ThemeManager.Brush("Cpu"), 12, ui)));
-        double right = series.Count == 0 ? 0 : series.Max(x => Width(x.Label)) + 10;
+        // Só as linhas, os pontos de agora e os cortes tracejados na cor de cada peça: os nomes, as leituras e os valores dos
+        // cortes ficam na legenda, em cima, então o gráfico não ganha rótulos sobrepostos com as três peças no teste.
+        var series = new List<(List<double> Data, string Channel, byte Alpha)>();
+        if (showGpu && _gpuTempHistory.Count >= 2) series.Add((_gpuTempHistory, "Gpu", 0x1C));
+        if (showCpu && _tempHistory.Count >= 2) series.Add((_tempHistory, "Cpu", 0x22));
 
         double yMin = 20, yMax = Math.Max(110, Math.Max(_tempLimit, showGpu ? _gpuTempLimit : 0) + 10);
         var ticks = new List<(double Value, TextBlock Label)>();
         for (double v = yMin; v <= yMax; v += 20) ticks.Add((v, Text($"{v:0} °C", faint)));
         double left = ticks.Max(t => Width(t.Label)) + 8;
-        const double top = 8, bottom = 22;
+        const double top = 8, bottom = 22, right = 8;
         double plotW = w - left - right, plotH = h - top - bottom;
         if (plotW < 40) return;
         double Y(double v) => top + plotH * (1 - (Math.Clamp(v, yMin, yMax) - yMin) / (yMax - yMin));
@@ -522,13 +561,7 @@ public partial class StressView : UserControl, IDisposable
         var now = Text("agora", faint, font: ui);
         Place(now, left + plotW - Width(now), axisY);
 
-        var warn = ThemeManager.Brush("Warn");
-        var surface = ThemeManager.Brush("Surface");
-        var limits = new List<(double Value, string Label)>();
-        if (showCpu) limits.Add((_tempLimit, showGpu ? $"limite do processador {_tempLimit:0} °C" : $"limite {_tempLimit:0} °C"));
-        if (showGpu) limits.Add((_gpuTempLimit, showCpu ? $"limite da placa de vídeo {_gpuTempLimit:0} °C" : $"limite {_gpuTempLimit:0} °C"));
-        double? lastLabelY = null;
-        foreach (var (value, label) in limits.OrderByDescending(l => l.Value))
+        foreach (var (value, channel) in Limits(showCpu, showGpu))
         {
             TempChart.Children.Add(new Line
             {
@@ -536,17 +569,11 @@ public partial class StressView : UserControl, IDisposable
                 X2 = left + plotW,
                 Y1 = Y(value),
                 Y2 = Y(value),
-                Stroke = warn,
-                StrokeThickness = 1,
+                Stroke = ThemeManager.Brush(channel),
+                StrokeThickness = 1.2,
                 StrokeDashArray = new DoubleCollection { 4, 3 },
+                Opacity = 0.9,
             });
-            double ly = Y(value) - 16;
-            if (lastLabelY is double prev && ly < prev + 15) ly = Y(value) + 3;
-            var tb = Text(label, warn, font: ui);
-            tb.Background = surface;
-            tb.Padding = new Thickness(0, 0, 6, 0);
-            Place(tb, left + 6, ly);
-            lastLabelY = ly;
         }
 
         if (series.Count == 0)
@@ -555,7 +582,7 @@ public partial class StressView : UserControl, IDisposable
             empty.TextAlignment = TextAlignment.Center;
             empty.TextWrapping = TextWrapping.Wrap;
             empty.MaxWidth = Math.Min(520, plotW - 40);
-            empty.Background = surface; // a frase não cruza a linha de grade que passa no meio
+            empty.Background = ThemeManager.Brush("Surface"); // a frase não cruza a linha de grade que passa no meio
             empty.Padding = new Thickness(12, 4, 12, 4);
             empty.Measure(new Size(empty.MaxWidth, double.PositiveInfinity));
             Place(empty, left + (plotW - empty.DesiredSize.Width) / 2, top + (plotH - empty.DesiredSize.Height) / 2);
@@ -563,8 +590,7 @@ public partial class StressView : UserControl, IDisposable
         }
 
         double step = plotW / (HistoryLength - 1);
-        var ends = new List<(double Y, TextBlock Label)>();
-        foreach (var (data, channel, areaAlpha, endLabel) in series)
+        foreach (var (data, channel, areaAlpha) in series)
         {
             var stroke = ThemeManager.Brush(channel);
             int offset = HistoryLength - data.Count;
@@ -578,21 +604,44 @@ public partial class StressView : UserControl, IDisposable
             TempChart.Children.Add(area);
             TempChart.Children.Add(line);
             var end = line.Points[^1];
-            var dot = new Ellipse { Width = 6, Height = 6, Fill = stroke };
-            Place(dot, end.X - 3, end.Y - 3);
-            ends.Add((end.Y, endLabel));
+            var dot = new Ellipse { Width = 7, Height = 7, Fill = stroke, Stroke = ThemeManager.Brush("Surface"), StrokeThickness = 1.5 };
+            Place(dot, end.X - 3.5, end.Y - 3.5);
         }
+    }
 
-        const double labelH = 15;
-        var placed = ends.OrderBy(e => e.Y).Select(e => (Y: e.Y - CapMiddle(e.Label), e.Label)).ToList();
-        if (placed.Count == 2 && placed[1].Y - placed[0].Y < labelH)
+    private IEnumerable<(double Value, string Channel)> Limits(bool cpu, bool gpu)
+    {
+        if (cpu) yield return (_tempLimit, "Cpu");
+        if (gpu) yield return (_gpuTempLimit, "Gpu");
+    }
+
+    /// <summary>
+    /// Legenda do gráfico, à direita do título: por peça, o traço na cor dela com o nome e a temperatura de agora, e o tracejado
+    /// com o corte. Com as duas peças, uma depois da outra, separadas por um vão.
+    /// </summary>
+    private void DrawLegend(bool cpu, bool gpu)
+    {
+        TempLegend.Children.Clear();
+        var ui = (FontFamily)FindResource("UiFont");
+        var readout = (FontFamily)FindResource("Readout");
+        void Item(string channel, string name, List<double> data, double limit, bool first)
         {
-            double center = (placed[0].Y + placed[1].Y) / 2;
-            placed[0] = (center - labelH / 2 - 1, placed[0].Label);
-            placed[1] = (center + labelH / 2 + 1, placed[1].Label);
+            var color = ThemeManager.Brush(channel);
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(first ? 0 : 28, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            row.Children.Add(new Line { X1 = 0, X2 = 14, Y1 = 0, Y2 = 0, Stroke = color, StrokeThickness = 2, VerticalAlignment = VerticalAlignment.Center });
+            var label = new TextBlock { FontFamily = ui, FontSize = 12, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            label.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
+            label.Inlines.Add(new Run(name + " "));
+            label.Inlines.Add(new Run(data.Count > 0 ? $"{data[^1]:0} °C" : "—") { FontFamily = readout, FontSize = 13 });
+            row.Children.Add(label);
+            row.Children.Add(new Line { X1 = 0, X2 = 14, Y1 = 0, Y2 = 0, Stroke = color, StrokeThickness = 1.2, StrokeDashArray = new DoubleCollection { 3, 2 }, Margin = new Thickness(16, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
+            var cut = new TextBlock { Text = $"corte {limit:0} °C", FontFamily = ui, FontSize = 12, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            cut.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+            row.Children.Add(cut);
+            TempLegend.Children.Add(row);
         }
-        foreach (var (y, label) in placed)
-            Place(label, left + plotW + 10, Math.Clamp(y, 0, h - labelH));
+        if (cpu) Item("Cpu", "Processador", _tempHistory, _tempLimit, true);
+        if (gpu) Item("Gpu", "Placa de vídeo", _gpuTempHistory, _gpuTempLimit, !cpu);
     }
 
     /// <summary>Por que o gráfico está vazio, em palavras simples: ainda lendo ou o sensor que falta e como resolver.</summary>

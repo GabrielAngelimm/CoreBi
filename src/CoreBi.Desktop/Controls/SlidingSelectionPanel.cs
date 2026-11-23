@@ -35,6 +35,14 @@ public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
     private static readonly DependencyProperty SpotOpacityProperty = DependencyProperty.Register(
         "SpotOpacity", typeof(double), typeof(SlidingSelectionPanel), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
 
+    public static readonly DependencyProperty UniformProperty = DependencyProperty.Register(
+        nameof(Uniform), typeof(bool), typeof(SlidingSelectionPanel), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsMeasure));
+    /// <summary>
+    /// Opções em colunas iguais que dividem a largura toda (os controles da configuração dos testes): o texto fica no meio de
+    /// cada tecla e nenhuma fica mais estreita que a maior.
+    /// </summary>
+    public bool Uniform { get => (bool)GetValue(UniformProperty); set => SetValue(UniformProperty, value); }
+
     private Rect _target = Rect.Empty;
     private bool _shown;
 
@@ -46,9 +54,31 @@ public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
         IsEnabledChanged += (_, _) => InvalidateVisual(); // desligado, o destaque esmaece junto com as opções
     }
 
+    protected override Size MeasureOverride(Size constraint)
+    {
+        if (!Uniform || Orientation != System.Windows.Controls.Orientation.Horizontal) return base.MeasureOverride(constraint);
+        var items = Children.OfType<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
+        double widest = 0, tallest = 0;
+        foreach (var c in items)
+        {
+            c.Measure(new Size(double.PositiveInfinity, constraint.Height));
+            widest = Math.Max(widest, c.DesiredSize.Width);
+            tallest = Math.Max(tallest, c.DesiredSize.Height);
+        }
+        return new Size(widest * items.Count, tallest);
+    }
+
     protected override Size ArrangeOverride(Size arrangeSize)
     {
-        var size = base.ArrangeOverride(arrangeSize);
+        Size size;
+        if (Uniform && Orientation == System.Windows.Controls.Orientation.Horizontal)
+        {
+            var items = Children.OfType<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
+            double each = items.Count > 0 ? arrangeSize.Width / items.Count : 0;
+            for (int i = 0; i < items.Count; i++) items[i].Arrange(new Rect(i * each, 0, each, arrangeSize.Height));
+            size = arrangeSize;
+        }
+        else size = base.ArrangeOverride(arrangeSize);
         Follow(animate: false);
         return size;
     }

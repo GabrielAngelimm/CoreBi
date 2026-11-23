@@ -43,7 +43,7 @@ public partial class BenchmarksView
         _benchCts = cts;
         var ct = cts.Token;
         Ui.SetRunning(BtnBench, true, "Iniciar teste", "Cancelar");
-        BenchOptions.IsEnabled = BenchTestPanel.IsEnabled = false;
+        BenchOptions.IsEnabled = BenchDurationSection.IsEnabled = BenchTestPanel.IsEnabled = false;
         BenchHint.Text = "";
         BenchIdle.Visibility = BenchPreview.Visibility = Visibility.Collapsed;
         BenchMt.Text = BenchSt.Text = BenchRatio.Text = "—";
@@ -78,7 +78,7 @@ public partial class BenchmarksView
             UpdateCpuView();
             _benchCts = null;
             Ui.SetRunning(BtnBench, false, "Iniciar teste", "Cancelar");
-            BenchOptions.IsEnabled = BenchTestPanel.IsEnabled = true;
+            BenchOptions.IsEnabled = BenchDurationSection.IsEnabled = BenchTestPanel.IsEnabled = true;
             BenchBuckets.Children.Clear();
             BenchElapsed.Text = "";
         }

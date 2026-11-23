@@ -123,14 +123,29 @@ public sealed class BottleneckSession
     private readonly List<(LoadSample Sample, Limiter Limiter)> _samples = new();
     private readonly Dictionary<string, int> _processes = new(StringComparer.OrdinalIgnoreCase);
     private readonly Stopwatch _clock = Stopwatch.StartNew();
+    private TimeSpan? _lastGame;
     public TimeSpan Duration { get; init; }
     public int Count => _samples.Count;
-    public bool Done => _clock.Elapsed >= Duration;
-    public TimeSpan Elapsed => _clock.Elapsed;
 
-    public void Add(LoadSample s)
+    /// <summary>
+    /// Tempo com um jogo em primeiro plano. A análise só anda enquanto o jogo entrega quadros: com o CoreBi ou outra janela na
+    /// frente (Alt+Tab, menu do Windows) o relógio para, e a duração escolhida é toda de jogo.
+    /// </summary>
+    public TimeSpan Measured { get; private set; }
+    public bool Done => Measured >= Duration;
+
+    public void Add(LoadSample s) => Add(s, _clock.Elapsed);
+
+    internal void Add(LoadSample s, TimeSpan now)
     {
-        if (s.Fps is not > 0) return;
+        if (s.Fps is not > 0)
+        {
+            _lastGame = null;
+            return;
+        }
+        // Entre duas leituras com jogo; um vão maior que 2 s (tique atrasado, jogo voltando) conta só 1 s
+        if (_lastGame is TimeSpan last) Measured += now - last <= TimeSpan.FromSeconds(2) ? now - last : TimeSpan.FromSeconds(1);
+        _lastGame = now;
         var limiter = s.Classify();
         if (limiter == Limiter.Unknown) return;
         _samples.Add((s, limiter));
@@ -148,7 +163,7 @@ public sealed class BottleneckSession
         {
             Date = date,
             Process = Process ?? "",
-            Seconds = Math.Round(Duration.TotalSeconds),
+            Seconds = Math.Round(Measured.TotalSeconds),
             Samples = Count,
             Main = Main ?? Limiter.Unknown,
             Shares = Distribution().Select(d => new BottleneckShare(d.Limiter, Math.Round(d.Pct, 1))).ToList(),
