@@ -556,9 +556,9 @@ public partial class DriverBackupDialog : UserControl
             if (!done)
             {
                 Strip.SetCurrent(upTo);
-                Lead.Text = "Devolvendo nvhdci.inf ao Windows…";
+                Progress(upTo, total, "driver de som da NVIDIA");
             }
-            else RestoreDone(new DriverRestoreResult(total, _installed, _current, new[] { "rtkvhd64.inf (código 2)" }, true, false), "");
+            else RestoreDone(new DriverRestoreResult(total, _installed, _current, new[] { "driver de som da Realtek (rtkvhd64.inf, código 2)" }, true, false), "");
         }
         else if (!done)
         {
