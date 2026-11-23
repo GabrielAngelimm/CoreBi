@@ -89,8 +89,18 @@ internal static partial class Program
             Console.WriteLine($"Processador parado na Visão geral: {idleCpuMsPerSecond:0} ms por segundo");
             Console.WriteLine($"Leitura dos sensores (Poll, fora da janela): média {refresh.Average():0.0} ms, máx. {refresh.Max():0.0} ms");
             Console.WriteLine($"Maior intervalo entre quadros em 4 s parado (tique de 1 s): {tickGap:0} ms");
-            results.Add(new { kind = "tick", buildMs, shownMs, loadMs, refreshAvg = refresh.Average(), refreshMax = refresh.Max(), idleMaxFrameGapMs = tickGap, idleCpuMsPerSecond,
-                hardware = parts.Select(p => new { p.Name, Type = p.Type.ToString(), p.Ms }) });
+            results.Add(new
+            {
+                kind = "tick",
+                buildMs,
+                shownMs,
+                loadMs,
+                refreshAvg = refresh.Average(),
+                refreshMax = refresh.Max(),
+                idleMaxFrameGapMs = tickGap,
+                idleCpuMsPerSecond,
+                hardware = parts.Select(p => new { p.Name, Type = p.Type.ToString(), p.Ms })
+            });
 
             var navs = window.NavPanel.Children.OfType<RadioButton>().ToList();
             Console.WriteLine();
