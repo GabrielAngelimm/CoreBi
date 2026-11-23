@@ -23,8 +23,7 @@ public partial class OverlayView : UserControl
     /// </summary>
     private static readonly double PreviewFactor = 984.0 / Math.Max(1280, SystemParameters.PrimaryScreenWidth) * 1.4;
 
-    /// <summary>A prévia desliza de um canto a outro e muda de tamanho nesse tempo, com a mesma curva dos números da Rede.</summary>
-    private static readonly Duration GlideTime = TimeSpan.FromMilliseconds(420);
+    /// <summary>A prévia cresce até o tamanho escolhido com a mesma curva dos números da Rede.</summary>
     private static readonly IEasingFunction Glide = new QuinticEase { EasingMode = EasingMode.EaseOut };
 
     private static readonly (string Group, string Icon, string ResourceKey, string Full)[] Groups =
@@ -74,8 +73,6 @@ public partial class OverlayView : UserControl
     public OverlayView()
     {
         InitializeComponent();
-        // O "fantasma" dos cantos livres: a própria prévia, ao vivo, pintada translúcida no canto sob o mouse (CornerZone)
-        Resources["OvGhost"] = new VisualBrush(OvPreview) { Stretch = Stretch.Fill };
         // Primeira carga: a prévia espera o nome do hardware e a primeira leitura dos sensores; a página entra inteira em esqueleto
         Skeleton.SetActive(OvPositionCard, true);
     }
@@ -313,36 +310,25 @@ public partial class OverlayView : UserControl
         OvMonitorBox.MinHeight = wide ? 300 : 440;
     }
 
-    /// <summary>Os cantos livres desenham o contorno no tamanho exato da prévia: é ali que o overlay vai ficar.</summary>
-    private void OvPreviewHost_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        foreach (var rb in OvCornerPanel.Children.OfType<RadioButton>())
-        {
-            rb.MinWidth = e.NewSize.Width;
-            rb.MinHeight = e.NewSize.Height;
-        }
-    }
+    /// <summary>Tamanho do tracejado de um canto livre (CornerZone): a prévia passa por ele antes de crescer.</summary>
+    private static readonly Size ZoneSize = new(184, 104);
+    private static readonly TimeSpan MoveTime = TimeSpan.FromMilliseconds(320), GrowTime = TimeSpan.FromMilliseconds(300);
+    private static readonly IEasingFunction Travel = new CubicEase { EasingMode = EasingMode.EaseInOut };
+    private double _scale = 1;
 
     internal void LayoutPreview(string corner, double scale)
     {
-        bool glide = _corner != null && _corner != corner && Animate && OvPreviewHost.IsVisible;
-        // Onde a prévia está agora (no meio de outro deslize, inclusive), antes de trocar de canto
-        Point from = glide ? OvPreviewHost.TranslatePoint(new Point(), OvScreen) : default;
-        OvPreviewShift.BeginAnimation(TranslateTransform.XProperty, null);
-        OvPreviewShift.BeginAnimation(TranslateTransform.YProperty, null);
+        bool moving = _corner != null && _corner != corner;
+        bool resizing = _corner != null && Math.Abs(_scale - scale) > 0.001;
+        bool animate = (moving || resizing) && Animate && OvPreviewHost.IsVisible;
+        // Onde a caixa está agora, como se vê (no meio de outro movimento, inclusive), antes de trocar canto e tamanho
+        Rect from = animate ? VisibleRect() : Rect.Empty;
+        StopMotion();
 
         OvPreviewHost.HorizontalAlignment = corner.EndsWith('R') ? HorizontalAlignment.Right : HorizontalAlignment.Left;
         OvPreviewHost.VerticalAlignment = corner.StartsWith('B') ? VerticalAlignment.Bottom : VerticalAlignment.Top;
-        double target = PreviewFactor * scale;
-        if (Animate && OvPreviewHost.IsVisible && Math.Abs(OvPreviewScale.ScaleX - target) > 0.001)
-        {
-            // Tamanho: a caixa cresce ou encolhe presa ao seu canto, no mesmo tempo do deslize
-            var grow = new DoubleAnimation(OvPreviewScale.ScaleX, target, GlideTime) { EasingFunction = Glide, FillBehavior = FillBehavior.Stop };
-            OvPreviewScale.ScaleX = OvPreviewScale.ScaleY = target;
-            OvPreviewScale.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
-            OvPreviewScale.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
-        }
-        else OvPreviewScale.ScaleX = OvPreviewScale.ScaleY = target;
+        _scale = scale;
+        FitScale();
         OvCornerName.Text = corner switch
         {
             "TR" => "Superior direito",
@@ -350,15 +336,91 @@ public partial class OverlayView : UserControl
             "BR" => "Inferior direito",
             _ => "Superior esquerdo",
         };
-        if (glide)
-        {
-            // Deslize: a caixa já está no canto novo; o deslocamento parte de onde ela estava e volta a zero
-            OvScreen.UpdateLayout();
-            Point to = OvPreviewHost.TranslatePoint(new Point(), OvScreen);
-            OvPreviewShift.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(from.X - to.X, 0, GlideTime) { EasingFunction = Glide, FillBehavior = FillBehavior.Stop });
-            OvPreviewShift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(from.Y - to.Y, 0, GlideTime) { EasingFunction = Glide, FillBehavior = FillBehavior.Stop });
-        }
         _corner = corner;
+        OvScreen.UpdateLayout();
+        HideCoveredZones();
+        if (!animate) return;
+
+        // A caixa já está no lugar e no tamanho finais; a transformação a leva de onde estava até lá. Ao trocar de canto, ela
+        // vai encolhida ao tamanho do tracejado até ele e então cresce até o tamanho escolhido, presa ao canto; ao trocar só o
+        // tamanho, cresce ou encolhe direto, presa ao canto.
+        Rect to = new(OvPreviewHost.TranslatePoint(new Point(), OvScreen), OvPreviewHost.RenderSize);
+        if (to.Width <= 0 || to.Height <= 0) return;
+        bool right = corner.EndsWith('R'), bottom = corner.StartsWith('B');
+        OvPreviewHost.RenderTransformOrigin = new Point(right ? 1 : 0, bottom ? 1 : 0);
+        Point Anchor(Rect r) => new(right ? r.Right : r.Left, bottom ? r.Bottom : r.Top);
+        double startZoom = from.Width / to.Width;
+        Vector startShift = Anchor(from) - Anchor(to);
+        if (moving)
+        {
+            double zoneZoom = Math.Min(1, Math.Min(ZoneSize.Width / to.Width, ZoneSize.Height / to.Height));
+            Animate2(OvPreviewZoom, ScaleTransform.ScaleXProperty, startZoom, zoneZoom, 1);
+            Animate2(OvPreviewZoom, ScaleTransform.ScaleYProperty, startZoom, zoneZoom, 1);
+            Animate2(OvPreviewShift, TranslateTransform.XProperty, startShift.X, 0, 0);
+            Animate2(OvPreviewShift, TranslateTransform.YProperty, startShift.Y, 0, 0);
+        }
+        else
+        {
+            var grow = new DoubleAnimation(startZoom, 1, GrowTime) { EasingFunction = Glide, FillBehavior = FillBehavior.Stop };
+            OvPreviewZoom.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+            OvPreviewZoom.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
+        }
+    }
+
+    /// <summary>Duas etapas: vai de <paramref name="start"/> a <paramref name="mid"/> no deslize e daí a <paramref name="end"/> no crescimento.</summary>
+    private static void Animate2(Animatable target, DependencyProperty property, double start, double mid, double end)
+    {
+        var a = new DoubleAnimationUsingKeyFrames { FillBehavior = FillBehavior.Stop };
+        a.KeyFrames.Add(new DiscreteDoubleKeyFrame(start, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        a.KeyFrames.Add(new EasingDoubleKeyFrame(mid, KeyTime.FromTimeSpan(MoveTime), Travel));
+        a.KeyFrames.Add(new EasingDoubleKeyFrame(end, KeyTime.FromTimeSpan(MoveTime + GrowTime), Glide));
+        target.BeginAnimation(property, a);
+    }
+
+    private void StopMotion()
+    {
+        OvPreviewZoom.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        OvPreviewZoom.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        OvPreviewShift.BeginAnimation(TranslateTransform.XProperty, null);
+        OvPreviewShift.BeginAnimation(TranslateTransform.YProperty, null);
+    }
+
+    /// <summary>O retângulo da caixa como se vê na tela desenhada, com a transformação do momento.</summary>
+    private Rect VisibleRect() =>
+        OvPreviewHost.TransformToAncestor(OvScreen).TransformBounds(new Rect(OvPreviewHost.RenderSize));
+
+    /// <summary>
+    /// A escala da prévia: a do tamanho escolhido, mas nunca maior que a tela desenhada (com "Tudo" no Grande a caixa passava da
+    /// borda e era cortada).
+    /// </summary>
+    private void FitScale()
+    {
+        double target = PreviewFactor * _scale;
+        OvPreview.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        var natural = OvPreview.DesiredSize;
+        if (natural.Width > 0 && natural.Height > 0)
+            target = Math.Min(target, Math.Min((OvScreen.Width - 32) / natural.Width, (OvScreen.Height - 32) / natural.Height));
+        if (Math.Abs(OvPreviewScale.ScaleX - target) > 0.0005) OvPreviewScale.ScaleX = OvPreviewScale.ScaleY = target;
+    }
+
+    private void OvPreviewHost_SizeChanged(object sender, SizeChangedEventArgs e) => HideCoveredZones();
+
+    /// <summary>Um tracejado que a prévia cobre (overlay grande, com muitos itens) some, para não ficar um por cima do outro.</summary>
+    private void HideCoveredZones()
+    {
+        // Pelo lugar de layout (alinhamento e tamanho), sem a transformação de um movimento em andamento
+        var size = OvPreviewHost.RenderSize;
+        var box = new Rect(OvPreviewHost.HorizontalAlignment == HorizontalAlignment.Right ? OvScreen.Width - 16 - size.Width : 16,
+            OvPreviewHost.VerticalAlignment == VerticalAlignment.Bottom ? OvScreen.Height - 16 - size.Height : 16, size.Width, size.Height);
+        box.Inflate(8, 8);
+        foreach (var rb in OvCornerPanel.Children.OfType<RadioButton>())
+        {
+            string tag = (string)rb.Tag;
+            double x = tag.EndsWith('R') ? OvScreen.Width - 16 - ZoneSize.Width : 16;
+            double y = tag.StartsWith('B') ? OvScreen.Height - 16 - ZoneSize.Height : 16;
+            bool covered = tag != _corner && box.IntersectsWith(new Rect(x, y, ZoneSize.Width, ZoneSize.Height));
+            rb.Visibility = covered ? Visibility.Hidden : Visibility.Visible;
+        }
     }
 
     internal void UpdatePreview()
@@ -377,6 +439,7 @@ public partial class OverlayView : UserControl
     internal void ShowPreview(FrameStats f, IReadOnlyList<OverlayLine> lines, IReadOnlySet<string> show, string? extra, bool sample, bool overlayOn)
     {
         OvPreview.Update(f, lines, show, extra);
+        FitScale();
         OvSampleNote.Visibility = sample ? Visibility.Visible : Visibility.Collapsed;
         OvLed.SetResourceReference(Shape.FillProperty, overlayOn ? "HudSignal" : "HudSep");
     }
