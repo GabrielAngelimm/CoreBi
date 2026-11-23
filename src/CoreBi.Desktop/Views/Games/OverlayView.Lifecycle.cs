@@ -1,8 +1,10 @@
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using CoreBi.Engine.Games;
+using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Desktop.Views;
 
@@ -18,6 +20,9 @@ public partial class OverlayView : IDisposable
     private int _rtssProcess;
     private long _rtssLastUpdate, _rtssLastAck, _rtssRetryAfter, _rtssPendingSince;
     private uint _rtssPublishedFrame;
+    private long _rtssProbeAfter;
+    private RtssStatus _rtssProbe = RtssStatus.Unavailable;
+    private bool _rtssInstalled;
 
     internal void SuspendForBenchmark(bool suspended)
     {
@@ -206,6 +211,47 @@ public partial class OverlayView : IDisposable
             _ => _context.Frames.Error != null ? text : null,
         };
         OvStatusDot.SetResourceReference(Shape.FillProperty, brushKey);
+    }
+
+    /// <summary>
+    /// "Onde funciona": o estado agora de cada caso. O RTSS é consultado a cada 3 s, só com a página à vista (abre a seção
+    /// compartilhada dele e lê o cabeçalho, sem ocupar slot nem procurar processos).
+    /// </summary>
+    private void UpdateReady()
+    {
+        if (_context == null) return;
+        long now = Environment.TickCount64;
+        if (now >= _rtssProbeAfter)
+        {
+            _rtssProbeAfter = now + 3000;
+            _rtssProbe = _rtssOverlay.Probe();
+            _rtssInstalled = _rtssProbe != RtssStatus.Unavailable || RtssOverlayClient.IsInstalled();
+        }
+        (string rtss, string rtssKey, string rtssGlyph, string rtssTip) =
+            _rtssShowing ? ("Dentro do jogo agora, pelo RTSS", "Ok", "\uE73E", "O jogo está em tela cheia e o RTSS desenha o overlay dentro dele.")
+            : _rtssProbe is RtssStatus.Ready or RtssStatus.Busy ? ("RTSS aberto, pronto", "Ok", "\uE73E", "Com o RTSS aberto, o overlay aparece também nos jogos em tela cheia exclusiva.")
+            : _rtssProbe == RtssStatus.Incompatible ? ("Atualize o RTSS para 7.3.7+", "Warn", "\uE7BA", "O RTSS aberto é de uma versão que o CoreBi não reconhece.")
+            : _rtssInstalled ? ("Abra o RTSS antes do jogo", "Warn", "\uE7BA", "O RTSS está instalado, mas fechado. Abra-o antes do jogo para o overlay aparecer em tela cheia exclusiva.")
+            : ("Precisa do RTSS 7.3.7 ou mais novo", "Faint", "\uE946", "Em tela cheia exclusiva o Windows não deixa outra janela por cima do jogo; o RTSS (RivaTuner Statistics Server, grátis) desenha o overlay dentro dele. Instale e abra antes do jogo.");
+        SetReady(OvRtssGlyph, OvRtssState, rtssGlyph, rtssKey, rtss, rtssTip);
+
+        bool admin = ProcessElevation.IsElevated;
+        SetReady(OvAdminGlyph, OvAdminState, admin ? "\uE73E" : "\uE7BA", admin ? "Ok" : "Warn",
+            admin ? "Temperatura, clock e consumo" : "Abra o CoreBi como administrador",
+            admin ? null : "Sem administrador, temperatura, clock e consumo da CPU aparecem com travessão no overlay.");
+
+        string? error = _context.Frames.Error;
+        SetReady(OvFpsGlyph, OvFpsState, error == null ? "\uE73E" : "\uE711", error == null ? "Ok" : "Danger",
+            error == null ? "Eventos do Windows, sem tocar no jogo" : "Indisponível agora",
+            error ?? "O FPS vem dos eventos de apresentação do Windows (ETW): o CoreBi não injeta nada nem lê a memória do jogo.");
+    }
+
+    private static void SetReady(TextBlock glyph, TextBlock state, string icon, string brushKey, string text, string? tip)
+    {
+        glyph.Text = icon;
+        glyph.SetResourceReference(TextBlock.ForegroundProperty, brushKey);
+        if (state.Text != text) state.Text = text;
+        state.ToolTip = tip;
     }
 
     public void Dispose()

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using CoreBi.Desktop.Services;
@@ -17,10 +18,14 @@ namespace CoreBi.Desktop.Views;
 public partial class OverlayView : UserControl
 {
     /// <summary>
-    /// Escala da prévia em relação ao overlay real: largura da tela desenhada (798) pela do monitor principal,
+    /// Escala da prévia em relação ao overlay real: largura da tela desenhada (984) pela do monitor principal,
     /// com 40 % de folga para o texto continuar legível; mesmo no tamanho Grande a caixa cabe no quarto da tela do seu canto.
     /// </summary>
-    private static readonly double PreviewFactor = 798.0 / Math.Max(1280, SystemParameters.PrimaryScreenWidth) * 1.4;
+    private static readonly double PreviewFactor = 984.0 / Math.Max(1280, SystemParameters.PrimaryScreenWidth) * 1.4;
+
+    /// <summary>A prévia desliza de um canto a outro e muda de tamanho nesse tempo, com a mesma curva dos números da Rede.</summary>
+    private static readonly Duration GlideTime = TimeSpan.FromMilliseconds(420);
+    private static readonly IEasingFunction Glide = new QuinticEase { EasingMode = EasingMode.EaseOut };
 
     private static readonly (string Group, string Icon, string ResourceKey, string Full)[] Groups =
     {
@@ -61,12 +66,19 @@ public partial class OverlayView : UserControl
     private HashSet<string>? _showItems;
     private string? _corner;
     private bool _ready;
+    private readonly Dictionary<string, CheckBox> _chips = new();
+    private readonly List<Action> _rowRefresh = new();
 
     public OverlayView()
     {
         InitializeComponent();
-        OvAdminNote.Visibility = ProcessElevation.IsElevated ? Visibility.Collapsed : Visibility.Visible;
+        // O "fantasma" dos cantos livres: a própria prévia, ao vivo, pintada translúcida no canto sob o mouse (CornerZone)
+        Resources["OvGhost"] = new VisualBrush(OvPreview) { Stretch = Stretch.Fill };
+        // Primeira carga: a prévia espera o nome do hardware e a primeira leitura dos sensores; a página entra inteira em esqueleto
+        Skeleton.SetActive(OvPositionCard, true);
     }
+
+    private static bool Animate => SystemParameters.ClientAreaAnimation;
 
     internal bool IsOverlayEnabled => ChkOverlay.IsChecked == true;
 
@@ -90,6 +102,14 @@ public partial class OverlayView : UserControl
         SetOpacity(settings.OverlayOpacity);
         _ready = true;
         UpdateStatus(null);
+        UpdateReady();
+    }
+
+    /// <summary>Sai do esqueleto quando a prévia tem o que mostrar: nomes do hardware e a primeira leitura dos sensores.</summary>
+    private void ReleaseSkeleton()
+    {
+        if (_context is { HardwareRead: true, SensorsRead: true } && Skeleton.GetActive(OvPositionCard))
+            Skeleton.SetActive(OvPositionCard, false);
     }
 
     internal void RefreshHardware()
@@ -121,54 +141,84 @@ public partial class OverlayView : UserControl
     private void BuildPicker()
     {
         OvItemsPanel.Children.Clear();
+        _chips.Clear();
+        _rowRefresh.Clear();
         var groups = OverlayMetrics.All.GroupBy(m => m.Group).ToList();
         for (int i = 0; i < groups.Count; i++)
         {
             string group = groups[i].Key;
             var items = groups[i].ToList();
             var meta = Groups.FirstOrDefault(g => g.Group == group);
-            var row = new Border { BorderThickness = new Thickness(0, 0, 0, i < groups.Count - 1 ? 1 : 0), Padding = new Thickness(0, 10, 0, 10) };
+            var row = new Border { BorderThickness = new Thickness(0, 0, 0, i < groups.Count - 1 ? 1 : 0), Padding = new Thickness(0, 12, 0, 12) };
             row.SetResourceReference(Border.BorderBrushProperty, "Line");
 
             var grid = new Grid { VerticalAlignment = VerticalAlignment.Center };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(128) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(132) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             var glyph = new HwIcon { Kind = meta.Icon ?? "\uE946", Width = 30, Height = 30, VerticalAlignment = VerticalAlignment.Top };
             grid.Children.Add(glyph);
 
-            var name = new StackPanel { Margin = new Thickness(12, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
-            var title = new TextBlock { Text = group, FontSize = 16, FontWeight = FontWeights.SemiBold, Padding = new Thickness(0, 6, 0, 0) };
-            title.SetResourceReference(TextBlock.FontFamilyProperty, "LabelFont");
+            var name = new StackPanel { Margin = new Thickness(14, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
+            var title = new TextBlock { Text = group, Padding = new Thickness(0, 4, 0, 0) };
+            title.SetResourceReference(StyleProperty, "GroupTitle");
             name.Children.Add(title);
             if (meta.Full is { Length: > 0 } full)
             {
-                var sub = new TextBlock { Text = full, FontSize = 12, LineHeight = 16, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
-                sub.SetResourceReference(TextBlock.FontFamilyProperty, "SmallFont");
-                sub.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+                var sub = new TextBlock { Text = full, Margin = new Thickness(0, 2, 0, 0) };
+                sub.SetResourceReference(StyleProperty, "Caption");
                 name.Children.Add(sub);
             }
             Grid.SetColumn(name, 1);
             grid.Children.Add(name);
 
-            // 7 px acima alinha a linha de base da contagem com o nome e a primeira fila de pílulas (medido).
-            var count = new TextBlock { FontSize = 12, Margin = new Thickness(12, 7, 0, 0), VerticalAlignment = VerticalAlignment.Top };
+            // Marcar ou desmarcar a linha inteira: um tique por item e a contagem (GroupToggle)
+            var ticks = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            var tickBars = items.Select(_ =>
+            {
+                var t = new Border { Width = 4, Height = 14, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 3, 0), SnapsToDevicePixels = true };
+                ticks.Children.Add(t);
+                return t;
+            }).ToList();
+            var count = new TextBlock { FontSize = 13, Margin = new Thickness(7, 0, 0, 1), VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Right };
+            count.SetResourceReference(TextBlock.FontFamilyProperty, "Readout");
+            count.SetBinding(TextBlock.ForegroundProperty, new System.Windows.Data.Binding(nameof(Control.Foreground)) { RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.FindAncestor, typeof(Button), 1) });
             Typography.SetNumeralAlignment(count, FontNumeralAlignment.Tabular);
-            Grid.SetColumn(count, 3);
-            grid.Children.Add(count);
+            count.MinWidth = 26;
+            var face = new StackPanel { Orientation = Orientation.Horizontal };
+            face.Children.Add(ticks);
+            face.Children.Add(count);
+            var toggle = new Button { Content = face, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(8, 0, -10, 0) };
+            toggle.Style = (Style)Resources["GroupToggle"];
+            Grid.SetColumn(toggle, 3);
+            grid.Children.Add(toggle);
 
             void Refresh()
             {
                 int on = items.Count(m => ShowItems.Contains(m.Key));
                 count.Text = $"{on}/{items.Count}";
-                count.ToolTip = on == 0 ? $"Nada marcado: a linha {group} não aparece no overlay." : $"{on} de {items.Count} itens no overlay.";
-                count.SetResourceReference(TextBlock.ForegroundProperty, on > 0 ? "Muted" : "Faint");
+                for (int k = 0; k < items.Count; k++)
+                    tickBars[k].SetResourceReference(Border.BackgroundProperty, ShowItems.Contains(items[k].Key) ? "Signal" : "LineStrong");
+                toggle.ToolTip = on == items.Count ? $"Desmarcar {(items.Count == 2 ? "os dois" : "todos")} de {group}"
+                    : on == 0 ? $"Nada marcado: a linha {group} não aparece no overlay. Clique para marcar {(items.Count == 2 ? "os dois" : "todos")}."
+                    : $"{on} de {items.Count} no overlay. Clique para marcar todos.";
                 glyph.SetResourceReference(Control.ForegroundProperty, on > 0 ? meta.ResourceKey ?? "Signal" : "Faint");
+                foreach (var m in items)
+                    if (_chips.TryGetValue(m.Key, out var c)) c.IsChecked = ShowItems.Contains(m.Key);
             }
 
-            var wrap = new WrapPanel { Margin = new Thickness(0, 2, 0, 0) };
+            toggle.Click += (_, _) =>
+            {
+                bool all = items.All(m => ShowItems.Contains(m.Key));
+                foreach (var m in items)
+                    if (all) ShowItems.Remove(m.Key); else ShowItems.Add(m.Key);
+                Refresh();
+                SaveItems();
+            };
+
+            var wrap = new WrapPanel { Margin = new Thickness(0, 1, 0, -6), VerticalAlignment = VerticalAlignment.Top };
             foreach (var m in items)
             {
                 var chip = new CheckBox { Content = m.Label, Tag = m.Key, IsChecked = ShowItems.Contains(m.Key) };
@@ -180,12 +230,14 @@ public partial class OverlayView : UserControl
                     Refresh();
                     SaveItems();
                 };
+                _chips[m.Key] = chip;
                 wrap.Children.Add(chip);
             }
             Grid.SetColumn(wrap, 2);
             grid.Children.Add(wrap);
 
             Refresh();
+            _rowRefresh.Add(Refresh);
             row.Child = grid;
             OvItemsPanel.Children.Add(row);
         }
@@ -219,8 +271,9 @@ public partial class OverlayView : UserControl
             var k when Presets.TryGetValue(k, out var set) => set.ToHashSet(),
             _ => OverlayMetrics.Defaults(),
         };
+        // As pílulas e os tiques trocam no lugar (nada é recriado, a lista não pisca)
+        foreach (var refresh in _rowRefresh) refresh();
         SaveItems();
-        BuildPicker();
     }
 
     private void OvOpacity_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -259,11 +312,36 @@ public partial class OverlayView : UserControl
         OvMonitorBox.MinHeight = wide ? 300 : 440;
     }
 
+    /// <summary>Os cantos livres desenham o contorno no tamanho exato da prévia: é ali que o overlay vai ficar.</summary>
+    private void OvPreviewHost_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        foreach (var rb in OvCornerPanel.Children.OfType<RadioButton>())
+        {
+            rb.MinWidth = e.NewSize.Width;
+            rb.MinHeight = e.NewSize.Height;
+        }
+    }
+
     internal void LayoutPreview(string corner, double scale)
     {
+        bool glide = _corner != null && _corner != corner && Animate && OvPreviewHost.IsVisible;
+        // Onde a prévia está agora (no meio de outro deslize, inclusive), antes de trocar de canto
+        Point from = glide ? OvPreviewHost.TranslatePoint(new Point(), OvScreen) : default;
+        OvPreviewShift.BeginAnimation(TranslateTransform.XProperty, null);
+        OvPreviewShift.BeginAnimation(TranslateTransform.YProperty, null);
+
         OvPreviewHost.HorizontalAlignment = corner.EndsWith('R') ? HorizontalAlignment.Right : HorizontalAlignment.Left;
         OvPreviewHost.VerticalAlignment = corner.StartsWith('B') ? VerticalAlignment.Bottom : VerticalAlignment.Top;
-        OvPreviewScale.ScaleX = OvPreviewScale.ScaleY = PreviewFactor * scale;
+        double target = PreviewFactor * scale;
+        if (Animate && OvPreviewHost.IsVisible && Math.Abs(OvPreviewScale.ScaleX - target) > 0.001)
+        {
+            // Tamanho: a caixa cresce ou encolhe presa ao seu canto, no mesmo tempo do deslize
+            var grow = new DoubleAnimation(OvPreviewScale.ScaleX, target, GlideTime) { EasingFunction = Glide, FillBehavior = FillBehavior.Stop };
+            OvPreviewScale.ScaleX = OvPreviewScale.ScaleY = target;
+            OvPreviewScale.BeginAnimation(ScaleTransform.ScaleXProperty, grow);
+            OvPreviewScale.BeginAnimation(ScaleTransform.ScaleYProperty, grow);
+        }
+        else OvPreviewScale.ScaleX = OvPreviewScale.ScaleY = target;
         OvCornerName.Text = corner switch
         {
             "TR" => "Canto superior direito",
@@ -271,14 +349,23 @@ public partial class OverlayView : UserControl
             "BR" => "Canto inferior direito",
             _ => "Canto superior esquerdo",
         };
-        if (_corner != null && _corner != corner && SystemParameters.ClientAreaAnimation)
-            OvPreviewHost.BeginAnimation(OpacityProperty, new DoubleAnimation(0.25, OpacityOf(OvOpacity.Value), TimeSpan.FromMilliseconds(180)) { FillBehavior = FillBehavior.Stop });
+        if (glide)
+        {
+            // Deslize: a caixa já está no canto novo; o deslocamento parte de onde ela estava e volta a zero
+            OvScreen.UpdateLayout();
+            Point to = OvPreviewHost.TranslatePoint(new Point(), OvScreen);
+            OvPreviewShift.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(from.X - to.X, 0, GlideTime) { EasingFunction = Glide, FillBehavior = FillBehavior.Stop });
+            OvPreviewShift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(from.Y - to.Y, 0, GlideTime) { EasingFunction = Glide, FillBehavior = FillBehavior.Stop });
+        }
         _corner = corner;
     }
 
     internal void UpdatePreview()
     {
-        if (_context == null || !IsVisible) return;
+        if (_context == null) return;
+        ReleaseSkeleton();
+        if (!IsVisible) return;
+        UpdateReady();
         var live = _context.Frames.Running ? _context.Frames.GetForegroundStats() : null;
         var frames = live ?? SampleFrames;
         ShowPreview(frames, BuildLines(), ShowItems, ShowItems.Contains("clock") ? DateTime.Now.ToString("HH:mm") : null,
