@@ -1,53 +1,4 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:views="clr-namespace:CoreBi.Desktop.Views" xmlns:local="clr-namespace:CoreBi.Desktop" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.MainWindow" Title="CoreBi" Icon="/CoreBi.Desktop;component/Assets/corebi.ico" Width="1360" Height="860" MinWidth="1120" MinHeight="680" WindowStartupLocation="CenterScreen" WindowStyle="None" ResizeMode="CanResize" Background="{DynamicResource Bg}" Foreground="{DynamicResource Fg}" FontFamily="{StaticResource UiFont}" FontSize="13" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display" PreviewKeyDown="Window_PreviewKeyDown">
-    <Window.Resources>
-        <!-- Cabeçalho de grupo do menu, um pouco mais justo que o NavHeader padrão: com o aviso de sensores e a central à vista, os
-             14 itens cabem sem rolar em 1920 × 1032 -->
-        <Style x:Key="SideNavHeader" TargetType="TextBlock" BasedOn="{StaticResource NavHeader}">
-            <Setter Property="Margin" Value="24,12,0,4" />
-        </Style>
-        <!-- Central de monitoramento: a leitura do meio some sem sensor (nada de travessão sem rótulo), sem mudar a altura da linha;
-             a fração da direita fica em travessão no tom Faint.
-             Linha de base comum: rótulo (DIN 12,5), leitura (DIN semicondensada 15) e fração (DIN 12) ficam no topo da linha, e o
-             rótulo e a fração levam um espaço na fonte e no tamanho da leitura (SideStrut). Assim as três linhas de texto têm a mesma
-             subida e a base cai no mesmo y (centradas, cada uma tinha a base 1 px abaixo da anterior). -->
-        <Style x:Key="SideReading" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="VerticalAlignment" Value="Top" />
-            <Style.Triggers>
-                <Trigger Property="Text" Value="—">
-                    <Setter Property="Visibility" Value="Hidden" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-        <Style x:Key="SideStrut" TargetType="Run">
-            <Setter Property="Text" Value=" " />
-            <Setter Property="FontFamily" Value="{StaticResource Readout}" />
-            <Setter Property="FontStretch" Value="SemiCondensed" />
-            <Setter Property="FontSize" Value="15" />
-        </Style>
-        <Style x:Key="SideLabel" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
-            <Setter Property="FontSize" Value="12.5" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
-            <Setter Property="VerticalAlignment" Value="Top" />
-        </Style>
-        <!-- A fração: o espaço de apoio vai antes do número, para não empurrá-lo da borda direita -->
-        <Style x:Key="SideShareBox" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="VerticalAlignment" Value="Top" />
-            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
-        </Style>
-        <Style x:Key="SideShare" TargetType="Run">
-            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
-            <Style.Triggers>
-                <Trigger Property="Text" Value="—">
-                    <Setter Property="Foreground" Value="{DynamicResource Faint}" />
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-    </Window.Resources>
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="52" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
@@ -59,9 +10,14 @@
             </Grid.ColumnDefinitions>
 
             <!-- ================= Barra lateral ================= -->
+            <!--
+                Uma coluna só, alinhada a uma vertical: a tinta da marca, dos títulos de grupo e dos ícones começa a 26 px da borda, e os
+                textos dos itens a 58. A barra é só navegação: marca, os 14 itens em três grupos e, no rodapé, o aviso de sensores (quando
+                há o que avisar) e o tema. As leituras ao vivo ficam nas páginas (Visão geral, Sensores, Placa de vídeo, Teste de carga).
+            -->
             <Border x:Name="Sidebar" Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,1,0">
                 <DockPanel>
-                    <!-- Marca: símbolo vetorial (brand/geometry.json) + assinatura -->
+                    <!-- Marca: símbolo vetorial (brand/geometry.json) + assinatura, centrada na linha da busca de páginas (34 px) -->
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="22,0,0,0" Height="68" VerticalAlignment="Center">
                         <Viewbox Width="36" Height="36" VerticalAlignment="Center">
                             <Canvas Width="256" Height="256">
@@ -74,89 +30,10 @@
                         <TextBlock Text="CoreBi" FontFamily="{StaticResource Readout}" FontWeight="SemiBold" FontSize="27" Margin="12,4,0,0" VerticalAlignment="Center" />
                     </StackPanel>
 
-                    <!-- Rodapé: central de monitoramento, aviso de sensores e, por último, a chave de tema; nada muda de lugar entre as páginas -->
-                    <StackPanel DockPanel.Dock="Bottom" Margin="14,6,14,14">
-                        <!-- Central de monitoramento: quatro medidores segmentados, cada um na cor do seu componente. Na Visão geral, que mostra o
-                             mesmo em tamanho grande, fica oculta sem sair do lugar (Hidden): o aviso e a chave de tema não pulam ao navegar. -->
-                        <Border x:Name="SideMonitor" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="10,12,10,10">
-                            <StackPanel>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="44" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Style="{StaticResource SideLabel}"><Run Text="CPU" /><Run Style="{StaticResource SideStrut}" /></TextBlock>
-                                    <TextBlock x:Name="SideTemp" Grid.Column="1" Text="—" Style="{StaticResource SideReading}" />
-                                    <TextBlock Grid.Column="2" Style="{StaticResource SideShareBox}"><Run Style="{StaticResource SideStrut}" /><Run x:Name="SideLoad" Text="—" Style="{StaticResource SideShare}" /></TextBlock>
-                                </Grid>
-                                <Grid Height="5" Margin="0,4,0,8" OpacityMask="{StaticResource SegmentMask}">
-                                    <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource Cpu}" RenderTransformOrigin="0,0.5">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="SideCpuBar" ScaleX="0" />
-                                        </Border.RenderTransform>
-                                    </Border>
-                                </Grid>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="44" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Style="{StaticResource SideLabel}"><Run Text="GPU" /><Run Style="{StaticResource SideStrut}" /></TextBlock>
-                                    <TextBlock x:Name="SideGpuTemp" Grid.Column="1" Text="—" Style="{StaticResource SideReading}" />
-                                    <TextBlock Grid.Column="2" Style="{StaticResource SideShareBox}"><Run Style="{StaticResource SideStrut}" /><Run x:Name="SideGpuLoad" Text="—" Style="{StaticResource SideShare}" /></TextBlock>
-                                </Grid>
-                                <Grid Height="5" Margin="0,4,0,8" OpacityMask="{StaticResource SegmentMask}">
-                                    <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource Gpu}" RenderTransformOrigin="0,0.5">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="SideGpuBar" ScaleX="0" />
-                                        </Border.RenderTransform>
-                                    </Border>
-                                </Grid>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="44" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Style="{StaticResource SideLabel}"><Run Text="RAM" /><Run Style="{StaticResource SideStrut}" /></TextBlock>
-                                    <TextBlock x:Name="SideRam" Grid.Column="1" Text="—" Style="{StaticResource SideReading}" />
-                                    <TextBlock Grid.Column="2" Style="{StaticResource SideShareBox}"><Run Style="{StaticResource SideStrut}" /><Run x:Name="SideRamLoad" Text="—" Style="{StaticResource SideShare}" /></TextBlock>
-                                </Grid>
-                                <Grid Height="5" Margin="0,4,0,8" OpacityMask="{StaticResource SegmentMask}">
-                                    <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource Memory}" RenderTransformOrigin="0,0.5">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="SideRamBar" ScaleX="0" />
-                                        </Border.RenderTransform>
-                                    </Border>
-                                </Grid>
-                                <Grid x:Name="SideDiskRow" Background="Transparent">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="44" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Style="{StaticResource SideLabel}"><Run Text="Disco" /><Run Style="{StaticResource SideStrut}" /></TextBlock>
-                                    <TextBlock x:Name="SideDisk" Grid.Column="1" Text="—" Style="{StaticResource SideReading}" />
-                                    <TextBlock Grid.Column="2" Style="{StaticResource SideShareBox}"><Run Style="{StaticResource SideStrut}" /><Run x:Name="SideDiskLoad" Text="—" Style="{StaticResource SideShare}" /></TextBlock>
-                                </Grid>
-                                <Grid Height="5" Margin="0,4,0,0" OpacityMask="{StaticResource SegmentMask}">
-                                    <Border Background="{DynamicResource Line}" />
-                                    <Border Background="{DynamicResource Storage}" RenderTransformOrigin="0,0.5">
-                                        <Border.RenderTransform>
-                                            <ScaleTransform x:Name="SideDiskBar" ScaleX="0" />
-                                        </Border.RenderTransform>
-                                    </Border>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-                        <!-- Aviso de sensores: o que falta numa linha, o motivo e o botão na linha de baixo (cabe sem rolar o menu em 1920 × 1032).
-                             Fica abaixo da central para não mudar de lugar quando ela se esconde na Visão geral. -->
-                        <Border x:Name="CpuSensorWarn" Visibility="Collapsed" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource Warn}" BorderThickness="1" CornerRadius="{StaticResource RadiusInset}" Padding="10,8" Margin="0,0,0,10">
+                    <!-- Rodapé: o aviso de sensores e, por último, o tema; o rodapé fica preso embaixo e nada muda de lugar entre as páginas -->
+                    <StackPanel DockPanel.Dock="Bottom" Margin="12,8,12,16">
+                        <!-- Aviso de sensores: o que falta numa linha, o motivo e o botão na linha de baixo -->
+                        <Border x:Name="CpuSensorWarn" Visibility="Collapsed" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource Warn}" BorderThickness="1" CornerRadius="{StaticResource RadiusInset}" Padding="14,11,10,10" Margin="0,0,0,12">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
@@ -173,32 +50,35 @@
                                 <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Corrigir" MinHeight="26" Padding="10,3" FontSize="12" VerticalAlignment="Center" Margin="0,4,0,0" Click="BtnFixCpuSensors_Click" />
                             </Grid>
                         </Border>
-                        <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,8,0,0">
-                            <CheckBox x:Name="ThemeSwitch" Style="{StaticResource ThemeToggle}" Content="Modo escuro" Click="Theme_Click" AutomationProperties.Name="Modo escuro" />
+                        <!-- Tema: as duas opções à vista, no trilho em pílula das configurações, na largura da pílula da navegação -->
+                        <Border Style="{StaticResource ThemeSegmentGroup}" AutomationProperties.Name="Tema">
+                            <local:SlidingSelectionPanel Style="{StaticResource ConfigSegmentRail}">
+                                <RadioButton x:Name="ThemeLight" Style="{StaticResource ThemeSegment}" Content="Claro" local:Ui.Icon="&#xE706;" local:Ui.Channel="Gpu" Click="ThemeOption_Click" AutomationProperties.Name="Tema claro" />
+                                <RadioButton x:Name="ThemeDark" Style="{StaticResource ThemeSegment}" Content="Escuro" local:Ui.Icon="&#xE708;" local:Ui.Channel="Memory" Click="ThemeOption_Click" AutomationProperties.Name="Tema escuro" />
+                            </local:SlidingSelectionPanel>
                         </Border>
                     </StackPanel>
 
-                    <!-- Navegação -->
+                    <!-- Navegação: em janelas baixas o menu rola e o item da página aberta fica sempre à vista -->
                     <ScrollViewer x:Name="NavScroll" VerticalScrollBarVisibility="Auto" Focusable="False" SizeChanged="NavScroll_SizeChanged">
-                        <local:SlidingSelectionPanel x:Name="NavPanel" Style="{StaticResource NavRail}" Margin="0,4,0,8">
+                        <local:SlidingSelectionPanel x:Name="NavPanel" Style="{StaticResource NavRail}" Margin="0,2,0,8">
                             <RadioButton x:Name="NavDash" Style="{StaticResource NavItem}" Tag="PageDash" local:Ui.Icon="&#xE80F;" Content="Visão geral" Checked="Nav_Checked" IsChecked="True" />
-                            <TextBlock Text="Monitoramento" Style="{StaticResource SideNavHeader}" />
+                            <TextBlock Text="Monitoramento" Style="{StaticResource NavHeader}" />
                             <RadioButton x:Name="NavSystem" Style="{StaticResource NavItem}" Tag="PageSystem" local:Ui.Icon="desktop" Content="Sistema" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavSensors" Style="{StaticResource NavItem}" Tag="PageSensors" local:Ui.Icon="&#xE9D9;" Content="Sensores" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavGpu" Style="{StaticResource NavItem}" Tag="PageGpu" local:Ui.Icon="gpu" Content="Placa de vídeo" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavDisks" Style="{StaticResource NavItem}" Tag="PageDisks" local:Ui.Icon="storage" Content="Discos" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavEnergy" Style="{StaticResource NavItem}" Tag="PageEnergy" local:Ui.Icon="&#xE7E8;" Content="Energia" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavNet" Style="{StaticResource NavItem}" Tag="PageNet" local:Ui.Icon="net" Content="Rede" Checked="Nav_Checked" />
-                            <TextBlock Text="Jogos" Style="{StaticResource SideNavHeader}" />
+                            <TextBlock Text="Jogos e desempenho" Style="{StaticResource NavHeader}" />
                             <RadioButton x:Name="NavOverlay" Style="{StaticResource NavItem}" Tag="PageOverlay" local:Ui.Icon="&#xE81E;" Content="OverlayBi" Checked="Nav_Checked" />
-                            <RadioButton x:Name="NavBottleneck" Style="{StaticResource NavItem}" Tag="PageBottleneck" local:Ui.Icon="&#xE9D2;" Content="Gargalo" Checked="Nav_Checked" />
-                            <TextBlock Text="Desempenho" Style="{StaticResource SideNavHeader}" />
-                            <RadioButton x:Name="NavBench" Style="{StaticResource NavItem}" Tag="PageBench" local:Ui.Icon="&#xE8B9;" Content="Benchmark" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavStress" Style="{StaticResource NavItem}" Tag="PageStress" local:Ui.Icon="&#xE945;" Content="Teste de carga" Checked="Nav_Checked" />
-                            <TextBlock Text="Ferramentas" Style="{StaticResource SideNavHeader}" />
-                            <RadioButton x:Name="NavStartup" Style="{StaticResource NavItem}" Tag="PageStartup" local:Ui.Icon="&#xE823;" Content="Inicialização" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavBench" Style="{StaticResource NavItem}" Tag="PageBench" local:Ui.Icon="&#xEC4A;" Content="Benchmark" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavBottleneck" Style="{StaticResource NavItem}" Tag="PageBottleneck" local:Ui.Icon="&#xE9D2;" Content="Gargalo" Checked="Nav_Checked" />
+                            <TextBlock Text="Ferramentas" Style="{StaticResource NavHeader}" />
                             <RadioButton x:Name="NavApps" Style="{StaticResource NavItem}" Tag="PageApps" local:Ui.Icon="&#xE719;" Content="Instalar apps" Checked="Nav_Checked" />
                             <RadioButton x:Name="NavDriver" Style="{StaticResource NavItem}" Tag="PageDriver" local:Ui.Icon="&#xE896;" Content="Drivers" Checked="Nav_Checked" />
+                            <RadioButton x:Name="NavStartup" Style="{StaticResource NavItem}" Tag="PageStartup" local:Ui.Icon="&#xE823;" Content="Inicialização" Checked="Nav_Checked" />
                         </local:SlidingSelectionPanel>
                     </ScrollViewer>
                 </DockPanel>

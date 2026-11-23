@@ -66,7 +66,6 @@ public partial class MainWindow : Window, ILiveMotionHost
         SideVersion.Text = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1";
 
         _deviceWatcher.StartInitialSnapshots();
-        RefreshSideStorageAsync();
 
         Loaded += async (_, _) => await LoadHardwareAsync();
 
@@ -164,7 +163,6 @@ public partial class MainWindow : Window, ILiveMotionHost
         // Durante benchmarks de GPU/disco as leituras de sensores (NVML/driver) ficam pausadas para não gerar engasgos no 1% low.
         if (_sensorsHeldForBenchmark)
         {
-            UpdateSidebarCpu();
             PageStress.Tick();
             return;
         }
@@ -181,7 +179,6 @@ public partial class MainWindow : Window, ILiveMotionHost
         if (poll != null) _monitor.Apply(poll);
         _gpuMonitor.UpdateLoads(_context.Gpus);
         PageSensors.Tick();
-        UpdateSidebarTelemetry();
         PageStress.Tick();
         PageGpu.Tick();
         UpdateCpuSensorWarning();
@@ -246,7 +243,6 @@ public partial class MainWindow : Window, ILiveMotionHost
 
     private async Task OnStorageChangedAsync()
     {
-        RefreshSideStorageAsync();
         await PageSystem.RefreshStorageAsync();
         if (PageDisks.IsVisible) await PageDisks.RefreshAsync();
         if (PageBench.IsVisible) PageBench.RefreshHardware();
@@ -268,7 +264,7 @@ public partial class MainWindow : Window, ILiveMotionHost
         RedrawThemedVisuals();
     }
 
-    private void UpdateThemeButton() => ThemeSwitch.IsChecked = !ThemeManager.IsLight;
+    private void UpdateThemeButton() => (ThemeManager.IsLight ? ThemeLight : ThemeDark).IsChecked = true;
 
     private void RedrawThemedVisuals()
     {

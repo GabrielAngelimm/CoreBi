@@ -76,7 +76,6 @@ public partial class MainWindow
             if (show) PageMotion.Enter(p); // antes de mostrar: quem reage a ficar visível já sabe que a entrada começou
             p.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         }
-        SideMonitor.Visibility = name == nameof(PageDash) ? Visibility.Hidden : Visibility.Visible; // Hidden (não Collapsed): o rodapé não pula
         SyncFrameMonitoring();
     }
 }

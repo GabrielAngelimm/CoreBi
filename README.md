@@ -12,9 +12,8 @@ Desenvolvido em C#/.NET 10 e WPF. As regras, os coletores e as integrações sã
 | --- | --- |
 | Visão geral | Resumo do computador, histórico de sensores e alertas |
 | Monitoramento | Sistema, sensores, placa de vídeo, discos, energia e rede |
-| Jogos | Análise de gargalo e overlay com ETW e integração opcional RTSS para tela cheia |
-| Desempenho | Benchmarks de CPU, GPU, DXR, simulação, RAM, carregamento e disco; stress de CPU, RAM e GPU |
-| Ferramentas | Inicialização, drivers e instalação de apps via winget |
+| Jogos e desempenho | Overlay com ETW e integração opcional RTSS para tela cheia; stress de CPU, RAM e GPU; benchmarks de CPU, GPU, DXR, simulação, RAM, carregamento e disco; análise de gargalo |
+| Ferramentas | Instalação de apps via winget, drivers e inicialização |
 
 As ferramentas de monitoramento e benchmark usam leituras ou cargas reais. A classificação de gargalo é uma aproximação. Consulte [implementação, fontes e limites](docs/FEATURES.md).
 
