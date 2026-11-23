@@ -1,5 +1,7 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.AppsView" xmlns:local="clr-namespace:CoreBi.Desktop">
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.AppsView" xmlns:local="clr-namespace:CoreBi.Desktop" xmlns:sys="clr-namespace:System;assembly=mscorlib">
     <UserControl.Resources>
+        <!-- Altura das linhas do catálogo: 30 até a página medir a área; depois o código estica para encher o cartão (FitRows) -->
+        <sys:Double x:Key="AppRowHeight">30</sys:Double>
         <!--
             Ícone oficial do app num ladrilho neutro e suave (Hover), o mesmo em todo lugar da página: na linha do catálogo
             (26 px, ícone de 18) e na ficha do pacote (redondo, 34 px, ícone de 22). Sem o PNG, a inicial do nome no lugar.

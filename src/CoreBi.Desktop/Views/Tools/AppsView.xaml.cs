@@ -16,12 +16,7 @@ namespace CoreBi.Desktop.Views;
 public partial class AppsView : UserControl
 {
     private FeatureContext _context = null!;
-    public AppsView()
-    {
-        // Altura das linhas do catálogo: 30 px até a página medir a área; depois esticam para encher o cartão (FitRows)
-        Resources["AppRowHeight"] = 30.0;
-        InitializeComponent();
-    }
+    public AppsView() => InitializeComponent();
     internal void Initialize(FeatureContext context) => _context = context;
 
     internal List<InstallableApp>? _installApps;
