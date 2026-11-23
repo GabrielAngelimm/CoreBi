@@ -55,7 +55,10 @@ public static class InstallerWindow
         return found;
     }
 
-    public static string ClickNext(IntPtr wizard)
+    public static string NextLabel(IntPtr wizard) { return FindNext(wizard, false); }
+    public static string ClickNext(IntPtr wizard) { return FindNext(wizard, true); }
+
+    private static string FindNext(IntPtr wizard, bool click)
     {
         string clicked = null;
         EnumChildWindows(wizard, (hwnd, data) =>
@@ -71,6 +74,7 @@ public static class InstallerWindow
             string label = text.ToString().Replace("&", "");
             if (label.Length == 0 || Other.IsMatch(label)) return true;
             clicked = label;
+            if (!click) return false;
             // BN_CLICKED (0) para o pai, com o próprio botão no lParam: é como a VCL do Inno entrega o clique ao botão.
             // PostMessage, não SendMessage: se o clique abrir uma caixa de mensagem, o script não fica preso nela.
             PostMessage(GetParent(hwnd), 0x0111, IntPtr.Zero, hwnd);
@@ -215,12 +219,14 @@ try {
         Start-Process -FilePath $Setup -ArgumentList '/COMPONENTS="app"'
         $wizard = Wait-Wizard
         for ($i = 0; $i -lt 5; $i++) { Next-Page $wizard }
-        $deadline = [DateTime]::UtcNow.AddSeconds(150)
-        while (-not (Test-Path -LiteralPath (Join-Path $appDir 'unins000.dat')) -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 500 }
-        Start-Sleep -Seconds 3
+        # A instalação acabou quando o botão de avançar volta como Concluir (durante a cópia só o Cancelar aparece)
+        $deadline = [DateTime]::UtcNow.AddSeconds(200)
+        while ([InstallerWindow]::NextLabel($wizard) -notmatch 'Concluir|Finish' -and [DateTime]::UtcNow -lt $deadline) { Start-Sleep -Milliseconds 500 }
+        Start-Sleep -Seconds 1
         Save-Page $wizard "$prefix-6-concluido"
         Stop-Setup
         Remove-App
+        if (Test-Path -LiteralPath $appDir) { Remove-Item -LiteralPath $appDir -Recurse -Force -ErrorAction SilentlyContinue }
     }
 }
 finally {
