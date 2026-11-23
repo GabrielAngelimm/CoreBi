@@ -16,7 +16,12 @@ namespace CoreBi.Desktop.Views;
 public partial class AppsView : UserControl
 {
     private FeatureContext _context = null!;
-    public AppsView() => InitializeComponent();
+    public AppsView()
+    {
+        InitializeComponent();
+        // Esqueleto já no primeiro quadro: ligado só depois da entrada, o painel vazio aparecia por um instante e piscava
+        Skeleton.SetActive(AppsCard, true);
+    }
     internal void Initialize(FeatureContext context) => _context = context;
 
     internal List<InstallableApp>? _installApps;

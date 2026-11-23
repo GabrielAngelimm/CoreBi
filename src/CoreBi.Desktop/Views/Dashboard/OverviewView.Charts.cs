@@ -361,7 +361,10 @@ public partial class OverviewView
 
         _rings = rings.Select(r => (r.Frac, r.Channel)).ToList();
         DrawRings();
-        DashRingLegend.ItemsSource = rings.Select(r => r.Item).ToList();
+        // Relida a cada segundo: as linhas só são refeitas quando um valor muda, para não piscarem nem perderem o realce do mouse
+        Ui.SetItems(DashRingLegend, rings.Select(r => r.Item).ToList());
+        // Anéis só com RAM, VRAM e disco já lidos: um anel a mais surgindo depois empurraria a legenda
+        Skeleton.SetActive(DashMemoryCard, Warming(_context.HardwareRead && _context.SensorsRead && _context.Drives.Count > 0));
     }
 
     private void DrawRings()

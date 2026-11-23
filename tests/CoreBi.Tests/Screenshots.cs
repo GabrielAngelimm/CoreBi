@@ -149,7 +149,8 @@ internal static partial class Program
         var panels = new List<Border>();
         void Walk(DependencyObject node)
         {
-            if (node is Border b && b.IsVisible && (b.ReadLocalValue(Skeleton.LayoutProperty) != DependencyProperty.UnsetValue
+            // Planta dada no próprio painel ou no modelo dos itens (os cartões de componente da Visão geral)
+            if (node is Border b && b.IsVisible && (Skeleton.GetLayout(b).Length > 0 || b.ReadLocalValue(Skeleton.LayoutProperty) != DependencyProperty.UnsetValue
                 || b.ReadLocalValue(Skeleton.ShapeProperty) != DependencyProperty.UnsetValue || b.ReadLocalValue(Skeleton.TopProperty) != DependencyProperty.UnsetValue
                 || b.ReadLocalValue(Skeleton.RowHeightProperty) != DependencyProperty.UnsetValue))
                 panels.Add(b);
@@ -157,11 +158,12 @@ internal static partial class Program
         }
         Walk(window);
         if (panels.Count == 0) return;
-        Skeleton.Set(true, panels.ToArray());
+        // SetCurrentValue: um esqueleto ligado por binding (Skeleton.Active="{Binding Loading}") continua ligado ao binding depois
+        foreach (var p in panels) p.SetCurrentValue(Skeleton.ActiveProperty, true);
         Wait(150);
         SaveWindow(window, file);
         Console.WriteLine(file);
-        Skeleton.Set(false, panels.ToArray());
+        foreach (var p in panels) p.SetCurrentValue(Skeleton.ActiveProperty, false);
         Wait(300);
     }
 

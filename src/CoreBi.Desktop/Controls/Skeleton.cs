@@ -13,7 +13,7 @@ public enum SkeletonShape { Rows, Text, Block }
 /// Esqueleto de carregamento de um painel (Border): enquanto <c>Skeleton.Active</c> é verdadeiro, uma camada no fundo do próprio
 /// painel cobre o conteúdo e mostra barras no tom dos fios no lugar dos dados, com um pulso lento de opacidade. A moldura do
 /// painel e o que fica acima de <c>Skeleton.Top</c> (o título fixo) continuam à vista, então só o que falta ler fica em espera.
-/// Ao desligar, a camada some em 200 ms e o conteúdo aparece embaixo dela, sem salto: as barras têm a altura das linhas reais.
+/// Ao desligar, a camada some em 260 ms e o conteúdo aparece embaixo dela, sem salto: as barras têm a altura das linhas reais.
 /// A camada fica dentro do painel, então entra junto com a página (opacidade e deslocamento) e some quando a página some.
 /// Sem degradê nem brilho correndo: o pulso é o único movimento e só existe enquanto há algo carregando.
 /// Respeita "Mostrar animações no Windows".
@@ -125,6 +125,7 @@ public static class Skeleton
 
         private readonly Border _border;
         private int _version;
+        private bool _leaving;
         private AnimationClock? _pulse;
 
         public SkeletonLayer(Border border)
@@ -140,6 +141,8 @@ public static class Skeleton
         public void Show()
         {
             _version++;
+            _leaving = false;
+            InvalidateMeasure();
             BeginAnimation(OpacityProperty, null);
             Opacity = 1;
             Visibility = Visibility.Visible;
@@ -172,6 +175,10 @@ public static class Skeleton
         {
             int version = ++_version;
             IsHitTestVisible = false;
+            // A altura reservada pela planta sai junto com o esqueleto, no mesmo quadro em que o conteúdo aparece: se a planta e o
+            // conteúdo diferirem um pouco, o ajuste fica escondido na troca, e não num salto 200 ms depois, com tudo já à vista
+            _leaving = true;
+            InvalidateMeasure();
             if (!animate)
             {
                 BeginAnimation(OpacityProperty, null);
@@ -179,7 +186,9 @@ public static class Skeleton
                 StopPulse();
                 return;
             }
-            var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(200)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+            // 260 ms, devagar no começo e no fim: o conteúdo embaixo vai aparecendo enquanto as barras somem (uma troca cruzada),
+            // em vez de a camada sumir quase toda no primeiro quadro
+            var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(260)) { EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } };
             fade.Completed += (_, _) =>
             {
                 if (version != _version) return; // ligou de novo durante o fade
@@ -197,7 +206,7 @@ public static class Skeleton
         protected override Size MeasureOverride(Size availableSize)
         {
             string plan = GetLayout(_border);
-            return string.IsNullOrWhiteSpace(plan) ? default : new Size(0, GetTop(_border) + SkeletonPlan.Height(plan));
+            return _leaving || string.IsNullOrWhiteSpace(plan) ? default : new Size(0, GetTop(_border) + SkeletonPlan.Height(plan));
         }
 
         /// <summary>

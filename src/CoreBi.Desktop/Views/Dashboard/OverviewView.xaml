@@ -61,8 +61,12 @@
                         <RowDefinition Height="16" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <!-- Instrumento principal: osciloscópio de dois canais -->
-                    <Border Style="{StaticResource CardBorder}" MinHeight="330">
+                    <!--
+                        Instrumento principal: osciloscópio de dois canais. Na abertura, até a primeira leitura dos sensores, o
+                        esqueleto fica abaixo do cabeçalho (título e filtros à vista): os dois mostradores, a legenda e a área do gráfico
+                    -->
+                    <Border x:Name="DashChartCard" Style="{StaticResource CardBorder}" MinHeight="330" local:Skeleton.Top="34"
+                            local:Skeleton.Layout="gap 18; row 50: n 104^34, - 96, n 104^34, - *; gap 4; row 18: dot 10, - 8, c 72, - 110, dot 10, - 8, c 86, - *; gap 26; rest: frame *">
                         <DockPanel>
                             <!-- Cabeçalho de 34 px, igual em todos os cartões: o título centrado na linha e, à direita, os filtros em pílula -->
                             <Grid DockPanel.Dock="Top" Height="34">
@@ -133,7 +137,8 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <ItemsControl x:Name="DashComponents" Focusable="False">
+                        <!-- Os dois cartões acendem juntos na cascata da entrada (PageMotion.Group) -->
+                        <ItemsControl x:Name="DashComponents" Focusable="False" local:PageMotion.Group="True">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <UniformGrid Columns="2" />
@@ -141,7 +146,10 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}" Margin="0,0,16,0">
+                                    <!-- Esqueleto até o nome e a primeira leitura: ícone, nome e modelo, atalho, leitura grande, medidor e as três grandezas -->
+                                    <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}" Margin="0,0,16,0"
+                                            local:Skeleton.Active="{Binding Loading}"
+                                            local:Skeleton.Layout="col 0 36; row 36: box 36^36; col 48 52%; gap 2; row 20: h *@0.55^15; gap 2; row 14: c *@0.8; col 0 100%; row 36: - *, dot 32&gt;; end; foot 20: n 54^13, - *, n 54^13, - *, n 54^13; footgap 4; foot 17: c 44, - *, c 44, - *, c 44; footgap 16; foot 6: box *^6; footgap 8; foot 46: n 118^30">
                                         <DockPanel>
                                             <Grid DockPanel.Dock="Top">
                                                 <Grid.ColumnDefinitions>
@@ -193,7 +201,9 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <Border x:Name="DashMemoryCard" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
+                        <!-- Esqueleto na abertura até RAM, VRAM e disco estarem lidos: o aro, o título e as três linhas da legenda -->
+                        <Border x:Name="DashMemoryCard" Grid.Column="1" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}"
+                                local:Skeleton.Layout="col 0 150; center 150: ring 150; col 174 *; row 24: h 50%^16; gap 8; share 3: dot 10, - 8, t *@0.7, - 12, n 40^14&gt;; end">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -269,7 +279,7 @@
                         responder (lido fora da janela).
                     -->
                     <Border x:Name="DashHealthCard" Grid.Row="2" Style="{StaticResource CardBorder}" local:Skeleton.Top="34"
-                            local:Skeleton.Layout="gap 14; col 0 26; row 26: box 26; col 40; row 18: s *@0.45; row 17: c *@0.9; end; gap 14; col 0 26; row 26: box 26; col 40; row 18: s *@0.42; row 17: c *@0.85; end">
+                            local:Skeleton.Layout="gap 14; col 0 26; row 26: box 26; col 40; row 20: s *@0.45; gap 3; row 16: c *@0.9; end; gap 14; col 0 26; row 26: box 26; col 40; row 20: s *@0.42; gap 3; row 16: c *@0.85; end">
                         <StackPanel>
                             <Grid Height="34">
                                 <TextBlock Text="Saúde do PC" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" />

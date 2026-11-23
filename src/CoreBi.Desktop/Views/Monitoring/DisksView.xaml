@@ -1,4 +1,4 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.DisksView" xmlns:local="clr-namespace:CoreBi.Desktop">
+﻿<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.DisksView" xmlns:local="clr-namespace:CoreBi.Desktop">
     <UserControl.Resources>
         <!-- LED de veredito: cinza sem dado, verde, âmbar ou vermelho -->
         <Style x:Key="DiskLed" TargetType="Ellipse">
@@ -208,7 +208,8 @@
 
                 <Grid x:Name="DiskBody" Grid.Row="2" SizeChanged="DiskBody_SizeChanged">
                     <!-- Disco escolhido -->
-                    <Grid x:Name="DiskPanel" Visibility="Hidden">
+                    <!-- À vista desde o primeiro quadro, em esqueleto: escondida até a leitura, a ficha surgia de uma vez, fora da cascata da entrada -->
+                    <Grid x:Name="DiskPanel">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition x:Name="LifeColumn" Width="400" />
                             <ColumnDefinition Width="16" />
@@ -230,9 +231,9 @@
                             DIN 30 e a especificação numa frase. Sem selo: saudável é silencioso (o veredito fica no cartão Integridade);
                             atenção, crítico e "sem dados" ganham a linha com o motivo sob a frase. À direita, separado por fio, o espaço.
                         -->
-                        <!-- Esqueleto: ícone, sobretítulo, modelo e frase; à direita o título do espaço, a barra e as três leituras -->
+                        <!-- Esqueleto: ícone, modelo e frase; à direita o título do espaço com o uso, a barra e a frase dos números (80 px por dentro, como a placa) -->
                         <Border x:Name="DiskPlate" Grid.ColumnSpan="5" Style="{StaticResource CardBorder}" Padding="0" Background="{DynamicResource Selected}" BorderBrush="{DynamicResource LineStrong}"
-                                local:Skeleton.Layout="gap 22; col 24 44; row 94: box 44^44; col 88 40%; gap 6; row 16: c *@0.2; gap 4; row 40: h *@0.7^24; gap 7; row 18: t *@0.8; col 60% 38%; row 16: c 64@0.9; gap 12; row 16: box *^16; gap 14; row 16: c 26%@0.6, - 8%, c 26%@0.5, - 8%, c 26%@0.5; gap 4; row 28: n 26%@0.7^22, - 8%, n 26%@0.85^22, - 8%, n 26%@0.85^22; end; gap 22">
+                                local:Skeleton.Layout="gap 24; col 24 44; row 80: box 44^44; col 88 40%; gap 13; row 34: h *@0.6^22; gap 8; row 18: t *@0.85; col 61% 37.4%; gap 8; row 16: c 60@0.9, - *, c 80@0.9&gt;; gap 12; row 12: box *^10; gap 12; row 16: t 55%@0.8; end; gap 24">
                             <Grid>
                                 <Border x:Name="PlateWash" Style="{StaticResource ChannelWash}" local:Ui.Channel="Storage" CornerRadius="15" />
                                 <Grid Margin="{StaticResource PanelPadding}">

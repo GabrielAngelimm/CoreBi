@@ -83,6 +83,7 @@ internal static partial class Program
                     shot.Report(report, $"{page} · {(round == 1 ? "primeira visita" : "volta")}", settleMs: 0);
                     Console.WriteLine(name);
                     Wait(2500); // leituras lentas (discos, drivers) terminam antes da próxima página
+                    if (round == 2) AuditPlans(target, report);
                 }
             }
             File.WriteAllText(Path.Combine(folder, "motion.txt"), report.ToString());
@@ -94,6 +95,28 @@ internal static partial class Program
             window.Close();
             app.Shutdown();
         }
+    }
+
+    /// <summary>
+    /// Confere a altura que cada planta de esqueleto reserva com a altura do painel já com os dados: diferença aqui é o painel
+    /// mudando de tamanho (e empurrando o que vem embaixo) quando o esqueleto sai. Num painel esticado pela grade (linha *), a
+    /// planta menor que o painel não importa; a maior, sim.
+    /// </summary>
+    private static void AuditPlans(FrameworkElement page, StringBuilder sb)
+    {
+        void Walk(DependencyObject node)
+        {
+            if (node is UIElement { Visibility: not Visibility.Visible }) return;
+            if (node is Border b && Skeleton.GetLayout(b) is { Length: > 0 } plan && !Skeleton.GetActive(b))
+            {
+                double reserved = Skeleton.GetTop(b) + SkeletonPlan.Height(plan) + b.Padding.Top + b.Padding.Bottom + b.BorderThickness.Top + b.BorderThickness.Bottom;
+                double real = b.ActualHeight, delta = reserved - real;
+                string name = b.Name.Length > 0 ? b.Name : "(cartão sem nome)";
+                sb.AppendLine($"  PLANTA {name}: esqueleto {reserved:0.#} px, com dados {real:0.#} px{(Math.Abs(delta) > 0.5 ? $"  Δ {delta:+0.#;-0.#}" : "  ok")}");
+            }
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) Walk(VisualTreeHelper.GetChild(node, i));
+        }
+        Walk(page);
     }
 
     /// <summary>Quadros de uma página e o estado dos cartões dela em cada quadro.</summary>
