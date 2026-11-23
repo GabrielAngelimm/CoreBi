@@ -127,6 +127,8 @@ public partial class AppsView : UserControl
         foreach (var view in _groupViews) if (view.Margin.Bottom != 0) view.Margin = new Thickness(0, 0, 0, -gap);
     }
 
+    private int _columns;
+
     /// <summary>
     /// Quantas colunas cabem (até 5) e quais categorias vão em cada uma: as categorias seguem a ordem do catálogo e são divididas
     /// em blocos contíguos com a menor altura máxima possível, para as colunas terminarem quase juntas.
