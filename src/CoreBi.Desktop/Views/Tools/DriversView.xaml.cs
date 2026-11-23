@@ -406,9 +406,9 @@ public partial class DriversView : UserControl
         if (Dialog is not { } dialog) return Task.FromResult(false);
         bool amd = g.Vendor == "AMD", update = amd || g.UpdateAvailable;
         string title = amd ? "Instalar o AMD Software" : g.UpdateAvailable ? "Atualizar o driver da NVIDIA" : "Reinstalar o driver da NVIDIA";
-        string lead = amd ? "O CoreBi baixa o instalador oficial da AMD e abre ele para você seguir."
-            : g.UpdateAvailable ? "O CoreBi baixa o instalador oficial da NVIDIA e abre ele. A tela pode piscar enquanto o driver troca."
-            : "Você já está com a versão mais nova. Reinstalar ajuda quando o driver dá problema: o CoreBi baixa o instalador oficial de novo e abre ele.";
+        string lead = amd ? "O CoreBi baixa o instalador oficial da AMD e abre ele.\nÉ só seguir o instalador até o fim."
+            : g.UpdateAvailable ? "O CoreBi baixa o instalador oficial da NVIDIA e abre ele.\nA tela pode piscar enquanto o driver troca."
+            : "Você já tem a versão mais nova; reinstalar ajuda quando o driver dá problema.\nO CoreBi baixa o instalador oficial de novo e abre ele.";
         string action = amd ? "Baixar e abrir" : g.UpdateAvailable ? $"Instalar {g.Latest}" : $"Reinstalar {g.Latest}";
         const string tip = "O arquivo vem do servidor oficial e tem a assinatura conferida. Antes de abrir, o CoreBi pede ao Windows um ponto de restauração.";
         var cells = new (string Label, string Value, string? Tip)[]
@@ -427,7 +427,7 @@ public partial class DriversView : UserControl
         string what = _drvWu.Count == 1 ? "1 driver" : $"{_drvWu.Count} drivers";
         long bytes = _drvWu.Sum(w => Math.Max(0, w.SizeBytes));
         return dialog.ConfirmAsync("Instalar do Windows Update",
-            "O próprio Windows Update baixa e instala os drivers da lista. No fim, ele pode pedir para reiniciar.",
+            "O próprio Windows Update baixa e instala os drivers da lista.\nNo fim, ele pode pedir para reiniciar o PC.",
             $"Instalar {what}", "Nada além da lista é instalado.",
             ("Drivers", _drvWu.Count.ToString(PtBr), null), ("Download", bytes > 0 ? Size(bytes) : "—", null));
     }
