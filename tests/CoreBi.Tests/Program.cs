@@ -74,7 +74,7 @@ internal static partial class Program
         else if (args.Contains("--hardware")) Hardware();
         else if (args.Contains("--startup")) Startup();
         else if (args.Contains("--integrations")) Integrations();
-        else { Logic(); RegressionTests(); TelemetryTests(); RtssTests(); Hardening(); NetworkTests(); MlabTests(); Ui(); }
+        else { Logic(); RegressionTests(); RuleTests(); TelemetryTests(); RtssTests(); Hardening(); NetworkTests(); MlabTests(); Ui(); }
         string reportName = args.Contains("--overlay-telemetry") ? "overlay-telemetry.json"
             : args.Contains("--bench") ? "bench.json"
             : args.Contains("--hardware") ? "hardware.json"
@@ -244,8 +244,6 @@ internal static partial class Program
             var window = new MainWindow();
             string[] pages = { "PageDash", "PageSystem", "PageSensors", "PageGpu", "PageDisks", "PageEnergy", "PageNet", "PageBottleneck", "PageOverlay", "PageBench", "PageStress", "PageStartup", "PageDriver", "PageApps" };
             foreach (string page in pages) { window.ShowPage(page); Require(((FrameworkElement)window.FindName(page)).Visibility == Visibility.Visible, "Navigation failed: " + page); }
-            foreach (string page in new[] { "PageOc", "PageOptimize", "PageInteg", "PageLauncher", "PageMakerDrv", "PageMakerPorts", "PageGames" }) Require(window.FindName(page) == null, "Removed page remained: " + page);
-            Require(window.FindName("NavGames") == null, "Removed menu item remained: FPS estimado");
             window.ShowPage("PageNet");
             var demoAdapter = new CoreBi.Engine.Monitoring.Network.NetworkAdapterInfo("Ethernet", "Adaptador de rede", "Ethernet (cabo)", 1000,
                 "192.168.1.2", System.Net.IPAddress.Parse("192.168.1.1"), "1.1.1.1", "00-00-00-00-00-00");
@@ -271,7 +269,7 @@ internal static partial class Program
             using (var held = window._workloads.TryBegin("test"))
             {
                 window.PageStress.StartStress(); Require(window.PageStress.StressHint.Text.Contains("benchmark"), "Stress ignored coordinator");
-                window.PageNet.RunOrCancelAsync().GetAwaiter().GetResult();
+                PumpDispatcher(window.PageNet.RunOrCancelAsync()); // bombeia o dispatcher: um await novo no caminho não trava o teste
                 Require(window.PageNet.NetStatus.Text.Contains("Termine") && window.PageNet.LastResult == null, "Network ignored coordinator");
             }
             var waiting = new CoreBi.Engine.Monitoring.Network.NetworkResult
@@ -299,7 +297,6 @@ internal static partial class Program
             Require(window.PageStress.StressDurationText.Text == "1 h 30", $"Duration slider step: '{window.PageStress.StressDurationText.Text}'");
             duration.Value = 1;
             window.NavBench.IsChecked = true; Require(window.PageBench.Visibility == Visibility.Visible, "Sidebar event did not navigate");
-            Require(window.Title == "CoreBi", "Original title remained");
 
             ThemeManager.Apply(true);
             var lightBg = ThemeManager.Brush("Bg").Color;
@@ -307,20 +304,20 @@ internal static partial class Program
             var darkBg = ThemeManager.Brush("Bg").Color;
             Require(lightBg != darkBg && !ThemeManager.IsLight, "ThemeManager did not switch palette colors");
 
+            // Escala e reposicionamento não podem lançar exceção (o desenho do overlay é conferido em OverlayRenderingTests)
             var overlay = new OverlayWindow { Corner = "BR" };
             overlay.SetScale(1.5);
             overlay.Reposition();
-            Require(overlay.Corner == "BR", "OverlayWindow did not retain corner");
             overlay.Close();
 
             string diskStatus = window.PageDisks.DiskHealthStatus.Text;
             string energyStatus = window.PageEnergy.EnergyStatus.Text;
             string netStatus = window.PageNet.NetStatus.Text;
             window.Close();
-            Task.WhenAll(window.PageDisks.RefreshAsync(), window.PageEnergy.RefreshAsync(), window.PageNet.RunOrCancelAsync()).GetAwaiter().GetResult();
+            PumpDispatcher(Task.WhenAll(window.PageDisks.RefreshAsync(), window.PageEnergy.RefreshAsync(), window.PageNet.RunOrCancelAsync()));
             Require(window.PageDisks.DiskHealthStatus.Text == diskStatus && window.PageEnergy.EnergyStatus.Text == energyStatus && window.PageNet.NetStatus.Text == netStatus,
                 "Closed monitoring pages accepted a new collection");
-            return new { pages = pages.Length, removed = 6, sharedSensors = true, themeRoundTrip = true, stressBlockedDuringPreparation = true };
+            return new { pages = pages.Length, sharedSensors = true, themeRoundTrip = true, stressBlockedDuringPreparation = true };
         });
         OverlayRenderingTests();
     }

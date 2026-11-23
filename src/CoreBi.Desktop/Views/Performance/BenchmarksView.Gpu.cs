@@ -24,7 +24,7 @@ public partial class BenchmarksView
     {
         new("Nota", r is null ? "—" : $"{r.Score:N0}", "pts", vs),
         new("FPS médio", r is null ? "—" : $"{r.AvgFps:0.0}", "FPS", "Quadros por segundo"),
-        new("1% low", r is null ? "—" : $"{r.Low1Fps:0.0}", "FPS", "Quadros mais lentos", Tip: "Média do 1% de quadros mais lentos: mostra os engasgos que o FPS médio esconde."),
+        new("1% low", r is null ? "—" : $"{r.Low1Fps:0.0}", "FPS", "Quadros mais lentos", Tip: "O FPS dos quadros mais lentos: só 1 % dos quadros demorou mais que isto. Mostra os engasgos que o FPS médio esconde."),
         new("Quadros", r is null ? "—" : $"{r.Frames:N0}"),
         new("Resolução", r is null ? "—" : $"{r.Width} × {r.Height}"),
     };
@@ -137,12 +137,12 @@ public partial class BenchmarksView
                 Tip: "Referência medida: AMD Radeon RX 9070, preset Alta em 1440p, modo Padrão: 878 pts (87,8 FPS, 1% low 77), variação de 0,5 %."),
             new("FPS, mediana", r is null ? "—" : $"{r.MedianFps:0.0}", "FPS", "Quadros por segundo"),
             new("1% low, mediana", r is null ? "—" : $"{r.MedianLow1:0.0}", "FPS", "Quadros mais lentos",
-                Tip: "Média do 1% de quadros mais lentos: mostra os engasgos que o FPS médio esconde."),
+                Tip: "O FPS dos quadros mais lentos: só 1 % dos quadros demorou mais que isto. Mostra os engasgos que o FPS médio esconde."),
             new("Variação entre passadas", r is null ? "—" : $"{r.VariationPct:0.0}", "%",
                 r is null ? "" : r.Reliable ? "Confiável" : "Instável, rode de novo", r is null ? "" : r.Reliable ? "Ok" : "Warn",
                 r is null ? null : passes + reliability),
-            new("Raios por segundo", r is null ? "—" : $"{r.GigaRaysPerSec:0.0}", "bilhões", r is null ? "" : "estimado",
-                Tip: "Estimado pelas amostras e rebatidas por pixel do preset."),
+            new("Raios por segundo", r is null ? "—" : $"{r.GigaRaysPerSec:0.0}", "bilhões", r is null ? "" : "no máximo",
+                Tip: "Teto calculado pelas amostras e rebatidas por pixel do preset: os raios que saem da cena param antes, então o número real fica abaixo."),
         };
     }
 
@@ -221,7 +221,7 @@ public partial class BenchmarksView
     private static List<BenchStat> SimStats(GameSimResult? r, string vs = "") => new()
     {
         new("FPS médio", r is null ? "—" : $"{r.AvgFps:0}", "FPS", vs, Tip: "A nota do teste é o FPS médio."),
-        new("1% low", r is null ? "—" : $"{r.Low1Fps:0}", "FPS", "Quadros mais lentos", Tip: "Média do 1% de quadros mais lentos."),
+        new("1% low", r is null ? "—" : $"{r.Low1Fps:0}", "FPS", "Quadros mais lentos", Tip: "O FPS dos quadros mais lentos: só 1 % dos quadros demorou mais que isto."),
         new("Thread principal", r is null ? "—" : $"{r.MainThreadMs:0.00}", "ms/quadro", Tip: "Grade espacial, lógica e preparo do desenho, numa thread só."),
         new("Física e IA", r is null ? "—" : $"{r.ParallelMs:0.00}", "ms/quadro", Tip: "Física, colisão e IA das unidades, em paralelo nas outras threads."),
     };

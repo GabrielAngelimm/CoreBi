@@ -9,6 +9,8 @@ internal sealed class NetworkRateLimitStore
 {
     private sealed record SavedLimit(DateTimeOffset UntilUtc);
     internal static readonly TimeSpan DefaultDelay = TimeSpan.FromSeconds(60);
+    /// <summary>Teto da pausa pedida pelo servidor: a espera fica gravada e sobrevive ao reinício do CoreBi.</summary>
+    internal static readonly TimeSpan MaxDelay = TimeSpan.FromHours(1);
     private readonly object _sync = new();
     private readonly string _path;
     private DateTimeOffset? _untilUtc;
@@ -37,9 +39,9 @@ internal sealed class NetworkRateLimitStore
         now = now.ToUniversalTime();
         DateTimeOffset requested;
         if (retryAfter?.Delta is { } delay && delay > TimeSpan.Zero)
-            requested = delay >= DateTimeOffset.MaxValue - now ? DateTimeOffset.MaxValue : now.Add(delay);
+            requested = now.Add(delay < MaxDelay ? delay : MaxDelay);
         else if (retryAfter?.Date is { } date && date > now)
-            requested = date.ToUniversalTime();
+            requested = date.ToUniversalTime() < now.Add(MaxDelay) ? date.ToUniversalTime() : now.Add(MaxDelay);
         else
             requested = now.Add(DefaultDelay);
 

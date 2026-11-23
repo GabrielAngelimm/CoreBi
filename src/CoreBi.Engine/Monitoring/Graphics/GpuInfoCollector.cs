@@ -54,6 +54,9 @@ public sealed class GpuInfo
 
 public static class GpuInfoCollector
 {
+    /// <summary>Texto entre aspas simples numa consulta WQL: a barra e o apóstrofo precisam de escape.</summary>
+    private static string WqlLiteral(string value) => value.Replace("\\", "\\\\").Replace("'", "\\'");
+
     private static readonly Regex PciIdRegex = new(
         @"VEN_([0-9A-F]{4})&DEV_([0-9A-F]{4})(?:&SUBSYS_([0-9A-F]{4})([0-9A-F]{4}))?(?:&REV_([0-9A-F]{2}))?",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -286,7 +289,7 @@ public static class GpuInfoCollector
         var dict = new Dictionary<string, object?>();
         if (pnpId.Length == 0) return dict;
         // Instanciar pelo caminho do objeto falha ("Não encontrado"); via consulta WQL funciona.
-        WmiQuery.ForEach($"SELECT * FROM Win32_PnPEntity WHERE DeviceID='{pnpId.Replace("\\", "\\\\")}'", item =>
+        WmiQuery.ForEach($"SELECT * FROM Win32_PnPEntity WHERE DeviceID='{WqlLiteral(pnpId)}'", item =>
         {
             if (dict.Count > 0 || item is not ManagementObject mo) return;
             using var input = mo.GetMethodParameters("GetDeviceProperties");
@@ -309,7 +312,7 @@ public static class GpuInfoCollector
     {
         if (pnpId.Length == 0) return "—";
         string? result = WmiQuery.FirstOrDefault(
-            $"SELECT IsSigned, Signer FROM Win32_PnPSignedDriver WHERE DeviceID='{pnpId.Replace("\\", "\\\\")}'",
+            $"SELECT IsSigned, Signer FROM Win32_PnPSignedDriver WHERE DeviceID='{WqlLiteral(pnpId)}'",
             d =>
             {
                 bool signed = WmiQuery.GetNullableBool(d, "IsSigned") == true;

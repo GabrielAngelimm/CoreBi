@@ -5,6 +5,9 @@ namespace CoreBi.Engine.Monitoring.Sensors;
 
 public class SensorRow : INotifyPropertyChanged
 {
+    // Uma instância só: a página Sensores atualiza centenas de linhas por segundo
+    private static readonly PropertyChangedEventArgs AllChanged = new(string.Empty);
+
     public string Id { get; init; } = "";
     public string Hardware { get; init; } = "";
     public string Category { get; init; } = "";
@@ -99,7 +102,7 @@ public class SensorRow : INotifyPropertyChanged
         }
         else if (_value == null) return;
         _value = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
+        PropertyChanged?.Invoke(this, AllChanged);
     }
 
     public void ResetStats()
@@ -107,7 +110,7 @@ public class SensorRow : INotifyPropertyChanged
         _min = _max = _value;
         _sum = _value ?? 0;
         _count = _value != null ? 1 : 0;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(string.Empty));
+        PropertyChanged?.Invoke(this, AllChanged);
     }
 
     private bool NeverZero => Type is SensorType.Temperature or SensorType.Clock or SensorType.Voltage;

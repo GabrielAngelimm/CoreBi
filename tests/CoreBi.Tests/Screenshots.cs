@@ -24,6 +24,7 @@ internal static partial class Program
             : ["PageDash", "PageSystem", "PageSensors", "PageDisks", "PageEnergy", "PageNet", "PageOverlay"];
         string[] themes = args.Length > 4 ? args[4].Split(',') : ["dark", "light"];
         Directory.CreateDirectory(folder);
+        int skipped = 0; // página pedida que não existe mais no menu: a captura dela sumiria sem aviso
         string data = Path.Combine(folder, "settings");
         Directory.CreateDirectory(data);
         string real = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CoreBi", "settings.json");
@@ -61,6 +62,7 @@ internal static partial class Program
                     if (window.NavPanel.Children.OfType<RadioButton>().FirstOrDefault(n => n.Tag as string == parts[0]) is not { } nav)
                     {
                         Console.WriteLine("Página sem item no menu: " + parts[0]);
+                        skipped++;
                         continue;
                     }
                     nav.IsChecked = false;
@@ -119,7 +121,7 @@ internal static partial class Program
                     if (theme == themes[0]) SaveSkeletons(window, Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-skeleton.png"));
                 }
             }
-            return 0;
+            return skipped == 0 ? 0 : 1;
         }
         finally
         {
