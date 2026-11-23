@@ -1,17 +1,53 @@
 # Mudanças
 
-## Não lançado
+## 1.0.0 — a publicar
 
-- Barra lateral refeita: os grupos Jogos e Desempenho viraram um só, "Jogos e desempenho" (OverlayBi, Teste de carga, Benchmark e Gargalo), e Ferramentas segue a ordem de quem acabou de formatar (Instalar apps, Drivers, Inicialização). Itens mais altos e com respiro entre eles, ícone e texto alinhados numa malha só (com a marca e os títulos de grupo na mesma vertical), página escolhida com o texto em seminegrito num esmaecer suave e a pílula chegando junto com a página. O tema virou uma escolha à vista, "Claro" ou "Escuro", e a troca agora é um esmaecer suave da tela inteira, em vez de um corte seco. A central de monitoramento (CPU, GPU, RAM e disco) saiu da barra: repetia a Visão geral e era redesenhada a cada segundo. Benchmark ganhou um ícone de velocímetro, desenhado como as peças, e os glifos do menu ficam centrados pela tinta.
-- Instalar apps refeito: 73 apps em 13 categorias (navegadores, jogos, comunicação, gravação, música e vídeo, produtividade, periféricos, criação, utilitários, segurança, acesso remoto, desenvolvimento e componentes como Visual C++, .NET, DirectX 9 e Java), com o ícone oficial de cada um, a página inteira em colunas, legenda de estados, kits (Pós-formatação, Jogos, Trabalho e estudo, Criador, Programação), busca, filtro Todos / Disponíveis / No pacote / Instalados (que é também a legenda), título da categoria que marca todos os apps dela e funil para filtrar por ela, confirmação com o pacote inteiro antes de instalar e um cartão com o pacote na ordem em que vai instalar. Durante a instalação nada na tela pula: o progresso aparece no próprio app (um arco girando) e no cartão do pacote ("Instalando 3/12"), e ao terminar cada app mostra o estado real, Instalado ou disponível. Cada app tem uma dica curta dizendo o que ele é. Apps da Microsoft Store (Teams, ChatGPT) agora aparecem como instalados, pela confirmação do winget.
-- Navegação mais fluida: toda página troca no instante do clique, com a mesma entrada suave, e os painéis acendem em sequência. Painéis que ainda estão lendo dados mostram um esqueleto de carregamento no lugar do conteúdo (Sensores, Sistema, Placa de vídeo, Discos, Energia, Rede, Gargalo, Inicialização, Instalar apps, Drivers e a saúde do PC na Visão geral), que dá lugar ao conteúdo quando ele chega.
-- A interface deixou de congelar por ~75 ms a cada segundo: a leitura dos sensores roda fora da thread da janela. A Visão geral lê o registro de eventos em segundo plano (travava ~110 ms a cada visita), e Sensores monta os cartões aos poucos e guarda a página por um minuto depois de sair dela.
-- Arquitetura revisada, sem mudança de tela nem de função: o Engine passa a guardar as regras que a interface repetia (limiares de rede, pontuação de memória, desligamentos inesperados do disco, busca de driver), arquivos grandes viram partes por assunto, o que só o Engine usa fica interno e o Desktop ganha a pasta Controls para os blocos visuais reutilizáveis. As páginas seguem um contrato só (Tick, RefreshAsync, RefreshHardware, RedrawTheme). Detalhes em docs/ARCHITECTURE.md.
-- Corrigidas regressões da organização anterior: capacidades de disco voltam a sair como no Explorador (1 TB = 931 GB), vereditos em maiúsculas voltam a "Saudável", o overlay volta a ser pausado durante os benchmarks de GPU, a leitura de sensores por segundo deixou de copiar a lista inteira várias vezes, o TPM ausente volta a aparecer como "Ausente" e a limpeza do teste de carga da GPU libera os alvos mesmo quando a renderização falha.
-- Comentários que explicavam decisões (anticheat, compatibilidade com o Explorador, limites de hardware) voltaram ao código.
-- Ferramentas: CI confere licenses/ com o lock de pacotes e fixa a versão do Inno Setup; Test.ps1 restaura em modo travado e ganhou o modo OverlayTelemetry; Publish.ps1 limpa a pasta padrão antes de publicar.
+Primeira versão completa: as 14 páginas foram refinadas uma a uma e o app passou por uma revisão final de código, interface e documentação. A data entra aqui no dia da publicação.
 
-## 0.2.6 — 2026-11-20
+### Páginas
+
+- **Visão geral** (#48): forma mais arredondada, anéis de uso, componentes e atividade recente com testes e dispositivos conectados.
+- **Sistema** (#50): abas com 12 px de vão, versão do app no topo e relatório personalizado (escolha das partes; HTML, PDF ou JSON), num desenho novo.
+- **Sensores e Placa de vídeo** (#53, #56): cabeçalho com respiro e ficha técnica igual à de Sistema; a placa de vídeo cabe numa tela, com as leituras ao vivo na faixa da placa.
+- **Discos** (#55): a página toda para os discos, faixa de vida útil e régua térmica.
+- **Energia** (#54, #57): sessão de consumo no cabeçalho, troca de plano suave e Tensões ocupando o cartão.
+- **Rede** (#60): histórico dos testes, instrumento centrado e números animados.
+- **OverlayBi** (#62): monitor novo, prévia que desliza até o canto, itens em pílula com LED e "Onde funciona" em tópicos.
+- **Gargalo, Benchmark e Teste de carga** (#63): páginas refinadas, com histórico e os últimos resultados de cada teste.
+- **Inicialização e Drivers** (#64): tabela única, apps da Microsoft Store na inicialização, backup e restauração dos drivers na própria janela.
+- **Instalar apps** (#58): catálogo de 73 apps em 13 categorias, com ícones oficiais, kits, busca, filtros e o pacote na ordem em que vai instalar.
+- **Barra lateral** (#65): grupo Jogos e desempenho, malha única de ícone e texto, tema Claro/Escuro em pílula com troca suave. A central de monitoramento saiu da barra: repetia a Visão geral.
+
+### Interface
+
+- Navegação fluida (#46, #47, #59): a página troca no instante do clique, os painéis acendem em sequência e a primeira carga mostra o esqueleto da página inteira. A leitura dos sensores saiu da thread da janela, que deixou de travar ~75 ms a cada segundo.
+- Escala única de texto e recuo óptico de 24 px no app todo (#55), cabeçalhos de cartão de 34 px e raios em quatro degraus (#49), botões, campos e filtros em pílula (#51, #52).
+- Revisão final: texto apagado com contraste AA nos dois temas, eixos dos gráficos no piso de 12 px, anel de foco que acompanha a forma de cada controle, botões que afundam ao clicar, botões só de glifo com nome para o leitor de tela e todo o movimento seguindo o "Mostrar animações" do Windows.
+- Textos padronizados: espaço antes de "%", estados vazios iguais, status do cabeçalho com " · " e datas com "ontem" e o ano quando muda.
+
+### Segurança e privacidade
+
+- DLLs nativas carregadas só do System32 (a `nvml.dll` também da pasta NVSMI da NVIDIA), e o pacote publicado deixa as DLLs ao lado do `CoreBi.exe` em vez de extraí-las para a pasta temporária do usuário.
+- O Edge usado no PDF vem só do registro da máquina ou de Program Files, e um atalho no lugar do PDF gerado é recusado.
+- Relatório HTML com política de conteúdo restrita e escape do CSS; consultas WMI e o ponto de restauração com escape; respostas dos fabricantes limitadas a 8 MB.
+- Memória do RTSS malformada vira "Incompatível" em vez de derrubar o app.
+- Licença MIT restaurada na raiz, com o aviso do projeto de origem (ResetExplode) em `NOTICE.md`; os dois vão junto do programa publicado.
+
+### Código e testes
+
+- Auditoria de arquitetura (#44): o Engine guarda as regras que a interface repetia, as páginas seguem um contrato só (Tick, RefreshAsync, RefreshHardware, RedrawTheme) e o Desktop ganhou a pasta Controls.
+- Revisão final: limites de temperatura num lugar só, NVML pela placa certa em PCs com duas placas, sessões ETW órfãs limpas ao abrir, cultura pt-BR fixada, cada página isolada para que uma falha não derrube as outras, erros antes silenciosos no log e a NVML lida só quando a página aparece.
+- Testes das regras que viram veredito na tela (1% low, notas, saúde de disco, rede, equilíbrio, históricos, configurações, bateria e plano de energia); saíram verificações que nunca falhavam.
+- Cerca de 600 linhas de estilos e controles sem uso removidas.
+- Corrigidas regressões da organização anterior: capacidades de disco como no Explorador (1 TB = 931 GB), vereditos em caixa de frase, overlay pausado durante os benchmarks de GPU e o TPM ausente como "Ausente".
+
+### Ferramentas e dependências
+
+- Os scripts de `tools/` baixam o SDK fixado quando ele falta (#36).
+- CI: escrita no repositório só num job pequeno que publica as capturas, `licenses/` e `THIRD-PARTY.md` conferidos com o lock, aviso quando as capturas falham e tempo limite nos testes.
+- TraceEvent 4.0.2 (#61).
+
+## 0.2.6 — 2026-11-20 (sem tag)
 
 - FPS estimado removido do app: saem a página, o item do menu Jogos, as tabelas de FPS por jogo e a integração opcional com a API HowManyFPS, com o campo da chave. Uma chave que estivesse salva é descartada na próxima gravação das configurações, e o pacote System.Security.Cryptography.ProtectedData, que só servia para cifrá-la, saiu do projeto. O FPS medido continua igual no OverlayBi (inclusive pelo RTSS), no Gargalo e nos benchmarks.
 - Dependências: System.Management e System.Diagnostics.EventLog 11.0.0.

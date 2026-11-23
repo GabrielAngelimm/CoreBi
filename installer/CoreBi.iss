@@ -2,7 +2,7 @@
 ; Compilado por tools\Installer.ps1 a partir de artifacts\publish\win-x64.
 
 #ifndef AppVersion
-  #define AppVersion "0.2.6"
+  #define AppVersion "1.0.0"
 #endif
 #ifndef PublishDir
   #define PublishDir "..\artifacts\publish\win-x64"
@@ -17,6 +17,7 @@ AppName=CoreBi
 AppVersion={#AppVersion}
 AppVerName=CoreBi {#AppVersion}
 AppPublisher=CoreBi contributors
+AppCopyright=Copyright (c) 2026 CoreBi contributors. Licença MIT.
 AppPublisherURL=https://github.com/GabrielAngelimm/CoreBi
 AppSupportURL=https://github.com/GabrielAngelimm/CoreBi/issues
 DefaultDirName={autopf}\CoreBi
@@ -66,8 +67,8 @@ Filename: "{app}\CoreBi.exe"; Description: "Abrir o CoreBi"; WorkingDir: "{app}"
 [Code]
 const
   UninstallRoot = 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\';
-  DescPawnIO = 'Driver assinado que permite ler a temperatura, o consumo e o clock internos da CPU. Sem ele o CoreBi funciona, mas esses sensores ficam indisponíveis. Baixado do repositório oficial do winget (não vem dentro deste instalador).';
-  DescRtss = 'Serviço de OSD (o mesmo do MSI Afterburner) que permite exibir o OverlayBi dentro de jogos em tela cheia exclusiva. Pode ser desmarcado: sem ele o overlay continua funcionando em jogos em janela e sem bordas. Baixado pelo winget (Guru3D.RTSS); a licença do RTSS não permite redistribuí-lo no instalador.';
+  DescPawnIO = 'Driver assinado que permite ler a temperatura, o consumo e o clock internos da CPU. Sem ele o CoreBi funciona, mas esses sensores ficam indisponíveis. Baixado do repositório oficial do winget (não vem dentro deste instalador); mantê-lo marcado aceita a licença do PawnIO.';
+  DescRtss = 'Serviço de OSD (o mesmo do MSI Afterburner) que permite exibir o OverlayBi dentro de jogos em tela cheia exclusiva. Pode ser desmarcado: sem ele o overlay continua funcionando em jogos em janela e sem bordas. Baixado pelo winget (Guru3D.RTSS): a licença do RTSS não permite incluí-lo aqui, e mantê-lo marcado aceita essa licença.';
 
 var
   DescLabel: TNewStaticText;
@@ -106,13 +107,14 @@ end;
 
 procedure InitializeWizard;
 begin
-  WizardForm.ComponentsList.Height := WizardForm.ComponentsList.Height - ScaleY(64);
+  { A lista tem três itens: a sobra vai para a descrição, que com a licença chega a cinco linhas }
+  WizardForm.ComponentsList.Height := WizardForm.ComponentsList.Height - ScaleY(80);
   DescLabel := TNewStaticText.Create(WizardForm);
   DescLabel.Parent := WizardForm.SelectComponentsPage;
   DescLabel.Left := WizardForm.ComponentsList.Left;
   DescLabel.Top := WizardForm.ComponentsList.Top + WizardForm.ComponentsList.Height + ScaleY(8);
   DescLabel.Width := WizardForm.ComponentsList.Width;
-  DescLabel.Height := ScaleY(56);
+  DescLabel.Height := ScaleY(72);
   DescLabel.AutoSize := False;
   DescLabel.WordWrap := True;
   WizardForm.ComponentsList.OnClick := @MostrarDescricao;

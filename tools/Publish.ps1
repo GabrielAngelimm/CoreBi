@@ -17,7 +17,11 @@ try {
     $licensesTarget = Join-Path $OutputDirectory 'licenses'
     if (Test-Path -LiteralPath $licensesTarget) { Remove-Item -LiteralPath $licensesTarget -Recurse -Force }
     Copy-Item -LiteralPath (Join-Path $script:RepoRoot 'licenses') -Destination $OutputDirectory -Recurse -Force
-    foreach ($required in @('THIRD-PARTY.md','packages.json')) {
+    # A licença MIT e o aviso de origem acompanham o binário (condição da própria MIT)
+    foreach ($notice in @('LICENSE','NOTICE.md')) {
+        Copy-Item -LiteralPath (Join-Path $script:RepoRoot $notice) -Destination (Join-Path $OutputDirectory "licenses/$notice") -Force
+    }
+    foreach ($required in @('THIRD-PARTY.md','packages.json','LICENSE','NOTICE.md')) {
         if (-not (Test-Path -LiteralPath (Join-Path $OutputDirectory "licenses/$required"))) { throw "Licença ausente no pacote: $required" }
     }
     Write-Host "CoreBi disponível em $OutputDirectory"

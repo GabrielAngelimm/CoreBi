@@ -15,7 +15,7 @@ O pacote publicado acompanha estes avisos, as licenças originais disponíveis e
 | HidSharp | 2.6.4 | LICENSE.txt | [origem](https://software.seekye.com/hidsharp) |
 | LibreHardwareMonitorLib | 0.9.6 | MPL-2.0 | [origem](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/tree/3d331e3370efb858411f19511373eff65a218701) |
 | Microsoft.Diagnostics.NETCore.Client | 0.2.661903 | MIT | [origem](https://github.com/dotnet/diagnostics/tree/d7b455b46332b31fd9ba3a3f3e020387984c511a) |
-| Microsoft.Diagnostics.Tracing.TraceEvent | 4.0.0 | MIT | [origem](https://github.com/Microsoft/perfview) |
+| Microsoft.Diagnostics.Tracing.TraceEvent | 4.0.2 | MIT | [origem](https://github.com/Microsoft/perfview) |
 | Microsoft.Extensions.DependencyInjection.Abstractions | 8.0.2 | MIT | [origem](https://github.com/dotnet/runtime/tree/81cabf2857a01351e5ab578947c7403a5b128ad1) |
 | Microsoft.Extensions.Logging.Abstractions | 8.0.3 | MIT | [origem](https://github.com/dotnet/runtime/tree/eba546b0f0d448e0176a2222548fd7a2fbf464c0) |
 | Microsoft.NETCore.App.Runtime.win-x64 | 10.0.13 | MIT | [origem](https://github.com/dotnet/dotnet/tree/4099f83977f4d29604a9aeb971fb0a7bc1d5f699) |
