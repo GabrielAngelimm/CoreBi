@@ -15,11 +15,53 @@ namespace CoreBi.Desktop;
 public static class FileIcons
 {
     private static readonly ConcurrentDictionary<string, ImageSource?> Cache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, bool> Glyphs = new(StringComparer.OrdinalIgnoreCase);
 
     public static ImageSource? Get(string? path)
     {
         if (string.IsNullOrWhiteSpace(path)) return null;
         return Cache.GetOrAdd(path, Load);
+    }
+
+    /// <summary>
+    /// O ícone é um glifo de uma cor só (os apps da Store sem placa, como o do ChatGPT, vêm brancos e somem no tema claro)? Aí a tela
+    /// pinta o desenho com a cor do texto, como o Windows faz na barra de tarefas.
+    /// </summary>
+    public static bool IsGlyph(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        return Glyphs.GetOrAdd(path, p => Get(p) is BitmapSource b && Monochrome(b));
+    }
+
+    /// <summary>Quase todo pixel visível sem cor (cinza) e com o mesmo brilho: um desenho só, não um ícone colorido.</summary>
+    internal static bool Monochrome(BitmapSource source)
+    {
+        try
+        {
+            var bgra = new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
+            int w = bgra.PixelWidth, h = bgra.PixelHeight;
+            var px = new byte[w * h * 4];
+            bgra.CopyPixels(px, w * 4, 0);
+            int seen = 0, gray = 0;
+            double sum = 0, sumSq = 0;
+            for (int i = 0; i < px.Length; i += 4)
+            {
+                byte a = px[i + 3];
+                if (a < 96) continue;
+                // Pré-multiplicado não: Bgra32 é direto; ainda assim, o brilho vem da cor sem o alfa
+                int b = px[i], g = px[i + 1], r = px[i + 2];
+                int max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
+                seen++;
+                if (max - min < 28) gray++;
+                double l = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                sum += l;
+                sumSq += l * l;
+            }
+            if (seen < 24) return false;
+            double mean = sum / seen, spread = Math.Sqrt(Math.Max(0, sumSq / seen - mean * mean));
+            return gray >= seen * 0.9 && spread < 0.12;
+        }
+        catch { return false; }
     }
 
     private static ImageSource? Load(string path)

@@ -16,6 +16,7 @@ public sealed class StartupRow(StartupEntry entry, ImageSource? icon)
 {
     public StartupEntry Entry { get; } = entry;
     public ImageSource? Icon { get; } = icon;
+    public bool Glyph { get; } = FileIcons.IsGlyph(entry.IconPath);
     /// <summary>Dica do nome: o nome da entrada no Windows (quando é outro) e a descrição do arquivo.</summary>
     public string NameTip => string.Join("\n", new[]
     {
@@ -31,6 +32,7 @@ public sealed class RemovedRow(StartupBackup backup, ImageSource? icon)
 {
     public StartupBackup Backup { get; } = backup;
     public ImageSource? Icon { get; } = icon;
+    public bool Glyph { get; } = FileIcons.IsGlyph(backup.IconPath);
     public string Title => Backup.DisplayName;
     public string When => Backup.RemovedAt is { } at ? StartupView.Day(at) : "";
     public string Tip => string.Join("\n", new[] { Backup.Publisher ?? "", Backup.Command ?? Backup.Original ?? "" }.Where(s => s.Length > 0));
@@ -65,6 +67,9 @@ public partial class StartupView : UserControl
     private ICollectionView? _view;
     private string _filter = "all";
     private HashSet<StartupRow> _passing = new();
+    /// <summary>Por que a lista de removidos está vazia quando não deu para ler (sem administrador); null, o texto de sempre.</summary>
+    private string? _removedNote;
+    private const string EmptyRemovedText = "Nada removido. A lixeira de um programa tira ele da inicialização e guarda aqui, para devolver quando quiser.";
 
     private void StartupListScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
         => ToolPage.AlignHead(StartupListScroll, StartupHead, HeadMargin);
@@ -96,15 +101,16 @@ public partial class StartupView : UserControl
         {
             list = await Task.Run(_startup.List, _context.Lifetime);
             if (_context.IsClosing) return;
+            _removedNote = null;
             try { _removed = await Task.Run(() => _startup.Backups, _context.Lifetime); }
-            catch (UnauthorizedAccessException) { _removed = Array.Empty<StartupBackup>(); backupError = "Os removidos só aparecem com o CoreBi aberto como administrador."; }
+            catch (UnauthorizedAccessException) { _removed = Array.Empty<StartupBackup>(); _removedNote = "Os removidos ficam numa pasta que só o CoreBi aberto como administrador consegue ler."; }
             catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); backupError = "Não foi possível ler os removidos: " + ex.Message; }
             boots = await Task.Run(_startup.Boots, _context.Lifetime);
             // Ícones lidos fora da tela (o primeiro acesso a cada arquivo leva alguns milissegundos); depois vêm do cache
             await Task.Run(() =>
             {
-                foreach (var e in list) FileIcons.Get(e.IconPath);
-                foreach (var b in _removed) FileIcons.Get(b.IconPath);
+                foreach (var e in list) FileIcons.IsGlyph(e.IconPath);
+                foreach (var b in _removed) FileIcons.IsGlyph(b.IconPath);
             }, _context.Lifetime);
         }
         catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); _scanning = false; Skeleton.Set(false, StartupCard, BootCard); return; }
@@ -165,6 +171,7 @@ public partial class StartupView : UserControl
     {
         if (RemovedList.ItemsSource is not IEnumerable<RemovedRow> shown || Signature(shown.Select(r => r.Backup)) != Signature(_removed))
             RemovedList.ItemsSource = _removed.Select(b => new RemovedRow(b, FileIcons.Get(b.IconPath))).ToList();
+        RemovedEmpty.Text = _removedNote ?? EmptyRemovedText;
         RemovedEmpty.Visibility = _removed.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         BtnStartupRestore.Visibility = _removed.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
     }

@@ -86,11 +86,21 @@
         <DataTemplate x:Key="ProgramIcon">
             <Grid Width="24" Height="24" VerticalAlignment="Center" HorizontalAlignment="Left">
                 <TextBlock x:Name="glyph" Text="&#xE71D;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Faint}" Visibility="Collapsed" />
-                <Image Source="{Binding Icon}" Width="24" Height="24" RenderOptions.BitmapScalingMode="HighQuality" />
+                <Image x:Name="image" Source="{Binding Icon}" Width="24" Height="24" RenderOptions.BitmapScalingMode="HighQuality" />
+                <!-- Ícone de uma cor só (app da Store sem placa): o desenho pintado com a cor do texto, visível nos dois temas -->
+                <Rectangle x:Name="tinted" Width="24" Height="24" Fill="{DynamicResource Fg}" Visibility="Collapsed">
+                    <Rectangle.OpacityMask>
+                        <ImageBrush ImageSource="{Binding Icon}" Stretch="Uniform" />
+                    </Rectangle.OpacityMask>
+                </Rectangle>
             </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding Icon}" Value="{x:Null}">
                     <Setter TargetName="glyph" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Glyph}" Value="True">
+                    <Setter TargetName="image" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="tinted" Property="Visibility" Value="Visible" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -295,10 +305,10 @@
                         <!--
                             Tempo de início: o total em mostrador (BIOS + Windows + programas), a barra das três partes na proporção e a
                             legenda com o tempo de cada uma; embaixo, os últimos dez inícios em barras (Windows e programas empilhados), da
-                            esquerda para a direita, o mais novo aceso. O cartão tem altura fixa: sem registro, a mesma área diz por quê.
+                            esquerda para a direita, o mais novo aceso. O cartão tem altura fixa (454, a do conteúdo completo; o esqueleto cabe nela): sem registro, a mesma área diz por quê.
                         -->
-                        <Border x:Name="BootCard" Style="{StaticResource CardBorder}" local:Skeleton.Top="34"
-                                local:Skeleton.Layout="gap 14; row 56: n 96, - *; row 18: c 62%; gap 16; row 12: box *@1^12; gap 14; rows 3 30: - 2, dot 10, - 12, t 52%, - *, n 44&gt;; gap 20; row 18: c 40%; gap 10; row 96: box *; gap 8; row 16: c *@0.9">
+                        <Border x:Name="BootCard" Style="{StaticResource CardBorder}" Height="454" local:Skeleton.Top="34"
+                                local:Skeleton.Layout="gap 14; row 52: n 96, - *; row 18: c 62%; gap 16; row 12: box *@1^12; gap 14; rows 3 30: - 2, dot 10, - 12, t 52%, - *, n 44&gt;; gap 16; row 18: c 40%; gap 10; row 96: box *; gap 8; row 16: c *@0.9">
                             <StackPanel>
                                 <Grid Style="{StaticResource CardHeader}">
                                     <Grid.ColumnDefinitions>
