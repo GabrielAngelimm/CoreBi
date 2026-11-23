@@ -8,7 +8,10 @@ public static class NetworkThresholds
     public const double InternetLossWarnPct = 1;
     public const double InternetLossCritPct = 5;
     public const double InternetLatencyWarnMs = 80;
+    public const double InternetLatencyCritMs = 150;
     public const double InternetJitterWarnMs = 20;
+    /// <summary>Quanto a latência pode subir com a conexão cheia antes de o veredito apontar bufferbloat.</summary>
+    public const double BufferbloatWarnMs = 100;
 
     /// <summary>Início do achado que não afeta o veredito (roteador que bloqueia ping).</summary>
     public const string RouterSilentNotePrefix = "O roteador não responde";
@@ -75,7 +78,7 @@ internal static class NetworkDiagnostics
                 notes.Add(new("Um dos alvos de internet não respondeu a ping; a perda nesse alvo é inconclusiva.", true));
                 internetVerdict = HealthVerdict.Warning;
             }
-            if (netLoss > NetworkThresholds.InternetLossCritPct || netAvg > 150) { critical = true; internetVerdict = HealthVerdict.Critical; }
+            if (netLoss > NetworkThresholds.InternetLossCritPct || netAvg > NetworkThresholds.InternetLatencyCritMs) { critical = true; internetVerdict = HealthVerdict.Critical; }
             else if (netLoss > NetworkThresholds.InternetLossWarnPct || netAvg > NetworkThresholds.InternetLatencyWarnMs || netJit > NetworkThresholds.InternetJitterWarnMs) internetVerdict = HealthVerdict.Warning;
             if (netLoss > NetworkThresholds.InternetLossWarnPct) notes.Add(new($"Há perda de pacotes nos alvos que responderam ({netLoss:0.#}%). Verifique a rede local e, se persistir, o provedor.", true));
             if (netAvg > NetworkThresholds.InternetLatencyWarnMs) notes.Add(new($"Latência alta até os alvos de internet ({netAvg:0} ms). O teste não identifica sozinho a origem do atraso.", true));
@@ -83,7 +86,7 @@ internal static class NetworkDiagnostics
         }
 
         double? bloat = Bufferbloat(loadedBaselineTarget, loadedMs);
-        if (bloat > 100)
+        if (bloat > NetworkThresholds.BufferbloatWarnMs)
             notes.Add(new($"A latência sobe para {loadedMs:0} ms quando a conexão está cheia (bufferbloat). Ative SQM/QoS no roteador ou limite a velocidade a ~90%.", true));
         if (dnsMs > 150)
             notes.Add(new($"A resolução do nome demorou {dnsMs:0} ms. O resultado pode incluir cache do Windows e atrasos da rede.", true));

@@ -94,6 +94,20 @@ internal static partial class Program
             var written = new SensorRow { Name = "Data Written", HardwareType = HardwareType.Storage, Type = SensorType.Data };
             written.Update(1200, null, null);
             Require(hot.Level == 1 && hot.Number == 64f.ToString("0.0"), "Disk temperature verdict or fixed decimals");
+            // Sensores e Discos usam os mesmos limites (ThermalLimits): NVMe a 72 °C é atenção nas duas páginas.
+            SensorRow Temp(string name, string root, HardwareType type, float value)
+            {
+                var row = new SensorRow { Id = root + "/temperature/0", Name = name, RootId = root, RootType = type, HardwareType = type, Type = SensorType.Temperature };
+                row.Update(value, null, null);
+                return row;
+            }
+            Require(Temp("Temperature", "/nvme/0", HardwareType.Storage, 72).Level == 1 && Temp("Temperature", "/nvme/0", HardwareType.Storage, 86).Level == 2
+                && Temp("Temperature", "/nvme/0", HardwareType.Storage, 65).Level == 0, "NVMe temperature verdict differs from the Disks page");
+            Require(Temp("Critical Temperature", "/nvme/0", HardwareType.Storage, 84).Level == 0 && Temp("Warning Temperature", "/nvme/0", HardwareType.Storage, 76).Level == 0,
+                "Disk threshold rows colored as readings");
+            Require(Temp("GPU Hot Spot", "/gpu-nvidia/0", HardwareType.GpuNvidia, 100).Level == 1 && Temp("GPU Core", "/gpu-nvidia/0", HardwareType.GpuNvidia, 100).Level == 2,
+                "GPU hot spot uses the chip limits");
+            Require(LoadSample.ThermalLimitC == ThermalLimits.ChipCritC, "Gargalo thermal limit differs from Sensores");
             Require(written.IsCounter && written.MaxNumber == "", "Counter shows statistics");
             Require(!PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Ethernet, "Intel(R) Ethernet Controller I225-V-WFP Native MAC Layer LightWeight Filter-0000", "Ethernet-WFP")
                 && !PhysicalNetwork.IsPhysical(System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211, "Microsoft Wi-Fi Direct Virtual Adapter", "Conexão Local* 8")

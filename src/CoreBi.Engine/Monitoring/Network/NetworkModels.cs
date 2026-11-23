@@ -81,9 +81,9 @@ public sealed class NetworkResult
     /// <summary>Pings a 1.1.1.1 enquanto o download enche a conexão.</summary>
     public IReadOnlyList<double?> LoadedSamples { get; init; } = [];
     public double? LoadedLatencyMs { get; init; }
-    /// <summary>Quanto a latência sobe com a conexão cheia; acima de 100 ms o veredito aponta bufferbloat.</summary>
+    /// <summary>Quanto a latência sobe com a conexão cheia; acima de <see cref="NetworkThresholds.BufferbloatWarnMs"/> o veredito aponta bufferbloat.</summary>
     public double? BufferbloatMs { get; init; }
-    public bool Bufferbloat => BufferbloatMs > 100;
+    public bool Bufferbloat => BufferbloatMs > NetworkThresholds.BufferbloatWarnMs;
     public HealthVerdict LocalVerdict { get; init; } = HealthVerdict.Unknown;
     public HealthVerdict InternetVerdict { get; init; } = HealthVerdict.Unknown;
     public IReadOnlyList<string> Notes { get; init; } = [];

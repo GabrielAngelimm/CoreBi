@@ -53,14 +53,23 @@ public class SensorRow : INotifyPropertyChanged
         _ => 2
     };
 
-    /// <summary>Veredito só para temperatura: 0 normal, 1 atenção, 2 crítico (discos esquentam menos).</summary>
+    /// <summary>
+    /// Veredito só para temperatura: 0 normal, 1 atenção, 2 crítico, com os limites de <see cref="ThermalLimits"/>.
+    /// Os limites que o próprio disco informa ("Temperatura de aviso", "Temperatura crítica") não são leituras e ficam neutros.
+    /// </summary>
     public int Level
     {
         get
         {
-            if (Type != SensorType.Temperature || _value is not { } v) return 0;
-            bool disk = (RootId.Length > 0 ? RootType : HardwareType) == HardwareType.Storage;
-            float warn = disk ? 60 : 85, crit = disk ? 70 : 95;
+            if (Type != SensorType.Temperature || _value is not { } v || Name is "Warning Temperature" or "Critical Temperature") return 0;
+            double warn, crit;
+            if ((RootId.Length > 0 ? RootType : HardwareType) == HardwareType.Storage)
+                // A biblioteca identifica o NVMe por "/nvme/…"; NVMe é sempre SSD. SATA não diz o tipo aqui.
+                (warn, crit) = ThermalLimits.Disk(isSsd: (RootId.Length > 0 ? RootId : Id).StartsWith("/nvme", StringComparison.Ordinal));
+            else if (Name is "GPU Hot Spot" or "GPU Memory Junction")
+                (warn, crit) = (ThermalLimits.JunctionWarnC, ThermalLimits.JunctionCritC);
+            else
+                (warn, crit) = (ThermalLimits.ChipWarnC, ThermalLimits.ChipCritC);
             return v >= crit ? 2 : v >= warn ? 1 : 0;
         }
     }

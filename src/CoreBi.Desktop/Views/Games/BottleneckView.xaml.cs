@@ -129,17 +129,17 @@ namespace CoreBi.Desktop.Views
         private bool _demo;
 
         private readonly LimitReading _gpu = new("Uso da GPU", "Gpu", LoadSample.GpuLimitPct / 100.0, $"Limite em {LoadSample.GpuLimitPct:0} %",
-            "Quanto a placa de vídeo está trabalhando. A partir de 90 % ela é o limite, o normal em jogos pesados.", first: true);
+            $"Quanto a placa de vídeo está trabalhando. A partir de {LoadSample.GpuLimitPct:0} % ela é o limite, o normal em jogos pesados.", first: true);
         private readonly LimitReading _cpu = new("Núcleo mais ocupado", "Cpu", LoadSample.CpuLimitPct / 100.0, $"Limite em {LoadSample.CpuLimitPct:0} %",
-            "Jogos costumam depender de um ou dois núcleos. A partir de 85 % num núcleo (ou no total) o processador passa a segurar o FPS.");
+            $"Jogos costumam depender de um ou dois núcleos. A partir de {LoadSample.CpuLimitPct:0} % num núcleo (ou no total) o processador passa a segurar o FPS.");
         private readonly LimitReading _vram = new("VRAM em uso", "Gpu", LoadSample.VramLimitPct / 100.0, $"Limite em {LoadSample.VramLimitPct:0} %",
-            "A memória da própria placa de vídeo, onde ficam as texturas. A partir de 97 % ela está cheia e o jogo engasga.");
+            $"A memória da própria placa de vídeo, onde ficam as texturas. A partir de {LoadSample.VramLimitPct:0} % ela está cheia e o jogo engasga.");
         private readonly LimitReading _ram = new("RAM em uso", "Memory", LoadSample.RamLimitPct / 100.0, $"Limite em {LoadSample.RamLimitPct:0} %",
-            "A memória do PC. A partir de 92 % o Windows passa a usar o disco no lugar dela, bem mais lento.");
+            $"A memória do PC. A partir de {LoadSample.RamLimitPct:0} % o Windows passa a usar o disco no lugar dela, bem mais lento.");
         private readonly LimitReading _gpuTemp = new("Temperatura da GPU", "Gpu", LoadSample.ThermalLimitC / 100.0, $"Limite em {LoadSample.ThermalLimitC:0} °C",
-            "A partir de 95 °C, ou quando o driver reduz o clock pela temperatura, o limite é o calor.");
+            $"A partir de {LoadSample.ThermalLimitC:0} °C, ou quando o driver reduz o clock pela temperatura, o limite é o calor.");
         private readonly LimitReading _cpuTemp = new("Temperatura da CPU", "Cpu", LoadSample.ThermalLimitC / 100.0, $"Limite em {LoadSample.ThermalLimitC:0} °C",
-            "A partir de 95 °C o processador reduz o clock para se proteger. Sem modo administrador, a leitura pode faltar.");
+            $"A partir de {LoadSample.ThermalLimitC:0} °C o processador reduz o clock para se proteger. Sem modo administrador, a leitura pode faltar.");
 
         private readonly SituationItem[] _situations = BottleneckAnalyzer.Situations
             .Select((l, i) => new SituationItem(l, i == 0, SituationName(l), BottleneckAnalyzer.Meaning(l), LimiterChannel(l), BottleneckAnalyzer.Advice(l)))

@@ -112,7 +112,7 @@ internal sealed class GpuBoard
         _temp.Value = temp is float tt ? $"{tt:0}" : "—";
         _temp.Unit = "°C";
         _temp.Sub = hot is float hs ? $"ponto quente {hs:0} °C" : "";
-        _temp.Tone = temp >= 95 || hot >= 105 ? "Danger" : "";
+        _temp.Tone = temp >= ThermalLimits.ChipCritC || hot >= ThermalLimits.JunctionCritC ? "Danger" : "";
         _temp.Max = 100;
 
         Push("power", power, gap);

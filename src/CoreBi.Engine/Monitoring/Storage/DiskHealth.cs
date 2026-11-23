@@ -219,7 +219,7 @@ public static class DiskHealth
             if (w >= DiskDetail.WearCritAt) crit.Add($"Desgaste de {w:0}%: o SSD está no fim da vida útil. Troque e faça backup.");
             else if (w >= DiskDetail.WearWarnAt) warn.Add($"Desgaste de {w:0}%: o SSD já gastou boa parte da vida útil. Planeje a troca.");
         }
-        double okMax = isSsd ? 70 : 55, critMax = isSsd ? 85 : 65;
+        var (okMax, critMax) = ThermalLimits.Disk(isSsd);
         if (r.Temp is double t)
         {
             if (t >= critMax) crit.Add($"Temperatura de {t:0} °C é muito alta para este disco.");

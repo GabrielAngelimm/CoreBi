@@ -226,11 +226,7 @@ namespace CoreBi.Desktop.Views
             var kind = OverviewView.BenchEvent(record);
             _context.RecordEvent(kind.Icon, "Benchmark concluído", summary, "", kind.Channel);
             _context.Settings.BenchRecords.Insert(0, record);
-            _context.Settings.BenchRecords = _context.Settings.BenchRecords
-                .GroupBy(r => r.Test)
-                .SelectMany(g => g.Take(10))
-                .OrderByDescending(r => r.Date)
-                .ToList();
+            _context.Settings.BenchRecords = BenchRecord.Normalize(_context.Settings.BenchRecords);
             _context.SaveSettings();
             UpdateGameBenchHistory();
         }

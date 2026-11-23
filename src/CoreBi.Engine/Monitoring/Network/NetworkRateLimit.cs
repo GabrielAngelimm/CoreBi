@@ -8,7 +8,7 @@ namespace CoreBi.Engine.Monitoring.Network;
 internal sealed class NetworkRateLimitStore
 {
     private sealed record SavedLimit(DateTimeOffset UntilUtc);
-    private static readonly TimeSpan DefaultDelay = TimeSpan.FromSeconds(60);
+    internal static readonly TimeSpan DefaultDelay = TimeSpan.FromSeconds(60);
     private readonly object _sync = new();
     private readonly string _path;
     private DateTimeOffset? _untilUtc;

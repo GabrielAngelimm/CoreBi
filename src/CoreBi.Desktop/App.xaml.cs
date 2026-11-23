@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 using System.Windows;
@@ -13,6 +14,10 @@ public partial class App : Application
 
     public App()
     {
+        // A interface é só em português: números e datas seguem o pt-BR mesmo num Windows com formatos de outra região.
+        // Sem isso, a mesma ficha misturava "15,9 GB" (formatado em pt-BR) com "448.0 GB/s" (formato do sistema).
+        var ptBr = CultureInfo.GetCultureInfo("pt-BR");
+        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = ptBr;
         DispatcherUnhandledException += (_, e) =>
         {
             DiagnosticLog.Write("ui.unhandled", e.Exception);

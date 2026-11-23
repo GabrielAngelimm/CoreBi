@@ -105,8 +105,7 @@ public partial class BenchmarksView
 
         _context.Settings.BenchRuns.Insert(0, new BenchRun(DateTime.Now, mt, st, sustained, HardwareNaming.ShortCpuName(_context.CpuName)));
         _context.RecordEvent("cpu", "Benchmark", "Render de CPU", mt is double mte ? $"{mte:N0} pts" : st is double ste ? $"{ste:N0} pts" : "", "Cpu");
-        if (_context.Settings.BenchRuns.Count > 10)
-            _context.Settings.BenchRuns.RemoveRange(10, _context.Settings.BenchRuns.Count - 10);
+        _context.Settings.BenchRuns = BenchRun.Normalize(_context.Settings.BenchRuns);
         _context.SaveSettings();
         UpdateCpuHistory();
     }

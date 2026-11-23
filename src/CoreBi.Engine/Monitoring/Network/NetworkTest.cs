@@ -197,7 +197,7 @@ public static class NetworkTest
             progress(new(NetworkPhase.Analysis, UploadEnd, "Analisando",
                 LatencyMs: netAvg, DownloadMbps: down, UploadMbps: up));
 
-        DateTimeOffset? limitedUntil = limit.Limited ? rateLimit.Active(DateTimeOffset.UtcNow) ?? DateTimeOffset.UtcNow.AddSeconds(60) : null;
+        DateTimeOffset? limitedUntil = limit.Limited ? rateLimit.Active(DateTimeOffset.UtcNow) ?? DateTimeOffset.UtcNow.Add(NetworkRateLimitStore.DefaultDelay) : null;
         NetworkPhase? interrupted = limitedUntil != null ? (uploadStarted ? NetworkPhase.Upload : NetworkPhase.Download)
             : down == null ? NetworkPhase.Download : up == null ? NetworkPhase.Upload : null;
         double interruptedFraction = interrupted switch

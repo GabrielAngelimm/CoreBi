@@ -169,7 +169,7 @@ public partial class DriversView : UserControl
     internal static void Verdict(GpuDriverStatus g, bool studio)
     {
         g.Lead = ""; g.Tone = "";
-        if (g.Vendor != "NVIDIA" || g.Latest.Length == 0 || g.Installed.Length == 0) return;
+        if (!g.CanCompare) return;
         string line = studio ? "Studio" : "Game Ready";
         if (g.UpdateAvailable) { g.Lead = "Driver novo"; g.Tone = "warn"; g.Message = $"Saiu um {line} mais novo."; }
         else { g.Lead = "Em dia"; g.Tone = "ok"; g.Message = $"É o {line} mais novo da NVIDIA."; }

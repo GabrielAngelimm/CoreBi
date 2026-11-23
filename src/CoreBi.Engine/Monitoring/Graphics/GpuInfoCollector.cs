@@ -107,16 +107,19 @@ public static class GpuInfoCollector
         var matchingDxgi = adapters.Where(a => a.VendorId.ToString("X4") == ven && a.DeviceId.ToString("X4") == dev).ToList();
         var dx = matchingDxgi.FirstOrDefault();
 
+        var pnpProps = PnpProperties(pnp);
+
         IntPtr h = IntPtr.Zero;
         if (ven == "10DE" && uint.TryParse(dev, System.Globalization.NumberStyles.HexNumber, null, out uint devNum))
         {
             uint pciId = (devNum << 16) | 0x10DE;
-            var matchingNv = nvDevices.Where(d => d.Pci.PciDeviceId == pciId).ToList();
+            // Duas placas iguais têm o mesmo ID PCI; só o barramento separa uma da outra. Sem ele, a placa fica sem as
+            // leituras do NVML em vez de mostrar as da gêmea.
+            uint? pciBus = AsUInt(pnpProps.GetValueOrDefault("DEVPKEY_Device_BusNumber"));
+            var matchingNv = nvDevices.Where(d => d.Pci.PciDeviceId == pciId && (pciBus is not uint b || d.Pci.Bus == b)).ToList();
             if (matchingNv.Count == 1) h = matchingNv[0].Handle;
-            else if (matchingNv.Count > 1 && dx != null) h = matchingNv[0].Handle;
         }
 
-        var pnpProps = PnpProperties(pnp);
         var reg = GpuRegistryReader.ReadDriverHardwareInfo(pnpProps.GetValueOrDefault("DEVPKEY_Device_Driver") as string);
 
         var gpu = new GpuInfo
@@ -302,7 +305,7 @@ public static class GpuInfoCollector
             {
                 "DEVPKEY_PciDevice_CurrentLinkSpeed", "DEVPKEY_PciDevice_CurrentLinkWidth",
                 "DEVPKEY_PciDevice_MaxLinkSpeed", "DEVPKEY_PciDevice_MaxLinkWidth",
-                "DEVPKEY_Device_Driver", "DEVPKEY_Device_LocationInfo"
+                "DEVPKEY_Device_Driver", "DEVPKEY_Device_LocationInfo", "DEVPKEY_Device_BusNumber"
             };
             using var output = mo.InvokeMethod("GetDeviceProperties", input, null);
             if (output?["deviceProperties"] is ManagementBaseObject[] props)
