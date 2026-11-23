@@ -546,9 +546,9 @@
                             <TextBlock x:Name="PackCount" Text="0" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="34" Foreground="{DynamicResource Faint}"
                                        Typography.NumeralAlignment="Tabular" MinWidth="40" TextAlignment="Left" VerticalAlignment="Center" Margin="0,0,14,2" />
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock x:Name="PackTitle" Text="apps no pacote" Style="{StaticResource ItemTitle}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock x:Name="PackTitle" Text="apps no pacote" Style="{StaticResource ItemTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
                                 <TextBlock x:Name="PackNote" Text="Marque apps para montar" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}"
-                                           Margin="0,2,0,0" TextTrimming="CharacterEllipsis" local:HeaderMotion.SoftText="True" />
+                                           Margin="0,2,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" local:HeaderMotion.SoftText="True" />
                             </StackPanel>
                         </Grid>
                         <!-- Barra da fila, rente ao pé da leitura: só aparece durante a instalação -->

@@ -202,7 +202,7 @@ public partial class AppsView : UserControl
             PackCount.Text = _runDone.ToString();
             PackCount.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
             PackTitle.Text = $"de {_runTotal} concluídos";
-            PackNote.Text = _appsStop ? "Parando depois do app atual" : "Instalando um por vez, sem janelas";
+            PackNote.Text = _appsStop ? "Parando depois do app atual" : "Um por vez, sem janelas";
             return;
         }
         int n = _package.Count;
