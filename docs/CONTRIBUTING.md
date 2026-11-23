@@ -82,13 +82,13 @@ Uma troca de versão passa por:
 
 O texto de `SideVersion` em `src/CoreBi.Desktop/Shell/MainWindow.xaml` é só para o designer; em execução o app mostra a versão do assembly.
 
-Uma release é manual e sai de um commit da `main` com a CI verde:
+Uma release sai da `main` com a CI verde, pelo workflow **Release** (Actions > Release > Run workflow, com a versão):
 
-1. Troque a versão como acima e feche a seção do CHANGELOG com a data.
-2. `.\tools\Installer.ps1` gera o instalador e mostra o SHA256.
-3. Para a versão portátil, compacte a pasta `artifacts/publish/win-x64` inteira (o `CoreBi.exe` não roda sozinho: as DLLs nativas e `licenses/` vão junto). Use uma ferramenta que grave caminhos com `/`, porque o `Compress-Archive` do Windows PowerShell 5.1 grava `\`.
-4. Gere o zip do código-fonte daquele commit e um `SHA256SUMS.txt` com os três arquivos.
-5. Crie a tag `vX.Y.Z` no commit e publique a release com as notas em português, tiradas do CHANGELOG.
+1. Troque a versão como acima e feche a seção do CHANGELOG com a data (`## X.Y.Z — AAAA-MM-DD`); sem a data o workflow para.
+2. O workflow compila, roda os testes e gera numa máquina limpa o instalador, o zip portátil (a pasta `artifacts/publish/win-x64` inteira dentro de `CoreBi/`, com caminhos em `/`), o `SHA256SUMS.txt` e as notas, tiradas da seção do CHANGELOG (`tools/release_assets.py`).
+3. Um segundo job, o único com escrita, confere os SHA256, cria a tag `vX.Y.Z` no commit e publica a release como a mais recente. O código-fonte daquele commit o GitHub anexa sozinho.
+
+Para gerar os mesmos arquivos no PC: `.\tools\Installer.ps1` e depois `python -B tools/release_assets.py X.Y.Z` (saem em `artifacts/release`).
 
 ## Dados e publicação
 

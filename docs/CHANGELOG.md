@@ -1,8 +1,8 @@
 # Mudanças
 
-## 1.0.0 — a publicar
+## 1.0.0 — 2026-11-23
 
-Primeira versão completa: as 14 páginas foram refinadas uma a uma e o app passou por uma revisão final de código, interface e documentação. A data entra aqui no dia da publicação.
+Primeira versão completa: as 14 páginas foram refinadas uma a uma e o app passou por uma revisão final de código, interface e documentação.
 
 ### Páginas
 
@@ -31,6 +31,11 @@ Primeira versão completa: as 14 páginas foram refinadas uma a uma e o app pass
 - O Edge usado no PDF vem só do registro da máquina ou de Program Files, e um atalho no lugar do PDF gerado é recusado.
 - Relatório HTML com política de conteúdo restrita e escape do CSS; consultas WMI e o ponto de restauração com escape; respostas dos fabricantes limitadas a 8 MB.
 - Memória do RTSS malformada vira "Incompatível" em vez de derrubar o app.
+
+### Instalador e distribuição
+
+- Instalador novo: segue o tema claro ou escuro do Windows, com a barra de título no mesmo tom, abre com boas-vindas e fecha com a conclusão no painel da marca (o símbolo e a cor de cada peça), desenhado para cada escala de tela.
+- A release sai do GitHub Actions a partir da `main`: compila, testa e gera o instalador, o zip portátil com a pasta inteira, o `SHA256SUMS.txt` e as notas numa máquina limpa.
 - Licença MIT na raiz, que também vai junto do programa publicado.
 
 ### Código e testes

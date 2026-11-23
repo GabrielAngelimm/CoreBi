@@ -61,12 +61,16 @@ internal static partial class Program
             Wait(seconds * 1000);
 
             // Leitura de 1 s: só os sensores e o tique inteiro (todas as páginas), com a Visão geral à vista
+            // Tempo de relógio e de processador de cada leitura: a diferença é espera (driver, amostragem da NVML)
             var refresh = new List<double>();
+            var refreshCpu = new List<double>();
             for (int i = 0; i < 10; i++)
             {
+                double cpu0 = ThreadCpuMs();
                 var w = Stopwatch.StartNew();
                 window._monitor.Poll();
                 refresh.Add(w.Elapsed.TotalMilliseconds);
+                refreshCpu.Add(ThreadCpuMs() - cpu0);
                 Wait(200);
             }
             var parts = window._monitor.TimeEachHardware();
@@ -79,6 +83,19 @@ internal static partial class Program
             Wait(4000);
             self.Refresh();
             double idleCpuMsPerSecond = (self.TotalProcessorTime - cpuStart).TotalMilliseconds / 4;
+            // O mesmo trecho sem o tique de 1 s (sem leitura nem páginas): o que sobra é desenho e os coletores em segundo plano.
+            // Depois, um segundo coletor de uso da GPU do Windows (PDH) ligado ao lado mostra quanto um coletor desses custa.
+            var timer = (DispatcherTimer)typeof(MainWindow).GetField("_timer", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(window)!;
+            timer.Stop();
+            Wait(1500);
+            double noTickCpuMsPerSecond = ProcessCpuMsPerSecond(4000);
+            double pdhCpuMsPerSecond;
+            using (new CoreBi.Engine.Monitoring.Graphics.WindowsGpuUsage())
+            {
+                Wait(1500);
+                pdhCpuMsPerSecond = ProcessCpuMsPerSecond(4000) - noTickCpuMsPerSecond;
+            }
+            timer.Start();
             double tickGap = 0;
             long last = idleStart;
             foreach (long f in frames.ToList()) { tickGap = Math.Max(tickGap, Ms(f - last)); last = f; }
@@ -86,8 +103,8 @@ internal static partial class Program
             Console.WriteLine($"Carga do hardware: {loadMs:0} ms");
             foreach (var (name, type, ms) in parts.OrderByDescending(p => p.Ms))
                 Console.WriteLine($"  {type,-12} {ms,6:0.0} ms  {name}");
-            Console.WriteLine($"Processador parado na Visão geral: {idleCpuMsPerSecond:0} ms por segundo");
-            Console.WriteLine($"Leitura dos sensores (Poll, fora da janela): média {refresh.Average():0.0} ms, máx. {refresh.Max():0.0} ms");
+            Console.WriteLine($"Processador parado na Visão geral: {idleCpuMsPerSecond:0} ms por segundo; sem o tique de 1 s: {noTickCpuMsPerSecond:0} ms; um coletor PDH de uso da GPU: {pdhCpuMsPerSecond:0} ms");
+            Console.WriteLine($"Leitura dos sensores (Poll, fora da janela): média {refresh.Average():0.0} ms, máx. {refresh.Max():0.0} ms; processador {refreshCpu.Average():0.0} ms por leitura");
             Console.WriteLine($"Maior intervalo entre quadros em 4 s parado (tique de 1 s): {tickGap:0} ms");
             results.Add(new
             {
@@ -99,6 +116,9 @@ internal static partial class Program
                 refreshMax = refresh.Max(),
                 idleMaxFrameGapMs = tickGap,
                 idleCpuMsPerSecond,
+                noTickCpuMsPerSecond,
+                pdhCpuMsPerSecond,
+                refreshCpuAvg = refreshCpu.Average(),
                 hardware = parts.Select(p => new { p.Name, Type = p.Type.ToString(), p.Ms })
             });
 
@@ -145,6 +165,28 @@ internal static partial class Program
 
         static double Ms(long ticks) => ticks * 1000.0 / Stopwatch.Frequency;
     }
+
+    /// <summary>Processador gasto pelo app inteiro (todas as threads) por segundo, numa janela de espera com a interface viva.</summary>
+    private static double ProcessCpuMsPerSecond(int milliseconds)
+    {
+        var self = Process.GetCurrentProcess();
+        TimeSpan start = self.TotalProcessorTime;
+        Wait(milliseconds);
+        self.Refresh();
+        return (self.TotalProcessorTime - start).TotalMilliseconds * 1000 / milliseconds;
+    }
+
+    /// <summary>Processador gasto só pela thread atual (kernel + usuário), em ms.</summary>
+    private static double ThreadCpuMs()
+    {
+        GetThreadTimes(GetCurrentThread(), out _, out _, out long kernel, out long user);
+        return (kernel + user) / 10_000.0;
+    }
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentThread();
+    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+    private static extern bool GetThreadTimes(IntPtr thread, out long creation, out long exit, out long kernel, out long user);
 
     /// <summary>Espera a fila da interface esvaziar até a prioridade de ociosidade (layout, render e trabalho adiado já rodaram).</summary>
     private static void Drain()
