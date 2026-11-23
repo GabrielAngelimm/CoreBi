@@ -2,6 +2,7 @@
     <UserControl.Resources>
         <!-- Altura das linhas do catálogo: 30 até a página medir a área; depois o código estica para encher o cartão (FitRows) -->
         <sys:Double x:Key="AppRowHeight">30</sys:Double>
+        <Thickness x:Key="AppGroupGap">0,0,0,14</Thickness>
         <!--
             Ícone oficial do app num ladrilho neutro e suave (Hover), o mesmo em todo lugar da página: na linha do catálogo
             (26 px, ícone de 18) e na ficha do pacote (redondo, 34 px, ícone de 22). Sem o PNG, a inicial do nome no lugar.
@@ -195,7 +196,7 @@
             </Setter>
         </Style>
         <DataTemplate x:Key="CategoryGroup">
-            <StackPanel Margin="0,0,0,14">
+            <StackPanel Margin="{DynamicResource AppGroupGap}">
                 <Grid x:Name="head" Height="31" Margin="0,0,0,6" Background="Transparent">
                     <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" />
                     <Border x:Name="accent" Height="2" VerticalAlignment="Bottom" Background="{DynamicResource Signal}" CornerRadius="1" Visibility="Hidden" />

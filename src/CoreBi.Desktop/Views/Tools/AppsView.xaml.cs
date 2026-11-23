@@ -32,7 +32,7 @@ public partial class AppsView : UserControl
     private string? _category;
 
     // Geometria das colunas: largura mínima de uma coluna, o vão entre elas e as alturas que entram na divisão
-    private const double MinColumn = 250, ColumnGap = 28, GroupHead = 37, RowHeight = 32, MaxRowSlot = 40, GroupGap = 14;
+    private const double MinColumn = 250, ColumnGap = 28, GroupHead = 37, RowHeight = 32, MaxRowSlot = 40, GroupGap = 14, MaxGroupGap = 28;
 
     private void Say(string status, string detail = "") => ToolPage.Say(AppsStatus, AppsDetail, status, detail);
 
@@ -105,8 +105,9 @@ public partial class AppsView : UserControl
     private List<(int Groups, int Rows)> _columnShape = new();
 
     /// <summary>
-    /// Estica as linhas (de 30 até 38 px) para a coluna mais alta terminar no pé do cartão: o vão embaixo das categorias fica igual
-    /// ao de cima, em vez de sobrar um bloco vazio. Sem altura para 30 px, as linhas ficam em 30 e o catálogo rola por dentro.
+    /// Estica as linhas (de 30 até 38 px) e, com o que sobrar, o vão entre as categorias (de 14 até 28), para a coluna mais alta
+    /// terminar no pé do cartão: o vão embaixo das categorias fica igual ao de cima, em vez de sobrar um bloco vazio. Linhas e vãos
+    /// em pixels inteiros, iguais em todas as colunas. Sem altura para 30 px, tudo fica no mínimo e o catálogo rola por dentro.
     /// </summary>
     private void FitRows()
     {
@@ -116,10 +117,15 @@ public partial class AppsView : UserControl
         foreach (var (groups, rows) in _columnShape)
             if (rows > 0) slot = Math.Min(slot, (height - groups * GroupHead - (groups - 1) * GroupGap) / rows);
         slot = Math.Floor(Math.Clamp(slot, RowHeight, MaxRowSlot));
+        double gap = MaxGroupGap;
+        foreach (var (groups, rows) in _columnShape)
+            if (groups > 1) gap = Math.Min(gap, (height - groups * GroupHead - rows * slot) / (groups - 1));
+        gap = Math.Floor(Math.Clamp(gap, GroupGap, MaxGroupGap));
         Resources["AppRowHeight"] = slot - 2;
+        Resources["AppGroupGap"] = new Thickness(0, 0, 0, gap);
+        // A última categoria de cada coluna não leva o vão de baixo
+        foreach (var view in _groupViews) if (view.Margin.Bottom != 0) view.Margin = new Thickness(0, 0, 0, -gap);
     }
-
-    private int _columns;
 
     /// <summary>
     /// Quantas colunas cabem (até 5) e quais categorias vão em cada uma: as categorias seguem a ordem do catálogo e são divididas
