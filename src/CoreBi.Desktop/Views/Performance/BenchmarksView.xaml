@@ -254,7 +254,7 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ItemsControl">
-                                <TextBlock Text="Nenhum resultado ainda. Cada teste concluído fica aqui, com a barra comparando ao melhor." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                <TextBlock Text="Nenhum resultado ainda." Style="{StaticResource Caption}" TextWrapping="Wrap" />
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
@@ -323,7 +323,7 @@
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                         <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
-                                        <TextBlock x:Name="BenchStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
+                                        <TextBlock x:Name="BenchStatus" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="BenchElapsed" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
@@ -382,7 +382,7 @@
                                             </Grid>
                                         </Viewbox>
                                         <Border x:Name="BenchIdle" Style="{StaticResource StageNote}">
-                                            <TextBlock Text="Esta é a cena do teste. Durante a medição, ela é desenhada de novo, bloco a bloco, por todos os núcleos." Style="{StaticResource StageNoteText}" />
+                                            <TextBlock Text="A cena do teste, redesenhada bloco a bloco durante a medição." Style="{StaticResource StageNoteText}" />
                                         </Border>
                                     </Grid>
                                 </Border>
@@ -404,7 +404,7 @@
                                     <TextBlock x:Name="BenchHint" Style="{StaticResource ConfigHint}" />
                                     <Button x:Name="BtnBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnBench_Click" />
                                 </StackPanel>
-                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="24" MaxGap="32" Margin="0,16,0,24">
                                     <StackPanel x:Name="BenchOptions" Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Núcleos" Style="{StaticResource ConfigName}" ToolTip="Multi-core usa todos os núcleos ao mesmo tempo; single-core, um só. Os dois mede um depois do outro." />
                                         <Border Style="{StaticResource ConfigSegmentGroup}">
@@ -474,7 +474,7 @@
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                         <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
-                                        <TextBlock x:Name="SimStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
+                                        <TextBlock x:Name="SimStatus" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="SimDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
@@ -496,7 +496,7 @@
                                             <Image x:Name="SimImage" Width="440" Height="440" RenderOptions.BitmapScalingMode="NearestNeighbor" Style="{StaticResource StagePreview}" />
                                         </Viewbox>
                                         <Border x:Name="SimIdle" Style="{StaticResource StageNote}">
-                                            <TextBlock Text="Dois exércitos, 30 mil unidades. Durante o teste, elas avançam, colidem e lutam a cada quadro." Style="{StaticResource StageNoteText}" />
+                                            <TextBlock Text="Dois exércitos, 30 mil unidades, lutando a cada quadro." Style="{StaticResource StageNoteText}" />
                                         </Border>
                                     </Grid>
                                 </Border>
@@ -518,7 +518,7 @@
                                     <Button x:Name="BtnSimBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnSimBench_Click"
                                             ToolTip="Lógica, física, colisão e IA de 30 mil unidades num mapa. A nota é quantos quadros por segundo o processador aguenta, sem a placa de vídeo." />
                                 </StackPanel>
-                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="24" MaxGap="32" Margin="0,16,0,24">
                                     <StackPanel Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Duração" Style="{StaticResource ConfigName}" ToolTip="Mais tempo dá uma média mais estável." />
                                         <Border Style="{StaticResource ConfigSegmentGroup}">
@@ -579,7 +579,7 @@
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                         <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
-                                        <TextBlock x:Name="GbStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
+                                        <TextBlock x:Name="GbStatus" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="GbDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
@@ -595,7 +595,7 @@
                                 <ItemsControl x:Name="GbResult" ItemTemplate="{StaticResource StatCell}" ItemsPanel="{StaticResource RulerPanel}" AlternationCount="16" Focusable="False" />
                             </Border>
                             <local:RunTrace x:Name="GbTrace" Grid.Row="3" Margin="{StaticResource PanelPadding}" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
-                                            EmptyText="O FPS de cada momento da passada aparece aqui. A cena abre numa janela própria; Esc cancela." />
+                                            EmptyText="O FPS de cada momento aparece aqui. Esc cancela o teste." />
                         </Grid>
                     </Border>
                     <Grid Grid.Column="2">
@@ -612,7 +612,7 @@
                                 <StackPanel DockPanel.Dock="Bottom">
                                     <Button x:Name="BtnGpuBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnGpuBench_Click" />
                                 </StackPanel>
-                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="24" MaxGap="32" Margin="0,16,0,24">
                                     <StackPanel Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Resolução" Style="{StaticResource ConfigName}" ToolTip="Mais pixels pesam mais na placa de vídeo. Compare só resultados na mesma resolução." />
                                         <Border Style="{StaticResource ConfigSegmentGroup}">
@@ -682,7 +682,7 @@
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                         <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
-                                        <TextBlock x:Name="RtStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
+                                        <TextBlock x:Name="RtStatus" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="RtDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
@@ -698,7 +698,7 @@
                                 <ItemsControl x:Name="RtResult" ItemTemplate="{StaticResource StatCell}" ItemsPanel="{StaticResource RulerPanel}" AlternationCount="16" Focusable="False" />
                             </Border>
                             <local:RunTrace x:Name="RtTrace" Grid.Row="3" Margin="{StaticResource PanelPadding}" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
-                                            EmptyText="O FPS de cada momento da passada aparece aqui. A cena abre numa janela própria; Esc cancela." />
+                                            EmptyText="O FPS de cada momento aparece aqui. Esc cancela o teste." />
                         </Grid>
                     </Border>
                     <Grid Grid.Column="2">
@@ -716,7 +716,7 @@
                                     <Button x:Name="BtnRtBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnRtBench_Click" ToolTipService.ShowOnDisabled="True"
                                             ToolTip="Compare só resultados com a mesma resolução, o mesmo preset e o mesmo driver, com o PC na tomada e sem outros programas pesados abertos." />
                                 </StackPanel>
-                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="24" MaxGap="32" Margin="0,16,0,24">
                                     <StackPanel Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Resolução" Style="{StaticResource ConfigName}" />
                                         <Border Style="{StaticResource ConfigSegmentGroup}">
@@ -791,7 +791,7 @@
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                         <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
-                                        <TextBlock x:Name="MemStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
+                                        <TextBlock x:Name="MemStatus" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="MemDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
@@ -822,7 +822,7 @@
                                     <Button x:Name="BtnMemBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnMemBench_Click"
                                             ToolTip="Latência e banda da RAM, com blocos maiores que o cache do processador; depois, um pacote de 512 MB e mil arquivos de 64 KB lidos sem o cache do Windows e apagados no fim." />
                                 </StackPanel>
-                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="24" MaxGap="32" Margin="0,16,0,24">
                                     <!-- Sem ajustes: o que o teste faz fica na dica do botão e em cada linha do palco -->
                                     <StackPanel Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Sem ajustes" Style="{StaticResource ConfigName}" />
@@ -872,7 +872,7 @@
                                 <StackPanel Grid.Column="2" Style="{StaticResource PlateState}">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                         <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse Style="{StaticResource RunLed}" /></InlineUIContainer></TextBlock>
-                                        <TextBlock x:Name="DiskStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
+                                        <TextBlock x:Name="DiskStatus" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="DiskDetail" Style="{StaticResource TestDetail}" />
                                 </StackPanel>
@@ -903,7 +903,7 @@
                                     <Button x:Name="BtnDiskBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnDiskBench_Click"
                                             ToolTip="Grava um arquivo temporário na unidade escolhida, mede sem o cache do Windows e apaga o arquivo no final. Feche outros programas pesados antes." />
                                 </StackPanel>
-                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="24" MaxGap="32" Margin="0,16,0,24">
                                     <StackPanel Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Unidade" Style="{StaticResource ConfigName}" ToolTip="Onde o arquivo de teste é gravado." />
                                         <Border Style="{StaticResource ConfigSegmentGroup}">

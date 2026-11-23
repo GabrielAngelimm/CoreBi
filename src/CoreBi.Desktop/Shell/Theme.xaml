@@ -2205,10 +2205,10 @@
     </Style>
     <!--
         Coluna da bancada (Benchmark e Teste de carga), o mesmo desenho nos sete testes: em cima, o cartão de configurações
-        ("Configurações do benchmark" ou "do teste de carga"), com o título, as seções (rótulo e controle, 28 a 48 entre elas com
-        um fio no meio, ConfigStack) e o botão de iniciar no pé, 24 abaixo delas; embaixo, o Histórico, que rola por dentro. No
-        Benchmark o histórico tem altura fixa (BenchHistoryCard) e a configuração fica com o resto; no Teste de carga a
-        configuração tem a altura das cinco seções, sempre as mesmas, e o histórico fica com o resto.
+        ("Configurações do benchmark" ou "do teste de carga"), com o título, as seções (rótulo e controle, 16 abaixo do título,
+        24 a 32 entre elas e sem fio, ConfigStack) e o botão de iniciar no pé; a sobra fica entre a última seção e o botão. No
+        Benchmark, embaixo, o Histórico de altura fixa (BenchHistoryCard), que rola por dentro; no Teste de carga a configuração
+        tem a coluna toda e o histórico fica no palco, ao lado do gráfico.
     -->
     <Style x:Key="ConfigCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
         <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
@@ -2221,6 +2221,9 @@
     </Style>
     <!-- Controle segmentado da configuração: a largura toda do cartão, teclas iguais de 34 (o grupo fica com 42) e texto 14 -->
     <Style x:Key="ConfigSegmentGroup" TargetType="Border" BasedOn="{StaticResource SegmentGroup}">
+        <!-- 42 de altura e o mesmo fio LineStrong das pílulas: trilho e pílulas leem do mesmo tamanho lado a lado -->
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="CornerRadius" Value="21"/>
         <Setter Property="Padding" Value="3"/>
@@ -2251,7 +2254,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Grid>
+                    <Grid x:Name="root">
                         <Border x:Name="b" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource LineStrong}" Background="Transparent" SnapsToDevicePixels="True"/>
                         <Border x:Name="on" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource SignalDeep}" Background="{DynamicResource SignalSoft}" Opacity="0" SnapsToDevicePixels="True"/>
                         <ContentPresenter x:Name="content" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8,1,8,0"/>
@@ -2279,9 +2282,9 @@
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
                         </Trigger>
+                        <!-- A pílula inteira a 30 %, texto e marca juntos (a opacidade de "on" é animada e venceria um Setter) -->
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
-                            <Setter TargetName="on" Property="Opacity" Value="0.3"/>
+                            <Setter TargetName="root" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -2297,7 +2300,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Grid>
+                    <Grid x:Name="root">
                         <Border x:Name="b" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource LineStrong}" Background="Transparent" SnapsToDevicePixels="True"/>
                         <Border x:Name="on" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource SignalDeep}" Background="{DynamicResource SignalSoft}" Opacity="0" SnapsToDevicePixels="True"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8,0">
@@ -2340,9 +2343,9 @@
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
                         </Trigger>
+                        <!-- A pílula inteira a 30 %, texto e marca juntos (a opacidade de "on" é animada e venceria um Setter) -->
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
-                            <Setter TargetName="on" Property="Opacity" Value="0.3"/>
+                            <Setter TargetName="root" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -2407,7 +2410,7 @@
     </Style>
     <!--
         Histórico do Benchmark: a mesma altura nos seis testes (a do Ray tracing, o teste com mais ajustes), então trocar de teste
-        não move a divisa entre os dois cartões; a configuração fica com o resto e centra as seções nele (ConfigStack.MaxGap).
+        não move a divisa entre os dois cartões; a configuração fica com o resto, com as seções em cima e a sobra antes do botão (ConfigStack.MaxGap).
     -->
     <Style x:Key="BenchHistoryCard" TargetType="Border" BasedOn="{StaticResource HistoryCard}">
         <Setter Property="Height" Value="340"/>
@@ -2418,7 +2421,7 @@
     -->
     <Style x:Key="HistoryHeader" TargetType="Grid" BasedOn="{StaticResource CardHeader}">
         <Setter Property="DockPanel.Dock" Value="Top"/>
-        <Setter Property="Margin" Value="0,0,16,10"/>
+        <Setter Property="Margin" Value="0,0,16,20"/>
     </Style>
     <!--
         Limpar o histórico: a mesma pílula do Limpar de Instalar apps (fio tracejado LineStrong, lixeira e texto), com largura fixa

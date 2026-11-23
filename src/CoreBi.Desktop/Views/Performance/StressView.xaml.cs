@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using CoreBi.Desktop.Services;
@@ -70,7 +71,7 @@ public partial class StressView : UserControl, IDisposable
         _gpuMaxTemp = 0;
         ResetStressReadings();
         StressDurationChanged();
-        SetStatus("Pronto", aborted: false);
+        SetStatus("", aborted: false);
         StDetail.Text = "";
         StressHint.Text = "";
         BtnStressReset.IsEnabled = false;
@@ -138,6 +139,21 @@ public partial class StressView : UserControl, IDisposable
     }
     private void TempChart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
 
+    // Com o mouse em cima, o gráfico mostra o valor exato daquele segundo, como os gráficos da Visão geral e dos Discos
+    private double? _hoverX;
+
+    private void TempChart_MouseMove(object sender, MouseEventArgs e)
+    {
+        _hoverX = e.GetPosition(TempChart).X;
+        DrawChart();
+    }
+
+    private void TempChart_MouseLeave(object sender, MouseEventArgs e)
+    {
+        _hoverX = null;
+        DrawChart();
+    }
+
     private void StressDurationChanged()
     {
         if (!IsInitialized || StressDurationText == null) return;
@@ -174,11 +190,16 @@ public partial class StressView : UserControl, IDisposable
     private void UpdateConfigEnabled(bool running)
     {
         bool cpu = ChkCpu.IsChecked == true, ram = ChkRam.IsChecked == true, gpu = ChkGpu.IsChecked == true;
-        StressDurationSection.IsEnabled = !running;
-        CpuLimitSection.IsEnabled = !running && (cpu || ram || !gpu);
+        // Nenhuma peça marcada, nada para ajustar: a duração e o corte do processador também se apagam
+        bool any = cpu || ram || gpu;
+        StressDurationSection.IsEnabled = !running && any;
+        BtnStress.IsEnabled = running || any;
+        BtnStress.ToolTip = running || any ? "Põe as peças marcadas no máximo e acompanha a temperatura, para ver se o PC aguenta sem travar." : "Marque uma peça em cima para começar.";
+        CpuLimitSection.IsEnabled = !running && (cpu || ram);
         GpuLimitSection.IsEnabled = GpuResSection.IsEnabled = GpuMsaaSection.IsEnabled = GpuOptions.IsEnabled = !running && gpu;
         RamSection.IsEnabled = !running && ram;
         const string Off = "Marque a peça em cima para ajustar.";
+        StressDurationSection.ToolTip = any || running ? null : "Marque uma peça em cima para ajustar.";
         CpuLimitSection.ToolTip = CpuLimitSection.IsEnabled || running ? null : "Marque o processador ou a memória em cima para ajustar.";
         GpuLimitSection.ToolTip = GpuResSection.ToolTip = GpuMsaaSection.ToolTip = GpuOptions.ToolTip = GpuOptions.IsEnabled || running ? null : Off;
         RamSection.ToolTip = RamSection.IsEnabled || running ? null : Off;
@@ -275,7 +296,7 @@ public partial class StressView : UserControl, IDisposable
             SetStressControls(running: true);
             UpdateColumnStates();
             SetStatus("Rodando", aborted: false);
-            StDetail.Text = minutes > 0 ? $"Termina às {_stressStart + _stressDuration:HH:mm}" : "Roda até você parar";
+            StDetail.Text = minutes > 0 ? $"Termina às {_stressStart + _stressDuration:HH:mm}" : "";
         }
         catch (Exception ex)
         {
@@ -336,7 +357,8 @@ public partial class StressView : UserControl, IDisposable
 
         if (aborted) status = "Interrompido";
         SetStatus(status, aborted);
-        StDetail.Text = reason;
+        // "Parado" e "Concluído" já dizem tudo; o motivo só aparece quando acrescenta algo (o corte, a janela fechada, a falha)
+        StDetail.Text = reason is "Parado por você" or "Tempo de teste concluído" ? "" : reason;
         BtnStressReset.IsEnabled = true;
 
         var run = new StressRun
@@ -525,7 +547,7 @@ public partial class StressView : UserControl, IDisposable
             UpdateColumnStates();
             ResetStressReadings();
             StressDurationChanged();
-            SetStatus("Pronto", false);
+            SetStatus("", false);
             StDetail.Text = "";
             StTemp.Text = "—";
             ShowHistory();
@@ -702,6 +724,73 @@ public partial class StressView : UserControl, IDisposable
             var dot = new Ellipse { Width = 7, Height = 7, Fill = stroke, Stroke = ThemeManager.Brush("Surface"), StrokeThickness = 1.5 };
             Place(dot, end.X - 3.5, end.Y - 3.5);
         }
+        DrawHover(series, left, top, plotW, plotH, step, Y, Place);
+    }
+
+    /// <summary>
+    /// A leitura sob o mouse: fio tracejado na vertical, um ponto em cada linha e a caixa com quando foi e a temperatura de cada
+    /// peça (o mesmo desenho da dica do gráfico da Visão geral).
+    /// </summary>
+    private void DrawHover(List<(List<double> Data, string Channel, byte Alpha)> series, double left, double top, double plotW, double plotH,
+        double step, Func<double, double> y, Action<UIElement, double, double> place)
+    {
+        if (_hoverX is not double mx || mx < left - 4 || mx > left + plotW + 4) return;
+        int at = (int)Math.Round(Math.Clamp((mx - left) / step, 0, HistoryLength - 1));
+        var values = new List<(string Channel, double Value)>();
+        foreach (var (data, channel, _) in series)
+        {
+            int i = at - (HistoryLength - data.Count);
+            if (i >= 0 && i < data.Count) values.Add((channel, data[i]));
+        }
+        if (values.Count == 0) return;
+
+        double px = left + at * step;
+        var wire = new Line { X1 = Math.Round(px) + 0.5, X2 = Math.Round(px) + 0.5, Y1 = top, Y2 = top + plotH, StrokeThickness = 1, StrokeDashArray = new DoubleCollection { 3, 3 }, Stroke = ThemeManager.Brush("Faint"), SnapsToDevicePixels = true };
+        TempChart.Children.Add(wire);
+        foreach (var (channel, value) in values)
+        {
+            var dot = new Ellipse { Width = 11, Height = 11, StrokeThickness = 2.5, Stroke = ThemeManager.Brush(channel), Fill = ThemeManager.Brush("Surface") };
+            place(dot, px - 5.5, y(value) - 5.5);
+        }
+
+        var ui = (FontFamily)FindResource("UiFont");
+        var readout = (FontFamily)FindResource("Readout");
+        var rows = new StackPanel();
+        var when = new TextBlock { Text = ChartScale.RelativeAgo(HistoryLength - 1 - at), FontFamily = ui, FontSize = 12, Foreground = ThemeManager.Brush("Faint") };
+        Typography.SetNumeralAlignment(when, FontNumeralAlignment.Tabular);
+        rows.Children.Add(when);
+        // Processador primeiro, na mesma ordem da legenda
+        foreach (var (channel, value) in values.OrderBy(v => v.Channel == "Cpu" ? 0 : 1))
+        {
+            var row = new Grid { Margin = new Thickness(0, 4, 0, 0) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition());
+            var swatch = new Border { Width = 10, Height = 3, CornerRadius = new CornerRadius(1.5), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0), Background = ThemeManager.Brush(channel) };
+            var name = new TextBlock { Text = channel == "Cpu" ? "Processador" : "Placa de vídeo", FontFamily = ui, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Foreground = ThemeManager.Brush("Muted") };
+            var number = new TextBlock { Text = $"{value:0.#} °C", FontFamily = readout, FontStretch = FontStretches.SemiCondensed, FontSize = 15, Margin = new Thickness(16, 0, 0, 0), HorizontalAlignment = HorizontalAlignment.Right, Foreground = ThemeManager.Brush("Fg") };
+            Typography.SetNumeralAlignment(number, FontNumeralAlignment.Tabular);
+            Grid.SetColumn(number, 1);
+            row.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { swatch, name } });
+            row.Children.Add(number);
+            rows.Children.Add(row);
+        }
+        var tip = new Border
+        {
+            CornerRadius = (CornerRadius)FindResource("RadiusControl"),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(12, 8, 12, 8),
+            Background = ThemeManager.Brush("Raised"),
+            BorderBrush = ThemeManager.Brush("LineStrong"),
+            IsHitTestVisible = false,
+            Child = rows,
+        };
+        tip.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        double tw = tip.DesiredSize.Width, th = tip.DesiredSize.Height;
+        double tx = px + 14 + tw > TempChart.ActualWidth ? px - 14 - tw : px + 14;
+        double anchor = values.Min(v => y(v.Value));
+        double ty = Math.Clamp(anchor - th / 2, top, Math.Max(top, top + plotH - th));
+        Panel.SetZIndex(tip, 10);
+        place(tip, tx, ty);
     }
 
     private IEnumerable<(double Value, string Channel)> Limits(bool cpu, bool gpu)

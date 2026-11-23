@@ -57,9 +57,9 @@ public sealed class SpreadPanel : System.Windows.Controls.Panel
 }
 
 /// <summary>
-/// Seções da configuração de um teste: o vão que sobra se divide por igual entre elas, com um fio no meio de cada vão, entre
-/// MinGap e MaxGap; o bloco fica no meio da altura (com poucas seções num cartão alto, a sobra vai em cima e embaixo, por igual,
-/// e as seções não se espalham pelo cartão). Com uma seção só, ela fica no meio. As recolhidas não contam.
+/// Seções da configuração de um teste, de cima para baixo logo abaixo do título: o vão que sobra se divide por igual entre
+/// elas, entre MinGap e MaxGap (fio opcional no meio de cada vão, Divider); o que passa disso fica embaixo, antes do botão.
+/// As recolhidas não contam.
 /// </summary>
 public sealed class ConfigStack : System.Windows.Controls.Panel
 {
@@ -98,7 +98,8 @@ public sealed class ConfigStack : System.Windows.Controls.Panel
         double used = visible.Sum(c => c.DesiredSize.Height);
         int n = visible.Count;
         double gap = n > 1 ? Math.Clamp((final.Height - used) / n, MinGap, Math.Max(MinGap, MaxGap)) : 0;
-        double y = n > 0 ? Math.Max(0, (final.Height - used - (n - 1) * gap) / 2) : 0;
+        // Encostadas em cima, logo abaixo do título: a sobra fica entre a última seção e o botão de iniciar
+        double y = 0;
         _lines.Clear();
         for (int i = 0; i < n; i++)
         {

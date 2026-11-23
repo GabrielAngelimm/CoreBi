@@ -78,7 +78,18 @@ public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
         {
             var items = Children.OfType<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
             double each = items.Count > 0 ? arrangeSize.Width / items.Count : 0;
-            for (int i = 0; i < items.Count; i++) items[i].Arrange(new Rect(i * each, 0, each, arrangeSize.Height));
+            // Colunas iguais quando todas cabem; se uma não cabe ("Tela cheia" entre "720p" e "1440p"), cada uma fica com a
+            // largura dela mais a mesma parte da sobra, e nenhuma corta o texto
+            double natural = items.Sum(c => c.DesiredSize.Width);
+            bool fits = items.All(c => c.DesiredSize.Width <= each + 0.5);
+            double extra = items.Count > 0 ? Math.Max(0, arrangeSize.Width - natural) / items.Count : 0;
+            double x = 0;
+            foreach (var c in items)
+            {
+                double width = fits ? each : c.DesiredSize.Width + extra;
+                c.Arrange(new Rect(x, 0, width, arrangeSize.Height));
+                x += width;
+            }
             size = arrangeSize;
         }
         else size = base.ArrangeOverride(arrangeSize);

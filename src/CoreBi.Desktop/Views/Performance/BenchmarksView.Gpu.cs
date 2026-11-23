@@ -211,23 +211,11 @@ public partial class BenchmarksView
         }
         string key = $"rt:{r.Preset}:{r.Height}";
         string vs = VsBest(r.Score, _context.Settings.BenchRecords.Where(x => x.Test == key).Select(x => x.Score));
-        string driver = DriverVersionOf(r.Adapter);
         RtStatus.Text = "Concluído";
-        RtDetail.Text = driver.Length > 0 ? $"Driver {driver}" : "";
+        RtDetail.Text = "";
         RtResult.ItemsSource = RtStats(r, vs);
         SaveBenchRecord(key, r.Score, $"{r.Score:N0} pts · {r.MedianFps:0} FPS · {PresetName(r.Preset)} {r.Height}p" + (r.Reliable ? "" : " · instável"),
             RtStats(r).Select(Figure), RtTrace.Snapshot());
-    }
-
-    private string DriverVersionOf(string adapter)
-    {
-        if (_context == null) return "";
-        var match = _context.Gpus.FirstOrDefault(g =>
-                adapter.Contains(g.Name.Trim(), StringComparison.OrdinalIgnoreCase)
-                || g.Name.Contains(adapter, StringComparison.OrdinalIgnoreCase))
-            ?? _context.PrimaryGpu;
-        if (match == null) return "";
-        return GpuSheet.Flatten(match).GetValueOrDefault("Versão do driver") ?? "";
     }
 
     private static List<BenchStat> SimStats(GameSimResult? r, string vs = "") => new()
@@ -288,7 +276,7 @@ public partial class BenchmarksView
 
         string vs = VsBest(r.Score, _context.Settings.BenchRecords.Where(x => x.Test == "sim").Select(x => x.Score));
         SimStatus.Text = $"Concluído em {TimeSpan.FromSeconds(r.Seconds):m\\:ss}";
-        SimDetail.Text = $"{r.Frames:N0} quadros";
+        SimDetail.Text = "";
         SimResult.ItemsSource = SimStats(r, vs);
         SaveBenchRecord("sim", r.Score, $"{r.AvgFps:0} FPS · 1% low {r.Low1Fps:0}", SimStats(r).Select(Figure));
     }

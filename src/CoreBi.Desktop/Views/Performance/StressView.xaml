@@ -129,7 +129,7 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ItemsControl">
-                                <TextBlock Text="Nenhum teste ainda. Cada teste encerrado fica aqui, com como terminou e as temperaturas máximas." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                <TextBlock Text="Nenhum teste ainda." Style="{StaticResource Caption}" TextWrapping="Wrap" />
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
@@ -202,7 +202,7 @@
                                 <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Top">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                         <TextBlock Style="{StaticResource PlateStatus}"><InlineUIContainer><Ellipse x:Name="StLed" Style="{StaticResource TestStatusLed}" Visibility="Collapsed" /></InlineUIContainer></TextBlock>
-                                        <TextBlock x:Name="StStatus" Text="Pronto" Style="{StaticResource PlateStatus}" />
+                                        <TextBlock x:Name="StStatus" Style="{StaticResource PlateStatus}" />
                                     </StackPanel>
                                     <TextBlock x:Name="StDetail" Style="{StaticResource TestDetail}" TextWrapping="Wrap" MaxWidth="460" />
                                 </StackPanel>
@@ -372,13 +372,14 @@
                                             <StackPanel x:Name="TempLegend" DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" />
                                             <TextBlock Text="Temperatura" Style="{StaticResource Label}" Margin="0" VerticalAlignment="Center" />
                                         </DockPanel>
-                                        <Canvas x:Name="TempChart" MinHeight="160" ClipToBounds="True" SizeChanged="TempChart_SizeChanged" />
+                                        <Canvas x:Name="TempChart" MinHeight="160" ClipToBounds="True" Background="Transparent" SizeChanged="TempChart_SizeChanged"
+                                                MouseMove="TempChart_MouseMove" MouseLeave="TempChart_MouseLeave" />
                                     </DockPanel>
                                 </Border>
                                 <!-- Histórico: rola por dentro; a sobra à direita é a da barra de rolagem -->
                                 <Border Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="1,1,0,0" Padding="24,24,8,8">
                                     <DockPanel>
-                                        <Grid DockPanel.Dock="Top" Height="30" Margin="0,0,16,10">
+                                        <Grid DockPanel.Dock="Top" Height="30" Margin="0,0,16,20">
                                             <TextBlock Text="Histórico" Style="{StaticResource Label}" Margin="0" VerticalAlignment="Center" Background="Transparent"
                                                        ToolTip="Os últimos 30 testes encerrados, o mais recente em cima." />
                                             <Button x:Name="StressHistoryClear" Style="{StaticResource HistoryClear}" Click="StressHistoryClear_Click" />
@@ -409,10 +410,10 @@
                                 <StackPanel DockPanel.Dock="Bottom">
                                     <TextBlock x:Name="StressHint" Style="{StaticResource ConfigHint}" />
                                     <Button x:Name="BtnStress" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnStress_Click"
-                                            ToolTip="Põe as peças marcadas no máximo e acompanha a temperatura, para ver se o PC aguenta sem travar." />
+                                            ToolTipService.ShowOnDisabled="True" />
                                 </StackPanel>
-                                <local:ConfigStack MinGap="24" MaxGap="56" Margin="0,8,0,20">
-                                    <StackPanel x:Name="StressDurationSection" Style="{StaticResource ConfigSection}">
+                                <local:ConfigStack MinGap="24" MaxGap="32" Margin="0,16,0,20">
+                                    <StackPanel x:Name="StressDurationSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
                                         <DockPanel Style="{StaticResource ConfigHead}">
                                             <TextBlock x:Name="StressDurationText" Text="10 min" Style="{StaticResource ConfigValue}" />
                                             <TextBlock Text="Duração" Style="{StaticResource ConfigName}" Margin="0" ToolTip="O teste para sozinho no fim do tempo, ou antes, no corte de temperatura." />
@@ -427,7 +428,7 @@
                                             <TextBlock Text="Corte do processador" Style="{StaticResource ConfigName}" Margin="0"
                                                        ToolTip="O teste para sozinho quando o processador chega a esta temperatura. Vale também no teste de memória, que o esquenta." />
                                         </DockPanel>
-                                        <local:ValueSlider x:Name="TempLimit" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Cpu}" Minimum="60" Maximum="105" Value="90"
+                                        <local:ValueSlider x:Name="TempLimit" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Cpu}" Minimum="60" Maximum="100" Value="90"
                                                            ValueChanged="TempLimit_Changed" AutomationProperties.Name="Corte do processador" />
                                     </StackPanel>
                                     <StackPanel x:Name="GpuLimitSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">

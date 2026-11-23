@@ -117,7 +117,7 @@ public partial class BenchmarksView
 
             DiskResult.ItemsSource = DiskRows(r);
             DiskStatus.Text = "Concluído";
-            DiskDetail.Text = "Arquivo de teste apagado";
+            DiskDetail.Text = "";
             SaveBenchRecord("disk", r.Score,
                 $"{r.Drive} · {r.SeqReadMBs:N0}/{r.SeqWriteMBs:N0} MiB/s · 4K {r.ReadIopsQ1 / 1000:0.#}k IOPS", DiskRows(r).Select(Figure));
         }
@@ -197,7 +197,7 @@ public partial class BenchmarksView
             Show();
 
             MemStatus.Text = "Concluído";
-            MemDetail.Text = "Arquivos de teste apagados";
+            MemDetail.Text = "";
             SaveBenchRecord("mem", MemoryBench.Score(lat.Value, load.MapLoadSeconds),
                 $"{lat:0} ns · {bw.Value.Read:0} GB/s · mapa {load.MapLoadSeconds:0.00} s", MemRows(lat, bw, load).Select(Figure));
         }

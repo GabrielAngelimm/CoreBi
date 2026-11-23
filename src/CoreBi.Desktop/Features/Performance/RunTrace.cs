@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace CoreBi.Desktop;
@@ -10,6 +11,7 @@ namespace CoreBi.Desktop;
 public sealed class RunTrace : InstrumentBase
 {
     private readonly List<Point> _samples = new();
+    private double? _hoverX;
 
     public static readonly DependencyProperty EmptyTextProperty =
         DependencyProperty.Register(nameof(EmptyText), typeof(string), typeof(RunTrace), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
@@ -65,6 +67,20 @@ public sealed class RunTrace : InstrumentBase
         progress = Math.Clamp(progress, 0, 1);
         if (_samples.Count > 0 && progress < _samples[^1].X) return;
         _samples.Add(new Point(progress, value));
+        InvalidateVisual();
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        _hoverX = e.GetPosition(this).X;
+        InvalidateVisual();
+    }
+
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+        _hoverX = null;
         InvalidateVisual();
     }
 
@@ -127,5 +143,34 @@ public sealed class RunTrace : InstrumentBase
         dc.DrawText(label, new Point(lx, my - label.Height - 2));
 
         dc.DrawEllipse(SurfaceBrush, Stroke(ChannelBrush, 2), points[^1], 4, 4);
+        DrawHover(dc, w, top, plotH, points);
+    }
+
+    /// <summary>A leitura sob o mouse, no desenho da dica dos gráficos de Discos e Energia: fio, ponto e caixa com o valor.</summary>
+    private void DrawHover(DrawingContext dc, double w, double top, double plotH, List<Point> points)
+    {
+        if (_hoverX is not double mx) return;
+        int nearest = -1;
+        double best = double.MaxValue;
+        for (int i = 0; i < points.Count; i++)
+        {
+            double d = Math.Abs(points[i].X - mx);
+            if (d < best) { best = d; nearest = i; }
+        }
+        if (nearest < 0 || best > 16) return;
+
+        var p = points[nearest];
+        double lx = Math.Round(p.X) + 0.5;
+        dc.DrawLine(Stroke(FaintBrush, 1, new DashStyle(new double[] { 3, 3 }, 0)), new Point(lx, top), new Point(lx, top + plotH));
+        dc.DrawEllipse(SurfaceBrush, Stroke(ChannelBrush, 2.5), p, 5.5, 5.5);
+
+        var when = Text($"aos {_samples[nearest].X * 100:0} % da passada", 11.5, FaintBrush, readout: false);
+        var value = Text($"{_samples[nearest].Y:0} {Unit}".TrimEnd(), 16, InkBrush);
+        double bw = Math.Max(when.Width, value.Width) + 24, bh = when.Height + value.Height + 16;
+        double bx = p.X + 14 + bw > w ? p.X - 14 - bw : p.X + 14;
+        double by = Math.Clamp(p.Y - bh / 2, top, Math.Max(top, top + plotH - bh));
+        dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bw, bh), 8, 8);
+        dc.DrawText(when, new Point(bx + 12, by + 8));
+        dc.DrawText(value, new Point(bx + 12, by + 8 + when.Height));
     }
 }
