@@ -1,12 +1,11 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.StressView" xmlns:local="clr-namespace:CoreBi.Desktop">
     <!--
         Bancada de teste (a mesma composição do Benchmark): os componentes a carregar numa faixa em cima; embaixo, à esquerda, o
-        palco e, à direita, numa coluna de 360 px, as configurações do teste e o histórico (de altura fixa). O palco tem a placa (o
-        tempo decorrido de quanto, e o estado à direita), a barra de progresso no lugar do fio, as leituras ao vivo em três colunas
-        fixas (processador, memória e placa de vídeo, sempre as três e sempre do mesmo tamanho; a que não entra no teste fica um
-        tom abaixo) e a temperatura dos últimos 5 minutos, com a legenda e os cortes em cima. A configuração mostra só o que vale
-        para os componentes marcados. O histórico guarda cada teste encerrado (como terminou, quanto durou e as máximas), e a
-        página abre com ele. Cabe numa tela com a janela maximizada; em janelas menores a página rola.
+        palco e, à direita, numa coluna de 360 px, as configurações do teste na altura toda. O palco tem a placa (o tempo decorrido
+        de quanto, e o estado à direita), a barra de progresso no lugar do fio, as leituras ao vivo em três colunas fixas
+        (processador, placa de vídeo e memória, sempre as três e sempre do mesmo tamanho; a que não entra no teste fica um tom
+        abaixo) e, embaixo, a temperatura dos últimos 5 minutos, com a legenda e os cortes em cima, ao lado do histórico, que
+        guarda cada teste encerrado (como terminou e as máximas); a página abre com ele. Cabe numa tela com a janela maximizada; em janelas menores a página rola.
     -->
     <UserControl.Resources>
         <Style x:Key="StageCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
@@ -357,34 +356,52 @@
                                 </Border>
                             </UniformGrid>
 
-                            <!-- Temperatura dos últimos 5 minutos, com os nomes e os limites rotulados no próprio gráfico -->
-                            <Border Grid.Row="3" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="{StaticResource PanelPadding}">
-                                <DockPanel>
-                                    <!-- Legenda em cima: cada peça na cor dela com a leitura de agora e o corte (o tracejado da mesma cor) -->
-                                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
-                                        <StackPanel x:Name="TempLegend" DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" />
-                                        <TextBlock Text="Temperatura" Style="{StaticResource Label}" Margin="0" VerticalAlignment="Center" />
+                            <!--
+                                Embaixo, lado a lado: a temperatura dos últimos 5 minutos e o histórico (360 px, a largura da coluna de
+                                configurações), separados por um fio. Os dois títulos ficam numa linha de 30 px, a altura do Limpar.
+                            -->
+                            <Grid Grid.Row="3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="360" />
+                                </Grid.ColumnDefinitions>
+                                <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="{StaticResource PanelPadding}">
+                                    <DockPanel>
+                                        <!-- Legenda em cima: cada peça na cor dela com a leitura de agora e o corte (o tracejado da mesma cor) -->
+                                        <DockPanel DockPanel.Dock="Top" Height="30" Margin="0,0,0,10">
+                                            <StackPanel x:Name="TempLegend" DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" />
+                                            <TextBlock Text="Temperatura" Style="{StaticResource Label}" Margin="0" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                        <Canvas x:Name="TempChart" MinHeight="160" ClipToBounds="True" SizeChanged="TempChart_SizeChanged" />
                                     </DockPanel>
-                                    <Canvas x:Name="TempChart" MinHeight="160" ClipToBounds="True" SizeChanged="TempChart_SizeChanged" />
-                                </DockPanel>
-                            </Border>
+                                </Border>
+                                <!-- Histórico: rola por dentro; a sobra à direita é a da barra de rolagem -->
+                                <Border Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="1,1,0,0" Padding="24,20,8,8">
+                                    <DockPanel>
+                                        <Grid DockPanel.Dock="Top" Height="30" Margin="0,0,16,10">
+                                            <TextBlock Text="Histórico" Style="{StaticResource Label}" Margin="0" VerticalAlignment="Center" Background="Transparent"
+                                                       ToolTip="Os últimos 30 testes encerrados, o mais recente em cima." />
+                                            <Button x:Name="StressHistoryClear" Style="{StaticResource HistoryClear}" Click="StressHistoryClear_Click" />
+                                        </Grid>
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+                                            <ItemsControl x:Name="StressHistory" Style="{StaticResource StressHistoryList}" />
+                                        </ScrollViewer>
+                                    </DockPanel>
+                                </Border>
+                            </Grid>
                         </Grid>
                     </Border>
 
-                    <!-- Configurações e histórico -->
+                    <!-- Configurações -->
                     <Grid Grid.Column="2">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="16" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
                         <!--
-                            Configurações: as cinco sempre à vista, na ordem das peças (processador, placa de vídeo, memória), então o
-                            cartão nunca muda de tamanho; o ajuste de uma peça fora do teste esmaece e trava. Esqueleto da primeira
-                            visita: a página espera a primeira leitura dos sensores (os outros cartões o acompanham).
+                            Configurações, na altura toda da coluna: as sete sempre à vista, na ordem das peças (a duração, o corte do
+                            processador, a placa de vídeo com corte, resolução, anti-aliasing e carga, e a memória), espalhadas com o
+                            mesmo vão; o ajuste de uma peça fora do teste esmaece e trava. Esqueleto da primeira visita: a página
+                            espera a primeira leitura dos sensores (os outros cartões o acompanham).
                         -->
                         <Border x:Name="StressConfigCard" Style="{StaticResource ConfigCard}"
-                                local:Skeleton.Layout="row 34: h 230; foot 42: btn *^42; footgap 24; gap 16; bands 5; row 17: c 40%, - *, c 15%&gt;; gap 10; row 24: pill *^8; endbands">
+                                local:Skeleton.Layout="row 34: h 230; foot 42: btn *^42; footgap 24; gap 12; bands 7; row 17: c 40%, - *, c 15%&gt;; gap 10; row 24: pill *^8; endbands">
                             <DockPanel>
                                 <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
                                     <TextBlock Text="Configurações do teste de carga" Style="{StaticResource CardTitle}" />
@@ -394,7 +411,7 @@
                                     <Button x:Name="BtnStress" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnStress_Click"
                                             ToolTip="Põe as peças marcadas no máximo e acompanha a temperatura, para ver se o PC aguenta sem travar." />
                                 </StackPanel>
-                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="32" Margin="0,16,0,24">
+                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="28" MaxGap="56" Margin="0,12,0,24">
                                     <StackPanel x:Name="StressDurationSection" Style="{StaticResource ConfigSection}">
                                         <DockPanel Style="{StaticResource ConfigHead}">
                                             <TextBlock x:Name="StressDurationText" Text="10 min" Style="{StaticResource ConfigValue}" />
@@ -422,12 +439,30 @@
                                         <local:ValueSlider x:Name="GpuTempLimit" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Gpu}" Minimum="60" Maximum="100" Value="85"
                                                            ValueChanged="TempLimit_Changed" AutomationProperties.Name="Corte da placa de vídeo" />
                                     </StackPanel>
-                                    <!-- Carga da placa de vídeo: resolução da janela, anti-aliasing e camadas num só ajuste (StressView.GpuLoads) -->
+                                    <!-- A janela 3D da placa de vídeo: resolução, anti-aliasing e carga do desenho (StressView.GpuResolutions, GpuMsaa, GpuLoads) -->
+                                    <StackPanel x:Name="GpuResSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
+                                        <DockPanel Style="{StaticResource ConfigHead}">
+                                            <TextBlock x:Name="GpuResText" Text="1080p" Style="{StaticResource ConfigValue}" />
+                                            <TextBlock Text="Resolução da placa de vídeo" Style="{StaticResource ConfigName}" Margin="0"
+                                                       ToolTip="O tamanho da janela 3D. Em janela, a temperatura continua à vista no CoreBi; em tela cheia, o corte por temperatura continua valendo." />
+                                        </DockPanel>
+                                        <local:ValueSlider x:Name="GpuRes" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Gpu}" Minimum="0" Maximum="3" Value="1"
+                                                           ValueChanged="StressOption_Changed" AutomationProperties.Name="Resolução da placa de vídeo" />
+                                    </StackPanel>
+                                    <StackPanel x:Name="GpuMsaaSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
+                                        <DockPanel Style="{StaticResource ConfigHead}">
+                                            <TextBlock x:Name="GpuMsaaText" Text="4x" Style="{StaticResource ConfigValue}" />
+                                            <TextBlock Text="Anti-aliasing (MSAA)" Style="{StaticResource ConfigName}" Margin="0"
+                                                       ToolTip="Suaviza as bordas desenhando cada pixel várias vezes: mais amostras, mais trabalho para a placa de vídeo." />
+                                        </DockPanel>
+                                        <local:ValueSlider x:Name="GpuMsaaSlider" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Gpu}" Minimum="0" Maximum="2" Value="1"
+                                                           ValueChanged="StressOption_Changed" AutomationProperties.Name="Anti-aliasing" />
+                                    </StackPanel>
                                     <StackPanel x:Name="GpuOptions" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
                                         <DockPanel Style="{StaticResource ConfigHead}">
                                             <TextBlock x:Name="GpuLoadText" Text="Alta" Style="{StaticResource ConfigValue}" />
                                             <TextBlock Text="Carga da placa de vídeo" Style="{StaticResource ConfigName}" Margin="0"
-                                                       ToolTip="A janela 3D fica aberta ao lado do CoreBi, para você acompanhar a temperatura. Normal: 720p e anti-aliasing 4x. Alta: 1080p, 4x e mais camadas. Extrema: 1440p, 8x e o máximo de camadas." />
+                                                       ToolTip="Quantas camadas a cena desenha por quadro e quanto cálculo cada pixel faz. Extrema esquenta mais rápido." />
                                         </DockPanel>
                                         <local:ValueSlider x:Name="GpuLoad" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Gpu}" Minimum="0" Maximum="2" Value="1"
                                                            ValueChanged="StressOption_Changed" AutomationProperties.Name="Carga da placa de vídeo" />
@@ -441,17 +476,6 @@
                                                            SmallChange="10" LargeChange="10" ValueChanged="StressOption_Changed" AutomationProperties.Name="RAM livre em teste" />
                                     </StackPanel>
                                 </local:ConfigStack>
-                            </DockPanel>
-                        </Border>
-                        <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
-                            <DockPanel>
-                                <Grid Style="{StaticResource HistoryHeader}">
-                                    <TextBlock Text="Histórico" Style="{StaticResource CardTitle}" Background="Transparent" ToolTip="Os últimos 30 testes encerrados, o mais recente em cima." />
-                                    <Button x:Name="StressHistoryClear" Style="{StaticResource HistoryClear}" Click="StressHistoryClear_Click" />
-                                </Grid>
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
-                                    <ItemsControl x:Name="StressHistory" Style="{StaticResource StressHistoryList}" />
-                                </ScrollViewer>
                             </DockPanel>
                         </Border>
                     </Grid>

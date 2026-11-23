@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -109,25 +110,33 @@ public partial class StressView : UserControl, IDisposable
         _ => $"{minutes / 60} h {minutes % 60}",
     };
 
-    /// <summary>Os três níveis de carga da placa de vídeo: nome, largura e altura da janela, anti-aliasing, camadas e iterações do shader.</summary>
-    private static readonly (string Name, GpuBurnSettings Load)[] GpuLoads =
+    /// <summary>As paradas da resolução da janela 3D; a última é a tela cheia, no tamanho do monitor.</summary>
+    private static readonly (string Name, int Width, int Height)[] GpuResolutions =
     {
-        ("Normal", new GpuBurnSettings { Width = 1280, Height = 720, Msaa = 4, Shells = 96, Iterations = 32 }),
-        ("Alta", new GpuBurnSettings { Width = 1920, Height = 1080, Msaa = 4, Shells = 128, Iterations = 48 }),
-        ("Extrema", new GpuBurnSettings { Width = 2560, Height = 1440, Msaa = 8, Shells = 160, Iterations = 64 }),
+        ("720p", 1280, 720), ("1080p", 1920, 1080), ("1440p", 2560, 1440), ("Tela cheia", 0, 0),
     };
 
-    private GpuBurnSettings ChosenGpuLoad => GpuLoads[Math.Clamp((int)Math.Round(GpuLoad.Value), 0, GpuLoads.Length - 1)].Load;
+    private static readonly (string Name, int Samples)[] GpuMsaa = { ("Desligado", 1), ("4x", 4), ("8x", 8) };
+
+    /// <summary>A carga do desenho: camadas de pelo (overdraw) e iterações do shader por pixel.</summary>
+    private static readonly (string Name, int Shells, int Iterations)[] GpuLoads =
+    {
+        ("Normal", 96, 32), ("Alta", 128, 48), ("Extrema", 160, 64),
+    };
+
+    private static T Stop<T>(T[] stops, RangeBase slider) => stops[Math.Clamp((int)Math.Round(slider.Value), 0, stops.Length - 1)];
 
     private void StressOption_Changed(object sender, RoutedPropertyChangedEventArgs<double> e) => ShowLimits();
 
     /// <summary>O valor de cada controle deslizante ao lado do nome dele.</summary>
     private void ShowLimits()
     {
-        if (CpuLimitText == null || GpuLimitText == null || GpuLoadText == null || RamFractionText == null) return;
+        if (CpuLimitText == null || GpuLimitText == null || GpuLoadText == null || RamFractionText == null || GpuResText == null || GpuMsaaText == null) return;
         CpuLimitText.Text = $"{TempLimit.Value:0} °C";
         GpuLimitText.Text = $"{GpuTempLimit.Value:0} °C";
-        GpuLoadText.Text = GpuLoads[Math.Clamp((int)Math.Round(GpuLoad.Value), 0, GpuLoads.Length - 1)].Name;
+        GpuResText.Text = Stop(GpuResolutions, GpuRes).Name;
+        GpuMsaaText.Text = Stop(GpuMsaa, GpuMsaaSlider).Name;
+        GpuLoadText.Text = Stop(GpuLoads, GpuLoad).Name;
         RamFractionText.Text = $"{RamFraction.Value:0} %";
     }
     private void TempChart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
@@ -170,11 +179,11 @@ public partial class StressView : UserControl, IDisposable
         bool cpu = ChkCpu.IsChecked == true, ram = ChkRam.IsChecked == true, gpu = ChkGpu.IsChecked == true;
         StressDurationSection.IsEnabled = !running;
         CpuLimitSection.IsEnabled = !running && (cpu || ram || !gpu);
-        GpuLimitSection.IsEnabled = GpuOptions.IsEnabled = !running && gpu;
+        GpuLimitSection.IsEnabled = GpuResSection.IsEnabled = GpuMsaaSection.IsEnabled = GpuOptions.IsEnabled = !running && gpu;
         RamSection.IsEnabled = !running && ram;
         const string Off = "Marque a peça em cima para ajustar.";
         CpuLimitSection.ToolTip = CpuLimitSection.IsEnabled || running ? null : "Marque o processador ou a memória em cima para ajustar.";
-        GpuLimitSection.ToolTip = GpuOptions.ToolTip = GpuOptions.IsEnabled || running ? null : Off;
+        GpuLimitSection.ToolTip = GpuResSection.ToolTip = GpuMsaaSection.ToolTip = GpuOptions.ToolTip = GpuOptions.IsEnabled || running ? null : Off;
         RamSection.ToolTip = RamSection.IsEnabled || running ? null : Off;
     }
 
@@ -248,14 +257,15 @@ public partial class StressView : UserControl, IDisposable
 
             if (gpu)
             {
-                // Carga num ajuste só, sempre em janela, para a temperatura continuar à vista no CoreBi
-                var load = ChosenGpuLoad;
+                // Em janela, a temperatura continua à vista no CoreBi; em tela cheia, o corte por temperatura continua valendo
+                var res = Stop(GpuResolutions, GpuRes);
+                var load = Stop(GpuLoads, GpuLoad);
                 _burn.Start(new GpuBurnSettings
                 {
-                    Fullscreen = false,
-                    Width = load.Width,
-                    Height = load.Height,
-                    Msaa = load.Msaa,
+                    Fullscreen = res.Width == 0,
+                    Width = res.Width,
+                    Height = res.Height,
+                    Msaa = Stop(GpuMsaa, GpuMsaaSlider).Samples,
                     Shells = load.Shells,
                     Iterations = load.Iterations,
                     AdapterName = _context.PrimaryGpu?.Name ?? "",
@@ -642,17 +652,24 @@ public partial class StressView : UserControl, IDisposable
         var now = Text("agora", faint, font: ui);
         Place(now, left + plotW - Width(now), axisY);
 
-        foreach (var (value, channel) in Limits(showCpu, showGpu))
+        // Os dois cortes na mesma altura (o mesmo valor, ou a menos de 3 px) viram uma linha só, em traços alternados nas duas
+        // cores: um não some atrás do outro
+        var limits = Limits(showCpu, showGpu).ToList();
+        bool shared = limits.Count == 2 && Math.Abs(Y(limits[0].Value) - Y(limits[1].Value)) < 3;
+        for (int i = 0; i < limits.Count; i++)
         {
+            var (value, channel) = limits[i];
+            double y = shared ? Math.Round((Y(limits[0].Value) + Y(limits[1].Value)) / 2) : Y(value);
             TempChart.Children.Add(new Line
             {
                 X1 = left,
                 X2 = left + plotW,
-                Y1 = Y(value),
-                Y2 = Y(value),
+                Y1 = y,
+                Y2 = y,
                 Stroke = ThemeManager.Brush(channel),
                 StrokeThickness = 1.2,
-                StrokeDashArray = new DoubleCollection { 4, 3 },
+                StrokeDashArray = shared ? new DoubleCollection { 4, 4 } : new DoubleCollection { 4, 3 },
+                StrokeDashOffset = shared && i == 1 ? 4 : 0,
                 Opacity = 0.9,
             });
         }
