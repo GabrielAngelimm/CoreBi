@@ -225,6 +225,27 @@ public sealed partial class SensorMonitor : IDisposable
         }
     }
 
+    /// <summary>Quanto cada peça leva para ser lida, na thread de quem chama (diagnóstico do --nav-timing). -1 é uma leitura que falhou.</summary>
+    internal IReadOnlyList<(string Name, HardwareType Type, double Ms)> TimeEachHardware()
+    {
+        var result = new List<(string, HardwareType, double)>();
+        lock (_hardware)
+        {
+            if (!_open || _disposed || _paused) return result;
+            var scratch = new List<PolledSensor>(64);
+            foreach (var hw in _source.Hardware)
+            {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                double ms;
+                try { Walk(hw, hw, scratch); ms = watch.Elapsed.TotalMilliseconds; }
+                catch (Exception ex) { ms = -1; DiagnosticLog.Write("sensors.timing", ex); }
+                result.Add((hw.Name, hw.HardwareType, ms));
+                scratch.Clear();
+            }
+        }
+        return result;
+    }
+
     private void Walk(IHardware hw, IHardware root, List<PolledSensor> readings)
     {
         hw.Update();

@@ -31,6 +31,7 @@ internal static partial class Program
 
         var app = new TestApplication();
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
+        var build = Stopwatch.StartNew();
         var window = new MainWindow
         {
             WindowState = WindowState.Normal,
@@ -47,7 +48,10 @@ internal static partial class Program
         var frames = new List<long>();
         var clock = Stopwatch.StartNew();
         CompositionTarget.Rendering += (_, _) => frames.Add(clock.ElapsedTicks);
+        double buildMs = build.Elapsed.TotalMilliseconds;
         window.Show();
+        Drain();
+        double shownMs = build.Elapsed.TotalMilliseconds;
         var results = new List<object>();
         try
         {
@@ -65,17 +69,28 @@ internal static partial class Program
                 refresh.Add(w.Elapsed.TotalMilliseconds);
                 Wait(200);
             }
-            // Congelamento da interface pelo tique de 1 s: maior intervalo entre quadros em 4 s parados na Visão geral
+            var parts = window._monitor.TimeEachHardware();
+            // Congelamento da interface pelo tique de 1 s: maior intervalo entre quadros em 4 s parados na Visão geral.
+            // No mesmo trecho, o processador que o app inteiro gasta parado (leitura dos sensores, tique e desenho).
             frames.Clear();
             long idleStart = clock.ElapsedTicks;
+            var self = Process.GetCurrentProcess();
+            TimeSpan cpuStart = self.TotalProcessorTime;
             Wait(4000);
+            self.Refresh();
+            double idleCpuMsPerSecond = (self.TotalProcessorTime - cpuStart).TotalMilliseconds / 4;
             double tickGap = 0;
             long last = idleStart;
             foreach (long f in frames.ToList()) { tickGap = Math.Max(tickGap, Ms(f - last)); last = f; }
+            Console.WriteLine($"Janela montada: {buildMs:0} ms; primeira tela pronta: {shownMs:0} ms");
             Console.WriteLine($"Carga do hardware: {loadMs:0} ms");
+            foreach (var (name, type, ms) in parts.OrderByDescending(p => p.Ms))
+                Console.WriteLine($"  {type,-12} {ms,6:0.0} ms  {name}");
+            Console.WriteLine($"Processador parado na Visão geral: {idleCpuMsPerSecond:0} ms por segundo");
             Console.WriteLine($"Leitura dos sensores (Poll, fora da janela): média {refresh.Average():0.0} ms, máx. {refresh.Max():0.0} ms");
             Console.WriteLine($"Maior intervalo entre quadros em 4 s parado (tique de 1 s): {tickGap:0} ms");
-            results.Add(new { kind = "tick", loadMs, refreshAvg = refresh.Average(), refreshMax = refresh.Max(), idleMaxFrameGapMs = tickGap });
+            results.Add(new { kind = "tick", buildMs, shownMs, loadMs, refreshAvg = refresh.Average(), refreshMax = refresh.Max(), idleMaxFrameGapMs = tickGap, idleCpuMsPerSecond,
+                hardware = parts.Select(p => new { p.Name, Type = p.Type.ToString(), p.Ms }) });
 
             var navs = window.NavPanel.Children.OfType<RadioButton>().ToList();
             Console.WriteLine();
