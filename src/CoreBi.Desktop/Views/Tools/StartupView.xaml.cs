@@ -148,7 +148,7 @@ public partial class StartupView : UserControl
     {
         _passing = _rows.Where(r => _filter switch { "on" => r.Entry.Enabled, "off" => !r.Entry.Enabled, _ => true }).ToHashSet();
         _view?.Refresh();
-        StartupListScroll.ScrollToTop();
+        StartupListScroll?.ScrollToTop();
     }
 
     private void UpdateCounts()
