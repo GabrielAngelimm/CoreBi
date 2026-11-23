@@ -13,8 +13,10 @@ try {
     # administrador altera. Extraídas pelo próprio executável elas iriam para o %TEMP% do usuário e seriam
     # carregadas de lá com elevação: um programa qualquer da mesma conta poderia trocá-las.
     # ReadyToRun: o código do app já vai compilado para x64, então a janela abre sem esperar o JIT e o processador
-    # fica mais livre nos primeiros minutos (medido com --nav-timing no PC de testes).
-    Invoke-CoreBiDotnet publish 'src/CoreBi.Desktop/CoreBi.Desktop.csproj' -c Release -r win-x64 --self-contained true '-p:PublishSingleFile=true' '-p:PublishReadyToRun=true' '-p:RestoreLockedMode=true' '-p:DebugType=None' '-p:DebugSymbols=false' -o $OutputDirectory
+    # fica mais livre nos primeiros minutos (medido com --nav-timing no PC de testes). Cada assembly separado, sem o
+    # modo composto, que o pacote único ligaria sozinho: o .NET já vem pré-compilado e o TraceEvent repete duas DLLs de
+    # interop, o que o modo composto recusa.
+    Invoke-CoreBiDotnet publish 'src/CoreBi.Desktop/CoreBi.Desktop.csproj' -c Release -r win-x64 --self-contained true '-p:PublishSingleFile=true' '-p:PublishReadyToRun=true' '-p:PublishReadyToRunComposite=false' '-p:RestoreLockedMode=true' '-p:DebugType=None' '-p:DebugSymbols=false' -o $OutputDirectory
     Move-Item -LiteralPath (Join-Path $OutputDirectory 'CoreBi.Desktop.exe') -Destination (Join-Path $OutputDirectory 'CoreBi.exe') -Force
     $licensesTarget = Join-Path $OutputDirectory 'licenses'
     if (Test-Path -LiteralPath $licensesTarget) { Remove-Item -LiteralPath $licensesTarget -Recurse -Force }
