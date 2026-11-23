@@ -78,7 +78,7 @@ Chamadas assíncronas de atualização retornam `Task`, permitindo aguardar e va
 
 As operações críticas bloqueiam o fechamento enquanto são gerenciadas pelo aplicativo, exibindo a mensagem da operação ativa. Um instalador oficial que já foi aberto continua em seu próprio processo. Serviços Windows permanecem no Engine:
 
-- `AppInstaller`: catálogo, detecção local, instalação interativa e argumentos explícitos de winget.
+- `AppInstaller`: detecção local (registro e `winget export`), instalação em silêncio pacote a pacote, instalação interativa e argumentos explícitos de winget. O catálogo fica em `AppCatalog` (cartões `InstallableApp` com um ou mais `AppPackage`); os ícones oficiais saem de `tools/AppIcons.ps1` para `Desktop/Assets/Apps`.
 - `DriverInventory`, `GpuDriverLookup`, `DriverBackup`, `DriverInstaller` e `WindowsUpdateService`: inventário, metadados oficiais, download/assinatura/execução, backup pnputil e escopo COM com resultados individuais.
 - `StartupService` e `StartupManager`: backup durável antes de remover (com rollback em caso de falha), registro canônico protegido e restauração por ID. A interface não fornece caminhos arbitrários para restaurar.
 - `ProcessRunner`: `ArgumentList`, leitura concorrente/buffer limitado de stdout e stderr, cancelamento da árvore de processo criada pelo CoreBi.

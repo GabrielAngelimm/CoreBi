@@ -1,47 +1,14 @@
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using CoreBi.Engine.Infrastructure;
 using Microsoft.Win32;
 
 namespace CoreBi.Engine.Tools.Apps;
 
-/// <summary>App do catálogo "Instalar apps" (pós-formatação), instalado pelo winget.</summary>
-public sealed class InstallableApp : INotifyPropertyChanged
-{
-    public string Name { get; init; } = "";
-    public string Description { get; init; } = "";
-    public string WingetId { get; init; } = "";
-    /// <summary>Começo do nome em "Aplicativos instalados" (Painel de Controle), para saber se já está instalado.</summary>
-    public string DisplayPrefix { get; init; } = "";
-    public bool PreSelect { get; init; } = true;
-
-    private bool _selected, _installed;
-    private string _status = "";
-
-    public bool Selected { get => _selected; set => Set(ref _selected, value); }
-    public bool Installed
-    {
-        get => _installed;
-        set { Set(ref _installed, value); OnChanged(nameof(CanSelect)); }
-    }
-    public bool CanSelect => !Installed;
-    public string Status { get => _status; set => Set(ref _status, value); }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-    private void OnChanged([CallerMemberName] string? p = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
-    private void Set<T>(ref T field, T value, [CallerMemberName] string? p = null)
-    {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return;
-        field = value;
-        OnChanged(p);
-    }
-}
-
 /// <summary>
-/// Catálogo de apps essenciais e instalação via winget (Gerenciador de Pacotes do Windows).
-/// O winget baixa sempre a versão oficial mais recente do site do fabricante e confere o hash do instalador.
+/// Instalação via winget (Gerenciador de Pacotes do Windows). O winget baixa sempre a versão oficial mais recente do endereço
+/// do fabricante que está no manifesto e confere o SHA-256 do instalador antes de abrir.
 /// </summary>
 public static partial class AppInstaller
 {
@@ -53,19 +20,12 @@ public static partial class AppInstaller
     private const int WingetNotFound = unchecked((int)0x8A150014);
     private const int WingetDownloadFailed = unchecked((int)0x8A150008);
 
-    [GeneratedRegex(@"\A[A-Za-z0-9][A-Za-z0-9._-]{0,127}\z", RegexOptions.CultureInvariant)]
+    // IDs do winget: letras, números, ponto, hífen, sublinhado e "+" (Notepad++.Notepad++, Microsoft.VCRedist.2015+.x64)
+    [GeneratedRegex(@"\A[A-Za-z0-9][A-Za-z0-9.+_-]{0,127}\z", RegexOptions.CultureInvariant)]
     private static partial Regex PackageIdRegex();
 
-    public static List<InstallableApp> Catalog() => new()
-    {
-        new() { Name = "Steam", Description = "Loja e biblioteca de jogos da Valve.", WingetId = "Valve.Steam", DisplayPrefix = "Steam" },
-        new() { Name = "Google Chrome", Description = "Navegador do Google.", WingetId = "Google.Chrome", DisplayPrefix = "Google Chrome" },
-        new() { Name = "Discord", Description = "Chat de voz e texto para jogar com os amigos.", WingetId = "Discord.Discord", DisplayPrefix = "Discord" },
-        new() { Name = "Lightshot", Description = "Captura de tela rápida com a tecla Print Screen.", WingetId = "Skillbrains.Lightshot", DisplayPrefix = "Lightshot" },
-        new() { Name = "7-Zip", Description = "Compactador gratuito para zip, rar e 7z.", WingetId = "7zip.7zip", DisplayPrefix = "7-Zip" },
-        new() { Name = "WinRAR", Description = "Compactador clássico, pago depois do teste.", WingetId = "RARLab.WinRAR", DisplayPrefix = "WinRAR", PreSelect = false },
-        new() { Name = "VLC", Description = "Player de vídeo e música que abre qualquer formato.", WingetId = "VideoLAN.VLC", DisplayPrefix = "VLC media player" },
-    };
+    /// <summary>O catálogo da página (ver <see cref="AppCatalog"/>).</summary>
+    public static List<InstallableApp> Catalog() => AppCatalog.Create();
 
     internal static string WingetPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\WindowsApps\winget.exe");
@@ -96,32 +56,95 @@ public static partial class AppInstaller
         return names;
     }
 
-    public static void RefreshInstalled(IEnumerable<InstallableApp> apps)
+    /// <summary>
+    /// IDs dos pacotes que o winget reconhece como instalados (pela fonte winget), lidos de um "winget export". Inclui os MSIX, que
+    /// não aparecem no registro. Nulo se o winget não respondeu (sem winget, fonte desatualizada, cancelado).
+    /// </summary>
+    public static async Task<HashSet<string>?> InstalledPackageIdsAsync(CancellationToken ct)
+    {
+        if (!WingetAvailable) return null;
+        string file = Path.Combine(Path.GetTempPath(), $"corebi-winget-{Environment.ProcessId}-{Guid.NewGuid():N}.json");
+        try
+        {
+            var args = new[] { "export", "--output", file, "--source", "winget", "--accept-source-agreements", "--disable-interactivity" };
+            // O código de saída não importa: o export sai com erro quando algum app não casa com a fonte, mas grava o arquivo
+            await ProcessRunner.RunAsync(WingetPath, args, ct).ConfigureAwait(false);
+            if (!File.Exists(file)) return null;
+            return ParseExport(await File.ReadAllTextAsync(file, ct).ConfigureAwait(false));
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) { DiagnosticLog.Write("apps.export", ex); return null; }
+        finally
+        {
+            try { File.Delete(file); } catch { }
+        }
+    }
+
+    /// <summary>IDs do JSON do "winget export" (Sources[].Packages[].PackageIdentifier).</summary>
+    internal static HashSet<string> ParseExport(string json)
+    {
+        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        using var doc = JsonDocument.Parse(json);
+        if (!doc.RootElement.TryGetProperty("Sources", out var sources) || sources.ValueKind != JsonValueKind.Array) return ids;
+        foreach (var source in sources.EnumerateArray())
+        {
+            if (!source.TryGetProperty("Packages", out var packages) || packages.ValueKind != JsonValueKind.Array) continue;
+            foreach (var package in packages.EnumerateArray())
+                if (package.TryGetProperty("PackageIdentifier", out var id) && id.GetString() is { Length: > 0 } s) ids.Add(s);
+        }
+        return ids;
+    }
+
+    /// <summary>Um pacote está instalado se o winget o lista, se o nome dele aparece no registro ou se o teste próprio acha.</summary>
+    public static bool IsInstalled(AppPackage package, IEnumerable<string> installedNames, ISet<string>? wingetIds = null)
+    {
+        if (wingetIds != null && wingetIds.Contains(package.Id)) return true;
+        if (package.Probe != null && package.Probe()) return true;
+        return package.DisplayPattern is { } pattern && installedNames.Any(n => pattern.IsMatch(n));
+    }
+
+    /// <summary>O cartão conta como instalado só com todos os pacotes dele presentes (Visual C++ antigos são dez).</summary>
+    public static bool IsInstalled(InstallableApp app, IEnumerable<string> installedNames, ISet<string>? wingetIds = null)
+    {
+        var names = installedNames as ICollection<string> ?? installedNames.ToList();
+        return app.Packages.Count > 0 && app.Packages.All(p => IsInstalled(p, names, wingetIds));
+    }
+
+    public static void RefreshInstalled(IEnumerable<InstallableApp> apps, ISet<string>? wingetIds = null)
     {
         var names = InstalledNames();
         foreach (var a in apps)
         {
-            a.Installed = IsInstalled(a, names);
+            a.Installed = IsInstalled(a, names, wingetIds);
             if (a.Installed) a.Selected = false;
         }
     }
 
-    public static bool IsInstalled(InstallableApp app, IEnumerable<string> installedNames) =>
-        installedNames.Any(n => n.StartsWith(app.DisplayPrefix, StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>Instala um app em silêncio via winget. Retorna (ok, mensagem curta).</summary>
+    /// <summary>Instala em silêncio os pacotes de um cartão, um por vez. Retorna (ok, mensagem curta); falha no primeiro que falhar.</summary>
     public static async Task<(bool Ok, string Message)> InstallAsync(InstallableApp app, CancellationToken ct)
     {
-        var result = await ProcessRunner.RunAsync(WingetPath, BuildArguments(app.WingetId), ct).ConfigureAwait(false);
+        bool any = false;
+        foreach (var package in app.Packages)
+        {
+            var (ok, installed, message) = await InstallPackageAsync(package.Id, ct).ConfigureAwait(false);
+            if (!ok) return (false, app.Packages.Count > 1 ? $"{package.Id}: {message}" : message);
+            any |= installed;
+        }
+        return (true, any ? "Instalado." : "Já estava instalado.");
+    }
+
+    private static async Task<(bool Ok, bool Installed, string Message)> InstallPackageAsync(string id, CancellationToken ct)
+    {
+        var result = await ProcessRunner.RunAsync(WingetPath, BuildArguments(id), ct).ConfigureAwait(false);
         string output = result.Output + result.Error;
 
         return result.ExitCode switch
         {
-            0 => (true, "Instalado."),
-            WingetNoApplicableUpgrade or WingetAlreadyInstalled => (true, "Já estava instalado."),
-            WingetNotFound => (false, "Pacote não encontrado no winget."),
-            WingetDownloadFailed => (false, "Falha no download: confira a internet e tente de novo."),
-            _ => (false, $"Falhou (código 0x{result.ExitCode:X8}). {LastLine(output)}".Trim()),
+            0 => (true, true, "Instalado."),
+            WingetNoApplicableUpgrade or WingetAlreadyInstalled => (true, false, "Já estava instalado."),
+            WingetNotFound => (false, false, "Pacote não encontrado no winget."),
+            WingetDownloadFailed => (false, false, "Falha no download: confira a internet e tente de novo."),
+            _ => (false, false, $"Falhou (código 0x{result.ExitCode:X8}). {LastLine(output)}".Trim()),
         };
     }
 

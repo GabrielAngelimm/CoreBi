@@ -160,6 +160,43 @@ internal static partial class Program
             Require(args.Contains("--source") && args.Contains("winget") && args.Contains("--exact"), "Source/package not constrained");
             Expect<ArgumentException>(() => AppInstaller.BuildArguments("7zip.7zip --source evil")); return new { noShell = true };
         });
+        Check("Instalar apps: catálogo com IDs válidos, sem repetição, e categorias conhecidas", () =>
+        {
+            var apps = AppInstaller.Catalog();
+            var ids = apps.SelectMany(a => a.Packages).Select(p => p.Id).ToList();
+            Require(apps.Count == 73, $"Catálogo com {apps.Count} cartões");
+            Require(ids.Distinct(StringComparer.OrdinalIgnoreCase).Count() == ids.Count, "Pacote repetido no catálogo");
+            foreach (string id in ids) AppInstaller.BuildArguments(id); // "+" (Notepad++, VCRedist 2015+) passa; espaço e opções não
+            Require(apps.All(a => AppCatalog.Categories.Contains(a.Category) && a.Icon.Length > 0 && a.Description.Length > 0), "Cartão sem categoria, ícone ou descrição");
+            Require(apps.Count(a => a.Kits.HasFlag(AppKit.PostFormat)) >= 5 && apps.Any(a => a.Kits.HasFlag(AppKit.Games)) && apps.Any(a => a.Kits.HasFlag(AppKit.Work))
+                && apps.Count(a => a.Kits.HasFlag(AppKit.Creator)) >= 4 && apps.Count(a => a.Kits.HasFlag(AppKit.Dev)) >= 4, "Kit vazio");
+            var vc = apps.Single(a => a.Name == "Visual C++ antigos");
+            Require(vc.Packages.Count == 10, "Visual C++ antigos sem os dez pacotes");
+            Require(AppInstaller.IsInstalled(vc.Packages[1], new[] { "Microsoft Visual C++ 2005 Redistributable" })
+                    && !AppInstaller.IsInstalled(vc.Packages[1], new[] { "Microsoft Visual C++ 2005 Redistributable (x64)" }), "x86 e x64 de 2005 confundidos");
+            Require(!AppInstaller.IsInstalled(vc, new[] { "Microsoft Visual C++ 2005 Redistributable (x64)" }), "Cartão de vários pacotes contou com um só");
+            var teams = apps.Single(a => a.Name == "Microsoft Teams");
+            Require(!AppInstaller.IsInstalled(teams, new[] { "Microsoft Teams" }) && AppInstaller.IsInstalled(teams, Array.Empty<string>(), new HashSet<string> { "Microsoft.Teams" }),
+                    "MSIX deve contar só pelo ID do winget");
+            return new { cards = apps.Count, packages = ids.Count };
+        });
+        Check("Instalar apps: IDs do winget export", () =>
+        {
+            const string json = "{\"Sources\":[{\"Packages\":[{\"PackageIdentifier\":\"Valve.Steam\"},{\"PackageIdentifier\":\"Microsoft.VCRedist.2015+.x64\"}],\"SourceDetails\":{}}]}";
+            var ids = AppInstaller.ParseExport(json);
+            Require(ids.Count == 2 && ids.Contains("valve.steam") && ids.Contains("Microsoft.VCRedist.2015+.x64"), "Export mal lido");
+            Require(AppInstaller.ParseExport("{}").Count == 0, "Export vazio");
+            return new { ids = ids.Count };
+        });
+        Check("Instalar apps: categorias divididas em colunas que terminam quase juntas", () =>
+        {
+            // As 13 categorias do catálogo (cabeçalho 37 + 32 por linha + 14 de vão) em 5 colunas: a mais alta fica com 3 grupos
+            var rows = new[] { 6, 6, 3, 6, 3, 5, 11, 4, 6, 6, 3, 7, 7 };
+            var split = CoreBi.Desktop.Views.AppsView.Partition(rows.Select(r => 37.0 + r * 32 + 14).ToArray(), 5);
+            Require(split.Count == 5 && split.Sum() == rows.Length && split.All(n => n > 0), "Divisão inválida");
+            Require(CoreBi.Desktop.Views.AppsView.Partition(new[] { 1.0, 1.0 }, 5).Count == 2, "Mais colunas que grupos");
+            return new { split };
+        });
         Check("processes: both pipes drain, output is bounded and quoting survives", () =>
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));

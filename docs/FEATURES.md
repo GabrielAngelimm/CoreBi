@@ -20,7 +20,7 @@
 | Stress | CPU em todos os threads; RAM com padrões e verificação; GPU com cena de carga e monitoramento de temperaturas quando disponíveis | Teste curto prova execução/parada. Estabilidade térmica e precisão da proteção requerem ensaios prolongados |
 | Inicialização | Registro Run/StartupApproved e pastas de atalhos; ativar/desativar, backup/remoção e restauração | Backup durável protegido antes de remover; restauração por ID recusa conflitos. Falhas testadas com backend isolado; alterações reais ainda pendentes |
 | Drivers | Inventário WMI, consulta de versão de GPU, download com verificação de assinatura, Windows Update e backup pnputil | Download exige HTTPS oficial e publicador exato/Authenticode. Consulta NVIDIA e busca WU testadas; instalação real e fluxo AMD pendentes |
-| Instalar apps | Catálogo curado, inventário do Windows e execução do winget por identificador | Argumentos separados e ID validado. Versão/inventário testados; instalação real depende de fonte, rede e instaladores de terceiros |
+| Instalar apps | Catálogo curado de 73 apps (cartões com um ou mais pacotes), inventário do registro confirmado pelo `winget export` e execução do winget por identificador | Argumentos separados e ID validado; os IDs do catálogo foram conferidos no repositório winget-pkgs. Catálogo, leitura do export e inventário testados; instalação real depende de fonte, rede e instaladores de terceiros |
 | Relatórios e histórico | Exporta informações coletadas e resultados; mantém configurações/históricos locais próprios | Os dados refletem a disponibilidade no momento da coleta; a exportação pode incluir identificadores do computador |
 
 ## Relação com utilitários conhecidos

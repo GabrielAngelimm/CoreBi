@@ -227,3 +227,80 @@ public sealed class EdgeRowPanel : System.Windows.Controls.Panel
         return final;
     }
 }
+
+/// <summary>
+/// Fila de fichas numa linha só (a faixa "No pacote" de Instalar apps): põe as fichas da esquerda para a direita enquanto couberem
+/// e, quando não cabem todas, o último filho (o indicador "+N") logo depois da última que coube. <see cref="HiddenCount"/> diz
+/// quantas ficaram de fora, para o indicador mostrar. Pede só a largura usada, então o que vem depois fica colado à fila.
+/// </summary>
+public sealed class OverflowStrip : System.Windows.Controls.Panel
+{
+    public static readonly DependencyProperty SpacingProperty = DependencyProperty.Register(
+        nameof(Spacing), typeof(double), typeof(OverflowStrip), new FrameworkPropertyMetadata(8.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
+    public double Spacing { get => (double)GetValue(SpacingProperty); set => SetValue(SpacingProperty, value); }
+
+    public static readonly DependencyProperty HiddenCountProperty = DependencyProperty.Register(
+        nameof(HiddenCount), typeof(int), typeof(OverflowStrip), new PropertyMetadata(0));
+    /// <summary>Fichas que não couberam (o indicador mostra "+N").</summary>
+    public int HiddenCount { get => (int)GetValue(HiddenCountProperty); private set => SetValue(HiddenCountProperty, value); }
+
+    private int _shown;
+
+    // O que fica de fora é posto além da borda e cortado aqui (arranjar com tamanho zero ainda deixaria o desenho vazar)
+    public OverflowStrip() => ClipToBounds = true;
+
+    private static void Hide(UIElement child, Size final) =>
+        child.Arrange(new Rect(final.Width + 10000, 0, child.DesiredSize.Width, child.DesiredSize.Height));
+
+    protected override Size MeasureOverride(Size available)
+    {
+        int n = InternalChildren.Count - 1;
+        if (n < 0) return default;
+        var any = new Size(double.PositiveInfinity, available.Height);
+        foreach (UIElement child in InternalChildren) child.Measure(any);
+        var indicator = InternalChildren[n];
+        double used = 0, height = 0;
+        int shown = 0;
+        for (; shown < n; shown++)
+        {
+            var size = InternalChildren[shown].DesiredSize;
+            double next = used + (shown > 0 ? Spacing : 0) + size.Width;
+            // Se esta não é a última, precisa sobrar lugar para o indicador
+            double reserve = shown < n - 1 ? Spacing + indicator.DesiredSize.Width : 0;
+            if (next + reserve > available.Width && !(shown == n - 1 && next <= available.Width)) break;
+            used = next;
+            height = Math.Max(height, size.Height);
+        }
+        _shown = shown;
+        int hidden = n - shown;
+        if (HiddenCount != hidden) HiddenCount = hidden;
+        if (hidden > 0)
+        {
+            used += (shown > 0 ? Spacing : 0) + indicator.DesiredSize.Width;
+            height = Math.Max(height, indicator.DesiredSize.Height);
+        }
+        return new Size(used, height);
+    }
+
+    protected override Size ArrangeOverride(Size final)
+    {
+        int n = InternalChildren.Count - 1;
+        double x = 0;
+        for (int i = 0; i < n; i++)
+        {
+            var child = InternalChildren[i];
+            if (i >= _shown) { Hide(child, final); continue; }
+            var size = child.DesiredSize;
+            child.Arrange(new Rect(x, (final.Height - size.Height) / 2, size.Width, size.Height));
+            x += size.Width + Spacing;
+        }
+        if (n >= 0)
+        {
+            var indicator = InternalChildren[n];
+            if (n - _shown > 0)
+                indicator.Arrange(new Rect(x, (final.Height - indicator.DesiredSize.Height) / 2, indicator.DesiredSize.Width, indicator.DesiredSize.Height));
+            else Hide(indicator, final);
+        }
+        return final;
+    }
+}

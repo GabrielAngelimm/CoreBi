@@ -42,7 +42,7 @@ internal static partial class Program
     {
         var watch = Stopwatch.StartNew();
         try { var details = test(); Results.Add(new { name, status = "PASS", elapsedMs = watch.ElapsedMilliseconds, details }); Console.WriteLine("PASS " + name); }
-        catch (Exception ex) { Failures++; Results.Add(new { name, status = "FAIL", error = ex.ToString() }); Console.WriteLine("FAIL " + name + ": " + ex.Message); }
+        catch (Exception ex) { Failures++; Results.Add(new { name, status = "FAIL", error = ex.ToString() }); Console.WriteLine("FAIL " + name + ": " + ex.Message + (ex.GetBaseException() is { } inner && inner != ex ? " -> " + inner.GetType().Name + ": " + inner.Message : "")); }
     }
     private static void Skip(string name, string reason)
     {

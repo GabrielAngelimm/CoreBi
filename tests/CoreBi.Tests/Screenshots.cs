@@ -75,6 +75,19 @@ internal static partial class Program
                     else if (parts[0] == "PageSensors" && parts.Length == 2) { window.PageSensors.SensorSearch.Text = parts[1]; Wait(800); }
                     // "PageDisks:3" repete o disco em três teclas, para ver a faixa de discos num PC que só tem um
                     else if (parts[0] == "PageDisks" && parts.Length == 2 && int.TryParse(parts[1], out int copies)) { window.PageDisks.PreviewRack(copies); Wait(800); }
+                    // "PageApps:pack" marca os kits Pós-formatação e Jogos (sem instalar nada), para ver o pacote e o filtro com apps
+                    else if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "pack")
+                    {
+                        foreach (var a in window.PageApps._installApps ?? [])
+                            if (!a.Installed && (a.Kits & (CoreBi.Engine.Tools.Apps.AppKit.PostFormat | CoreBi.Engine.Tools.Apps.AppKit.Games)) != 0) a.Selected = true;
+                        Wait(800);
+                    }
+                    // "PageApps:confirm" abre a confirmação com o pacote marcado antes (sem instalar) e fecha depois da captura
+                    else if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "confirm") { window.PageApps.PreviewConfirm(); Wait(900); }
+                    // "PageApps:installing" mostra a fila no meio (um instalado, um instalando, o resto na fila), sem instalar nada
+                    else if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "installing") { window.PageApps.PreviewRun(true); Wait(900); }
+                    // "PageApps:Jogos" filtra pela categoria, como o clique no título dela (volta a todas depois da captura)
+                    else if (parts[0] == "PageApps" && parts.Length == 2) { window.PageApps.FilterCategory(parts[1]); Wait(800); }
                     Wait(600);
                     string file = Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-{theme}.png");
                     SaveWindow(window, file);
@@ -83,6 +96,9 @@ internal static partial class Program
                     if (typeof(MainWindow).GetField(parts[0], System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)?.GetValue(window) is UserControl { Content: ScrollViewer scroll })
                         Console.WriteLine($"  {parts[0]}: rolagem {scroll.ScrollableHeight:0} px");
                     if (report) { window.ReportLayer.Cancel(); Wait(300); continue; }
+                    if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "confirm") { window.InstallLayer.Cancel(); Wait(300); continue; }
+                    if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "installing") window.PageApps.PreviewRun(false);
+                    if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] != "pack") window.PageApps.FilterCategory(null);
                     if (theme == themes[0]) SaveSkeletons(window, Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-skeleton.png"));
                 }
             }
