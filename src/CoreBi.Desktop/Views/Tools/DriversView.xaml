@@ -85,9 +85,9 @@
                             <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
                         </DockPanel>
                         <!-- Backup e restauração: cada um abre a janela que confirma (onde salvar / qual backup) antes de mexer em qualquer coisa -->
-                        <Button x:Name="BtnDrvBackup" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE74E;" Content="Fazer backup" Click="BtnDrvBackup_Click"
+                        <Button x:Name="BtnDrvBackup" Style="{StaticResource HeaderSecondary}" Margin="0,0,10,0" local:Ui.Icon="&#xE74E;" Content="Fazer backup" Click="BtnDrvBackup_Click"
                                 ToolTip="Guarda uma cópia dos drivers das suas peças, para reinstalar tudo depois de formatar." />
-                        <Button x:Name="BtnDrvRestore" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE777;" Content="Restaurar" Click="BtnDrvRestore_Click"
+                        <Button x:Name="BtnDrvRestore" Style="{StaticResource HeaderSecondary}" Margin="0,0,10,0" local:Ui.Icon="&#xE777;" Content="Restaurar" Click="BtnDrvRestore_Click"
                                 ToolTip="Reinstala os drivers de um backup. O Windows só usa os que forem melhores que os atuais." />
                         <Button x:Name="BtnDrvScan" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnDrvScan_Click"
                                 ToolTip="Lê tudo de novo e consulta a versão mais nova da placa de vídeo." />
