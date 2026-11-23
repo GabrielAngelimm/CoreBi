@@ -116,7 +116,8 @@ public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
         var target = new Rect(item.TranslatePoint(new Point(), this), item.RenderSize);
         if (target != _target)
         {
-            bool slide = animate && _shown && !_target.IsEmpty;
+            // "Mostrar animações no Windows" desligado: o destaque pula direto, como todo movimento do app
+            bool slide = animate && _shown && !_target.IsEmpty && SystemParameters.ClientAreaAnimation;
             _target = target;
             if (slide)
             {
@@ -136,7 +137,7 @@ public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
         if (visible == _shown) return;
         _shown = visible;
         double to = visible ? 1 : 0;
-        if (animate)
+        if (animate && SystemParameters.ClientAreaAnimation)
         {
             BeginAnimation(SpotOpacityProperty, new DoubleAnimation(to, FadeTime));
         }

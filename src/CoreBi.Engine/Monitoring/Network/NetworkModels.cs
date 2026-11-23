@@ -60,7 +60,7 @@ public sealed class PingResult
     public double LossPct => Sent == 0 ? 0 : 100.0 * Lost / Sent;
     public bool Answered => Sent - Lost > 0;
     public string Text => !Answered ? "não responde"
-        : $"média {Avg:0.#} ms · mín {Min:0.#} · máx {Max:0.#} · jitter {Jitter:0.#} ms · perda {LossPct:0.#}%";
+        : $"média {Avg:0.#} ms · mín {Min:0.#} · máx {Max:0.#} · jitter {Jitter:0.#} ms · perda {LossPct:0.#} %";
 }
 
 public sealed class NetworkResult

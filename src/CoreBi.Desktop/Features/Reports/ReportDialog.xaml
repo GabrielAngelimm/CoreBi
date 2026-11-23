@@ -21,7 +21,7 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Border x:Name="box" Width="18" Height="18" CornerRadius="5" BorderThickness="1.5" BorderBrush="{DynamicResource LineStrong}"
+                                <Border x:Name="box" Width="18" Height="18" CornerRadius="{StaticResource RadiusSmall}" BorderThickness="1.5" BorderBrush="{DynamicResource LineStrong}"
                                         Background="Transparent" VerticalAlignment="Center" SnapsToDevicePixels="True">
                                     <TextBlock x:Name="mark" Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="10" Foreground="{DynamicResource SignalFg}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />

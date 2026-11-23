@@ -474,10 +474,7 @@ public partial class DriverBackupDialog : UserControl
         _closing = false;
         Panel.BeginAnimation(HeightProperty, null);
         Visibility = Visibility.Visible;
-        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-        Scrim.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
-        Panel.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(170)) { EasingFunction = ease });
-        PanelShift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(230)) { EasingFunction = ease });
+        PageMotion.EnterDialog(Scrim, Panel, PanelShift);
         Dispatcher.BeginInvoke(() => { if (BtnConfirm.IsEnabled) { BtnConfirm.Focus(); Keyboard.Focus(BtnConfirm); } else BtnFolder.Focus(); },
             System.Windows.Threading.DispatcherPriority.Input);
         return _pending.Task;

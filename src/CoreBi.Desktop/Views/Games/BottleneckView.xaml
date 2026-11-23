@@ -214,7 +214,7 @@
                             (quando e o quê, veredito 24, uma linha do que fazer e o FPS nas mesmas colunas); e o tempo em cada situação,
                             que divide a sobra de altura até o pé. Os outros números da análise ficam na dica do resultado.
                         -->
-                        <Border x:Name="BnSessionCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="{StaticResource CardPadding}">
+                        <Border x:Name="BnSessionCard" Grid.Row="2" Style="{StaticResource CardBorder}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />

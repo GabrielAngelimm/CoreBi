@@ -172,12 +172,12 @@ public sealed class RunTrace : InstrumentBase
         dc.DrawLine(Stroke(FaintBrush, 1, new DashStyle(new double[] { 3, 3 }, 0)), new Point(lx, top), new Point(lx, top + plotH));
         dc.DrawEllipse(SurfaceBrush, Stroke(ChannelBrush, 2.5), p, 5.5, 5.5);
 
-        var when = Text($"aos {samples[nearest].X * 100:0} % da passada", 11.5, FaintBrush, readout: false);
+        var when = Text($"aos {samples[nearest].X * 100:0} % da passada", AxisText, FaintBrush, readout: false);
         var value = Text($"{samples[nearest].Y:0} {Unit}".TrimEnd(), 16, InkBrush);
         double bw = Math.Max(when.Width, value.Width) + 24, bh = when.Height + value.Height + 16;
         double bx = p.X + 14 + bw > w ? p.X - 14 - bw : p.X + 14;
         double by = Math.Clamp(p.Y - bh / 2, top, Math.Max(top, top + plotH - bh));
-        dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bw, bh), 8, 8);
+        dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bw, bh), TipRadius, TipRadius);
         dc.DrawText(when, new Point(bx + 12, by + 8));
         dc.DrawText(value, new Point(bx + 12, by + 8 + when.Height));
     }

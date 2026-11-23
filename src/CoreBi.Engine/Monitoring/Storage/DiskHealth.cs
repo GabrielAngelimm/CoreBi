@@ -221,8 +221,8 @@ public static class DiskHealth
 
         if (r.Wear is double w)
         {
-            if (w >= DiskDetail.WearCritAt) crit.Add($"Desgaste de {w:0}%: o SSD está no fim da vida útil. Troque e faça backup.");
-            else if (w >= DiskDetail.WearWarnAt) warn.Add($"Desgaste de {w:0}%: o SSD já gastou boa parte da vida útil. Planeje a troca.");
+            if (w >= DiskDetail.WearCritAt) crit.Add($"Desgaste de {w:0} %: o SSD está no fim da vida útil. Troque e faça backup.");
+            else if (w >= DiskDetail.WearWarnAt) warn.Add($"Desgaste de {w:0} %: o SSD já gastou boa parte da vida útil. Planeje a troca.");
         }
         var (okMax, critMax) = ThermalLimits.Disk(isSsd);
         if (r.Temp is double t)
@@ -233,7 +233,7 @@ public static class DiskHealth
         if (r.Nvme?.CriticalWarning is > 0) crit.Add("O SSD acusa um aviso crítico no próprio relatório de saúde NVMe. Faça backup agora.");
         if (r.Nvme?.MediaErrors is > 0) warn.Add($"O SSD registrou {(r.Nvme.MediaErrors == 1 ? "1 erro" : $"{r.Nvme.MediaErrors:N0} erros")} de mídia e integridade dos dados.");
         if (r.Spare is double sp && r.SpareThreshold is double st && st > 0 && sp < st)
-            crit.Add($"Os blocos de reserva do SSD estão em {sp:0}%, abaixo do mínimo de {st:0}% definido pelo fabricante. Faça backup.");
+            crit.Add($"Os blocos de reserva do SSD estão em {sp:0} %, abaixo do mínimo de {st:0} % definido pelo fabricante. Faça backup.");
         if (r.ReadErrUncorrected > 0 || r.WriteErrUncorrected > 0)
             warn.Add($"Erros não corrigidos: {r.ReadErrUncorrected ?? 0} de leitura e {r.WriteErrUncorrected ?? 0} de escrita.");
 
@@ -263,14 +263,14 @@ public static class DiskHealth
         var metrics = new List<KeyValuePair<string, string>>();
         void M(string k, string? val) { if (val != null) metrics.Add(new(k, val)); }
         M("Temperatura", r.Temp is double tt ? $"{tt:0} °C" + (recordedTempMax is double tm ? $" (máx. registrado {tm:0})" : "") : null);
-        if (r.Wear is double wr) { M("Desgaste", $"{wr:0}%"); M("Vida útil restante", $"{Math.Max(0, 100 - wr):0}%"); }
+        if (r.Wear is double wr) { M("Desgaste", $"{wr:0} %"); M("Vida útil restante", $"{Math.Max(0, 100 - wr):0} %"); }
         M("Horas ligado", r.PowerOnHours is long h ? $"{h:N0} h ({h / 24.0:N0} dias)" : null);
         M("Ciclos liga/desliga", r.StartStop is long ss ? $"{ss:N0}" : null);
         M("Erros de leitura", r.ReadErr is long re ? $"{re:N0}" + (r.ReadErrUncorrected is long ru && ru > 0 ? $" ({ru:N0} não corrigidos)" : "") : null);
         M("Erros de escrita", r.WriteErr is long we ? $"{we:N0}" + (r.WriteErrUncorrected is long wu && wu > 0 ? $" ({wu:N0} não corrigidos)" : "") : null);
         M("Total gravado", r.WrittenGb is double wg && wg > 0 ? $"{wg:N0} GB" : null);
         M("Total lido", r.ReadGb is double rg && rg > 0 ? $"{rg:N0} GB" : null);
-        M("Blocos de reserva", r.Spare is double spare ? $"{spare:0}%" + (r.SpareThreshold is double min && min > 0 ? $" (mínimo {min:0}%)" : "") : null);
+        M("Blocos de reserva", r.Spare is double spare ? $"{spare:0} %" + (r.SpareThreshold is double min && min > 0 ? $" (mínimo {min:0} %)" : "") : null);
         M("Aviso crítico (NVMe)", r.Nvme?.CriticalWarning is ulong cw ? (cw == 0 ? "Nenhum" : $"0x{cw:X2}") : null);
         M("Erros de mídia (NVMe)", r.Nvme?.MediaErrors is ulong me ? $"{me:N0}" : null);
         M("Desligamentos inesperados", r.Nvme?.UnsafeShutdowns is ulong us ? $"{us:N0}" : null);

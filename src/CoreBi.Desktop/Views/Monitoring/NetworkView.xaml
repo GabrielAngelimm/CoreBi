@@ -127,7 +127,7 @@
                         </Grid>
                         <DockPanel Style="{StaticResource PageStatusSlot}">
                             <TextBlock x:Name="NetDetail" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
-                            <TextBlock x:Name="NetStatus" Text="Pronto para testar" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
+                            <TextBlock x:Name="NetStatus" Text="Pronto para testar" Style="{StaticResource PageStatus}" TextAlignment="Right" />
                         </DockPanel>
                         <Button x:Name="BtnNetTest" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE768;" Content="Testar a rede" Click="BtnNetTest_Click"
                                 ToolTip="Envia pings ao roteador e aos DNS 1.1.1.1 e 8.8.8.8 e transfere dados para medir a velocidade. O consumo pode chegar a centenas de MB." />
@@ -282,7 +282,7 @@
                         <ColumnDefinition Width="340" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Style="{StaticResource CardBorder}" Padding="{StaticResource CardPadding}">
+                    <Border Style="{StaticResource CardBorder}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -352,7 +352,7 @@
 
                     <!-- Histórico: um teste por linha (quando, download, upload, latência), o mais recente em cima; o escolhido é o que o
                          diagnóstico mostra. Fica guardado em AppSettings.NetRuns e rola dentro do cartão. -->
-                    <Border x:Name="NetHistoryCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="{StaticResource CardPadding}">
+                    <Border x:Name="NetHistoryCard" Grid.Column="2" Style="{StaticResource CardBorder}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -420,7 +420,7 @@
                     </Border>
 
                     <!-- Esqueleto: as seis linhas da conexão espalhadas pela altura, nome à esquerda e valor à direita -->
-                    <Border x:Name="NetInfoCard" Grid.Column="4" Style="{StaticResource CardBorder}" Padding="{StaticResource CardPadding}" local:Skeleton.Top="40"
+                    <Border x:Name="NetInfoCard" Grid.Column="4" Style="{StaticResource CardBorder}" local:Skeleton.Top="40"
                             local:Skeleton.Layout="spread 6: c *@0.5, t *@0.6&gt;">
                         <Grid>
                             <Grid.RowDefinitions>

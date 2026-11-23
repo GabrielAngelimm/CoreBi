@@ -69,7 +69,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{Binding Label}" FontSize="13" Foreground="{DynamicResource Fg}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="12,0,8,0" />
                     <TextBlock x:Name="value" Grid.Column="1" Style="{StaticResource ReadoutText}" FontSize="16" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,2,0,-2">
-                        <Run Text="{Binding Number, Mode=OneWay}" /><Run Text=" " FontSize="11" /><Run x:Name="unit" Text="{Binding Unit, Mode=OneWay}" FontSize="11" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource UiFont}" />
+                        <Run Text="{Binding Number, Mode=OneWay}" /><Run Text=" " FontSize="12" /><Run x:Name="unit" Text="{Binding Unit, Mode=OneWay}" FontSize="12" Foreground="{DynamicResource Muted}" FontFamily="{StaticResource UiFont}" />
                     </TextBlock>
                     <TextBlock Grid.Column="2" Text="{Binding MinNumber}" Style="{StaticResource StatCell}" />
                     <TextBlock Grid.Column="3" Text="{Binding AvgNumber}" Style="{StaticResource StatCell}" />
@@ -235,7 +235,7 @@
             <TextBlock Text="Sensores" Style="{StaticResource PageTitle}" />
             <TextBlock Text="Temperatura, uso e consumo de cada peça, lidos a cada segundo." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
             <StackPanel Style="{StaticResource PageActions}">
-                <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageStatus}" local:HeaderMotion.SoftText="False" Margin="0,0,20,2" Typography.NumeralAlignment="Tabular"
+                <TextBlock x:Name="StatusText" Text="Lendo sensores…" Style="{StaticResource PageStatus}" local:HeaderMotion.SoftText="False" Margin="0,0,20,2"
                            ToolTip="A leitura é a cada segundo e pausa durante o teste de placa de vídeo." />
                 <TextBox x:Name="SensorSearch" Style="{StaticResource SearchField}" local:Ui.Placeholder="Buscar sensor ou componente" Margin="0,0,10,0" TextChanged="SensorSearch_Changed" />
                 <Button x:Name="BtnSensorsReset" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE777;" Content="Zerar estatísticas" Click="BtnSensorsReset_Click" />

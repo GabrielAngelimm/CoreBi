@@ -41,6 +41,13 @@ public partial class ToastWindow : Window
 
     private void Fade(double to, Action? done)
     {
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            BeginAnimation(OpacityProperty, null);
+            Opacity = to;
+            done?.Invoke();
+            return;
+        }
         var anim = new DoubleAnimation(to, TimeSpan.FromMilliseconds(180));
         if (done != null) anim.Completed += (_, _) => done();
         BeginAnimation(OpacityProperty, anim);
