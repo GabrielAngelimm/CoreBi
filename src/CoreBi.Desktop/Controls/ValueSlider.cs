@@ -221,8 +221,10 @@ public sealed class ValueSlider : RangeBase
         double cy = Math.Round(ActualHeight / 2);
         double x = XOf(Math.Clamp((double)GetValue(ShownProperty), Minimum, Maximum));
         double halo = (double)GetValue(HaloProperty);
-        // Desligado, nada de cor: a parte acesa e o botão ficam no tom dos pontos, para não parecer que dá para mexer
+        // Desligado, nada de cor e a 30 %, como as pílulas: a parte acesa e o botão ficam no tom dos pontos, para não parecer
+        // que dá para mexer
         var fill = IsEnabled ? Fill : Dot ?? Fill;
+        if (!IsEnabled) dc.PushOpacity(0.3);
 
         var track = new Rect(Left - TrackHeight / 2, cy - TrackHeight / 2, Usable + TrackHeight, TrackHeight);
         dc.DrawRoundedRectangle(Track, null, track, TrackHeight / 2, TrackHeight / 2);
@@ -252,6 +254,7 @@ public sealed class ValueSlider : RangeBase
         var ring = Ring is { } r ? new Pen(r, RingWidth) : null;
         ring?.Freeze();
         dc.DrawEllipse(fill, ring, new Point(x, cy), ThumbRadius - RingWidth / 2, ThumbRadius - RingWidth / 2);
+        if (!IsEnabled) dc.Pop();
     }
 
     protected override AutomationPeer OnCreateAutomationPeer() => new Peer(this);
