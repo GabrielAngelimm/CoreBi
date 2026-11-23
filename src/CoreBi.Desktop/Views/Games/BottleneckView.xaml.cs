@@ -9,12 +9,14 @@ namespace CoreBi.Desktop
 {
     /// <summary>
     /// Medidor do Gargalo: leitura, fração 0–1 na cor do componente (Channel: Cpu, Gpu, Memory, Danger; vazio = aço) e a marca do
-    /// limite que a classificação usa (Mark, 0–1; NaN = sem marca). Atualizado no lugar a cada leitura.
+    /// limite que a classificação usa (Mark, 0–1; NaN = sem marca). Atualizado no lugar a cada leitura; Active acende o rótulo da
+    /// leitura que explica o veredito de agora.
     /// </summary>
     public sealed class LimitReading : ObservableObject
     {
         private string _label, _value = "—", _sub = "", _tone = "";
         private double _fraction;
+        private bool _active;
 
         public LimitReading(string label, string channel, double mark = double.NaN, string? tip = null, string? hint = null)
         {
@@ -37,12 +39,63 @@ namespace CoreBi.Desktop
         public string Value { get => _value; set => Set(ref _value, value); }
         public string Sub { get => _sub; set => Set(ref _sub, value); }
         public string Tone { get => _tone; set => Set(ref _tone, value); }
+        public bool Active { get => _active; set => Set(ref _active, value); }
         public double Fraction { get => _fraction; set => Set(ref _fraction, Math.Clamp(value, 0, 1)); }
     }
 
-    public sealed record RulerStat(string Label, string Value, string Unit, bool First, string? Tip = null, string? HintText = null)
+    /// <summary>Uma das seis situações da análise de sessão: fixa na tela, com o tempo nela atualizado no lugar.</summary>
+    public sealed class SituationItem : ObservableObject
     {
-        public string Hint => HintText is null ? "" : "  " + HintText;
+        private string _value = "—";
+        private double _fraction;
+        private bool _quiet;
+
+        public SituationItem(Limiter limiter, bool first, string label, string meaning, string channel, string tip)
+        {
+            Limiter = limiter;
+            First = first;
+            Label = label;
+            Meaning = meaning;
+            Channel = channel;
+            Tip = tip;
+        }
+
+        public Limiter Limiter { get; }
+        public bool First { get; }
+        public string Label { get; }
+        public string Meaning { get; }
+        public string Channel { get; }
+        public string Tip { get; }
+        public string Value { get => _value; set => Set(ref _value, value); }
+        public double Fraction { get => _fraction; set => Set(ref _fraction, Math.Clamp(value, 0, 1)); }
+        /// <summary>A situação não aconteceu na análise mostrada (0 %): nome e número um tom abaixo.</summary>
+        public bool Quiet { get => _quiet; set => Set(ref _quiet, value); }
+    }
+
+    /// <summary>Média ou máximo da sessão: número e unidade (a unidade some no travessão).</summary>
+    public sealed class SessionStat : ObservableObject
+    {
+        private readonly string _unit;
+        private string _value = "—";
+
+        public SessionStat(string label, string unit, bool first, string tip)
+        {
+            Label = label;
+            _unit = unit;
+            First = first;
+            Tip = tip;
+        }
+
+        public string Label { get; }
+        public bool First { get; }
+        public string Tip { get; }
+        public string UnitText => _value == "—" ? "" : (_unit == "%" ? " %" : " " + _unit);
+
+        public string Value
+        {
+            get => _value;
+            set { if (Set(ref _value, value)) OnPropertyChanged(nameof(UnitText)); }
+        }
     }
 }
 
@@ -50,33 +103,58 @@ namespace CoreBi.Desktop.Views
 {
     public partial class BottleneckView : UserControl
     {
-        private const string SessionTip = "Precisa de um jogo aberto em primeiro plano. Mede pelo tempo escolhido e mostra por quanto tempo cada peça limitou o FPS.";
+        private const string SessionTip = "Inicie e vá para o jogo: a análise espera ele ficar em primeiro plano e mede pelo tempo escolhido.";
+        private const string IdleStatus = "Jogue com o CoreBi aberto: no fim, você vê o que segurou o FPS e por quanto tempo.";
+        private const string IdleTitle = "Nenhum jogo em primeiro plano";
+        private const string IdleAdvice = "Abra um jogo e deixe-o em primeiro plano: aqui aparece, segundo a segundo, qual peça limita o FPS.";
 
         private FeatureContext? _context;
         private BottleneckSession? _session;
         private double _balanceRatio = 1;
+        // Prévia das capturas de tela: um resultado e um veredito de exemplo que o Tick não sobrescreve (nada é salvo)
+        private bool _demo;
 
         private readonly LimitReading _gpu = new("Uso da GPU", "Gpu", LoadSample.GpuLimitPct / 100.0,
-            "A partir de 90 % a placa de vídeo é o limite (o normal em jogos pesados).", "placa de vídeo");
-        private readonly LimitReading _cpu = new("Núcleo mais ocupado da CPU", "Cpu", LoadSample.CpuLimitPct / 100.0,
-            "A partir de 85 % num núcleo (ou no total) a CPU passa a limitar o FPS.", "processador");
+            "Quanto a placa de vídeo está trabalhando. A partir de 90 % ela é o limite, o normal em jogos pesados.", "placa de vídeo");
+        private readonly LimitReading _cpu = new("Núcleo mais ocupado", "Cpu", LoadSample.CpuLimitPct / 100.0,
+            "Jogos costumam depender de um ou dois núcleos. A partir de 85 % num núcleo (ou no total) o processador passa a segurar o FPS.", "processador");
         private readonly LimitReading _vram = new("VRAM em uso", "Gpu", LoadSample.VramLimitPct / 100.0,
-            "A partir de 97 % a memória de vídeo está cheia.", "memória da placa de vídeo");
+            "A memória da própria placa de vídeo, onde ficam as texturas. A partir de 97 % ela está cheia e o jogo engasga.", "memória da placa de vídeo");
         private readonly LimitReading _ram = new("RAM em uso", "Memory", LoadSample.RamLimitPct / 100.0,
-            "A partir de 92 % a memória RAM está cheia.", "memória do PC");
+            "A memória do PC. A partir de 92 % o Windows passa a usar o disco no lugar dela, bem mais lento.", "memória do PC");
         private readonly LimitReading _gpuTemp = new("Temperatura da GPU", "Gpu", LoadSample.ThermalLimitC / 100.0,
-            "A partir de 95 °C, ou quando o driver reduz o clock pela temperatura, o limite é térmico.");
+            "A partir de 95 °C, ou quando o driver reduz o clock pela temperatura, o limite é o calor.");
         private readonly LimitReading _cpuTemp = new("Temperatura da CPU", "Cpu", LoadSample.ThermalLimitC / 100.0,
-            "A partir de 95 °C o limite é térmico.");
+            "A partir de 95 °C o processador reduz o clock para se proteger. Sem modo administrador, a leitura pode faltar.");
 
-        public BottleneckView() => InitializeComponent();
+        private readonly SituationItem[] _situations = BottleneckAnalyzer.Situations
+            .Select((l, i) => new SituationItem(l, i == 0, SituationName(l), BottleneckAnalyzer.Meaning(l), LimiterChannel(l), BottleneckAnalyzer.Advice(l)))
+            .ToArray();
+
+        private readonly SessionStat _avgFps = new("FPS médio", "FPS", true, "A média de quadros por segundo nos segundos medidos.");
+        private readonly SessionStat _avgLow = new("1% low médio", "FPS", false, "A média do FPS dos quadros mais lentos: quanto mais perto do FPS médio, menos travadas.");
+        private readonly SessionStat _gpuAvg = new("GPU média", "%", false, "O uso médio da placa de vídeo. Perto de 100 % ela foi bem aproveitada.");
+        private readonly SessionStat _coreAvg = new("Núcleo mais ocupado", "%", false, "A média do núcleo do processador mais ocupado a cada segundo.");
+        private readonly SessionStat _vramMax = new("VRAM máxima", "%", false, "O máximo de memória da placa de vídeo usado na análise.");
+        private readonly SessionStat _gpuTempMax = new("GPU mais quente", "°C", false, "A maior temperatura da placa de vídeo na análise.");
+
+        private readonly LimitReading[] _meters;
+
+        public BottleneckView()
+        {
+            InitializeComponent();
+            _meters = [_gpu, _cpu, _vram, _ram, _gpuTemp, _cpuTemp];
+        }
 
         internal bool HasActiveSession => _session is { Done: false };
 
         internal void Initialize(FeatureContext context)
         {
             _context = context;
-            BnMeters.ItemsSource = new[] { _gpu, _cpu, _vram, _ram, _gpuTemp, _cpuTemp };
+            BnMeters.ItemsSource = _meters;
+            BnDistribution.ItemsSource = _situations;
+            BnResultStats.ItemsSource = new[] { _avgFps, _avgLow, _gpuAvg, _coreAvg, _vramMax, _gpuTempMax };
+            ShowRun(context.Settings.BottleneckRuns.FirstOrDefault());
             Skeleton.SetActive(BnBalanceCard, true); // o equilíbrio do hardware espera os nomes da CPU e da placa de vídeo
         }
 
@@ -109,72 +187,140 @@ namespace CoreBi.Desktop.Views
         internal void Tick()
         {
             // Sem a página à vista e sem sessão, nada é lido (o CoreBi fica aberto durante os jogos).
-            if (_context == null || (!IsVisible && _session == null)) return;
+            if (_context == null || _demo || (!IsVisible && _session == null)) return;
 
             var frames = _context.Frames.GetForegroundStats();
             var sample = BottleneckAnalyzer.Sample(_context.Sensors, _context.PrimaryGpu, frames);
             var limiter = sample.Classify();
 
-            if (IsVisible)
-            {
-                bool game = frames != null;
-                bool verdict = game && limiter != Limiter.Unknown;
-                BnGameLine.Visibility = game ? Visibility.Visible : Visibility.Collapsed;
-                // Só o nome do processo, de propósito (anticheats): ver FrameMonitor.ResolveProcessName.
-                BnLiveGame.Text = game ? $"Medindo {frames!.ProcessName}" : "";
-                string tone = verdict ? VerdictTone(limiter) : "";
-                if (verdict)
-                {
-                    SetLiveTitle(BottleneckAnalyzer.Title(limiter), tone);
-                    BnLiveAdvice.Text = BottleneckAnalyzer.Advice(limiter);
-                }
-                else
-                {
-                    var (title, advice) = game ? Unclassified(sample, frames!)
-                        : ("Nenhum jogo em primeiro plano", "Abra um jogo e deixe-o em primeiro plano: o CoreBi mostra qual peça limita o FPS.");
-                    SetLiveTitle(title, null);
-                    BnLiveAdvice.Text = advice;
-                }
-
-                BnFrameStats.Visibility = game ? Visibility.Visible : Visibility.Collapsed;
-                if (game)
-                {
-                    BnFrameStats.ItemsSource = new[]
-                    {
-                        new RulerStat("Agora", $"{frames!.Fps:0}", "FPS", true, "Quadros entregues no último segundo.", "quadros por segundo"),
-                        new RulerStat("1% low", $"{frames.Low1Fps:0}", "FPS", false, "O FPS dos quadros mais lentos (o pior 1 % dos últimos 10 s). Mostra as travadas.", "os quadros mais lentos"),
-                    };
-                }
-
-                BnLiveCard.SetResourceReference(Border.BackgroundProperty, tone == "Danger" ? "DangerSoft" : tone == "Warn" ? "WarnSoft" : "Surface");
-                BnLiveCard.SetResourceReference(Border.BorderBrushProperty, tone == "" ? "Line" : tone);
-
-                SetPct(_gpu, sample.GpuLoad);
-                SetPct(_cpu, sample.CpuMaxCore);
-                _cpu.Sub = string.Join(", ", new[]
-                {
-                    sample.BusiestCore is { } core ? char.ToUpper(core[0], CultureInfo.CurrentCulture) + core[1..] : null,
-                    sample.CpuTotal is float total ? $"total da CPU {total:0} %" : null,
-                }.Where(x => x != null));
-                SetPct(_vram, sample.VramPct);
-                SetPct(_ram, sample.RamPct);
-                SetTemp(_gpuTemp, sample.GpuTemp);
-                _gpuTemp.Sub = sample.GpuThermalCap ? "O driver está reduzindo o clock pela temperatura" : "";
-                if (sample.GpuThermalCap) _gpuTemp.Tone = "Danger";
-                SetTemp(_cpuTemp, sample.CpuTemp);
-            }
+            if (IsVisible) ShowLive(sample, frames, limiter);
 
             if (_session != null)
             {
                 _session.Add(sample);
                 var elapsed = _session.Elapsed;
+                string clock = $"{Clock(elapsed)} de {Clock(_session.Duration)}";
+                // Só o nome do processo, de propósito (anticheats): ver FrameMonitor.ResolveProcessName.
                 BnSessionStatus.Text = frames != null
-                    ? $"Medindo {frames.ProcessName}: {elapsed:m\\:ss} de {_session.Duration:m\\:ss}, {_session.Count} amostras"
-                    : $"Aguardando um jogo em primeiro plano: {elapsed:m\\:ss} de {_session.Duration:m\\:ss}";
-                BnSessionProgress.ScaleX = Math.Clamp(elapsed / _session.Duration, 0, 1);
+                    ? $"Medindo {frames.ProcessName} · {clock} · {Samples(_session.Count)}"
+                    : $"Vá para o jogo e deixe-o em primeiro plano · {clock}";
+                Ui.Glide(BnSessionProgress, Math.Clamp(elapsed / _session.Duration, 0, 1), _context.IsLiveMotion());
+                if (_session.ToRun(DateTime.Now) is { } partial) ShowRun(partial, status: false);
                 if (_session.Done) FinishSession();
             }
         }
+
+        /// <summary>O cartão Agora e as leituras: o veredito do último segundo, o FPS e o que prova o veredito.</summary>
+        private void ShowLive(LoadSample sample, FrameStats? frames, Limiter limiter)
+        {
+            bool game = frames != null;
+            bool verdict = game && limiter != Limiter.Unknown;
+            BnLiveDot.Visibility = game ? Visibility.Visible : Visibility.Collapsed;
+            BnLiveGame.Text = game ? frames!.ProcessName : "";
+            string? tone = verdict ? VerdictTone(limiter) : null;
+            if (verdict) SetLive(BottleneckAnalyzer.Title(limiter), BottleneckAnalyzer.Advice(limiter), tone);
+            else if (game)
+            {
+                var (title, advice) = Unclassified(sample, frames!);
+                SetLive(title, advice, null);
+            }
+            else SetLive(IdleTitle, IdleAdvice, null);
+
+            BnFpsNow.Text = frames?.Fps is > 0 ? $"{frames.Fps:0}" : "—";
+            BnFpsLow.Text = frames?.Low1Fps is > 0 ? $"{frames.Low1Fps:0}" : "—";
+
+            SetPct(_gpu, sample.GpuLoad);
+            SetPct(_cpu, sample.CpuMaxCore);
+            _cpu.Sub = string.Join(" · ", new[]
+            {
+                sample.BusiestCore is { Length: > 0 } core ? char.ToUpper(core[0], CultureInfo.CurrentCulture) + core[1..] : null,
+                sample.CpuTotal is float total ? $"total da CPU {total:0} %" : null,
+            }.Where(x => x != null));
+            SetPct(_vram, sample.VramPct);
+            SetPct(_ram, sample.RamPct);
+            SetTemp(_gpuTemp, sample.GpuTemp);
+            _gpuTemp.Sub = sample.GpuThermalCap ? "O driver está reduzindo o clock pela temperatura" : "";
+            if (sample.GpuThermalCap) _gpuTemp.Tone = "Danger";
+            SetTemp(_cpuTemp, sample.CpuTemp);
+            _cpuTemp.Sub = sample.CpuTemp == null && _context?.SensorsRead == true
+                ? CpuSensorMessages.Inline(_context.Sensors.DiagnoseCpuSensors(), "Sem leitura") ?? "" : "";
+
+            // A leitura que explica o veredito acende o rótulo; as outras ficam no tom de sempre.
+            var active = !verdict ? null : limiter switch
+            {
+                Limiter.Gpu => _gpu,
+                Limiter.Cpu => _cpu,
+                Limiter.Vram => _vram,
+                Limiter.Ram => _ram,
+                Limiter.Thermal => sample.GpuThermalCap || sample.GpuTemp >= LoadSample.ThermalLimitC ? _gpuTemp : _cpuTemp,
+                _ => null,
+            };
+            foreach (var m in _meters) m.Active = ReferenceEquals(m, active);
+        }
+
+        private void SetLive(string title, string advice, string? tone)
+        {
+            BnLiveTitle.Text = title;
+            BnLiveTitle.SetResourceReference(TextBlock.ForegroundProperty, tone == null ? "Muted" : tone == "" ? "Fg" : tone);
+            BnLiveAdvice.Text = advice;
+            BnLiveCard.SetResourceReference(Border.BackgroundProperty, tone == "Danger" ? "DangerSoft" : tone == "Warn" ? "WarnSoft" : "Surface");
+            BnLiveCard.SetResourceReference(Border.BorderBrushProperty, string.IsNullOrEmpty(tone) ? "Line" : tone);
+        }
+
+        /// <summary>
+        /// Mostra uma análise (a última guardada, a que acabou de terminar ou a parcial durante a medição) no lugar: as situações e
+        /// as médias deslizam até os números novos. Sem análise, travessões e medidores vazios.
+        /// </summary>
+        private void ShowRun(BottleneckRun? run, bool status = true)
+        {
+            if (run == null)
+            {
+                SetResult("Nenhuma análise ainda", "Escolha a duração, clique em Iniciar análise e vá jogar. Ao voltar, o resultado está aqui.", null);
+                foreach (var s in _situations) { s.Value = "—"; s.Fraction = 0; s.Quiet = false; }
+                foreach (var stat in new[] { _avgFps, _avgLow, _gpuAvg, _coreAvg, _vramMax, _gpuTempMax }) stat.Value = "—";
+                if (status) BnSessionStatus.Text = IdleStatus;
+                return;
+            }
+
+            SetResult(BottleneckAnalyzer.Title(run.Main), BottleneckAnalyzer.Advice(run.Main), VerdictTone(run.Main));
+            foreach (var s in _situations)
+            {
+                double pct = run.Share(s.Limiter);
+                s.Value = pct <= 0 ? "0 %" : pct < 1 ? "<1 %" : $"{pct:0} %";
+                s.Fraction = pct / 100;
+                s.Quiet = pct <= 0;
+            }
+            _avgFps.Value = Number(run.AvgFps);
+            _avgLow.Value = Number(run.AvgLow1Fps);
+            _gpuAvg.Value = Number(run.GpuAvg);
+            _coreAvg.Value = Number(run.CoreAvg);
+            _vramMax.Value = Number(run.VramMax);
+            _gpuTempMax.Value = Number(run.GpuTempMax);
+            if (status) BnSessionStatus.Text = Summary(run);
+
+            static string Number(double? v) => v is double d && double.IsFinite(d) ? $"{d:0}" : "—";
+        }
+
+        private void SetResult(string title, string advice, string? tone)
+        {
+            BnResultTitle.Text = title;
+            BnResultTitle.SetResourceReference(TextBlock.ForegroundProperty, tone == null ? "Muted" : tone == "" ? "Fg" : tone);
+            BnResultAdvice.Text = advice;
+            BnResultAdvice.SetResourceReference(TextBlock.ForegroundProperty, tone == null ? "Muted" : "Fg");
+        }
+
+        private static string Summary(BottleneckRun run) => string.Join(" · ", new[]
+        {
+            "Última análise",
+            run.Process.Length > 0 ? run.Process : null,
+            ReadoutFormat.When(run.Date),
+            ReadoutFormat.Span(TimeSpan.FromSeconds(run.Seconds)),
+            Samples(run.Samples),
+        }.Where(x => x != null));
+
+        private static string Samples(int n) => n == 1 ? "1 amostra" : $"{n.ToString("N0", CultureInfo.GetCultureInfo("pt-BR"))} amostras";
+
+        private static string Clock(TimeSpan t) => $"{(int)t.TotalMinutes}:{t.Seconds:00}";
 
         private void BnBalanceCanvas_SizeChanged(object sender, SizeChangedEventArgs e) => PositionBalanceDot();
 
@@ -191,23 +337,32 @@ namespace CoreBi.Desktop.Views
             if (_session != null)
             {
                 _session = null;
-                Ui.SetRunning(BtnBnSession, false, "Iniciar análise");
-                BtnBnSession.ToolTip = SessionTip;
-                BnSessionBar.Visibility = Visibility.Collapsed;
-                BnSessionStatus.Text = "Análise cancelada.";
-                _context?.SyncFrameMonitoring();
+                StopUi();
+                var last = _context?.Settings.BottleneckRuns.FirstOrDefault();
+                ShowRun(last);
+                BnSessionStatus.Text = last == null ? "Análise cancelada." : "Análise cancelada · " + Summary(last);
                 return;
             }
 
             int minutes = int.Parse(Ui.CheckedTag(BnDurationPanel) ?? "1", CultureInfo.InvariantCulture);
             _session = new BottleneckSession { Duration = TimeSpan.FromMinutes(minutes) };
-            BnResult.Visibility = Visibility.Collapsed;
             Ui.SetRunning(BtnBnSession, true, "Iniciar análise", "Cancelar");
             BtnBnSession.ToolTip = null;
+            BnDurationPanel.IsEnabled = false;
             BnSessionProgress.ScaleX = 0;
-            BnSessionBar.Visibility = Visibility.Visible;
-            BnSessionStatus.Text = "Aguardando um jogo em primeiro plano.";
-            BnSessionEmpty.Visibility = Visibility.Visible;
+            BnSessionBar.Opacity = 1;
+            ShowRun(null, status: false);
+            SetResult("Medindo…", "A análise conta só os segundos com um jogo em primeiro plano. O resultado se forma aqui enquanto você joga.", null);
+            BnSessionStatus.Text = $"Vá para o jogo e deixe-o em primeiro plano · 0:00 de {Clock(_session.Duration)}";
+            _context?.SyncFrameMonitoring();
+        }
+
+        private void StopUi()
+        {
+            Ui.SetRunning(BtnBnSession, false, "Iniciar análise");
+            BtnBnSession.ToolTip = SessionTip;
+            BnDurationPanel.IsEnabled = true;
+            BnSessionBar.Opacity = 0;
             _context?.SyncFrameMonitoring();
         }
 
@@ -215,48 +370,72 @@ namespace CoreBi.Desktop.Views
         {
             var sess = _session!;
             _session = null;
-            Ui.SetRunning(BtnBnSession, false, "Iniciar análise");
-            BtnBnSession.ToolTip = SessionTip;
-            BnSessionBar.Visibility = Visibility.Collapsed;
-            _context?.SyncFrameMonitoring();
+            StopUi();
 
-            if (sess.Count == 0)
+            if (sess.ToRun(DateTime.Now) is not { } run)
             {
-                BnSessionStatus.Text = $"Análise concluída às {DateTime.Now:HH:mm} sem nenhuma amostra classificável: faltou o FPS de um jogo ou o uso da GPU e da CPU.";
-                BnResult.Visibility = Visibility.Collapsed;
-                BnSessionEmpty.Visibility = Visibility.Visible;
+                var last = _context?.Settings.BottleneckRuns.FirstOrDefault();
+                ShowRun(last);
+                BnSessionStatus.Text = "A análise terminou sem nenhuma amostra: faltou o FPS de um jogo em primeiro plano ou o uso da GPU e da CPU."
+                    + (last == null ? "" : " Abaixo, a anterior.");
                 return;
             }
 
-            BnSessionStatus.Text = $"Análise concluída às {DateTime.Now:HH:mm}, com {sess.Count} amostras.";
-            var main = sess.Main ?? Limiter.Unknown;
-            BnResultTitle.Text = BottleneckAnalyzer.Title(main);
-            var stats = new List<(string Label, string Value, string Unit)>();
-            if (sess.AvgFps is double fps) stats.Add(("Média", $"{fps:0}", "FPS"));
-            if (sess.Avg(x => x.GpuLoad) is double g) stats.Add(("Uso médio da GPU", $"{g:0}", "%"));
-            if (sess.Avg(x => x.CpuTotal) is double c) stats.Add(("Uso médio da CPU", $"{c:0}", "%"));
-            if (sess.Avg(x => x.CpuMaxCore) is double k) stats.Add(("Núcleo mais ocupado", $"{k:0}", "%"));
-            if (sess.Max(x => x.VramPct) is double v) stats.Add(("VRAM máxima", $"{v:0}", "%"));
-            if (sess.Max(x => x.GpuTemp) is double gt) stats.Add(("GPU mais quente", $"{gt:0}", "°C"));
-            BnResultStats.ItemsSource = stats.Select((x, i) => new RulerStat(x.Label, x.Value, x.Unit, i == 0)).ToList();
-            BnDistribution.ItemsSource = sess.Distribution()
-                .Select(d => new LimitReading(BottleneckAnalyzer.Title(d.Limiter), LimiterChannel(d.Limiter))
-                {
-                    Value = $"{d.Pct:0} %",
-                    Fraction = d.Pct / 100,
-                })
-                .ToList();
-            BnResultAdvice.Text = BottleneckAnalyzer.Advice(main);
-            BnResult.Visibility = Visibility.Visible;
-            BnSessionEmpty.Visibility = Visibility.Collapsed;
+            ShowRun(run);
+            if (_context == null) return;
+            var runs = _context.Settings.BottleneckRuns;
+            runs.Insert(0, run);
+            if (runs.Count > BottleneckRun.Capacity) runs.RemoveRange(BottleneckRun.Capacity, runs.Count - BottleneckRun.Capacity);
+            _context.SaveSettings();
+            _context.RecordEvent("", "Análise de gargalo", $"{BottleneckAnalyzer.Title(run.Main)} em {run.Share(run.Main):0} % do tempo",
+                run.AvgFps is double fps ? $"{fps:0} FPS" : "", LimiterChannel(run.Main));
         }
 
-        private void SetLiveTitle(string text, string? tone)
+        /// <summary>
+        /// Prévia para as capturas de tela: um veredito ao vivo e uma análise de exemplo, sem medir nem salvar nada. false volta à
+        /// página real (a última análise guardada e o Tick de sempre).
+        /// </summary>
+        internal void PreviewDemo(bool on)
         {
-            bool verdict = tone != null;
-            BnLiveTitle.Text = text;
-            BnLiveTitle.FontSize = verdict ? 44 : 17;
-            BnLiveTitle.SetResourceReference(TextBlock.ForegroundProperty, !verdict ? "Muted" : tone == "" ? "Fg" : tone!);
+            _demo = on;
+            if (!on)
+            {
+                ShowRun(_context?.Settings.BottleneckRuns.FirstOrDefault());
+                return;
+            }
+
+            BnLiveDot.Visibility = Visibility.Visible;
+            BnLiveGame.Text = "JogoDeExemplo";
+            SetLive(BottleneckAnalyzer.Title(Limiter.Cpu), BottleneckAnalyzer.Advice(Limiter.Cpu), VerdictTone(Limiter.Cpu));
+            BnFpsNow.Text = "118";
+            BnFpsLow.Text = "74";
+            (double, string)[] values = [(0.71, "71 %"), (0.91, "91 %"), (0.64, "64 %"), (0.58, "58 %"), (0.67, "67 °C"), (0.78, "78 °C")];
+            for (int i = 0; i < _meters.Length; i++)
+            {
+                _meters[i].Fraction = values[i].Item1;
+                _meters[i].Value = values[i].Item2;
+                _meters[i].Tone = "";
+                _meters[i].Sub = "";
+                _meters[i].Active = _meters[i] == _cpu;
+            }
+            _cpu.Sub = "Núcleo 3 · total da CPU 46 %";
+
+            BnSessionStatus.Text = Summary(new BottleneckRun { Process = "JogoDeExemplo", Date = DateTime.Now.AddMinutes(-12), Seconds = 180, Samples = 176 });
+            ShowRun(new BottleneckRun
+            {
+                Date = DateTime.Now.AddMinutes(-12),
+                Process = "JogoDeExemplo",
+                Seconds = 180,
+                Samples = 176,
+                Main = Limiter.Gpu,
+                Shares = [new(Limiter.Gpu, 64.2), new(Limiter.Cpu, 27.8), new(Limiter.Capped, 6.3), new(Limiter.Vram, 1.7)],
+                AvgFps = 112,
+                AvgLow1Fps = 71,
+                GpuAvg = 92,
+                CoreAvg = 83,
+                VramMax = 89,
+                GpuTempMax = 74,
+            }, status: false);
         }
 
         private static void SetPct(LimitReading reading, double? pct)
@@ -274,15 +453,18 @@ namespace CoreBi.Desktop.Views
 
         private static (string Title, string Advice) Unclassified(LoadSample s, FrameStats f)
         {
-            if (f.Fps is not > 0) return ("Sem quadros novos", "O programa em primeiro plano não entregou nenhum quadro no último segundo.");
+            if (f.Fps is not > 0) return ("Sem quadros novos", "O programa em primeiro plano não entregou nenhum quadro no último segundo (jogo minimizado ou em carregamento).");
             string missing = (s.GpuLoad == null, s.CpuTotal == null) switch
             {
                 (true, true) => "o uso da GPU e da CPU",
                 (true, false) => "o uso da GPU",
                 _ => "o uso da CPU",
             };
-            return ($"Falta {missing}", "O FPS chega, mas sem essa leitura não dá para dizer o que limita.");
+            return ($"Falta {missing}", "O FPS chega, mas sem essa leitura não dá para dizer qual peça limita.");
         }
+
+        // O nome da situação na lista da análise (o título do veredito, menos "Nada no limite", que lá vira o motivo provável).
+        private static string SituationName(Limiter l) => l == Limiter.Capped ? "Trava de FPS ou menu" : BottleneckAnalyzer.Title(l);
 
         // Só o que pede ação ganha cor; GPU no limite é o esperado num jogo e fica em tinta.
         private static string VerdictTone(Limiter l) => l switch

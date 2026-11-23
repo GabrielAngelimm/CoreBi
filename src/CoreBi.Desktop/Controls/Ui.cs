@@ -99,6 +99,19 @@ public static class Ui
         meter.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(to, TimeSpan.FromMilliseconds(500)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
     }
 
+    /// <summary>
+    /// Fração de um medidor ligada por binding (<c>&lt;ScaleTransform local:Ui.Fill="{Binding Fraction}"/&gt;</c>): cada valor novo
+    /// desliza até lá (<see cref="Glide"/>) quando a janela está à frente e nada pesado roda (MainWindow.LiveMotion); senão vai direto.
+    /// </summary>
+    public static readonly DependencyProperty FillProperty = DependencyProperty.RegisterAttached(
+        "Fill", typeof(double), typeof(Ui), new PropertyMetadata(0.0, (d, e) =>
+        {
+            if (d is ScaleTransform meter)
+                Glide(meter, (double)e.NewValue, Application.Current?.MainWindow is ILiveMotionHost { LiveMotion: true });
+        }));
+    public static double GetFill(DependencyObject d) => (double)d.GetValue(FillProperty);
+    public static void SetFill(DependencyObject d, double value) => d.SetValue(FillProperty, value);
+
     /// <summary>Camada que acende por cima de um botão quando o mouse passa (cada estilo de botão escolhe a sua).</summary>
     public static readonly DependencyProperty HoverFillProperty = DependencyProperty.RegisterAttached(
         "HoverFill", typeof(Brush), typeof(Ui), new FrameworkPropertyMetadata(null));

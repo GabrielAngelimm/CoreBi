@@ -4,7 +4,8 @@ using System.Windows.Media;
 namespace CoreBi.Desktop;
 
 /// <summary>
-/// Traço de FPS ao longo de um benchmark (eixo X = progresso 0..1 informado pelo motor), com linha tracejada da média.
+/// Traço de FPS ao longo de um benchmark (eixo X = progresso 0..1 informado pelo motor), com linha tracejada da média. Parado,
+/// mostra a última passada guardada (Load), com a nota de quando foi no canto de cima.
 /// </summary>
 public sealed class RunTrace : InstrumentBase
 {
@@ -12,16 +13,50 @@ public sealed class RunTrace : InstrumentBase
 
     public static readonly DependencyProperty EmptyTextProperty =
         DependencyProperty.Register(nameof(EmptyText), typeof(string), typeof(RunTrace), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty NoteProperty =
+        DependencyProperty.Register(nameof(Note), typeof(string), typeof(RunTrace), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
     public static readonly DependencyProperty UnitProperty =
         DependencyProperty.Register(nameof(Unit), typeof(string), typeof(RunTrace), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
 
     public string EmptyText { get => (string)GetValue(EmptyTextProperty); set => SetValue(EmptyTextProperty, value); }
     public string Unit { get => (string)GetValue(UnitProperty); set => SetValue(UnitProperty, value); }
+    /// <summary>Uma linha no canto de cima, à direita ("Última passada · hoje às 21:40"); vazia durante o teste.</summary>
+    public string Note { get => (string)GetValue(NoteProperty); set => SetValue(NoteProperty, value); }
 
     public void Clear()
     {
         _samples.Clear();
+        Note = "";
         InvalidateVisual();
+    }
+
+    /// <summary>Mostra uma passada guardada: os valores em progresso igual do início ao fim.</summary>
+    public void Load(IReadOnlyList<double>? values, string note)
+    {
+        _samples.Clear();
+        if (values is { Count: >= 2 })
+            for (int i = 0; i < values.Count; i++)
+                if (double.IsFinite(values[i]) && values[i] > 0) _samples.Add(new Point((double)i / (values.Count - 1), values[i]));
+        Note = _samples.Count >= 2 ? note : "";
+        InvalidateVisual();
+    }
+
+    /// <summary>A passada atual reamostrada em até <paramref name="count"/> pontos de progresso igual, para guardar.</summary>
+    public List<double>? Snapshot(int count = 120)
+    {
+        if (_samples.Count < 2) return null;
+        var list = new List<double>(count);
+        int j = 0;
+        double first = _samples[0].X, last = _samples[^1].X;
+        for (int i = 0; i < count; i++)
+        {
+            double x = first + (last - first) * i / (count - 1);
+            while (j < _samples.Count - 2 && _samples[j + 1].X < x) j++;
+            var (a, b) = (_samples[j], _samples[j + 1]);
+            double t = b.X > a.X ? Math.Clamp((x - a.X) / (b.X - a.X), 0, 1) : 0;
+            list.Add(Math.Round(a.Y + (b.Y - a.Y) * t, 1));
+        }
+        return list;
     }
 
     public void Add(double progress, double value)
@@ -38,7 +73,9 @@ public sealed class RunTrace : InstrumentBase
         double w = ActualWidth, h = ActualHeight;
         if (w < 120 || h < 80) return;
         dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, h));
-        const double left = 44, bottom = 20, top = 12;
+        const double left = 44, bottom = 20;
+        string note = Note ?? "";
+        double top = note.Length > 0 ? 28 : 12;
         double plotW = w - left, plotH = h - top - bottom;
 
         double peak = _samples.Count > 0 ? _samples.Max(p => p.Y) : 0;
@@ -52,12 +89,17 @@ public sealed class RunTrace : InstrumentBase
         {
             double y = Math.Round(Y(v)) + 0.5;
             dc.DrawLine(grid, new Point(left, y), new Point(w, y));
-            var t = Text($"{v:0}", 11, FaintBrush);
+            var t = Text($"{v:0}", 12, FaintBrush);
             // Meio dos algarismos no fio (base menos metade da altura das maiúsculas, 0,7 em).
-            dc.DrawText(t, new Point(left - 10 - t.Width, y - (t.Baseline - 11 * 0.7 / 2)));
+            dc.DrawText(t, new Point(left - 10 - t.Width, y - (t.Baseline - 12 * 0.7 / 2)));
         }
-        var start = Text("início", 11, FaintBrush);
-        var end = Text("fim", 11, FaintBrush);
+        var start = Text("início", 12, FaintBrush);
+        var end = Text("fim", 12, FaintBrush);
+        if (note.Length > 0)
+        {
+            var n = Text(note, 12, MutedBrush, readout: false);
+            dc.DrawText(n, new Point(w - n.Width, 0));
+        }
         dc.DrawText(start, new Point(left, h - start.Height + 2));
         dc.DrawText(end, new Point(w - end.Width, h - end.Height + 2));
 
@@ -79,7 +121,7 @@ public sealed class RunTrace : InstrumentBase
         double mean = _samples.Average(s => s.Y);
         double my = Math.Round(Y(mean)) + 0.5;
         dc.DrawLine(Stroke(MutedBrush, 1, new DashStyle(new double[] { 4, 3 }, 0)), new Point(left, my), new Point(points[^1].X, my));
-        var label = Text($"média {mean:0} {Unit}".TrimEnd(), 11.5, MutedBrush);
+        var label = Text($"média {mean:0} {Unit}".TrimEnd(), 12, MutedBrush);
         double lx = Math.Max(left + 6, Math.Min(points[^1].X, w) - label.Width - 6);
         dc.DrawRectangle(SurfaceBrush, null, new Rect(lx - 4, my - label.Height - 2, label.Width + 8, label.Height));
         dc.DrawText(label, new Point(lx, my - label.Height - 2));

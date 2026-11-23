@@ -89,7 +89,7 @@ public partial class BenchmarksView
         GbStatus.Text = $"Concluído em {TimeSpan.FromSeconds(r.Seconds):m\\:ss}";
         GbDetail.Text = "";
         GbResult.ItemsSource = GpuStats(r, vs);
-        SaveBenchRecord("gpu", r.Score, $"{r.Score:N0} pts · {r.AvgFps:0} FPS · {r.Height}p");
+        SaveBenchRecord("gpu", r.Score, $"{r.Score:N0} pts · {r.AvgFps:0} FPS · {r.Height}p", GpuStats(r).Select(Figure), GbTrace.Snapshot());
     }
 
     private async void CheckRtSupportOnce()
@@ -215,7 +215,8 @@ public partial class BenchmarksView
         RtStatus.Text = "Concluído";
         RtDetail.Text = driver.Length > 0 ? $"Driver {driver}" : "";
         RtResult.ItemsSource = RtStats(r, vs);
-        SaveBenchRecord(key, r.Score, $"{r.Score:N0} pts · {r.MedianFps:0} FPS · {PresetName(r.Preset)} {r.Height}p" + (r.Reliable ? "" : " · instável"));
+        SaveBenchRecord(key, r.Score, $"{r.Score:N0} pts · {r.MedianFps:0} FPS · {PresetName(r.Preset)} {r.Height}p" + (r.Reliable ? "" : " · instável"),
+            RtStats(r).Select(Figure), RtTrace.Snapshot());
     }
 
     private string DriverVersionOf(string adapter)
@@ -248,6 +249,7 @@ public partial class BenchmarksView
         _simBitmap ??= new WriteableBitmap(SimView, SimView, 96, 96, PixelFormats.Bgra32, null);
         if (_simPixels.Length == 0) _simPixels = new int[SimView * SimView];
         SimImage.Source = _simBitmap;
+        SimImage.Opacity = 1;
         SimIdle.Visibility = Visibility.Collapsed;
 
         var sim = new GameSimBench();
@@ -288,7 +290,18 @@ public partial class BenchmarksView
         SimStatus.Text = $"Concluído em {TimeSpan.FromSeconds(r.Seconds):m\\:ss}";
         SimDetail.Text = $"{r.Frames:N0} quadros";
         SimResult.ItemsSource = SimStats(r, vs);
-        SaveBenchRecord("sim", r.Score, $"{r.AvgFps:0} FPS · 1% low {r.Low1Fps:0}");
+        SaveBenchRecord("sim", r.Score, $"{r.AvgFps:0} FPS · 1% low {r.Low1Fps:0}", SimStats(r).Select(Figure));
+    }
+
+    /// <summary>O palco da simulação parado: a formação inicial do teste (a mesma de toda passada), esmaecida.</summary>
+    private void InitSimStage()
+    {
+        _simBitmap ??= new WriteableBitmap(SimView, SimView, 96, 96, PixelFormats.Bgra32, null);
+        if (_simPixels.Length == 0) _simPixels = new int[SimView * SimView];
+        SimImage.Source = _simBitmap;
+        var sim = new GameSimBench();
+        sim.Prepare();
+        DrawSim(sim);
     }
 
     private void DrawSim(GameSimBench sim)

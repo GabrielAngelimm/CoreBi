@@ -11,6 +11,9 @@ using CoreBi.Engine.Performance.Stress;
 
 namespace CoreBi.Desktop.Views;
 
+/// <summary>Linha do histórico do Teste de carga: título, motivo (vazio quando foi o tempo), máximas, data e tom do LED.</summary>
+public sealed record StressHistoryRow(string Title, string Reason, string Facts, string Date, string Tone);
+
 public partial class StressView : UserControl, IDisposable
 {
     private const int HistoryLength = 300; // 5 min a 1 amostra/s
@@ -31,8 +34,17 @@ public partial class StressView : UserControl, IDisposable
     private float _gpuMaxTemp;
     /// <summary>Parada pedida enquanto as threads ou a janela da placa de vídeo ainda encerram; aplicada no próximo tique.</summary>
     private (string Reason, string Status, bool Aborted)? _pendingStop;
+    // O que o teste em andamento carrega, para o histórico (as teclas podem mudar depois do fim)
+    private bool _runCpu, _runRam, _runGpu;
+    // Prévia das capturas de tela: um teste de exemplo que o Tick não sobrescreve (nada é salvo)
+    private bool _demo;
 
-    public StressView() => InitializeComponent();
+    public StressView()
+    {
+        InitializeComponent();
+        // Primeira visita: a página espera a primeira leitura dos sensores (a temperatura é o centro dela)
+        Skeleton.SetActive(StressConfigCard, true);
+    }
 
     internal bool IsRunning => _stress.Running || _gpuBurnOn || _burn.Running;
 
@@ -41,6 +53,7 @@ public partial class StressView : UserControl, IDisposable
         _context = context;
         UpdateStressColumns();
         StressDurationChanged();
+        ShowHistory();
     }
 
     private void BtnStress_Click(object sender, RoutedEventArgs e)
@@ -159,14 +172,12 @@ public partial class StressView : UserControl, IDisposable
 
         _stressLease = _context.Workloads.TryBegin(WorkloadOperations.Stress);
         if (_stressLease == null) { StressHint.Text = "Termine o outro teste antes."; return; }
+        (_runCpu, _runRam, _runGpu) = (cpu, ram, gpu);
 
         try
         {
             if (cpu || ram) _stress.Start(cpu, ram, fraction);
 
-            var parts = new List<string>();
-            if (cpu) parts.Add($"processador (corte em {_tempLimit:0} °C)");
-            if (ram) parts.Add($"RAM ({fraction * 100:0} % da livre)");
             if (gpu)
             {
                 string res = Ui.CheckedTag(GpuResPanel) ?? "1920x1080";
@@ -185,15 +196,12 @@ public partial class StressView : UserControl, IDisposable
                     AdapterName = _context.PrimaryGpu?.Name ?? "",
                 });
                 _gpuBurnOn = true;
-                parts.Add($"placa de vídeo ({Ui.CheckedText(GpuResPanel)}, {(msaa > 1 ? $"MSAA {msaa}x" : "sem MSAA")}, " +
-                          $"{Ui.CheckedText(GpuIntensityPanel)}, corte em {_gpuTempLimit:0} °C)");
             }
 
             ResetStressReadings();
             SetStressControls(running: true);
             SetStatus("Rodando", aborted: false);
-            StDetail.Text = minutes > 0 ? $"Termina às {_stressStart + _stressDuration:HH:mm}" : "";
-            Log($"Iniciado: {string.Join(", ", parts)}; {(minutes > 0 ? DurationText(_stressDuration) : "sem limite de tempo")}");
+            StDetail.Text = minutes > 0 ? $"Termina às {_stressStart + _stressDuration:HH:mm}" : "Roda até você parar";
         }
         catch (Exception ex)
         {
@@ -216,6 +224,8 @@ public partial class StressView : UserControl, IDisposable
     private static string DurationText(TimeSpan d) =>
         d.TotalMinutes >= 60 && d.TotalMinutes % 60 == 0 ? $"{d.TotalHours:0} h" : $"{d.TotalMinutes:0} min";
 
+    private static string Clock(TimeSpan t) => t.TotalHours >= 1 ? $"{(int)t.TotalHours}:{t:mm\\:ss}" : $"{(int)t.TotalMinutes}:{t:ss}";
+
     private void ResetStressReadings()
     {
         ShowStressTime(TimeSpan.Zero, _stressDuration);
@@ -234,14 +244,11 @@ public partial class StressView : UserControl, IDisposable
         bool hadCpu = _stress.Running;
         _stress.Stop();
 
-        string gpuSummary = "";
         if (_gpuBurnOn)
         {
             _burn.Stop();
             if (_stress.Running || _burn.Running) { _pendingStop = (reason, status, aborted); SetStatus("Parando…", false); return; }
             _gpuBurnOn = false;
-            gpuSummary = $"; placa de vídeo {_burn.Frames:N0} quadros, média de {_burn.AverageFps:0} FPS" +
-                         (_gpuMaxTemp > 0 ? $", até {_gpuMaxTemp:0.#} °C" : "");
         }
         if (_stress.Running) { _pendingStop = (reason, status, aborted); SetStatus("Parando…", false); return; }
         _pendingStop = null;
@@ -255,9 +262,56 @@ public partial class StressView : UserControl, IDisposable
         if (aborted) status = "Interrompido";
         SetStatus(status, aborted);
         StDetail.Text = reason;
-        Log($"{reason}; duração {elapsed:hh\\:mm\\:ss}" +
-            (hadCpu && _stressMaxTemp > 0 ? $"; processador até {_stressMaxTemp:0.#} °C" : "") +
-            (hadRam ? $"; RAM {passes} passadas, {errors} erros" : "") + gpuSummary);
+
+        var run = new StressRun
+        {
+            Date = DateTime.Now,
+            Cpu = _runCpu,
+            Ram = _runRam,
+            Gpu = _runGpu,
+            PlannedMinutes = _stressDuration.TotalMinutes,
+            Seconds = Math.Round(elapsed.TotalSeconds),
+            Outcome = aborted ? StressOutcome.Aborted : status == "Concluído" ? StressOutcome.Completed : StressOutcome.Stopped,
+            Reason = reason,
+            CpuMaxC = hadCpu && _stressMaxTemp > 0 ? Math.Round(_stressMaxTemp, 1) : null,
+            GpuMaxC = _runGpu && _gpuMaxTemp > 0 ? Math.Round(_gpuMaxTemp, 1) : null,
+            RamPasses = hadRam ? passes : null,
+            RamErrors = hadRam ? errors : null,
+            GpuAvgFps = _runGpu && _burn.AverageFps > 0 ? Math.Round(_burn.AverageFps, 1) : null,
+        };
+        if (_context != null)
+        {
+            var runs = _context.Settings.StressRuns;
+            runs.Insert(0, run);
+            if (runs.Count > StressRun.Capacity) runs.RemoveRange(StressRun.Capacity, runs.Count - StressRun.Capacity);
+            _context.SaveSettings();
+        }
+        ShowHistory();
+    }
+
+    private void ShowHistory(IEnumerable<StressRun>? runs = null) =>
+        StressHistory.ItemsSource = (runs ?? _context?.Settings.StressRuns ?? []).Select(HistoryRow).ToList();
+
+    /// <summary>Um teste encerrado em palavras: "Estável por 10 min", "Parado aos 3:12" ou "Interrompido aos 4:05", e as máximas.</summary>
+    private static StressHistoryRow HistoryRow(StressRun r)
+    {
+        var took = TimeSpan.FromSeconds(r.Seconds);
+        string title = r.Outcome switch
+        {
+            StressOutcome.Completed => $"Estável por {DurationText(TimeSpan.FromMinutes(r.PlannedMinutes))}",
+            StressOutcome.Aborted => $"Interrompido aos {Clock(took)}",
+            _ => $"Parado aos {Clock(took)}",
+        };
+        string reason = r.Outcome == StressOutcome.Completed || r.Reason == "Parado por você" ? "" : r.Reason;
+        var facts = new List<string>();
+        if (r.Cpu) facts.Add(r.CpuMaxC is double c ? $"Processador até {c:0} °C" : "Processador");
+        else if (r.Ram && r.CpuMaxC is double rc) facts.Add($"Processador até {rc:0} °C");
+        if (r.Ram && r.RamPasses is long p)
+            facts.Add($"RAM: {p:N0} {(p == 1 ? "passada" : "passadas")}, {(r.RamErrors is > 0 ? $"{r.RamErrors:N0} {(r.RamErrors == 1 ? "erro" : "erros")}" : "sem erros")}");
+        if (r.Gpu)
+            facts.Add(string.Join(", ", new[] { r.GpuMaxC is double g ? $"Placa de vídeo até {g:0} °C" : "Placa de vídeo", r.GpuAvgFps is double f ? $"{f:0} FPS em média" : null }.Where(x => x != null)));
+        string tone = r.Outcome switch { StressOutcome.Aborted => "Danger", StressOutcome.Stopped => "Warn", _ => "Ok" };
+        return new StressHistoryRow(title, reason, string.Join(" · ", facts), ReadoutFormat.When(r.Date, compact: true), tone);
     }
 
     private void SetStressControls(bool running)
@@ -277,7 +331,8 @@ public partial class StressView : UserControl, IDisposable
 
     internal void Tick()
     {
-        if (_context == null) return;
+        if (_context == null || _demo) return;
+        if (_context.SensorsRead && Skeleton.GetActive(StressConfigCard)) Skeleton.SetActive(StressConfigCard, false);
         if (_pendingStop is { } pending) { StopStress(pending.Reason, pending.Status, pending.Aborted); return; }
         if (_stress.Running && _stress.Error != null) { StopStress("Falha no teste: " + _stress.Error, aborted: true); return; }
 
@@ -350,10 +405,54 @@ public partial class StressView : UserControl, IDisposable
         if (IsVisible) DrawChart();
     }
 
-    private void Log(string msg)
+    /// <summary>
+    /// Prévia para as capturas de tela: um teste do processador em andamento (6 min de 10, temperatura subindo) e um histórico
+    /// de exemplo, sem carregar nada nem salvar. false volta à página real.
+    /// </summary>
+    internal void PreviewDemo(bool on)
     {
-        StressLog.Items.Add($"{DateTime.Now:HH:mm:ss}  {msg}");
-        StressLog.ScrollIntoView(StressLog.Items[^1]);
+        _demo = on;
+        _tempHistory.Clear();
+        if (!on)
+        {
+            ResetStressReadings();
+            StressDurationChanged();
+            SetStatus("Pronto", false);
+            StDetail.Text = "";
+            StTemp.Text = "—";
+            ShowHistory();
+            DrawChart();
+            return;
+        }
+
+        var rng = new Random(7);
+        for (int i = 0; i < HistoryLength; i++)
+        {
+            // Ociosa nos primeiros 2 min, sobe quando a carga começa e assenta perto de 81 °C
+            double t = i < 120 ? 44 + rng.NextDouble() * 2 : 81 - 35 * Math.Exp(-(i - 120) / 22.0) + rng.NextDouble() * 1.6;
+            _tempHistory.Add(Math.Round(t, 1));
+        }
+        ShowStressTime(TimeSpan.FromSeconds(372), TimeSpan.FromMinutes(10));
+        StProgress.ScaleX = 0.62;
+        StLed.Visibility = Visibility.Visible;
+        StLed.SetResourceReference(Shape.FillProperty, "Signal");
+        StStatus.Text = "Rodando";
+        StStatus.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
+        StDetail.Text = $"Termina às {DateTime.Now.AddSeconds(228):HH:mm}";
+        StTemp.Text = $"{_tempHistory[^1]:0.#}";
+        StTempMax.Text = $"{_tempHistory.Max():0.#} °C";
+        StClock.Text = "4.410 MHz";
+        StPower.Text = "118 W";
+        StLoad.Text = "100 %";
+        var now = DateTime.Now;
+        ShowHistory(new[]
+        {
+            new StressRun { Date = now.AddDays(-1).AddHours(-2), Cpu = true, PlannedMinutes = 10, Seconds = 600, Outcome = StressOutcome.Completed, Reason = "Tempo de teste concluído", CpuMaxC = 82 },
+            new StressRun { Date = now.AddDays(-2), Cpu = true, Ram = true, PlannedMinutes = 30, Seconds = 1800, Outcome = StressOutcome.Completed, Reason = "Tempo de teste concluído", CpuMaxC = 84, RamPasses = 37, RamErrors = 0 },
+            new StressRun { Date = now.AddDays(-3), Gpu = true, PlannedMinutes = 10, Seconds = 247, Outcome = StressOutcome.Aborted, Reason = "A placa de vídeo chegou a 85 °C, no limite de 85 °C", GpuMaxC = 85, GpuAvgFps = 141 },
+            new StressRun { Date = now.AddDays(-5), Cpu = true, PlannedMinutes = 0, Seconds = 192, Outcome = StressOutcome.Stopped, Reason = "Parado por você", CpuMaxC = 79 },
+        });
+        DrawChart();
     }
 
     /// <summary>Redesenha o gráfico com as cores do tema atual.</summary>
@@ -371,7 +470,7 @@ public partial class StressView : UserControl, IDisposable
         var readout = (FontFamily)FindResource("Readout");
         var faint = ThemeManager.Brush("Faint");
 
-        TextBlock Text(string text, Brush fg, double size = 10.5, FontFamily? font = null)
+        TextBlock Text(string text, Brush fg, double size = 12, FontFamily? font = null)
         {
             var tb = new TextBlock { Text = text, FontSize = size, Foreground = fg, FontFamily = font ?? readout };
             Typography.SetNumeralAlignment(tb, FontNumeralAlignment.Tabular);
@@ -395,9 +494,9 @@ public partial class StressView : UserControl, IDisposable
 
         var series = new List<(List<double> Data, string Channel, byte Alpha, TextBlock Label)>();
         if (showGpu && _gpuTempHistory.Count >= 2)
-            series.Add((_gpuTempHistory, "Gpu", 0x1C, Text($"Placa de vídeo {_gpuTempHistory[^1]:0} °C", ThemeManager.Brush("Gpu"), 11.5, ui)));
+            series.Add((_gpuTempHistory, "Gpu", 0x1C, Text($"Placa de vídeo {_gpuTempHistory[^1]:0} °C", ThemeManager.Brush("Gpu"), 12, ui)));
         if (showCpu && _tempHistory.Count >= 2)
-            series.Add((_tempHistory, "Cpu", 0x22, Text($"Processador {_tempHistory[^1]:0} °C", ThemeManager.Brush("Cpu"), 11.5, ui)));
+            series.Add((_tempHistory, "Cpu", 0x22, Text($"Processador {_tempHistory[^1]:0} °C", ThemeManager.Brush("Cpu"), 12, ui)));
         double right = series.Count == 0 ? 0 : series.Max(x => Width(x.Label)) + 10;
 
         double yMin = 20, yMax = Math.Max(110, Math.Max(_tempLimit, showGpu ? _gpuTempLimit : 0) + 10);
@@ -451,8 +550,11 @@ public partial class StressView : UserControl, IDisposable
 
         if (series.Count == 0)
         {
-            var empty = Text("Sem leitura de temperatura ainda.", ThemeManager.Brush("Muted"), 13, ui);
-            empty.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var empty = Text(EmptyChartText(showCpu, showGpu), ThemeManager.Brush("Muted"), 13, ui);
+            empty.TextAlignment = TextAlignment.Center;
+            empty.TextWrapping = TextWrapping.Wrap;
+            empty.MaxWidth = Math.Min(520, plotW - 40);
+            empty.Measure(new Size(empty.MaxWidth, double.PositiveInfinity));
             Place(empty, left + (plotW - empty.DesiredSize.Width) / 2, top + (plotH - empty.DesiredSize.Height) / 2);
             return;
         }
@@ -488,6 +590,21 @@ public partial class StressView : UserControl, IDisposable
         }
         foreach (var (y, label) in placed)
             Place(label, left + plotW + 10, Math.Clamp(y, 0, h - labelH));
+    }
+
+    /// <summary>Por que o gráfico está vazio, em palavras simples: ainda lendo ou o sensor que falta e como resolver.</summary>
+    private string EmptyChartText(bool cpu, bool gpu)
+    {
+        if (_context is not { SensorsRead: true }) return "Lendo os sensores…";
+        if (cpu && _context.Sensors.CpuTemperature == null)
+            return _context.Sensors.DiagnoseCpuSensors() switch
+            {
+                SensorMonitor.CpuSensorProblem.NotElevated => "Sem a temperatura do processador: o Windows só libera esse sensor com o CoreBi aberto como administrador.",
+                SensorMonitor.CpuSensorProblem.PawnIOMissing => "Sem a temperatura do processador: falta o driver PawnIO, que lê o sensor. Use Corrigir, no pé do menu.",
+                _ => "O sensor de temperatura do processador não respondeu.",
+            };
+        if (gpu && _context.PrimaryGpuTemp() == null) return "A placa de vídeo não informa a temperatura.";
+        return "A temperatura aparece aqui segundo a segundo, com o limite de corte.";
     }
 
     public void Dispose()

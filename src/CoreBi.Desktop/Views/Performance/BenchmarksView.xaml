@@ -4,8 +4,9 @@
         Bancada de teste (a mesma composição do Teste de carga): as teclas do teste numa faixa em cima; embaixo, à esquerda, o
         palco e, à direita, numa coluna de 330 px, a configuração com a ação principal e o histórico. O palco tem a placa (o que
         está sendo medido, as leituras ao vivo e o estado do teste), a barra de progresso no lugar do fio, a régua do resultado
-        logo abaixo, com a nota no maior número da tela, e embaixo o visual do teste (a imagem ou o traço do FPS). Cabe numa tela
-        com a janela maximizada; em janelas menores a página rola.
+        logo abaixo, com a nota no maior número da tela, e embaixo o visual do teste (a imagem ou o traço do FPS). O palco nunca
+        abre vazio: a página mostra o último resultado de cada teste, a cena ou a formação do teste esmaecida com uma legenda, e a
+        última passada guardada do FPS. Cabe numa tela com a janela maximizada; em janelas menores a página rola.
     -->
     <UserControl.Resources>
         <Style x:Key="StageCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
@@ -73,16 +74,30 @@
         <Style x:Key="CellSub" TargetType="TextBlock" BasedOn="{StaticResource StatSub}">
             <Setter Property="Margin" Value="0,3,0,0" />
         </Style>
-        <!-- Estado vazio do palco de imagem: frase em Segoe 13 Muted centrada, fora do Viewbox para não escalar com a imagem -->
-        <Style x:Key="StageEmpty" TargetType="TextBlock">
+        <!--
+            Legenda do palco parado: uma pílula no pé da imagem esmaecida (a cena ou a formação do teste), fora do Viewbox para
+            não escalar com a imagem. Some quando o teste começa.
+        -->
+        <Style x:Key="StageNote" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource Surface}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="17" />
+            <Setter Property="Padding" Value="16,8" />
+            <Setter Property="Margin" Value="24,0,24,20" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
+        </Style>
+        <Style x:Key="StageNoteText" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
             <Setter Property="FontSize" Value="13" />
-            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="Foreground" Value="{DynamicResource Fg}" />
             <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="TextAlignment" Value="Center" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="24,0" />
+        </Style>
+        <!-- Imagem do palco parado: a prévia esmaecida, para não passar por resultado -->
+        <Style x:Key="StagePreview" TargetType="Image">
+            <Setter Property="Opacity" Value="0.42" />
         </Style>
         <ItemsPanelTemplate x:Key="RulerPanel">
             <UniformGrid Rows="1" />
@@ -143,30 +158,40 @@
         </ItemsPanelTemplate>
 
         <!--
-            Medição de memória e disco (MemRow): nome e contexto à esquerda, leitura à direita; a explicação fica na dica. Nome,
-            número e unidade são Bahnschrift no mesmo bloco de 36, alinhados pelo topo: a base cai na mesma fração do bloco nos
-            três, então ficam na mesma linha de base (antes o nome era Segoe 14 centrado e ficava fora da base do número). O
-            contexto sobe 6 para colar no nome, já que o bloco deixa cerca de 10 px abaixo da base; pelo mesmo motivo o recuo é
-            12 em cima e 8 embaixo, para o ar acima das maiúsculas e abaixo da base ficar igual.
+            Medição de memória e disco (MemRow): as linhas dividem a altura do palco (UniformGrid), com o fio entre elas. À
+            esquerda o nome (DIN 14) e, embaixo, o que a medida quer dizer em palavras simples; à direita o número (mostrador 30)
+            com a unidade numa coluna fixa, para os números ficarem alinhados, e o contexto da medição embaixo.
         -->
         <DataTemplate x:Key="MeasureRow">
-            <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="0,12,0,8" Background="Transparent" ToolTip="{Binding Hint}">
-                <Grid>
+            <Border x:Name="row" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Background="Transparent">
+                <Grid VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel VerticalAlignment="Top" Margin="0,0,24,0">
-                        <TextBlock Text="{Binding Label}" FontFamily="{StaticResource LabelFont}" FontSize="14" LineHeight="36" LineStackingStrategy="BlockLineHeight" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="{Binding Sub}" Style="{StaticResource CellSub}" Margin="0,-6,0,0" Visibility="{Binding Sub, Converter={StaticResource NotEmptyVis}}" />
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,32,0">
+                        <TextBlock Text="{Binding Label}" Style="{StaticResource ItemTitle}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Hint}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0" />
                     </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                        <TextBlock Text="{Binding Value}" Style="{StaticResource TestCellValue}" LineHeight="36" />
-                        <TextBlock Text="{Binding Unit}" Style="{StaticResource TestCellUnit}" LineHeight="36" Width="44" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <TextBlock x:Name="value" Text="{Binding Value}" Style="{StaticResource TestCellValue}" />
+                            <TextBlock x:Name="unit" Text="{Binding Unit}" Tag="{Binding Value}" Style="{StaticResource TestCellUnit}" Width="52" />
+                        </StackPanel>
+                        <TextBlock x:Name="sub" Text="{Binding Sub}" Style="{StaticResource StatSub}" HorizontalAlignment="Right" Margin="0,-4,0,0"
+                                   Visibility="{Binding Sub, Converter={StaticResource NotEmptyVis}}" />
                     </StackPanel>
                 </Grid>
             </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}" Value="0">
+                    <Setter TargetName="row" Property="BorderThickness" Value="0" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
         </DataTemplate>
+        <ItemsPanelTemplate x:Key="MeasurePanel">
+            <UniformGrid Columns="1" />
+        </ItemsPanelTemplate>
 
         <!-- Histórico (BenchHistoryRow): resultado, detalhe e data; o medidor segmentado na cor do componente compara com o
              melhor resultado comparável (Ui.Channel da lista escolhe a cor) -->
@@ -229,7 +254,7 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ItemsControl">
-                                <TextBlock Text="Nenhum resultado ainda." Style="{StaticResource Caption}" />
+                                <TextBlock Text="Nenhum resultado ainda. Cada teste concluído fica aqui, com a barra comparando ao melhor." Style="{StaticResource Caption}" TextWrapping="Wrap" />
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
@@ -363,11 +388,15 @@
                                     <Grid>
                                         <Viewbox Stretch="Uniform">
                                             <Grid Width="960" Height="540">
+                                                <!-- A cena do teste, renderizada uma vez pelo próprio Render 3D (Assets/bench-scene.jpg) -->
+                                                <Image x:Name="BenchPreview" Width="960" Height="540" Source="/Assets/bench-scene.jpg" Style="{StaticResource StagePreview}" RenderOptions.BitmapScalingMode="HighQuality" />
                                                 <Image x:Name="BenchImage" Width="960" Height="540" RenderOptions.BitmapScalingMode="HighQuality" />
                                                 <Canvas x:Name="BenchBuckets" Width="960" Height="540" />
                                             </Grid>
                                         </Viewbox>
-                                        <TextBlock x:Name="BenchIdle" Text="A imagem aparece bloco a bloco durante o teste." Style="{StaticResource StageEmpty}" />
+                                        <Border x:Name="BenchIdle" Style="{StaticResource StageNote}">
+                                            <TextBlock Text="Esta é a cena do teste. Durante a medição, ela é desenhada de novo, bloco a bloco, por todos os núcleos." Style="{StaticResource StageNoteText}" />
+                                        </Border>
                                     </Grid>
                                 </Border>
                             </local:FillBox>
@@ -379,7 +408,9 @@
                             <RowDefinition Height="16" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
+                        <!-- Esqueleto da primeira visita: a página espera o nome do processador e das outras peças (os outros cartões o acompanham) -->
+                        <Border x:Name="BenchConfigCard" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}"
+                                local:Skeleton.Layout="row 17: c 64; gap 8; row 36: pill 254^36; gap 16; row 17: c 64; gap 8; row 36: pill 234^36; gap 20; row 40: btn *^40">
                             <StackPanel>
                                 <StackPanel x:Name="BenchOptions" Style="{StaticResource TestSection}">
                                     <TextBlock Text="Núcleos" Style="{StaticResource Label}" />
@@ -466,9 +497,11 @@
                                 <Border Style="{StaticResource TestStage}" Tag="{Binding ElementName=SimIdle}">
                                     <Grid>
                                         <Viewbox Stretch="Uniform">
-                                            <Image x:Name="SimImage" Width="440" Height="440" RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                                            <Image x:Name="SimImage" Width="440" Height="440" RenderOptions.BitmapScalingMode="NearestNeighbor" Style="{StaticResource StagePreview}" />
                                         </Viewbox>
-                                        <TextBlock x:Name="SimIdle" Text="30 mil unidades em batalha aparecem aqui durante o teste." Style="{StaticResource StageEmpty}" />
+                                        <Border x:Name="SimIdle" Style="{StaticResource StageNote}">
+                                            <TextBlock Text="Dois exércitos, 30 mil unidades. Durante o teste, elas avançam, colidem e lutam a cada quadro." Style="{StaticResource StageNoteText}" />
+                                        </Border>
                                     </Grid>
                                 </Border>
                             </local:FillBox>
@@ -553,7 +586,7 @@
                                 <ItemsControl x:Name="GbResult" ItemTemplate="{StaticResource StatCell}" ItemsPanel="{StaticResource RulerPanel}" AlternationCount="16" Focusable="False" />
                             </Border>
                             <local:RunTrace x:Name="GbTrace" Grid.Row="3" Margin="{StaticResource PanelPadding}" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
-                                            EmptyText="A cena abre numa janela própria. Esc cancela." />
+                                            EmptyText="O FPS de cada momento da passada aparece aqui. A cena abre numa janela própria; Esc cancela." />
                         </Grid>
                     </Border>
                     <Grid Grid.Column="2">
@@ -642,7 +675,7 @@
                                 <ItemsControl x:Name="RtResult" ItemTemplate="{StaticResource StatCell}" ItemsPanel="{StaticResource RulerPanel}" AlternationCount="16" Focusable="False" />
                             </Border>
                             <local:RunTrace x:Name="RtTrace" Grid.Row="3" Margin="{StaticResource PanelPadding}" MinHeight="180" ChannelBrush="{DynamicResource Gpu}" Unit="FPS"
-                                            EmptyText="A cena abre numa janela própria. Esc cancela." />
+                                            EmptyText="O FPS de cada momento da passada aparece aqui. A cena abre numa janela própria; Esc cancela." />
                         </Grid>
                     </Border>
                     <Grid Grid.Column="2">
@@ -731,9 +764,8 @@
                                     </Border.RenderTransform>
                                 </Border>
                             </Grid>
-                            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Focusable="False">
-                                <ItemsControl x:Name="MemResult" ItemTemplate="{StaticResource MeasureRow}" Margin="24,8" Focusable="False" />
-                            </ScrollViewer>
+                            <ItemsControl x:Name="MemResult" Grid.Row="2" ItemTemplate="{StaticResource MeasureRow}" ItemsPanel="{StaticResource MeasurePanel}" AlternationCount="16"
+                                          Margin="24,4,24,8" Focusable="False" />
                         </Grid>
                     </Border>
                     <Grid Grid.Column="2">
@@ -742,9 +774,12 @@
                             <RowDefinition Height="16" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <Border Style="{StaticResource CardBorder}">
-                            <Button x:Name="BtnMemBench" Style="{StaticResource StartButton}" Margin="0" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnMemBench_Click"
-                                    ToolTip="Lê um pacote de 512 MB e mil arquivos de 64 KB da pasta temporária, sem o cache do Windows. Os arquivos são apagados no final." />
+                        <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                           Text="Mede a RAM e simula o carregamento de um mapa: um pacote de 512 MB e mil arquivos de 64 KB na pasta temporária, lidos sem o cache do Windows e apagados no fim." />
+                                <Button x:Name="BtnMemBench" Style="{StaticResource StartButton}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnMemBench_Click" />
+                            </StackPanel>
                         </Border>
                         <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=MemHistory}">
                             <DockPanel>
@@ -796,9 +831,8 @@
                                     </Border.RenderTransform>
                                 </Border>
                             </Grid>
-                            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Focusable="False">
-                                <ItemsControl x:Name="DiskResult" ItemTemplate="{StaticResource MeasureRow}" Margin="24,8" Focusable="False" />
-                            </ScrollViewer>
+                            <ItemsControl x:Name="DiskResult" Grid.Row="2" ItemTemplate="{StaticResource MeasureRow}" ItemsPanel="{StaticResource MeasurePanel}" AlternationCount="16"
+                                          Margin="24,4,24,8" Focusable="False" />
                         </Grid>
                     </Border>
                     <Grid Grid.Column="2">

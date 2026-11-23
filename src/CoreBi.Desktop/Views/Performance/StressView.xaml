@@ -1,10 +1,11 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.StressView" xmlns:local="clr-namespace:CoreBi.Desktop">
     <!--
         Bancada de teste (a mesma composição do Benchmark): os componentes a carregar numa faixa em cima; embaixo, à esquerda, o
-        palco e, à direita, numa coluna de 330 px, a configuração com a ação principal e o registro. O palco tem a placa (o tempo
+        palco e, à direita, numa coluna de 330 px, a configuração com a ação principal e o histórico. O palco tem a placa (o tempo
         decorrido de quanto, e o estado à direita), a barra de progresso no lugar do fio, uma coluna de leituras ao vivo por
         componente escolhido e a temperatura dos últimos 5 minutos com os limites. A configuração mostra só o que vale para os
-        componentes marcados. Cabe numa tela com a janela maximizada; em janelas menores a página rola.
+        componentes marcados. O histórico guarda cada teste encerrado (como terminou, quanto durou e as máximas), e a página abre
+        com ele. Cabe numa tela com a janela maximizada; em janelas menores a página rola.
     -->
     <UserControl.Resources>
         <Style x:Key="StageCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
@@ -82,12 +83,58 @@
         <Style x:Key="ConfigLabel" TargetType="TextBlock" BasedOn="{StaticResource Label}">
             <Setter Property="Margin" Value="0,16,0,8" />
         </Style>
-        <!-- Registro vazio: a frase some com a primeira linha -->
-        <Style x:Key="LogEmpty" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding HasItems, ElementName=StressLog}" Value="True">
-                    <Setter Property="Visibility" Value="Collapsed" />
+        <!--
+            Linha do histórico (StressHistoryRow): o LED de como terminou (verde estável, âmbar parado, vermelho interrompido) na
+            linha do título, o título em DIN 14 e a data à direita; embaixo, o motivo (só quando não foi o tempo, em vermelho se
+            interrompido) e as máximas de cada peça. Fio entre as linhas, nunca antes da primeira.
+        -->
+        <DataTemplate x:Key="StressHistoryRow">
+            <Border x:Name="row" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,12" Margin="0,0,16,0" Background="Transparent">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Ellipse x:Name="led" Style="{StaticResource StatusLed}" Width="8" Height="8" Fill="{DynamicResource Ok}" VerticalAlignment="Top" Margin="0,6,10,0" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource ItemTitle}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="reason" Text="{Binding Reason}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                   Visibility="{Binding Reason, Converter={StaticResource NotEmptyVis}}" />
+                        <TextBlock Text="{Binding Facts}" Style="{StaticResource Caption}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,2,0,0"
+                                   Visibility="{Binding Facts, Converter={StaticResource NotEmptyVis}}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="{Binding Date}" Style="{StaticResource StatSub}" Margin="12,2,0,0" VerticalAlignment="Top" />
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}" Value="0">
+                    <Setter TargetName="row" Property="BorderThickness" Value="0" />
+                    <Setter TargetName="row" Property="Padding" Value="0,0,0,12" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="Warn">
+                    <Setter TargetName="led" Property="Fill" Value="{DynamicResource Warn}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Tone}" Value="Danger">
+                    <Setter TargetName="led" Property="Fill" Value="{DynamicResource Danger}" />
+                    <Setter TargetName="reason" Property="Foreground" Value="{DynamicResource Danger}" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+        <Style x:Key="StressHistoryList" TargetType="ItemsControl">
+            <Setter Property="ItemTemplate" Value="{StaticResource StressHistoryRow}" />
+            <Setter Property="AlternationCount" Value="64" />
+            <Setter Property="Focusable" Value="False" />
+            <Style.Triggers>
+                <Trigger Property="HasItems" Value="False">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ItemsControl">
+                                <TextBlock Text="Nenhum teste ainda. Cada teste encerrado fica aqui, com como terminou e as temperaturas máximas." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
@@ -277,7 +324,9 @@
                             <RowDefinition Height="16" />
                             <RowDefinition Height="*" MinHeight="140" />
                         </Grid.RowDefinitions>
-                        <Border Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
+                        <!-- Esqueleto da primeira visita: a página espera a primeira leitura dos sensores (os outros cartões o acompanham) -->
+                        <Border x:Name="StressConfigCard" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}"
+                                local:Skeleton.Layout="row 17: c 60; gap 8; row 36: pill 258^36; gap 16; row 17: c 140; gap 8; row 36: t 90, - *, pill 156^36; gap 20; row 40: btn *^40">
                             <StackPanel>
                                 <StackPanel x:Name="StressDurationSection" Style="{StaticResource TestSection}">
                                     <TextBlock Text="Duração" Style="{StaticResource Label}" />
@@ -354,19 +403,14 @@
                                 <TextBlock x:Name="StressHint" Style="{StaticResource Caption}" Foreground="{DynamicResource Warn}" Margin="0,10,0,0" Visibility="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=StressLog}">
+                        <Border Grid.Row="2" Style="{StaticResource TestLogCard}" Tag="{Binding ElementName=StressHistory}">
                             <DockPanel>
                                 <!-- No meio da linha de 34 px dos cabeçalhos de cartão, como o Histórico do Benchmark -->
-                                <TextBlock DockPanel.Dock="Top" Text="Registro" Style="{StaticResource SectionTitle}" Margin="0,7,16,17" />
-                                <TextBlock DockPanel.Dock="Top" Text="Nenhum teste nesta sessão." Style="{StaticResource LogEmpty}" />
-                                <ListBox x:Name="StressLog" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}" ItemContainerStyle="{StaticResource PlainItem}"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto" Focusable="False">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,0,16,4" />
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
+                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource SectionTitle}" Margin="0,7,16,17" HorizontalAlignment="Left" Background="Transparent"
+                                           ToolTip="Os últimos 30 testes encerrados, o mais recente em cima." />
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+                                    <ItemsControl x:Name="StressHistory" Style="{StaticResource StressHistoryList}" />
+                                </ScrollViewer>
                             </DockPanel>
                         </Border>
                     </Grid>

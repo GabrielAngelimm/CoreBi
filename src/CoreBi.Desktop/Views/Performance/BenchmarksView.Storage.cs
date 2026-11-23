@@ -47,6 +47,7 @@ public partial class BenchmarksView
     {
         var chip = DiskDrivePanel.Children.OfType<RadioButton>().FirstOrDefault(r => r.IsChecked == true);
         if (chip?.Tag is not string root) { DiskDevice.Text = "Unidade"; DiskDeviceSpec.Text = ""; return; }
+        ShowLastDisk(root);
         DiskDevice.Text = $"Unidade {chip.Content}";
         try
         {
@@ -56,6 +57,16 @@ public partial class BenchmarksView
         catch { DiskDeviceSpec.Text = ""; }
     }
 
+    /// <summary>O último resultado da unidade escolhida (cada unidade tem o seu); sem teste nela, as linhas vazias.</summary>
+    private void ShowLastDisk(string root)
+    {
+        if (_context == null || _gameBenchRunning) return;
+        string drive = root.TrimEnd('\\');
+        var last = Last(r => r.Test == "disk" && (SummaryParts(r.Summary).FirstOrDefault() ?? "") == drive);
+        DiskResult.ItemsSource = Merge(DiskRows(null), last?.Figures);
+        DiskDetail.Text = last?.Figures != null ? LastNote(last.Date) : "";
+    }
+
     private static List<MemRow> DiskRows(DiskBenchResult? r)
     {
         static string N(double? v) => v is double d ? $"{d:N0}" : "—";
@@ -63,10 +74,11 @@ public partial class BenchmarksView
         {
             new("Leitura sequencial", N(r?.SeqReadMBs), "MiB/s", "Blocos de 1 MB", "Pesa ao copiar arquivos grandes e ao carregar jogos."),
             new("Escrita sequencial", N(r?.SeqWriteMBs), "MiB/s", "Blocos de 1 MB, direto no disco",
-                "SSDs com cache SLC ficam mais lentos depois de gravar dezenas de GB seguidos."),
+                "Pesa ao instalar jogos e salvar arquivos grandes. SSDs com cache SLC desaceleram depois de dezenas de GB."),
             new("Leitura aleatória de 4 KB", N(r?.ReadIopsQ1), "IOPS", r is null ? "Uma por vez" : $"Uma por vez, latência média de {r.ReadLatencyUs:0.0} µs",
-                "É o que mais pesa na rapidez do sistema e dos programas."),
-            new("Escrita aleatória de 4 KB", N(r?.WriteIopsQ1), "IOPS", r is null ? "Uma por vez" : $"Uma por vez, latência média de {r.WriteLatencyUs:0.0} µs"),
+                "É o que mais pesa na rapidez do Windows e dos programas."),
+            new("Escrita aleatória de 4 KB", N(r?.WriteIopsQ1), "IOPS", r is null ? "Uma por vez" : $"Uma por vez, latência média de {r.WriteLatencyUs:0.0} µs",
+                "Pesa ao salvar configurações, registros e outros arquivos pequenos."),
             new("Leitura aleatória de 4 KB em paralelo", N(r?.ReadIopsQ8), "IOPS", "8 ao mesmo tempo", "Como ao abrir muitos programas de uma vez."),
         };
     }
@@ -107,7 +119,7 @@ public partial class BenchmarksView
             DiskStatus.Text = "Concluído";
             DiskDetail.Text = "Arquivo de teste apagado";
             SaveBenchRecord("disk", r.Score,
-                $"{r.Drive} · {r.SeqReadMBs:N0}/{r.SeqWriteMBs:N0} MiB/s · 4K {r.ReadIopsQ1 / 1000:0.#}k IOPS");
+                $"{r.Drive} · {r.SeqReadMBs:N0}/{r.SeqWriteMBs:N0} MiB/s · 4K {r.ReadIopsQ1 / 1000:0.#}k IOPS", DiskRows(r).Select(Figure));
         }
         catch (OperationCanceledException) { DiskStatus.Text = "Cancelado"; DiskDetail.Text = "Arquivo de teste apagado"; }
         catch (Exception ex)
@@ -133,13 +145,13 @@ public partial class BenchmarksView
         string drive = load?.Drive.TrimEnd('\\') ?? "";
         return new()
         {
-            new("Latência da RAM", F(lat, "0.0"), "ns", "", "Acesso aleatório à memória. Quanto menor, melhor."),
-            new("Leitura da RAM", F(bw?.Read, "0.0"), "GB/s", "", "Todas as threads lendo em sequência."),
-            new("Cópia da RAM", F(bw?.Copy, "0.0"), "GB/s", "", "Leitura e escrita ao mesmo tempo."),
+            new("Latência da RAM", F(lat, "0.0"), "ns", "", "Quanto tempo a memória leva para responder a um pedido. Quanto menor, melhor."),
+            new("Leitura da RAM", F(bw?.Read, "0.0"), "GB/s", "", "Quantos dados a memória entrega por segundo, com todas as threads lendo."),
+            new("Cópia da RAM", F(bw?.Copy, "0.0"), "GB/s", "", "Ler e escrever ao mesmo tempo, como ao descompactar e preparar dados."),
             new("Leitura do pacote do mapa", F(load?.SeqReadMBs, "N0"), "MiB/s", load is null ? "" : $"512 MB em sequência na unidade {drive}",
-                "Leitura sequencial, sem o cache do Windows."),
+                "O arquivo grande do mapa lido em sequência, sem o cache do Windows."),
             new("Arquivos pequenos", F(load?.FilesPerSec, "N0"), "arq/s", load is null ? "" : $"{load.SmallFilesMBs:N0} MiB/s",
-                "Mil arquivos de 64 KB lidos por 8 threads, sem o cache do Windows."),
+                "Mil arquivos de 64 KB lidos por 8 threads, como texturas e sons."),
             new("Carregamento do mapa", F(load?.MapLoadSeconds, "0.00"), "s", "", "Pacote e arquivos pequenos juntos. Quanto menor, mais rápido o jogo carrega."),
         };
     }
@@ -187,7 +199,7 @@ public partial class BenchmarksView
             MemStatus.Text = "Concluído";
             MemDetail.Text = "Arquivos de teste apagados";
             SaveBenchRecord("mem", MemoryBench.Score(lat.Value, load.MapLoadSeconds),
-                $"{lat:0} ns · {bw.Value.Read:0} GB/s · mapa {load.MapLoadSeconds:0.00} s");
+                $"{lat:0} ns · {bw.Value.Read:0} GB/s · mapa {load.MapLoadSeconds:0.00} s", MemRows(lat, bw, load).Select(Figure));
         }
         catch (OperationCanceledException) { MemStatus.Text = "Cancelado"; MemDetail.Text = "Arquivos de teste apagados"; }
         catch (Exception ex) { MemStatus.Text = $"Falhou: {ex.Message}"; MemDetail.Text = ""; }

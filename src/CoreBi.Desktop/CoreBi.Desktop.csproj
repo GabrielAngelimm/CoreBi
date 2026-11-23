@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Assets/*.png"/>
+    <Resource Include="Assets/*.jpg"/>
     <Resource Include="Assets/*.ico"/>
     <Resource Include="Assets/Apps/*.png"/>
   </ItemGroup>
