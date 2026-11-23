@@ -118,6 +118,10 @@ public sealed class SpareHeightBox : System.Windows.Controls.Decorator
         return new Size(Child?.DesiredSize.Width ?? 0, 0);
     }
 
+    // O filho é medido duas vezes por passada (sem altura aqui, com a altura toda no arranjo), então a altura desejada dele
+    // sempre "muda": o padrão pediria nova medida ao pai e a página entraria num laço de layout. Basta rearranjar.
+    protected override void OnChildDesiredSizeChanged(UIElement child) => InvalidateArrange();
+
     protected override Size ArrangeOverride(Size arrangeSize)
     {
         if (Child != null)
