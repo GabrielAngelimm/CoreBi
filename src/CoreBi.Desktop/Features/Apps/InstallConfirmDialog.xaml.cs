@@ -33,8 +33,8 @@ public partial class InstallConfirmDialog : UserControl
         CountRun.Text = n.ToString();
         BtnConfirm.Content = n == 1 ? "Instalar 1 app" : $"Instalar {n} apps";
         Lead.Text = n == 1
-            ? "Confira o app abaixo. Ele instala em silêncio, sem janelas; dá para parar a qualquer momento."
-            : $"Confira os {n} apps abaixo. Eles instalam um por vez, nesta ordem, em silêncio e sem janelas; dá para parar depois do app atual.";
+            ? "Confira o app abaixo. Ele instala em silêncio, sem abrir janelas."
+            : $"Confira os {n} apps abaixo. Eles instalam um por vez, nesta ordem, em silêncio e sem abrir janelas. Para interromper, clique em \"Parar depois do atual\", no topo da página: o app que estiver instalando termina e os seguintes continuam no pacote, para instalar depois.";
 
         Visibility = Visibility.Visible;
         Enter();

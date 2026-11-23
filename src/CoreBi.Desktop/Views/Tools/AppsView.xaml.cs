@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -192,24 +193,58 @@ public partial class AppsView : UserControl
     private int _runDone, _runTotal;
 
     /// <summary>
-    /// A leitura do pacote: fora da instalação, quantos apps estão nele; durante, quantos da fila já terminaram ("3 de 12") e o
-    /// que está acontecendo agora (instalando ou parando).
+    /// A leitura do pacote: fora da instalação, "Apps no pacote" e quantos são; durante, "Instalando" e quantos da fila já
+    /// terminaram ("3/12"), com o que está acontecendo agora embaixo. O número conta até o valor novo em vez de trocar seco.
     /// </summary>
     private void UpdatePackHead()
     {
         if (_appsBusy)
         {
-            PackCount.Text = _runDone.ToString();
-            PackCount.SetResourceReference(TextBlock.ForegroundProperty, "Fg");
-            PackTitle.Text = $"de {_runTotal} concluídos";
+            PackTitle.Text = "Instalando";
             PackNote.Text = _appsStop ? "Parando depois do app atual" : "Um por vez, sem janelas";
+            PackOf.Text = $"/{_runTotal}";
+            PackCount.SetResourceReference(TextElement.ForegroundProperty, "Fg");
+            CountTo(_runDone);
             return;
         }
         int n = _package.Count;
-        PackCount.Text = n.ToString();
-        PackCount.SetResourceReference(TextBlock.ForegroundProperty, n == 0 ? "Faint" : "Fg");
-        PackTitle.Text = n == 1 ? "app no pacote" : "apps no pacote";
+        PackTitle.Text = "Apps no pacote";
         PackNote.Text = n == 0 ? "Marque apps para montar" : "Instalam nesta ordem";
+        PackOf.Text = "";
+        PackCount.SetResourceReference(TextElement.ForegroundProperty, n == 0 ? "Faint" : "Fg");
+        CountTo(n);
+    }
+
+    private int _shownCount, _countTarget;
+    private System.Windows.Threading.DispatcherTimer? _countTimer;
+
+    /// <summary>Leva o mostrador do pacote até <paramref name="target"/> contando (um kit de 8 apps sobe 1, 2, 3… em ~200 ms).</summary>
+    private void CountTo(int target)
+    {
+        _countTarget = target;
+        if (!SystemParameters.ClientAreaAnimation || !IsVisible)
+        {
+            _countTimer?.Stop();
+            ShowCount(target);
+            return;
+        }
+        if (_countTimer == null)
+        {
+            _countTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(26) };
+            _countTimer.Tick += (_, _) =>
+            {
+                int gap = _countTarget - _shownCount;
+                if (gap == 0) { _countTimer.Stop(); return; }
+                ShowCount(_shownCount + Math.Sign(gap) * Math.Max(1, Math.Abs(gap) / 6));
+            };
+        }
+        if (_countTarget != _shownCount) _countTimer.Start();
+    }
+
+    private void ShowCount(int n)
+    {
+        _shownCount = n;
+        PackCount.Text = n.ToString();
     }
 
     /// <summary>Indicador "+N" do fim da faixa, com a lista dos que não couberam na dica.</summary>

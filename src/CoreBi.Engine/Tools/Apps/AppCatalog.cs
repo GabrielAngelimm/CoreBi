@@ -38,7 +38,7 @@ public static class AppCatalog
         App("Jogos", "Steam", "steam", "Loja e biblioteca de jogos.", Games, P("Valve.Steam", "Steam")),
         App("Jogos", "Epic Games", "epic", "Loja de jogos com um jogo grátis toda semana.", Games, P("EpicGames.EpicGamesLauncher", "Epic Games Launcher")),
         App("Jogos", "EA app", "ea", "Loja e jogos da EA, como EA FC e Battlefield.", 0, P("ElectronicArts.EADesktop", "EA app")),
-        App("Jogos", "Ubisoft Connect", "ubisoft", "Loja e jogos da Ubisoft, como Rainbow Six.", Games, P("Ubisoft.Connect", "Ubisoft Connect")),
+        App("Jogos", "Ubisoft Connect", "ubisoft", "Loja e jogos da Ubisoft, como Rainbow Six.", 0, P("Ubisoft.Connect", "Ubisoft Connect")),
         App("Jogos", "Battle.net", "battlenet", "Jogos da Blizzard, como Overwatch e Diablo, e Call of Duty.", 0, P("Blizzard.BattleNet", "Battle.net")),
         App("Jogos", "Rockstar Games", "rockstar", "Abre GTA V, Red Dead Redemption e outros da Rockstar.", 0, P("RockstarGames.Launcher", "Rockstar Games Launcher")),
 
@@ -46,25 +46,25 @@ public static class AppCatalog
         App("Acesso remoto", "TeamViewer", "teamviewer", "Acessa e controla outro computador a distância.", 0, P("TeamViewer.TeamViewer", "TeamViewer")),
         App("Acesso remoto", "Parsec", "parsec", "Joga no seu PC de longe, com pouco atraso.", 0, P("Parsec.Parsec", "Parsec")),
 
-        App("Comunicação", "Discord", "discord", "Chamada de voz e chat para jogar com os amigos.", Post | Games, P("Discord.Discord", "Discord")),
+        App("Comunicação", "Discord", "discord", "Chamada de voz e chat para jogar com os amigos.", Games, P("Discord.Discord", "Discord")),
         App("Comunicação", "Telegram", "telegram", "Mensagens no PC com a mesma conta do celular.", 0, P("Telegram.TelegramDesktop", "Telegram Desktop")),
         App("Comunicação", "TeamSpeak", "teamspeak", "Chat de voz leve e com pouco atraso para times.", 0, P("TeamSpeakSystems.TeamSpeakClient", "TeamSpeak")),
         App("Comunicação", "Zoom", "zoom", "Reuniões e aulas por vídeo.", Work, P("Zoom.Zoom", "Zoom")),
         App("Comunicação", "Microsoft Teams", "teams", "Reuniões e chat do trabalho ou da escola.", Work, P("Microsoft.Teams", null)),
         App("Comunicação", "Slack", "slack", "Chat de equipe organizado por canais.", 0, P("SlackTechnologies.Slack", "Slack")),
 
-        App("Gravação e live", "OBS Studio", "obs", "Grava a tela e faz lives na Twitch e no YouTube.", Games | Creator, P("OBSProject.OBSStudio", "OBS Studio")),
+        App("Gravação e live", "OBS Studio", "obs", "Grava a tela e faz lives na Twitch e no YouTube.", Creator, P("OBSProject.OBSStudio", "OBS Studio")),
         App("Gravação e live", "Streamlabs", "streamlabs", "Faz lives com alertas e temas prontos.", 0, P("Streamlabs.Streamlabs", "Streamlabs")),
         App("Gravação e live", "Lightshot", "lightshot", "Tira print de um pedaço da tela com o Print Screen.", 0, P("Skillbrains.Lightshot", "Lightshot")),
 
-        App("Música e vídeo", "Spotify", "spotify", "Música e podcasts por streaming.", Post, P("Spotify.Spotify", "Spotify")),
+        App("Música e vídeo", "Spotify", "spotify", "Música e podcasts por streaming.", 0, P("Spotify.Spotify", "Spotify")),
         App("Música e vídeo", "Deezer", "deezer", "Música por streaming, com letras e o Flow.", 0, P("Deezer.Deezer", "Deezer")),
         App("Música e vídeo", "VLC", "vlc", "Player que abre praticamente qualquer vídeo ou música.", Post, P("VideoLAN.VLC", "VLC media player")),
         App("Música e vídeo", "K-Lite Codec Pack", "klite", "Codecs para o Windows abrir qualquer formato de vídeo.", 0, P("CodecGuide.K-LiteCodecPack.Standard", "K-Lite Codec Pack")),
         App("Música e vídeo", "iTunes", "itunes", "Música da Apple e backup do iPhone no PC.", 0, P("Apple.iTunes", "iTunes")),
 
         App("Produtividade", "LibreOffice", "libreoffice", "Textos, planilhas e apresentações, de graça.", Work, P("TheDocumentFoundation.LibreOffice", "LibreOffice")),
-        App("Produtividade", "Acrobat Reader", "acrobat", "Abre, preenche e assina PDFs.", Work, P("Adobe.Acrobat.Reader.64-bit", "Adobe Acrobat")),
+        App("Produtividade", "Acrobat Reader", "acrobat", "Abre, preenche e assina PDFs.", Post | Work, P("Adobe.Acrobat.Reader.64-bit", "Adobe Acrobat")),
         App("Produtividade", "Notion", "notion", "Notas, tarefas e documentos num lugar só.", 0, P("Notion.Notion", "Notion")),
         App("Produtividade", "Notepad++", "notepadpp", "Bloco de notas turbinado, bom para código.", Dev, P("Notepad++.Notepad++", "Notepad++")),
         App("Produtividade", "Google Drive", "googledrive", "Seus arquivos do Google Drive direto no Explorer.", Work, P("Google.GoogleDrive", "Google Drive")),

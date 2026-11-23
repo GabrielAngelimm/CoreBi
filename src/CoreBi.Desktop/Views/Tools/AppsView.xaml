@@ -510,7 +510,7 @@
                             <StackPanel x:Name="AppsKits" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <CheckBox x:Name="KitPost" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE977;" Content="Pós-formatação" Tag="PostFormat" Click="Kit_Click" />
                                 <CheckBox x:Name="KitGames" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE7FC;" Content="Jogos" Tag="Games" Click="Kit_Click" />
-                                <CheckBox x:Name="KitWork" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE821;" Content="Trabalho" Tag="Work" Click="Kit_Click" />
+                                <CheckBox x:Name="KitWork" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE821;" Content="Trabalho e estudo" Tag="Work" Click="Kit_Click" />
                                 <CheckBox x:Name="KitCreator" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE714;" Content="Criador" Tag="Creator" Click="Kit_Click" />
                                 <CheckBox x:Name="KitDev" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE943;" Content="Programação" Tag="Dev" Click="Kit_Click" />
                                 <Border Width="1" Height="20" Background="{DynamicResource Line}" Margin="14,0,6,0" VerticalAlignment="Center" />
@@ -538,18 +538,21 @@
                             <ColumnDefinition Width="252" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
+                        <!-- Título do cartão como o do catálogo, a linha do que acontece agora embaixo e, à direita, a quantidade em mostrador -->
                         <Grid VerticalAlignment="Center" Margin="0,0,24,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock x:Name="PackCount" Text="0" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="34" Foreground="{DynamicResource Faint}"
-                                       Typography.NumeralAlignment="Tabular" MinWidth="40" TextAlignment="Left" VerticalAlignment="Center" Margin="0,0,14,2" />
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock x:Name="PackTitle" Text="apps no pacote" Style="{StaticResource ItemTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock x:Name="PackTitle" Text="Apps no pacote" Style="{StaticResource CardTitle}" HorizontalAlignment="Left" />
                                 <TextBlock x:Name="PackNote" Text="Marque apps para montar" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}"
-                                           Margin="0,2,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" local:HeaderMotion.SoftText="True" />
+                                           Margin="0,1,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" local:HeaderMotion.SoftText="True" />
                             </StackPanel>
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,2" Typography.NumeralAlignment="Tabular">
+                                <Run x:Name="PackCount" Text="0" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="34" Foreground="{DynamicResource Faint}" /><Run
+                                    x:Name="PackOf" Text="" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="17" Foreground="{DynamicResource Faint}" />
+                            </TextBlock>
                         </Grid>
                         <!-- Barra da fila, rente ao pé da leitura: só aparece durante a instalação -->
                         <Grid x:Name="PackProgress" Style="{StaticResource ProgressTrack}" Height="3" VerticalAlignment="Bottom" Margin="0,0,24,13" Visibility="Collapsed">
