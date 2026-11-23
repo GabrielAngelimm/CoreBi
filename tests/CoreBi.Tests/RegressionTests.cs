@@ -236,7 +236,9 @@ internal static partial class Program
             Require(DriverBackup.Find(folder.Path)?.Folder == newer, "Parent folder picks the newest backup");
             Require(DriverBackup.Find(Path.Combine(folder.Path, "missing")) == null && DriverBackup.Find(Directory.CreateDirectory(Path.Combine(folder.Path, "empty")).FullName) == null,
                 "Folder without packages is not a backup");
-            Require(DriverInventory.ProblemMeaning(28) == "Sem driver: o aparelho não funciona" && DriverInventory.ProblemMeaning(999) == "Problema código 999", "Device problem text");
+            Require(DriverInventory.MsiSlug("MAG B550 TOMAHAWK (MS-7C91)") == "MAG-B550-TOMAHAWK" && DriverInventory.AsrockPlatform("B550M Pro4") == "AMD"
+                && DriverInventory.AsrockPlatform("B660M Pro RS") == "Intel" && DriverInventory.AsrockPlatform("Fatal1ty") == null, "Board support page slugs");
+            Require(DriverInventory.ProblemMeaning(28) == "Sem driver instalado" && DriverInventory.ProblemMeaning(999) == "Problema código 999", "Device problem text");
             return new { packages = 2 };
         });
 

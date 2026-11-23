@@ -205,9 +205,10 @@ public partial class StartupView : UserControl
         }
         BootShown.Visibility = Visibility.Visible;
         BootMissing.Visibility = Visibility.Collapsed;
-        BootWhen.Text = "Ligado " + Day(last.When);
+        BootWhen.Text = "Início de " + Day(last.When);
 
-        double bios = report.BiosMs ?? 0, total = bios + last.TotalMs;
+        // A BIOS que o Windows guarda é a do início atual: só soma quando o último medido é este mesmo início
+        double bios = report.Stale ? 0 : report.BiosMs ?? 0, total = bios + last.TotalMs;
         // Total em segundos inteiros (décimos abaixo de 10 s); acima de 2 minutos, em minutos e segundos
         if (total >= 120_000)
         {
@@ -220,8 +221,20 @@ public partial class StartupView : UserControl
             BootTotal.Text = total >= 10_000 ? (total / 1000).ToString("0", PtBr) : (total / 1000).ToString("0.0", PtBr);
             BootUnit.Text = "s";
         }
-        BootSub.Text = bios > 0 ? "do botão de ligar até o PC ficar pronto" : "do Windows carregar até o PC ficar pronto";
-        BootSub.ToolTip = fastNote.Length > 0 ? fastNote.Trim() : null;
+        if (report.Stale)
+        {
+            // A medição do Windows parou: o número é o do último início medido, e o aviso diz desde quando e quantos ficaram de fora
+            BootSub.Text = $"Medição parada desde {last.When:dd/MM}: {report.Unmeasured.ToString(PtBr)}{(report.Unmeasured >= 99 ? "+" : "")} inícios sem registro.";
+            BootSub.Foreground = (Brush)FindResource("Warn");
+            BootSub.ToolTip = "Quem mede o início é o Diagnóstico do Windows, e ele parou de gravar. Programas de otimização às vezes desligam essa parte."
+                + "\nOs números aqui são os do último início medido.";
+        }
+        else
+        {
+            BootSub.Text = bios > 0 ? "do botão de ligar até o PC ficar pronto" : "do Windows carregar até o PC ficar pronto";
+            BootSub.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+            BootSub.ToolTip = fastNote.Length > 0 ? fastNote.Trim() : null;
+        }
 
         BootBarBios.Width = new GridLength(bios, GridUnitType.Star);
         BootBarMain.Width = new GridLength(last.MainPathMs, GridUnitType.Star);
@@ -250,9 +263,9 @@ public partial class StartupView : UserControl
     /// Capturas dos testes ("PageStartup:demo"): dez inícios e três removidos de exemplo, para ver os dois cartões cheios mesmo
     /// sem administrador. Nada é lido nem salvo; desligar volta ao que foi lido de verdade.
     /// </summary>
-    internal void PreviewDemo(bool on)
+    internal void PreviewDemo(string? mode)
     {
-        if (!on)
+        if (mode == null)
         {
             _removed = _realRemoved ?? _removed;
             _realRemoved = null;
@@ -269,7 +282,9 @@ public partial class StartupView : UserControl
         var boots = Enumerable.Range(0, Bars)
             .Select(i => new BootTime(now.Date.AddDays(-(Bars - 1 - i) * 1.5).AddHours(8 + i % 4), mains[i] + posts[i], mains[i], posts[i], 12))
             .Reverse().ToList();
-        ShowBoots(new BootReport(boots, 10_310, false, null));
+        ShowBoots(mode == "stale"
+            ? new BootReport(boots.Select(b => b with { When = b.When.AddDays(-29) }).ToList(), 10_310, false, null, 15)
+            : new BootReport(boots, 10_310, false, null));
         string Program(string relative) => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), relative);
         _removed = new[]
         {

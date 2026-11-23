@@ -140,14 +140,7 @@ public partial class DriversView : UserControl
     private void ShowGpus()
     {
         bool studioOn = DrvStudio.IsChecked == true;
-        foreach (var g in _drvGpus)
-            g.Caption = g.Vendor switch
-            {
-                "NVIDIA" => studioOn ? "NVIDIA · driver Studio" : "NVIDIA · driver Game Ready",
-                "AMD" => "AMD · Adrenalin",
-                "" => "",
-                _ => g.Vendor,
-            };
+        foreach (var g in _drvGpus) Verdict(g, studioOn);
         DrvGpus.ItemsSource = null;
         DrvGpus.ItemsSource = _drvGpus;
         DrvGpuEmpty.Visibility = _drvGpus.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -163,7 +156,30 @@ public partial class DriversView : UserControl
         BtnDrvInstall.Content = target == null ? "Baixar e instalar"
             : target.Vendor == "NVIDIA" && !target.UpdateAvailable ? $"Reinstalar {target.Latest}"
             : $"Baixar e instalar {target.Latest}";
+        DrvGpuSize.Text = target == null ? "" : SizePt(target.SizeText);
+        DrvGpuSize.ToolTip = DrvGpuSize.Text.Length > 0 ? "Tamanho do instalador." : null;
         UpdatePrimary();
+    }
+
+    /// <summary>
+    /// O veredito no pé da placa. Com a NVIDIA dá para comparar as versões: "Em dia" em verde ou "Driver novo" em âmbar, e uma
+    /// frase curta que diz a linha do driver (Game Ready ou Studio). Nos outros casos fica só a frase do motor, sem palavra da frente.
+    /// </summary>
+    internal static void Verdict(GpuDriverStatus g, bool studio)
+    {
+        g.Lead = ""; g.Tone = "";
+        if (g.Vendor != "NVIDIA" || g.Latest.Length == 0 || g.Installed.Length == 0) return;
+        string line = studio ? "Studio" : "Game Ready";
+        if (g.UpdateAvailable) { g.Lead = "Driver novo"; g.Tone = "warn"; g.Message = $"Saiu um {line} mais novo."; }
+        else { g.Lead = "Em dia"; g.Tone = "ok"; g.Message = $"É o {line} mais novo da NVIDIA."; }
+    }
+
+    /// <summary>"1.04 GB" da NVIDIA em português: "1,04 GB".</summary>
+    internal static string SizePt(string size)
+    {
+        size = size.Trim();
+        var m = System.Text.RegularExpressions.Regex.Match(size, @"^(\d+)\.(\d+)(\s*\w+)$");
+        return m.Success ? $"{m.Groups[1].Value},{m.Groups[2].Value}{m.Groups[3].Value}" : size;
     }
 
     /// <summary>
@@ -189,29 +205,51 @@ public partial class DriversView : UserControl
         var b = _drvBoardInfo;
         DrvBoard.Text = b.Model;
         DrvBoard.ToolTip = b.Model.Length > 0 ? b.Model : null;
-        DrvBoardMaker.Text = b.Maker.Equals(b.Model, StringComparison.OrdinalIgnoreCase) ? "" : b.Maker;
+        bool known = b.SupportUrl.Length > 0;
+        // Com o fabricante conhecido, o nome dele está no botão; a linha do fabricante só aparece quando não há botão
+        DrvBoardMaker.Text = known || b.Maker.Equals(b.Model, StringComparison.OrdinalIgnoreCase) ? "" : b.Maker;
         DrvBoardMaker.Visibility = DrvBoardMaker.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         string version = b.BiosVersion.Trim();
         string date = b.BiosDate == "—" ? "" : b.BiosDate.Trim();
         DrvBoardBios.Text = version;
         DrvBoardBiosDate.Text = date.Length > 0 ? date : "—";
-        DrvBoardBiosDate.ToolTip = DateTime.TryParseExact(date, "dd/MM/yyyy", PtBr, DateTimeStyles.None, out var when) ? Age(when) : null;
+        // Pé da placa no mesmo desenho do da placa de vídeo: a idade na frente, em tinta, e o conselho em Muted
+        string brandName = b.Brand.Length > 0 ? b.Brand : "o fabricante";
+        DrvBoardAge.Inlines.Clear();
+        if (DateTime.TryParseExact(date, "dd/MM/yyyy", PtBr, DateTimeStyles.None, out var when))
+        {
+            var lead = new System.Windows.Documents.Run(Age(when)) { FontWeight = FontWeights.SemiBold };
+            lead.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Fg");
+            DrvBoardAge.Inlines.Add(lead);
+            var gap = new System.Windows.Documents.Run("  ·  ");
+            gap.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Faint");
+            DrvBoardAge.Inlines.Add(gap);
+            DrvBoardAge.Inlines.Add(new System.Windows.Documents.Run($"Atualize só se a {brandName} recomendar."));
+        }
+        var age = DrvBoardAge.Inlines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        DrvBoardAge.Visibility = age;
+        DrvBoardAgeHair.Visibility = age;
         DrvBiosBox.Visibility = version.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        bool known = b.SupportUrl.Length > 0;
-        BtnDrvBoardPage.Content = b.Brand.Length > 0 ? $"Suporte da {b.Brand}" : "Suporte do fabricante";
+        string brand = b.Brand.Length > 0 ? b.Brand : "fabricante";
+        BtnDrvBoardPage.Content = $"Abrir no site da {brand}";
+        BtnDrvBoardPage.ToolTip = b.SupportIsModelPage
+            ? "Abre a página de suporte do seu modelo: drivers de chipset, áudio e rede, e as versões da BIOS."
+            : b.Brand == "Gigabyte"
+            ? "Abre o site da Gigabyte já buscando o seu modelo. Ele tem uma página por revisão da placa: a sua está impressa nela, perto dos slots (ex.: Rev. 1.3)."
+            : "Abre a central de suporte do fabricante. Busque pelo modelo para achar os drivers e a BIOS.";
         BtnDrvBoardPage.Visibility = known ? Visibility.Visible : Visibility.Collapsed;
         DrvBoardNote.Visibility = known || b.Model.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    /// <summary>"Lançada há 1 ano e 2 meses": a idade da BIOS, na dica da data.</summary>
+    /// <summary>"Há 1 ano e 2 meses": a idade da BIOS, na frente do pé da placa.</summary>
     internal static string Age(DateTime when)
     {
         int months = Math.Max(0, (DateTime.Today.Year - when.Year) * 12 + DateTime.Today.Month - when.Month - (DateTime.Today.Day < when.Day ? 1 : 0));
         int years = months / 12, rest = months % 12;
         string y = years == 1 ? "1 ano" : $"{years} anos", m = rest == 1 ? "1 mês" : $"{rest} meses";
-        return "Lançada há " + (months == 0 ? "menos de 1 mês" : years == 0 ? m : rest == 0 ? y : $"{y} e {m}") + ".";
+        return "Há " + (months == 0 ? "menos de 1 mês" : years == 0 ? m : rest == 0 ? y : $"{y} e {m}");
     }
 
     private void ShowInventory(List<DriverRow> inventory)

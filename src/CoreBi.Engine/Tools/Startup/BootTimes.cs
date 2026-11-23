@@ -12,10 +12,19 @@ namespace CoreBi.Engine.Tools.Startup;
 /// </summary>
 public sealed record BootTime(DateTime When, double TotalMs, double MainPathMs, double PostBootMs, int StartupApps);
 
-/// <summary>Último início e os anteriores, mais o tempo da BIOS no último (o Windows só guarda esse).</summary>
-public sealed record BootReport(IReadOnlyList<BootTime> Boots, double? BiosMs, bool FastStartup, string? Unavailable)
+/// <summary>
+/// Último início e os anteriores, mais o tempo da BIOS no início atual (o Windows só guarda esse). <see cref="Unmeasured"/> conta
+/// os inícios completos depois do último medido: o log do sistema registra cada um, mesmo quando a medição do Windows parou.
+/// </summary>
+public sealed record BootReport(IReadOnlyList<BootTime> Boots, double? BiosMs, bool FastStartup, string? Unavailable, int Unmeasured = 0)
 {
     public BootTime? Last => Boots.Count > 0 ? Boots[0] : null;
+
+    /// <summary>
+    /// A medição parou: dois ou mais inícios sem medida, ou só o atual, mas já faz 15 minutos (o Windows grava a medida
+    /// poucos minutos depois de ligar). Aí o último medido não é o de agora e a BIOS de agora não soma com ele.
+    /// </summary>
+    public bool Stale => Unmeasured >= 2 || (Unmeasured == 1 && Environment.TickCount64 > 15 * 60_000);
 }
 
 public static class BootTimes
@@ -51,7 +60,33 @@ public static class BootTimes
         catch (UnauthorizedAccessException) { return new BootReport(boots, bios, fast, "admin"); }
         catch (EventLogNotFoundException) { return new BootReport(boots, bios, fast, "log"); }
         catch (Exception ex) { DiagnosticLog.Write("startup.boot-times", ex); return new BootReport(boots, bios, fast, "log"); }
-        return new BootReport(boots, bios, fast, boots.Count == 0 ? "empty" : null);
+        return new BootReport(boots, bios, fast, boots.Count == 0 ? "empty" : null, boots.Count > 0 ? CountSince(boots[0].When) : 0);
+    }
+
+    /// <summary>
+    /// Inícios completos do Windows depois de <paramref name="since"/>, pelo evento 12 do Kernel-General no log do sistema (que
+    /// não pede administrador). A folga de 5 minutos cobre a diferença entre o relógio desse evento e o da medição.
+    /// </summary>
+    internal static int CountSince(DateTime since, int cap = 99)
+    {
+        int n = 0;
+        try
+        {
+            var query = new EventLogQuery("System", PathType.LogName,
+                "*[System[Provider[@Name='Microsoft-Windows-Kernel-General'] and (EventID=12)]]")
+            { ReverseDirection = true };
+            using var reader = new EventLogReader(query);
+            for (EventRecord? record = reader.ReadEvent(); record != null && n < cap; record = reader.ReadEvent())
+            {
+                using (record)
+                {
+                    if (record.TimeCreated is not { } at || at <= since.AddMinutes(5)) break;
+                    n++;
+                }
+            }
+        }
+        catch (Exception ex) { DiagnosticLog.Write("startup.boot-count", ex); }
+        return n;
     }
 
     internal static BootTime? Parse(string xml, DateTime? created)

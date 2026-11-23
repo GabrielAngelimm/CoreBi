@@ -88,8 +88,9 @@ internal static partial class Program
                     else if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "installing") { window.PageApps.PreviewRun(true); Wait(900); }
                     // "PageApps:Jogos" filtra pela categoria, como o clique no título dela (volta a todas depois da captura)
                     else if (parts[0] == "PageApps" && parts.Length == 2) { window.PageApps.FilterCategory(parts[1]); Wait(800); }
-                    // "PageStartup:demo" mostra dez inícios e três removidos de exemplo (nada é lido nem salvo)
-                    else if (parts[0] == "PageStartup" && parts.Length == 2 && parts[1] == "demo") { window.PageStartup.PreviewDemo(true); Wait(900); }
+                    // "PageStartup:demo" mostra dez inícios e três removidos de exemplo; "PageStartup:stale", os mesmos com a medição do
+                    // Windows parada há dias (nada é lido nem salvo)
+                    else if (parts[0] == "PageStartup" && parts.Length == 2) { window.PageStartup.PreviewDemo(parts[1]); Wait(900); }
                     // "PageDriver:demo" mostra drivers achados no Windows Update; "PageDriver:searching", a busca em andamento; "PageDriver:backup"
                     // e "PageDriver:restore", as janelas de confirmação (nada é procurado, copiado nem instalado)
                     else if (parts[0] == "PageDriver" && parts.Length == 2) { window.PageDriver.PreviewDemo(parts[1]); Wait(900); }
@@ -104,7 +105,7 @@ internal static partial class Program
                     if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "confirm") { window.InstallLayer.Cancel(); Wait(300); continue; }
                     if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "installing") window.PageApps.PreviewRun(false);
                     if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] != "pack") window.PageApps.FilterCategory(null);
-                    if (parts[0] == "PageStartup" && parts.Length == 2 && parts[1] == "demo") window.PageStartup.PreviewDemo(false);
+                    if (parts[0] == "PageStartup" && parts.Length == 2) window.PageStartup.PreviewDemo(null);
                     if (parts[0] == "PageDriver" && parts.Length == 2) window.PageDriver.PreviewDemo(null);
                     if (theme == themes[0]) SaveSkeletons(window, Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-skeleton.png"));
                 }

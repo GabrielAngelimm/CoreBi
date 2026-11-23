@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Engine.Tools.Drivers;
@@ -10,18 +11,44 @@ public static class DriverInventory
         "DISPLAY", "NET", "MEDIA", "BLUETOOTH", "HDC", "SCSIADAPTER", "USB", "SYSTEM",
     };
 
-    private static readonly (string[] Tokens, string Brand, Func<string, string> SupportUrl)[] BoardVendors =
+    /// <summary>
+    /// O atalho da placa-mãe por fabricante. ASUS, MSI e ASRock montam o endereço da página do modelo a partir do nome que o
+    /// Windows dá à placa (Direct = true). A Gigabyte separa cada revisão da placa numa página (Rev. 1.0, 1.3...) e o Windows não
+    /// diz qual é a sua, então o atalho abre a busca do site com o modelo. Os outros abrem a central de suporte.
+    /// </summary>
+    private static readonly (string[] Tokens, string Brand, Func<string, (string Url, bool Direct)> SupportUrl)[] BoardVendors =
     {
-        // Onde o site aceita busca, o atalho já abre o modelo da placa (a primeira resposta é a página de suporte dele)
-        (new[] { "ASUS" }, "ASUS", q => "https://www.asus.com/searchresult?searchType=support&searchKey=" + q),
-        (new[] { "Micro-Star", "MSI" }, "MSI", q => "https://www.msi.com/search/" + q),
-        (new[] { "GIGABYTE" }, "Gigabyte", q => "https://www.gigabyte.com/Search?kw=" + q),
-        (new[] { "ASRock" }, "ASRock", _ => "https://www.asrock.com/support/index.asp"),
-        (new[] { "Dell" }, "Dell", _ => "https://www.dell.com/support/home/"),
-        (new[] { "LENOVO" }, "Lenovo", _ => "https://support.lenovo.com/"),
-        (new[] { "HP", "Hewlett" }, "HP", _ => "https://support.hp.com/"),
-        (new[] { "Acer" }, "Acer", _ => "https://www.acer.com/support"),
+        (new[] { "ASUS" }, "ASUS", m => ("https://www.asus.com/supportonly/" + Uri.EscapeDataString(m) + "/helpdesk_download/", true)),
+        (new[] { "Micro-Star", "MSI" }, "MSI", m => ("https://www.msi.com/Motherboard/" + MsiSlug(m) + "/support", true)),
+        (new[] { "GIGABYTE" }, "Gigabyte", m => ("https://www.gigabyte.com/Search?kw=" + Uri.EscapeDataString(m), false)),
+        (new[] { "ASRock" }, "ASRock", m => AsrockPlatform(m) is { } p
+            ? ($"https://www.asrock.com/mb/{p}/{Uri.EscapeDataString(m)}/index.asp#Download", true)
+            : ("https://www.asrock.com/support/index.asp", false)),
+        (new[] { "Dell" }, "Dell", _ => ("https://www.dell.com/support/home/", false)),
+        (new[] { "LENOVO" }, "Lenovo", _ => ("https://support.lenovo.com/", false)),
+        (new[] { "HP", "Hewlett" }, "HP", _ => ("https://support.hp.com/", false)),
+        (new[] { "Acer" }, "Acer", _ => ("https://www.acer.com/support", false)),
     };
+
+    /// <summary>"MAG B550 TOMAHAWK (MS-7C91)" vira "MAG-B550-TOMAHAWK", o trecho do endereço das páginas da MSI.</summary>
+    internal static string MsiSlug(string model)
+    {
+        string name = Regex.Replace(model, @"\(MS-[^)]*\)", "").Trim();
+        return Uri.EscapeDataString(Regex.Replace(name, @"\s+", "-"));
+    }
+
+    /// <summary>
+    /// O site da ASRock separa as placas por plataforma. Os chipsets AMD têm números próprios (B550, X670...); qualquer outro
+    /// chipset com letra e três dígitos é Intel. Sem chipset no nome, null.
+    /// </summary>
+    internal static string? AsrockPlatform(string model)
+    {
+        var m = Regex.Match(model, @"\b([ABHQXZW])(\d{3})");
+        if (!m.Success) return null;
+        int n = int.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture);
+        bool amd = m.Groups[1].Value is "A" or "B" or "X" && n is 320 or 350 or 370 or 399 or 450 or 470 or 520 or 550 or 570 or 620 or 650 or 670 or 840 or 850 or 870;
+        return amd ? "AMD" : "Intel";
+    }
 
     /// <summary>Drivers instalados (sem os genéricos da Microsoft, exceto vídeo, rede e áudio).</summary>
     public static List<DriverRow> ListInstalled()
@@ -75,7 +102,7 @@ public static class DriverInventory
         14 => "Reinicie o PC para o dispositivo funcionar",
         18 or 24 => "Reinstale o driver",
         19 => "Registro do dispositivo com problema",
-        28 => "Sem driver: o aparelho não funciona",
+        28 => "Sem driver instalado",
         29 => "Desativado pela BIOS",
         31 => "O driver não carregou direito",
         32 => "O serviço do driver está desligado",
@@ -150,13 +177,13 @@ public static class DriverInventory
         string sysModel = sysInfo.Model ?? "";
 
         string combined = b.Maker + " " + sys;
-        string query = Uri.EscapeDataString(b.Model.Length > 0 && !b.Model.Contains("Default", StringComparison.OrdinalIgnoreCase) ? b.Model : sysModel);
+        string query = (b.Model.Length > 0 && !b.Model.Contains("Default", StringComparison.OrdinalIgnoreCase) ? b.Model : sysModel).Trim();
         foreach (var (tokens, brand, urlFactory) in BoardVendors)
         {
             if (tokens.Any(t => combined.Contains(t, StringComparison.OrdinalIgnoreCase)))
             {
                 b.Brand = brand;
-                b.SupportUrl = urlFactory(query);
+                (b.SupportUrl, b.SupportIsModelPage) = query.Length > 0 ? urlFactory(query) : ("", false);
                 break;
             }
         }
