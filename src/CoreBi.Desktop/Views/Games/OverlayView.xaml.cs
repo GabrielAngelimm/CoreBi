@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -26,14 +27,15 @@ public partial class OverlayView : UserControl
     /// <summary>A prévia cresce até o tamanho escolhido com a mesma curva dos números da Rede.</summary>
     private static readonly IEasingFunction Glide = new QuinticEase { EasingMode = EasingMode.EaseOut };
 
-    private static readonly (string Group, string Icon, string ResourceKey, string Full)[] Groups =
+    /// <summary>A legenda de cada grupo, curta para caber numa linha sob o nome.</summary>
+    private static readonly Dictionary<string, string> GroupCaptions = new()
     {
-        ("FPS", "\uEC4A", "Signal", "Quadros por segundo"),
-        ("GPU", "gpu", "Signal", "Placa de vídeo"),
-        ("VRAM", "vram", "Signal", "Memória da placa de vídeo"),
-        ("CPU", "cpu", "Signal", "Processador"),
-        ("RAM", "ram", "Signal", "Memória"),
-        ("Outros", "\uE727", "Signal", ""),
+        ["FPS"] = "Quadros por segundo",
+        ["GPU"] = "Placa de vídeo",
+        ["VRAM"] = "Memória de vídeo",
+        ["CPU"] = "Processador",
+        ["RAM"] = "Memória",
+        ["Outros"] = "Nomes e hora",
     };
 
     private static readonly Dictionary<string, string> ItemHints = new()
@@ -47,7 +49,7 @@ public partial class OverlayView : UserControl
         ["hwnames"] = "Mostra o modelo ao lado de CPU e GPU e a quantidade de RAM (ex.: CPU Ryzen 7 5700X).",
         ["cpu_temp"] = "Precisa do CoreBi aberto como administrador.",
         ["cpu_clock"] = "Precisa do CoreBi aberto como administrador.",
-        ["cpu_clockmax"] = "Precisa do CoreBi aberto como administrador.",
+        ["cpu_clockmax"] = "O clock do núcleo mais rápido. Precisa do CoreBi aberto como administrador.",
         ["cpu_power"] = "Precisa do CoreBi aberto como administrador.",
     };
 
@@ -66,9 +68,6 @@ public partial class OverlayView : UserControl
     private string? _corner;
     private bool _ready;
     private readonly Dictionary<string, CheckBox> _chips = new();
-    private readonly List<Action> _rowRefresh = new();
-    /// <summary>O que cada linha tinha marcado quando o interruptor dela foi desligado, para voltar igual.</summary>
-    private readonly Dictionary<string, HashSet<string>> _groupMemory = new();
 
     public OverlayView()
     {
@@ -137,107 +136,63 @@ public partial class OverlayView : UserControl
         return set;
     }
 
+    /// <summary>
+    /// O que mostrar: um grupo por componente, com o nome e a legenda numa coluna à esquerda e os itens em LED numa grade de três
+    /// colunas. O painel espalha a sobra de altura entre os grupos; o fio de cada grupo fica no topo da sua faixa e o conteúdo no
+    /// meio, então o fio cai sempre a meio caminho entre dois grupos.
+    /// </summary>
     private void BuildPicker()
     {
         OvItemsPanel.Children.Clear();
         _chips.Clear();
-        _rowRefresh.Clear();
+        var itemStyle = (Style)Resources["OvItem"];
         var groups = OverlayMetrics.All.GroupBy(m => m.Group).ToList();
         for (int i = 0; i < groups.Count; i++)
         {
             string group = groups[i].Key;
-            var items = groups[i].ToList();
-            var meta = Groups.FirstOrDefault(g => g.Group == group);
-            var row = new Border
+            var slot = new Grid();
+            if (i > 0)
             {
-                SnapsToDevicePixels = true,
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(14),
-                Padding = new Thickness(14, 10, 14, 10),
-                Margin = new Thickness(0, i == 0 ? 0 : 3, 0, i < groups.Count - 1 ? 3 : 0),
-            };
+                var rule = new Border { VerticalAlignment = VerticalAlignment.Top };
+                rule.SetResourceReference(StyleProperty, "Divider");
+                slot.Children.Add(rule);
+            }
 
-            row.SetResourceReference(Border.BorderBrushProperty, "Line");
-            var grid = new Grid { VerticalAlignment = VerticalAlignment.Center };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(132) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var row = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 10, 0, 10) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(136) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            var glyph = new HwIcon { Kind = meta.Icon ?? "\uE946", Width = 30, Height = 30, VerticalAlignment = VerticalAlignment.Top };
-            grid.Children.Add(glyph);
-
-            var name = new StackPanel { Margin = new Thickness(14, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
-            var title = new TextBlock { Text = group, Padding = new Thickness(0, 4, 0, 0) };
+            // Nome no alto da primeira linha de itens (34 px): o título de 16 e a legenda de 12, cada um numa linha só
+            var name = new StackPanel { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 1, 12, 0) };
+            var title = new TextBlock { Text = group, TextWrapping = TextWrapping.NoWrap };
             title.SetResourceReference(StyleProperty, "GroupTitle");
             name.Children.Add(title);
-            if (meta.Full is { Length: > 0 } full)
+            if (GroupCaptions.TryGetValue(group, out var caption))
             {
-                var sub = new TextBlock { Text = full, Margin = new Thickness(0, 2, 0, 0) };
+                var sub = new TextBlock { Text = caption, TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 1, 0, 0) };
                 sub.SetResourceReference(StyleProperty, "Caption");
                 name.Children.Add(sub);
             }
-            Grid.SetColumn(name, 1);
-            grid.Children.Add(name);
+            row.Children.Add(name);
 
-            // A linha inteira liga e desliga num interruptor: desligada some do overlay; religada volta com o que estava marcado
-            // (ou com os itens padrão do grupo). A linha ligada vira um bloco elevado; a desligada fica só no contorno, apagada.
-            var toggle = new CheckBox { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(16, 5, 0, 0) };
-            toggle.SetResourceReference(StyleProperty, "Switch");
-            Grid.SetColumn(toggle, 3);
-            grid.Children.Add(toggle);
-
-            void Refresh()
+            var grid = new UniformGrid { Columns = 3, VerticalAlignment = VerticalAlignment.Top };
+            foreach (var m in groups[i])
             {
-                bool on = items.Any(m => ShowItems.Contains(m.Key));
-                toggle.IsChecked = on;
-                toggle.ToolTip = on ? $"Tirar a linha {group} do overlay" : $"Mostrar a linha {group} no overlay";
-                glyph.SetResourceReference(Control.ForegroundProperty, on ? meta.ResourceKey ?? "Signal" : "Faint");
-                title.SetResourceReference(TextBlock.ForegroundProperty, on ? "Fg" : "Muted");
-                row.SetResourceReference(Border.BackgroundProperty, on ? "Raised" : "Surface");
-                foreach (var m in items)
-                    if (_chips.TryGetValue(m.Key, out var c)) c.IsChecked = ShowItems.Contains(m.Key);
-            }
-
-            toggle.Click += (_, _) =>
-            {
-                if (toggle.IsChecked == true)
+                var item = new CheckBox { Style = itemStyle, Content = m.Label, Tag = m.Key, IsChecked = ShowItems.Contains(m.Key) };
+                if (ItemHints.TryGetValue(m.Key, out var hint)) item.ToolTip = hint;
+                item.Click += (_, _) =>
                 {
-                    var back = _groupMemory.TryGetValue(group, out var kept) && kept.Count > 0 ? kept
-                        : items.Where(m => m.Default).Select(m => m.Key).DefaultIfEmpty(items[0].Key).ToHashSet();
-                    ShowItems.UnionWith(back);
-                }
-                else
-                {
-                    _groupMemory[group] = items.Where(m => ShowItems.Contains(m.Key)).Select(m => m.Key).ToHashSet();
-                    foreach (var m in items) ShowItems.Remove(m.Key);
-                }
-                Refresh();
-                SaveItems();
-            };
-
-            var wrap = new WrapPanel { Margin = new Thickness(0, 1, 0, -6), VerticalAlignment = VerticalAlignment.Top };
-            foreach (var m in items)
-            {
-                var chip = new CheckBox { Content = m.Label, Tag = m.Key, IsChecked = ShowItems.Contains(m.Key) };
-                chip.SetResourceReference(StyleProperty, "OptionChipSignal");
-                if (ItemHints.TryGetValue(m.Key, out var hint)) chip.ToolTip = hint;
-                chip.Click += (_, _) =>
-                {
-                    if (chip.IsChecked == true) ShowItems.Add(m.Key); else ShowItems.Remove(m.Key);
-                    Refresh();
+                    if (item.IsChecked == true) ShowItems.Add(m.Key); else ShowItems.Remove(m.Key);
                     SaveItems();
                 };
-                _chips[m.Key] = chip;
-                wrap.Children.Add(chip);
+                _chips[m.Key] = item;
+                grid.Children.Add(item);
             }
-            Grid.SetColumn(wrap, 2);
-            grid.Children.Add(wrap);
+            Grid.SetColumn(grid, 1);
+            row.Children.Add(grid);
 
-            Refresh();
-            _rowRefresh.Add(Refresh);
-            row.Child = grid;
-            OvItemsPanel.Children.Add(row);
+            slot.Children.Add(row);
+            OvItemsPanel.Children.Add(slot);
         }
         SyncPreset();
     }
@@ -269,8 +224,8 @@ public partial class OverlayView : UserControl
             var k when Presets.TryGetValue(k, out var set) => set.ToHashSet(),
             _ => OverlayMetrics.Defaults(),
         };
-        // As pílulas e os tiques trocam no lugar (nada é recriado, a lista não pisca)
-        foreach (var refresh in _rowRefresh) refresh();
+        // Os LEDs trocam no lugar (nada é recriado, a lista não pisca)
+        foreach (var (key, item) in _chips) item.IsChecked = _showItems.Contains(key);
         SaveItems();
     }
 
@@ -302,11 +257,11 @@ public partial class OverlayView : UserControl
     {
         if (!e.WidthChanged) return;
         bool wide = e.NewSize.Width >= 1180;
-        Grid.SetRow(OvItemsCard, wide ? 0 : 1);
-        Grid.SetColumn(OvItemsCard, wide ? 2 : 0);
-        Grid.SetColumnSpan(OvItemsCard, wide ? 1 : 3);
+        Grid.SetRow(OvSide, wide ? 0 : 1);
+        Grid.SetColumn(OvSide, wide ? 2 : 0);
+        Grid.SetColumnSpan(OvSide, wide ? 1 : 3);
         Grid.SetColumnSpan(OvPositionCard, wide ? 1 : 3);
-        OvItemsCard.Margin = new Thickness(0, wide ? 0 : 16, 0, 0);
+        OvSide.Margin = new Thickness(0, wide ? 0 : 16, 0, 0);
         OvMonitorBox.MinHeight = wide ? 300 : 440;
     }
 

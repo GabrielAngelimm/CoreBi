@@ -24,25 +24,22 @@
     <SolidColorBrush x:Key="CloseHover" Color="#C42B1C"/>
     <!--
         Monitor desenhado em OverlayBi: um monitor de bordas finas (moldura de 8 px, queixo com o LED à direita, haste com o furo
-        do cabo e base) e o papel de parede: noite na serra em planos chapados (sem degradê, brilho nem vinheta). Do céu para o
-        chão os planos escurecem, para o overlay, grafite, se destacar por cima em qualquer canto.
+        do cabo e base) e o papel de parede: lua e quatro serras em planos chapados (sem degradê, brilho nem vinheta), cada uma com a
+        face oposta à lua um tom abaixo. Do céu para o chão os planos escurecem, para o overlay, grafite, se destacar em qualquer canto.
     -->
     <SolidColorBrush x:Key="HudScreenBezel" Color="#07090B"/>
     <SolidColorBrush x:Key="HudScreenEdge" Color="#2C3235"/>
     <SolidColorBrush x:Key="HudScene" Color="#3A5262"/>
-    <SolidColorBrush x:Key="HudSceneStar" Color="#80DCE6EA"/>
-    <SolidColorBrush x:Key="HudSceneMoon" Color="#C7D3D8"/>
-    <SolidColorBrush x:Key="HudSceneHalo" Color="#4F6878"/>
-    <SolidColorBrush x:Key="HudSceneFar" Color="#4A6476"/>
-    <SolidColorBrush x:Key="HudSceneFarShade" Color="#435D6F"/>
-    <SolidColorBrush x:Key="HudSceneSnow" Color="#8FA5B2"/>
-    <SolidColorBrush x:Key="HudSceneNear" Color="#30475A"/>
-    <SolidColorBrush x:Key="HudSceneNearShade" Color="#2B4153"/>
-    <SolidColorBrush x:Key="HudSceneHill" Color="#22374A"/>
-    <SolidColorBrush x:Key="HudSceneForest" Color="#1B2D3C"/>
-    <SolidColorBrush x:Key="HudSceneGround" Color="#14212B"/>
-    <SolidColorBrush x:Key="HudScenePine" Color="#0F1A23"/>
-    <SolidColorBrush x:Key="HudSceneAim" Color="#BFE6EAEC"/>
+    <SolidColorBrush x:Key="HudSceneGlow" Color="#3D5667"/>
+    <SolidColorBrush x:Key="HudSceneHalo" Color="#435C6E"/>
+    <SolidColorBrush x:Key="HudSceneMoon" Color="#D3DDE1"/>
+    <SolidColorBrush x:Key="HudSceneFar" Color="#5A7486"/>
+    <SolidColorBrush x:Key="HudSceneFarShade" Color="#4D6779"/>
+    <SolidColorBrush x:Key="HudSceneMid" Color="#3E5769"/>
+    <SolidColorBrush x:Key="HudSceneMidShade" Color="#344C5E"/>
+    <SolidColorBrush x:Key="HudSceneNear" Color="#283E50"/>
+    <SolidColorBrush x:Key="HudSceneNearShade" Color="#213546"/>
+    <SolidColorBrush x:Key="HudSceneFront" Color="#17242F"/>
     <SolidColorBrush x:Key="HudStand" Color="#22292D"/>
     <SolidColorBrush x:Key="HudStandSide" Color="#191E21"/>
     <SolidColorBrush x:Key="HudStandHole" Color="#101416"/>
