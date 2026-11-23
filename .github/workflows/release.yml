@@ -28,7 +28,8 @@ jobs:
       - name: Versão pedida
         env:
           VERSION: ${{ inputs.version }}
-        run: if ($env:VERSION -notmatch '^\d+\.\d+\.\d+$') { throw "Versão inválida: $env:VERSION" }
+        run: |
+          if ($env:VERSION -notmatch '^\d+\.\d+\.\d+$') { throw "Versão inválida: $env:VERSION" }
       - run: dotnet restore CoreBi.slnx --locked-mode
       - run: dotnet build CoreBi.slnx -c Release --no-restore
       - run: dotnet run --project tests/CoreBi.Tests -c Release --no-build -- artifacts/tests
