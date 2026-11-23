@@ -140,12 +140,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="Transparent" Padding="8,0,6,0">
-                            <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
-                                <Run x:Name="title" Text="{Binding Name, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold"
-                                     Foreground="{DynamicResource Fg}" /><InlineUIContainer><Border Width="8" /></InlineUIContainer><Run
-                                    Text="{Binding Count, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16"
-                                    Foreground="{DynamicResource Faint}" Typography.NumeralAlignment="Tabular" />
-                            </TextBlock>
+                            <TextBlock x:Name="title" Text="{Binding Name, Mode=OneWay}" FontFamily="{StaticResource DisplayFont}" FontSize="16" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource Fg}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <DataTrigger Binding="{Binding Pick}" Value="done">
@@ -503,12 +499,7 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <!-- Título e contagem num TextBlock só: Runs de fontes diferentes na mesma base -->
-                            <TextBlock Style="{StaticResource CardTitle}" ToolTip="Pare o mouse num app para ver o que ele é.">
-                                <Run Text="Catálogo" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="AppsCount"
-                                    FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16" FontWeight="Normal" Foreground="{DynamicResource Faint}"
-                                    Typography.NumeralAlignment="Tabular" />
-                            </TextBlock>
+                            <TextBlock Text="Catálogo" Style="{StaticResource CardTitle}" ToolTip="Pare o mouse num app para ver o que ele é." />
                             <!-- Kits: marcam de uma vez os apps de um uso comum (o que já está instalado fica de fora); Limpar, depois de um fio, esvazia o pacote -->
                             <StackPanel x:Name="AppsKits" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <CheckBox x:Name="KitPost" Style="{StaticResource KitChip}" local:Ui.Icon="&#xE977;" Content="Pós-formatação" Tag="PostFormat" Click="Kit_Click" />

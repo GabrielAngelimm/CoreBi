@@ -66,7 +66,6 @@ public partial class AppsView : UserControl
             group.Refresh();
         }
         _package.CollectionChanged += (_, _) => RebuildPack();
-        AppsCount.Text = _tiles.Count.ToString();
         LockInstallWidth();
         LayoutColumns(force: true);
         RebuildPack();
@@ -665,13 +664,12 @@ public partial class AppsView : UserControl
 
 public enum AppPhase { Idle, Queued, Installing, Done, Failed, Skipped }
 
-/// <summary>Uma categoria do catálogo: o título (que marca a categoria inteira), o filtro dela, a quantidade e as linhas.</summary>
+/// <summary>Uma categoria do catálogo: o título (que marca a categoria inteira), o filtro dela e as linhas.</summary>
 public sealed class AppGroup : ObservableObject
 {
     internal AppGroup(string name, List<AppTile> tiles) { Name = name; Tiles = tiles; }
     public string Name { get; }
     public List<AppTile> Tiles { get; }
-    public int Count => Tiles.Count;
 
     private bool _active, _dimmed;
     private string _pick = "none";
