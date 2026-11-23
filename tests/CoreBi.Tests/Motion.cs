@@ -76,12 +76,21 @@ internal static partial class Program
                     Wait(1200);
                     var shot = new Film(window, () => target);
                     shot.Start();
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
                     nav.IsChecked = true;
                     shot.Run(1300, 15);
                     string name = $"{(round == 1 ? "1" : "2")}-{page}-{(round == 1 ? "primeira" : "volta")}";
                     shot.Save(Path.Combine(folder, name + ".png"), StripTimes, $"{page} · {(round == 1 ? "primeira visita" : "volta")}");
                     shot.Report(report, $"{page} · {(round == 1 ? "primeira visita" : "volta")}", settleMs: 0);
                     Console.WriteLine(name);
+                    // Quanto o esqueleto dura de fato (o filme tem só 1,3 s): espera a página sair dele, até 8 s
+                    if (Film.Cards(target).Any(c => c.Skeleton))
+                    {
+                        while (clock.ElapsedMilliseconds < 8000 && Film.Cards(target).Any(c => c.Skeleton)) Wait(50);
+                        var left = Film.Cards(target).Where(c => c.Skeleton).Select(c => c.Name).ToList();
+                        report.AppendLine(left.Count == 0 ? $"  esqueleto da página até {clock.ElapsedMilliseconds} ms"
+                            : $"  ainda em esqueleto aos 8 s: {string.Join(", ", left)}");
+                    }
                     Wait(2500); // leituras lentas (discos, drivers) terminam antes da próxima página
                     if (round == 2) AuditPlans(target, report);
                 }
@@ -122,7 +131,7 @@ internal static partial class Program
     /// <summary>Quadros de uma página e o estado dos cartões dela em cada quadro.</summary>
     private sealed class Film
     {
-        private sealed record Card(string Name, Rect Box, bool Skeleton, double Opacity);
+        internal sealed record Card(string Name, Rect Box, bool Skeleton, double Opacity);
         private sealed record Frame(double Ms, BitmapSource? Image, List<Card> Cards, bool Visible);
 
         private const double Scale = 0.25;
@@ -180,7 +189,7 @@ internal static partial class Program
         private static Style? _cardStyle;
 
         /// <summary>Cartões visíveis da página, com a caixa de layout (sem os deslocamentos da animação) relativa à página.</summary>
-        private static List<Card> Cards(FrameworkElement page)
+        internal static List<Card> Cards(FrameworkElement page)
         {
             _cardStyle ??= Application.Current.TryFindResource("CardBorder") as Style;
             var list = new List<Card>();
