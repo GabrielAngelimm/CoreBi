@@ -363,7 +363,8 @@
                                 <TextBlock Text="Histórico" Style="{StaticResource CardTitle}" ToolTip="Os últimos 30 testes deste PC. Clique num deles para ver o diagnóstico daquele teste." />
                                 <TextBlock x:Name="NetHistoryCount" Style="{StaticResource Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" />
                             </Grid>
-                            <!-- Cabeçalho da tabela nas mesmas colunas das linhas, rente ao título: as linhas avançam 10 px para cada lado (o recuo do
+                            <!-- A lista rola pela roda sem barra (a barra roubava 10 px e tirava os números da coluna do cabeçalho; a última linha
+                                 cortada já diz que há mais). Cabeçalho da tabela nas mesmas colunas das linhas, rente ao título: as linhas avançam 10 px para cada lado (o recuo do
                                  conteúdo delas), então o fundo da escolhida sai da margem e o texto fica na linha do título e do pé do cartão -->
                             <Grid x:Name="NetHistoryHead" Grid.Row="1" Margin="0,12,0,4">
                                 <Grid.ColumnDefinitions>
@@ -379,7 +380,7 @@
                             </Grid>
                             <local:SpareHeightBox Grid.Row="2" Margin="-10,0,-10,0">
                                 <ListBox x:Name="NetHistory" ItemContainerStyle="{StaticResource ListNavItem}" Padding="0" Margin="0,0,0,0"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto" SelectionChanged="NetHistory_SelectionChanged" Focusable="False">
+                                         ScrollViewer.VerticalScrollBarVisibility="Hidden" SelectionChanged="NetHistory_SelectionChanged" Focusable="False">
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <Grid>
