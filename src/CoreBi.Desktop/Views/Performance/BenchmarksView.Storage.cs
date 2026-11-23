@@ -63,8 +63,8 @@ public partial class BenchmarksView
         if (_context == null || _gameBenchRunning) return;
         string drive = root.TrimEnd('\\');
         var last = Last(r => r.Test == "disk" && (SummaryParts(r.Summary).FirstOrDefault() ?? "") == drive);
-        DiskResult.ItemsSource = Merge(DiskRows(null), last?.Figures);
-        DiskDetail.Text = last?.Figures != null ? LastNote(last.Date) : "";
+        DiskResult.ItemsSource = Merge(DiskRows(null), Saved(last));
+        DiskDetail.Text = last != null ? LastNote(last.Date) : "";
     }
 
     private static List<MemRow> DiskRows(DiskBenchResult? r)

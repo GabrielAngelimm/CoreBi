@@ -168,7 +168,7 @@
                         </Grid.RowDefinitions>
 
                         <!--
-                            Agora: o veredito em DIN 28 (a placa da página), na cor só quando pede ação, e a dica embaixo (duas linhas
+                            Agora: o veredito em DIN 28 (a placa da página), na cor só quando pede ação, e a dica embaixo (três linhas
                             reservadas); à direita, o FPS agora e o 1% low. A altura não muda com ou sem jogo. Em cima, "Agora" e, com um
                             jogo medido, o LED no sinal e o nome do processo.
                         -->
@@ -184,7 +184,7 @@
                                                      ToolTip="Medindo o FPS do programa em primeiro plano" /></InlineUIContainer><Run x:Name="BnLiveGame" Foreground="{DynamicResource Fg}" />
                                     </TextBlock>
                                     <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" Style="{StaticResource PlateName}" Foreground="{DynamicResource Muted}" Margin="0,8,0,0" />
-                                    <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="760" HorizontalAlignment="Left" Margin="0,6,0,0" MinHeight="40"
+                                    <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="760" HorizontalAlignment="Left" Margin="0,6,0,0" MinHeight="60"
                                                Text="Abra um jogo e deixe-o em primeiro plano: aqui aparece, segundo a segundo, qual peça limita o FPS." />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">

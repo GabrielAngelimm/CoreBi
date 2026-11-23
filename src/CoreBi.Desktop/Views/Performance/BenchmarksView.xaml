@@ -389,7 +389,7 @@
                                         <Viewbox Stretch="Uniform">
                                             <Grid Width="960" Height="540">
                                                 <!-- A cena do teste, renderizada uma vez pelo próprio Render 3D (Assets/bench-scene.jpg) -->
-                                                <Image x:Name="BenchPreview" Width="960" Height="540" Source="/Assets/bench-scene.jpg" Style="{StaticResource StagePreview}" RenderOptions.BitmapScalingMode="HighQuality" />
+                                                <Image x:Name="BenchPreview" Width="960" Height="540" Source="/CoreBi.Desktop;component/Assets/bench-scene.jpg" Style="{StaticResource StagePreview}" RenderOptions.BitmapScalingMode="HighQuality" />
                                                 <Image x:Name="BenchImage" Width="960" Height="540" RenderOptions.BitmapScalingMode="HighQuality" />
                                                 <Canvas x:Name="BenchBuckets" Width="960" Height="540" />
                                             </Grid>

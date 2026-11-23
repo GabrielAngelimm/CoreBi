@@ -139,8 +139,8 @@ namespace CoreBi.Desktop.Views
             if (rt != null) RtTrace.Load(rt.Trace, "Última passada · " + ReadoutFormat.When(rt.Date));
 
             var mem = Last(r => r.Test == "mem");
-            MemResult.ItemsSource = Merge(MemRows(null, null, null), mem?.Figures);
-            MemDetail.Text = mem?.Figures != null ? LastNote(mem.Date) : "";
+            MemResult.ItemsSource = Merge(MemRows(null, null, null), Saved(mem));
+            MemDetail.Text = mem != null ? LastNote(mem.Date) : "";
         }
 
         private static string LastNote(DateTime at) => "Último teste " + ReadoutFormat.When(at);
@@ -152,20 +152,59 @@ namespace CoreBi.Desktop.Views
 
         private static BenchFigure Figure(MemRow r) => new(r.Label, r.Value, r.Unit, r.Sub, "", r.Hint);
 
-        /// <summary>Os números guardados de um teste, ou o modelo vazio com só a nota na primeira célula (resultados antigos).</summary>
+        /// <summary>
+        /// Os números guardados de um teste; nos resultados de versões antigas, a nota e o que o resumo guardou (o resto fica em
+        /// travessão).
+        /// </summary>
         private static List<BenchStat> Restore(BenchRecord? r, List<BenchStat> empty, Func<double, string> score)
         {
             if (r == null) return empty;
             if (r.Figures is { Count: > 0 } figures) return figures.Select(f => new BenchStat(f.Label, f.Value, f.Unit, f.Sub, f.Tone, f.Tip)).ToList();
-            var list = empty.ToList();
+            var legacy = Legacy(r);
+            var list = empty.Select(s => legacy.FirstOrDefault(f => f.Label == s.Label) is { } f ? s with { Value = f.Value } : s).ToList();
             list[0] = list[0] with { Value = score(r.Score) };
+            return list;
+        }
+
+        private static List<BenchFigure>? Saved(BenchRecord? r) => r == null ? null : r.Figures ?? Legacy(r);
+
+        /// <summary>O que dá para tirar do resumo de um resultado antigo, sem os números guardados ("84 ns · 36 GB/s · mapa 0,19 s").</summary>
+        private static List<BenchFigure> Legacy(BenchRecord r)
+        {
+            var p = SummaryParts(r.Summary);
+            string Part(int i) => i < p.Length ? p[i] : "";
+            static string Num(string part) => part.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(t => t.Length > 0 && char.IsDigit(t[0])) ?? "";
+            var list = new List<BenchFigure>();
+            void Add(string label, string value) { if (value.Length > 0) list.Add(new BenchFigure(label, value)); }
+            switch (r.Test)
+            {
+                case "gpu":
+                    Add("FPS médio", Num(Part(1)));
+                    Add("Resolução", Part(2));
+                    break;
+                case "sim":
+                    Add("1% low", Num(Part(1).Replace("1% low", "", StringComparison.Ordinal)));
+                    break;
+                case "mem":
+                    Add("Latência da RAM", Num(Part(0)));
+                    Add("Leitura da RAM", Num(Part(1)));
+                    Add("Carregamento do mapa", Num(Part(2)));
+                    break;
+                case "disk":
+                    string[] seq = Num(Part(1)).Split('/');
+                    if (seq.Length == 2) { Add("Leitura sequencial", seq[0]); Add("Escrita sequencial", seq[1]); }
+                    break;
+                default:
+                    if (r.Test.StartsWith("rt:", StringComparison.Ordinal)) Add("FPS, mediana", Num(Part(1)));
+                    break;
+            }
             return list;
         }
 
         /// <summary>As linhas de memória ou disco com os valores guardados (os nomes e as explicações vêm sempre da versão atual).</summary>
         private static List<MemRow> Merge(List<MemRow> rows, List<BenchFigure>? figures) =>
             figures is not { Count: > 0 } ? rows
-                : rows.Select(row => figures.FirstOrDefault(f => f.Label == row.Label) is { } f ? row with { Value = f.Value, Sub = f.Sub } : row).ToList();
+                : rows.Select(row => figures.FirstOrDefault(f => f.Label == row.Label) is { } f ? row with { Value = f.Value, Sub = f.Sub.Length > 0 ? f.Sub : row.Sub } : row).ToList();
 
         /// <summary>Partes do resumo salvo ("valor · detalhe · detalhe"), o mesmo formato que a Visão geral lê (OverviewView.BenchEvent).</summary>
         private static string[] SummaryParts(string summary) =>

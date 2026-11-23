@@ -413,6 +413,7 @@ public partial class StressView : UserControl, IDisposable
     {
         _demo = on;
         _tempHistory.Clear();
+        Ui.SetRunning(BtnStress, on, "Iniciar teste");
         if (!on)
         {
             ResetStressReadings();
@@ -554,6 +555,8 @@ public partial class StressView : UserControl, IDisposable
             empty.TextAlignment = TextAlignment.Center;
             empty.TextWrapping = TextWrapping.Wrap;
             empty.MaxWidth = Math.Min(520, plotW - 40);
+            empty.Background = surface; // a frase não cruza a linha de grade que passa no meio
+            empty.Padding = new Thickness(12, 4, 12, 4);
             empty.Measure(new Size(empty.MaxWidth, double.PositiveInfinity));
             Place(empty, left + (plotW - empty.DesiredSize.Width) / 2, top + (plotH - empty.DesiredSize.Height) / 2);
             return;
