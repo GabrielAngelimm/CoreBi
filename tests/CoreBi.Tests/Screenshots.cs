@@ -94,6 +94,12 @@ internal static partial class Program
                     // e "PageDriver:restore", as janelas de confirmação; ":backup-work", ":backup-done", ":restore-work" e ":restore-done", o
                     // andamento e o fim dentro delas (nada é procurado, copiado nem instalado)
                     else if (parts[0] == "PageDriver" && parts.Length == 2) { window.PageDriver.PreviewDemo(parts[1]); Wait(900); }
+                    // "PageBottleneck:demo" mostra um veredito ao vivo e uma análise de exemplo (nada é medido nem salvo)
+                    else if (parts[0] == "PageBottleneck" && parts.Length == 2 && parts[1] == "demo") { window.PageBottleneck.PreviewDemo(true); Wait(1200); }
+                    // "PageBench:gpu" abre o teste pela tecla (render, sim, gpu, rt, mem, disk) e volta ao Render 3D depois da captura
+                    else if (parts[0] == "PageBench" && parts.Length == 2) { window.PageBench.SelectTest(parts[1]); Wait(900); }
+                    // "PageStress:demo" mostra um teste do processador em andamento e um histórico de exemplo (nada roda nem é salvo)
+                    else if (parts[0] == "PageStress" && parts.Length == 2 && parts[1] == "demo") { window.PageStress.PreviewDemo(true); Wait(900); }
                     Wait(600);
                     string file = Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-{theme}.png");
                     SaveWindow(window, file);
@@ -107,6 +113,9 @@ internal static partial class Program
                     if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] != "pack") window.PageApps.FilterCategory(null);
                     if (parts[0] == "PageStartup" && parts.Length == 2) window.PageStartup.PreviewDemo(null);
                     if (parts[0] == "PageDriver" && parts.Length == 2) window.PageDriver.PreviewDemo(null);
+                    if (parts[0] == "PageBottleneck" && parts.Length == 2 && parts[1] == "demo") window.PageBottleneck.PreviewDemo(false);
+                    if (parts[0] == "PageStress" && parts.Length == 2 && parts[1] == "demo") window.PageStress.PreviewDemo(false);
+                    if (parts[0] == "PageBench" && parts.Length == 2) window.PageBench.SelectTest("render");
                     if (theme == themes[0]) SaveSkeletons(window, Path.Combine(folder, $"{page.Replace(':', '-').Replace(' ', '-')}-skeleton.png"));
                 }
             }

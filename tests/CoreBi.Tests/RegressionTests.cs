@@ -70,6 +70,20 @@ internal static partial class Program
             Require(session.Count == 3 && session.Main == Limiter.Gpu, "Session Main limiter incorrect");
             var dist = session.Distribution();
             Require(dist.Count == 2 && dist[0].Limiter == Limiter.Gpu && Math.Abs(dist[0].Pct - 66.67) < 0.1, "Session distribution incorrect");
+
+            // O relógio da análise só anda com um jogo em primeiro plano: o Alt+Tab (sem FPS) pausa, e a volta não conta o vão
+            var timed = new BottleneckSession { Duration = TimeSpan.FromSeconds(4) };
+            var away = gpuAndCpu with { Fps = null };
+            timed.Add(gpuAndCpu, TimeSpan.FromSeconds(0));
+            timed.Add(gpuAndCpu, TimeSpan.FromSeconds(1));
+            timed.Add(gpuAndCpu, TimeSpan.FromSeconds(2));
+            timed.Add(away, TimeSpan.FromSeconds(3));
+            timed.Add(away, TimeSpan.FromSeconds(30));
+            timed.Add(gpuAndCpu, TimeSpan.FromSeconds(31));
+            Require(timed.Measured == TimeSpan.FromSeconds(2) && !timed.Done, $"Away time counted: {timed.Measured}");
+            timed.Add(gpuAndCpu, TimeSpan.FromSeconds(32));
+            timed.Add(gpuAndCpu, TimeSpan.FromSeconds(33));
+            Require(timed.Measured == TimeSpan.FromSeconds(4) && timed.Done, $"Game time not counted: {timed.Measured}");
             return new { priorityVerified = true, main = session.Main.ToString() };
         });
 

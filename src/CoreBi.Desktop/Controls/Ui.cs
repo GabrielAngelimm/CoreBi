@@ -99,6 +99,36 @@ public static class Ui
         meter.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(to, TimeSpan.FromMilliseconds(500)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
     }
 
+    /// <summary>
+    /// A barra de progresso de um teste que acabou (concluído, cancelado ou interrompido) volta ao zero deslizando em 240 ms, sem
+    /// pular: a mesma volta no Benchmark e no Teste de carga. O valor de base já fica em 0, então um teste novo começa limpo.
+    /// </summary>
+    public static void Rewind(ScaleTransform bar)
+    {
+        double from = bar.ScaleX;
+        bar.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        bar.ScaleX = 0;
+        if (from <= 0 || !SystemParameters.ClientAreaAnimation) return;
+        bar.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(from, 0, TimeSpan.FromMilliseconds(240))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
+            FillBehavior = FillBehavior.Stop,
+        });
+    }
+
+    /// <summary>
+    /// Fração de um medidor ligada por binding (<c>&lt;ScaleTransform local:Ui.Fill="{Binding Fraction}"/&gt;</c>): cada valor novo
+    /// desliza até lá (<see cref="Glide"/>) quando a janela está à frente e nada pesado roda (MainWindow.LiveMotion); senão vai direto.
+    /// </summary>
+    public static readonly DependencyProperty FillProperty = DependencyProperty.RegisterAttached(
+        "Fill", typeof(double), typeof(Ui), new PropertyMetadata(0.0, (d, e) =>
+        {
+            if (d is ScaleTransform meter)
+                Glide(meter, (double)e.NewValue, Application.Current?.MainWindow is ILiveMotionHost { LiveMotion: true });
+        }));
+    public static double GetFill(DependencyObject d) => (double)d.GetValue(FillProperty);
+    public static void SetFill(DependencyObject d, double value) => d.SetValue(FillProperty, value);
+
     /// <summary>Camada que acende por cima de um botão quando o mouse passa (cada estilo de botão escolhe a sua).</summary>
     public static readonly DependencyProperty HoverFillProperty = DependencyProperty.RegisterAttached(
         "HoverFill", typeof(Brush), typeof(Ui), new FrameworkPropertyMetadata(null));
@@ -128,7 +158,9 @@ public static class Ui
             button.SetValue(IdleStyleProperty, idle);
         }
         bool header = button.TryFindResource("HeaderPrimary") is Style hp && ReferenceEquals(idle, hp);
-        var target = running ? button.TryFindResource(header ? "HeaderStop" : "StopButton") as Style : idle;
+        // O botão do pé das configurações (ConfigStart, 42 px) para no ConfigStop, da mesma altura
+        bool config = button.TryFindResource("ConfigStart") is Style cs && ReferenceEquals(idle, cs);
+        var target = running ? button.TryFindResource(header ? "HeaderStop" : config ? "ConfigStop" : "StopButton") as Style : idle;
         bool changed = !ReferenceEquals(button.Style, target) || !Equals(button.Content, running ? runningText : idleText);
         if (target != null) button.Style = target;
         SetIcon(button, running ? "\uE71A" : idleIcon);

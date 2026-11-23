@@ -753,7 +753,7 @@
                             <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.4"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -997,12 +997,15 @@
     <!-- ===================== Seleção de opções ===================== -->
     <!-- Controle segmentado: um poço com teclas; a escolhida sobe (fundo elevado, fio e texto em tinta) e, num
          SlidingSelectionPanel, a tecla acesa desliza de uma opção para a outra -->
+    <!-- 34 de altura, a mesma dos botões no cartão (Iniciar análise), sem fio nem folga: a tecla escolhida ocupa a altura toda,
+         então ela e o botão ao lado são do mesmo tamanho, de borda a borda; o poço é só o fundo um tom abaixo -->
     <Style x:Key="SegmentGroup" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Bg}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
+        <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="CornerRadius" Value="17"/>
-        <Setter Property="Padding" Value="3"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Height" Value="34"/>
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
@@ -1011,18 +1014,19 @@
         <Setter Property="Orientation" Value="Horizontal"/>
         <Setter Property="Highlight" Value="{DynamicResource Selected}"/>
         <Setter Property="HighlightBorder" Value="{DynamicResource LineStrong}"/>
-        <Setter Property="HighlightRadius" Value="14"/>
+        <Setter Property="HighlightRadius" Value="17"/>
     </Style>
     <Style x:Key="Segment" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
         <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Padding" Value="14,4,14,0"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="12,5,12,3" MinHeight="26">
+                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="17" Padding="{TemplateBinding Padding}" MinHeight="28">
                         <Grid>
                             <!-- Cópia invisível em seminegrito: o segmento já nasce com a largura do escolhido, então marcar um não desloca os vizinhos -->
                             <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Visibility="Hidden" HorizontalAlignment="Center"/>
@@ -1046,7 +1050,7 @@
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1080,7 +1084,7 @@
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1118,7 +1122,7 @@
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.5"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1161,7 +1165,7 @@
                             <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="root" Property="Opacity" Value="0.4"/>
+                            <Setter TargetName="root" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1292,7 +1296,7 @@
                             <Setter TargetName="on" Property="Opacity" Value="1"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="root" Property="Opacity" Value="0.4"/>
+                            <Setter TargetName="root" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1343,7 +1347,7 @@
                             <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.5"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1386,7 +1390,7 @@
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1456,7 +1460,7 @@
                             <Setter TargetName="ic" Property="Foreground" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.4"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1762,7 +1766,7 @@
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalHover}"/>
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1847,7 +1851,7 @@
                             </Setter>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.35"/>
+                            <Setter Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1904,7 +1908,7 @@
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.4"/>
+                            <Setter Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1955,20 +1959,20 @@
 
     <!-- rodada-unslop: bancada de teste início -->
     <!--
-        Bancada de teste (Benchmark e Teste de carga): a mesma tecla horizontal escolhe o teste (TestTab, um por vez) e o que
-        carregar (TestToggle, vários). Ícone do componente na cor dele, sem fundo; nome na letra da estrutura e a peça embaixo.
-        A escolhida leva o sinal (fio Signal e fundo SignalSoft, texto aceso), nunca a cor do componente; o TestToggle ligado
-        também acende o visto no sinal, porque ali a escolha é múltipla. Desligada, a tecla fica a meia opacidade.
+        Bancada de teste (Benchmark e Teste de carga): a mesma tecla grande escolhe o teste (TestTab, um por vez) e o que carregar
+        (TestToggle, vários). Ícone do componente de 36 na cor dele, sem fundo; nome em DIN 16 seminegrito na tinta e a peça
+        embaixo em 13; fio LineStrong, que firma sob o mouse, e um leve afundar no clique, para ler como botão. A escolhida leva o
+        sinal (fio Signal e fundo SignalSoft), nunca a cor do componente. Desligada, a tecla fica a 30 %.
     -->
     <Style x:Key="TestTab" TargetType="RadioButton">
-        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="face" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
-                            CornerRadius="{StaticResource RadiusInset}" Padding="14,12,14,12" SnapsToDevicePixels="True">
+                    <Border x:Name="face" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusInset}" Padding="16,15,16,15" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -1976,48 +1980,58 @@
                             </Grid.ColumnDefinitions>
                             <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
                                           Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Width="30" Height="30" VerticalAlignment="Center"/>
-                            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
-                                <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="14" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False">
+                                          Width="36" Height="36" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center">
+                                <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="16" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False">
                                     <ContentPresenter.Resources>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                                         </Style>
                                     </ContentPresenter.Resources>
                                 </ContentPresenter>
-                                <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                <TextBlock x:Name="caption" Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
+                                           FontSize="13" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="face" Property="Background" Value="{DynamicResource Hover}"/>
-                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Muted}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="face" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="0.985" ScaleY="0.985"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalSoft}"/>
                             <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Signal}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="face" Property="Opacity" Value="0.5"/>
+                            <Setter TargetName="face" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
+    <!--
+        Componente do Teste de carga (vários ao mesmo tempo): a mesma tecla grande do Benchmark (ícone de 36, nome em DIN 16 na
+        tinta, legenda 13) com a marca de escolha à direita, um anel vazio fora do teste e, dentro, um círculo no sinal com o visto,
+        que entra crescendo; a tecla escolhida ganha o fundo SignalSoft e o fio Signal, como a do Benchmark.
+    -->
     <Style x:Key="TestToggle" TargetType="CheckBox">
-        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
-                    <Border x:Name="face" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
-                            CornerRadius="{StaticResource RadiusInset}" Padding="14,12,14,12" SnapsToDevicePixels="True">
+                    <Border x:Name="face" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1"
+                            CornerRadius="{StaticResource RadiusInset}" Padding="18,15,18,15" SnapsToDevicePixels="True" RenderTransformOrigin="0.5,0.5">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -2026,36 +2040,68 @@
                             </Grid.ColumnDefinitions>
                             <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
                                           Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Width="30" Height="30" VerticalAlignment="Center"/>
-                            <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
-                                <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="14" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False"/>
+                                          Width="36" Height="36" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Margin="14,0,12,0" VerticalAlignment="Center">
+                                <ContentPresenter TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="16" TextElement.FontWeight="SemiBold" RecognizesAccessKey="False"/>
                                 <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                           FontSize="13" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"/>
                             </StackPanel>
-                            <Border x:Name="box" Grid.Column="2" Width="18" Height="18" CornerRadius="{StaticResource RadiusSmall}" BorderThickness="1.5"
-                                    BorderBrush="{DynamicResource LineStrong}" VerticalAlignment="Center">
-                                <TextBlock x:Name="mark" Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="11"
-                                           Foreground="{DynamicResource SignalFg}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
-                            </Border>
+                            <!-- A marca de escolha: anel vazio fora do teste; dentro, círculo no sinal com o visto, que entra crescendo -->
+                            <Grid Grid.Column="2" Width="22" Height="22" VerticalAlignment="Center">
+                                <Ellipse x:Name="ring" Stroke="{DynamicResource LineStrong}" StrokeThickness="1.5" Fill="Transparent"/>
+                                <Grid x:Name="tick" Opacity="0" RenderTransformOrigin="0.5,0.5">
+                                    <Grid.RenderTransform>
+                                        <ScaleTransform x:Name="tickScale" ScaleX="0.6" ScaleY="0.6"/>
+                                    </Grid.RenderTransform>
+                                    <Ellipse Fill="{DynamicResource Signal}"/>
+                                    <TextBlock Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource SignalFg}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Grid>
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="face" Property="Background" Value="{DynamicResource Hover}"/>
-                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
-                            <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Faint}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Muted}"/>
+                            <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Muted}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="face" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="0.985" ScaleY="0.985"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="face" Property="Background" Value="{DynamicResource SignalSoft}"/>
                             <Setter TargetName="face" Property="BorderBrush" Value="{DynamicResource Signal}"/>
-                            <Setter TargetName="box" Property="Background" Value="{DynamicResource Signal}"/>
-                            <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource Signal}"/>
-                            <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter TargetName="ring" Property="Stroke" Value="{DynamicResource Signal}"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="tick" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="tickScale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="tickScale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><BackEase EasingMode="EaseOut" Amplitude="0.4"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="tick" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="tickScale" Storyboard.TargetProperty="ScaleX" To="0.6" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="tickScale" Storyboard.TargetProperty="ScaleY" To="0.6" Duration="0:0:0.12"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="face" Property="Opacity" Value="0.5"/>
+                            <Setter TargetName="face" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -2193,7 +2239,7 @@
     <Style x:Key="TestSection" TargetType="StackPanel">
         <Style.Triggers>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Opacity" Value="0.5"/>
+                <Setter Property="Opacity" Value="0.4"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -2215,18 +2261,324 @@
         </Style.Triggers>
     </Style>
     <!--
-        Cartão de histórico ou registro na coluna da bancada: com itens, desce até o pé do palco e rola por dentro; vazio,
-        encolhe à frase (Tag recebe a lista).
+        Coluna da bancada (Benchmark e Teste de carga), o mesmo desenho nos sete testes: em cima, o cartão de configurações
+        ("Configurações do benchmark" ou "do teste de carga"), com o título, as seções (rótulo e controle, 16 abaixo do título,
+        24 a 32 entre elas e sem fio, ConfigStack) e o botão de iniciar no pé; a sobra fica entre a última seção e o botão. No
+        Benchmark, embaixo, o Histórico de altura fixa (BenchHistoryCard), que rola por dentro; no Teste de carga a configuração
+        tem a coluna toda e o histórico fica no palco, ao lado do gráfico.
     -->
-    <Style x:Key="TestLogCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
-        <Setter Property="Padding" Value="24,16,8,8"/>
-        <Style.Triggers>
-            <DataTrigger Binding="{Binding Tag.HasItems, RelativeSource={RelativeSource Self}}" Value="False">
-                <Setter Property="VerticalAlignment" Value="Top"/>
-                <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
-            </DataTrigger>
-        </Style.Triggers>
+    <Style x:Key="ConfigCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
     </Style>
+    <Style x:Key="ConfigSection" TargetType="StackPanel" BasedOn="{StaticResource TestSection}"/>
+    <!-- Rótulo da seção: DIN 13 em tom secundário e 10 até o controle -->
+    <Style x:Key="ConfigName" TargetType="TextBlock" BasedOn="{StaticResource Label}">
+        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <!-- Controle segmentado da configuração: a largura toda do cartão, teclas iguais de 34 (o grupo fica com 42) e texto 14 -->
+    <Style x:Key="ConfigSegmentGroup" TargetType="Border" BasedOn="{StaticResource SegmentGroup}">
+        <!-- 42 de altura e o mesmo fio LineStrong das pílulas: trilho e pílulas leem do mesmo tamanho lado a lado -->
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="CornerRadius" Value="21"/>
+        <Setter Property="Padding" Value="3"/>
+    </Style>
+    <Style x:Key="ConfigSegmentRail" TargetType="local:SlidingSelectionPanel" BasedOn="{StaticResource SegmentRail}">
+        <Setter Property="Uniform" Value="True"/>
+        <Setter Property="HighlightRadius" Value="17"/>
+    </Style>
+    <Style x:Key="ConfigSegment" TargetType="RadioButton" BasedOn="{StaticResource Segment}">
+        <Setter Property="Height" Value="34"/>
+        <Setter Property="FontSize" Value="14"/>
+        <!-- As colunas são iguais e o texto fica no meio: a folga lateral pequena deixa caber "Sem limite" em quatro colunas -->
+        <Setter Property="Padding" Value="4,5,4,3"/>
+    </Style>
+    <!--
+        Escolha em pílulas soltas (a outra forma de filtro, ao lado do trilho deslizante): cada opção é uma pílula de 42 px, a
+        altura do trilho, com fio LineStrong; sob o mouse, o fundo Hover; escolhida, fundo SignalSoft, fio SignalDeep e texto em
+        tinta e seminegrito. As cores entram e saem em 140 ms. Vão de 8 entre elas (UniformGrid com Margin -4 e cada uma com 4).
+    -->
+    <Style x:Key="ConfigChip" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="Margin" Value="4,0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid x:Name="root">
+                        <Border x:Name="b" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource LineStrong}" Background="Transparent" SnapsToDevicePixels="True"/>
+                        <Border x:Name="on" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource SignalDeep}" Background="{DynamicResource SignalSoft}" Opacity="0" SnapsToDevicePixels="True"/>
+                        <ContentPresenter x:Name="content" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8,2,8,0"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <!-- A pílula inteira a 30 %, texto e marca juntos (a opacidade de "on" é animada e venceria um Setter) -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="root" Property="Opacity" Value="0.3"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!--
+        A mesma pílula com um medidor de nível antes do nome (três barras de 4 px, de 6 a 14 de altura), para escolhas que sobem
+        de intensidade: Tag 0, 1 ou 2 acende uma, duas ou três barras na cor do componente (Ui.Channel); fora da escolha, o
+        medidor fica a meia luz.
+    -->
+    <Style x:Key="LevelChip" TargetType="RadioButton" BasedOn="{StaticResource ConfigChip}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid x:Name="root">
+                        <Border x:Name="b" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource LineStrong}" Background="Transparent" SnapsToDevicePixels="True"/>
+                        <Border x:Name="on" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource SignalDeep}" Background="{DynamicResource SignalSoft}" Opacity="0" SnapsToDevicePixels="True"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8,0">
+                            <StackPanel x:Name="bars" Orientation="Horizontal" VerticalAlignment="Center" Height="14" Margin="0,0,8,0" Opacity="0.55">
+                                <Border x:Name="l1" Width="4" Height="6" CornerRadius="1.5" VerticalAlignment="Bottom" Margin="0,0,2,0" Background="{DynamicResource Gpu}"/>
+                                <Border x:Name="l2" Width="4" Height="10" CornerRadius="1.5" VerticalAlignment="Bottom" Margin="0,0,2,0" Background="{DynamicResource Gpu}"/>
+                                <Border x:Name="l3" Width="4" Height="14" CornerRadius="1.5" VerticalAlignment="Bottom" Background="{DynamicResource Gpu}"/>
+                            </StackPanel>
+                            <ContentPresenter VerticalAlignment="Center" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Tag" Value="0">
+                            <Setter TargetName="l2" Property="Background" Value="{DynamicResource LineStrong}"/>
+                            <Setter TargetName="l3" Property="Background" Value="{DynamicResource LineStrong}"/>
+                        </Trigger>
+                        <Trigger Property="Tag" Value="1">
+                            <Setter TargetName="l3" Property="Background" Value="{DynamicResource LineStrong}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter TargetName="bars" Property="Opacity" Value="1"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <!-- A pílula inteira a 30 %, texto e marca juntos (a opacidade de "on" é animada e venceria um Setter) -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="root" Property="Opacity" Value="0.3"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!--
+        Ajuste por controle deslizante (duração, corte por temperatura): o rótulo à esquerda e o valor escolhido à direita na mesma
+        linha (ConfigValue, 14 seminegrito, o mesmo peso do texto da tecla escolhida), 10 até o trilho. A cor do trilho aceso é a
+        do ajuste: sinal na duração, a cor da peça no corte (a mesma do tracejado do gráfico).
+    -->
+    <Style x:Key="ConfigHead" TargetType="DockPanel">
+        <Setter Property="Margin" Value="0,0,0,10"/>
+        <Setter Property="LastChildFill" Value="True"/>
+    </Style>
+    <Style x:Key="ConfigValue" TargetType="TextBlock">
+        <Setter Property="DockPanel.Dock" Value="Right"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+        <Setter Property="VerticalAlignment" Value="Bottom"/>
+    </Style>
+    <Style x:Key="ConfigSlider" TargetType="local:ValueSlider">
+        <Setter Property="Height" Value="24"/>
+        <Setter Property="Track" Value="{DynamicResource LineStrong}"/>
+        <Setter Property="Fill" Value="{DynamicResource Signal}"/>
+        <Setter Property="Ring" Value="{DynamicResource Surface}"/>
+        <Setter Property="Dot" Value="{DynamicResource Faint}"/>
+        <Setter Property="SmallChange" Value="1"/>
+        <Setter Property="LargeChange" Value="5"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+    </Style>
+    <!-- Linha de ajuste com o nome à esquerda e o campo à direita (corte por temperatura), na altura das teclas -->
+    <Style x:Key="ConfigRow" TargetType="Grid">
+        <Setter Property="MinHeight" Value="42"/>
+    </Style>
+    <Style x:Key="ConfigRowName" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style x:Key="ConfigStart" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    </Style>
+    <!-- O mesmo botão rodando (Ui.SetRunning): a mesma altura, para nada no cartão se mexer quando o teste começa -->
+    <Style x:Key="ConfigStop" TargetType="Button" BasedOn="{StaticResource StopButton}">
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    </Style>
+    <!-- O aviso do botão (falta algo para começar) fica em cima dele, para o botão não sair do pé -->
+    <Style x:Key="ConfigHint" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+        <Setter Property="Foreground" Value="{DynamicResource Warn}"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+        <Setter Property="Visibility" Value="{Binding Text, RelativeSource={RelativeSource Self}, Converter={StaticResource NotEmptyVis}}"/>
+    </Style>
+    <Style x:Key="HistoryCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Padding" Value="24,16,8,8"/>
+    </Style>
+    <!--
+        Histórico do Benchmark: a mesma altura nos seis testes (a do Ray tracing, o teste com mais ajustes), então trocar de teste
+        não move a divisa entre os dois cartões; a configuração fica com o resto, com as seções em cima e a sobra antes do botão (ConfigStack.MaxGap).
+    -->
+    <Style x:Key="BenchHistoryCard" TargetType="Border" BasedOn="{StaticResource HistoryCard}">
+        <!-- 312: com as teclas maiores em cima, é o que deixa as três seções do Ray tracing caberem na configuração a 1032 -->
+        <Setter Property="Height" Value="312"/>
+        <!-- 31 da borda ao título e 31 do título à primeira linha, o mesmo par do histórico do Teste de carga (HistoryHeader) -->
+        <Setter Property="Padding" Value="24,24,8,8"/>
+    </Style>
+    <!--
+        Cabeçalho do histórico: a linha de 34 px dos cartões, com o título à esquerda e Limpar à direita, os dois no meio dela; 13
+        até a lista, e o vão do fim do título ao começo da primeira linha fica igual ao da borda ao título (31). Recua 16 à direita, o mesmo recuo da lista (que deixa lugar à barra de rolagem), para o botão alinhar com ela.
+    -->
+    <Style x:Key="HistoryHeader" TargetType="Grid" BasedOn="{StaticResource CardHeader}">
+        <Setter Property="DockPanel.Dock" Value="Top"/>
+        <Setter Property="Margin" Value="0,0,16,13"/>
+    </Style>
+    <!--
+        Limpar o histórico: a mesma pílula do Limpar de Instalar apps (fio tracejado LineStrong, lixeira e texto), com largura fixa
+        de 112 e o conteúdo no meio, presa à direita da linha do título e no meio dela; a borda direita fica na linha das datas.
+        Sob o mouse, fundo Hover, texto em tinta e lixeira vermelha. O primeiro clique arma (ConfirmButton.Armed): a pílula ganha
+        fundo DangerSoft e fio Danger, e o texto rola no lugar: "Limpar" sobe e some enquanto "Confirmar" sobe de baixo e
+        acende, em 180 ms; desarmar faz o caminho de volta. A pílula não muda de tamanho nem de lugar. Só aparece com algo
+        para limpar.
+    -->
+    <Style x:Key="HistoryClear" TargetType="Button">
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Width" Value="112"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
+        <Setter Property="ToolTip" Value="Apaga os resultados guardados deste teste. Pede confirmação."/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="root" SnapsToDevicePixels="True" ClipToBounds="False">
+                        <Border x:Name="fill" CornerRadius="15" Background="Transparent"/>
+                        <Rectangle x:Name="dash" RadiusX="15" RadiusY="15" Stroke="{DynamicResource LineStrong}" StrokeThickness="1" StrokeDashArray="3 2.5"/>
+                        <Border x:Name="alarm" CornerRadius="15" Background="{DynamicResource DangerSoft}" BorderBrush="{DynamicResource Danger}" BorderThickness="1" Opacity="0"/>
+                        <!-- Os dois textos no mesmo lugar, recortados pela pílula: um rola para fora enquanto o outro entra -->
+                        <Grid ClipToBounds="True">
+                            <StackPanel x:Name="rest" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <StackPanel.RenderTransform><TranslateTransform x:Name="restMove"/></StackPanel.RenderTransform>
+                                <TextBlock x:Name="glyph" Text="&#xE74D;" FontFamily="{StaticResource Icons}" FontSize="13" Foreground="{DynamicResource Faint}" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Limpar" VerticalAlignment="Center" Margin="0,1,0,0"/>
+                            </StackPanel>
+                            <StackPanel x:Name="ask" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0">
+                                <StackPanel.RenderTransform><TranslateTransform x:Name="askMove" Y="12"/></StackPanel.RenderTransform>
+                                <TextBlock Text="&#xE74D;" FontFamily="{StaticResource Icons}" FontSize="13" Margin="0,0,7,0" VerticalAlignment="Center" Foreground="{DynamicResource Danger}"/>
+                                <TextBlock Text="Confirmar" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,1,0,0" Foreground="{DynamicResource Danger}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="fill" Property="Background" Value="{DynamicResource Hover}"/>
+                            <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Danger}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="local:ConfirmButton.Armed" Value="True">
+                            <Setter Property="ToolTip" Value="Clique de novo para apagar. Esc ou 5 segundos sem clicar cancelam."/>
+                            <Setter TargetName="fill" Property="Background" Value="Transparent"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="alarm" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18"/>
+                                        <DoubleAnimation Storyboard.TargetName="dash" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/>
+                                        <DoubleAnimation Storyboard.TargetName="rest" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="restMove" Storyboard.TargetProperty="Y" To="-12" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="ask" Storyboard.TargetProperty="Opacity" To="1" BeginTime="0:0:0.04" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="askMove" Storyboard.TargetProperty="Y" To="0" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="alarm" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/>
+                                        <DoubleAnimation Storyboard.TargetName="dash" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18"/>
+                                        <DoubleAnimation Storyboard.TargetName="ask" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="askMove" Storyboard.TargetProperty="Y" To="12" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="rest" Storyboard.TargetProperty="Opacity" To="1" BeginTime="0:0:0.04" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="restMove" Storyboard.TargetProperty="Y" To="0" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="root" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="0.97" ScaleY="0.97" CenterX="56" CenterY="15"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- rodada-unslop: bancada de teste fim -->
 
 </ResourceDictionary>

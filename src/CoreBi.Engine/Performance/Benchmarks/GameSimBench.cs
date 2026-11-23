@@ -89,6 +89,9 @@ public sealed class GameSimBench
             sw.Elapsed.TotalSeconds);
     }
 
+    /// <summary>Põe as unidades na formação inicial do teste (a mesma de toda passada), para a página mostrar antes de medir.</summary>
+    public void Prepare() => Reset();
+
     private void Reset()
     {
         _rng = 12345;

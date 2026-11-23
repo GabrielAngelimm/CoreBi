@@ -35,7 +35,7 @@
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="b" Property="Opacity" Value="0.4" />
+                                <Setter TargetName="b" Property="Opacity" Value="0.3" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

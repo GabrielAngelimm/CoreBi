@@ -2,13 +2,23 @@ using System.Text.Json;
 using CoreBi.Engine.Games;
 using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring.Network;
+using CoreBi.Engine.Performance.Stress;
 
 namespace CoreBi.Engine.Persistence;
 
 public sealed record BenchRun(DateTime Date, double? Multi, double? Single, bool Sustained, string Cpu);
 
 /// <summary>Resultado dos benchmarks (Test = "gpu", "sim", "mem", "disk" ou "rt:&lt;qualidade&gt;:&lt;altura&gt;").</summary>
-public sealed record BenchRecord(DateTime Date, string Test, double Score, string Summary);
+public sealed record BenchRecord(DateTime Date, string Test, double Score, string Summary)
+{
+    /// <summary>Os números do resultado como a página mostra (nota e medidas), para ela abrir com o último teste; null nos antigos.</summary>
+    public List<BenchFigure>? Figures { get; init; }
+    /// <summary>O FPS ao longo da passada, reamostrado em até 120 pontos de progresso igual (Cena de jogo, Ray tracing, Simulação).</summary>
+    public List<double>? Trace { get; init; }
+}
+
+/// <summary>Um número de resultado de benchmark: rótulo, valor já formatado, unidade, contexto, tom e a dica.</summary>
+public sealed record BenchFigure(string Label, string Value, string Unit = "", string Sub = "", string Tone = "", string? Tip = null);
 
 /// <summary>
 /// Configurações em %AppData%\CoreBi. Campos removidos do app (como a antiga chave HowManyFpsKeyProtected) são
@@ -26,6 +36,10 @@ public sealed class AppSettings
     public List<JsonElement> StartupRemoved { get; set; } = new();
     /// <summary>Testes de rede concluídos, mais recente primeiro (NetworkHistory.Capacity).</summary>
     public List<NetworkRun> NetRuns { get; set; } = new();
+    /// <summary>Análises de sessão do Gargalo, mais recente primeiro (BottleneckRun.Capacity).</summary>
+    public List<BottleneckRun> BottleneckRuns { get; set; } = new();
+    /// <summary>Testes de carga encerrados, mais recente primeiro (StressRun.Capacity).</summary>
+    public List<StressRun> StressRuns { get; set; } = new();
 
     public bool LightTheme { get; set; }
 
@@ -84,6 +98,8 @@ public sealed class AppSettings
         BenchRuns = (BenchRuns ?? new()).Where(x => x != null).Take(100).ToList();
         BenchRecords = (BenchRecords ?? new()).Where(x => x != null).Take(1000).ToList();
         NetRuns = NetworkHistory.Normalize(NetRuns);
+        BottleneckRuns = BottleneckRun.Normalize(BottleneckRuns);
+        StressRuns = StressRun.Normalize(StressRuns);
         StartupRemoved = (StartupRemoved ?? new()).Where(x => x.ValueKind != JsonValueKind.Null && x.ValueKind != JsonValueKind.Undefined).ToList();
         OverlayCorner = OverlayMetrics.NormalizeCorner(OverlayCorner);
         OverlayScale = OverlayMetrics.NormalizeScale(OverlayScale);

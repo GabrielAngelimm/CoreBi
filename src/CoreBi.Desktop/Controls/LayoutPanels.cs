@@ -57,6 +57,74 @@ public sealed class SpreadPanel : System.Windows.Controls.Panel
 }
 
 /// <summary>
+/// Seções da configuração de um teste, de cima para baixo logo abaixo do título: o vão que sobra se divide por igual entre
+/// elas, entre MinGap e MaxGap (fio opcional no meio de cada vão, Divider); o que passa disso fica embaixo, antes do botão.
+/// As recolhidas não contam.
+/// </summary>
+public sealed class ConfigStack : System.Windows.Controls.Panel
+{
+    public static readonly DependencyProperty MinGapProperty = DependencyProperty.Register(
+        nameof(MinGap), typeof(double), typeof(ConfigStack), new FrameworkPropertyMetadata(24.0, FrameworkPropertyMetadataOptions.AffectsMeasure));
+    public double MinGap { get => (double)GetValue(MinGapProperty); set => SetValue(MinGapProperty, value); }
+
+    public static readonly DependencyProperty DividerProperty = DependencyProperty.Register(
+        nameof(Divider), typeof(System.Windows.Media.Brush), typeof(ConfigStack), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+    public System.Windows.Media.Brush? Divider { get => (System.Windows.Media.Brush?)GetValue(DividerProperty); set => SetValue(DividerProperty, value); }
+
+    public static readonly DependencyProperty MaxGapProperty = DependencyProperty.Register(
+        nameof(MaxGap), typeof(double), typeof(ConfigStack), new FrameworkPropertyMetadata(double.PositiveInfinity, FrameworkPropertyMetadataOptions.AffectsArrange));
+    public double MaxGap { get => (double)GetValue(MaxGapProperty); set => SetValue(MaxGapProperty, value); }
+
+    private readonly List<double> _lines = new();
+
+    protected override Size MeasureOverride(Size available)
+    {
+        double w = 0, h = 0;
+        int n = 0;
+        foreach (UIElement child in InternalChildren)
+        {
+            child.Measure(new Size(available.Width, double.PositiveInfinity));
+            if (child.Visibility == Visibility.Collapsed) continue;
+            w = Math.Max(w, child.DesiredSize.Width);
+            h += child.DesiredSize.Height;
+            n++;
+        }
+        return new Size(w, h + Math.Max(0, n - 1) * MinGap);
+    }
+
+    protected override Size ArrangeOverride(Size final)
+    {
+        var visible = InternalChildren.Cast<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
+        double used = visible.Sum(c => c.DesiredSize.Height);
+        int n = visible.Count;
+        double gap = n > 1 ? Math.Clamp((final.Height - used) / n, MinGap, Math.Max(MinGap, MaxGap)) : 0;
+        // Encostadas em cima, logo abaixo do título: a sobra fica entre a última seção e o botão de iniciar
+        double y = 0;
+        _lines.Clear();
+        for (int i = 0; i < n; i++)
+        {
+            var child = visible[i];
+            child.Arrange(new Rect(0, Math.Round(y), final.Width, child.DesiredSize.Height));
+            y += child.DesiredSize.Height;
+            if (i < n - 1)
+            {
+                _lines.Add(Math.Round(y + gap / 2));
+                y += gap;
+            }
+        }
+        InvalidateVisual();
+        return final;
+    }
+
+    protected override void OnRender(System.Windows.Media.DrawingContext dc)
+    {
+        base.OnRender(dc);
+        if (Divider == null) return;
+        foreach (double y in _lines) dc.DrawRectangle(Divider, null, new Rect(0, y, ActualWidth, 1));
+    }
+}
+
+/// <summary>
 /// Linhas de itens que dividem a sobra de largura em vãos iguais, inclusive o vão antes do primeiro item (o último encosta na direita);
 /// quando não cabem, quebram em mais linhas, cada uma distribuída do mesmo jeito.
 /// </summary>
