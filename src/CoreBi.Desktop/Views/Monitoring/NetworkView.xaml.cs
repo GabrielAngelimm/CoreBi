@@ -52,7 +52,7 @@ public partial class NetworkView : UserControl
     private void ShowHistory(int? select)
     {
         var runs = _context.Settings.NetRuns;
-        var rows = runs.Select(r => new HistoryRow(r, Capitalize(WhenText(r.Date)), Mbps(r.DownloadMbps), Mbps(r.UploadMbps),
+        var rows = runs.Select(r => new HistoryRow(r, Capitalize(WhenText(r.Date, compact: true)), Mbps(r.DownloadMbps), Mbps(r.UploadMbps),
             r.LatencyMs is { } l ? $"{Format(l)} ms" : "—",
             r.Verdict switch { HealthVerdict.Warning => "Warn", HealthVerdict.Critical => "Danger", _ => "" })).ToList();
         _historySync = true;
@@ -65,25 +65,25 @@ public partial class NetworkView : UserControl
         NetHistoryEmpty.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         NetHistoryHead.Visibility = rows.Count == 0 ? Visibility.Hidden : Visibility.Visible;
         NetHistoryCount.Text = rows.Count switch { 0 => "", 1 => "1 teste", _ => $"{rows.Count} testes" };
-        if (select is { } s && s < rows.Count && !_running) DisplayResult(NetworkHistory.ToResult(runs[s]), animate: false);
+        if (select is { } s && s < rows.Count && !_running) DisplayResult(NetworkHistory.ToResult(runs[s]), animate: false, fromHistory: true);
     }
 
     private void NetHistory_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_historySync || _running || NetHistory.SelectedItem is not HistoryRow row) return;
-        DisplayResult(NetworkHistory.ToResult(row.Run), animate: true);
+        DisplayResult(NetworkHistory.ToResult(row.Run), animate: true, fromHistory: true);
     }
 
     private static string Mbps(double? v) => v is { } x ? Format(x) : "—";
 
-    /// <summary>"hoje às 21:40", "ontem às 18:02" ou "17/11 às 09:12" (outro ano: "17/11/2025").</summary>
-    internal static string WhenText(DateTime at)
+    /// <summary>"hoje às 21:40", "ontem às 18:02" ou "17/11 às 09:12" (outro ano: "17/11/2025"); compacto, sem o "às" (linhas do histórico).</summary>
+    internal static string WhenText(DateTime at, bool compact = false)
     {
         var day = at.Date;
         var today = DateTime.Today;
         string date = day == today ? "hoje" : day == today.AddDays(-1) ? "ontem"
             : at.Year == today.Year ? at.ToString("dd/MM", PtBr) : at.ToString("dd/MM/yyyy", PtBr);
-        return $"{date} às {at:HH:mm}";
+        return compact ? $"{date} {at:HH:mm}" : $"{date} às {at:HH:mm}";
     }
 
     private static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpper(text[0], PtBr) + text[1..];
@@ -314,7 +314,7 @@ public partial class NetworkView : UserControl
         _ => "Faint",
     };
 
-    internal void DisplayResult(NetworkResult? r, bool animate = false)
+    internal void DisplayResult(NetworkResult? r, bool animate = false, bool fromHistory = false)
     {
         _result = r;
         SetSpeeds(r?.DownloadMbps, r?.UploadMbps, animate);
@@ -352,7 +352,8 @@ public partial class NetworkView : UserControl
 
         ShowRoute(r);
         DrawTrace();
-        if (r != null) ShowAdapter(r.Adapter);
+        // Um teste do histórico não guarda o adaptador: a ficha da conexão continua a de agora
+        if (r != null && !fromHistory) ShowAdapter(r.Adapter);
     }
 
     private void ShowNotes(NetworkResult r, string key)
