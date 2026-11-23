@@ -48,7 +48,7 @@
   },
   {
     "package": "Microsoft.Diagnostics.Tracing.TraceEvent",
-    "version": "4.0.0",
+    "version": "4.0.2",
     "license": "MIT",
     "authors": "Microsoft",
     "copyright": "© Microsoft Corporation. All rights reserved.",
