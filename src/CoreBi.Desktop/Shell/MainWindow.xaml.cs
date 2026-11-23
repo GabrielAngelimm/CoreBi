@@ -204,14 +204,17 @@ public partial class MainWindow : Window, ILiveMotionHost
             catch (Exception ex)
             {
                 PageSensors.SetStatus($"Sensores indisponíveis: {ex.Message}");
+                _context.SensorsRead = true;
+                PageDash.SensorsReady();
                 return;
             }
             if (_context.IsClosing) return;
             if (await _monitor.PollAsync() is { } poll && !_context.IsClosing) _monitor.Apply(poll); // primeira leitura também fora da janela
             if (_context.IsClosing) return;
+            _context.SensorsRead = true;
             UpdateCpuSensorWarning();
             PageSensors.Populate();
-            PageDash.UpdateDashboard();
+            PageDash.SensorsReady();
         }
 
         async Task LoadGpuAndCpu()
@@ -229,6 +232,7 @@ public partial class MainWindow : Window, ILiveMotionHost
 
             _context.Gpus = gpus;
             _context.CpuName = cpuName;
+            _context.HardwareRead = true;
             PageGpu.PopulateGpus(gpus);
             PageSystem.RefreshHardware();
             PageBottleneck.RefreshHardware();

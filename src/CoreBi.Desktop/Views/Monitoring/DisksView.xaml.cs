@@ -55,7 +55,12 @@ public partial class DisksView : UserControl
     private DateTime _readAt;
     private bool _wide = true;
 
-    public DisksView() => InitializeComponent();
+    public DisksView()
+    {
+        InitializeComponent();
+        // Esqueleto já no primeiro quadro: ligado só depois da entrada, o painel vazio aparecia por um instante e piscava
+        Skeleton.Set(true, DiskPlate, LifeCard, TempCard, CheckCard);
+    }
 
     internal void Initialize(FeatureContext context) => _context = context;
 

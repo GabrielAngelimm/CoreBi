@@ -7,24 +7,36 @@ using System.Windows.Threading;
 namespace CoreBi.Desktop;
 
 /// <summary>
-/// Entrada das páginas, igual em todas: a página aparece no mesmo instante do clique, com 170 ms de opacidade e 230 ms de
-/// deslocamento curto (10 px), e os painéis dela acendem em sequência, 30 ms um depois do outro (no máximo sete), na ordem
+/// Entrada das páginas, igual em todas: a página aparece no mesmo instante do clique, com 200 ms de opacidade e 280 ms de
+/// deslocamento curto (8 px), e os painéis dela acendem em sequência, 35 ms um depois do outro (no máximo sete), na ordem
 /// de leitura, subindo 6 px enquanto acendem. Trabalho pesado de montagem espera a entrada terminar (<see cref="AfterEntrance"/>) para não engasgar o
 /// movimento; até lá, os painéis que dependem dele mostram o esqueleto (<see cref="Skeleton"/>).
 /// Respeita "Mostrar animações no Windows": sem animações, a página só aparece.
 /// </summary>
 public static class PageMotion
 {
-    public static readonly TimeSpan PageFade = TimeSpan.FromMilliseconds(170);
-    public static readonly TimeSpan PageShift = TimeSpan.FromMilliseconds(230);
-    private static readonly TimeSpan PanelFade = TimeSpan.FromMilliseconds(220);
-    private static readonly TimeSpan PanelShift = TimeSpan.FromMilliseconds(280);
+    // Um pouco mais longa e com desaceleração mais macia que a primeira versão (170/230 ms, 10 px, cúbica): a página assenta em
+    // vez de "chegar", sem ficar lenta para quem troca de página rápido
+    public static readonly TimeSpan PageFade = TimeSpan.FromMilliseconds(200);
+    public static readonly TimeSpan PageShift = TimeSpan.FromMilliseconds(280);
+    private const double PageRise = 8;
+    private static readonly TimeSpan PanelFade = TimeSpan.FromMilliseconds(240);
+    private static readonly TimeSpan PanelShift = TimeSpan.FromMilliseconds(320);
     private const double PanelRise = 6;
-    private const int StaggerMs = 30;
+    private const int StaggerMs = 35;
     private const int MaxStaggered = 7;
 
     private static readonly DependencyProperty EnteredAtProperty = DependencyProperty.RegisterAttached(
         "EnteredAt", typeof(long), typeof(PageMotion), new PropertyMetadata(0L));
+
+    /// <summary>
+    /// Marca um elemento que não é painel mas acende como um na cascata: uma lista de cartões gerados (ItemsControl), cujos
+    /// itens não aparecem na árvore lógica e ficariam de fora da cascata, entrando todos de uma vez com a página.
+    /// </summary>
+    public static readonly DependencyProperty GroupProperty = DependencyProperty.RegisterAttached(
+        "Group", typeof(bool), typeof(PageMotion), new PropertyMetadata(false));
+    public static bool GetGroup(DependencyObject d) => (bool)d.GetValue(GroupProperty);
+    public static void SetGroup(DependencyObject d, bool value) => d.SetValue(GroupProperty, value);
 
     private static Style? _card;
 
@@ -38,24 +50,25 @@ public static class PageMotion
     public static void Enter(FrameworkElement page)
     {
         page.SetValue(EnteredAtProperty, Environment.TickCount64);
+        page.SetValue(EntriesProperty, (int)page.GetValue(EntriesProperty) + 1);
         if (!Animate) return;
         if (page.RenderTransform is not TranslateTransform shift || shift.IsFrozen) page.RenderTransform = shift = new TranslateTransform();
         var panels = Panels(page).Take(MaxStaggered).ToList();
         page.BeginAnimation(UIElement.OpacityProperty, null);
         shift.BeginAnimation(TranslateTransform.YProperty, null);
         page.Opacity = 0;
-        shift.Y = 10;
+        shift.Y = PageRise;
         foreach (var panel in panels.Skip(1)) { panel.BeginAnimation(UIElement.OpacityProperty, null); panel.Opacity = 0; }
 
         page.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
         {
             page.SetValue(EnteredAtProperty, Environment.TickCount64);
-            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            var ease = new QuinticEase { EasingMode = EasingMode.EaseOut };
             // Valor de base no destino e a animação saindo do começo, no mesmo passo: nenhum quadro sai entre os dois
             page.Opacity = 1;
             shift.Y = 0;
             page.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, PageFade) { EasingFunction = ease, FillBehavior = FillBehavior.Stop });
-            shift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(10, 0, PageShift) { EasingFunction = ease, FillBehavior = FillBehavior.Stop });
+            shift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(PageRise, 0, PageShift) { EasingFunction = ease, FillBehavior = FillBehavior.Stop });
             for (int i = 1; i < panels.Count; i++)
             {
                 panels[i].Opacity = 1;
@@ -101,9 +114,9 @@ public static class PageMotion
         {
             object node = stack.Pop();
             if (node is FrameworkElement { Visibility: not Visibility.Visible } && !ReferenceEquals(node, page)) continue;
-            if (node is Border border && IsCard(border.Style))
+            if (node is Border border && IsCard(border.Style) || node is FrameworkElement group && GetGroup(group))
             {
-                yield return border;
+                yield return (FrameworkElement)node;
                 continue;
             }
             if (node is not DependencyObject d) continue;
@@ -130,11 +143,24 @@ public static class PageMotion
     }
 
     /// <summary>
-    /// A página ainda está entrando (deslocamento e cascata dos painéis, ~450 ms): o tique de 1 s pula o redesenho dela nesse
+    /// A página ainda está entrando (deslocamento e cascata dos painéis, ~530 ms): o tique de 1 s pula o redesenho dela nesse
     /// intervalo, para um gráfico refeito não cair no meio do movimento (a amostra continua sendo guardada).
     /// </summary>
     public static bool IsEntering(FrameworkElement page) =>
-        Animate && Environment.TickCount64 - (long)page.GetValue(EnteredAtProperty) < 450;
+        Animate && Environment.TickCount64 - (long)page.GetValue(EnteredAtProperty) < 530;
+
+    private static readonly DependencyProperty EntriesProperty = DependencyProperty.RegisterAttached(
+        "Entries", typeof(int), typeof(PageMotion), new PropertyMetadata(0));
+
+    /// <summary>
+    /// Primeira carga da página: ainda não entrou (montada no construtor, ou a Visão geral na abertura) ou está na primeira
+    /// entrada. Só nela o esqueleto cobre a página inteira; uma releitura pedida depois (um botão Atualizar) fica no cartão dela.
+    /// </summary>
+    public static bool FirstLoad(FrameworkElement page)
+    {
+        int entries = (int)page.GetValue(EntriesProperty);
+        return entries == 0 || entries == 1 && Environment.TickCount64 - (long)page.GetValue(EnteredAtProperty) < 600;
+    }
 
     /// <summary>O mesmo que <see cref="AfterEntrance"/>, para esperar com await: a leitura corre durante a entrada e só o que
     /// mexe na tela espera ela terminar.</summary>

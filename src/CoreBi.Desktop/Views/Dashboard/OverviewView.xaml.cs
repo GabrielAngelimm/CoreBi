@@ -11,8 +11,49 @@ using CoreBi.Engine.Persistence;
 
 namespace CoreBi.Desktop
 {
-    public sealed record DashComponent(string Icon, string Channel, string Name, string Model, string Target, string LinkTip, Brush Meter,
-                                       string Hero, string HeroUnit, double Fraction, IReadOnlyList<KeyValuePair<string, string>> Stats);
+    /// <summary>
+    /// Cartão de componente da Visão geral (processador, placa de vídeo). O mesmo objeto vive a sessão inteira e só os valores
+    /// mudam a cada segundo: trocar a lista refazia os dois cartões a cada tique, e o esqueleto deles não teria como sair suave.
+    /// </summary>
+    public sealed class DashComponent : ObservableObject
+    {
+        private string _model = "", _hero = "—";
+        private double _fraction;
+        private bool _loading = true;
+
+        public DashComponent(string icon, string channel, string name, string target, string linkTip)
+        {
+            Icon = icon;
+            Channel = channel;
+            Name = name;
+            Target = target;
+            LinkTip = linkTip;
+        }
+
+        public string Icon { get; }
+        public string Channel { get; }
+        public string Name { get; }
+        public string Target { get; }
+        public string LinkTip { get; }
+        public string HeroUnit => "em uso";
+        public Brush Meter => ThemeManager.Brush(Channel);
+        public DashStat[] Stats { get; } = { new("Temp."), new("Clock"), new("Consumo") };
+        public string Model { get => _model; set => Set(ref _model, value); }
+        public string Hero { get => _hero; set => Set(ref _hero, value); }
+        public double Fraction { get => _fraction; set => Set(ref _fraction, value); }
+        /// <summary>Ainda sem nome ou sem a primeira leitura dos sensores: o cartão mostra o esqueleto.</summary>
+        public bool Loading { get => _loading; set => Set(ref _loading, value); }
+
+        internal void RedrawTheme() => OnPropertyChanged(nameof(Meter));
+    }
+
+    public sealed class DashStat : ObservableObject
+    {
+        private string _value = "—";
+        public DashStat(string key) => Key = key;
+        public string Key { get; }
+        public string Value { get => _value; set => Set(ref _value, value); }
+    }
 
     public sealed record DashEvent(string Icon, string Title, string Detail, string Value, DateTime At, string Channel = "")
     {
@@ -53,7 +94,18 @@ namespace CoreBi.Desktop.Views
         private bool _errorsBusy;
         private bool _metricChosen, _metricAuto;
 
-        public OverviewView() => InitializeComponent();
+        private readonly DashComponent _cpuCard = new("cpu", "Cpu", "Processador", "PageSystem:Processador", "Abrir o processador em Sistema");
+        private readonly DashComponent _gpuCard = new("gpu", "Gpu", "Placa de vídeo", "PageGpu", "Abrir Placa de vídeo");
+        private readonly DateTime _bornAt = DateTime.Now;
+
+        public OverviewView()
+        {
+            InitializeComponent();
+            // Na abertura, antes de o hardware ser lido: os dois cartões já no lugar (o da placa de vídeo não surge depois) e
+            // esqueleto no gráfico e nos anéis, desde o primeiro quadro
+            DashComponents.ItemsSource = new[] { _cpuCard, _gpuCard };
+            Skeleton.Set(true, DashChartCard, DashMemoryCard);
+        }
 
         internal void Initialize(FeatureContext context)
         {
@@ -61,13 +113,32 @@ namespace CoreBi.Desktop.Views
             UpdateDashboard();
         }
 
+        /// <summary>
+        /// Ainda lendo o hardware da abertura (nomes, placa de vídeo e a primeira leitura dos sensores). Com um teto de 10 s: um
+        /// sensor que não responde não deixa a página em esqueleto para sempre.
+        /// </summary>
+        private bool Warming(bool ready) => !ready && (DateTime.Now - _bornAt).TotalSeconds < 10;
+
         internal void Tick()
+        {
+            if (_context == null) return;
+            AddSample();
+            if (IsVisible) UpdateDashboard(full: false);
+        }
+
+        private void AddSample()
         {
             if (_context == null) return;
             _samples.Add(new DashSample(DateTime.Now, _context.Sensors.CpuTemperature, _context.PrimaryGpuTemp(),
                 _context.Sensors.CpuLoad, _context.PrimaryGpuLoad(), _context.Sensors.CpuPower, _context.PrimaryGpuPower()));
             if (_samples.Count > MaxSamples) _samples.RemoveAt(0);
-            if (IsVisible) UpdateDashboard(full: false);
+        }
+
+        /// <summary>A primeira leitura dos sensores chegou (ou falhou): a amostra entra já, sem esperar o próximo tique.</summary>
+        internal void SensorsReady()
+        {
+            if (_context?.Sensors.IsOpen == true) AddSample();
+            UpdateDashboard();
         }
 
         internal void AddEvent(string icon, string title, string detail, string value, string channel = "")
@@ -85,6 +156,7 @@ namespace CoreBi.Desktop.Views
                 PickMetric();
                 DrawChart();
             }
+            Skeleton.SetActive(DashChartCard, Warming(_context.SensorsRead));
             UpdateComponents();
             UpdateRings();
             if (full)
@@ -92,10 +164,15 @@ namespace CoreBi.Desktop.Views
                 UpdateScores();
                 ShowEvents();
             }
-            if (full || (DateTime.Now - _healthAt).TotalSeconds > 60) UpdateHealth();
+            if (full || (DateTime.Now - _healthAt).TotalSeconds > 60 || Skeleton.GetActive(DashHealthCard)) UpdateHealth();
         }
 
-        internal void RedrawTheme() => UpdateDashboard();
+        internal void RedrawTheme()
+        {
+            _cpuCard.RedrawTheme();
+            _gpuCard.RedrawTheme();
+            UpdateDashboard();
+        }
 
         // Formatos gravados em BenchRecord.Summary (settings.json), lidos por posição:
         //   rt:   "1.499 pts · 150 FPS · Alta 1080p [· instável]"
@@ -170,35 +247,34 @@ namespace CoreBi.Desktop.Views
         private void UpdateComponents()
         {
             if (_context == null) return;
-            static KeyValuePair<string, string> Stat(string label, string value) => new(label, value);
+            bool sensors = _context.SensorsRead;
 
             var cpuLive = _context.ReadCpuLive();
             var cpuLoad = _context.Sensors.CpuLoad;
-            var rows = new List<DashComponent>
-            {
-                new("cpu", "Cpu", "Processador", HardwareNaming.ShortCpuName(_context.CpuName), "PageSystem:Processador", "Abrir o processador em Sistema", ThemeManager.Brush("Cpu"),
-                    FormatReading(cpuLoad, "0", " %"), "em uso", (cpuLoad ?? 0) / 100.0,
-                    new[]
-                    {
-                        Stat("Temp.", FormatReading(_context.Sensors.CpuTemperature, "0", " °C")),
-                        Stat("Clock", FormatReading(cpuLive.AvgClockMHz, "0", " MHz")),
-                        Stat("Consumo", FormatReading(_context.Sensors.CpuPower, "0", " W")),
-                    }),
-            };
+            _cpuCard.Model = HardwareNaming.ShortCpuName(_context.CpuName);
+            _cpuCard.Hero = FormatReading(cpuLoad, "0", " %");
+            _cpuCard.Fraction = (cpuLoad ?? 0) / 100.0;
+            _cpuCard.Stats[0].Value = FormatReading(_context.Sensors.CpuTemperature, "0", " °C");
+            _cpuCard.Stats[1].Value = FormatReading(cpuLive.AvgClockMHz, "0", " MHz");
+            _cpuCard.Stats[2].Value = FormatReading(_context.Sensors.CpuPower, "0", " W");
+            _cpuCard.Loading = Warming(_context.HardwareRead && sensors);
 
             if (_context.PrimaryGpu is { } gpu)
             {
                 var live = GpuMonitor.ReadLive(gpu, _context.Sensors.Snapshot());
-                rows.Add(new("gpu", "Gpu", "Placa de vídeo", HardwareNaming.ShortGpuName(gpu.Name), "PageGpu", "Abrir Placa de vídeo", ThemeManager.Brush("Gpu"),
-                    FormatReading(live.LoadPct, "0", " %"), "em uso", (live.LoadPct ?? 0) / 100.0,
-                    new[]
-                    {
-                        Stat("Temp.", FormatReading(live.TempC, "0", " °C")),
-                        Stat("Clock", live.CoreClockMHz is float c ? $"{c:0} MHz" : "—"),
-                        Stat("Consumo", FormatReading(live.PowerW, "0", " W")),
-                    }));
+                _gpuCard.Model = HardwareNaming.ShortGpuName(gpu.Name);
+                _gpuCard.Hero = FormatReading(live.LoadPct, "0", " %");
+                _gpuCard.Fraction = (live.LoadPct ?? 0) / 100.0;
+                _gpuCard.Stats[0].Value = FormatReading(live.TempC, "0", " °C");
+                _gpuCard.Stats[1].Value = live.CoreClockMHz is float c ? $"{c:0} MHz" : "—";
+                _gpuCard.Stats[2].Value = FormatReading(live.PowerW, "0", " W");
             }
-            DashComponents.ItemsSource = rows;
+            _gpuCard.Loading = Warming(_context.HardwareRead && sensors);
+
+            // Sem placa de vídeo (lida e não achada), o cartão dela sai; até a leitura terminar ele fica, em esqueleto
+            bool gpuShown = _context.PrimaryGpu != null || !_context.HardwareRead;
+            if (DashComponents.Items.Count != (gpuShown ? 2 : 1))
+                DashComponents.ItemsSource = gpuShown ? new[] { _cpuCard, _gpuCard } : new[] { _cpuCard };
         }
 
         private void UpdateScores()
@@ -249,8 +325,9 @@ namespace CoreBi.Desktop.Views
 
             // O registro de eventos do Windows leva ~100 ms para responder: é lido fora da janela, no máximo a cada minuto
             if ((_healthAt - _errorsAt).TotalSeconds > 60) ReadErrorsAsync();
-            Skeleton.SetActive(DashHealthCard, _errors == null);
-            if (_errors is not { } errs) return;
+            // Os dois itens de uma vez: o dos sensores só existe depois da primeira leitura, e entrar depois empurrava a atividade recente
+            Skeleton.SetActive(DashHealthCard, _errors == null || Warming(_context.SensorsRead));
+            if (_errors is not { } errs || Warming(_context.SensorsRead)) return;
 
             var list = new List<DashCheck>();
             if (_context.Sensors.IsOpen) // enquanto detecta o hardware, ainda não dá para saber

@@ -1,4 +1,4 @@
-<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.GraphicsView" xmlns:local="clr-namespace:CoreBi.Desktop" xmlns:inv="clr-namespace:CoreBi.Desktop.Features.Monitoring.Inventory">
+﻿<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.GraphicsView" xmlns:local="clr-namespace:CoreBi.Desktop" xmlns:inv="clr-namespace:CoreBi.Desktop.Features.Monitoring.Inventory">
     <UserControl.Resources>
         <!-- Leitura ao vivo, na faixa da placa: rótulo, número de mostrador, medidor segmentado no canal Gpu (a fração da escala:
              100 %, o clock máximo, o limite de energia, a VRAM total) e o complemento (linha reservada, para as sete terem a mesma
@@ -67,7 +67,7 @@
              NVENC/NVDEC, PCIe em uso) saíram; o limitador do clock só aparece quando segura a placa, sob o clock do núcleo. -->
         <!-- Esqueleto: o desenho, fabricante, nome e subtítulo, e as sete leituras com o medidor -->
         <Border x:Name="GpuPlateCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16"
-                local:Skeleton.Layout="gap 28; col 28 44; gap 22; row 44: box 44^44; col 92 22%; gap 4; row 16: c *@0.3; gap 4; row 38: h *@0.8^24; gap 4; row 18: t *@0.8; col 30% 68%; row 16: c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6; gap 4; row 38: n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26; gap 6; row 6: box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *; gap 7; row 16: c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7; end; gap 28">
+                local:Skeleton.Layout="gap 28; col 28 44; gap 22; row 44: box 44^44; col 92 22%; gap 4; row 16: c *@0.3; gap 4; row 38: h *@0.8^24; gap 4; row 18: t *@0.8; col 30% 68%; row 16: c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6; gap 4; row 38: n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26; gap 6; row 6: box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *; gap 7; row 16: c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7; end; gap 31">
             <Grid>
                 <!-- Faixa da placa: fundo Selected com o fundo claro do canal Gpu, como a placa de Sistema, nos cantos do cartão -->
                 <Border Background="{DynamicResource Selected}" CornerRadius="{StaticResource RadiusPanel}" ClipToBounds="True">

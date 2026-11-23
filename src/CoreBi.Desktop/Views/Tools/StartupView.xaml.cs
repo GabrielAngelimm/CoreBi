@@ -10,7 +10,12 @@ namespace CoreBi.Desktop.Views;
 public partial class StartupView : UserControl
 {
     private FeatureContext _context = null!;
-    public StartupView() => InitializeComponent();
+    public StartupView()
+    {
+        InitializeComponent();
+        // Esqueleto já no primeiro quadro: ligado só depois da entrada, o painel vazio aparecia por um instante e piscava
+        Skeleton.SetActive(StartupCard, true);
+    }
     internal void Initialize(FeatureContext context) => _context = context;
     private bool RequireAdmin() => PermissionGuard.RequireAdmin(_context.Owner);
 

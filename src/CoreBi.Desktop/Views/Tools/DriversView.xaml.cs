@@ -14,7 +14,12 @@ namespace CoreBi.Desktop.Views;
 public partial class DriversView : UserControl
 {
     private FeatureContext _context = null!;
-    public DriversView() => InitializeComponent();
+    public DriversView()
+    {
+        InitializeComponent();
+        // Esqueleto já no primeiro quadro: ligado só depois da entrada, o painel vazio aparecia por um instante e piscava
+        Skeleton.Set(true, DrvGpuCard, DrvBoardCard, DrvTableCard);
+    }
     internal void Initialize(FeatureContext context) => _context = context;
     private bool RequireAdmin() => PermissionGuard.RequireAdmin(_context.Owner);
 

@@ -29,7 +29,14 @@ public partial class NetworkView : UserControl
         DrawDial(null, null);
     }
 
-    internal void Initialize(FeatureContext context) => _context = context;
+    // O adaptador é lido já na abertura do app, fora da interface: a primeira visita encontra a ficha pronta e entra sem esqueleto
+    private Task<NetworkAdapterInfo?>? _adapterRead;
+
+    internal void Initialize(FeatureContext context)
+    {
+        _context = context;
+        _adapterRead = Task.Run(NetworkTest.ReadAdapter);
+    }
 
     // Larguras do painel de diagnóstico: abaixo de NarrowDiag a latência e as grandezas de apoio descem para uma faixa sob o
     // instrumento (a latência à esquerda e as quatro grandezas em fila); abaixo de CompactDiag a faixa não comporta cinco
@@ -355,9 +362,14 @@ public partial class NetworkView : UserControl
     private async void NetworkView_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (!IsVisible || _running || _result != null || _context == null || _context.IsClosing) return;
-        if (NetInfo.ItemsSource == null) Skeleton.SetActive(NetInfoCard, true); // primeira leitura do adaptador
+        // Primeira visita: a leitura feita na abertura (o esqueleto só aparece se ela ainda não terminou); depois, uma releitura
+        var read = _adapterRead ?? Task.Run(NetworkTest.ReadAdapter);
+        _adapterRead = null;
+        if (read.IsCompletedSuccessfully) { ShowAdapter(read.Result); return; }
+        if (NetInfo.ItemsSource == null) Skeleton.SetActive(NetInfoCard, true);
         NetworkAdapterInfo? adapter;
-        try { adapter = await Task.Run(NetworkTest.ReadAdapter); }
+        try { adapter = await read; }
+        catch { adapter = null; }
         finally { Skeleton.SetActive(NetInfoCard, false); }
         if (_context.IsClosing || _running || _result != null) return;
         ShowAdapter(adapter);

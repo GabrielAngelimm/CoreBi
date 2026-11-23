@@ -295,7 +295,8 @@
                         </TextBlock>
                         <TextBlock Text="Filtrar por tipo de sensor" Style="{StaticResource Label}" Margin="0" />
                     </StackPanel>
-                    <WrapPanel x:Name="CategoryChips" Margin="0,0,0,-6" />
+                    <!-- Altura de uma fila de pílulas já antes da primeira leitura: vazia, a faixa era 4 px mais baixa e o painel subia quando elas chegavam -->
+                    <WrapPanel x:Name="CategoryChips" Margin="0,0,0,-6" MinHeight="34" />
                 </DockPanel>
             </Border>
 

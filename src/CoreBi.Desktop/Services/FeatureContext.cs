@@ -48,6 +48,10 @@ internal sealed class FeatureContext
     public IReadOnlyList<DriveCard> Drives { get; internal set; } = Array.Empty<DriveCard>();
     public string CpuName { get; internal set; } = "";
     public GpuInfo? PrimaryGpu => Gpus.Count > 0 ? Gpus[0] : null;
+    /// <summary>Nome do processador e placas de vídeo já lidos na abertura (com sucesso ou não).</summary>
+    public bool HardwareRead { get; internal set; }
+    /// <summary>A primeira leitura dos sensores já terminou na abertura (com sucesso ou não).</summary>
+    public bool SensorsRead { get; internal set; }
 
     public bool IsClosing => Lifetime.IsCancellationRequested;
 

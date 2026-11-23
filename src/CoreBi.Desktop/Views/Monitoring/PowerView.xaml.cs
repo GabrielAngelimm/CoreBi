@@ -88,6 +88,8 @@ public partial class PowerView : UserControl
     public PowerView()
     {
         InitializeComponent();
+        // Esqueleto já no primeiro quadro: ligado só depois da entrada, o painel vazio aparecia por um instante e piscava
+        Skeleton.Set(true, FeedCard, VoltCard, DaysCard);
         // Consumo ao vivo e tensões: a leitura nova entra com a página, antes do primeiro quadro (o tique pula a entrada)
         PageMotion.RevealLive(this, () => { if (_context != null) ShowLive(); });
     }
