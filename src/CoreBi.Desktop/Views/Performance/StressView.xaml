@@ -376,7 +376,7 @@
                                     </DockPanel>
                                 </Border>
                                 <!-- Histórico: rola por dentro; a sobra à direita é a da barra de rolagem -->
-                                <Border Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="1,1,0,0" Padding="24,20,8,8">
+                                <Border Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="1,1,0,0" Padding="24,24,8,8">
                                     <DockPanel>
                                         <Grid DockPanel.Dock="Top" Height="30" Margin="0,0,16,10">
                                             <TextBlock Text="Histórico" Style="{StaticResource Label}" Margin="0" VerticalAlignment="Center" Background="Transparent"
