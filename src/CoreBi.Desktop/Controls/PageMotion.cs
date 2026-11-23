@@ -50,6 +50,7 @@ public static class PageMotion
     public static void Enter(FrameworkElement page)
     {
         page.SetValue(EnteredAtProperty, Environment.TickCount64);
+        page.SetValue(EntriesProperty, (int)page.GetValue(EntriesProperty) + 1);
         if (!Animate) return;
         if (page.RenderTransform is not TranslateTransform shift || shift.IsFrozen) page.RenderTransform = shift = new TranslateTransform();
         var panels = Panels(page).Take(MaxStaggered).ToList();
@@ -147,6 +148,19 @@ public static class PageMotion
     /// </summary>
     public static bool IsEntering(FrameworkElement page) =>
         Animate && Environment.TickCount64 - (long)page.GetValue(EnteredAtProperty) < 530;
+
+    private static readonly DependencyProperty EntriesProperty = DependencyProperty.RegisterAttached(
+        "Entries", typeof(int), typeof(PageMotion), new PropertyMetadata(0));
+
+    /// <summary>
+    /// Primeira carga da página: ainda não entrou (montada no construtor, ou a Visão geral na abertura) ou está na primeira
+    /// entrada. Só nela o esqueleto cobre a página inteira; uma releitura pedida depois (um botão Atualizar) fica no cartão dela.
+    /// </summary>
+    public static bool FirstLoad(FrameworkElement page)
+    {
+        int entries = (int)page.GetValue(EntriesProperty);
+        return entries == 0 || entries == 1 && Environment.TickCount64 - (long)page.GetValue(EnteredAtProperty) < 600;
+    }
 
     /// <summary>O mesmo que <see cref="AfterEntrance"/>, para esperar com await: a leitura corre durante a entrada e só o que
     /// mexe na tela espera ela terminar.</summary>

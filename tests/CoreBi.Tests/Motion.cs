@@ -185,21 +185,26 @@ internal static partial class Program
             _cardStyle ??= Application.Current.TryFindResource("CardBorder") as Style;
             var list = new List<Card>();
             var counts = new Dictionary<string, int>();
-            void Walk(DependencyObject node, Vector offset, double opacity)
+            // Em esqueleto = a camada do painel (ou de um painel em volta) está à vista: vale também para os companheiros, que
+            // entram no esqueleto da página sem Skeleton.Active
+            static bool LayerShown(Border b) => b.Child is Grid { Children.Count: 2 } g && g.Children[1] is FrameworkElement l
+                && l.GetType().Name == "SkeletonLayer" && l.Visibility == Visibility.Visible && l.Opacity > 0.5;
+            void Walk(DependencyObject node, Vector offset, double opacity, bool covered)
             {
                 if (node is UIElement { Visibility: not Visibility.Visible }) return;
                 if (node is Visual v && !ReferenceEquals(node, page)) offset += VisualTreeHelper.GetOffset(v);
                 if (node is UIElement ui) opacity *= ui.Opacity;
+                if (node is Border lb && LayerShown(lb)) covered = true;
                 if (node is Border b && IsCard(b.Style) && b.ActualWidth > 0)
                 {
                     string key = b.Name.Length > 0 ? b.Name : $"cartão {Describe(b)}";
                     counts[key] = counts.TryGetValue(key, out int n) ? n + 1 : 1;
                     if (counts[key] > 1) key += $" #{counts[key]}";
-                    list.Add(new Card(key, new Rect(offset.X, offset.Y, b.ActualWidth, b.ActualHeight), Skeleton.GetActive(b), opacity));
+                    list.Add(new Card(key, new Rect(offset.X, offset.Y, b.ActualWidth, b.ActualHeight), covered, opacity));
                 }
-                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) Walk(VisualTreeHelper.GetChild(node, i), offset, opacity);
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) Walk(VisualTreeHelper.GetChild(node, i), offset, opacity, covered);
             }
-            Walk(page, default, 1);
+            Walk(page, default, 1, false);
             return list;
         }
 
@@ -281,6 +286,10 @@ internal static partial class Program
                 }
                 foreach (var c in before.Values.Where(c => !now.ContainsKey(c.Name))) { sb.AppendLine($"  {t,6:0} ms  SUMIU    {c.Name}"); issues++; }
             }
+            // Página em parte esqueleto, em parte pronta (o que a primeira carga não deve ter): o primeiro quadro assim e quantos
+            var partial = shown.Where(f => f.Cards.Any(c => c.Skeleton) && f.Cards.Any(c => !c.Skeleton)).ToList();
+            if (partial.Count > 0)
+                sb.AppendLine($"  {partial[0].Ms,6:0} ms  ESQUELETO PARCIAL em {partial.Count} quadros (prontos: {string.Join(", ", partial[0].Cards.Where(c => !c.Skeleton).Select(c => c.Name))})");
             var first = shown[0];
             sb.AppendLine($"  1º quadro ({first.Ms:0} ms): {first.Cards.Count} cartões, esqueleto em {first.Cards.Count(c => c.Skeleton)}: {string.Join(", ", first.Cards.Where(c => c.Skeleton).Select(c => c.Name))}");
             if (issues == 0) sb.AppendLine("  sem trancos");
