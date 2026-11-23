@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -71,7 +71,7 @@ public partial class DriverBackupDialog : UserControl
         FolderLabel.Text = "Backup";
         BtnFolder.Content = "Escolher";
         BtnFolder.ToolTip = "Escolha a pasta do backup, ou a pasta que guarda vários (vale o mais novo).";
-        Promise.Text = "Antes de começar, o CoreBi cria um ponto de restauração.";
+        Promise.Text = "Cria um ponto de restauração antes.";
         SetIcon(BtnConfirm, "");
         Order(folderFirst: true);
     }

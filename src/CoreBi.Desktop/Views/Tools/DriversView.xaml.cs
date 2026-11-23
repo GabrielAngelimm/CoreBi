@@ -1,4 +1,4 @@
-using CoreBi.Desktop.Services;
+﻿using CoreBi.Desktop.Services;
 using CoreBi.Engine.Performance;
 using CoreBi.Engine.Tools.Drivers;
 using System.ComponentModel;
@@ -215,7 +215,7 @@ public partial class DriversView : UserControl
         DrvBoardBios.Text = version;
         DrvBoardBiosDate.Text = date.Length > 0 ? date : "—";
         // Pé da placa no mesmo desenho do da placa de vídeo: a idade na frente, em tinta, e o conselho em Muted
-        string brandName = b.Brand.Length > 0 ? b.Brand : "o fabricante";
+        string brandName = b.Brand.Length > 0 ? "a " + b.Brand : "o fabricante";
         DrvBoardAge.Inlines.Clear();
         if (DateTime.TryParseExact(date, "dd/MM/yyyy", PtBr, DateTimeStyles.None, out var when))
         {
@@ -225,7 +225,7 @@ public partial class DriversView : UserControl
             var gap = new System.Windows.Documents.Run("  ·  ");
             gap.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Faint");
             DrvBoardAge.Inlines.Add(gap);
-            DrvBoardAge.Inlines.Add(new System.Windows.Documents.Run($"Atualize só se a {brandName} recomendar."));
+            DrvBoardAge.Inlines.Add(new System.Windows.Documents.Run($"Atualize só se {brandName} recomendar."));
         }
         var age = DrvBoardAge.Inlines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         DrvBoardAge.Visibility = age;
