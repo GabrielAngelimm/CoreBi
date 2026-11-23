@@ -470,9 +470,10 @@ public partial class AppsView : UserControl
             }
             // Primeiro o registro (instantâneo), para a página acender; depois o winget confirma pelos IDs, em segundo plano
             var names = await Task.Run(AppInstaller.InstalledNames, _context.Lifetime);
+            var installed = await InstalledAsync(names, _wingetIds);
             if (entering) await PageMotion.EntranceDone(this);
             if (_context.IsClosing) return;
-            Apply(names, _wingetIds);
+            Apply(installed);
             _wingetAvailable = AppInstaller.WingetAvailable;
             BtnAppsStore.Visibility = _wingetAvailable ? Visibility.Collapsed : Visibility.Visible;
             if (_wingetAvailable) Say($"Lido às {DateTime.Now:HH:mm}");
@@ -501,19 +502,34 @@ public partial class AppsView : UserControl
             var ids = await AppInstaller.InstalledPackageIdsAsync(cts.Token);
             if (ids == null || cts.IsCancellationRequested || _appsBusy || _context.IsClosing) return;
             _wingetIds = ids;
-            Apply(names, ids);
+            var installed = await InstalledAsync(names, ids);
+            if (cts.IsCancellationRequested || _appsBusy || _context.IsClosing) return;
+            Apply(installed);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex) { DiagnosticLog.Write("apps.export", ex); }
     }
 
-    private void Apply(IEnumerable<string> names, ISet<string>? wingetIds)
+    /// <summary>
+    /// Quais apps do catálogo estão instalados, fora da janela: as sondas (arquivos, registro) e os padrões de nome dos 73 apps
+    /// levavam centenas de ms na thread da interface e congelavam a página logo depois da entrada, a cada volta.
+    /// </summary>
+    private Task<HashSet<InstallableApp>> InstalledAsync(IEnumerable<string> names, ISet<string>? wingetIds)
+    {
+        var apps = _installApps?.ToList() ?? new List<InstallableApp>();
+        return Task.Run(() =>
+        {
+            var list = names as ICollection<string> ?? names.ToList();
+            return apps.Where(a => AppInstaller.IsInstalled(a, list, wingetIds)).ToHashSet();
+        });
+    }
+
+    private void Apply(HashSet<InstallableApp> installed)
     {
         if (_installApps == null) return;
-        var list = names as ICollection<string> ?? names.ToList();
         foreach (var app in _installApps)
         {
-            app.Installed = AppInstaller.IsInstalled(app, list, wingetIds);
+            app.Installed = installed.Contains(app);
             if (app.Installed) app.Selected = false;
         }
         UpdateCounts();
@@ -607,7 +623,7 @@ public partial class AppsView : UserControl
         _wingetIds = finished;
         foreach (var tile in sel) tile.Phase = AppPhase.Idle;
         SetBusy(false);
-        Apply(names, finished);
+        Apply(await InstalledAsync(names, finished));
         RebuildPack();
 
         string failures = failed.Count > 0 ? "Falharam: " + string.Join(", ", failed) : "";
