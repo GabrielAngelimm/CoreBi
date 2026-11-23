@@ -4,7 +4,7 @@
 
 | Capacidade | Responsável canônico | Fonte de verdade | Variações permitidas | Verificação |
 | --- | --- | --- | --- | --- |
-| Table Selection | WPF DataGrid/ListBox e estilos compartilhados | src/CoreBi.Desktop/Shell/Theme.xaml | Seleção simples ou múltipla conforme operação original | tests/CoreBi.Tests/Program.cs constrói todas as páginas; teclado completo pendente |
+| Table Selection | WPF ListBox/ItemsControl e estilos compartilhados (`TableHead`, `TableRow`) | src/CoreBi.Desktop/Shell/Theme.xaml | Seleção simples ou múltipla conforme operação original | tests/CoreBi.Tests/Program.cs constrói todas as páginas; teclado completo pendente |
 | Select/Listbox | WPF ListBox, controle segmentado, chips e ladrilhos (RadioButton) | src/CoreBi.Desktop/Shell/Theme.xaml | Segmentos para opções fixas; chips para listas geradas; ladrilhos para escolher o teste; lista para inventário e paleta de comandos | Construção e navegação WPF; revisão manual de foco pendente |
 | Form | Controles WPF, handlers próprios em todas as 14 páginas autocontidas e validação do Engine | src/CoreBi.Desktop/Views e Features | Campos de filtros e opções originais | Teste de persistência das configurações e regras; instalações não executadas |
 | Scrollbar | WPF ScrollViewer/ScrollBar com estilo do tema | src/CoreBi.Desktop/Shell/Theme.xaml | Rolagem da navegação e do conteúdo independentes | XAML compilado; múltiplos DPI pendentes |
@@ -16,10 +16,10 @@ Operações administrativas usam comandos específicos e diálogos Windows. Sele
 ## Estados e consistência
 
 - Dados ausentes: travessão, mensagem de causa ou estado desconhecido. Não preencher uma medição com zero fictício.
-- Rede: Cloudflare é a opção inicial; se a medição ficar incompleta, o M-Lab é tentado automaticamente. A origem acompanha o resultado, e a espera da Cloudflare não bloqueia o M-Lab. Nesta versão pessoal não há confirmação na tela; antes de distribuir, obter consentimento informado conforme as regras do M-Lab.
+- Rede: Cloudflare é a opção inicial; se a medição ficar incompleta, o M-Lab é tentado automaticamente, sem confirmação na tela (decisão do mantenedor para a 1.0, de uso pessoal e entre amigos; veja [PRIVACY.md](PRIVACY.md)). A origem acompanha o resultado, e a espera da Cloudflare não bloqueia o M-Lab. Se o público mudar, a página pede o consentimento antes da primeira troca; o motor já tem a trava.
 - Cargas pesadas: apenas uma operação ativa, incluindo sua preparação. Cancelar a operação correta, restaurar botões/monitoramento e limpar temporários.
 - Inicialização/drivers/apps: preservar confirmação e resultado por operação; não alegar teste de instalação quando só houve inventário.
-- Relatórios e configurações pertencem ao CoreBi. Nome original pode aparecer nos créditos legais e documentação de origem, sem marca na interface.
+- Relatórios e configurações pertencem ao CoreBi. O projeto de origem (ResetExplode) aparece só nos créditos legais ([NOTICE.md](../NOTICE.md) e [LICENSE](../LICENSE)), sem marca na interface.
 - Estimativa (o equilíbrio teórico do Gargalo) e medição (ETW, RTSS e sensores) têm fontes distintas; não converter a estimativa em leitura medida.
 
 - Botões de iniciar e parar trocam de papel no mesmo lugar (`Ui.SetRunning`): cor, glifo e texto mudam juntos.
@@ -28,4 +28,4 @@ Operações administrativas usam comandos específicos e diálogos Windows. Sele
 
 ## Reformulação e pendências
 
-A interface foi redesenhada (direção "Bancada", descrita em [DESIGN.md](DESIGN.md)) mantendo nomes de elementos, handlers e fluxos usados pelo código e pelos testes. Compilar não certifica acessibilidade: falta revisar em Windows a navegação completa por teclado (a paleta de comandos Ctrl + K cobre a navegação entre páginas), leitor de tela, alto contraste e DPI em vários monitores.
+A interface foi redesenhada (direção "Bancada", descrita em [DESIGN.md](DESIGN.md)) mantendo nomes de elementos, handlers e fluxos usados pelo código e pelos testes. Na 1.0 o anel de foco acompanha a forma de cada controle, botões só de glifo dizem a dica ao leitor de tela e as animações seguem o "Mostrar animações" do Windows. Compilar não certifica acessibilidade: falta revisar em Windows a navegação completa por teclado (a paleta de comandos Ctrl + K cobre a navegação entre páginas), o leitor de tela de ponta a ponta, alto contraste e DPI em vários monitores.

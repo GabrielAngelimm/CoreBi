@@ -1,5 +1,19 @@
 # Validação
 
+## Estado atual — revisão da 1.0 (2026-11-23)
+
+O que cada mudança precisa passar está no [workflow Verify](https://github.com/GabrielAngelimm/CoreBi/actions/workflows/verify.yml), que roda em todo push:
+
+- Varredura de segredos em todo o histórico, paleta do tema, chaves de recurso do XAML, restore bloqueado, formatação e build Release sem avisos.
+- A suíte padrão (`.\tools\Test.ps1`): regras do Engine que viram veredito na tela (1% low, notas, saúde de disco, bateria e plano de energia, limites da rede e do equilíbrio, limites dos históricos, migração das configurações), política de downloads e de processos, rede e M-Lab contra servidores locais, RTSS em memória isolada, overlay e a construção e navegação das 14 páginas WPF. Não precisa de internet, administrador nem hardware específico.
+- Licenças: `licenses/packages.json` contra o lock e `THIRD-PARTY.md` contra o `packages.json`.
+- Capturas das 14 páginas e dos estados de demonstração, nos temas claro e escuro, publicadas no branch `capturas/<branch>`.
+- Publicação e instalador.
+
+A revisão da 1.0 mexeu no código sem mudar telas aprovadas: regras de temperatura num lugar só, carga das DLLs nativas restrita, falhas isoladas por página, contraste do texto apagado, foco de teclado, animações que respeitam o Windows e remoção de código morto. O teste completo no PC do mantenedor é o último passo antes da publicação.
+
+Continua fora do alcance automático o que está na tabela de [falhas cobertas e limites](#falhas-cobertas-e-limites): FPS em jogos, cargas longas, instalações reais, notebook e acessibilidade de ponta a ponta. As seções abaixo são o histórico de validações, cada uma com a data em que foi feita; números de testes e de páginas nelas valem para aquela data.
+
 ## Alternativa M-Lab e tela de Rede — 2026-10-28
 
 - Alternativa M-Lab: regressões verificam a proteção da API do motor, escolha de servidores HTTPS seguros, resposta sem capacidade, contagem de upload confirmada e a troca automática após uma falha. Um servidor WebSocket local exercita transferências NDT7 e respostas de upload com AppInfo ou somente TCPInfo. Em 28/10/2026, um teste real de upload com limite de 100 MB confirmou aproximadamente 453 Mbps pelo contador TCP, que inclui sobrecarga de protocolo. Uma medição isolada não valida a precisão em 1 Gbps nem garante resultados futuros. Nesta versão pessoal a tela usa a autorização prévia do proprietário; a distribuição requer o consentimento informado dos demais usuários.
@@ -76,4 +90,4 @@ As regressões verificam falha de gravação/serialização, backup antes da rem
 | Rede, bateria e USB | Tráfego completo/comparação externa, notebook e conexão/desconexão física |
 | Interface | Teclado, leitor de tela, alto contraste, DPI e outras máquinas; construção XAML não certifica acessibilidade |
 
-Nenhuma entrada pessoal de inicialização foi modificada e nenhum driver/app foi instalado pelos testes. O repositório original permaneceu intacto. Resultados brutos locais podem conter caminhos/identificadores e não são incluídos no código público. Os mecanismos e limites de cada ferramenta estão em [FEATURES.md](FEATURES.md).
+Nenhuma entrada pessoal de inicialização foi modificada e nenhum driver/app foi instalado pelos testes. Resultados brutos locais podem conter caminhos/identificadores e não são incluídos no código público. Os mecanismos e limites de cada ferramenta estão em [FEATURES.md](FEATURES.md).
