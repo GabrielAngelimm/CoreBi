@@ -210,6 +210,8 @@ public partial class DriverBackupDialog : UserControl
         Strip.Reset(total);
         SetCount(0, total);
         Legend.Visibility = _restore ? Visibility.Visible : Visibility.Collapsed;
+        SwatchInstalled.SetResourceReference(Border.BackgroundProperty, "Signal");
+        SwatchCurrent.SetResourceReference(Border.BackgroundProperty, "Signal");
         UpdateLegend();
         if (_restore)
         {
@@ -283,7 +285,7 @@ public partial class DriverBackupDialog : UserControl
         _openPath = info.Folder;
         bool systemDisk = SameRoot(info.Folder, Environment.SystemDirectory);
         Finish(ok: true, "Backup pronto",
-            $"{info.Count} drivers copiados ({size}). " + (systemDisk
+            $"{info.Count} drivers copiados ({size}).\n" + (systemDisk
                 ? "Antes de formatar, leve a pasta para outro disco ou um pen drive."
                 : "A pasta fica fora do disco do Windows e sobrevive à formatação."));
         FolderLabel.Text = "Salvo em";
@@ -296,14 +298,15 @@ public partial class DriverBackupDialog : UserControl
         int done = result.Installed + result.Current + result.Failed.Count;
         Strip.SetDone(done);
         SetCount(done, result.Total);
-        string next = result.Reboot ? "Reinicie o PC para terminar de instalar." : "";
+        string next = result.Reboot ? "\nReinicie o PC para terminar de instalar." : "";
+        int failed = result.Failed.Count;
         if (result.Canceled)
-            Finish(ok: result.Failed.Count == 0, "Restauração parada", $"Parou em {done} de {result.Total}. O que já entrou continua instalado. {next}".Trim(), sweep: false);
-        else if (result.Failed.Count > 0)
-            Finish(ok: false, "Restauração terminou com erros", $"{result.Failed.Count} não entraram (passe o mouse em Com erro para ver quais). {next}".Trim());
+            Finish(ok: failed == 0, "Restauração parada", $"Parou em {done} de {result.Total}. O que já entrou continua instalado.{next}", sweep: false);
+        else if (failed > 0)
+            Finish(ok: false, "Restauração terminou com erros",
+                (failed == 1 ? "1 driver não entrou" : $"{failed} drivers não entraram") + " (passe o mouse em Com erro para ver)." + next);
         else
-            Finish(ok: true, "Drivers restaurados", result.Reboot ? "Tudo certo. " + next
-                : result.Installed == 0 ? "Este PC já tinha todos os drivers do backup." : "Tudo certo: os drivers do backup estão no Windows.");
+            Finish(ok: true, "Drivers restaurados", (result.Installed == 0 ? "Este PC já tinha todos os drivers do backup." : "Tudo certo: os drivers do backup estão no Windows.") + next);
         LegendFailedItem.ToolTip = result.Failed.Count > 0 ? string.Join("\n", result.Failed) : null;
         Lead.ToolTip = restorePoint.Length > 0 ? restorePoint : null;
     }
@@ -319,7 +322,13 @@ public partial class DriverBackupDialog : UserControl
         TitleMark.Text = ok ? "" : "";
         TitleMark.SetResourceReference(TextBlock.ForegroundProperty, ok ? "Ok" : "Warn");
         TitleMark.Visibility = Visibility.Visible;
-        if (sweep) Strip.Complete();
+        if (sweep)
+        {
+            // A legenda acompanha a varredura: as cores dela continuam sendo as da faixa
+            Strip.Complete();
+            SwatchInstalled.SetResourceReference(Border.BackgroundProperty, "Ok");
+            SwatchCurrent.SetResourceReference(Border.BackgroundProperty, "Ok");
+        }
         if (SystemParameters.ClientAreaAnimation && IsVisible)
         {
             var pop = new DoubleAnimation(0.4, 1, TimeSpan.FromMilliseconds(360)) { EasingFunction = new BackEase { Amplitude = 0.5, EasingMode = EasingMode.EaseOut } };

@@ -96,11 +96,11 @@
                                 <local:DriverStrip x:Name="Strip" Margin="0,10,0,0" />
                                 <WrapPanel x:Name="Legend" Margin="0,12,0,0" Visibility="Collapsed">
                                     <StackPanel Orientation="Horizontal" Margin="0,0,20,0" ToolTip="Entraram em algum dispositivo deste PC.">
-                                        <Border Width="8" Height="8" Background="{DynamicResource Signal}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <Border x:Name="SwatchInstalled" Width="8" Height="8" Background="{DynamicResource Signal}" VerticalAlignment="Center" Margin="0,0,8,0" />
                                         <TextBlock Style="{StaticResource Caption}"><Run Text="Instalados " /><Run x:Name="LegendInstalled" Text="0" Foreground="{DynamicResource Fg}" /></TextBlock>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,20,0" ToolTip="O PC já tinha esse driver (ou um mais novo), ou não tem a peça dele.">
-                                        <Border Width="8" Height="8" Background="{DynamicResource Signal}" Opacity="0.47" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <Border x:Name="SwatchCurrent" Width="8" Height="8" Background="{DynamicResource Signal}" Opacity="0.47" VerticalAlignment="Center" Margin="0,0,8,0" />
                                         <TextBlock Style="{StaticResource Caption}"><Run Text="Já em dia " /><Run x:Name="LegendCurrent" Text="0" Foreground="{DynamicResource Fg}" /></TextBlock>
                                     </StackPanel>
                                     <StackPanel x:Name="LegendFailedItem" Orientation="Horizontal" Visibility="Collapsed">
