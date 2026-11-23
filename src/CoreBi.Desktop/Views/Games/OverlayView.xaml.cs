@@ -344,10 +344,10 @@ public partial class OverlayView : UserControl
         else OvPreviewScale.ScaleX = OvPreviewScale.ScaleY = target;
         OvCornerName.Text = corner switch
         {
-            "TR" => "Canto superior direito",
-            "BL" => "Canto inferior esquerdo",
-            "BR" => "Canto inferior direito",
-            _ => "Canto superior esquerdo",
+            "TR" => "Superior direito",
+            "BL" => "Inferior esquerdo",
+            "BR" => "Inferior direito",
+            _ => "Superior esquerdo",
         };
         if (glide)
         {

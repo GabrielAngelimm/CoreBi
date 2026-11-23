@@ -346,7 +346,7 @@
                                     <!-- Rótulo e valor como Runs do mesmo TextBlock: a mesma linha de base por construção (em dois TextBlocks
                                          centrados o rótulo ficava 1 px acima). O espaço (um médio e um fino, a 13 px) dá ≈ 9 px. -->
                                     <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis">
-                                        <Run Text="Posição" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" /><Run Text="&#x2002;&#x2009;" FontSize="13" /><Run x:Name="OvCornerName" Text="Canto superior esquerdo" FontWeight="SemiBold" />
+                                        <Run Text="Posição" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" /><Run Text="&#x2002;&#x2009;" FontSize="13" /><Run x:Name="OvCornerName" Text="Superior esquerdo" FontWeight="SemiBold" />
                                     </TextBlock>
                                     <Border Grid.Column="1" Width="1" Height="22" Background="{DynamicResource Line}" Margin="16,0" />
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
