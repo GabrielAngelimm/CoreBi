@@ -12,6 +12,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/GabrielAngelimm/CoreBi/releases/latest"><img src="https://img.shields.io/badge/vers%C3%A3o-1.0.0-27C9BC" alt="Versão 1.0.0"></a>
   <a href="https://github.com/GabrielAngelimm/CoreBi/actions/workflows/verify.yml"><img src="https://github.com/GabrielAngelimm/CoreBi/actions/workflows/verify.yml/badge.svg" alt="Verify"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-MIT-informational" alt="Licença MIT"></a>
   <img src="https://img.shields.io/badge/Windows-10%20%7C%2011%20x64-informational" alt="Windows 10 e 11 x64">
@@ -32,7 +33,7 @@ As páginas seguem os grupos da barra lateral.
 | Jogos e desempenho | OverlayBi, Teste de carga, Benchmark, Gargalo | Overlay de FPS e sensores por cima do jogo (também em tela cheia exclusiva, com o RTSS), testes de estabilidade de CPU, RAM e GPU com corte por temperatura, benchmarks de CPU, GPU, ray tracing, memória e disco com histórico, e a leitura de quem limita o FPS durante o jogo |
 | Ferramentas | Instalar apps, Drivers, Inicialização | Catálogo de 73 apps instalados pelo winget em pacote, drivers da placa de vídeo e do Windows Update com backup e restauração, e os programas que abrem com o Windows, com backup antes de remover |
 
-A paleta de comandos (Ctrl + K) leva a qualquer página e às ações mais usadas. O tema claro ou escuro fica na barra lateral.
+Dois atalhos valem para o app todo: **Ctrl + K** abre a paleta de comandos, que leva a qualquer página e às ações mais usadas, e **Ctrl + Shift + O** liga ou desliga o OverlayBi, inclusive com o jogo em primeiro plano. O tema claro ou escuro fica na barra lateral.
 
 Os benchmarks e o teste de carga fazem trabalho real, com métodos próprios: os números não são comparáveis um a um com os de outros programas. O Gargalo combina leituras reais em regras e é uma estimativa. Os detalhes de cada ferramenta, as fontes de dados e os limites estão em [docs/FEATURES.md](docs/FEATURES.md).
 
@@ -48,18 +49,27 @@ O runtime do .NET vem junto; não é preciso instalar nada da Microsoft.
 
 ## Instalar
 
-1. Baixe `CoreBi-<versão>-win-x64-setup.exe` em [Releases](https://github.com/GabrielAngelimm/CoreBi/releases).
-2. Confira o arquivo com o `SHA256SUMS.txt` da mesma release:
+Cada [release](https://github.com/GabrielAngelimm/CoreBi/releases/latest) traz três arquivos:
+
+| Arquivo | Para quê |
+| --- | --- |
+| `CoreBi-1.0.0-win-x64-setup.exe` | Instalador, o caminho recomendado |
+| `CoreBi-1.0.0-win-x64-portable.zip` | Versão portátil, sem instalar |
+| `SHA256SUMS.txt` | O SHA256 dos dois, para conferir o download |
+
+1. Baixe o instalador e confira o arquivo com o `SHA256SUMS.txt`:
 
    ```powershell
-   Get-FileHash .\CoreBi-<versão>-win-x64-setup.exe -Algorithm SHA256
+   Get-FileHash .\CoreBi-1.0.0-win-x64-setup.exe -Algorithm SHA256
    ```
 
-3. Execute o instalador. Ele instala em `Program Files`, cria os atalhos e registra o CoreBi para desinstalação. Na tela de componentes, PawnIO e RTSS vêm marcados: cada um é baixado pelo winget do repositório oficial, com a licença do próprio fornecedor, e nenhum vem dentro do instalador. Desmarque o que não quiser.
+2. Execute o instalador. Ele segue o tema claro ou escuro do Windows, instala em `Program Files`, cria os atalhos e registra o CoreBi para desinstalação. Na tela de componentes, PawnIO e RTSS vêm marcados: cada um é baixado pelo winget do repositório oficial, com a licença do próprio fornecedor, e nenhum vem dentro do instalador. Desmarque o que não quiser.
 
 O instalador não tem assinatura digital, então o Windows pode mostrar "O Windows protegeu o computador". Depois de conferir o SHA256, use **Mais informações** e **Executar assim mesmo**.
 
-**Sem instalador:** extraia o zip portátil inteiro numa pasta e abra `CoreBi.exe`. O executável precisa das DLLs e da pasta `licenses` que vêm ao lado dele. Nessa forma, o PawnIO é instalado pelo próprio app, em **Corrigir**, no pé do menu.
+**Portátil:** extraia o zip inteiro numa pasta e abra `CoreBi\CoreBi.exe`. O executável precisa das DLLs, da pasta `amd64` e da pasta `licenses` que vêm ao lado dele. Nessa forma, o PawnIO é instalado pelo próprio app, em **Corrigir**, no pé do menu.
+
+**Atualizar:** rode o instalador da versão nova por cima; configurações, históricos e backups continuam onde estão.
 
 **Desinstalar:** pelo Windows, em Aplicativos instalados. O desinstalador pergunta se também apaga as configurações, o histórico e os backups de inicialização; o padrão é manter, porque esses backups são o que permite restaurar um programa removido da inicialização. PawnIO e RTSS ficam instalados, porque outros programas podem usá-los.
 
@@ -102,13 +112,15 @@ Para gerar o pacote e o instalador:
 .\tools\Installer.ps1    # artifacts/installer/CoreBi-<versão>-win-x64-setup.exe e o SHA256
 ```
 
+As releases oficiais saem do workflow **Release** do GitHub Actions, que compila, testa e gera os três arquivos numa máquina limpa; os passos estão no [guia de contribuição](docs/CONTRIBUTING.md#versão-e-release).
+
 ## Testes
 
 ```powershell
 .\tools\Test.ps1
 ```
 
-A suíte padrão roda sem internet e sem hardware específico: regras do Engine, segurança, rede contra servidores locais, RTSS em memória isolada e a construção e navegação das 14 páginas. Os modos `Hardware`, `Startup`, `Integrations`, `Bench` e `OverlayTelemetry` usam o equipamento de verdade e são opcionais; os comandos e os cuidados estão em [CONTRIBUTING.md](docs/CONTRIBUTING.md). A CI do GitHub roda a suíte padrão, as capturas das páginas, a publicação e o instalador a cada push.
+A suíte padrão roda sem internet e sem hardware específico: regras do Engine, segurança, rede contra servidores locais, RTSS em memória isolada e a construção e navegação das 14 páginas. Os modos `Hardware`, `Startup`, `Integrations`, `Bench` e `OverlayTelemetry` usam o equipamento de verdade e são opcionais; os comandos e os cuidados estão em [CONTRIBUTING.md](docs/CONTRIBUTING.md). A CI do GitHub roda a suíte padrão, as capturas das páginas, a publicação, o instalador e as capturas das telas do instalador a cada push.
 
 ## Estrutura
 
@@ -117,7 +129,7 @@ src/CoreBi.Engine/       Coletores, regras, benchmarks, integrações e persist�
 src/CoreBi.Desktop/      Janela, páginas, controles e serviços da interface (WPF)
 tests/CoreBi.Tests/      Regressões, interface e verificações opcionais de hardware
 tools/                   Compilação, testes, publicação, licenças e manutenção
-installer/               Script do instalador (Inno Setup)
+installer/               Script e imagens do instalador (Inno Setup)
 brand/                   Símbolo, logotipo e ícone (tools/generate_brand.py)
 docs/                    Arquitetura, design, privacidade, segurança e validação
 licenses/                Licenças e avisos dos componentes distribuídos
@@ -137,6 +149,6 @@ Leia o [guia de contribuição](docs/CONTRIBUTING.md) antes de abrir um PR: ele 
 
 ## Licença e créditos
 
-O CoreBi é distribuído sob a [licença MIT](LICENSE).
+O CoreBi é criado e mantido por [Gabriel Angelim](https://github.com/GabrielAngelimm) e distribuído sob a [licença MIT](LICENSE).
 
 Os sensores vêm do [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) (MPL-2.0), os eventos de FPS do TraceEvent e os testes gráficos do Vortice, cada um com a própria licença, listada em [licenses/THIRD-PARTY.md](licenses/THIRD-PARTY.md). PawnIO e RTSS são programas de terceiros, instalados à parte e com as licenças dos autores. Os ícones dos apps do catálogo pertencem aos seus donos ([licenses/APP-ICONS.md](licenses/APP-ICONS.md)).
