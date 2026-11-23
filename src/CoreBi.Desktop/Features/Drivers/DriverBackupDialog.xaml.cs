@@ -65,7 +65,7 @@ public partial class DriverBackupDialog : UserControl
     private void RestoreTexts()
     {
         DialogTitle.Text = "Restaurar drivers";
-        Lead.Text = "Reinstala os drivers de um backup do CoreBi. Onde você já tiver um driver mais novo, o Windows mantém o seu.";
+        Lead.Text = "Reinstala os drivers de um backup do CoreBi.\nOnde você já tiver um driver mais novo, o Windows mantém o seu.";
         FolderLabel.Text = "Backup";
         BtnFolder.Content = "Escolher";
         BtnFolder.ToolTip = "Escolha a pasta do backup, ou a pasta que guarda vários (vale o mais novo).";
