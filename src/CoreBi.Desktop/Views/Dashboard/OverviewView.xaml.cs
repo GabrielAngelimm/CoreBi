@@ -157,8 +157,10 @@ namespace CoreBi.Desktop.Views
                 DrawChart();
             }
             Skeleton.SetActive(DashChartCard, Warming(_context.SensorsRead));
-            UpdateComponents();
-            UpdateRings();
+            // Uma leitura completa da placa por tique (seis consultas NVML), dividida entre o cartão e o anel da VRAM
+            var gpuLive = _context.PrimaryGpu is { } gpu ? GpuMonitor.ReadLive(gpu, _context.Sensors.Snapshot()) : null;
+            UpdateComponents(gpuLive);
+            UpdateRings(gpuLive);
             if (full)
             {
                 UpdateScores();
@@ -186,16 +188,16 @@ namespace CoreBi.Desktop.Views
             string Part(int i) => i < parts.Length ? parts[i] : "";
             static string Join(IEnumerable<string> p) => string.Join(" · ", p.Where(s => s.Length > 0));
             if (r.Test.StartsWith("rt:", StringComparison.Ordinal))
-                return new DashEvent("gpu", "Ray tracing", Join(new[] { Part(2), Part(1), Part(3) }), Part(0), r.Date, "Gpu");
+                return new DashEvent("gpu", ReadoutFormat.BenchTitle(r.Test), Join(new[] { Part(2), Part(1), Part(3) }), Part(0), r.Date, "Gpu");
 
             switch (r.Test)
             {
                 case "gpu":
-                    return new DashEvent("gpu", "Cena de jogo (GPU)", Join(parts.Skip(1)), Part(0), r.Date, "Gpu");
+                    return new DashEvent("gpu", ReadoutFormat.BenchTitle(r.Test), Join(parts.Skip(1)), Part(0), r.Date, "Gpu");
                 case "sim":
-                    return new DashEvent("\ue7fc", "Simulação de jogo (CPU)", Part(1), Part(0), r.Date, "Cpu");
+                    return new DashEvent("\ue7fc", ReadoutFormat.BenchTitle(r.Test), Part(1), Part(0), r.Date, "Cpu");
                 case "mem":
-                    return new DashEvent("ram", "Benchmark de memória",
+                    return new DashEvent("ram", ReadoutFormat.BenchTitle(r.Test),
                         Join(new[] { Part(1).Length > 0 ? "Leitura " + Part(1) : "", Part(2).Replace("mapa ", "mapa em ") }), Part(0), r.Date, "Memory");
                 case "disk":
                     {
@@ -203,10 +205,10 @@ namespace CoreBi.Desktop.Views
                         int slash = speeds.IndexOf('/');
                         int space = speeds.IndexOf(' ');
                         if (slash > 0 && space > slash)
-                            return new DashEvent("storage", $"Benchmark de disco ({Part(0).TrimEnd(':')}:)",
+                            return new DashEvent("storage", $"{ReadoutFormat.BenchTitle(r.Test)} ({Part(0).TrimEnd(':')}:)",
                                 Join(new[] { $"Escrita {speeds[(slash + 1)..space]} {speeds[(space + 1)..]}", Part(2) }),
                                 $"{speeds[..slash]} {speeds[(space + 1)..]}", r.Date, "Storage");
-                        return new DashEvent("storage", "Benchmark de disco", Join(parts.Skip(1)), Part(0), r.Date, "Storage");
+                        return new DashEvent("storage", ReadoutFormat.BenchTitle(r.Test), Join(parts.Skip(1)), Part(0), r.Date, "Storage");
                     }
                 default:
                     return new DashEvent("\ue8b9", r.Test, Join(parts.Skip(1)), Part(0), r.Date);
@@ -220,8 +222,8 @@ namespace CoreBi.Desktop.Views
             {
                 string mode = r.Multi != null ? "Multi-core" : "Single-core";
                 string cpu = string.IsNullOrWhiteSpace(r.Cpu) ? "" : $" · {r.Cpu}";
-                if (r.Multi is double m) yield return new DashEvent("cpu", "Render de CPU", mode + cpu, $"{m:N0} pts", r.Date, "Cpu");
-                else if (r.Single is double s) yield return new DashEvent("cpu", "Render de CPU", mode + cpu, $"{s:N0} pts", r.Date, "Cpu");
+                if (r.Multi is double m) yield return new DashEvent("cpu", ReadoutFormat.BenchTitle("render"), mode + cpu, $"{m:N0} pts", r.Date, "Cpu");
+                else if (r.Single is double s) yield return new DashEvent("cpu", ReadoutFormat.BenchTitle("render"), mode + cpu, $"{s:N0} pts", r.Date, "Cpu");
             }
             foreach (var r in _context.Settings.BenchRecords)
                 yield return BenchEvent(r);
@@ -244,7 +246,7 @@ namespace CoreBi.Desktop.Views
 
         private static string FormatReading(float? value, string fmt, string unit) => value is float x ? x.ToString(fmt) + unit : "—";
 
-        private void UpdateComponents()
+        private void UpdateComponents(GpuLiveSample? live)
         {
             if (_context == null) return;
             bool sensors = _context.SensorsRead;
@@ -259,9 +261,8 @@ namespace CoreBi.Desktop.Views
             _cpuCard.Stats[2].Value = FormatReading(_context.Sensors.CpuPower, "0", " W");
             _cpuCard.Loading = Warming(_context.HardwareRead && sensors);
 
-            if (_context.PrimaryGpu is { } gpu)
+            if (_context.PrimaryGpu is { } gpu && live != null)
             {
-                var live = GpuMonitor.ReadLive(gpu, _context.Sensors.Snapshot());
                 _gpuCard.Model = HardwareNaming.ShortGpuName(gpu.Name);
                 _gpuCard.Hero = FormatReading(live.LoadPct, "0", " %");
                 _gpuCard.Fraction = (live.LoadPct ?? 0) / 100.0;

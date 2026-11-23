@@ -23,30 +23,19 @@ public sealed class GpuInfo
     internal IntPtr NvmlHandle { get; set; }
     internal ulong? AdapterLuid { get; set; }
 
-    public List<KeyValuePair<string, string>> LiveExtras()
-    {
-        var list = new List<KeyValuePair<string, string>>();
-        var h = NvmlHandle;
-        if (h == IntPtr.Zero) return list;
-
-        if (Nvml.PState(h) is int p) list.Add(new("Estado de desempenho", $"P{p}"));
-        if (Nvml.ThrottleReasons(h) is ulong r) list.Add(new("PerfCap (limitador)", PerfCap(r)));
-        if (Nvml.PowerUsageMw(h) is uint pw && Nvml.PowerLimitMw(h) is uint lim && lim > 0)
-            list.Add(new("Consumo / limite", $"{pw / 1000.0:0.0} W · {100.0 * pw / lim:0} %"));
-        if (Nvml.Util(h) is Nvml.Utilization u) list.Add(new("Controlador de memória", $"{u.Memory} %"));
-        if (Nvml.EncoderUtil(h) is uint enc) list.Add(new("Encoder (NVENC)", $"{enc} %"));
-        if (Nvml.DecoderUtil(h) is uint dec) list.Add(new("Decoder (NVDEC)", $"{dec} %"));
-        if (Nvml.CurPcieGen(h) is uint g && Nvml.CurPcieWidth(h) is uint w) list.Add(new("PCIe em uso", $"{PcieName(g)} x{w}"));
-        return list;
-    }
+    /// <summary>
+    /// Por que o driver segura o clock agora ("Energia", "Térmico", "HW slowdown", "Power brake", "Ociosa" ou "Nenhum"),
+    /// numa única consulta NVML: Teste de carga mostra a cada segundo, inclusive com jogo aberto. Vazio sem NVML.
+    /// </summary>
+    public string PerfCapNow() => NvmlHandle != IntPtr.Zero && Nvml.ThrottleReasons(NvmlHandle) is ulong r ? PerfCap(r) : "";
 
     private static string PerfCap(ulong r)
     {
         var parts = new List<string>();
         if ((r & 0x4) != 0) parts.Add("Energia");
         if ((r & Nvml.ThermalSlowdownMask) != 0) parts.Add("Térmico");
-        if ((r & 0x8) != 0) parts.Add("HW slowdown");
-        if ((r & 0x80) != 0) parts.Add("Power brake");
+        if ((r & Nvml.HwSlowdownMask) != 0) parts.Add("HW slowdown");
+        if ((r & Nvml.PowerBrakeMask) != 0) parts.Add("Power brake");
         if (parts.Count == 0) return (r & 0x1) != 0 ? "Ociosa" : "Nenhum";
         return string.Join(" + ", parts);
     }

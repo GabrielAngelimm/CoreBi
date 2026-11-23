@@ -1,4 +1,5 @@
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Power;
 using CoreBi.Engine.Monitoring.Sensors;
@@ -318,6 +319,16 @@ public partial class PowerView : UserControl
             if (_context.IsClosing) return;
             ShowPlan(Plan);
             HeaderMotion.Say(EnergyStatus, null, error == 0 ? $"Plano {PowerPlans.DisplayName(plan.Id, plan.Name)} ativado às {DateTime.Now:HH:mm}" : $"O Windows recusou a troca de plano (erro {error}).");
+        }
+        catch (Exception ex)
+        {
+            // Sem isto o erro fecharia o CoreBi e deixaria o botão desligado: volta ao plano ativo e diz o que houve
+            DiagnosticLog.Write("power.plan", ex);
+            if (_context.IsClosing) return;
+            _applyingPlan = false;
+            _pendingPlan = null;
+            if (Plan != null) ShowPlan(Plan);
+            HeaderMotion.Say(EnergyStatus, null, "Não foi possível trocar o plano.");
         }
         finally { _applyingPlan = false; }
     }

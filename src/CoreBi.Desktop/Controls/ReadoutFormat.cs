@@ -25,6 +25,21 @@ internal static class ReadoutFormat
     }
 
     /// <summary>Duração curta: "45 s", "3 min", "1 h 05 min".</summary>
+    /// <summary>
+    /// Nome de um teste do Benchmark fora da página (Visão geral e relatório), pela chave gravada no histórico
+    /// (<c>rt:&lt;qualidade&gt;:&lt;altura&gt;</c> no ray tracing). Um nome só, para o mesmo resultado não aparecer com dois.
+    /// </summary>
+    public static string BenchTitle(string test) => test switch
+    {
+        "render" => "Render de CPU",
+        "sim" => "Simulação de jogo (CPU)",
+        "gpu" => "Cena de jogo (GPU)",
+        "mem" => "Benchmark de memória",
+        "disk" => "Benchmark de disco",
+        _ when test.StartsWith("rt:", StringComparison.Ordinal) => "Ray tracing",
+        _ => test,
+    };
+
     public static string Span(TimeSpan t)
     {
         if (t.TotalSeconds < 60) return $"{Math.Max(0, (int)t.TotalSeconds)} s";

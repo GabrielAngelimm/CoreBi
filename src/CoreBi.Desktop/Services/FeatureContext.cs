@@ -76,19 +76,15 @@ internal sealed class FeatureContext
         return new CriticalScope(this, message);
     }
 
-    public GpuLiveSample? ReadPrimaryGpuLive() =>
-        PrimaryGpu is { } gpu ? GpuMonitor.ReadLive(gpu, Sensors.Snapshot()) : null;
-
     public CpuLiveSample ReadCpuLive() => CpuTelemetry.Read(Sensors, Sensors.Snapshot());
 
-    // Temperatura e consumo sozinhos não pagam a leitura completa (seis consultas NVML): são pedidos a cada segundo
-    // por várias páginas, inclusive durante benchmarks, quando o driver deve ser poupado.
+    // Temperatura, consumo e limitador sozinhos não pagam a leitura completa (GpuMonitor.ReadLive, seis consultas NVML):
+    // são pedidos a cada segundo por várias páginas, e cada um custa no máximo uma consulta ao driver.
     public float? PrimaryGpuTemp() => PrimaryGpu is { } gpu ? GpuMonitor.ReadTemp(gpu, Sensors.Snapshot()) : null;
     public float? PrimaryGpuPower() => PrimaryGpu is { } gpu ? GpuMonitor.ReadPower(gpu, Sensors.Snapshot()) : null;
     public float? PrimaryGpuLoad() => PrimaryGpu?.WindowsLoad;
 
-    public string PrimaryGpuPerfCap() =>
-        PrimaryGpu?.LiveExtras().FirstOrDefault(kv => kv.Key.StartsWith("PerfCap", StringComparison.Ordinal)).Value ?? "";
+    public string PrimaryGpuPerfCap() => PrimaryGpu?.PerfCapNow() ?? "";
 
     private sealed class CriticalScope(FeatureContext context, string message) : IDisposable
     {

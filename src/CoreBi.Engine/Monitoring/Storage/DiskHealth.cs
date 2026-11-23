@@ -50,9 +50,14 @@ public sealed class DiskDetail
     public bool? PredictFailure { get; init; }
     /// <summary>HealthStatus do Windows: 0 saudável, 1 atenção, 2 não saudável, 5 desconhecido.</summary>
     public int WindowsHealth { get; init; } = 5;
+    /// <summary>"Saudável", "Atenção" ou "Não saudável"; null quando o Windows não informa.</summary>
+    public string? WindowsHealthText => WmiDiskTopology.MapHealthStatusText(WindowsHealth);
     /// <summary>Nome do disco no LibreHardwareMonitor, para a leitura ao vivo; null quando não há par único.</summary>
     public string? SensorHardware { get; init; }
     public NvmeLog? Nvme { get; init; }
+
+    /// <summary>Falha prevista: o aviso S.M.A.R.T. do Windows ou, em NVMe, o "aviso crítico" do próprio relatório do disco.</summary>
+    public bool? Failing => PredictFailure ?? (Nvme?.CriticalWarning is ulong cw ? cw != 0 : null);
 }
 
 internal sealed class DiskSample

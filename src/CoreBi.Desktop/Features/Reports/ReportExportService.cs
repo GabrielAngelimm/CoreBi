@@ -123,22 +123,14 @@ internal static class ReportExportService
 
     private static List<ReportBench> BuildBenchList(AppSettings settings)
     {
-        static string TestName(string t) => t switch
-        {
-            "gpu" => "Cena de jogo (GPU)",
-            "sim" => "Simulação de jogo (CPU)",
-            "mem" => "Memória e carregamento",
-            "disk" => "Disco",
-            _ => t,
-        };
-        var list = settings.BenchRecords.Select(r => new ReportBench(r.Date, TestName(r.Test), r.Summary)).ToList();
+        var list = settings.BenchRecords.Select(r => new ReportBench(r.Date, ReadoutFormat.BenchTitle(r.Test), r.Summary)).ToList();
         foreach (var r in settings.BenchRuns)
         {
             var parts = new List<string>();
             if (r.Multi is double mt) parts.Add($"multi-core {mt:N0} pts");
             if (r.Single is double st) parts.Add($"single-core {st:N0} pts");
             if (r.Sustained) parts.Add("sustentado");
-            list.Add(new ReportBench(r.Date, "Render (CPU)", string.Join(" · ", parts) + (string.IsNullOrEmpty(r.Cpu) ? "" : $" · {r.Cpu}")));
+            list.Add(new ReportBench(r.Date, ReadoutFormat.BenchTitle("render"), string.Join(" · ", parts) + (string.IsNullOrEmpty(r.Cpu) ? "" : $" · {r.Cpu}")));
         }
         return list.OrderByDescending(b => b.Date).ToList();
     }

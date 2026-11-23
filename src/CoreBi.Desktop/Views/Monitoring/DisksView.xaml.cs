@@ -84,7 +84,8 @@ public partial class DisksView : UserControl
             var drivesTask = Task.Run(DriveMap.Read);
             var cards = await cardsTask;
             List<DriveCard> drives;
-            try { drives = await drivesTask; } catch { drives = new(); }
+            try { drives = await drivesTask; }
+            catch (Exception ex) { drives = new(); DiagnosticLog.Write("disks.drives", ex); }
             if (entering) await PageMotion.EntranceDone(this);
             if (_context.IsClosing) return;
             _readAt = DateTime.Now;
@@ -433,18 +434,12 @@ public partial class DisksView : UserControl
             n is long v ? new(title, v == 0 ? good : $"{v:N0}", v == 0 ? "Ok" : "Warn") : new(title, NotReported, "", NotReportedTip);
         var rows = new List<DiskCheck>
         {
-            d.WindowsHealth switch
-            {
-                0 => new("Saúde segundo o Windows", "Saudável", "Ok"),
-                1 => new("Saúde segundo o Windows", "Atenção", "Warn"),
-                2 => new("Saúde segundo o Windows", "Não saudável", "Danger"),
-                _ => new("Saúde segundo o Windows", NotReported, "", NotReportedTip),
-            },
+            d.WindowsHealthText is { } health
+                ? new("Saúde segundo o Windows", health, d.WindowsHealth switch { 0 => "Ok", 1 => "Warn", _ => "Danger" })
+                : new("Saúde segundo o Windows", NotReported, "", NotReportedTip),
         };
 
-        // Falha prevista: o aviso S.M.A.R.T. do Windows ou, em NVMe, o "aviso crítico" do próprio relatório do disco
-        bool? failing = d.PredictFailure ?? (d.Nvme?.CriticalWarning is ulong cw ? cw != 0 : null);
-        rows.Add(failing switch
+        rows.Add(d.Failing switch
         {
             true => new("Falha prevista (S.M.A.R.T.)", "Sim", "Danger"),
             false => new("Falha prevista (S.M.A.R.T.)", "Não", "Ok"),
