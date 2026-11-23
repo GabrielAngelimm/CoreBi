@@ -13,7 +13,11 @@ using CoreBi.Engine.Performance.Stress;
 namespace CoreBi.Desktop.Views;
 
 /// <summary>Linha do histórico do Teste de carga: título, motivo (vazio quando foi o tempo), máximas, data e tom do LED.</summary>
-public sealed record StressHistoryRow(string Title, string Reason, string Facts, string Date, string Tone);
+/// <summary>Linha do histórico: o título, as máximas por sigla e, na dica, o motivo e os números completos (Detail).</summary>
+public sealed record StressHistoryRow(string Title, string Detail, string Facts, string Date, string Tone)
+{
+    public string? Tip => Detail.Length > 0 ? Detail : null;
+}
 
 public partial class StressView : UserControl, IDisposable
 {
@@ -105,11 +109,26 @@ public partial class StressView : UserControl, IDisposable
         _ => $"{minutes / 60} h {minutes % 60}",
     };
 
+    /// <summary>Os três níveis de carga da placa de vídeo: nome, largura e altura da janela, anti-aliasing, camadas e iterações do shader.</summary>
+    private static readonly (string Name, GpuBurnSettings Load)[] GpuLoads =
+    {
+        ("Normal", new GpuBurnSettings { Width = 1280, Height = 720, Msaa = 4, Shells = 96, Iterations = 32 }),
+        ("Alta", new GpuBurnSettings { Width = 1920, Height = 1080, Msaa = 4, Shells = 128, Iterations = 48 }),
+        ("Extrema", new GpuBurnSettings { Width = 2560, Height = 1440, Msaa = 8, Shells = 160, Iterations = 64 }),
+    };
+
+    private GpuBurnSettings ChosenGpuLoad => GpuLoads[Math.Clamp((int)Math.Round(GpuLoad.Value), 0, GpuLoads.Length - 1)].Load;
+
+    private void StressOption_Changed(object sender, RoutedPropertyChangedEventArgs<double> e) => ShowLimits();
+
+    /// <summary>O valor de cada controle deslizante ao lado do nome dele.</summary>
     private void ShowLimits()
     {
-        if (CpuLimitText == null || GpuLimitText == null) return;
+        if (CpuLimitText == null || GpuLimitText == null || GpuLoadText == null || RamFractionText == null) return;
         CpuLimitText.Text = $"{TempLimit.Value:0} °C";
         GpuLimitText.Text = $"{GpuTempLimit.Value:0} °C";
+        GpuLoadText.Text = GpuLoads[Math.Clamp((int)Math.Round(GpuLoad.Value), 0, GpuLoads.Length - 1)].Name;
+        RamFractionText.Text = $"{RamFraction.Value:0} %";
     }
     private void TempChart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
 
@@ -211,7 +230,7 @@ public partial class StressView : UserControl, IDisposable
             if (r != MessageBoxResult.Yes) return;
         }
 
-        double fraction = double.Parse(Ui.CheckedTag(RamFractionPanel) ?? "0.6", CultureInfo.InvariantCulture);
+        double fraction = RamFraction.Value / 100;
         _stressDuration = TimeSpan.FromMinutes(minutes);
         _stressStart = DateTime.Now;
         _stressMaxTemp = 0;
@@ -229,17 +248,16 @@ public partial class StressView : UserControl, IDisposable
 
             if (gpu)
             {
-                // Carga: largura, altura, anti-aliasing, camadas e iterações do shader, num ajuste só (sempre em janela, para a
-                // temperatura continuar à vista no CoreBi)
-                var load = (Ui.CheckedTag(GpuLoadPanel) ?? "1920,1080,4,128,48").Split(',').Select(s => int.Parse(s, CultureInfo.InvariantCulture)).ToArray();
+                // Carga num ajuste só, sempre em janela, para a temperatura continuar à vista no CoreBi
+                var load = ChosenGpuLoad;
                 _burn.Start(new GpuBurnSettings
                 {
                     Fullscreen = false,
-                    Width = load[0],
-                    Height = load[1],
-                    Msaa = load[2],
-                    Shells = load[3],
-                    Iterations = load[4],
+                    Width = load.Width,
+                    Height = load.Height,
+                    Msaa = load.Msaa,
+                    Shells = load.Shells,
+                    Iterations = load.Iterations,
                     AdapterName = _context.PrimaryGpu?.Name ?? "",
                 });
                 _gpuBurnOn = true;
@@ -355,7 +373,11 @@ public partial class StressView : UserControl, IDisposable
         ShowHistory();
     }
 
-    /// <summary>Um teste encerrado em palavras: "Estável por 10 min", "Parado aos 3:12" ou "Interrompido aos 4:05", e as máximas.</summary>
+    /// <summary>
+    /// Um teste encerrado em duas linhas curtas: como terminou ("Estável por 10 min", "Parado aos 3:12", "Interrompido aos
+    /// 4:05") e a máxima de cada peça por sigla ("CPU 82 °C · GPU 85 °C · RAM sem erros"). O motivo e os números completos (as
+    /// passadas, o FPS médio) ficam na dica da linha.
+    /// </summary>
     private static StressHistoryRow HistoryRow(StressRun r)
     {
         var took = TimeSpan.FromSeconds(r.Seconds);
@@ -365,16 +387,23 @@ public partial class StressView : UserControl, IDisposable
             StressOutcome.Aborted => $"Interrompido aos {Clock(took)}",
             _ => $"Parado aos {Clock(took)}",
         };
-        string reason = r.Outcome == StressOutcome.Completed || r.Reason == "Parado por você" ? "" : r.Reason;
         var facts = new List<string>();
-        if (r.Cpu) facts.Add(r.CpuMaxC is double c ? $"Processador até {c:0} °C" : "Processador");
-        else if (r.Ram && r.CpuMaxC is double rc) facts.Add($"Processador até {rc:0} °C");
-        if (r.Ram && r.RamPasses is long p)
-            facts.Add($"RAM: {p:N0} {(p == 1 ? "passada" : "passadas")}, {(r.RamErrors is > 0 ? $"{r.RamErrors:N0} {(r.RamErrors == 1 ? "erro" : "erros")}" : "sem erros")}");
+        var detail = new List<string>();
+        if (r.Outcome != StressOutcome.Completed && r.Reason.Length > 0) detail.Add(r.Reason + ".");
+        if ((r.Cpu || r.Ram) && r.CpuMaxC is double c) facts.Add($"CPU {c:0} °C");
+        else if (r.Cpu) facts.Add("CPU");
         if (r.Gpu)
-            facts.Add(string.Join(", ", new[] { r.GpuMaxC is double g ? $"Placa de vídeo até {g:0} °C" : "Placa de vídeo", r.GpuAvgFps is double f ? $"{f:0} FPS em média" : null }.Where(x => x != null)));
+        {
+            facts.Add(r.GpuMaxC is double g ? $"GPU {g:0} °C" : "GPU");
+            if (r.GpuAvgFps is double f) detail.Add($"Placa de vídeo: {f:0} FPS em média.");
+        }
+        if (r.Ram)
+        {
+            facts.Add(r.RamErrors is > 0 ? $"RAM {r.RamErrors:N0} {(r.RamErrors == 1 ? "erro" : "erros")}" : "RAM sem erros");
+            if (r.RamPasses is long p) detail.Add($"Memória: {p:N0} {(p == 1 ? "passada" : "passadas")}.");
+        }
         string tone = r.Outcome switch { StressOutcome.Aborted => "Danger", StressOutcome.Stopped => "Warn", _ => "Ok" };
-        return new StressHistoryRow(title, reason, string.Join(" · ", facts), ReadoutFormat.When(r.Date, compact: true), tone);
+        return new StressHistoryRow(title, string.Join("\n", detail), string.Join(" · ", facts), ReadoutFormat.When(r.Date, compact: true), tone);
     }
 
     private void SetStressControls(bool running)

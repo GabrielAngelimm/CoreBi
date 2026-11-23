@@ -87,12 +87,12 @@
             <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
         </Style>
         <!--
-            Linha do histórico (StressHistoryRow): o LED de como terminou (verde estável, âmbar parado, vermelho interrompido) na
-            linha do título, o título em DIN 14 e a data à direita; embaixo, o motivo (só quando não foi o tempo, em vermelho se
-            interrompido) e as máximas de cada peça. Fio entre as linhas, nunca antes da primeira.
+            Linha do histórico (StressHistoryRow), em duas linhas curtas: o LED de como terminou (verde estável, âmbar parado,
+            vermelho interrompido), o título em DIN 14 e a data à direita; embaixo, as máximas por sigla em legenda. O motivo e os
+            números completos ficam na dica. Fio entre as linhas, nunca antes da primeira.
         -->
         <DataTemplate x:Key="StressHistoryRow">
-            <Border x:Name="row" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,12" Margin="0,0,16,0" Background="Transparent">
+            <Border x:Name="row" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,10" Margin="0,0,16,0" Background="Transparent" ToolTip="{Binding Tip}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -102,9 +102,7 @@
                     <Ellipse x:Name="led" Style="{StaticResource StatusLed}" Width="8" Height="8" Fill="{DynamicResource Ok}" VerticalAlignment="Top" Margin="0,6,10,0" />
                     <StackPanel Grid.Column="1">
                         <TextBlock Text="{Binding Title}" Style="{StaticResource ItemTitle}" TextTrimming="CharacterEllipsis" />
-                        <TextBlock x:Name="reason" Text="{Binding Reason}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,2,0,0"
-                                   Visibility="{Binding Reason, Converter={StaticResource NotEmptyVis}}" />
-                        <TextBlock Text="{Binding Facts}" Style="{StaticResource Caption}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,2,0,0"
+                        <TextBlock Text="{Binding Facts}" Style="{StaticResource Caption}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" Margin="0,3,0,0"
                                    Visibility="{Binding Facts, Converter={StaticResource NotEmptyVis}}" />
                     </StackPanel>
                     <TextBlock Grid.Column="2" Text="{Binding Date}" Style="{StaticResource StatSub}" Margin="12,2,0,0" VerticalAlignment="Top" />
@@ -113,14 +111,13 @@
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}" Value="0">
                     <Setter TargetName="row" Property="BorderThickness" Value="0" />
-                    <Setter TargetName="row" Property="Padding" Value="0,0,0,12" />
+                    <Setter TargetName="row" Property="Padding" Value="0,0,0,10" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Warn">
                     <Setter TargetName="led" Property="Fill" Value="{DynamicResource Warn}" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding Tone}" Value="Danger">
                     <Setter TargetName="led" Property="Fill" Value="{DynamicResource Danger}" />
-                    <Setter TargetName="reason" Property="Foreground" Value="{DynamicResource Danger}" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -387,7 +384,7 @@
                             visita: a página espera a primeira leitura dos sensores (os outros cartões o acompanham).
                         -->
                         <Border x:Name="StressConfigCard" Style="{StaticResource ConfigCard}"
-                                local:Skeleton.Layout="row 34: h 230; foot 42: btn *^42; gap 12; bands 5; row 17: c 40%, - *, c 15%&gt;; gap 10; row 24: pill *^8; endbands">
+                                local:Skeleton.Layout="row 34: h 230; foot 42: btn *^42; footgap 24; gap 12; bands 5; row 17: c 40%, - *, c 15%&gt;; gap 10; row 24: pill *^8; endbands">
                             <DockPanel>
                                 <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
                                     <TextBlock Text="Configurações do teste de carga" Style="{StaticResource CardTitle}" />
@@ -397,7 +394,7 @@
                                     <Button x:Name="BtnStress" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnStress_Click"
                                             ToolTip="Põe as peças marcadas no máximo e acompanha a temperatura, para ver se o PC aguenta sem travar." />
                                 </StackPanel>
-                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="16" Margin="0,4,0,8">
+                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="28" Margin="0,12,0,24">
                                     <StackPanel x:Name="StressDurationSection" Style="{StaticResource ConfigSection}">
                                         <DockPanel Style="{StaticResource ConfigHead}">
                                             <TextBlock x:Name="StressDurationText" Text="10 min" Style="{StaticResource ConfigValue}" />
@@ -425,37 +422,33 @@
                                         <local:ValueSlider x:Name="GpuTempLimit" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Gpu}" Minimum="60" Maximum="100" Value="85"
                                                            ValueChanged="TempLimit_Changed" AutomationProperties.Name="Corte da placa de vídeo" />
                                     </StackPanel>
-                                    <!-- Carga da placa de vídeo: resolução da janela, anti-aliasing e camadas num só ajuste -->
+                                    <!-- Carga da placa de vídeo: resolução da janela, anti-aliasing e camadas num só ajuste (StressView.GpuLoads) -->
                                     <StackPanel x:Name="GpuOptions" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
-                                        <TextBlock Text="Carga da placa de vídeo" Style="{StaticResource ConfigName}"
-                                                   ToolTip="A janela 3D fica aberta ao lado do CoreBi, para você acompanhar a temperatura. Mais carga é mais resolução, anti-aliasing e camadas." />
-                                        <Border Style="{StaticResource ConfigSegmentGroup}">
-                                            <local:SlidingSelectionPanel x:Name="GpuLoadPanel" Style="{StaticResource ConfigSegmentRail}">
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="GpuLoad" Content="Normal" Tag="1280,720,4,96,32" ToolTip="Janela de 720p, anti-aliasing 4x" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="GpuLoad" Content="Alta" Tag="1920,1080,4,128,48" IsChecked="True" ToolTip="Janela de 1080p, anti-aliasing 4x e mais camadas" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="GpuLoad" Content="Extrema" Tag="2560,1440,8,160,64" ToolTip="Janela de 1440p, anti-aliasing 8x e o máximo de camadas" />
-                                            </local:SlidingSelectionPanel>
-                                        </Border>
+                                        <DockPanel Style="{StaticResource ConfigHead}">
+                                            <TextBlock x:Name="GpuLoadText" Text="Alta" Style="{StaticResource ConfigValue}" />
+                                            <TextBlock Text="Carga da placa de vídeo" Style="{StaticResource ConfigName}" Margin="0"
+                                                       ToolTip="A janela 3D fica aberta ao lado do CoreBi, para você acompanhar a temperatura. Normal: 720p e anti-aliasing 4x. Alta: 1080p, 4x e mais camadas. Extrema: 1440p, 8x e o máximo de camadas." />
+                                        </DockPanel>
+                                        <local:ValueSlider x:Name="GpuLoad" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Gpu}" Minimum="0" Maximum="2" Value="1"
+                                                           ValueChanged="StressOption_Changed" AutomationProperties.Name="Carga da placa de vídeo" />
                                     </StackPanel>
                                     <StackPanel x:Name="RamSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
-                                        <TextBlock Text="RAM livre em teste" Style="{StaticResource ConfigName}" ToolTip="Quanto da memória livre o teste separa para gravar e conferir." />
-                                        <Border Style="{StaticResource ConfigSegmentGroup}">
-                                            <local:SlidingSelectionPanel x:Name="RamFractionPanel" Style="{StaticResource ConfigSegmentRail}">
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="Ram" Content="40 %" Tag="0.4" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="Ram" Content="60 %" Tag="0.6" IsChecked="True" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="Ram" Content="80 %" Tag="0.8" />
-                                            </local:SlidingSelectionPanel>
-                                        </Border>
+                                        <DockPanel Style="{StaticResource ConfigHead}">
+                                            <TextBlock x:Name="RamFractionText" Text="60 %" Style="{StaticResource ConfigValue}" />
+                                            <TextBlock Text="RAM livre em teste" Style="{StaticResource ConfigName}" Margin="0" ToolTip="Quanto da memória livre o teste separa para gravar e conferir." />
+                                        </DockPanel>
+                                        <local:ValueSlider x:Name="RamFraction" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Memory}" Minimum="40" Maximum="80" Step="10" Value="60"
+                                                           SmallChange="10" LargeChange="10" ValueChanged="StressOption_Changed" AutomationProperties.Name="RAM livre em teste" />
                                     </StackPanel>
                                 </local:ConfigStack>
                             </DockPanel>
                         </Border>
                         <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
                             <DockPanel>
-                                <DockPanel DockPanel.Dock="Top">
+                                <Grid Style="{StaticResource HistoryHeader}">
+                                    <TextBlock Text="Histórico" Style="{StaticResource CardTitle}" Background="Transparent" ToolTip="Os últimos 30 testes encerrados, o mais recente em cima." />
                                     <Button x:Name="StressHistoryClear" Style="{StaticResource HistoryClear}" Click="StressHistoryClear_Click" />
-                                    <TextBlock Text="Histórico" Style="{StaticResource HistoryCardTitle}" ToolTip="Os últimos 30 testes encerrados, o mais recente em cima." />
-                                </DockPanel>
+                                </Grid>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
                                     <ItemsControl x:Name="StressHistory" Style="{StaticResource StressHistoryList}" />
                                 </ScrollViewer>

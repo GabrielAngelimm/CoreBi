@@ -57,8 +57,9 @@ public sealed class SpreadPanel : System.Windows.Controls.Panel
 }
 
 /// <summary>
-/// Seções da configuração de um teste: o vão que sobra se divide por igual entre elas (e metade dele em cima e embaixo), com
-/// um fio no meio de cada vão. Com uma seção só, ela fica no meio. Vãos nunca menores que MinGap; as recolhidas não contam.
+/// Seções da configuração de um teste: o vão que sobra se divide por igual entre elas, com um fio no meio de cada vão, entre
+/// MinGap e MaxGap; o bloco fica no meio da altura (com poucas seções num cartão alto, a sobra vai em cima e embaixo, por igual,
+/// e as seções não se espalham pelo cartão). Com uma seção só, ela fica no meio. As recolhidas não contam.
 /// </summary>
 public sealed class ConfigStack : System.Windows.Controls.Panel
 {
@@ -69,6 +70,10 @@ public sealed class ConfigStack : System.Windows.Controls.Panel
     public static readonly DependencyProperty DividerProperty = DependencyProperty.Register(
         nameof(Divider), typeof(System.Windows.Media.Brush), typeof(ConfigStack), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
     public System.Windows.Media.Brush? Divider { get => (System.Windows.Media.Brush?)GetValue(DividerProperty); set => SetValue(DividerProperty, value); }
+
+    public static readonly DependencyProperty MaxGapProperty = DependencyProperty.Register(
+        nameof(MaxGap), typeof(double), typeof(ConfigStack), new FrameworkPropertyMetadata(double.PositiveInfinity, FrameworkPropertyMetadataOptions.AffectsArrange));
+    public double MaxGap { get => (double)GetValue(MaxGapProperty); set => SetValue(MaxGapProperty, value); }
 
     private readonly List<double> _lines = new();
 
@@ -84,7 +89,7 @@ public sealed class ConfigStack : System.Windows.Controls.Panel
             h += child.DesiredSize.Height;
             n++;
         }
-        return new Size(w, h + n * MinGap);
+        return new Size(w, h + Math.Max(0, n - 1) * MinGap);
     }
 
     protected override Size ArrangeOverride(Size final)
@@ -92,7 +97,7 @@ public sealed class ConfigStack : System.Windows.Controls.Panel
         var visible = InternalChildren.Cast<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
         double used = visible.Sum(c => c.DesiredSize.Height);
         int n = visible.Count;
-        double gap = n > 0 ? Math.Max(MinGap, (final.Height - used) / n) : 0;
+        double gap = n > 1 ? Math.Clamp((final.Height - used) / n, MinGap, Math.Max(MinGap, MaxGap)) : 0;
         double y = n > 0 ? Math.Max(0, (final.Height - used - (n - 1) * gap) / 2) : 0;
         _lines.Clear();
         for (int i = 0; i < n; i++)

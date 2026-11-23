@@ -85,6 +85,18 @@ public static class BottleneckAnalyzer
         _ => "",
     };
 
+    /// <summary>O que fazer, numa linha só: a frase que fica na tela embaixo do veredito (o conselho inteiro fica na dica).</summary>
+    public static string Hint(Limiter l) => l switch
+    {
+        Limiter.Unknown => "Faltam o FPS do jogo e as leituras dos sensores.",
+        Limiter.Gpu => "Normal num jogo pesado. Para mais FPS, baixe a resolução ou ative DLSS ou FSR.",
+        Limiter.Cpu => "Baixe distância de visão e multidões, feche programas e confira o XMP ou EXPO.",
+        Limiter.Vram => "Baixe a qualidade das texturas ou a resolução.",
+        Limiter.Ram => "Feche navegadores e outros programas.",
+        Limiter.Thermal => "Confira a ventilação, a poeira e a pasta térmica.",
+        _ => "Trava de FPS, V-Sync, menu ou pausa. Normal se o FPS já é o desejado."
+    };
+
     public static string Advice(Limiter l) => l switch
     {
         Limiter.Unknown => "Sem o FPS de um jogo em primeiro plano e as leituras dos sensores, não há como classificar.",

@@ -7,9 +7,10 @@
     -->
     <UserControl.Resources>
         <!--
-            Hierarquia do Gargalo, de cima para baixo, sem tamanhos no meio do caminho: título de cartão 18; veredito 28 (Agora) e
-            24 (análise); mostradores 38 (FPS) e 22 (todos os números de linha e de média); nome de linha 14; rótulo DIN 13;
-            legenda 12 só para a linha de quando e do quê. Explicações ficam nas dicas, não na tela.
+            Hierarquia do Gargalo: os dois cartões da esquerda leem igual, de cima para baixo. Rótulo DIN 13 com quando e o quê,
+            o veredito (28 no Agora, 24 na análise), uma linha do que fazer (14, apagada) e, à direita, o FPS nas mesmas colunas
+            (38 no Agora, 22 na análise). Depois, só linhas: nome 14, medidor e número 22. Título de cartão 18. O conselho inteiro
+            e as explicações ficam nas dicas, não na tela.
 
             Medidor das leituras: o nome (14) e a leitura (mostrador 22) na mesma linha de base (os dois no topo; o nome termina num
             espaço na fonte e no tamanho da leitura, então as duas linhas têm a mesma subida) e o medidor segmentado na cor do
@@ -109,21 +110,25 @@
         </DataTemplate>
 
         <!--
-            Média ou máximo da sessão: colunas iguais, cada uma centrada entre os fios (só há fio entre elas). Rótulo DIN 13 e número
-            no mostrador 22, o mesmo das linhas; número e unidade são Runs de um TextBlock só (mesma linha de base); sem dado,
-            travessão um tom abaixo e sem unidade.
+            FPS da análise ao lado do veredito dela, nas mesmas colunas do FPS do cartão Agora (168, fio, 24 + 140), então os números
+            dos dois cartões ficam um embaixo do outro. Rótulo DIN 13 e mostrador 22 (abaixo dos 38 do Agora: o ao vivo vem primeiro);
+            número e unidade são Runs de um TextBlock só; sem dado, travessão um tom abaixo e sem unidade.
         -->
         <DataTemplate x:Key="SessionStat">
-            <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Background="Transparent" ToolTip="{Binding Tip}">
-                <StackPanel HorizontalAlignment="Center">
-                    <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
-                    <TextBlock Margin="0,4,0,0" HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular">
+            <Border x:Name="cell" BorderBrush="{DynamicResource Line}" BorderThickness="1,0,0,0" Padding="24,0,0,0" Background="Transparent" ToolTip="{Binding Tip}">
+                <StackPanel x:Name="stack" Width="140">
+                    <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" />
+                    <TextBlock Margin="0,4,0,0" Typography.NumeralAlignment="Tabular">
                         <Run x:Name="number" Text="{Binding Value, Mode=OneWay}" FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="22" Foreground="{DynamicResource Fg}" /><Run x:Name="unit" Text="{Binding UnitText, Mode=OneWay}" FontFamily="{StaticResource LabelFont}" FontSize="13" Foreground="{DynamicResource Muted}" />
                     </TextBlock>
                 </StackPanel>
             </Border>
             <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding First}" Value="True"><Setter TargetName="cell" Property="BorderThickness" Value="0" /></DataTrigger>
+                <DataTrigger Binding="{Binding First}" Value="True">
+                    <Setter TargetName="cell" Property="BorderThickness" Value="0" />
+                    <Setter TargetName="cell" Property="Padding" Value="0" />
+                    <Setter TargetName="stack" Property="Width" Value="168" />
+                </DataTrigger>
                 <DataTrigger Binding="{Binding Value}" Value="—"><Setter TargetName="number" Property="Foreground" Value="{DynamicResource Faint}" /></DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
@@ -170,9 +175,9 @@
                         </Grid.RowDefinitions>
 
                         <!--
-                            Agora: o veredito em DIN 28 (a placa da página), na cor só quando pede ação, e a dica embaixo (três linhas
-                            reservadas); à direita, o FPS agora e o 1% low. A altura não muda com ou sem jogo. Em cima, "Agora" e, com um
-                            jogo medido, o LED no sinal e o nome do processo.
+                            Agora: o veredito em DIN 28 (a placa da página), na cor só quando pede ação, e uma linha do que fazer
+                            embaixo (o conselho inteiro na dica); à direita, o FPS agora e o 1% low. A altura não muda com ou sem jogo.
+                            Em cima, "Agora" e, com um jogo medido, o LED no sinal e o nome do processo.
                         -->
                         <Border x:Name="BnLiveCard" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}">
                             <Grid>
@@ -185,7 +190,7 @@
                                         <Run x:Name="BnLiveLabel" Text="Agora" /><InlineUIContainer><Ellipse x:Name="BnLiveDot" Style="{StaticResource StatusLed}" Fill="{DynamicResource Signal}" Width="7" Height="7" Margin="14,0,8,1" Visibility="Collapsed" /></InlineUIContainer><Run x:Name="BnLiveGame" Foreground="{DynamicResource Fg}" /><Run x:Name="BnLiveAgo" Foreground="{DynamicResource Muted}" />
                                     </TextBlock>
                                     <TextBlock x:Name="BnLiveTitle" Text="Nenhum jogo em primeiro plano" Style="{StaticResource PlateName}" Foreground="{DynamicResource Muted}" Margin="0,8,0,0" />
-                                    <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="760" HorizontalAlignment="Left" Margin="0,6,0,0" MinHeight="60" />
+                                    <TextBlock x:Name="BnLiveAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,8,0,0" Background="Transparent" />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
                                     <StackPanel x:Name="BnFpsCell" Style="{StaticResource FpsCell}" ToolTip="Quadros que o jogo entregou no último segundo.">
@@ -203,14 +208,14 @@
                         </Border>
 
                         <!--
-                            Análise de sessão, a única ação da página. Embaixo do título, a linha do que está acontecendo (ou de quando foi a
-                            última); depois o veredito, as médias e os máximos e as seis situações, que dividem a sobra de altura até o pé.
+                            Análise de sessão, a única ação da página. Três blocos com respiro entre eles, lidos nesta ordem: o título com
+                            a duração e o botão (e, embaixo, o trilho do andamento, reservado); o resultado, no mesmo desenho do Agora
+                            (quando e o quê, veredito 24, uma linha do que fazer e o FPS nas mesmas colunas); e o tempo em cada situação,
+                            que divide a sobra de altura até o pé. Os outros números da análise ficam na dica do resultado.
                         -->
                         <Border x:Name="BnSessionCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="{StaticResource CardPadding}">
                             <Grid>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
@@ -235,29 +240,37 @@
                                                 ToolTip="Inicie e vá para o jogo: a análise espera ele ficar em primeiro plano e mede pelo tempo escolhido." />
                                     </StackPanel>
                                 </Grid>
-                                <TextBlock x:Name="BnSessionStatus" Grid.Row="1" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" Typography.NumeralAlignment="Tabular"
-                                           Text="Jogue com o CoreBi aberto: no fim, você vê o que segurou o FPS e por quanto tempo." />
                                 <!-- Andamento da análise: o trilho fica reservado (apagado parado), para nada subir quando ela começa -->
-                                <Grid x:Name="BnSessionBar" Grid.Row="2" Style="{StaticResource ProgressTrack}" Margin="0,12,0,0" Opacity="0">
+                                <Grid x:Name="BnSessionBar" Grid.Row="1" Style="{StaticResource ProgressTrack}" Margin="0,12,0,0" Opacity="0">
                                     <Border Style="{StaticResource ProgressFill}">
                                         <Border.RenderTransform>
                                             <ScaleTransform x:Name="BnSessionProgress" ScaleX="0" />
                                         </Border.RenderTransform>
                                     </Border>
                                 </Grid>
-                                <StackPanel Grid.Row="3" Margin="0,18,0,0">
-                                    <TextBlock x:Name="BnResultTitle" Text="Nenhuma análise ainda" Style="{StaticResource TestPlateTitle}" Foreground="{DynamicResource Muted}" />
-                                    <TextBlock x:Name="BnResultAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" MaxWidth="820" HorizontalAlignment="Left" Margin="0,6,0,0" MinHeight="40"
-                                               Text="Escolha a duração, clique em Iniciar análise e vá jogar. Ao voltar, o resultado está aqui." />
-                                </StackPanel>
-                                <ItemsControl x:Name="BnResultStats" Grid.Row="4" ItemTemplate="{StaticResource SessionStat}" Margin="0,20,0,0" Focusable="False">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                </ItemsControl>
-                                <DockPanel Grid.Row="5" Margin="0,24,0,0">
-                                    <TextBlock DockPanel.Dock="Top" Text="Tempo em cada situação" Style="{StaticResource Label}" Margin="0,0,0,4" Background="Transparent"
-                                               ToolTip="Cada amostra da análise cai numa destas situações, pela regra das marcas em Leituras." />
+                                <!-- O resultado, no desenho do Agora -->
+                                <Grid x:Name="BnResult" Grid.Row="2" Margin="0,20,0,0" Background="Transparent">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,32,0">
+                                        <TextBlock x:Name="BnSessionStatus" Style="{StaticResource StatLabel}" Typography.NumeralAlignment="Tabular" Text="Última análise" />
+                                        <TextBlock x:Name="BnResultTitle" Text="Nenhuma ainda" Style="{StaticResource TestPlateTitle}" Foreground="{DynamicResource Muted}" Margin="0,8,0,0" />
+                                        <TextBlock x:Name="BnResultAdvice" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,8,0,0" Background="Transparent" />
+                                    </StackPanel>
+                                    <ItemsControl x:Name="BnResultStats" Grid.Column="1" ItemTemplate="{StaticResource SessionStat}" Focusable="False" VerticalAlignment="Top">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                    </ItemsControl>
+                                </Grid>
+                                <!-- Um fio separa o resultado do detalhe: daqui para baixo, só linhas -->
+                                <DockPanel Grid.Row="3" Margin="0,28,0,0">
+                                    <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="0,24,0,4">
+                                        <TextBlock Text="Tempo em cada situação" Style="{StaticResource Label}" Background="Transparent"
+                                                   ToolTip="Cada amostra da análise cai numa destas situações, pela regra das marcas em Leituras." />
+                                    </Border>
                                     <ItemsControl x:Name="BnDistribution" ItemTemplate="{StaticResource SituationRow}" Focusable="False">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate><UniformGrid Columns="1" /></ItemsPanelTemplate>
