@@ -311,6 +311,15 @@ Gráficos e indicadores refletem só dados reais e ficam vazios ou com travessã
 - Datas por `ReadoutFormat.When`: "hoje às 21:40", "ontem às 21:40", "17/11 às 21:40" e o ano quando muda; nas listas compactas, sem o "às".
 - Siglas aparecem por extenso na primeira vez ou na dica (placa de vídeo, processador); o texto fala com quem usa ("Instale em Corrigir"), sem jargão de programação.
 
+## Instalador
+
+O instalador (Inno Setup 6.7) usa o estilo `windows11` em modo dinâmico: segue o tema claro ou escuro do Windows ao abrir, com a barra de título no mesmo tom, e os textos, botões e listas são os do próprio Windows. A marca entra em dois lugares só:
+
+- O painel da esquerda nas boas-vindas e na conclusão é a barra lateral do app: o fundo `Sidebar` escuro, o símbolo em papel e sinal e, embaixo de um fio `Line`, uma fileira com um LED quadrado para cada peça, nas cores de `Cpu`, `Gpu`, `Memory`, `Storage`, `Board` e `Net`. Sem degradê, sombra ou texto na imagem.
+- O símbolo do canto das outras telas vem em tinta e verde-água no tema claro e em papel e sinal no escuro.
+
+As imagens saem de `tools/generate_installer_art.py`, a partir de `brand/geometry.json`, desenhadas no tamanho de cada escala de tela (100% a 250%); o Setup escolhe a mais próxima. Os textos das boas-vindas e da conclusão seguem a regra de texto acima, e a CI salva cada tela, nos dois temas, em `capturas/<branch>` (`instalador-*.png`).
+
 ## Como trocar a paleta
 
 1. Cores do app: a tabela `Palette` de `Shell/ThemeManager.cs`; depois, `python tools/sync_theme.py` copia os valores escuros para o bloco gerado de `Shell/Theme.xaml`.
