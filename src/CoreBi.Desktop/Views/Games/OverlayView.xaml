@@ -61,51 +61,6 @@
             </Setter>
         </Style>
 
-        <!-- Controle deslizante fino: trilho, parte preenchida acesa no sinal e botão redondo -->
-        <Style x:Key="OpacitySlider" TargetType="Slider">
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Slider">
-                        <Grid Height="28" Background="Transparent">
-                            <Border Height="4" CornerRadius="2" Background="{DynamicResource Line}" />
-                            <Track x:Name="PART_Track">
-                                <Track.DecreaseRepeatButton>
-                                    <RepeatButton Command="Slider.DecreaseLarge" Focusable="False" IsTabStop="False">
-                                        <RepeatButton.Template>
-                                            <ControlTemplate TargetType="RepeatButton">
-                                                <Grid Background="Transparent"><Border Height="4" CornerRadius="2" Background="{DynamicResource Signal}" /></Grid>
-                                            </ControlTemplate>
-                                        </RepeatButton.Template>
-                                    </RepeatButton>
-                                </Track.DecreaseRepeatButton>
-                                <Track.IncreaseRepeatButton>
-                                    <RepeatButton Command="Slider.IncreaseLarge" Focusable="False" IsTabStop="False">
-                                        <RepeatButton.Template>
-                                            <ControlTemplate TargetType="RepeatButton"><Grid Background="Transparent" /></ControlTemplate>
-                                        </RepeatButton.Template>
-                                    </RepeatButton>
-                                </Track.IncreaseRepeatButton>
-                                <Track.Thumb>
-                                    <Thumb Focusable="False">
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="Thumb">
-                                                <Ellipse x:Name="e" Width="16" Height="16" Fill="{DynamicResource Fg}" Stroke="{DynamicResource Raised}" StrokeThickness="3" />
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="e" Property="Fill" Value="{DynamicResource Fg}" /></Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </Track.Thumb>
-                            </Track>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!--
             Item do overlay: uma pílula com um LED e o nome; a pílula inteira é o alvo do clique. Apagado = anel, nome em tom baixo
             e fundo só sob o mouse; aceso = ponto no sinal, nome em tinta e um contorno neutro, sem fundo. Os itens de um grupo ficam
@@ -381,9 +336,10 @@
                                     <Border Grid.Column="1" Width="1" Height="22" Background="{DynamicResource Line}" Margin="16,0" />
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="Opacidade" Style="{StaticResource StatLabel}" VerticalAlignment="Center" Margin="0,0,12,0" />
-                                        <Slider x:Name="OvOpacity" Style="{StaticResource OpacitySlider}" Minimum="30" Maximum="100" SmallChange="1" LargeChange="10"
-                                                TickFrequency="1" IsSnapToTickEnabled="True" IsMoveToPointEnabled="True" Width="150" VerticalAlignment="Center"
-                                                ValueChanged="OvOpacity_Changed" PreviewMouseWheel="OvOpacity_Wheel" ToolTip="Também ajusta com a roda do mouse" />
+                                        <!-- O mesmo controle deslizante do Teste de carga (ValueSlider), com o anel na cor da faixa -->
+                                        <local:ValueSlider x:Name="OvOpacity" Style="{StaticResource ConfigSlider}" Ring="{DynamicResource Raised}" Minimum="30" Maximum="100"
+                                                           Step="1" SmallChange="5" LargeChange="10" Value="100" Width="160" VerticalAlignment="Center"
+                                                           ValueChanged="OvOpacity_Changed" AutomationProperties.Name="Opacidade" ToolTip="Também ajusta com a roda do mouse e as setas" />
                                         <TextBlock x:Name="OvOpacityText" Text="100 %" Style="{StaticResource Num}" Foreground="{DynamicResource Fg}" FontSize="14"
                                                    Width="48" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
                                     </StackPanel>
@@ -412,7 +368,7 @@
                         </Grid.RowDefinitions>
 
                         <!--
-                            O que mostrar: um grupo por componente (ícone, nome e legenda à esquerda, itens em três colunas), separados por um fio.
+                            O que mostrar: um grupo por componente (ícone, nome e legenda à esquerda, itens em três colunas), separados só pelo vão.
                             O cartão termina no último grupo, com a mesma margem embaixo que em cima; a sobra de altura vai para "Onde funciona".
                         -->
                         <Border x:Name="OvItemsCard" Style="{StaticResource CardBorder}">
@@ -477,7 +433,7 @@
                                         </local:SlidingSelectionPanel>
                                     </Border>
                                 </Grid>
-                                <StackPanel x:Name="OvItemsPanel" Grid.Row="1" Margin="0,12,0,0" />
+                                <StackPanel x:Name="OvItemsPanel" Grid.Row="1" Margin="0,22,0,0" />
                             </Grid>
                         </Border>
 
@@ -488,20 +444,20 @@
                         -->
                         <Border x:Name="OvWhereCard" Grid.Row="2" Style="{StaticResource CardBorder}">
                             <!--
-                                A sobra de altura vira vãos iguais: do título ao primeiro tópico e entre os tópicos (o fio fica no meio do vão).
+                                A sobra de altura vira vãos iguais, sem fio: do título ao primeiro tópico e entre os tópicos (no mínimo 12).
                                 O último tópico encosta na margem de baixo do cartão (-3 px: a linha de base fica a 25 px do pé, como o título do
                                 topo). O cabeçalho sobe 8 px no vão: o título centrado na linha de 34 px deixa 11 px vazios embaixo.
                             -->
                             <Grid Margin="0,0,0,-3">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" MinHeight="16" />
+                                    <RowDefinition Height="*" MinHeight="12" />
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" MinHeight="17" />
+                                    <RowDefinition Height="*" MinHeight="12" />
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" MinHeight="17" />
+                                    <RowDefinition Height="*" MinHeight="12" />
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" MinHeight="17" />
+                                    <RowDefinition Height="*" MinHeight="12" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <Grid Style="{StaticResource CardHeader}" Margin="0,0,0,-8">
@@ -522,7 +478,6 @@
                                     <TextBlock Grid.Column="1" Text="Janela e tela cheia sem borda" Style="{StaticResource WhereName}" />
                                     <TextBlock Grid.Column="2" Text="Funciona" Style="{StaticResource WhereState}" />
                                 </Grid>
-                                <Border Grid.Row="3" Style="{StaticResource Divider}" VerticalAlignment="Center" />
                                 <Grid Grid.Row="4" Style="{StaticResource WhereRow}" Background="Transparent" x:Name="OvRtssRow" ToolTip="Em tela cheia exclusiva o Windows não deixa outra janela por cima do jogo: quem desenha o overlay é o RTSS, se estiver aberto.">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
@@ -540,7 +495,6 @@
                                     <TextBlock x:Name="OvRtssHint" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource WhereHint}" />
                                     <Button x:Name="OvRtssAction" Grid.Column="3" Grid.RowSpan="2" Style="{StaticResource WhereButton}" Click="OvReadyAction_Click" />
                                 </Grid>
-                                <Border Grid.Row="5" Style="{StaticResource Divider}" VerticalAlignment="Center" />
                                 <Grid Grid.Row="6" Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="Temperatura, clock e consumo da CPU.">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
@@ -557,7 +511,6 @@
                                     <TextBlock x:Name="OvAdminState" Grid.Column="2" Text="Funciona" Style="{StaticResource WhereState}" />
                                     <TextBlock x:Name="OvAdminHint" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource WhereHint}" />
                                 </Grid>
-                                <Border Grid.Row="7" Style="{StaticResource Divider}" VerticalAlignment="Center" />
                                 <Grid Grid.Row="8" Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="O FPS vem dos eventos de apresentação do Windows (ETW): o CoreBi não injeta nada nem lê a memória do jogo.">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />

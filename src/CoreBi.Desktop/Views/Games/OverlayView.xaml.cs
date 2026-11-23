@@ -171,7 +171,7 @@ public partial class OverlayView : UserControl
 
     /// <summary>
     /// O que mostrar: um grupo por componente, com o ícone, o nome e a legenda numa coluna à esquerda e os itens em três colunas.
-    /// O fio de cada grupo fica no topo da sua faixa, com 8 px até o grupo de cima e até o seu; o cartão termina no último grupo.
+    /// Os grupos se separam só pelo vão (26 px, sem fio); o cartão termina no último grupo.
     /// </summary>
     private void BuildPicker()
     {
@@ -183,16 +183,11 @@ public partial class OverlayView : UserControl
         {
             string group = groups[i].Key;
             var slot = new Grid();
-            if (i > 0)
-            {
-                var rule = new Border { VerticalAlignment = VerticalAlignment.Top };
-                rule.SetResourceReference(StyleProperty, "Divider");
-                slot.Children.Add(rule);
-            }
 
-            // 8 px acima e abaixo de cada fio; o último grupo encosta na margem do cartão (-2 px: medido, a legenda fica a 25 px do pé, como o título do topo)
+            // Sem fio: 26 px de vão entre um grupo e o outro; o último encosta na margem do cartão (-2 px: medido, a legenda fica
+            // a 25 px do pé, como o título do topo)
             bool last = i == groups.Count - 1;
-            var row = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, i == 0 ? 0 : 8, 0, last ? -2 : 8) };
+            var row = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, i == 0 ? 0 : 13, 0, last ? -2 : 13) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
@@ -295,13 +290,6 @@ public partial class OverlayView : UserControl
         double opacity = OpacityOf(e.NewValue);
         OvPreviewHost.Opacity = opacity;
         OnOpacityChanged(opacity);
-    }
-
-    private void OvOpacity_Wheel(object sender, MouseWheelEventArgs e)
-    {
-        double step = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 1 : 5;
-        OvOpacity.Value = Math.Clamp(OvOpacity.Value + Math.Sign(e.Delta) * step, OvOpacity.Minimum, OvOpacity.Maximum);
-        e.Handled = true;
     }
 
     private static double OpacityOf(double percent) => Math.Clamp(percent / 100, 0.3, 1);

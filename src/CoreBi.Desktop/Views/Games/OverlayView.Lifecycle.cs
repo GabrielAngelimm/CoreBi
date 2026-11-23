@@ -237,19 +237,19 @@ public partial class OverlayView : IDisposable
             SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Ok", "Pelo RTSS");
         else if (_rtssProbe == RtssStatus.Incompatible)
             SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Warn", "RTSS desatualizado",
-                "Este RTSS é antigo demais para o CoreBi. Instale a versão 7.3.7 ou mais nova.", "Baixar o RTSS");
+                "RTSS antigo demais para o CoreBi: instale a versão 7.3.7 ou mais nova.", "Baixar o RTSS");
         else if (_rtssInstalled)
             SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Warn", "RTSS fechado",
                 "Abra o RTSS antes do jogo para o overlay aparecer em tela cheia exclusiva.", "Abrir o RTSS");
         else
             SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Faint", "Precisa do RTSS",
-                "Nesse modo o Windows não deixa outra janela por cima do jogo. O RTSS, gratuito, desenha o overlay dentro dele.", "Baixar o RTSS");
+                "O Windows não deixa janelas por cima; o RTSS, gratuito, desenha no jogo.", "Baixar o RTSS");
 
         if (ProcessElevation.IsElevated)
             SetTopic(OvAdminLed, OvAdminState, OvAdminHint, null, "Ok", "Funciona");
         else
             SetTopic(OvAdminLed, OvAdminState, OvAdminHint, null, "Warn", "Sem administrador",
-                "Temperatura, clock e consumo da CPU aparecem com travessão. Abra o CoreBi como administrador.");
+                "Abra o CoreBi como administrador para ler temperatura, clock e consumo.");
 
         string? error = _context.Frames.Error;
         if (error == null)
