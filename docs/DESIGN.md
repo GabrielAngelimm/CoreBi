@@ -1,4 +1,4 @@
-﻿---
+---
 version: 3.1
 name: CoreBi
 description: 'Bancada: a interface do CoreBi como um instrumento de medição. Painéis de grafite (ou papel), a marca acendendo o que se clica e cada componente de hardware com a sua cor e o seu desenho, tudo em cor chapada.'

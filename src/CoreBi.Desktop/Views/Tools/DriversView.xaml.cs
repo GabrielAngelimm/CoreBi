@@ -1,4 +1,4 @@
-﻿using CoreBi.Desktop.Services;
+using CoreBi.Desktop.Services;
 using CoreBi.Engine.Performance;
 using CoreBi.Engine.Tools.Drivers;
 using System.ComponentModel;
