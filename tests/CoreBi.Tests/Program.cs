@@ -57,6 +57,7 @@ internal static partial class Program
         if (args.FirstOrDefault() == "--report") return RealReport(args.Length > 1 ? args[1] : "report");
         if (args.FirstOrDefault() == "--shots") return Shots(args);
         if (args.FirstOrDefault() == "--nav-timing") return NavTiming(args);
+        if (args.FirstOrDefault() == "--motion") return Motion(args);
         string[] modes = { "--overlay-telemetry", "--bench", "--hardware", "--startup", "--integrations" };
         if (args.FirstOrDefault(a => a.StartsWith("--", StringComparison.Ordinal) && !modes.Contains(a)) is { } unknown)
         {
