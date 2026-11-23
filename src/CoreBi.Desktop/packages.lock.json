@@ -44,8 +44,8 @@
       },
       "Microsoft.Diagnostics.Tracing.TraceEvent": {
         "type": "Transitive",
-        "resolved": "4.0.0",
-        "contentHash": "uqiUXrXzIuVqm7h3G9Sr+HuwY8LNKqRDt/yHMOAOFGvzySX7ZVTgFiO0LUKFO+c92qYCn0Gml838quCOfai7RA==",
+        "resolved": "4.0.2",
+        "contentHash": "HW3sc0BS/snPlvvdtXWu7YloANo1dXbTb0vOqDXKvmCl7Xg1fGwEtKIjSKfE56PG+GvMD1Mvy2v+DjTMauKwwQ==",
         "dependencies": {
           "Microsoft.Diagnostics.NETCore.Client": "0.2.661903",
           "System.Reflection.TypeExtensions": "4.7.0"
@@ -300,7 +300,7 @@
         "type": "Project",
         "dependencies": {
           "LibreHardwareMonitorLib": "[0.9.6, )",
-          "Microsoft.Diagnostics.Tracing.TraceEvent": "[4.0.0, )",
+          "Microsoft.Diagnostics.Tracing.TraceEvent": "[4.0.2, )",
           "System.Diagnostics.EventLog": "[11.0.0, )",
           "System.Management": "[11.0.0, )",
           "Vortice.D3DCompiler": "[3.8.3, )",
