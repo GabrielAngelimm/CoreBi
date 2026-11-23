@@ -56,7 +56,7 @@
                                 </Grid>
                                 <TextBlock x:Name="count" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}" FontFamily="{StaticResource Readout}"
                                            FontStretch="SemiCondensed" FontSize="14" FontWeight="Normal" Foreground="{DynamicResource Faint}" Typography.NumeralAlignment="Tabular"
-                                           MinWidth="16" Margin="7,0,0,0" VerticalAlignment="Center" />
+                                           Margin="7,0,0,0" VerticalAlignment="Center" />
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -162,7 +162,7 @@
                             <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
                         </DockPanel>
                         <Button Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnStartupScan_Click"
-                                ToolTip="Lê de novo as chaves Run do registro, as pastas Inicializar, os apps da Microsoft Store e o tempo dos últimos inícios." />
+                                ToolTip="Lê a lista de novo e o tempo dos últimos inícios." />
                     </StackPanel>
                 </local:PageHeaderPanel>
 
@@ -191,7 +191,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="Programas de inicialização" Style="{StaticResource CardTitle}"
-                                           ToolTip="Programas que abrem sozinhos quando você entra no Windows. Desligar deixa o início mais leve e não desinstala nada." />
+                                           ToolTip="Programas que abrem sozinhos com o Windows. Desligar deixa o início mais rápido e não desinstala nada." />
                                 <!-- Filtro que não tira nada do lugar enquanto se mexe: a linha que muda de estado só sai do filtro na próxima escolha -->
                                 <Border Grid.Column="1" Style="{StaticResource SegmentGroup}">
                                     <local:SlidingSelectionPanel Style="{StaticResource SegmentRail}" ToggleButton.Checked="StartupFilter_Checked">
@@ -200,7 +200,7 @@
                                         <RadioButton x:Name="FilterOn" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Ligados" Tag="on"
                                                      ToolTip="Só os que abrem com o Windows." />
                                         <RadioButton x:Name="FilterOff" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Desligados" Tag="off"
-                                                     ToolTip="Só os que estão na lista mas não abrem." />
+                                                     ToolTip="Só os que não abrem com o Windows." />
                                     </local:SlidingSelectionPanel>
                                 </Border>
                             </Grid>
@@ -217,7 +217,7 @@
                                 <TextBlock Grid.Column="2" Text="Programa" Style="{StaticResource TableHead}" />
                                 <TextBlock Grid.Column="3" Text="Fabricante" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
                                 <TextBlock Grid.Column="4" Text="Comando" Style="{StaticResource TableHead}" Margin="16,0,0,0"
-                                           ToolTip="O que o Windows executa. Passe o mouse num comando para ver inteiro e de onde ele vem." />
+                                           ToolTip="O que o Windows abre. Passe o mouse para ver o comando inteiro." />
                             </Grid>
 
                             <ScrollViewer x:Name="StartupListScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" ScrollChanged="StartupListScroll_ScrollChanged">
@@ -239,7 +239,7 @@
                                                         <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Entry.Enabled, Mode=OneWay}" Tag="{Binding Entry}" Click="StartupToggle_Click"
                                                                   local:Ui.SwitchMotion="True" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,2,0,0"
                                                                   AutomationProperties.Name="{Binding Entry.Title}"
-                                                                  ToolTip="Abrir com o Windows. Desligado, o programa continua na lista para religar quando quiser." />
+                                                                  ToolTip="Ligado: abre com o Windows. Desligado: fica na lista, sem abrir." />
                                                         <ContentPresenter Grid.Column="1" Content="{Binding}" ContentTemplate="{StaticResource ProgramIcon}" />
                                                         <Grid Grid.Column="2">
                                                             <Grid.ColumnDefinitions>
@@ -250,7 +250,7 @@
                                                             <TextBlock Text="{Binding Entry.Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding NameTip}" />
                                                             <Border x:Name="missing" Grid.Column="1" Style="{StaticResource Badge}" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource WarnSoft}"
                                                                     VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"
-                                                                    ToolTip="O programa desta entrada não está mais no disco. Dá para remover da lista sem medo.">
+                                                                    ToolTip="O programa não está mais no PC. Pode remover sem medo.">
                                                                 <TextBlock Text="Arquivo ausente" Style="{StaticResource BadgeText}" Foreground="{DynamicResource Warn}" />
                                                             </Border>
                                                         </Grid>
@@ -261,10 +261,10 @@
                                                                    TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,4,0,0" ToolTip="{Binding CommandTip}" />
                                                         <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right">
                                                             <Button x:Name="open" Style="{StaticResource RowAction}" local:Ui.Icon="&#xE838;" Tag="{Binding Entry}" Click="StartupOpen_Click" Margin="0,0,4,0"
-                                                                    AutomationProperties.Name="Abrir local do arquivo" ToolTip="Abrir a pasta do programa no Explorador de Arquivos." />
+                                                                    AutomationProperties.Name="Abrir local do arquivo" ToolTip="Mostra o programa no Explorador de Arquivos." />
                                                             <Button x:Name="remove" Style="{StaticResource RowAction}" local:Ui.Icon="&#xE74D;" Tag="danger" DataContext="{Binding Entry}" Click="StartupRemove_Click"
                                                                     AutomationProperties.Name="Remover da inicialização"
-                                                                    ToolTip="Tirar da inicialização. O programa continua instalado e vai para Removidos, de onde dá para devolver." />
+                                                                    ToolTip="Tira da lista. O programa continua instalado e dá para devolver em Removidos." />
                                                         </StackPanel>
                                                     </Grid>
                                                 </Border>
@@ -316,7 +316,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="Tempo de início" Style="{StaticResource CardTitle}"
-                                               ToolTip="Medido pelo próprio Windows toda vez que o PC liga: do botão de ligar até o computador ficar pronto para usar." />
+                                               ToolTip="Quanto o PC leva do botão de ligar até ficar pronto. Quem mede é o próprio Windows." />
                                     <TextBlock x:Name="BootWhen" Grid.Column="1" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,1,0,0" />
                                 </Grid>
                                 <Grid Margin="0,14,0,0">
@@ -343,7 +343,7 @@
 
                                         <StackPanel Margin="0,12,0,0">
                                             <Grid x:Name="BootBiosRow" Style="{StaticResource BootPart}"
-                                                  ToolTip="O tempo da placa-mãe antes do Windows: teste da memória, logo do fabricante e escolha do disco. Não depende do Windows nem dos programas.">
+                                                  ToolTip="A placa-mãe se preparando antes do Windows (a tela com o logo). Não depende dos programas.">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto" />
                                                     <ColumnDefinition Width="*" />
@@ -354,7 +354,7 @@
                                                 <TextBlock x:Name="BootBios" Grid.Column="2" Text="—" Style="{StaticResource BootPartValue}" />
                                             </Grid>
                                             <Grid Style="{StaticResource BootPart}"
-                                                  ToolTip="Do carregamento do Windows até a área de trabalho aparecer: drivers, serviços e a entrada na sua conta.">
+                                                  ToolTip="O Windows carregando até a área de trabalho aparecer.">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto" />
                                                     <ColumnDefinition Width="*" />
@@ -365,7 +365,7 @@
                                                 <TextBlock x:Name="BootMain" Grid.Column="2" Text="—" Style="{StaticResource BootPartValue}" />
                                             </Grid>
                                             <Grid Style="{StaticResource BootPart}"
-                                                  ToolTip="Da área de trabalho até o PC ficar ocioso. É aqui que os programas de inicialização pesam: cada um desligado encurta esta parte.">
+                                                  ToolTip="Da área de trabalho até o PC sossegar. É aqui que os programas da lista pesam.">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto" />
                                                     <ColumnDefinition Width="*" />
@@ -378,7 +378,7 @@
                                         </StackPanel>
 
                                         <TextBlock Text="Últimos inícios" Style="{StaticResource StatLabel}" Margin="0,20,0,0"
-                                                   ToolTip="Cada barra é um início do Windows (sem a BIOS, que o Windows só guarda do último). O tom claro em cima é a parte dos programas." />
+                                                   ToolTip="Cada barra é um início. A parte de cima é o tempo dos programas." />
                                         <ItemsControl x:Name="BootBars" Height="96" Margin="0,10,0,0" Focusable="False">
                                             <ItemsControl.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -443,10 +443,10 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="Removidos" Style="{StaticResource CardTitle}"
-                                               ToolTip="Programas tirados da inicialização pela lixeira. O CoreBi guarda como estavam (ligados ou desligados) para devolver quando quiser." />
+                                               ToolTip="Programas tirados pela lixeira. Ficam guardados aqui para devolver quando quiser." />
                                     <Button x:Name="BtnStartupRestore" Grid.Column="1" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE7A7;" Content="Devolver todos"
                                             VerticalAlignment="Center" Margin="0,0,-10,0" Visibility="Collapsed" Click="BtnStartupRestore_Click"
-                                            ToolTip="Devolve todos à inicialização, do jeito que estavam." />
+                                            ToolTip="Devolve todos, do jeito que estavam." />
                                 </Grid>
                                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
                                     <ItemsControl x:Name="RemovedList" Focusable="False">
@@ -465,7 +465,7 @@
                                                                 Foreground="{DynamicResource Faint}" />
                                                         </TextBlock>
                                                         <Button Grid.Column="2" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE7A7;" Content="Devolver" Tag="{Binding Backup}"
-                                                                Click="StartupRestoreOne_Click" Margin="12,0,-10,0" ToolTip="Volta para a inicialização do jeito que estava." />
+                                                                Click="StartupRestoreOne_Click" Margin="12,0,-10,0" ToolTip="Devolve à lista, do jeito que estava." />
                                                     </Grid>
                                                 </Border>
                                             </DataTemplate>
@@ -474,7 +474,7 @@
                                 </ScrollViewer>
                                 <TextBlock x:Name="RemovedEmpty" Grid.Row="1" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextAlignment="Center" MaxWidth="330"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,8"
-                                           Text="Nada removido. A lixeira de um programa tira ele da inicialização e guarda aqui, para devolver quando quiser." />
+                                           Text="Nada removido. O que você tirar pela lixeira fica aqui, para devolver quando quiser." />
                             </Grid>
                         </Border>
                     </Grid>

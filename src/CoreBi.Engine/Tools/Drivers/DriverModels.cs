@@ -22,6 +22,8 @@ public sealed class GpuDriverStatus
     public string SizeText { get; set; } = "";
     public string OfficialPage { get; set; } = "";
     public string Message { get; set; } = "";
+    /// <summary>A linha embaixo do nome na tela ("NVIDIA · Game Ready"), montada pela página.</summary>
+    public string Caption { get; set; } = "";
 
     public bool CanAutoInstall => Vendor is "NVIDIA" or "AMD" && DownloadUrl.Length > 0;
     public bool UpdateAvailable =>

@@ -1,0 +1,93 @@
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.DriverBackupDialog" xmlns:local="clr-namespace:CoreBi.Desktop"
+             Visibility="Collapsed" Focusable="False" PreviewKeyDown="Dialog_PreviewKeyDown">
+    <!--
+        Fazer backup e Restaurar dos Drivers, sobre o app (a mesma janela do relatório e da confirmação de apps): o título, uma frase
+        do que acontece, a placa de números (quantos drivers, de quando, de qual PC), a pasta com o botão de trocar e, no rodapé, a
+        garantia (nada apagado / ponto de restauração antes) com Voltar e a ação. Nada começa sem o clique na ação.
+    -->
+    <Grid x:Name="Scrim" Background="{DynamicResource Scrim}" MouseLeftButtonDown="Scrim_MouseDown">
+        <Border x:Name="Panel" Width="620" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}"
+                BorderThickness="1" CornerRadius="{StaticResource RadiusPanel}" MouseLeftButtonDown="Panel_MouseDown" RenderTransformOrigin="0.5,0.5">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="48" ShadowDepth="14" Direction="270" Opacity="0.45" Color="#000000" />
+            </Border.Effect>
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="PanelShift" />
+            </Border.RenderTransform>
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="24,16,16,0">
+                    <Grid Style="{StaticResource CardHeader}">
+                        <TextBlock x:Name="DialogTitle" Style="{StaticResource CardTitle}" />
+                        <Button Style="{StaticResource IconButton}" Content="&#xE8BB;" HorizontalAlignment="Right" Click="Cancel_Click" ToolTip="Fechar (Esc)" />
+                    </Grid>
+                    <TextBlock x:Name="Lead" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="0,2,8,0" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Rodapé: a garantia à esquerda (escudo verde), Voltar e a ação à direita -->
+                <Border DockPanel.Dock="Bottom" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0"
+                        CornerRadius="{StaticResource RadiusPanelBottom}" Padding="24,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="&#xEA18;" FontFamily="{StaticResource Icons}" FontSize="16" Foreground="{DynamicResource Ok}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <TextBlock x:Name="Promise" Grid.Column="1" Style="{StaticResource Caption}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,20,0" />
+                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                            <Button Style="{StaticResource SecondaryButton}" Content="Voltar" Click="Cancel_Click" Margin="0,0,10,0" ToolTip="Fecha sem fazer nada (Esc)" />
+                            <Button x:Name="BtnConfirm" Style="{StaticResource PrimaryButton}" MinWidth="150" Click="Confirm_Click" ToolTipService.ShowOnDisabled="True" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <StackPanel Margin="24,20,24,24">
+                    <!-- Placa de números: duas ou três leituras em colunas iguais, separadas por fios; sem backup escolhido, a frase no lugar -->
+                    <Border Background="{DynamicResource Raised}" CornerRadius="{StaticResource RadiusInset}" Height="80">
+                        <Grid>
+                            <ItemsControl x:Name="Cells" Focusable="False" VerticalAlignment="Center">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Border x:Name="rule" Width="1" HorizontalAlignment="Left" Margin="0,4" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
+                                            <StackPanel HorizontalAlignment="Center" Margin="12,0">
+                                                <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                                <TextBlock Text="{Binding Value}" Style="{StaticResource StatValue}" HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding First}" Value="True">
+                                                <Setter TargetName="rule" Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock x:Name="CellsEmpty" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       TextAlignment="Center" Visibility="Collapsed" />
+                        </Grid>
+                    </Border>
+
+                    <!-- A pasta: rótulo, o caminho em mono numa caixa e o botão de trocar -->
+                    <TextBlock x:Name="FolderLabel" Style="{StaticResource StatLabel}" Margin="0,20,0,8" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Height="34" CornerRadius="17" BorderBrush="{DynamicResource Line}" BorderThickness="1" Background="{DynamicResource Bg}" Padding="14,0">
+                            <TextBlock x:Name="FolderText" FontFamily="{StaticResource Mono}" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        </Border>
+                        <Button x:Name="BtnFolder" Grid.Column="1" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE8B7;" Margin="10,0,0,0" Click="Folder_Click" />
+                    </Grid>
+                    <TextBlock x:Name="Hint" Style="{StaticResource Caption}" Margin="0,10,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

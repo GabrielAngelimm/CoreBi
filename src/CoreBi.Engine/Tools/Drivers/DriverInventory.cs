@@ -12,9 +12,10 @@ public static class DriverInventory
 
     private static readonly (string[] Tokens, string Brand, Func<string, string> SupportUrl)[] BoardVendors =
     {
-        (new[] { "ASUS" }, "ASUS", _ => "https://www.asus.com/support/download-center/"),
+        // Onde o site aceita busca, o atalho já abre o modelo da placa (a primeira resposta é a página de suporte dele)
+        (new[] { "ASUS" }, "ASUS", q => "https://www.asus.com/searchresult?searchType=support&searchKey=" + q),
         (new[] { "Micro-Star", "MSI" }, "MSI", q => "https://www.msi.com/search/" + q),
-        (new[] { "GIGABYTE" }, "Gigabyte", _ => "https://www.gigabyte.com/Support"),
+        (new[] { "GIGABYTE" }, "Gigabyte", q => "https://www.gigabyte.com/Search?kw=" + q),
         (new[] { "ASRock" }, "ASRock", _ => "https://www.asrock.com/support/index.asp"),
         (new[] { "Dell" }, "Dell", _ => "https://www.dell.com/support/home/"),
         (new[] { "LENOVO" }, "Lenovo", _ => "https://support.lenovo.com/"),
@@ -74,7 +75,7 @@ public static class DriverInventory
         14 => "Reinicie o PC para o dispositivo funcionar",
         18 or 24 => "Reinstale o driver",
         19 => "Registro do dispositivo com problema",
-        28 => "Driver não instalado",
+        28 => "Sem driver: o aparelho não funciona",
         29 => "Desativado pela BIOS",
         31 => "O driver não carregou direito",
         32 => "O serviço do driver está desligado",

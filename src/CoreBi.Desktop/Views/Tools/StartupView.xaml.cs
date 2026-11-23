@@ -69,7 +69,7 @@ public partial class StartupView : UserControl
     private HashSet<StartupRow> _passing = new();
     /// <summary>Por que a lista de removidos está vazia quando não deu para ler (sem administrador); null, o texto de sempre.</summary>
     private string? _removedNote;
-    private const string EmptyRemovedText = "Nada removido. A lixeira de um programa tira ele da inicialização e guarda aqui, para devolver quando quiser.";
+    private const string EmptyRemovedText = "Nada removido. O que você tirar pela lixeira fica aqui, para devolver quando quiser.";
 
     private void StartupListScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
         => ToolPage.AlignHead(StartupListScroll, StartupHead, HeadMargin);
@@ -103,7 +103,7 @@ public partial class StartupView : UserControl
             if (_context.IsClosing) return;
             _removedNote = null;
             try { _removed = await Task.Run(() => _startup.Backups, _context.Lifetime); }
-            catch (UnauthorizedAccessException) { _removed = Array.Empty<StartupBackup>(); _removedNote = "Os removidos ficam numa pasta que só o CoreBi aberto como administrador consegue ler."; }
+            catch (UnauthorizedAccessException) { _removed = Array.Empty<StartupBackup>(); _removedNote = "Abra o CoreBi como administrador para ver os removidos."; }
             catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); backupError = "Não foi possível ler os removidos: " + ex.Message; }
             boots = await Task.Run(_startup.Boots, _context.Lifetime);
             // Ícones lidos fora da tela (o primeiro acesso a cada arquivo leva alguns milissegundos); depois vêm do cache
@@ -131,7 +131,7 @@ public partial class StartupView : UserControl
         StartupEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         UpdateCounts();
         ShowRemoved();
-        if (boots != null) ShowBoots(boots);
+        if (boots != null) { _realBoots = boots; ShowBoots(boots); }
         Skeleton.Set(false, StartupCard, BootCard);
         if (announce) Say($"Lido às {DateTime.Now:HH:mm}", backupError);
         else if (backupError.Length > 0) StartupResult.Text = backupError;
@@ -199,8 +199,8 @@ public partial class StartupView : UserControl
             BootMissing.Visibility = Visibility.Visible;
             BootWhen.Text = "";
             BootMissing.Text = report.Unavailable == "admin"
-                ? "O Windows só mostra o tempo dos inícios com o CoreBi aberto como administrador."
-                : "O Windows ainda não registrou um início completo neste PC. Reinicie e volte aqui." + fastNote;
+                ? "Abra o CoreBi como administrador para ver o tempo de início."
+                : "Ainda não há um início completo registrado. Reinicie o PC e volte aqui." + fastNote;
             return;
         }
         BootShown.Visibility = Visibility.Visible;
@@ -245,6 +245,46 @@ public partial class StartupView : UserControl
         Ui.SetItems(BootBars, items);
         Ui.SetItems(BootDays, items);
     }
+
+    /// <summary>
+    /// Capturas dos testes ("PageStartup:demo"): dez inícios e três removidos de exemplo, para ver os dois cartões cheios mesmo
+    /// sem administrador. Nada é lido nem salvo; desligar volta ao que foi lido de verdade.
+    /// </summary>
+    internal void PreviewDemo(bool on)
+    {
+        if (!on)
+        {
+            _removed = _realRemoved ?? _removed;
+            _realRemoved = null;
+            _removedNote = _realNote;
+            ShowRemoved();
+            if (_realBoots != null) ShowBoots(_realBoots);
+            return;
+        }
+        _realRemoved = _removed;
+        _realNote = _removedNote;
+        var now = DateTime.Now;
+        double[] mains = { 14_200, 13_800, 15_100, 13_600, 21_400, 14_000, 13_900, 13_700, 14_300, 13_500 };
+        double[] posts = { 9_800, 10_400, 8_900, 11_200, 18_600, 9_100, 8_700, 6_400, 5_900, 5_600 };
+        var boots = Enumerable.Range(0, Bars)
+            .Select(i => new BootTime(now.Date.AddDays(-(Bars - 1 - i) * 1.5).AddHours(8 + i % 4), mains[i] + posts[i], mains[i], posts[i], 12))
+            .Reverse().ToList();
+        ShowBoots(new BootReport(boots, 10_310, false, null));
+        string Program(string relative) => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), relative);
+        _removed = new[]
+        {
+            new StartupBackup { Name = "Steam", Title = "Steam", Publisher = "Valve Corporation", IconPath = Program(@"Steam\steam.exe"), RemovedAt = now.AddMinutes(-12) },
+            new StartupBackup { Name = "MicrosoftEdgeAutoLaunch", Title = "Microsoft Edge", Publisher = "Microsoft Corporation", IconPath = Program(@"Microsoft\Edge\Application\msedge.exe"), RemovedAt = now.AddDays(-1).AddHours(-3) },
+            new StartupBackup { Name = "Spotify", Title = "Spotify", Publisher = "Spotify AB",
+                IconPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Spotify\Spotify.exe"), RemovedAt = now.AddDays(-4) },
+        };
+        _removedNote = null;
+        ShowRemoved();
+    }
+
+    private IReadOnlyList<StartupBackup>? _realRemoved;
+    private string? _realNote;
+    private BootReport? _realBoots;
 
     private async void BtnStartupScan_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
 
