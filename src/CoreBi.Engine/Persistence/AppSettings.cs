@@ -1,6 +1,7 @@
 using System.Text.Json;
 using CoreBi.Engine.Games;
 using CoreBi.Engine.Infrastructure;
+using CoreBi.Engine.Monitoring.Network;
 
 namespace CoreBi.Engine.Persistence;
 
@@ -23,6 +24,8 @@ public sealed class AppSettings
     public List<BenchRun> BenchRuns { get; set; } = new();
     public List<BenchRecord> BenchRecords { get; set; } = new();
     public List<JsonElement> StartupRemoved { get; set; } = new();
+    /// <summary>Testes de rede concluídos, mais recente primeiro (NetworkHistory.Capacity).</summary>
+    public List<NetworkRun> NetRuns { get; set; } = new();
 
     public bool LightTheme { get; set; }
 
@@ -77,6 +80,7 @@ public sealed class AppSettings
     {
         BenchRuns = (BenchRuns ?? new()).Where(x => x != null).Take(100).ToList();
         BenchRecords = (BenchRecords ?? new()).Where(x => x != null).Take(1000).ToList();
+        NetRuns = NetworkHistory.Normalize(NetRuns);
         StartupRemoved = (StartupRemoved ?? new()).Where(x => x.ValueKind != JsonValueKind.Null && x.ValueKind != JsonValueKind.Undefined).ToList();
         OverlayCorner = OverlayMetrics.NormalizeCorner(OverlayCorner);
         OverlayScale = OverlayMetrics.NormalizeScale(OverlayScale);

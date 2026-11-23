@@ -136,8 +136,23 @@ internal static partial class Program
             LocalVerdict = CoreBi.Engine.Monitoring.Health.HealthVerdict.Good,
             InternetVerdict = CoreBi.Engine.Monitoring.Health.HealthVerdict.Good,
         };
+        // Histórico de exemplo só na memória: o de agora em cima, escolhido, e testes anteriores com um dia de bufferbloat
+        var now = DateTime.Now;
+        var runs = new List<CoreBi.Engine.Monitoring.Network.NetworkRun> { CoreBi.Engine.Monitoring.Network.NetworkHistory.ToRun(sample) };
+        double[][] past = [[478, 208, 12], [491, 214, 11], [302, 96, 48], [469, 205, 13], [488, 211, 11], [455, 199, 14], [483, 210, 12], [476, 207, 12]];
+        for (int i = 0; i < past.Length; i++)
+            runs.Add(runs[0] with
+            {
+                Date = now.AddHours(-(i * 19 + 6)),
+                DownloadMbps = past[i][0],
+                UploadMbps = past[i][1],
+                LatencyMs = past[i][2],
+                Verdict = past[i][2] > 40 ? CoreBi.Engine.Monitoring.Health.HealthVerdict.Warning : CoreBi.Engine.Monitoring.Health.HealthVerdict.Good,
+            });
+        window.PageNet.UseSampleHistory(runs);
         window.PageNet.DisplayResult(sample);
-        Wait(400);
+        window.PageNet.NetHistory.SelectedIndex = 0;
+        Wait(600);
     }
 
     /// <summary>

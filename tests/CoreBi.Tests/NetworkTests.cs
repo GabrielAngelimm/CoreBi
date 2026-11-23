@@ -8,6 +8,39 @@ internal static partial class Program
 {
     private static void NetworkTests()
     {
+        Check("network: history keeps only finished tests and round-trips through settings JSON", () =>
+        {
+            var result = new NetworkResult
+            {
+                Card = new CoreBi.Engine.Monitoring.Health.HealthCard { Meta = "Ethernet (cabo) · Cloudflare · testado às 21:40:02", Verdict = CoreBi.Engine.Monitoring.Health.HealthVerdict.Warning, Label = "ATENÇÃO" },
+                Adapter = new NetworkAdapterInfo("Ethernet", "Placa", "Ethernet (cabo)", 1000, "192.168.0.2", IPAddress.Parse("192.168.0.1"), "1.1.1.1", "AA-BB-CC-DD-EE-FF"),
+                Router = new PingResult("Roteador", "192.168.0.1", new double?[] { 1, null, 2 }),
+                Internet = [new PingResult("Internet · Cloudflare", "1.1.1.1", new double?[] { 10, 12 })],
+                DownloadMbps = 480.5,
+                UploadMbps = 210,
+                LatencyMs = 11,
+                LoadedSamples = new double?[] { 30, null },
+                Notes = ["Latência sobe com a conexão cheia."],
+                TestedAt = new DateTime(2026, 11, 22, 21, 40, 2),
+            };
+            Require(NetworkHistory.Keeps(result), "A finished test was not kept");
+            Require(!NetworkHistory.Keeps(new NetworkResult { Card = result.Card, Adapter = result.Adapter, DownloadMbps = 1, InterruptedPhase = NetworkPhase.Upload }), "An interrupted test was kept");
+            Require(!NetworkHistory.Keeps(new NetworkResult { Card = result.Card, LatencyMs = 1 }), "A test without connection was kept");
+            var run = NetworkHistory.ToRun(result);
+            Require(run.Source == "Ethernet (cabo) · Cloudflare", $"Source kept the time: {run.Source}");
+            string json = System.Text.Json.JsonSerializer.Serialize(new List<NetworkRun> { run });
+            Require(!json.Contains("AA-BB") && !json.Contains("Placa"), "History stored adapter identity");
+            var back = NetworkHistory.Normalize(System.Text.Json.JsonSerializer.Deserialize<List<NetworkRun>>(json));
+            var shown = NetworkHistory.ToResult(back.Single());
+            Require(shown.DownloadMbps == 480.5 && shown.Router!.Lost == 1 && shown.Internet.Single().Avg == 11 && shown.LoadedSamples.Count == 2
+                && shown.Card.Verdict == CoreBi.Engine.Monitoring.Health.HealthVerdict.Warning && shown.TestedAt == result.TestedAt && shown.Adapter == null,
+                "History did not rebuild the result");
+            var list = new List<NetworkRun>();
+            for (int i = 0; i < NetworkHistory.Capacity + 5; i++) NetworkHistory.Add(list, run with { Date = run.Date.AddMinutes(i) });
+            Require(list.Count == NetworkHistory.Capacity && list[0].Date == run.Date.AddMinutes(NetworkHistory.Capacity + 4), "History cap or order wrong");
+            return new { kept = list.Count, json.Length };
+        });
+
         Check("network: download excludes warmup only when data continues", () =>
         {
             double expected = 80_000_000 * 8 / 1e6 / 7;
