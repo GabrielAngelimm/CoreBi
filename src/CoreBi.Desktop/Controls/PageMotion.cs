@@ -133,6 +133,27 @@ public static class PageMotion
     }
 
     /// <summary>
+    /// Entrada das janelas sobre a página (relatório, instalação de apps, backup de drivers): o fundo escurece, o painel
+    /// aparece e sobe 10 px, uma vez só. Com "Mostrar animações no Windows" desligado, tudo surge já no lugar.
+    /// </summary>
+    public static void EnterDialog(UIElement scrim, UIElement panel, TranslateTransform shift)
+    {
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            scrim.BeginAnimation(UIElement.OpacityProperty, null);
+            panel.BeginAnimation(UIElement.OpacityProperty, null);
+            shift.BeginAnimation(TranslateTransform.YProperty, null);
+            scrim.Opacity = panel.Opacity = 1;
+            shift.Y = 0;
+            return;
+        }
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        scrim.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
+        panel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(170)) { EasingFunction = ease });
+        shift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(230)) { EasingFunction = ease });
+    }
+
+    /// <summary>
     /// Leituras ao vivo de uma página (instrumentos, gráfico do consumo, tensões): a leitura nova entra no instante em que a página
     /// aparece, antes do primeiro quadro, e sobe junto com os outros cartões na mesma cascata. Antes, o tique trocava os valores da
     /// visita anterior de uma vez, logo depois do movimento, e só aquela área parecia saltar.

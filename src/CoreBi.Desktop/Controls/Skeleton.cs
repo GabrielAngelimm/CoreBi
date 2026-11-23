@@ -52,18 +52,6 @@ public static class Skeleton
     public static string GetLayout(DependencyObject d) => (string)d.GetValue(LayoutProperty);
     public static void SetLayout(DependencyObject d, string value) => d.SetValue(LayoutProperty, value);
 
-    /// <summary>Chave do estilo dos itens que já existem sem dados (cartões); cada um ganha contorno e <see cref="ItemLayoutProperty"/>.</summary>
-    public static readonly DependencyProperty ItemStyleProperty = DependencyProperty.RegisterAttached(
-        "ItemStyle", typeof(string), typeof(Skeleton), new FrameworkPropertyMetadata("", Redraw));
-    public static string GetItemStyle(DependencyObject d) => (string)d.GetValue(ItemStyleProperty);
-    public static void SetItemStyle(DependencyObject d, string value) => d.SetValue(ItemStyleProperty, value);
-
-    /// <summary>Planta de dentro de cada item (<see cref="ItemStyleProperty"/>), com <c>pad</c> para o recuo dele.</summary>
-    public static readonly DependencyProperty ItemLayoutProperty = DependencyProperty.RegisterAttached(
-        "ItemLayout", typeof(string), typeof(Skeleton), new FrameworkPropertyMetadata("", Redraw));
-    public static string GetItemLayout(DependencyObject d) => (string)d.GetValue(ItemLayoutProperty);
-    public static void SetItemLayout(DependencyObject d, string value) => d.SetValue(ItemLayoutProperty, value);
-
     private static readonly DependencyProperty LayerProperty = DependencyProperty.RegisterAttached(
         "Layer", typeof(SkeletonLayer), typeof(Skeleton));
 
@@ -362,31 +350,6 @@ public static class Skeleton
             return _leaving || string.IsNullOrWhiteSpace(plan) ? default : new Size(0, GetTop(_border) + SkeletonPlan.Height(plan));
         }
 
-        /// <summary>
-        /// Cada item já montado no estilo pedido (os cartões de Instalar apps existem antes de saber o que está instalado) ganha o
-        /// contorno dele e a planta de dentro, no lugar exato em que está.
-        /// </summary>
-        private void DrawItems(DrawingContext dc, string key, Brush bar, Brush strong)
-        {
-            if (_border.TryFindResource(key) is not Style style || ((Grid)Parent).Children[0] is not Visual content) return;
-            string plan = GetItemLayout(_border);
-            var outline = new Pen(bar, 1);
-            var stack = new Stack<DependencyObject>();
-            stack.Push(content);
-            while (stack.Count > 0)
-            {
-                var node = stack.Pop();
-                if (node is FrameworkElement { IsVisible: true } item && ReferenceEquals(item.Style, style))
-                {
-                    var bounds = item.TransformToVisual(this).TransformBounds(new Rect(item.RenderSize));
-                    dc.DrawRoundedRectangle(null, outline, new Rect(bounds.X + 0.5, bounds.Y + 0.5, Math.Max(0, bounds.Width - 1), Math.Max(0, bounds.Height - 1)), 6, 6);
-                    if (plan.Length > 0) SkeletonPlan.Draw(dc, plan, bounds, bar, strong);
-                    continue;
-                }
-                for (int i = VisualTreeHelper.GetChildrenCount(node) - 1; i >= 0; i--) stack.Push(VisualTreeHelper.GetChild(node, i));
-            }
-        }
-
         private Visual? Content => (Parent as Grid)?.Children[0];
 
         /// <summary>
@@ -518,8 +481,8 @@ public static class Skeleton
         {
             double w = ActualWidth, h = ActualHeight;
             if (w <= 0 || h <= 0) return;
-            string plan = GetLayout(_border), itemKey = GetItemStyle(_border);
-            bool auto = (bool)_border.GetValue(CompanionProperty) && string.IsNullOrWhiteSpace(plan) && itemKey.Length == 0;
+            string plan = GetLayout(_border);
+            bool auto = (bool)_border.GetValue(CompanionProperty) && string.IsNullOrWhiteSpace(plan);
             double top = Math.Min(h, auto && GetTop(_border) <= 0 ? AutoTop() : GetTop(_border));
             var fill = (Brush?)GetValue(FillProperty) ?? Brushes.Transparent;
             var bar = (Brush?)GetValue(BarProperty) ?? Brushes.Gray;
@@ -544,13 +507,12 @@ public static class Skeleton
                 dc.Pop();
                 return;
             }
-            if (!string.IsNullOrWhiteSpace(plan) || itemKey.Length > 0)
+            if (!string.IsNullOrWhiteSpace(plan))
             {
                 var box = new Rect(0, top, w, Math.Max(0, h - top));
                 dc.PushClip(new RectangleGeometry(new Rect(-pad.Left, top, w + pad.Left + pad.Right, Math.Max(0, h - top + pad.Bottom))));
                 dc.PushOpacity(1, _pulse);
-                if (!string.IsNullOrWhiteSpace(plan)) SkeletonPlan.Draw(dc, plan, box, bar, strong);
-                if (itemKey.Length > 0) DrawItems(dc, itemKey, bar, strong);
+                SkeletonPlan.Draw(dc, plan, box, bar, strong);
                 dc.Pop();
                 dc.Pop();
                 return;

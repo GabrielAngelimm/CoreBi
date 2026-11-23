@@ -192,11 +192,10 @@ public partial class SystemView : UserControl
     private TextBlock? _copiedIcon;
 
     /// <summary>Clique numa linha copia o valor; o ícone vira um visto por um instante.</summary>
-    private void SpecRow_Click(object sender, MouseButtonEventArgs e)
+    private async void SpecRow_Click(object sender, MouseButtonEventArgs e)
     {
         if (sender is not FrameworkElement { DataContext: SpecRow row } host) return;
-        try { Clipboard.SetText(row.Value); }
-        catch { return; }
+        if (!await Ui.TryCopyAsync(row.Value)) return;
         if (FindTagged(host, "copy") is not TextBlock icon) return;
         if (_copiedIcon != null && _copiedIcon != icon)
         {

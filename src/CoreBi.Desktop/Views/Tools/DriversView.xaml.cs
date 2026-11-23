@@ -375,19 +375,12 @@ public partial class DriversView : UserControl
     internal void BtnDrvBoardPage_Click(object sender, RoutedEventArgs e) => ExternalLinks.OpenHttps(_drvBoardInfo.SupportUrl);
 
     /// <summary>
-    /// Copia o nome do dispositivo (para colar numa busca). O glifo vira um visto verde e a dica diz "Copiado" por 1,4 s; a
-    /// área de transferência às vezes está presa por outro programa, então tenta de novo antes de desistir.
+    /// Copia o nome do dispositivo (para colar numa busca). O glifo vira um visto verde e a dica diz "Copiado" por 1,4 s.
     /// </summary>
     internal async void DrvCopy_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { DataContext: DriverLine line } button) return;
-        bool ok = false;
-        for (int attempt = 0; attempt < 3 && !ok; attempt++)
-        {
-            try { Clipboard.SetText(line.Device); ok = true; }
-            catch (System.Runtime.InteropServices.COMException) { await Task.Delay(60); }
-        }
-        if (!ok) return;
+        if (!await Ui.TryCopyAsync(line.Device)) return;
         Ui.SetIcon(button, "\uE73E");
         button.Tag = "copied";
         button.ToolTip = "Copiado";

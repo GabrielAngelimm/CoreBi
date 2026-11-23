@@ -22,7 +22,7 @@
     </DrawingBrush>
 
     <!-- Ficha técnica da placa de vídeo: uma linha chave/valor com a geometria da ficha de Sistema (fio em cima, chave 44 %,
-         vão de 16, valor 56 %, letra de 13,5) para as duas fichas lerem igual. O mouse acende o fundo, que avança 10 px para os
+         vão de 16, valor 56 %, letra de 14) para as duas fichas lerem igual. O mouse acende o fundo, que avança 10 px para os
          lados. A nota curta ("referência") fica ao lado do valor, num tom abaixo. -->
     <DataTemplate x:Key="GpuSpecRow">
         <Grid x:Name="host" Margin="-10,0" Background="Transparent" ToolTip="{Binding Tip}">
@@ -55,55 +55,4 @@
         </StackPanel>
     </DataTemplate>
 
-    <!-- Par chave/valor em lista compacta -->
-    <DataTemplate x:Key="KeyValueRow">
-        <Grid Margin="0,5">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding Key}" Foreground="{DynamicResource Muted}" Margin="0,0,12,0"/>
-            <TextBlock Grid.Column="1" Text="{Binding Value}" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" Style="{StaticResource Num}"/>
-        </Grid>
-    </DataTemplate>
-
-    <!-- Medidor segmentado: rótulo, valor e fração 0–1 -->
-    <DataTemplate x:Key="Meter">
-        <Grid Margin="0,0,0,14">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Text="{Binding Label}" Foreground="{DynamicResource Muted}" Margin="0,0,12,0" TextTrimming="CharacterEllipsis"/>
-            <TextBlock Grid.Column="1" Text="{Binding Value}" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" Style="{StaticResource Num}"/>
-            <Grid Grid.Row="1" Grid.ColumnSpan="2" Height="8" Margin="0,7,0,0" OpacityMask="{StaticResource SegmentMask}">
-                <Border Background="{DynamicResource Line}"/>
-                <Border Background="{DynamicResource Signal}" RenderTransformOrigin="0,0.5">
-                    <Border.RenderTransform>
-                        <ScaleTransform ScaleX="{Binding Fraction}"/>
-                    </Border.RenderTransform>
-                </Border>
-            </Grid>
-        </Grid>
-    </DataTemplate>
-
-    <Style x:Key="MonoCell" TargetType="TextBlock">
-        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
-    </Style>
-    <Style x:Key="ValueCell" TargetType="TextBlock">
-        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
-        <Setter Property="HorizontalAlignment" Value="Right"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-    </Style>
-    <Style x:Key="MutedCell" TargetType="TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-    </Style>
-    <Style x:Key="MutedMonoCell" TargetType="TextBlock" BasedOn="{StaticResource MonoCell}">
-        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="HorizontalAlignment" Value="Right"/>
-    </Style>
 </ResourceDictionary>

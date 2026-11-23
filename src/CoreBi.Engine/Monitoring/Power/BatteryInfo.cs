@@ -16,12 +16,12 @@ public static class BatteryInfo
         {
             var m = new List<KeyValuePair<string, string>>();
             void Add(string k, string? v) { if (!string.IsNullOrEmpty(v)) m.Add(new(k, v)); }
-            Add("Carga atual", b.Percent != null ? $"{b.Percent}%" : null);
+            Add("Carga atual", b.Percent != null ? $"{b.Percent} %" : null);
             Add("Estado", b.StatusText);
             if (b.RuntimeMin is int run) Add("Autonomia estimada", $"{run / 60}h {run % 60:00}min");
             Add("Capacidade de projeto", b.DesignWh is double d ? $"{d:0.0} Wh" : null);
             Add("Capacidade máxima atual", b.FullWh is double f ? $"{f:0.0} Wh" : null);
-            Add("Desgaste", b.WearPct is double w ? $"{w:0.0}%" : null);
+            Add("Desgaste", b.WearPct is double w ? $"{w:0.0} %" : null);
             Add("Ciclos de carga", b.Cycles?.ToString());
             Add("Tensão", b.Volts is double v ? $"{v:0.00} V" : null);
             if (b.RateW is double rate) Add(rate > 0 ? "Potência de carga" : "Consumo atual", $"{Math.Abs(rate):0.0} W");
@@ -35,7 +35,7 @@ public static class BatteryInfo
             cards.Add(new HealthCard
             {
                 Title = b.Title,
-                Meta = (b.Manufacturer ?? "") + (b.Percent != null ? $" · {b.Percent}% de carga" : ""),
+                Meta = (b.Manufacturer ?? "") + (b.Percent != null ? $" · {b.Percent} % de carga" : ""),
                 Verdict = b.Verdict,
                 Label = b.VerdictText.ToUpperInvariant(),
                 Reasons = reasons,

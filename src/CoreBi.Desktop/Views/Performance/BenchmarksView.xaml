@@ -48,7 +48,7 @@
         </Style>
         <!--
             Leitura ao vivo na placa: some quando não há leitura (Tag recebe o texto do número). 3 de cima: o alto das maiúsculas
-            do rótulo (12,5, cerca de 2 px abaixo do topo da caixa) cai na mesma linha do alto do nome da peça (24 num bloco de 30,
+            do rótulo (13, cerca de 2 px abaixo do topo da caixa) cai na mesma linha do alto do nome da peça (24 num bloco de 30,
             cerca de 5 px), medido nas capturas.
         -->
         <Style x:Key="PlateLive" TargetType="StackPanel" BasedOn="{StaticResource TestLiveCell}">
@@ -215,7 +215,7 @@
         </Style>
         <!--
             Linha do histórico: o resultado (mostrador 17) e o detalhe são Runs de um TextBlock só, e a data é outro TextBlock com a
-            mesma fonte de base (Segoe Small 11,5) e o mesmo bloco de 22, alinhados pelo topo. A base de um bloco vem da fonte do
+            mesma fonte de base (Segoe Small 12) e o mesmo bloco de 22, alinhados pelo topo. A base de um bloco vem da fonte do
             próprio TextBlock, então as duas caixas têm a base no mesmo y e o resultado assenta nela (antes, 1 px de diferença).
         -->
         <Style x:Key="HistoryLine" TargetType="TextBlock" BasedOn="{StaticResource StatSub}">
@@ -254,7 +254,7 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ItemsControl">
-                                <TextBlock Text="Nenhum resultado ainda." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                <TextBlock Text="Nenhum teste ainda." Style="{StaticResource Caption}" TextWrapping="Wrap" />
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>

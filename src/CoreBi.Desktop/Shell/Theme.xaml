@@ -36,7 +36,8 @@
     <!-- Texto -->
     <SolidColorBrush x:Key="Fg" Color="#E6EAEC"/>
     <SolidColorBrush x:Key="Muted" Color="#A3AAAE"/>
-    <SolidColorBrush x:Key="Faint" Color="#737A7E"/>
+    <!-- Faint é texto de verdade (eixos, cabeçalhos de tabela, legendas, travessões): 4,5:1 sobre os painéis, o mínimo do WCAG AA -->
+    <SolidColorBrush x:Key="Faint" Color="#80878B"/>
     <!-- Sinal: a marca. Ação principal, controles ligados, item escolhido na navegação, foco e o que está ao vivo -->
     <SolidColorBrush x:Key="Signal" Color="#27C9BC"/>
     <SolidColorBrush x:Key="SignalHover" Color="#4DD9CD"/>
@@ -104,8 +105,6 @@
     <CornerRadius x:Key="RadiusSmall">6</CornerRadius>
     <!-- Selo e etiqueta (20 a 22 px de altura): meia altura, a mesma pílula dos filtros -->
     <CornerRadius x:Key="RadiusPill">10</CornerRadius>
-    <!-- Faixas presas à borda de um painel (a placa da Placa de vídeo, o pé do Gargalo): o raio do painel menos o fio -->
-    <CornerRadius x:Key="RadiusPanelTop">15,15,0,0</CornerRadius>
     <CornerRadius x:Key="RadiusPanelBottom">0,0,15,15</CornerRadius>
     <!-- Respiro do painel: o mesmo nos quatro lados -->
     <Thickness x:Key="PanelPadding">24</Thickness>
@@ -131,7 +130,6 @@
 
     <BooleanToVisibilityConverter x:Key="BoolVis"/>
     <local:StringNotEmptyConverter x:Key="NotEmptyVis"/>
-    <local:SentenceCaseConverter x:Key="Sentence"/>
     <local:PillRadiusConverter x:Key="PillRadius"/>
 
     <!-- Título da página: a mesma voz da assinatura -->
@@ -325,6 +323,7 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <!-- Anel dos controles com RadiusControl (12 + 3) -->
     <Style x:Key="FocusRing">
         <Setter Property="Control.Template">
             <Setter.Value>
@@ -334,12 +333,18 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <!-- Anel dos blocos com RadiusInset (14 + 3), como os seletores de teste -->
+    <Style x:Key="InsetFocusRing">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border Margin="-3" BorderBrush="{DynamicResource Focus}" BorderThickness="2" CornerRadius="17" SnapsToDevicePixels="True"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
     <!-- ===================== Superfícies ===================== -->
-    <!-- Página: margens únicas para todas as telas -->
-    <Style x:Key="Page" TargetType="StackPanel">
-        <Setter Property="Margin" Value="36,10,36,36"/>
-    </Style>
     <!--
         Ritmo do topo: 20 da borda da janela à busca, 20 da busca ao topo das letras do título e 20 da última linha do cabeçalho
         (pé do subtítulo, ou do título quando não há subtítulo) ao primeiro painel. O 13 de cima e o 14 de baixo descontam o respiro
@@ -348,11 +353,8 @@
     <Style x:Key="PageGrid" TargetType="Grid">
         <Setter Property="Margin" Value="36,13,36,28"/>
     </Style>
-    <Style x:Key="PageHeader" TargetType="Grid">
-        <Setter Property="Margin" Value="0,0,0,14"/>
-    </Style>
     <!--
-        Cabeçalho de página, o mesmo em todas as telas (PageHeaderPanel): título à esquerda (DIN 36) e, à direita, na linha do
+        Cabeçalho de página, o mesmo em todas as telas (PageHeaderPanel): título à esquerda (DIN 40) e, à direita, na linha do
         título, a barra de ações (PageActions). Na barra, da esquerda para a direita: o estado vivo ("Lido às 20:31", PageStatus,
         com o detalhe um tom abaixo, PageDetail), o medidor de progresso da tarefa (TaskMeter, só durante ela), a busca
         (SearchField) e os botões (HeaderSecondary, HeaderPrimary), todos com 40 px e 10 entre si, a ação principal na ponta.
@@ -412,20 +414,6 @@
         <Setter Property="CornerRadius" Value="{StaticResource RadiusPanel}"/>
         <Setter Property="Padding" Value="{StaticResource CardPadding}"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
-    </Style>
-    <!-- Poço: área rebaixada dentro de um painel (lista curta, leitura secundária) -->
-    <Style x:Key="InsetBorder" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource Bg}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusInset}"/>
-        <Setter Property="Padding" Value="14,10"/>
-    </Style>
-    <!-- Palco escuro para imagens renderizadas pelos benchmarks -->
-    <Style x:Key="StageBorder" TargetType="Border">
-        <Setter Property="Background" Value="{DynamicResource Well}"/>
-        <Setter Property="CornerRadius" Value="{StaticResource RadiusInset}"/>
-        <Setter Property="ClipToBounds" Value="True"/>
     </Style>
     <Style x:Key="Divider" TargetType="Border">
         <Setter Property="Height" Value="1"/>
@@ -677,7 +665,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Grid Background="Transparent">
+                    <Grid x:Name="root" Background="Transparent">
                         <Border x:Name="hover" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Hover}" Opacity="0"/>
                         <ContentPresenter Margin="8,5"/>
                     </Grid>
@@ -697,6 +685,13 @@
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="root" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform Y="1"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -720,17 +715,6 @@
         <Setter Property="MinWidth" Value="172"/>
     </Style>
 
-    <!-- Ação destrutiva discreta dentro de listas (remover) -->
-    <Style x:Key="DangerGhostButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
-        <Setter Property="local:Ui.HoverFill" Value="{DynamicResource DangerSoft}"/>
-        <Setter Property="local:Ui.IconBrush" Value="{x:Null}"/>
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
     <!-- Botão só com glifo -->
     <Style x:Key="IconButton" TargetType="Button">
         <Setter Property="Width" Value="32"/>
@@ -741,6 +725,8 @@
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
+        <!-- Só glifo: o leitor de tela fala a dica -->
+        <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -751,6 +737,13 @@
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
                             <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="b" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform Y="1"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="b" Property="Opacity" Value="0.3"/>
@@ -777,7 +770,8 @@
         <Setter Property="HorizontalAlignment" Value="Right"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
+        <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -818,6 +812,7 @@
         <Setter Property="FontFamily" Value="{StaticResource Icons}"/>
         <Setter Property="FontSize" Value="10"/>
         <Setter Property="Focusable" Value="False"/>
+        <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}"/>
         <Setter Property="VerticalAlignment" Value="Top"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -887,6 +882,13 @@
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Raised}"/>
                             <Setter TargetName="glass" Property="Foreground" Value="{DynamicResource Signal}"/>
                             <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="b" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform Y="1"/>
+                                </Setter.Value>
+                            </Setter>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1035,7 +1037,7 @@
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Padding" Value="14,4,14,0"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -1078,11 +1080,11 @@
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Margin" Value="0,0,6,6"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="b" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="14"
+                    <Border x:Name="b" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource PillRadius}}"
                             Padding="12,6,12,3" Background="Transparent" SnapsToDevicePixels="True">
                         <ContentPresenter VerticalAlignment="Center"/>
                     </Border>
@@ -1095,44 +1097,6 @@
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource SignalSoft}"/>
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalDeep}"/>
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!-- Escolha do teste (Benchmark): cartão com o ícone do componente testado (na cor dele), nome e legenda -->
-    <Style x:Key="TestTile" TargetType="RadioButton">
-        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Margin" Value="0,0,10,0"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="b" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
-                            CornerRadius="{StaticResource RadiusInset}" Padding="14,12">
-                        <StackPanel>
-                            <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Width="30" Height="30" HorizontalAlignment="Left" Margin="-2,0,0,0"/>
-                            <ContentPresenter Margin="0,8,0,0" TextElement.FontWeight="SemiBold" TextElement.FontSize="14" TextElement.FontFamily="{StaticResource LabelFont}"/>
-                            <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                       Foreground="{DynamicResource Faint}" FontFamily="{StaticResource SmallFont}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
-                        </StackPanel>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
-                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Raised}"/>
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalDeep}"/>
-                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="b" Property="Opacity" Value="0.3"/>
@@ -1227,100 +1191,6 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="root" Property="Opacity" Value="0.3"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!-- Componente selecionável em cartão (Teste de carga: CPU, RAM, GPU) -->
-    <Style x:Key="ToggleCard" TargetType="CheckBox">
-        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="CheckBox">
-                    <Border x:Name="b" Background="{DynamicResource Bg}" BorderBrush="{DynamicResource Line}" BorderThickness="1"
-                            CornerRadius="{StaticResource RadiusInset}" Padding="12,10">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Width="30" Height="30" VerticalAlignment="Center"/>
-                            <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
-                                <ContentPresenter TextElement.FontWeight="SemiBold" TextElement.FontFamily="{StaticResource LabelFont}" TextElement.FontSize="14"/>
-                                <TextBlock Text="{Binding Path=(local:Ui.Caption), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource SmallFont}" FontSize="12" Foreground="{DynamicResource Faint}" TextTrimming="CharacterEllipsis"/>
-                            </StackPanel>
-                            <Border x:Name="dot" Grid.Column="2" Width="18" Height="18" CornerRadius="9" BorderThickness="1.5"
-                                    BorderBrush="{DynamicResource LineStrong}" VerticalAlignment="Center">
-                                <TextBlock x:Name="mark" Text="&#xE73E;" FontFamily="{StaticResource Icons}" FontSize="10"
-                                           Foreground="{DynamicResource SignalFg}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
-                            </Border>
-                        </Grid>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalDeep}"/>
-                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
-                            <Setter TargetName="dot" Property="Background" Value="{DynamicResource Signal}"/>
-                            <Setter TargetName="dot" Property="BorderBrush" Value="{DynamicResource Signal}"/>
-                            <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!--
-        Opção em pílula (itens do overlay): ligada = fundo elevado com visto aceso no sinal; desligada = contorno e "+".
-        O estado fica claro pela forma e pelo glifo, não só pela cor.
-    -->
-    <Style x:Key="OptionChip" TargetType="CheckBox">
-        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Margin" Value="0,0,6,6"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="CheckBox">
-                    <Border x:Name="b" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="14"
-                            Padding="9,6,12,3" Background="Transparent" SnapsToDevicePixels="True">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock x:Name="mark" Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="10"
-                                       Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,0,7,5"/>
-                            <ContentPresenter VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Faint}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Faint}"/>
-                            <Setter TargetName="mark" Property="Text" Value="&#xE73E;"/>
-                            <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Signal}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1517,16 +1387,6 @@
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
     </Style>
 
-    <Style x:Key="PlainItem" TargetType="ListBoxItem">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ListBoxItem">
-                    <ContentPresenter Margin="0,2"/>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <!-- Lista de itens selecionáveis (rack de Discos, paleta de comandos): a mesma seleção da navegação lateral -->
     <Style x:Key="ListNavItem" TargetType="ListBoxItem">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
@@ -1590,122 +1450,6 @@
         </Style.Triggers>
     </Style>
 
-    <!-- ===================== Tabela ===================== -->
-    <Style TargetType="DataGrid">
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="RowBackground" Value="Transparent"/>
-        <Setter Property="AlternatingRowBackground" Value="Transparent"/>
-        <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Line}"/>
-        <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-        <Setter Property="HeadersVisibility" Value="Column"/>
-        <Setter Property="RowHeaderWidth" Value="0"/>
-        <Setter Property="MinRowHeight" Value="34"/>
-        <Setter Property="CanUserResizeRows" Value="False"/>
-        <Setter Property="CanUserReorderColumns" Value="False"/>
-        <Setter Property="SelectionMode" Value="Single"/>
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
-    </Style>
-
-    <Style TargetType="DataGridColumnHeader">
-        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="12.5"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="DataGridColumnHeader">
-                    <Border BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="14,0,14,10" Background="Transparent">
-                        <ContentPresenter VerticalAlignment="Bottom" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style TargetType="DataGridRow">
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource Hover}"/>
-            </Trigger>
-            <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="{DynamicResource Selected}"/>
-            </Trigger>
-        </Style.Triggers>
-    </Style>
-
-    <Style TargetType="DataGridCell">
-        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="DataGridCell">
-                    <Border Background="Transparent" Padding="14,0">
-                        <ContentPresenter VerticalAlignment="Center"/>
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!-- rodada-unslop: visao-overlay-discos-rede início -->
-    <!--
-        Pílula de opção em que marcado leva o sinal: fio e visto verde-água sobre o fundo tingido (SignalSoft). O OptionChip usa
-        o cinza Selected, que no tema claro fica quase igual à pílula desmarcada e lembra um controle desabilitado.
-        Desmarcado: só o fio e o "+"; desabilitado: tudo esmaecido.
-    -->
-    <Style x:Key="OptionChipSignal" TargetType="CheckBox">
-        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Margin" Value="0,0,6,6"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="CheckBox">
-                    <Border x:Name="b" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="14"
-                            Padding="9,6,12,3" Background="Transparent" SnapsToDevicePixels="True">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock x:Name="mark" Text="&#xE710;" FontFamily="{StaticResource Icons}" FontSize="10"
-                                       Foreground="{DynamicResource Faint}" VerticalAlignment="Center" Margin="0,0,7,5"/>
-                            <ContentPresenter VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Faint}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="b" Property="Background" Value="{DynamicResource SignalSoft}"/>
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}"/>
-                            <Setter TargetName="mark" Property="Text" Value="&#xE73E;"/>
-                            <Setter TargetName="mark" Property="Foreground" Value="{DynamicResource Signal}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-                        </Trigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsChecked" Value="True"/>
-                                <Condition Property="IsMouseOver" Value="True"/>
-                            </MultiTrigger.Conditions>
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalHover}"/>
-                        </MultiTrigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    <!-- rodada-unslop: visao-overlay-discos-rede fim -->
-
-    <!-- rodada-unslop: ferramentas início -->
     <!--
         Medidor de progresso de uma tarefa, na barra de ações do cabeçalho (Inicialização, Drivers, Rede): o trilho
         contínuo no sinal e a porcentagem à direita. Só aparece durante a tarefa (os botões, rentes à direita, não andam; o estado
@@ -1745,106 +1489,6 @@
         <Setter Property="MinHeight" Value="34"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
-    <!-- Botão − e + do campo de número: bolinha de 34 px (a altura do campo) com o fio e o fundo dos campos, como a seta dos cartões.
-         Não pega o foco, para o cursor ficar no campo; segurar repete o passo; no limite da faixa o comando desliga e a bolinha apaga. -->
-    <Style x:Key="StepButton" TargetType="RepeatButton">
-        <Setter Property="Width" Value="34"/>
-        <Setter Property="Height" Value="34"/>
-        <Setter Property="Focusable" Value="False"/>
-        <Setter Property="Delay" Value="400"/>
-        <Setter Property="Interval" Value="90"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="Background" Value="{DynamicResource Surface}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
-        <Setter Property="FontFamily" Value="{StaticResource Icons}"/>
-        <Setter Property="FontSize" Value="11"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="RepeatButton">
-                    <Grid x:Name="root">
-                        <Border x:Name="b" CornerRadius="17" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="1" SnapsToDevicePixels="True"/>
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="root" Property="RenderTransform">
-                                <Setter.Value>
-                                    <TranslateTransform Y="1"/>
-                                </Setter.Value>
-                            </Setter>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.3"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-    <!--
-        Campo de número (NumberField.Minimum/Maximum/Step): uma bolinha − à esquerda, a pílula do valor no meio e uma bolinha + à
-        direita, 6 px entre elas. O valor é digitável: clicar em qualquer ponto da pílula (ou chegar nela pelo Tab) dá o foco ao número
-        e seleciona o valor, para digitar por cima.
-    -->
-    <Style x:Key="NumberField" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-        <Setter Property="Height" Value="34"/>
-        <Setter Property="MinHeight" Value="34"/>
-        <Setter Property="MaxLength" Value="3"/>
-        <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
-        <Setter Property="Background" Value="{DynamicResource Surface}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource Line}"/>
-        <Setter Property="Padding" Value="0"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="TextBox">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <RepeatButton Style="{StaticResource StepButton}" Content="&#xE738;" Command="{x:Static local:NumberField.Decrease}" ToolTip="Diminuir"/>
-                        <Border x:Name="b" Grid.Column="1" Margin="6,0" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="17" SnapsToDevicePixels="True" Cursor="IBeam">
-                            <!-- A Bahnschrift assenta 1,5 px acima do centro: 3 em cima a trazem de volta. Número e unidade juntos no meio,
-                                 na mesma linha de base (o °C, menor, sobe 2); um clique em qualquer ponto da pílula põe o foco no número
-                                 e seleciona o valor (NumberField) -->
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,0">
-                                <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Bottom"/>
-                                <TextBlock x:Name="sx" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}"
-                                           FontFamily="{StaticResource Readout}" FontSize="12" Foreground="{DynamicResource Muted}"
-                                           VerticalAlignment="Bottom" Margin="1,0,0,2"/>
-                            </StackPanel>
-                        </Border>
-                        <RepeatButton Grid.Column="2" Style="{StaticResource StepButton}" Content="&#xE710;" Command="{x:Static local:NumberField.Increase}" ToolTip="Aumentar"/>
-                    </Grid>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="local:Ui.Suffix" Value="">
-                            <Setter TargetName="sx" Property="Visibility" Value="Collapsed"/>
-                        </Trigger>
-                        <Trigger SourceName="b" Property="IsMouseOver" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                            <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}"/>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.3"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
     <!-- Grupo de controles que não são botões (interruptor e atalho do OverlayBi) na barra de ações: 40 px, o fio dos campos -->
     <Style x:Key="ActionGroup" TargetType="Border">
         <Setter Property="Height" Value="40"/>
@@ -1855,23 +1499,13 @@
         <Setter Property="Padding" Value="18,0"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
-    <!-- Cabeçalho de coluna de uma tabela feita à mão (linhas de altura fixa): DIN 12, um tom abaixo do conteúdo -->
+    <!-- Cabeçalho de coluna de uma tabela feita à mão (linhas de altura fixa): DIN 13, um tom abaixo do conteúdo -->
     <Style x:Key="TableHead" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-    </Style>
-    <!-- Quantidade ao lado do título de um painel ("Drivers instalados 48") -->
-    <Style x:Key="TitleCount" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource Readout}"/>
-        <Setter Property="FontStretch" Value="SemiCondensed"/>
-        <Setter Property="FontSize" Value="16"/>
-        <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
-        <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Margin" Value="10,1,0,0"/>
     </Style>
     <!-- Linha de tabela: fio em cima e fundo que acende sob o mouse (o mesmo realce das linhas de Sensores) -->
     <Style x:Key="TableRow" TargetType="Border">
@@ -1885,9 +1519,7 @@
             </Trigger>
         </Style.Triggers>
     </Style>
-    <!-- rodada-unslop: ferramentas fim -->
 
-    <!-- rodada-unslop: bancada de teste início -->
     <!--
         Bancada de teste (Benchmark e Teste de carga): a mesma tecla grande escolhe o teste (TestTab, um por vez) e o que carregar
         (TestToggle, vários). Ícone do componente de 36 na cor dele, sem fundo; nome em DIN 16 seminegrito na tinta e a peça
@@ -1897,7 +1529,7 @@
     <Style x:Key="TestTab" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource InsetFocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -1956,7 +1588,7 @@
     <Style x:Key="TestToggle" TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource InsetFocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
@@ -2084,23 +1716,6 @@
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         <Setter Property="Margin" Value="0,3,0,0"/>
         <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
-    </Style>
-    <!-- Mostrador grande do palco (temperatura, erros de memória): o número que se acompanha durante o teste -->
-    <Style x:Key="TestHero" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
-        <Setter Property="FontSize" Value="72"/>
-        <Setter Property="FontWeight" Value="Light"/>
-        <Setter Property="LineHeight" Value="76"/>
-        <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
-        <Setter Property="Margin" Value="-3,4,0,0"/>
-        <Style.Triggers>
-            <!-- Sem leitura: o travessão fica no tamanho de uma leitura comum, um tom abaixo e colado ao rótulo -->
-            <Trigger Property="Text" Value="—">
-                <Setter Property="FontSize" Value="32"/>
-                <Setter Property="LineHeight" Value="40"/>
-                <Setter Property="Margin" Value="0,4,0,0"/>
-                <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
-            </Trigger>
-        </Style.Triggers>
     </Style>
     <!-- Resultado principal do Benchmark (a nota, multi e single-core): o maior número da tela depois do teste -->
     <Style x:Key="TestResult" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
@@ -2320,6 +1935,13 @@
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
                         </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="root" Property="RenderTransform">
+                                <Setter.Value>
+                                    <TranslateTransform Y="1"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
                         <!-- A pílula inteira a 30 %, texto e marca juntos (a opacidade de "on" é animada e venceria um Setter) -->
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="root" Property="Opacity" Value="0.3"/>
@@ -2417,15 +2039,6 @@
         <Setter Property="SmallChange" Value="1"/>
         <Setter Property="LargeChange" Value="5"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-    </Style>
-    <!-- Linha de ajuste com o nome à esquerda e o campo à direita (corte por temperatura), na altura das teclas -->
-    <Style x:Key="ConfigRow" TargetType="Grid">
-        <Setter Property="MinHeight" Value="42"/>
-    </Style>
-    <Style x:Key="ConfigRowName" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-        <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <Style x:Key="ConfigStart" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
         <Setter Property="Height" Value="42"/>
@@ -2559,6 +2172,5 @@
         </Setter>
     </Style>
 
-    <!-- rodada-unslop: bancada de teste fim -->
 
 </ResourceDictionary>

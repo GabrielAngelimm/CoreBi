@@ -2,7 +2,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using CoreBi.Desktop.Views;
 
 namespace CoreBi.Desktop;
@@ -45,10 +44,7 @@ public partial class InstallConfirmDialog : UserControl
     /// <summary>A mesma entrada da janela de relatório: opacidade e 10 px de subida.</summary>
     private void Enter()
     {
-        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-        Scrim.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
-        Panel.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(170)) { EasingFunction = ease });
-        PanelShift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(230)) { EasingFunction = ease });
+        PageMotion.EnterDialog(Scrim, Panel, PanelShift);
     }
 
     private void Close(bool confirmed)

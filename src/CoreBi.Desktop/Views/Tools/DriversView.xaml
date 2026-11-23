@@ -37,6 +37,8 @@
             <Setter Property="local:Ui.Icon" Value="&#xE8C8;" />
             <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}" />
             <Setter Property="ToolTip" Value="Copiar o nome, para buscar o driver" />
+            <!-- Só glifo: o leitor de tela fala a dica -->
+            <Setter Property="AutomationProperties.Name" Value="{Binding ToolTip, RelativeSource={RelativeSource Self}}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -160,7 +162,7 @@
                         </Grid>
                         <DockPanel Style="{StaticResource PageStatusSlot}">
                             <TextBlock x:Name="DrvDetail" Style="{StaticResource PageDetail}" DockPanel.Dock="Right" />
-                            <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
+                            <TextBlock x:Name="DrvStatus" Text="Lendo drivers instalados…" Style="{StaticResource PageStatus}" TextAlignment="Right" />
                         </DockPanel>
                         <!--
                             Backup e restauração: o par diz a mesma coisa dos dois lados ("Fazer backup" / "Restaurar backup"). Cada um abre a

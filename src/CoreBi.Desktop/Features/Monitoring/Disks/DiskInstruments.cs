@@ -69,7 +69,7 @@ public sealed class LifeGauge : DiskInstrument
 
         foreach (var (f, label) in Marks)
         {
-            var t = Text(label, 11, FaintBrush);
+            var t = Text(label, AxisText, FaintBrush);
             var p = At(f, r2 + 22);
             dc.DrawText(t, new Point(p.X - t.Width / 2, p.Y - t.Height / 2));
         }
@@ -120,13 +120,13 @@ public sealed class ThermalScale : DiskInstrument
         for (double v = lo; v <= hi + 0.1; v += 10)
         {
             if (marks.Any(at => Math.Abs(X(at) - X(v)) < 26)) continue;
-            var t = Text(v >= last - 0.1 ? $"{v:0} °C" : $"{v:0}", 11, FaintBrush);
+            var t = Text(v >= last - 0.1 ? $"{v:0} °C" : $"{v:0}", AxisText, FaintBrush);
             double x = v <= lo ? 0 : v >= hi ? w - t.Width : X(v) - t.Width / 2;
             dc.DrawText(t, new Point(x, zoneY + 8));
         }
         foreach (double at in marks)
         {
-            var t = Text($"{at:0}", 11, FaintBrush);
+            var t = Text($"{at:0}", AxisText, FaintBrush);
             dc.DrawText(t, new Point(Math.Clamp(X(at) - t.Width / 2, 0, w - t.Width), zoneY + 8));
         }
 
@@ -195,7 +195,7 @@ public sealed class TraceChart : DiskInstrument
         {
             double v = lo + (hi - lo) * k / 3, y = Math.Round(Y(v)) + 0.5;
             dc.DrawLine(grid, new Point(left, y), new Point(w, y));
-            var t = Text($"{v:0} °C", 11, FaintBrush);
+            var t = Text($"{v:0} °C", AxisText, FaintBrush);
             dc.DrawText(t, new Point(0, y - t.Height / 2));
         }
         for (int k = 0; k <= 4; k++)
@@ -206,7 +206,7 @@ public sealed class TraceChart : DiskInstrument
         string[] xs = { "−5 min", "−2,5 min", "agora" };
         for (int k = 0; k < 3; k++)
         {
-            var t = Text(xs[k], 11, FaintBrush);
+            var t = Text(xs[k], AxisText, FaintBrush);
             double x = k == 0 ? left : k == 2 ? w - t.Width : left + plotW / 2 - t.Width / 2;
             dc.DrawText(t, new Point(x, h - t.Height + 2));
         }
@@ -214,7 +214,7 @@ public sealed class TraceChart : DiskInstrument
         {
             double y = Math.Round(Y(WarnAt)) + 0.5;
             dc.DrawLine(Stroke(WarnBrush, 1, new DashStyle(new double[] { 4, 4 }, 0)), new Point(left, y), new Point(w, y));
-            var t = Text($"atenção {WarnAt:0} °C", 11, WarnBrush, readout: false);
+            var t = Text($"atenção {WarnAt:0} °C", AxisText, WarnBrush, readout: false);
             dc.DrawText(t, new Point(w - t.Width - 4, y - t.Height - 2));
         }
 
@@ -259,12 +259,12 @@ public sealed class TraceChart : DiskInstrument
         dc.DrawEllipse(SurfaceBrush, Stroke(ChannelBrush, 2.5), new Point(px, py), 5.5, 5.5);
 
         string when = ChartScale.RelativeAgo(_samples.Count - 1 - nearest);
-        var time = Text(when, 11.5, FaintBrush, readout: false);
+        var time = Text(when, AxisText, FaintBrush, readout: false);
         var value = Text($"{_samples[nearest]!.Value:0.#} °C", 16, InkBrush);
         double bw = Math.Max(time.Width, value.Width) + 24, bh = time.Height + value.Height + 16;
         double bx = px + 14 + bw > w ? px - 14 - bw : px + 14;
         double by = Math.Clamp(py - bh / 2, top, Math.Max(top, top + plotH - bh));
-        dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bw, bh), 8, 8);
+        dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bw, bh), TipRadius, TipRadius);
         dc.DrawText(time, new Point(bx + 12, by + 8));
         dc.DrawText(value, new Point(bx + 12, by + 8 + time.Height));
     }

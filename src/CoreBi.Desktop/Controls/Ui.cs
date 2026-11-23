@@ -200,13 +200,24 @@ public static class Ui
         }
     }
 
+    /// <summary>
+    /// Copia um texto. A área de transferência às vezes está presa por outro programa, então tenta de novo antes de desistir
+    /// (Sistema e Drivers).
+    /// </summary>
+    public static async Task<bool> TryCopyAsync(string text)
+    {
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            try { Clipboard.SetText(text); return true; }
+            catch (System.Runtime.InteropServices.COMException) { await Task.Delay(60); }
+        }
+        return false;
+    }
+
     /// <summary>Raio dos painéis (RadiusPanel), para recortar cantos desenhados em código.</summary>
     public static double PanelRadius(FrameworkElement element) =>
         element.TryFindResource("RadiusPanel") is CornerRadius r ? r.TopLeft : 16;
 
     public static string? CheckedTag(System.Windows.Controls.Panel panel) =>
         panel.Children.OfType<System.Windows.Controls.RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Tag as string;
-
-    public static string CheckedText(System.Windows.Controls.Panel panel) =>
-        panel.Children.OfType<System.Windows.Controls.RadioButton>().FirstOrDefault(r => r.IsChecked == true)?.Content?.ToString() ?? "";
 }

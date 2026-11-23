@@ -68,7 +68,7 @@ public sealed class PowerTrace : InstrumentBase
         {
             double y = Math.Round(Y(v)) + 0.5;
             dc.DrawLine(grid, new Point(left, y), new Point(w, y));
-            var t = Text($"{v:0} W", 11, FaintBrush);
+            var t = Text($"{v:0} W", AxisText, FaintBrush);
             dc.DrawText(t, new Point(0, y - t.Height / 2));
         }
         for (int k = 0; k <= 4; k++)
@@ -79,7 +79,7 @@ public sealed class PowerTrace : InstrumentBase
         string[] xs = { "−5 min", "−2,5 min", "agora" };
         for (int k = 0; k < 3; k++)
         {
-            var t = Text(xs[k], 11, FaintBrush);
+            var t = Text(xs[k], AxisText, FaintBrush);
             double x = k == 0 ? left : k == 2 ? w - t.Width : left + plotW / 2 - t.Width / 2;
             dc.DrawText(t, new Point(x, h - t.Height + 2));
         }
@@ -125,7 +125,7 @@ public sealed class PowerTrace : InstrumentBase
         {
             double px = X(pi), py = Y(pv);
             dc.DrawLine(Stroke(FaintBrush, 1), new Point(Math.Round(px) + 0.5, py - 4), new Point(Math.Round(px) + 0.5, py - 14));
-            var t = Text($"pico {pv:0} W", 11, MutedBrush);
+            var t = Text($"pico {pv:0} W", AxisText, MutedBrush);
             dc.DrawText(t, new Point(Math.Clamp(px - t.Width / 2, left, w - t.Width), Math.Max(0, py - 16 - t.Height)));
         }
 
@@ -190,7 +190,7 @@ public sealed class PowerTrace : InstrumentBase
         double bh = time.Height + total.Height + rows.Count * rowH + 18;
         double bx = px + 14 + bw > w ? px - 14 - bw : px + 14;
         double by = Math.Clamp(y(Total(s)) - bh / 2, top, Math.Max(top, top + plotH - bh));
-        dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bw, bh), 8, 8);
+        dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bw, bh), TipRadius, TipRadius);
         dc.DrawText(time, new Point(bx + 12, by + 8));
         dc.DrawText(total, new Point(bx + 12, by + 8 + time.Height));
         double ry = by + 12 + time.Height + total.Height;
@@ -475,7 +475,7 @@ public sealed class UptimeChart : InstrumentBase
                 tri.Freeze();
                 dc.DrawGeometry(DangerBrush, null, tri);
             }
-            var total = Text(d.Total, 12.5, InkBrush);
+            var total = Text(d.Total, AxisText, InkBrush);
             dc.DrawText(total, new Point(w - total.Width, baseline - total.Baseline));
 
         }
@@ -483,7 +483,7 @@ public sealed class UptimeChart : InstrumentBase
         double ay = _days.Count * rowH + 3;
         for (int k = 0; k <= 4; k++)
         {
-            var t = Text($"{k * 6} h", 11, FaintBrush);
+            var t = Text($"{k * 6} h", AxisText, FaintBrush);
             double x = k == 0 ? x0 : k == 4 ? x0 + bw - t.Width : X(k * 6) - t.Width / 2;
             dc.DrawText(t, new Point(x, ay));
         }
@@ -500,7 +500,7 @@ public sealed class UptimeChart : InstrumentBase
         bx = Math.Max(x0, bx);
         double rowTop = row * rowH;
         double by = rowTop - bh - 4 >= 0 ? rowTop - bh - 4 : rowTop + rowH + 4;
-        dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bwid, bh), 8, 8);
+        dc.DrawRoundedRectangle(RaisedBrush, Stroke(LineStrongBrush, 1), new Rect(bx, by, bwid, bh), TipRadius, TipRadius);
         for (int i = 0; i < lines.Count; i++) dc.DrawText(lines[i], new Point(bx + 12, by + 7 + i * lh + (lh - lines[i].Height) / 2));
     }
 }

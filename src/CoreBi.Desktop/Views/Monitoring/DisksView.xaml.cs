@@ -112,10 +112,11 @@ public partial class DisksView : UserControl
             // Uma coisa por vez: o que pede atenção, quando há; senão só a hora da leitura (a contagem fica no rack)
             int bad = cards.Count(c => c.Verdict is HealthVerdict.Warning or HealthVerdict.Critical);
             int unknown = cards.Count(c => c.Verdict == HealthVerdict.Unknown);
-            string read = $"Lido às {_readAt:HH:mm}.";
-            HeaderMotion.Say(DiskHealthStatus, null, cards.Count == 0 ? "Nenhum disco encontrado."
-                : bad > 0 ? $"{(bad == 1 ? "1 disco precisa" : $"{bad} discos precisam")} de atenção. {read}"
-                : unknown > 0 ? $"{(unknown == 1 ? "1 disco" : $"{unknown} discos")} sem dados de saúde. {read}"
+            // Como Sistema e Energia: fatos juntos por " · " (minúscula depois dele), sem ponto final
+            string read = $"lido às {_readAt:HH:mm}";
+            HeaderMotion.Say(DiskHealthStatus, null, cards.Count == 0 ? "Nenhum disco encontrado"
+                : bad > 0 ? $"{(bad == 1 ? "1 disco precisa" : $"{bad} discos precisam")} de atenção · {read}"
+                : unknown > 0 ? $"{(unknown == 1 ? "1 disco" : $"{unknown} discos")} sem dados de saúde · {read}"
                 : $"Lido às {_readAt:HH:mm}");
             DiskPanel.Visibility = cards.Count == 0 ? Visibility.Hidden : Visibility.Visible;
         }
@@ -238,12 +239,11 @@ public partial class DisksView : UserControl
         if (value == null) { target.Inlines.Add(new Run("—")); return; }
         target.Inlines.Add(new Run(value));
         if (unit.Length == 0) return;
-        var run = new Run("\u2009" + unit) { FontSize = Math.Round(target.FontSize * 0.5) };
+        var run = new Run("\u2009" + unit) { FontSize = Math.Max(12, Math.Round(target.FontSize * 0.5)) }; // piso de 12, como ReadoutFormat.Set
         run.SetResourceReference(TextElement.ForegroundProperty, "Muted");
         run.SetResourceReference(TextElement.FontFamilyProperty, "LabelFont");
         target.Inlines.Add(run);
     }
-
 
     private void DiskCards_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

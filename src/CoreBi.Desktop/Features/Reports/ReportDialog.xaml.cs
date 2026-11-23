@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using CoreBi.Engine.Persistence;
 
 namespace CoreBi.Desktop;
@@ -75,10 +74,7 @@ public partial class ReportDialog : UserControl
     /// <summary>Entrada curta, a mesma das páginas: opacidade e 10 px de subida, uma vez só.</summary>
     private void Enter()
     {
-        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-        Scrim.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
-        Panel.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(170)) { EasingFunction = ease });
-        PanelShift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(10, 0, TimeSpan.FromMilliseconds(230)) { EasingFunction = ease });
+        PageMotion.EnterDialog(Scrim, Panel, PanelShift);
     }
 
     private void Close(ReportChoice? choice)

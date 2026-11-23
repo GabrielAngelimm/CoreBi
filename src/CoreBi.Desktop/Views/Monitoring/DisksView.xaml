@@ -185,7 +185,7 @@
                     <TextBlock Text="Discos" Style="{StaticResource PageTitle}" />
                     <TextBlock Text="Saúde, temperatura e espaço de cada disco." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                     <StackPanel Style="{StaticResource PageActions}">
-                        <TextBlock x:Name="DiskHealthStatus" Text="Lendo os discos…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" Typography.NumeralAlignment="Tabular" />
+                        <TextBlock x:Name="DiskHealthStatus" Text="Lendo os discos…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" />
                         <Button x:Name="BtnDiskRefresh" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnDiskRefresh_Click" />
                     </StackPanel>
                 </local:PageHeaderPanel>

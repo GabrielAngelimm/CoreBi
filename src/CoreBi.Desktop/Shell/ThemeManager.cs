@@ -38,7 +38,8 @@ public static class ThemeManager
         // Texto
         ("Fg", "#E6EAEC", "#182228"),
         ("Muted", "#A3AAAE", "#525D62"),
-        ("Faint", "#737A7E", "#7A8388"),
+        // Faint é texto de verdade (eixos, cabeçalhos de tabela, legendas, travessões): 4,5:1 sobre os painéis, o mínimo do WCAG AA
+        ("Faint", "#80878B", "#646D72"),
         // Sinal: a marca. Ação principal, controles ligados, item escolhido na navegação, foco e o que está ao vivo
         ("Signal", "#27C9BC", "#0A857C"),
         ("SignalHover", "#4DD9CD", "#08766E"),

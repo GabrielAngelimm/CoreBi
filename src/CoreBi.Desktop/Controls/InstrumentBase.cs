@@ -81,6 +81,12 @@ public abstract class InstrumentBase : FrameworkElement
         DependencyProperty.Register(name, typeof(double), owner,
             new FrameworkPropertyMetadata(initial, FrameworkPropertyMetadataOptions.AffectsRender));
 
+    /// <summary>Eixos, marcas e dicas dos gráficos: o piso da escala (nada abaixo de 12), igual à Visão geral e ao Teste de carga.</summary>
+    protected const double AxisText = 12;
+
+    /// <summary>Raio da caixa de dica: o RadiusControl, o mesmo das dicas da Visão geral e do Teste de carga.</summary>
+    protected double TipRadius => TryFindResource("RadiusControl") is CornerRadius r ? r.TopLeft : 12;
+
     protected FormattedText Text(string text, double size, Brush brush, bool readout = true, FontWeight? weight = null)
     {
         var family = (TryFindResource(readout ? "Readout" : "UiFont") as FontFamily) ?? new FontFamily("Segoe UI");

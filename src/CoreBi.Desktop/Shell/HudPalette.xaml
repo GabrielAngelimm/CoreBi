@@ -14,7 +14,6 @@
     <SolidColorBrush x:Key="HudMuted" Color="#8F979C"/>
     <SolidColorBrush x:Key="HudFaint" Color="#646B6F"/>
     <SolidColorBrush x:Key="HudSignal" Color="#27C9BC"/>
-    <SolidColorBrush x:Key="HudSignalSoft" Color="#2027C9BC"/>
     <!-- Cantos livres sobre a cena do monitor (OverlayBi): contorno tracejado claro e o realce sob o mouse -->
     <SolidColorBrush x:Key="HudZone" Color="#66C9CFD2"/>
     <SolidColorBrush x:Key="HudZoneMark" Color="#99C9CFD2"/>

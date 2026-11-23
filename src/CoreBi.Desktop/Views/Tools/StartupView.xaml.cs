@@ -43,7 +43,7 @@ public sealed class RemovedRow(StartupBackup backup, ImageSource? icon)
     public ImageSource? Icon { get; } = icon;
     public bool Glyph { get; } = FileIcons.IsGlyph(backup.IconPath);
     public string Title => Backup.DisplayName;
-    public string When => Backup.RemovedAt is { } at ? "removido " + StartupView.Day(at) : "";
+    public string When => Backup.RemovedAt is { } at ? "removido " + ReadoutFormat.When(at) : "";
     public string Publisher => HardwareNaming.CompanyName(Backup.Publisher);
     public string PublisherTip => Backup.Publisher ?? "";
     public string Command => Backup.Command ?? Backup.Original ?? "";
@@ -187,11 +187,6 @@ public partial class StartupView : UserControl
     }
 
     /// <summary>"hoje às 14:05", "ontem às 09:12", "21/11 às 18:30".</summary>
-    internal static string Day(DateTime at)
-    {
-        string day = at.Date == DateTime.Today ? "hoje" : at.Date == DateTime.Today.AddDays(-1) ? "ontem" : at.ToString("dd/MM", PtBr);
-        return $"{day} às {at:HH:mm}";
-    }
 
     /// <summary>
     /// Capturas dos testes ("PageStartup:demo"): três removidos de exemplo, com o filtro em Removidos, para ver a tabela deles mesmo

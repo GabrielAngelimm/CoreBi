@@ -87,7 +87,7 @@ public sealed class ValueSlider : RangeBase
         base.OnValueChanged(oldValue, newValue);
         double snapped = Snap(newValue);
         if (snapped != newValue) { Value = snapped; return; }
-        if (_glide && !_dragging)
+        if (_glide && !_dragging && SystemParameters.ClientAreaAnimation)
         {
             BeginAnimation(ShownProperty, new DoubleAnimation(newValue, GlideTime) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
         }
@@ -210,8 +210,11 @@ public sealed class ValueSlider : RangeBase
 
     private double StepSize(double change) => Math.Max(change, Step > 0 ? Step : 1);
 
-    private void SetHalo(double to) =>
+    private void SetHalo(double to)
+    {
+        if (!SystemParameters.ClientAreaAnimation) { BeginAnimation(HaloProperty, null); SetValue(HaloProperty, to); return; }
         BeginAnimation(HaloProperty, new DoubleAnimation(to, HaloTime) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+    }
 
     protected override void OnRender(DrawingContext dc)
     {

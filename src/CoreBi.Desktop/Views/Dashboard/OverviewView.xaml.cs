@@ -57,7 +57,7 @@ namespace CoreBi.Desktop
 
     public sealed record DashEvent(string Icon, string Title, string Detail, string Value, DateTime At, string Channel = "")
     {
-        public string When => At.Date == DateTime.Today ? $"hoje {At:HH:mm}" : $"{At:dd/MM HH:mm}";
+        public string When => ReadoutFormat.When(At, compact: true);
     }
 
     public sealed record DashRingItem(Brush Swatch, string Label, string Value, string Detail, string Target);

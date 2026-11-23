@@ -125,56 +125,6 @@ public sealed class ConfigStack : System.Windows.Controls.Panel
 }
 
 /// <summary>
-/// Linhas de itens que dividem a sobra de largura em vãos iguais, inclusive o vão antes do primeiro item (o último encosta na direita);
-/// quando não cabem, quebram em mais linhas, cada uma distribuída do mesmo jeito.
-/// </summary>
-public sealed class JustifyPanel : System.Windows.Controls.Panel
-{
-    private List<List<UIElement>> Lines(double width)
-    {
-        var lines = new List<List<UIElement>> { new() };
-        double x = 0;
-        foreach (UIElement c in InternalChildren)
-        {
-            if (c.Visibility == Visibility.Collapsed) continue;
-            double w = c.DesiredSize.Width;
-            if (lines[^1].Count > 0 && x + w > width) { lines.Add(new()); x = 0; }
-            lines[^1].Add(c);
-            x += w;
-        }
-        return lines;
-    }
-
-    protected override Size MeasureOverride(Size available)
-    {
-        foreach (UIElement c in InternalChildren) c.Measure(new Size(double.PositiveInfinity, available.Height));
-        var lines = Lines(available.Width);
-        double h = lines.Sum(l => l.Count == 0 ? 0 : l.Max(c => c.DesiredSize.Height));
-        double w = lines.Max(l => l.Sum(c => c.DesiredSize.Width));
-        return new Size(double.IsInfinity(available.Width) ? w : Math.Min(w, available.Width), h);
-    }
-
-    protected override Size ArrangeOverride(Size final)
-    {
-        double y = 0;
-        foreach (var line in Lines(final.Width))
-        {
-            if (line.Count == 0) continue;
-            double lineH = line.Max(c => c.DesiredSize.Height);
-            double gap = line.Count > 1 ? Math.Max(0, (final.Width - line.Sum(c => c.DesiredSize.Width)) / line.Count) : 0;
-            double x = gap;
-            foreach (var c in line)
-            {
-                c.Arrange(new Rect(x, y, c.DesiredSize.Width, lineH));
-                x += c.DesiredSize.Width + gap;
-            }
-            y += lineH;
-        }
-        return final;
-    }
-}
-
-/// <summary>
 /// Não pede altura: o filho é medido só no arranjo, com a altura que a página deu. Para uma lista que rola dentro do cartão
 /// numa linha "*" (o histórico de Rede): medida sem limite, ela pediria todas as linhas e faria a página rolar.
 /// </summary>
