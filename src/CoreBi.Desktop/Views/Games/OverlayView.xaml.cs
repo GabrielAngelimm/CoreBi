@@ -27,15 +27,15 @@ public partial class OverlayView : UserControl
     /// <summary>A prévia cresce até o tamanho escolhido com a mesma curva dos números da Rede.</summary>
     private static readonly IEasingFunction Glide = new QuinticEase { EasingMode = EasingMode.EaseOut };
 
-    /// <summary>A legenda de cada grupo, curta para caber numa linha sob o nome.</summary>
-    private static readonly Dictionary<string, string> GroupCaptions = new()
+    /// <summary>O ícone (HwIcon) e a legenda de cada grupo, curta para caber numa linha sob o nome.</summary>
+    private static readonly Dictionary<string, (string Icon, string Caption)> GroupInfo = new()
     {
-        ["FPS"] = "Quadros por segundo",
-        ["GPU"] = "Placa de vídeo",
-        ["VRAM"] = "Memória de vídeo",
-        ["CPU"] = "Processador",
-        ["RAM"] = "Memória",
-        ["Outros"] = "Nomes e hora",
+        ["FPS"] = ("\uEC4A", "Quadros por segundo"),
+        ["GPU"] = ("gpu", "Placa de vídeo"),
+        ["VRAM"] = ("vram", "Memória de vídeo"),
+        ["CPU"] = ("cpu", "Processador"),
+        ["RAM"] = ("ram", "Memória"),
+        ["Outros"] = ("\uE727", "Nomes e hora"),
     };
 
     private static readonly Dictionary<string, string> ItemHints = new()
@@ -158,22 +158,32 @@ public partial class OverlayView : UserControl
                 slot.Children.Add(rule);
             }
 
-            var row = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 10, 0, 10) };
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(136) });
+            var row = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 8, 0, 8) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            // Nome no alto da primeira linha de itens (34 px): o título de 16 e a legenda de 12, cada um numa linha só
-            var name = new StackPanel { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 1, 12, 0) };
+            // Ícone sutil (20 px, no tom secundário) e, ao lado, o título de 16 e a legenda de 12, cada um numa linha só,
+            // no alto da primeira linha de itens (38 px)
+            GroupInfo.TryGetValue(group, out var info);
+            var head = new Grid { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 3, 12, 0) };
+            head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            head.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var icon = new HwIcon { Kind = info.Icon ?? "\uE946", Width = 20, Height = 20, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 1, 10, 0) };
+            icon.SetResourceReference(Control.ForegroundProperty, "Muted");
+            head.Children.Add(icon);
+            var name = new StackPanel();
             var title = new TextBlock { Text = group, TextWrapping = TextWrapping.NoWrap };
             title.SetResourceReference(StyleProperty, "GroupTitle");
             name.Children.Add(title);
-            if (GroupCaptions.TryGetValue(group, out var caption))
+            if (info.Caption is { Length: > 0 } caption)
             {
                 var sub = new TextBlock { Text = caption, TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 1, 0, 0) };
                 sub.SetResourceReference(StyleProperty, "Caption");
                 name.Children.Add(sub);
             }
-            row.Children.Add(name);
+            Grid.SetColumn(name, 1);
+            head.Children.Add(name);
+            row.Children.Add(head);
 
             var grid = new UniformGrid { Columns = 3, VerticalAlignment = VerticalAlignment.Top };
             foreach (var m in groups[i])

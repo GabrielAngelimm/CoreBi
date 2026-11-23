@@ -218,7 +218,7 @@ public partial class OverlayView : IDisposable
 
     /// <summary>
     /// "Onde funciona": janela e tela cheia sem borda sempre funcionam (o overlay é uma janela por cima do jogo); a tela cheia
-    /// exclusiva depende do RTSS. Os avisos embaixo só aparecem quando falta algo. O RTSS é consultado a cada 3 s, só com a página
+    /// exclusiva depende do RTSS. Um tópico que pede ação ganha o que fazer e o botão na própria linha. O RTSS é consultado a cada 3 s, só com a página
     /// à vista (abre a seção compartilhada dele e lê o cabeçalho, sem ocupar slot nem procurar processos).
     /// </summary>
     private void UpdateReady()
@@ -232,49 +232,47 @@ public partial class OverlayView : IDisposable
             _rtssInstalled = _rtssProbe != RtssStatus.Unavailable || RtssOverlayClient.IsInstalled();
         }
 
-        // Tela cheia exclusiva: o estado num LED, o overlay do desenho na cor do estado e, se falta algo, o aviso com o botão
-        (string state, string led, string? alert, string? action, string tip) = true switch
-        {
-            _ when _rtssShowing || _rtssProbe is RtssStatus.Ready or RtssStatus.Busy =>
-                ("Funciona pelo RTSS", "Ok", null, null, "O RTSS está aberto e desenha o overlay dentro do jogo."),
-            _ when _rtssProbe == RtssStatus.Incompatible =>
-                ("Atualize o RTSS", "Warn", "Este RTSS é antigo demais para o CoreBi. Instale a versão 7.3.7 ou mais nova.", "Baixar o RTSS",
-                 "O RTSS instalado não fala com o CoreBi."),
-            _ when _rtssInstalled =>
-                ("Abra o RTSS", "Warn", "O RTSS está fechado. Abra antes do jogo para o overlay aparecer em tela cheia exclusiva.", "Abrir o RTSS",
-                 "O RTSS desenha o overlay dentro do jogo quando está aberto."),
-            _ => ("Precisa do RTSS", "Faint", null, null,
-                  "Nesse modo o Windows não deixa outra janela por cima do jogo. O RTSS, gratuito, desenha o overlay dentro dele."),
-        };
-        if (OvExclusiveState.Text != state) OvExclusiveState.Text = state;
-        OvExclusiveLed.SetResourceReference(Shape.FillProperty, led);
-        OvExclusiveMark.SetResourceReference(Shape.FillProperty, led == "Ok" ? "Signal" : led);
-        OvExclusive.ToolTip = tip;
-        OvRtssLink.Visibility = led == "Faint" ? Visibility.Visible : Visibility.Collapsed;
-        ShowAlert(OvRtssAlert, alert != null);
-        if (alert != null)
-        {
-            OvRtssAlertText.Text = alert;
-            OvRtssAction.Content = action;
-        }
+        // Tela cheia exclusiva: depende do RTSS. Os outros tópicos só mudam quando falta algo.
+        if (_rtssShowing || _rtssProbe is RtssStatus.Ready or RtssStatus.Busy)
+            SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Ok", "Pelo RTSS");
+        else if (_rtssProbe == RtssStatus.Incompatible)
+            SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Warn", "RTSS desatualizado",
+                "Este RTSS é antigo demais para o CoreBi. Instale a versão 7.3.7 ou mais nova.", "Baixar o RTSS");
+        else if (_rtssInstalled)
+            SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Warn", "RTSS fechado",
+                "Abra o RTSS antes do jogo para o overlay aparecer em tela cheia exclusiva.", "Abrir o RTSS");
+        else
+            SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Faint", "Precisa do RTSS",
+                "Nesse modo o Windows não deixa outra janela por cima do jogo. O RTSS, gratuito, desenha o overlay dentro dele.", "Baixar o RTSS");
 
-        ShowAlert(OvAdminAlert, !ProcessElevation.IsElevated);
+        if (ProcessElevation.IsElevated)
+            SetTopic(OvAdminLed, OvAdminState, OvAdminHint, null, "Ok", "Funciona");
+        else
+            SetTopic(OvAdminLed, OvAdminState, OvAdminHint, null, "Warn", "Sem administrador",
+                "Temperatura, clock e consumo da CPU aparecem com travessão. Abra o CoreBi como administrador.");
 
         string? error = _context.Frames.Error;
-        ShowAlert(OvFpsAlert, error != null);
-        if (error != null) OvFpsAlertText.Text = "O FPS não está sendo medido: " + error;
-
-        // O primeiro aviso visível abre 16 px abaixo dos modos; os seguintes, 8 px um do outro
-        bool first = true;
-        foreach (var box in new[] { OvRtssAlert, OvAdminAlert, OvFpsAlert })
-        {
-            if (box.Visibility != Visibility.Visible) continue;
-            box.Margin = new Thickness(0, first ? 16 : 8, 0, 0);
-            first = false;
-        }
+        if (error == null)
+            SetTopic(OvFpsLed, OvFpsState, OvFpsHint, null, "Ok", "Funciona");
+        else
+            SetTopic(OvFpsLed, OvFpsState, OvFpsHint, null, "Danger", "Indisponível", error);
     }
 
-    private static void ShowAlert(Border box, bool show) => box.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+    /// <summary>Um tópico de "Onde funciona": o LED e o estado no tom do veredito; quando falta algo, o que fazer embaixo e o botão.</summary>
+    private static void SetTopic(System.Windows.Shapes.Ellipse led, TextBlock state, TextBlock hint, Button? action, string tone, string text,
+        string? howTo = null, string? actionText = null)
+    {
+        led.SetResourceReference(Shape.FillProperty, tone);
+        if (state.Text != text) state.Text = text;
+        state.SetResourceReference(TextBlock.ForegroundProperty, tone is "Ok" or "Faint" ? "Muted" : tone);
+        if (hint.Text != (howTo ?? "")) hint.Text = howTo ?? "";
+        hint.Visibility = howTo != null ? Visibility.Visible : Visibility.Collapsed;
+        if (action != null)
+        {
+            action.Content = actionText;
+            action.Visibility = actionText != null ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
 
     /// <summary>O botão do aviso do RTSS: abre o RTSS instalado ou a página oficial de download (Guru3D).</summary>
     private void OvReadyAction_Click(object sender, RoutedEventArgs e)

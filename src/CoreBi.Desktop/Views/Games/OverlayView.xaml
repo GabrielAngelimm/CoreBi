@@ -107,28 +107,27 @@
         </Style>
 
         <!--
-            Item do overlay: um LED e o nome, sem caixa. Apagado = anel e nome em tom baixo; aceso = ponto no sinal com um halo
-            suave e o nome em tinta. O fundo só aparece sob o mouse. Os itens de um grupo ficam numa grade de três colunas.
+            Item do overlay: uma pílula sem fio, com um LED e o nome; a pílula inteira é o alvo do clique. Apagado = anel, nome em
+            tom baixo e fundo só sob o mouse; aceso = ponto no sinal, nome em tinta e a pílula tingida do sinal. Os itens de um
+            grupo ficam numa grade de três colunas.
         -->
         <Style x:Key="OvItem" TargetType="CheckBox">
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
             <Setter Property="FontFamily" Value="{StaticResource LabelFont}" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="0,1,4,1" />
             <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
-                        <Border x:Name="b" Height="34" Padding="10,0,6,0" CornerRadius="10" Background="Transparent" SnapsToDevicePixels="True">
+                        <Border x:Name="b" Height="36" Padding="11,0,6,0" CornerRadius="18" Background="Transparent" SnapsToDevicePixels="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-                                <Grid Width="16" Height="16" VerticalAlignment="Center">
-                                    <Ellipse x:Name="halo" Fill="{DynamicResource SignalSoft}" Opacity="0" />
-                                    <Ellipse x:Name="led" Width="8" Height="8" Stroke="{DynamicResource Faint}" StrokeThickness="1.5" Fill="Transparent" />
-                                </Grid>
+                                <Ellipse x:Name="led" Width="8" Height="8" VerticalAlignment="Center" Stroke="{DynamicResource Faint}" StrokeThickness="1.5" Fill="Transparent" />
                                 <!-- 2 px abaixo do centro: a DIN fica alta numa linha centrada (medido nas pílulas) -->
                                 <TextBlock Grid.Column="1" Text="{TemplateBinding Content}" Margin="9,2,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                             </Grid>
@@ -140,9 +139,9 @@
                                 <Setter TargetName="led" Property="Stroke" Value="{DynamicResource Muted}" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource SignalSoft}" />
                                 <Setter TargetName="led" Property="Fill" Value="{DynamicResource Signal}" />
                                 <Setter TargetName="led" Property="Stroke" Value="{DynamicResource Signal}" />
-                                <Setter TargetName="halo" Property="Opacity" Value="1" />
                                 <Setter Property="Foreground" Value="{DynamicResource Fg}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -152,50 +151,43 @@
         </Style>
 
         <!--
-            Onde funciona: os três modos de tela, cada um com um desenho (a tela, o jogo e o overlay no canto), o nome e o estado num LED.
-            Avisos só quando falta algo, numa faixa elevada com o que fazer.
+            Onde funciona: tópicos separados por um fio. Cada um tem um LED (verde: funciona; âmbar: falta algo; vermelho: falhou;
+            apagado: opcional), o caso e o estado à direita. Quando falta algo, a linha ganha embaixo o que fazer e, se der, o botão
+            que resolve; vários avisos são vários tópicos, cada um no seu lugar.
         -->
+        <Style x:Key="WhereRow" TargetType="Grid">
+            <Setter Property="Margin" Value="0,9,0,9" />
+        </Style>
+        <Style x:Key="WhereLed" TargetType="Ellipse" BasedOn="{StaticResource StatusLed}">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="Fill" Value="{DynamicResource Ok}" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Margin" Value="2,7,14,0" />
+        </Style>
         <Style x:Key="WhereName" TargetType="TextBlock">
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Foreground" Value="{DynamicResource Fg}" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
         <Style x:Key="WhereState" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Margin" Value="16,1,0,0" />
         </Style>
-        <Style x:Key="WhereLed" TargetType="Ellipse" BasedOn="{StaticResource StatusLed}">
-            <Setter Property="Width" Value="6" />
-            <Setter Property="Height" Value="6" />
-            <Setter Property="Fill" Value="{DynamicResource Ok}" />
-            <Setter Property="Margin" Value="0,1,7,0" />
-        </Style>
-        <Style x:Key="WhereFrame" TargetType="Rectangle">
-            <Setter Property="Width" Value="44" />
-            <Setter Property="Height" Value="30" />
-            <Setter Property="RadiusX" Value="5" />
-            <Setter Property="RadiusY" Value="5" />
-            <Setter Property="Stroke" Value="{DynamicResource Faint}" />
-            <Setter Property="StrokeThickness" Value="1.5" />
-        </Style>
-        <Style x:Key="WhereAlert" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource Raised}" />
-            <Setter Property="CornerRadius" Value="{StaticResource RadiusInset}" />
-            <Setter Property="Padding" Value="16,8,8,8" />
-            <Setter Property="MinHeight" Value="50" />
-            <Setter Property="Margin" Value="0,8,0,0" />
+        <Style x:Key="WhereHint" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+            <Setter Property="Margin" Value="0,3,0,0" />
             <Setter Property="Visibility" Value="Collapsed" />
         </Style>
-        <Style x:Key="WhereAlertText" TargetType="TextBlock" BasedOn="{StaticResource Body}">
+        <Style x:Key="WhereButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="12,0,12,0" />
-        </Style>
-        <Style x:Key="WhereAlertButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-            <Setter Property="MinHeight" Value="34" />
-            <Setter Property="Padding" Value="16,0" />
-            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="16,0,0,0" />
+            <Setter Property="Visibility" Value="Collapsed" />
         </Style>
     </UserControl.Resources>
 
@@ -489,81 +481,80 @@
                         <!--
                             Onde funciona: o overlay do CoreBi é uma janela por cima do jogo, então funciona em janela e em tela cheia sem borda.
                             Em tela cheia exclusiva o Windows não deixa outra janela por cima: ali quem desenha é o RTSS, se estiver aberto.
+                            Os sensores da CPU pedem administrador; o FPS vem dos eventos do Windows.
                         -->
                         <Border x:Name="OvWhereCard" Grid.Row="2" Style="{StaticResource CardBorder}">
                             <StackPanel>
                                 <Grid Style="{StaticResource CardHeader}">
-                                    <TextBlock Text="Onde funciona" Style="{StaticResource CardTitle}"
-                                               ToolTip="O overlay é uma janela do CoreBi por cima do jogo. Em tela cheia exclusiva o Windows não deixa outra janela por cima: ali quem desenha é o RTSS." />
+                                    <TextBlock Text="Onde funciona" Style="{StaticResource CardTitle}" />
                                 </Grid>
-                                <UniformGrid Columns="3" Margin="0,14,0,0">
-                                    <StackPanel Orientation="Horizontal" ToolTip="O jogo numa janela: o overlay fica por cima dela.">
-                                        <Canvas Width="44" Height="30" VerticalAlignment="Center" SnapsToDevicePixels="True">
-                                            <Rectangle Style="{StaticResource WhereFrame}" />
-                                            <Rectangle Canvas.Left="9" Canvas.Top="7" Width="26" Height="16" RadiusX="2" RadiusY="2" Fill="{DynamicResource Line}" Stroke="{DynamicResource Muted}" StrokeThickness="1" />
-                                            <Rectangle Canvas.Left="12" Canvas.Top="10" Width="7" Height="4" RadiusX="1" RadiusY="1" Fill="{DynamicResource Signal}" />
-                                        </Canvas>
-                                        <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="Janela" Style="{StaticResource WhereName}" />
-                                            <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                                                <Ellipse Style="{StaticResource WhereLed}" />
-                                                <TextBlock Text="Funciona" Style="{StaticResource WhereState}" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" ToolTip="Tela cheia em janela sem borda (borderless): o overlay fica por cima do jogo.">
-                                        <Canvas Width="44" Height="30" VerticalAlignment="Center" SnapsToDevicePixels="True">
-                                            <Rectangle Style="{StaticResource WhereFrame}" />
-                                            <Rectangle Canvas.Left="4" Canvas.Top="4" Width="36" Height="22" RadiusX="2" RadiusY="2" Fill="{DynamicResource Line}" Stroke="{DynamicResource Muted}" StrokeThickness="1" />
-                                            <Rectangle Canvas.Left="7" Canvas.Top="7" Width="7" Height="4" RadiusX="1" RadiusY="1" Fill="{DynamicResource Signal}" />
-                                        </Canvas>
-                                        <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="Tela cheia sem borda" Style="{StaticResource WhereName}" />
-                                            <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                                                <Ellipse Style="{StaticResource WhereLed}" />
-                                                <TextBlock Text="Funciona" Style="{StaticResource WhereState}" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <StackPanel x:Name="OvExclusive" Orientation="Horizontal">
-                                        <Canvas Width="44" Height="30" VerticalAlignment="Center" SnapsToDevicePixels="True">
-                                            <Rectangle Style="{StaticResource WhereFrame}" />
-                                            <Rectangle Canvas.Left="4" Canvas.Top="4" Width="36" Height="22" RadiusX="2" RadiusY="2" Fill="{DynamicResource Muted}" />
-                                            <Rectangle x:Name="OvExclusiveMark" Canvas.Left="7" Canvas.Top="7" Width="7" Height="4" RadiusX="1" RadiusY="1" Fill="{DynamicResource Faint}" />
-                                        </Canvas>
-                                        <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="Tela cheia exclusiva" Style="{StaticResource WhereName}" />
-                                            <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
-                                                <Ellipse x:Name="OvExclusiveLed" Style="{StaticResource WhereLed}" Fill="{DynamicResource Faint}" />
-                                                <TextBlock x:Name="OvExclusiveState" Text="Precisa do RTSS" Style="{StaticResource WhereState}" />
-                                                <TextBlock x:Name="OvRtssLink" Style="{StaticResource WhereState}" Margin="6,0,0,0" Visibility="Collapsed">
-                                                    <Hyperlink Click="OvReadyAction_Click" Foreground="{DynamicResource Signal}" TextDecorations="{x:Null}">Baixar</Hyperlink>
-                                                </TextBlock>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </UniformGrid>
-
-                                <!-- Avisos: só aparecem quando falta algo -->
-                                <Border x:Name="OvRtssAlert" Style="{StaticResource WhereAlert}" Margin="0,16,0,0">
-                                    <DockPanel>
-                                        <TextBlock Text="&#xE7BA;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Warn}" VerticalAlignment="Center" />
-                                        <Button x:Name="OvRtssAction" DockPanel.Dock="Right" Style="{StaticResource WhereAlertButton}" Click="OvReadyAction_Click" />
-                                        <TextBlock x:Name="OvRtssAlertText" Style="{StaticResource WhereAlertText}" />
-                                    </DockPanel>
-                                </Border>
-                                <Border x:Name="OvAdminAlert" Style="{StaticResource WhereAlert}">
-                                    <DockPanel>
-                                        <TextBlock Text="&#xE7BA;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Warn}" VerticalAlignment="Center" />
-                                        <TextBlock Style="{StaticResource WhereAlertText}" Text="Temperatura, clock e consumo da CPU precisam do CoreBi aberto como administrador." />
-                                    </DockPanel>
-                                </Border>
-                                <Border x:Name="OvFpsAlert" Style="{StaticResource WhereAlert}">
-                                    <DockPanel>
-                                        <TextBlock Text="&#xE783;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Danger}" VerticalAlignment="Center" />
-                                        <TextBlock x:Name="OvFpsAlertText" Style="{StaticResource WhereAlertText}" />
-                                    </DockPanel>
-                                </Border>
+                                <Grid Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="O overlay é uma janela do CoreBi por cima do jogo.">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Ellipse Style="{StaticResource WhereLed}" Fill="{DynamicResource Ok}" />
+                                    <TextBlock Grid.Column="1" Text="Janela e tela cheia sem borda" Style="{StaticResource WhereName}" />
+                                    <TextBlock Grid.Column="2" Text="Funciona" Style="{StaticResource WhereState}" />
+                                </Grid>
+                                <Border Style="{StaticResource Divider}" />
+                                <Grid Style="{StaticResource WhereRow}" Background="Transparent" x:Name="OvRtssRow" ToolTip="Em tela cheia exclusiva o Windows não deixa outra janela por cima do jogo: quem desenha o overlay é o RTSS, se estiver aberto.">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Ellipse x:Name="OvRtssLed" Style="{StaticResource WhereLed}" Fill="{DynamicResource Faint}" />
+                                    <TextBlock Grid.Column="1" Text="Tela cheia exclusiva" Style="{StaticResource WhereName}" />
+                                    <TextBlock x:Name="OvRtssState" Grid.Column="2" Text="Precisa do RTSS" Style="{StaticResource WhereState}" />
+                                    <TextBlock x:Name="OvRtssHint" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource WhereHint}" />
+                                    <Button x:Name="OvRtssAction" Grid.Column="3" Grid.RowSpan="2" Style="{StaticResource WhereButton}" Click="OvReadyAction_Click" />
+                                </Grid>
+                                <Border Style="{StaticResource Divider}" />
+                                <Grid Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="Temperatura, clock e consumo da CPU.">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Ellipse x:Name="OvAdminLed" Style="{StaticResource WhereLed}" Fill="{DynamicResource Ok}" />
+                                    <TextBlock Grid.Column="1" Text="Sensores da CPU" Style="{StaticResource WhereName}" />
+                                    <TextBlock x:Name="OvAdminState" Grid.Column="2" Text="Funciona" Style="{StaticResource WhereState}" />
+                                    <TextBlock x:Name="OvAdminHint" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource WhereHint}" />
+                                </Grid>
+                                <Border Style="{StaticResource Divider}" />
+                                <Grid Style="{StaticResource WhereRow}" Background="Transparent" ToolTip="O FPS vem dos eventos de apresentação do Windows (ETW): o CoreBi não injeta nada nem lê a memória do jogo.">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Ellipse x:Name="OvFpsLed" Style="{StaticResource WhereLed}" Fill="{DynamicResource Ok}" />
+                                    <TextBlock Grid.Column="1" Text="Contagem de FPS" Style="{StaticResource WhereName}" />
+                                    <TextBlock x:Name="OvFpsState" Grid.Column="2" Text="Funciona" Style="{StaticResource WhereState}" />
+                                    <TextBlock x:Name="OvFpsHint" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Style="{StaticResource WhereHint}" />
+                                </Grid>
                             </StackPanel>
                         </Border>
                     </Grid>
