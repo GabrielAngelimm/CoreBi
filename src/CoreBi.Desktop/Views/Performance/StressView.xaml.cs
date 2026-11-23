@@ -377,21 +377,8 @@ public partial class StressView : UserControl, IDisposable
         // janela fechada, a falha) continua escrita no painel, em vermelho, porque pede atenção
         SetStatus(aborted ? HistoryRow(run).Title : "", aborted);
         StDetail.Text = aborted ? reason : "";
-        GlideProgressToZero();
+        Ui.Rewind(StProgress);
         StressDurationChanged();
-    }
-
-    /// <summary>A barra de progresso volta ao zero deslizando (240 ms), sem pular.</summary>
-    private void GlideProgressToZero()
-    {
-        if (StProgress.ScaleX <= 0) return;
-        var back = new System.Windows.Media.Animation.DoubleAnimation(StProgress.ScaleX, 0, TimeSpan.FromMilliseconds(240))
-        {
-            EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut },
-            FillBehavior = System.Windows.Media.Animation.FillBehavior.Stop,
-        };
-        StProgress.ScaleX = 0;
-        StProgress.BeginAnimation(ScaleTransform.ScaleXProperty, back);
     }
 
     private void ShowHistory(IEnumerable<StressRun>? runs = null)

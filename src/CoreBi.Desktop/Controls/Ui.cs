@@ -100,6 +100,23 @@ public static class Ui
     }
 
     /// <summary>
+    /// A barra de progresso de um teste que acabou (concluído, cancelado ou interrompido) volta ao zero deslizando em 240 ms, sem
+    /// pular: a mesma volta no Benchmark e no Teste de carga. O valor de base já fica em 0, então um teste novo começa limpo.
+    /// </summary>
+    public static void Rewind(ScaleTransform bar)
+    {
+        double from = bar.ScaleX;
+        bar.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        bar.ScaleX = 0;
+        if (from <= 0 || !SystemParameters.ClientAreaAnimation) return;
+        bar.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(from, 0, TimeSpan.FromMilliseconds(240))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
+            FillBehavior = FillBehavior.Stop,
+        });
+    }
+
+    /// <summary>
     /// Fração de um medidor ligada por binding (<c>&lt;ScaleTransform local:Ui.Fill="{Binding Fraction}"/&gt;</c>): cada valor novo
     /// desliza até lá (<see cref="Glide"/>) quando a janela está à frente e nada pesado roda (MainWindow.LiveMotion); senão vai direto.
     /// </summary>

@@ -77,8 +77,8 @@ public partial class BenchmarksView
             _benchTimer.Stop();
             UpdateCpuView();
             _benchCts = null;
-            // Parado no meio ou concluído, a barra volta ao zero (a imagem e os números ficam)
-            BenchProgress.ScaleX = 0;
+            // Parado no meio ou concluído, a barra desliza de volta ao zero (a imagem e os números ficam)
+            Ui.Rewind(BenchProgress);
             Ui.SetRunning(BtnBench, false, "Iniciar teste", "Cancelar");
             BenchOptions.IsEnabled = BenchDurationSection.IsEnabled = BenchTestPanel.IsEnabled = true;
             BenchBuckets.Children.Clear();

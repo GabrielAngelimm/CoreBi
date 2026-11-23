@@ -74,7 +74,7 @@ public partial class BenchmarksView
             _context.SetBenchmarkIsolation(false, false);
             GbGpuNow.Text = "";
             SetGameBenchRunning(BtnGpuBench, false);
-            GbProgress.ScaleX = 0;
+            Ui.Rewind(GbProgress);
             GbFpsNow.Text = "—";
         }
 
@@ -199,7 +199,7 @@ public partial class BenchmarksView
             timer.Stop();
             _context.SetBenchmarkIsolation(false, false);
             SetGameBenchRunning(BtnRtBench, false);
-            RtProgress.ScaleX = 0;
+            Ui.Rewind(RtProgress);
             RtFpsNow.Text = "—";
         }
 
@@ -269,7 +269,7 @@ public partial class BenchmarksView
         {
             timer.Stop();
             SetGameBenchRunning(BtnSimBench, false);
-            SimProgress.ScaleX = 0;
+            Ui.Rewind(SimProgress);
             SimFpsNow.Text = "—";
             _gameBenchCts = null;
         }

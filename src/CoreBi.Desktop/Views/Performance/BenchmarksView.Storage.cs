@@ -132,7 +132,7 @@ public partial class BenchmarksView
         {
             _context.SetBenchmarkIsolation(false, false);
             timer.Stop();
-            DiskProgress.ScaleX = 0;
+            Ui.Rewind(DiskProgress);
             DiskDrivePanel.IsEnabled = DiskSizePanel.IsEnabled = true;
             SetGameBenchRunning(BtnDiskBench, false);
             _gameBenchCts = null;
@@ -206,7 +206,7 @@ public partial class BenchmarksView
         finally
         {
             timer.Stop();
-            MemProgress.ScaleX = 0;
+            Ui.Rewind(MemProgress);
             SetGameBenchRunning(BtnMemBench, false);
             _gameBenchCts = null;
         }
