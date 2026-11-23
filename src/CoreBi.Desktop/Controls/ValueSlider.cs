@@ -221,11 +221,13 @@ public sealed class ValueSlider : RangeBase
         double cy = Math.Round(ActualHeight / 2);
         double x = XOf(Math.Clamp((double)GetValue(ShownProperty), Minimum, Maximum));
         double halo = (double)GetValue(HaloProperty);
+        // Desligado, nada de cor: a parte acesa e o botão ficam no tom dos pontos, para não parecer que dá para mexer
+        var fill = IsEnabled ? Fill : Dot ?? Fill;
 
         var track = new Rect(Left - TrackHeight / 2, cy - TrackHeight / 2, Usable + TrackHeight, TrackHeight);
         dc.DrawRoundedRectangle(Track, null, track, TrackHeight / 2, TrackHeight / 2);
         var lit = new Rect(track.Left, track.Top, Math.Max(TrackHeight, x - track.Left), TrackHeight);
-        dc.DrawRoundedRectangle(Fill, null, lit, TrackHeight / 2, TrackHeight / 2);
+        dc.DrawRoundedRectangle(fill, null, lit, TrackHeight / 2, TrackHeight / 2);
 
         // Um ponto por passo quando são poucos (a duração): o trilho mostra onde o botão pode parar
         double step = Step > 0 ? Step : 1;
@@ -249,7 +251,7 @@ public sealed class ValueSlider : RangeBase
         }
         var ring = Ring is { } r ? new Pen(r, RingWidth) : null;
         ring?.Freeze();
-        dc.DrawEllipse(Fill, ring, new Point(x, cy), ThumbRadius - RingWidth / 2, ThumbRadius - RingWidth / 2);
+        dc.DrawEllipse(fill, ring, new Point(x, cy), ThumbRadius - RingWidth / 2, ThumbRadius - RingWidth / 2);
     }
 
     protected override AutomationPeer OnCreateAutomationPeer() => new Peer(this);

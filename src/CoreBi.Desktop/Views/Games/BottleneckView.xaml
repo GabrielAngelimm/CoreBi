@@ -73,8 +73,8 @@
         <!--
             Uma situação da análise, no mesmo desenho das leituras: o nome (14) à esquerda, o tempo nela num medidor na cor da peça e
             a porcentagem (mostrador 22) à direita; o que ela quer dizer e o que fazer ficam na dica. Fio entre as linhas (nunca
-            antes da primeira). Sem análise, o medidor fica vazio e a porcentagem é travessão; a que não aconteceu (0 %) fica um tom
-            abaixo.
+            antes da primeira). Sem análise, o medidor fica vazio e a porcentagem é travessão; a que não aconteceu (0 %) fica toda
+            apagada (nome e número em Faint).
         -->
         <DataTemplate x:Key="SituationRow">
             <Border x:Name="row" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Background="Transparent" ToolTip="{Binding Tip}">
@@ -103,8 +103,9 @@
                 <DataTrigger Binding="{Binding Channel}" Value="Memory"><Setter TargetName="fill" Property="Background" Value="{DynamicResource Memory}" /></DataTrigger>
                 <DataTrigger Binding="{Binding Channel}" Value="Danger"><Setter TargetName="fill" Property="Background" Value="{DynamicResource Danger}" /></DataTrigger>
                 <DataTrigger Binding="{Binding Quiet}" Value="True">
-                    <Setter TargetName="name" Property="Foreground" Value="{DynamicResource Muted}" />
+                    <Setter TargetName="name" Property="Foreground" Value="{DynamicResource Faint}" />
                     <Setter TargetName="value" Property="Foreground" Value="{DynamicResource Faint}" />
+                    <Setter TargetName="row" Property="TextElement.Foreground" Value="{DynamicResource Faint}" />
                 </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>

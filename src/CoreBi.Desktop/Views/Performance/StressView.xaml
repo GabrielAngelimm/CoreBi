@@ -411,7 +411,7 @@
                                     <Button x:Name="BtnStress" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnStress_Click"
                                             ToolTip="Põe as peças marcadas no máximo e acompanha a temperatura, para ver se o PC aguenta sem travar." />
                                 </StackPanel>
-                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="24" MaxGap="56" Margin="0,8,0,20">
+                                <local:ConfigStack MinGap="24" MaxGap="56" Margin="0,8,0,20">
                                     <StackPanel x:Name="StressDurationSection" Style="{StaticResource ConfigSection}">
                                         <DockPanel Style="{StaticResource ConfigHead}">
                                             <TextBlock x:Name="StressDurationText" Text="10 min" Style="{StaticResource ConfigValue}" />

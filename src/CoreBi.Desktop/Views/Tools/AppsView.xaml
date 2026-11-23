@@ -257,7 +257,7 @@
                                 <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Signal}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="b" Property="Opacity" Value="0.45" />
+                                <Setter TargetName="b" Property="Opacity" Value="0.3" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -294,7 +294,7 @@
                                 <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Danger}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="b" Property="Opacity" Value="0.45" />
+                                <Setter TargetName="b" Property="Opacity" Value="0.3" />
                                 <Setter Property="Cursor" Value="Arrow" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -365,7 +365,7 @@
                                 <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
                             </MultiTrigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="b" Property="Opacity" Value="0.45" />
+                                <Setter TargetName="b" Property="Opacity" Value="0.3" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

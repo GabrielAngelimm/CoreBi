@@ -404,7 +404,7 @@
                                     <TextBlock x:Name="BenchHint" Style="{StaticResource ConfigHint}" />
                                     <Button x:Name="BtnBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnBench_Click" />
                                 </StackPanel>
-                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
                                     <StackPanel x:Name="BenchOptions" Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Núcleos" Style="{StaticResource ConfigName}" ToolTip="Multi-core usa todos os núcleos ao mesmo tempo; single-core, um só. Os dois mede um depois do outro." />
                                         <Border Style="{StaticResource ConfigSegmentGroup}">
@@ -518,7 +518,7 @@
                                     <Button x:Name="BtnSimBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnSimBench_Click"
                                             ToolTip="Lógica, física, colisão e IA de 30 mil unidades num mapa. A nota é quantos quadros por segundo o processador aguenta, sem a placa de vídeo." />
                                 </StackPanel>
-                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
                                     <StackPanel Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Duração" Style="{StaticResource ConfigName}" ToolTip="Mais tempo dá uma média mais estável." />
                                         <Border Style="{StaticResource ConfigSegmentGroup}">
@@ -612,7 +612,7 @@
                                 <StackPanel DockPanel.Dock="Bottom">
                                     <Button x:Name="BtnGpuBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnGpuBench_Click" />
                                 </StackPanel>
-                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
                                     <StackPanel Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Resolução" Style="{StaticResource ConfigName}" ToolTip="Mais pixels pesam mais na placa de vídeo. Compare só resultados na mesma resolução." />
                                         <Border Style="{StaticResource ConfigSegmentGroup}">
@@ -716,7 +716,7 @@
                                     <Button x:Name="BtnRtBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnRtBench_Click" ToolTipService.ShowOnDisabled="True"
                                             ToolTip="Compare só resultados com a mesma resolução, o mesmo preset e o mesmo driver, com o PC na tomada e sem outros programas pesados abertos." />
                                 </StackPanel>
-                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
                                     <StackPanel Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Resolução" Style="{StaticResource ConfigName}" />
                                         <Border Style="{StaticResource ConfigSegmentGroup}">
@@ -822,7 +822,7 @@
                                     <Button x:Name="BtnMemBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnMemBench_Click"
                                             ToolTip="Latência e banda da RAM, com blocos maiores que o cache do processador; depois, um pacote de 512 MB e mil arquivos de 64 KB lidos sem o cache do Windows e apagados no fim." />
                                 </StackPanel>
-                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
                                     <!-- Sem ajustes: o que o teste faz fica na dica do botão e em cada linha do palco -->
                                     <StackPanel Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Sem ajustes" Style="{StaticResource ConfigName}" />
@@ -903,7 +903,7 @@
                                     <Button x:Name="BtnDiskBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnDiskBench_Click"
                                             ToolTip="Grava um arquivo temporário na unidade escolhida, mede sem o cache do Windows e apaga o arquivo no final. Feche outros programas pesados antes." />
                                 </StackPanel>
-                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="28" MaxGap="48" Margin="0,12,0,24">
+                                <local:ConfigStack MinGap="28" MaxGap="48" Margin="0,12,0,24">
                                     <StackPanel Style="{StaticResource ConfigSection}">
                                         <TextBlock Text="Unidade" Style="{StaticResource ConfigName}" ToolTip="Onde o arquivo de teste é gravado." />
                                         <Border Style="{StaticResource ConfigSegmentGroup}">

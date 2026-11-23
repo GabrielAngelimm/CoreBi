@@ -201,7 +201,7 @@ public partial class StressView : UserControl, IDisposable
 
     private static void SetColumn(Border column, TextBlock state, bool on)
     {
-        column.Opacity = on ? 1 : 0.5;
+        column.Opacity = on ? 1 : 0.35;
         state.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
     }
 

@@ -744,7 +744,7 @@
                             <Setter Property="Foreground" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.4"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1038,7 +1038,7 @@
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}"/>
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1072,7 +1072,7 @@
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1110,7 +1110,7 @@
                             <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.5"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1153,7 +1153,7 @@
                             <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="root" Property="Opacity" Value="0.4"/>
+                            <Setter TargetName="root" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1284,7 +1284,7 @@
                             <Setter TargetName="on" Property="Opacity" Value="1"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="root" Property="Opacity" Value="0.4"/>
+                            <Setter TargetName="root" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1335,7 +1335,7 @@
                             <Setter TargetName="mark" Property="Visibility" Value="Visible"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.5"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1378,7 +1378,7 @@
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1448,7 +1448,7 @@
                             <Setter TargetName="ic" Property="Foreground" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.4"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1754,7 +1754,7 @@
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource SignalHover}"/>
                         </MultiTrigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="b" Property="Opacity" Value="0.45"/>
+                            <Setter TargetName="b" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1839,7 +1839,7 @@
                             </Setter>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.35"/>
+                            <Setter Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1896,7 +1896,7 @@
                             <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource Signal}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.4"/>
+                            <Setter Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -1994,7 +1994,7 @@
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="face" Property="Opacity" Value="0.5"/>
+                            <Setter TargetName="face" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -2044,7 +2044,7 @@
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="face" Property="Opacity" Value="0.5"/>
+                            <Setter TargetName="face" Property="Opacity" Value="0.3"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -2182,7 +2182,7 @@
     <Style x:Key="TestSection" TargetType="StackPanel">
         <Style.Triggers>
             <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Opacity" Value="0.5"/>
+                <Setter Property="Opacity" Value="0.3"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -2413,18 +2413,18 @@
         <Setter Property="Margin" Value="0,0,16,10"/>
     </Style>
     <!--
-        Limpar o histórico: um texto com a lixeira em tom secundário, sem fundo; sob o mouse, a pílula Hover e o texto em tinta. O
-        primeiro clique arma (ConfirmButton.Armed): "Limpar" esmaece e "Confirmar" acende no tom de perigo sobre a pílula
-        DangerSoft com fio Danger, em 160 ms; o segundo apaga. Os dois ficam presos à direita (o texto parado termina na linha das
-        datas, a pílula cresce para a esquerda), e o botão reserva a largura do maior, então nada empurra o título. Só aparece com
-        algo para limpar.
+        Limpar o histórico: a mesma pílula do Limpar de Instalar apps (fio tracejado LineStrong, lixeira e texto), com largura fixa
+        de 112 e o conteúdo no meio, presa à direita da linha do título e no meio dela; a borda direita fica na linha das datas.
+        Sob o mouse, fundo Hover, texto em tinta e lixeira vermelha. O primeiro clique arma (ConfirmButton.Armed): a pílula ganha
+        fundo DangerSoft e fio Danger, e o texto rola no lugar: "Limpar" sobe e some enquanto "Confirmar" sobe de baixo e
+        acende, em 180 ms; desarmar faz o caminho de volta. A pílula não muda de tamanho nem de lugar. Só aparece com algo
+        para limpar.
     -->
     <Style x:Key="HistoryClear" TargetType="Button">
         <Setter Property="HorizontalAlignment" Value="Right"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Width" Value="112"/>
         <Setter Property="Height" Value="30"/>
-        <!-- A pílula passa 12 px da borda, para o texto parado terminar na mesma linha das datas do histórico -->
-        <Setter Property="Margin" Value="0,0,-12,0"/>
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
@@ -2434,60 +2434,62 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Grid x:Name="root">
-                        <!-- Parado: a pílula do mouse tem a largura de "Limpar", presa à direita -->
-                        <Grid x:Name="restLayer" HorizontalAlignment="Right" Background="Transparent">
-                            <Border x:Name="hover" CornerRadius="15" Background="{DynamicResource Hover}" Opacity="0"/>
-                            <StackPanel x:Name="rest" Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
-                                <TextBlock Text="&#xE74D;" FontFamily="{StaticResource Icons}" FontSize="13" Margin="0,0,7,0" VerticalAlignment="Center"/>
-                                <TextBlock Text="Limpar" VerticalAlignment="Center"/>
+                    <Grid x:Name="root" SnapsToDevicePixels="True" ClipToBounds="False">
+                        <Border x:Name="fill" CornerRadius="15" Background="Transparent"/>
+                        <Rectangle x:Name="dash" RadiusX="15" RadiusY="15" Stroke="{DynamicResource LineStrong}" StrokeThickness="1" StrokeDashArray="3 2.5"/>
+                        <Border x:Name="alarm" CornerRadius="15" Background="{DynamicResource DangerSoft}" BorderBrush="{DynamicResource Danger}" BorderThickness="1" Opacity="0"/>
+                        <!-- Os dois textos no mesmo lugar, recortados pela pílula: um rola para fora enquanto o outro entra -->
+                        <Grid ClipToBounds="True">
+                            <StackPanel x:Name="rest" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <StackPanel.RenderTransform><TranslateTransform x:Name="restMove"/></StackPanel.RenderTransform>
+                                <TextBlock x:Name="glyph" Text="&#xE74D;" FontFamily="{StaticResource Icons}" FontSize="13" Foreground="{DynamicResource Faint}" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Limpar" VerticalAlignment="Center" Margin="0,1,0,0"/>
                             </StackPanel>
-                        </Grid>
-                        <!-- Armado: a pílula de perigo cresce para a esquerda, a partir da mesma borda -->
-                        <Grid x:Name="askLayer" HorizontalAlignment="Right" Background="Transparent" IsHitTestVisible="False">
-                            <Border x:Name="alarm" CornerRadius="15" Background="{DynamicResource DangerSoft}" BorderBrush="{DynamicResource Danger}" BorderThickness="1" Opacity="0"/>
-                            <StackPanel x:Name="ask" Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center" Opacity="0">
+                            <StackPanel x:Name="ask" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0">
+                                <StackPanel.RenderTransform><TranslateTransform x:Name="askMove" Y="12"/></StackPanel.RenderTransform>
                                 <TextBlock Text="&#xE74D;" FontFamily="{StaticResource Icons}" FontSize="13" Margin="0,0,7,0" VerticalAlignment="Center" Foreground="{DynamicResource Danger}"/>
-                                <TextBlock Text="Confirmar" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource Danger}"/>
+                                <TextBlock Text="Confirmar" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,1,0,0" Foreground="{DynamicResource Danger}"/>
                             </StackPanel>
                         </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="fill" Property="Background" Value="{DynamicResource Hover}"/>
+                            <Setter TargetName="glyph" Property="Foreground" Value="{DynamicResource Danger}"/>
                             <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="hover" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.12"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="hover" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
                         </Trigger>
                         <Trigger Property="local:ConfirmButton.Armed" Value="True">
                             <Setter Property="ToolTip" Value="Clique de novo para apagar. Esc ou 5 segundos sem clicar cancelam."/>
-                            <Setter TargetName="askLayer" Property="IsHitTestVisible" Value="True"/>
+                            <Setter TargetName="fill" Property="Background" Value="Transparent"/>
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="alarm" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.16"/>
-                                        <DoubleAnimation Storyboard.TargetName="rest" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.1"/>
-                                        <DoubleAnimation Storyboard.TargetName="ask" Storyboard.TargetProperty="Opacity" To="1" BeginTime="0:0:0.06" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="alarm" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18"/>
+                                        <DoubleAnimation Storyboard.TargetName="dash" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/>
+                                        <DoubleAnimation Storyboard.TargetName="rest" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="restMove" Storyboard.TargetProperty="Y" To="-12" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="ask" Storyboard.TargetProperty="Opacity" To="1" BeginTime="0:0:0.04" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="askMove" Storyboard.TargetProperty="Y" To="0" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.EnterActions>
                             <Trigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="alarm" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
-                                        <DoubleAnimation Storyboard.TargetName="ask" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.1"/>
-                                        <DoubleAnimation Storyboard.TargetName="rest" Storyboard.TargetProperty="Opacity" To="1" BeginTime="0:0:0.06" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="alarm" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/>
+                                        <DoubleAnimation Storyboard.TargetName="dash" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.18"/>
+                                        <DoubleAnimation Storyboard.TargetName="ask" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.12"/>
+                                        <DoubleAnimation Storyboard.TargetName="askMove" Storyboard.TargetProperty="Y" To="12" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="rest" Storyboard.TargetProperty="Opacity" To="1" BeginTime="0:0:0.04" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="restMove" Storyboard.TargetProperty="Y" To="0" Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
@@ -2495,7 +2497,7 @@
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="root" Property="RenderTransform">
                                 <Setter.Value>
-                                    <TranslateTransform Y="1"/>
+                                    <ScaleTransform ScaleX="0.97" ScaleY="0.97" CenterX="56" CenterY="15"/>
                                 </Setter.Value>
                             </Setter>
                         </Trigger>
