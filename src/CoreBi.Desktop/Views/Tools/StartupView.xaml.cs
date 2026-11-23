@@ -284,9 +284,8 @@ public partial class StartupView : UserControl
         {
             string? exe = item.IconPath != null && File.Exists(item.IconPath) && !item.IconPath.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? item.IconPath : null;
             // Com o arquivo, o Explorador abre a pasta já com ele selecionado
-            var start = new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe")) { UseShellExecute = false };
-            if (exe != null) start.ArgumentList.Add("/select," + exe); else start.ArgumentList.Add(folder);
-            Process.Start(start)?.Dispose();
+            string args = exe != null ? $"/select,\"{exe}\"" : $"\"{folder}\"";
+            Process.Start(new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), args) { UseShellExecute = false })?.Dispose();
         }
         catch (Exception ex) { Say("Não foi possível abrir a pasta", ex.Message); }
     }
