@@ -60,7 +60,7 @@ public partial class StartupView : UserControl
     private bool RequireAdmin() => PermissionGuard.RequireAdmin(_context.Owner);
 
     private const string NextBoot = "Vale no próximo início do Windows.";
-    private static readonly Thickness HeadMargin = new(8, 10, 8, 0);
+    private static readonly Thickness HeadMargin = new(8, 16, 8, 0);
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
     private readonly StartupService _startup = new();

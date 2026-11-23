@@ -32,7 +32,7 @@ public partial class DriversView : UserControl
     internal CancellationTokenSource? _drvCts;
 
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
-    private static readonly Thickness HeadMargin = new(8, 2, 8, 0);
+    private static readonly Thickness HeadMargin = new(8, 16, 8, 6);
     private List<DriverLine> _lines = new();
     private ICollectionView? _view;
     private string _query = "";

@@ -386,7 +386,7 @@
                         Windows diz e o atalho para o Gerenciador na ponta da linha.
                     -->
                     <Border x:Name="DrvTableCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="34"
-                            local:Skeleton.Layout="gap 10; row 32: - 8, c *@0.1, c 220@0.36, c 170@0.3, c 96@0.42&gt;, - 8; row 40: - 8, s 64, - *; rows 1 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 52, - *; lines 6 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 58, - *; lines 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8">
+                            local:Skeleton.Layout="gap 16; row 32: - 8, c *@0.1, c 220@0.36, c 170@0.3, c 96@0.42&gt;, - 8; gap 6; row 40: - 8, s 64, - *; rows 1 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 52, - *; lines 6 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 58, - *; lines 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -420,7 +420,7 @@
                                          ToolTip="Busca pelo nome do dispositivo ou pelo fabricante." />
                             </Grid>
 
-                            <Grid x:Name="DrvHead" Grid.Row="1" Height="32" Margin="8,10,8,0">
+                            <Grid x:Name="DrvHead" Grid.Row="1" Height="32" Margin="8,16,8,6">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" MinWidth="200" />
                                     <ColumnDefinition Width="220" />
@@ -473,9 +473,10 @@
                                                             </Border>
                                                             <Button x:Name="copy" Grid.Column="2" Style="{StaticResource DrvCopy}" HorizontalAlignment="Left" Margin="6,0,0,0" Click="DrvCopy_Click" />
                                                         </Grid>
-                                                        <TextBlock x:Name="vendor" Grid.Column="1" Text="{Binding Vendor}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Vendor}" Margin="16,0,0,0" />
-                                                        <TextBlock x:Name="version" Grid.Column="2" Text="{Binding Version}" Style="{StaticResource Num}" TextTrimming="CharacterEllipsis" Margin="16,0,0,0" />
-                                                        <TextBlock x:Name="date" Grid.Column="3" Text="{Binding Date}" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" ToolTip="{Binding DateTip}" />
+                                                        <TextBlock x:Name="vendor" Grid.Column="1" Text="{Binding Vendor}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Vendor}" Margin="16,0,0,0"
+                                                                   VerticalAlignment="Center" />
+                                                        <TextBlock x:Name="version" Grid.Column="2" Text="{Binding Version}" Style="{StaticResource Num}" TextTrimming="CharacterEllipsis" Margin="16,0,0,0" VerticalAlignment="Center" />
+                                                        <TextBlock x:Name="date" Grid.Column="3" Text="{Binding Date}" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" VerticalAlignment="Center" ToolTip="{Binding DateTip}" />
                                                         <!-- Dispositivo com problema: no lugar de versão e data, o atalho para o Gerenciador de Dispositivos -->
                                                         <Button x:Name="manager" Grid.Column="1" Grid.ColumnSpan="3" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Margin="0,0,-10,0"
                                                                 Click="BtnDrvDeviceManager_Click" Visibility="Collapsed"
