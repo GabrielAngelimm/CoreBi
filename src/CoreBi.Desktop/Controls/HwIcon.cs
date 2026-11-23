@@ -171,8 +171,8 @@ public sealed class HwIcon : Control
             ["desktop"] = new[] { Box(3, 4.5, 18, 11.5, 2), Line("M12,16 V19.5"), Line("M8,19.5 H16") },
             ["fan"] = fan.ToArray(),
             // Termômetro: os sensores de temperatura (saúde do PC na Visão geral)
-            // Velocímetro: o benchmark (arco aberto embaixo, ponteiro para o alto à direita e o eixo)
-            ["gauge"] = new[] { Line("M4.64,18.25 A8.5,8.5 0 1 1 19.36,18.25"), Line("M12,14 L16.25,9.75"), Dot(12, 14, 1.6) },
+            // Velocímetro: o benchmark (arco de 270° aberto embaixo, do tamanho dos outros ícones do menu, ponteiro para o alto à direita e o eixo)
+            ["gauge"] = new[] { Line("M5.28,20.22 A9.5,9.5 0 1 1 18.72,20.22"), Line("M12,13.5 L16.6,8.9"), Dot(12, 13.5, 1.6) },
             ["temp"] = new[] { Line("M10,13.9 V5 A2,2 0 0 1 14,5 V13.9 A4,4 0 1 1 10,13.9 Z"), Line("M12,9.5 V15"), Dot(12, 17.36, 1.75) },
         };
     }
