@@ -2466,12 +2466,12 @@
         <Setter Property="Padding" Value="24,24,8,8"/>
     </Style>
     <!--
-        Cabeçalho do histórico: a linha de 34 px dos cartões, com o título à esquerda e Limpar à direita, os dois no meio dela; 12
+        Cabeçalho do histórico: a linha de 34 px dos cartões, com o título à esquerda e Limpar à direita, os dois no meio dela; 13
         até a lista, e o vão do fim do título ao começo da primeira linha fica igual ao da borda ao título (31). Recua 16 à direita, o mesmo recuo da lista (que deixa lugar à barra de rolagem), para o botão alinhar com ela.
     -->
     <Style x:Key="HistoryHeader" TargetType="Grid" BasedOn="{StaticResource CardHeader}">
         <Setter Property="DockPanel.Dock" Value="Top"/>
-        <Setter Property="Margin" Value="0,0,16,12"/>
+        <Setter Property="Margin" Value="0,0,16,13"/>
     </Style>
     <!--
         Limpar o histórico: a mesma pílula do Limpar de Instalar apps (fio tracejado LineStrong, lixeira e texto), com largura fixa

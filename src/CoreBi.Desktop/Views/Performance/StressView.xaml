@@ -374,7 +374,7 @@
                                 <Border Grid.Column="1" BorderBrush="{DynamicResource Line}" BorderThickness="1,1,0,0" Padding="24,24,8,8">
                                     <DockPanel>
                                         <!-- 31 da borda ao título e 31 do título à primeira linha, como no histórico do Benchmark -->
-                                        <Grid DockPanel.Dock="Top" Height="30" Margin="0,0,16,13">
+                                        <Grid DockPanel.Dock="Top" Height="30" Margin="0,0,16,18">
                                             <TextBlock Text="Histórico" Style="{StaticResource Label}" Margin="0" VerticalAlignment="Center" Background="Transparent"
                                                        ToolTip="Os últimos 30 testes encerrados, o mais recente em cima." />
                                             <Button x:Name="StressHistoryClear" Style="{StaticResource HistoryClear}" Click="StressHistoryClear_Click" />
