@@ -343,7 +343,7 @@
                             <Grid Style="{StaticResource CardHeader}" Margin="24,16,24,0">
                                 <!-- A duração da sessão fica no cabeçalho da página, ao lado de "Lido às" -->
                                 <TextBlock Text="Consumo" Style="{StaticResource CardTitle}" ToolTip="Processador e placa de vídeo, pelos sensores deles. O resto do PC (placa-mãe, memória, discos, ventoinhas) e a perda da fonte não são medidos." />
-                                <!-- "Ao vivo" centrado na linha, como o estado da Temperatura em Discos. O LED desce 1, para o meio dele
+                                <!-- "Ao vivo" centrado na linha, como o estado da Temperatura em Armazenamento. O LED desce 1, para o meio dele
                                      cair no meio da altura-x da legenda. -->
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <Ellipse x:Name="LiveDot" Style="{StaticResource StatusLed}" Margin="0,1,8,0" />

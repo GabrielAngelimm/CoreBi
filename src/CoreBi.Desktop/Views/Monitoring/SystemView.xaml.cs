@@ -17,7 +17,7 @@ using System.Windows.Threading;
 namespace CoreBi.Desktop.Views;
 
 /// <summary>
-/// Sistema: a ficha técnica do computador. Seis botões de categoria em cima e, embaixo, a ficha da escolhida.
+/// Ficha técnica: as especificações completas do computador. Seis botões de categoria em cima e, embaixo, a ficha da escolhida.
 /// </summary>
 public partial class SystemView : UserControl
 {

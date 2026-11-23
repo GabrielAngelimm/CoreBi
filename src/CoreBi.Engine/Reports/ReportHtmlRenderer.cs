@@ -50,7 +50,7 @@ internal static class ReportHtmlRenderer
 
         // O diagnóstico que entrou, na ordem em que aparece: título, página de onde vem, cor e o que ele resume
         var diag = new List<(string Title, string Page, string Channel, string Spec)>();
-        if (d.Disks.Count > 0) diag.Add(("Saúde dos discos", "Discos", "storage", Count(d.Disks.Count, "disco", "discos")));
+        if (d.Disks.Count > 0) diag.Add(("Saúde dos discos", "Armazenamento", "storage", Count(d.Disks.Count, "disco", "discos")));
         if (d.Power.Count > 0) diag.Add(("Bateria e energia", "Energia", "steel", d.Power[0].Verdict.Length > 0 ? HardwareNaming.Sentence(d.Power[0].Verdict) : Count(d.Power.Count, "item", "itens")));
         if (d.Network.Count > 0) diag.Add(("Teste de rede", "Rede", "net", Count(d.Network.Count, "medida", "medidas")));
         if (d.Sensors.Count > 0) diag.Add(("Sensores", "Sensores", "steel", Count(d.Sensors.Count, "leitura", "leituras")));

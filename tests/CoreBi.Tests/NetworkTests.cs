@@ -52,6 +52,28 @@ internal static partial class Program
             return new { warmupAndStall = true };
         });
 
+        Check("network: sustained speed ignores ramp-up and bursts like common speed tests", () =>
+        {
+            // 10 s a 0,25 s: 2 s subindo devagar, 8 s estáveis a 500 Mbps com uma rajada no meio
+            var samples = new List<(double, long)>();
+            long bytes = 0;
+            for (int i = 0; i <= 40; i++)
+            {
+                double t = i * 0.25;
+                double mbps = t <= 2 ? 100 + 200 * t : t is > 5 and <= 5.5 ? 900 : 500;
+                if (i > 0) bytes += (long)(mbps * 1e6 / 8 * 0.25);
+                samples.Add((t, bytes));
+            }
+            double mean = bytes * 8 / 1e6 / 10;
+            double sustained = NetworkTransfer.SustainedMbps(samples, 0)!.Value;
+            Require(sustained is > 495 and < 560 && sustained > mean, $"Sustained {sustained:0} vs mean {mean:0}");
+            Require(NetworkTransfer.SustainedMbps(samples.Take(8).ToList(), 0) == null, "A short run produced a sustained speed");
+            Require(NetworkTransfer.SustainedMbps(samples, 9) == null, "Samples before the warmup were used");
+            var flat = Enumerable.Range(0, 20).Select(i => (i * 0.25, (long)i * 1_000_000)).ToList();
+            Require(Math.Abs(NetworkTransfer.SustainedMbps(flat, 0)!.Value - 32) < 0.01, "A steady transfer changed under trimming");
+            return new { sustained = Math.Round(sustained), mean = Math.Round(mean) };
+        });
+
         Check("network: loaded latency compares the same target and requires a download", () =>
         {
             var transfer = new NetworkTransfer();

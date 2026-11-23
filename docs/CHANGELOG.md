@@ -1,5 +1,26 @@
 # Mudanças
 
+## 1.0.1 — 2026-11-23
+
+Ajustes da 1.0 depois do primeiro uso: nomes de duas páginas e os testes de disco e de rede medindo como os programas de referência.
+
+### Páginas
+
+- **Sistema agora se chama Ficha técnica** e **Discos agora se chama Armazenamento**, na barra lateral, nos títulos, nos atalhos e no relatório. Os nomes antigos continuam achando as páginas na paleta de comandos (Ctrl + K).
+- Subtítulos novos: "As especificações completas do seu computador, peça por peça." e "Saúde, vida útil, temperatura e espaço de cada SSD e HD."
+
+### Benchmark de disco
+
+- Leitura e escrita sequenciais com **8 pedidos de 1 MB na fila** (E/S overlapped), o perfil SEQ1M Q8T1 dos benchmarks de disco comuns. Antes ia um pedido por vez, e um NVMe de 7.000 MB/s ficava perto de 3.000.
+- Resultados em **MB/s decimais** (1 MB = 1.000.000 bytes), a unidade das caixas e dos outros benchmarks. Antes eram MiB/s, uns 5 % abaixo.
+- Sem write-through: a escrita usa o cache de escrita do próprio SSD, como os outros benchmarks. O arquivo de teste é preparado antes de medir, e cada fase sequencial dura 3 s.
+- Resultados antigos do histórico continuam como foram medidos e ficam abaixo dos novos.
+
+### Teste de rede
+
+- O download agora dá a **velocidade sustentada**, como os testes de velocidade comuns: a taxa em janelas de 1 s, sem as 30 % mais lentas (subida da conexão, soluços do Wi-Fi) e as 10 % mais rápidas (rajadas). Antes era a média simples, puxada para baixo pela subida.
+- Teto de dados do download de 350 MB para 1 GB (o de upload de 200 para 400 MB): em conexões de 500 Mbps ou mais o teste acabava em menos de 5 s. Download da Cloudflare com seis fluxos e 10 s.
+
 ## 1.0.0 — 2026-11-23
 
 Primeira versão completa: as 14 páginas foram refinadas uma a uma e o app passou por uma revisão final de código, interface e documentação.

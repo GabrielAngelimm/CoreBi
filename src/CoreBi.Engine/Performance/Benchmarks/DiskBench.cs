@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 using Microsoft.Win32.SafeHandles;
 
 namespace CoreBi.Engine.Performance.Benchmarks;
@@ -12,13 +13,20 @@ public sealed record DiskBenchResult(string Drive, long FileMb, double SeqReadMB
 }
 
 /// <summary>
-/// Benchmark de armazenamento: leitura e escrita sequenciais (1 MB) e acesso aleatório de 4 KB (1 e 8 requisições em paralelo).
-/// Usa FILE_FLAG_NO_BUFFERING + WRITE_THROUGH para medir o disco fora do cache do Windows.
+/// Benchmark de armazenamento: leitura e escrita sequenciais (blocos de 1 MiB, 8 pedidos na fila) e acesso aleatório de 4 KiB
+/// (1 e 8 em paralelo). Usa FILE_FLAG_NO_BUFFERING para medir o disco fora do cache do Windows e dá MB/s decimais
+/// (1 MB = 1.000.000 bytes), a unidade dos fabricantes e dos outros benchmarks de disco.
 /// </summary>
+/// <remarks>
+/// Por que 8 na fila: um SSD NVMe só chega à velocidade da caixa com vários pedidos em andamento. Com um pedido por vez
+/// (como era até a 1.0.0), cada bloco espera o anterior voltar e um NVMe de 7.000 MB/s para perto de 3.000.
+/// </remarks>
 public static class DiskBench
 {
     private const int Block = 1 << 20;
     private const int Small = 4096;
+    private const int SeqDepth = 8;
+    private const double SeqSeconds = 3;
     private const double RandomSeconds = 4;
 
     /// <summary>Unidades fixas e removíveis prontas com pelo menos 1,5 GB livres.</summary>
@@ -55,47 +63,110 @@ public static class DiskBench
 
         try
         {
-            using var buffer = new AlignedBuffer(Block);
-            var seq = buffer.AsSpan();
-            new Random(42).NextBytes(seq); // dados incompressíveis (impedem compressão pelo controlador)
-
-            using var handle = File.OpenHandle(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read,
-                FileOptions.WriteThrough | DirectIo.NoBuffering, fileBytes);
-
-            var sw = Stopwatch.StartNew();
-            for (long off = 0; off < fileBytes; off += Block)
+            var buffers = new AlignedBuffer[SeqDepth];
+            try
             {
-                ct.ThrowIfCancellationRequested();
-                RandomAccess.Write(handle, seq, off);
-                progress("Escrita sequencial (1 MB)", 0.00 + 0.25 * off / fileBytes);
-            }
-            double seqWrite = fileMb / sw.Elapsed.TotalSeconds;
+                for (int i = 0; i < SeqDepth; i++)
+                {
+                    buffers[i] = new AlignedBuffer(Block);
+                    new Random(42 + i).NextBytes(buffers[i].AsSpan()); // dados incompressíveis (impedem compressão pelo controlador)
+                }
 
-            sw.Restart();
-            for (long off = 0; off < fileBytes; off += Block)
+                // Preparo: o arquivo é escrito inteiro antes de medir. No NTFS, uma escrita que aumenta o arquivo é sempre
+                // síncrona, então a fila de 8 só funciona sobre um arquivo que já existe no tamanho final.
+                using (var create = File.OpenHandle(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read,
+                           DirectIo.NoBuffering, fileBytes))
+                {
+                    var fill = buffers[0].AsSpan();
+                    for (long off = 0; off < fileBytes; off += Block)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        RandomAccess.Write(create, fill, off);
+                        progress("Preparando o arquivo de teste", 0.10 * off / fileBytes);
+                    }
+                    RandomAccess.FlushToDisk(create);
+                }
+
+                double seqWrite, seqRead;
+                using (var queued = File.OpenHandle(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read,
+                           FileOptions.Asynchronous | DirectIo.NoBuffering))
+                {
+                    var memory = buffers.Select(b => b.AsMemory()).ToArray();
+                    seqWrite = Sequential(queued, memory, fileBytes, write: true, "Escrita sequencial (1 MB, 8 na fila)", 0.10, 0.20, progress, ct);
+                    RandomAccess.FlushToDisk(queued); // fora do tempo, como nos outros benchmarks: só garante o arquivo antes de ler
+                    seqRead = Sequential(queued, memory, fileBytes, write: false, "Leitura sequencial (1 MB, 8 na fila)", 0.30, 0.20, progress, ct);
+                }
+
+                long slots = fileBytes / Small;
+                double readIops, writeIops, readLat, writeLat;
+                using (var handle = File.OpenHandle(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read, DirectIo.NoBuffering))
+                {
+                    var small = buffers[0].AsSpan(Small);
+                    readIops = RandomLoop(handle, small, slots, write: false, progress, "Leitura 4 KB aleatória (1 por vez)", 0.50, 0.15, ct, out readLat);
+                    writeIops = RandomLoop(handle, small, slots, write: true, progress, "Escrita 4 KB aleatória (1 por vez)", 0.65, 0.15, ct, out writeLat);
+                }
+
+                progress("Leitura 4 KB aleatória (8 em paralelo)", 0.80);
+                double q8 = ParallelRead(path, slots, 8, ct, progress);
+
+                progress("Concluído", 1.0);
+                return new DiskBenchResult(driveRoot.TrimEnd('\\'), fileMb, seqRead, seqWrite, readIops, writeIops, readLat, writeLat, q8);
+            }
+            finally
             {
-                ct.ThrowIfCancellationRequested();
-                DirectIo.ReadExact(handle, seq, off, "Leitura sequencial incompleta.");
-                progress("Leitura sequencial (1 MB)", 0.25 + 0.25 * off / fileBytes);
+                foreach (var b in buffers) b?.Dispose();
             }
-            double seqRead = fileMb / sw.Elapsed.TotalSeconds;
-
-            long slots = fileBytes / Small;
-            var small = buffer.AsSpan(Small);
-            double readIops = RandomLoop(handle, small, slots, write: false, progress, "Leitura 4 KB aleatória (1 por vez)", 0.50, 0.15, ct, out double readLat);
-            double writeIops = RandomLoop(handle, small, slots, write: true, progress, "Escrita 4 KB aleatória (1 por vez)", 0.65, 0.15, ct, out double writeLat);
-
-            progress("Leitura 4 KB aleatória (8 em paralelo)", 0.80);
-            double q8 = ParallelRead(path, slots, 8, ct, progress);
-
-            progress("Concluído", 1.0);
-            return new DiskBenchResult(driveRoot.TrimEnd('\\'), fileMb, seqRead, seqWrite, readIops, writeIops, readLat, writeLat, q8);
         }
         finally
         {
             try { File.Delete(path); } catch { }
             try { Directory.Delete(dir); } catch { }
         }
+    }
+
+    /// <summary>
+    /// Blocos de 1 MiB em ordem, com <paramref name="buffers"/>.Length pedidos sempre em andamento no mesmo arquivo
+    /// (E/S overlapped). Roda por <see cref="SeqSeconds"/> e volta ao começo do arquivo quando chega ao fim. Devolve MB/s decimais.
+    /// </summary>
+    private static double Sequential(SafeFileHandle handle, Memory<byte>[] buffers, long fileBytes, bool write, string phase,
+                                     double start, double span, Action<string, double> progress, CancellationToken ct)
+    {
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        long next = 0, done = 0;
+        var sw = Stopwatch.StartNew();
+        async Task Lane(Memory<byte> buffer)
+        {
+            try
+            {
+                while (sw.Elapsed.TotalSeconds < SeqSeconds && !stop.IsCancellationRequested)
+                {
+                    long offset = (Interlocked.Add(ref next, Block) - Block) % fileBytes;
+                    if (write) await RandomAccess.WriteAsync(handle, buffer, offset, stop.Token).ConfigureAwait(false);
+                    else if (await RandomAccess.ReadAsync(handle, buffer, offset, stop.Token).ConfigureAwait(false) != buffer.Length)
+                        throw new EndOfStreamException("Leitura sequencial incompleta.");
+                    Interlocked.Add(ref done, buffer.Length);
+                }
+            }
+            catch when (!stop.IsCancellationRequested)
+            {
+                stop.Cancel(); // uma falha para as outras filas; o erro original sobe pelo WhenAll
+                throw;
+            }
+        }
+
+        var all = Task.WhenAll(buffers.Select(b => Lane(b)));
+        // WaitAny não lança: o resultado das filas é lido só depois que todas terminaram (o arquivo não fecha com pedido no ar)
+        while (Task.WaitAny([all], 150) < 0)
+            progress(phase, start + span * Math.Min(1, sw.Elapsed.TotalSeconds / SeqSeconds));
+        double seconds = sw.Elapsed.TotalSeconds;
+        ct.ThrowIfCancellationRequested();
+        if (all.Exception is { } failure)
+        {
+            // A falha de verdade, não o cancelamento que ela causou nas outras filas
+            var cause = failure.InnerExceptions.FirstOrDefault(e => e is not OperationCanceledException) ?? failure.InnerExceptions[0];
+            ExceptionDispatchInfo.Throw(cause);
+        }
+        return Interlocked.Read(ref done) / 1e6 / seconds;
     }
 
     private static double RandomLoop(SafeFileHandle handle, Span<byte> buf, long slots, bool write,

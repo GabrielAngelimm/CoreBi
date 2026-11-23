@@ -2,7 +2,7 @@
 ; Compilado por tools\Installer.ps1 a partir de artifacts\publish\win-x64.
 
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.0.1"
 #endif
 #ifndef PublishDir
   #define PublishDir "..\artifacts\publish\win-x64"

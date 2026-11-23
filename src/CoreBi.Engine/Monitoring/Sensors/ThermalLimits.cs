@@ -1,7 +1,7 @@
 namespace CoreBi.Engine.Monitoring.Sensors;
 
 /// <summary>
-/// Limites de temperatura num lugar só, para que Sensores, Discos, Placa de vídeo e Gargalo deem o mesmo veredito
+/// Limites de temperatura num lugar só, para que Sensores, Armazenamento, Placa de vídeo e Gargalo deem o mesmo veredito
 /// para a mesma leitura.
 /// </summary>
 public static class ThermalLimits

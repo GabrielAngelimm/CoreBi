@@ -7,7 +7,7 @@ using CoreBi.Engine.Persistence;
 
 namespace CoreBi.Desktop;
 
-/// <summary>Uma parte do relatório que a pessoa pode tirar ou pôr: uma ficha de Sistema ou um bloco do diagnóstico.</summary>
+/// <summary>Uma parte do relatório que a pessoa pode tirar ou pôr: uma aba da Ficha técnica ou um bloco do diagnóstico.</summary>
 public sealed class ReportPart : ObservableObject
 {
     private bool _included;

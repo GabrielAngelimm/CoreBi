@@ -177,7 +177,7 @@
         CardTitle 18 (painel) · GroupTitle 16 (grupo, nó, seção dentro do painel) · ItemTitle 14 seminegrito (nome numa lista ou tecla) ·
         Body, PageSubtitle, PageStatus, PlateText e botões 14 · StatLabel, Label e cabeçalho de tabela 13 (DIN) · Caption, StatSub e Footnote 12.
     -->
-    <!-- Nome na placa de identificação (Sistema, Placa de vídeo, Discos) -->
+    <!-- Nome na placa de identificação (Ficha técnica, Placa de vídeo, Armazenamento) -->
     <Style x:Key="PlateName" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
         <Setter Property="FontSize" Value="28"/>
@@ -200,7 +200,7 @@
         <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
-    <!-- Título de grupo dentro de uma ficha ou painel (Sensores, Sistema, nós de Rede, Drivers): um degrau abaixo do painel -->
+    <!-- Título de grupo dentro de uma ficha ou painel (Sensores, Ficha técnica, nós de Rede, Drivers): um degrau abaixo do painel -->
     <Style x:Key="GroupTitle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}"/>
         <Setter Property="FontSize" Value="16"/>
@@ -423,7 +423,7 @@
     <!--
         Ícone de componente: só o desenho, na cor do componente (Ui.Channel = Cpu, Gpu, Memory, Virtual, Storage, Board, Net,
         Signal; vazio = Steel), sem superfície ao redor. Sem ladrilho para marcá-lo, o ícone é grande (26 a 40 px) e é a única
-        marca visual da peça: o mesmo em Sistema, Sensores, Visão geral, Discos, OverlayBi, Rede e nos testes.
+        marca visual da peça: o mesmo na Ficha técnica, Sensores, Visão geral, Armazenamento, OverlayBi, Rede e nos testes.
     -->
     <Style x:Key="ChannelIcon" TargetType="local:HwIcon">
         <Setter Property="Foreground" Value="{DynamicResource Steel}"/>
@@ -439,7 +439,7 @@
         </Style.Triggers>
     </Style>
     <!--
-        Fundo claro da ficha de um componente (a placa de Sistema, o cabeçalho de Sensores): a cor dele numa transparência
+        Fundo claro da ficha de um componente (a placa da Ficha técnica, o cabeçalho de Sensores): a cor dele numa transparência
         baixa e uniforme, sobre o tom da ficha. Ui.Channel escolhe o componente.
     -->
     <Style x:Key="ChannelWash" TargetType="Border">
@@ -1387,7 +1387,7 @@
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
     </Style>
 
-    <!-- Lista de itens selecionáveis (rack de Discos, paleta de comandos): a mesma seleção da navegação lateral -->
+    <!-- Lista de itens selecionáveis (rack de Armazenamento, paleta de comandos): a mesma seleção da navegação lateral -->
     <Style x:Key="ListNavItem" TargetType="ListBoxItem">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="Cursor" Value="Hand"/>
@@ -1671,7 +1671,7 @@
         </Setter>
     </Style>
     <!--
-        Placa do palco: quem está sendo medido (nome em DIN 24, como o da peça em Sensores e Discos) e o estado do teste à direita.
+        Placa do palco: quem está sendo medido (nome em DIN 24, como o da peça em Sensores e Armazenamento) e o estado do teste à direita.
         Linha em bloco de 30: com a mesma família e a mesma altura de linha em bloco, o WPF põe a linha de base na mesma fração da
         linha (altura × ascendente ÷ entrelinha da fonte, que não muda com o tamanho), então o estado em DIN 14 com o mesmo bloco
         de 30 (PlateStatus no Benchmark) assenta na linha de base do nome.

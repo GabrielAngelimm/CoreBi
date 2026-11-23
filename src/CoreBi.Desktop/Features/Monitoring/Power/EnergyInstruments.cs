@@ -6,7 +6,7 @@ namespace CoreBi.Desktop;
 
 /// <summary>
 /// Consumo dos últimos 5 min (1 amostra/s), empilhado: processador embaixo e placa de vídeo por cima, cada um no seu canal,
-/// então o contorno superior é a soma. Pausa sob o mouse e mostra a hora e cada parcela, como os gráficos de Discos e Visão geral.
+/// então o contorno superior é a soma. Pausa sob o mouse e mostra a hora e cada parcela, como os gráficos de Armazenamento e Visão geral.
 /// </summary>
 public sealed class PowerTrace : InstrumentBase
 {

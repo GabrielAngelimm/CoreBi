@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/GabrielAngelimm/CoreBi/releases/latest"><img src="https://img.shields.io/badge/vers%C3%A3o-1.0.0-27C9BC" alt="Versão 1.0.0"></a>
+  <a href="https://github.com/GabrielAngelimm/CoreBi/releases/latest"><img src="https://img.shields.io/badge/vers%C3%A3o-1.0.1-27C9BC" alt="Versão 1.0.1"></a>
   <a href="https://github.com/GabrielAngelimm/CoreBi/actions/workflows/verify.yml"><img src="https://github.com/GabrielAngelimm/CoreBi/actions/workflows/verify.yml/badge.svg" alt="Verify"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/licen%C3%A7a-MIT-informational" alt="Licença MIT"></a>
   <img src="https://img.shields.io/badge/Windows-10%20%7C%2011%20x64-informational" alt="Windows 10 e 11 x64">
@@ -29,7 +29,7 @@ As páginas seguem os grupos da barra lateral.
 | Grupo | Páginas | O que oferecem |
 | --- | --- | --- |
 | No topo | Visão geral | Resumo do PC: uso das peças, saúde do sistema, últimos testes e dispositivos conectados |
-| Monitoramento | Sistema, Sensores, Placa de vídeo, Discos, Energia, Rede | Ficha técnica com relatório para exportar (HTML, PDF ou JSON), todos os sensores com mínimo e máximo, a placa de vídeo ao vivo, vida útil e SMART dos discos, consumo da sessão e plano de energia, latência, perda e velocidade da conexão |
+| Monitoramento | Ficha técnica, Sensores, Placa de vídeo, Armazenamento, Energia, Rede | Especificações completas com relatório para exportar (HTML, PDF ou JSON), todos os sensores com mínimo e máximo, a placa de vídeo ao vivo, vida útil e SMART dos discos, consumo da sessão e plano de energia, latência, perda e velocidade da conexão |
 | Jogos e desempenho | OverlayBi, Teste de carga, Benchmark, Gargalo | Overlay de FPS e sensores por cima do jogo (também em tela cheia exclusiva, com o RTSS), testes de estabilidade de CPU, RAM e GPU com corte por temperatura, benchmarks de CPU, GPU, ray tracing, memória e disco com histórico, e a leitura de quem limita o FPS durante o jogo |
 | Ferramentas | Instalar apps, Drivers, Inicialização | Catálogo de 73 apps instalados pelo winget em pacote, drivers da placa de vídeo e do Windows Update com backup e restauração, e os programas que abrem com o Windows, com backup antes de remover |
 
@@ -53,14 +53,14 @@ Cada [release](https://github.com/GabrielAngelimm/CoreBi/releases/latest) traz t
 
 | Arquivo | Para quê |
 | --- | --- |
-| `CoreBi-1.0.0-win-x64-setup.exe` | Instalador, o caminho recomendado |
-| `CoreBi-1.0.0-win-x64-portable.zip` | Versão portátil, sem instalar |
+| `CoreBi-1.0.1-win-x64-setup.exe` | Instalador, o caminho recomendado |
+| `CoreBi-1.0.1-win-x64-portable.zip` | Versão portátil, sem instalar |
 | `SHA256SUMS.txt` | O SHA256 dos dois, para conferir o download |
 
 1. Baixe o instalador e confira o arquivo com o `SHA256SUMS.txt`:
 
    ```powershell
-   Get-FileHash .\CoreBi-1.0.0-win-x64-setup.exe -Algorithm SHA256
+   Get-FileHash .\CoreBi-1.0.1-win-x64-setup.exe -Algorithm SHA256
    ```
 
 2. Execute o instalador. Ele segue o tema claro ou escuro do Windows, instala em `Program Files`, cria os atalhos e registra o CoreBi para desinstalação. Na tela de componentes, PawnIO e RTSS vêm marcados: cada um é baixado pelo winget do repositório oficial, com a licença do próprio fornecedor, e nenhum vem dentro do instalador. Desmarque o que não quiser.

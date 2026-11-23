@@ -69,7 +69,7 @@ public static class SensorBoard
         _ => ("Outro", "", 70)
     };
 
-    /// <summary>Canal de cor do componente: o mesmo da Visão geral e do Sistema.</summary>
+    /// <summary>Canal de cor do componente: o mesmo da Visão geral e da Ficha técnica.</summary>
     private static string ToneOf(HardwareType t) => t switch
     {
         HardwareType.Cpu => "Cpu",

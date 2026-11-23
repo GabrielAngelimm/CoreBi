@@ -213,7 +213,7 @@
                                 <!-- Título no topo, alinhado com os de Processador e Placa de vídeo; a legenda assenta no pé, como as grandezas deles -->
                                 <DockPanel Grid.Column="1">
                                     <TextBlock DockPanel.Dock="Top" Text="Memória e disco" Style="{StaticResource SectionTitle}" Margin="0,0,0,8" />
-                                    <!-- Cada linha leva à seção do item: RAM ao Sistema, VRAM à Placa de vídeo, disco a Discos -->
+                                    <!-- Cada linha leva à seção do item: RAM à Ficha técnica, VRAM à Placa de vídeo, disco a Armazenamento -->
                                     <ItemsControl x:Name="DashRingLegend" Margin="-8,0,-8,-4" VerticalAlignment="Bottom" Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>

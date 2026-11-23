@@ -24,7 +24,9 @@ public partial class MainWindow
             else if (child is RadioButton nav)
             {
                 string title = nav.Content as string ?? "";
-                _paletteEntries.Add(new PaletteEntry(title, nav == NavDash ? "Página" : section, Ui.GetIcon(nav), section,
+                // Os nomes antigos continuam achando a página (Ficha técnica era Sistema; Armazenamento, Discos)
+                string extra = nav == NavSystem ? " sistema especificações hardware" : nav == NavDisks ? " discos ssd hd nvme" : "";
+                _paletteEntries.Add(new PaletteEntry(title, nav == NavDash ? "Página" : section, Ui.GetIcon(nav), section + extra,
                     () => nav.IsChecked = true));
             }
         }

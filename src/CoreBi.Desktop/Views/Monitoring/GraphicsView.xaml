@@ -69,7 +69,7 @@
         <Border x:Name="GpuPlateCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="0" Margin="0,0,0,16"
                 local:Skeleton.Layout="gap 28; col 28 44; gap 22; row 44: box 44^44; col 92 22%; gap 4; row 16: c *@0.3; gap 4; row 38: h *@0.8^24; gap 4; row 18: t *@0.8; col 30% 68%; row 16: c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6, - 18, c *@0.6; gap 4; row 38: n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26, - 18, n *@0.7^26; gap 6; row 6: box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *, - 18, box *; gap 7; row 16: c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7, - 18, c *@0.7; end; gap 31">
             <Grid>
-                <!-- Faixa da placa: fundo Selected com o fundo claro do canal Gpu, como a placa de Sistema, nos cantos do cartão -->
+                <!-- Faixa da placa: fundo Selected com o fundo claro do canal Gpu, como a placa da Ficha técnica, nos cantos do cartão -->
                 <Border Background="{DynamicResource Selected}" CornerRadius="{StaticResource RadiusPanel}" ClipToBounds="True">
                     <Grid>
                         <Border Style="{StaticResource ChannelWash}" local:Ui.Channel="Gpu" CornerRadius="{StaticResource RadiusPanel}" />

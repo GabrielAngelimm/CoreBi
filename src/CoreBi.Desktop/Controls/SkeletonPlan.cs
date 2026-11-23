@@ -55,7 +55,7 @@ public static class SkeletonPlan
             if (band != null)
             {
                 // Faixas: o trecho até endbands se repete em N faixas iguais da altura que sobra, centrado em cada uma, com o fio
-                // entre elas (leituras empilhadas, como o odômetro de Discos na janela larga)
+                // entre elas (leituras empilhadas, como o odômetro de Armazenamento na janela larga)
                 if (cmd != "endbands") { band.Add(cmd); continue; }
                 string inner = string.Join(";", band);
                 double ih = Height(inner), each = Math.Max(0, bottom - y) / bands;

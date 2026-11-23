@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Optimize Condition="'$(Configuration)'=='Release'">true</Optimize>
     <Deterministic>true</Deterministic>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Product>CoreBi</Product>
     <Authors>Gabriel Angelim</Authors>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
