@@ -896,8 +896,11 @@
 
     <!-- ===================== Navegação lateral ===================== -->
     <!--
-        Item da navegação, em Bahnschrift. O escolhido acende o ícone no sinal e ganha uma pílula tingida; dentro de um
-        SlidingSelectionPanel a pílula é uma só e desliza até o item escolhido (Ui.SlidingGroup), sem barra lateral.
+        Item da navegação, em Bahnschrift, numa malha fixa: pílula de 40 px (passo de 44, 4 px entre uma pílula e outra), ícone de
+        20 px a 14 da borda da pílula e o texto 12 depois dele. Ícone de 20 numa linha de 40 fica no pixel inteiro (o de 19 em 36
+        caía em meio pixel e o arredondamento o deixava 1 px fora do meio). O escolhido acende o ícone no sinal, o texto passa a
+        seminegrito em tinta, os dois num esmaecer de 160 ms (duas camadas sobrepostas: a troca de peso não "pula"), e ganha a
+        pílula tingida; dentro de um SlidingSelectionPanel a pílula é uma só e desliza até o item escolhido (Ui.SlidingGroup).
     -->
     <Style x:Key="NavItem" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
@@ -905,27 +908,31 @@
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="GroupName" Value="Nav"/>
-        <!-- 36 de altura e 38 de passo (eram 34 e 36): mais respiro, e o menu inteiro ainda cabe acima da central em 1920 × 1032 -->
-        <Setter Property="Margin" Value="12,1"/>
+        <Setter Property="Margin" Value="12,2"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Grid Background="Transparent" Height="36">
+                    <Grid Background="Transparent" Height="40">
                         <Border x:Name="hover" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource Hover}" Opacity="0"/>
                         <Border x:Name="sel" CornerRadius="{StaticResource RadiusControl}" Background="{DynamicResource NavSel}" Opacity="0"/>
-                        <Grid>
+                        <Grid Margin="14,0,12,0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="40"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="12"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
+                            <!-- Glifo centrado pela tinta (OpticalCenter): os da fonte ficavam de meio a um pixel acima do texto -->
                             <local:HwIcon x:Name="ic" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                          Width="20" Height="20" VerticalAlignment="Center" OpticalCenter="True"/>
                             <local:HwIcon x:Name="icOn" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Width="19" Height="19" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0,0,0"
-                                          Foreground="{DynamicResource Signal}" Opacity="0"/>
-                            <!-- A DIN assenta 1,5 px acima do centro da caixa: 3 px em cima a descem até o meio do ícone -->
-                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="2,3,8,0"/>
+                                          Width="20" Height="20" VerticalAlignment="Center" OpticalCenter="True" Foreground="{DynamicResource Signal}" Opacity="0"/>
+                            <!-- A DIN assenta 1,5 px acima do centro da caixa: 3 px em cima a descem até o meio do ícone e da pílula -->
+                            <Grid Grid.Column="2" VerticalAlignment="Center" Margin="0,3,0,0">
+                                <TextBlock x:Name="txt" Text="{TemplateBinding Content}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock x:Name="txtOn" Text="{TemplateBinding Content}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Fg}" Opacity="0"/>
+                            </Grid>
                         </Grid>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -952,6 +959,8 @@
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetName="icOn" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.16"/>
                                         <DoubleAnimation Storyboard.TargetName="ic" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.16"/>
+                                        <DoubleAnimation Storyboard.TargetName="txtOn" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.16"/>
+                                        <DoubleAnimation Storyboard.TargetName="txt" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.16"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.EnterActions>
@@ -960,11 +969,11 @@
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetName="icOn" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
                                         <DoubleAnimation Storyboard.TargetName="ic" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
+                                        <DoubleAnimation Storyboard.TargetName="txtOn" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
+                                        <DoubleAnimation Storyboard.TargetName="txt" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-                            <Setter Property="FontWeight" Value="SemiBold"/>
                             <Setter TargetName="hover" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                         <MultiTrigger>
@@ -980,18 +989,22 @@
         </Setter>
     </Style>
 
-    <!-- Trilho da navegação: um destaque só, tingido de sinal, que desliza até a página aberta -->
+    <!-- Trilho da navegação: um destaque só, tingido de sinal, que desliza até a página aberta no mesmo tempo em que ela assenta
+         (PageMotion.PageShift, 280 ms) -->
     <Style x:Key="NavRail" TargetType="local:SlidingSelectionPanel">
         <Setter Property="Highlight" Value="{DynamicResource NavSel}"/>
         <Setter Property="HighlightRadius" Value="12"/>
+        <Setter Property="SlideDuration" Value="0:0:0.28"/>
     </Style>
 
+    <!-- Cabeçalho de grupo do menu: alinhado à tinta dos ícones (26 px) e mais perto do grupo que abre do que do anterior
+         (22 em cima, 6 embaixo), para cada título ler como parte do grupo de baixo -->
     <Style x:Key="NavHeader" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="Foreground" Value="{DynamicResource Faint}"/>
-        <Setter Property="Margin" Value="24,18,0,6"/>
+        <Setter Property="Margin" Value="26,22,0,6"/>
     </Style>
 
     <!-- ===================== Seleção de opções ===================== -->
@@ -1166,89 +1179,6 @@
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="root" Property="Opacity" Value="0.3"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!--
-        Chave de tema (rodapé da barra lateral): a linha inteira é clicável; ligada = modo escuro. O botão desliza e o ícone troca
-        entre o sol (cobre) e a lua (lavanda) com um giro curto, só em resposta ao clique.
-    -->
-    <Style x:Key="ThemeToggle" TargetType="CheckBox">
-        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
-        <Setter Property="FontSize" Value="14"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="CheckBox">
-                    <Border x:Name="row" Background="Transparent" CornerRadius="{StaticResource RadiusControl}" Height="36" Padding="12,0,10,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid Width="18" Height="18" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
-                                <Grid.RenderTransform>
-                                    <RotateTransform x:Name="spin" Angle="0"/>
-                                </Grid.RenderTransform>
-                                <TextBlock x:Name="sun" Text="&#xE706;" Style="{StaticResource IconGlyph}" FontSize="15" Foreground="{DynamicResource Gpu}"/>
-                                <TextBlock x:Name="moon" Text="&#xE708;" Style="{StaticResource IconGlyph}" FontSize="14" Foreground="{DynamicResource Memory}" Opacity="0"/>
-                            </Grid>
-                            <ContentPresenter Grid.Column="1" VerticalAlignment="Center" Margin="10,1,8,0"/>
-                            <Grid Grid.Column="2" Width="36" Height="20" VerticalAlignment="Center">
-                                <Border CornerRadius="10" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1"/>
-                                <Border x:Name="on" CornerRadius="10" Background="{DynamicResource Signal}" Opacity="0"/>
-                                <Ellipse x:Name="knob" Width="14" Height="14" Margin="3,0" HorizontalAlignment="Left" Fill="{DynamicResource Muted}">
-                                    <Ellipse.RenderTransform>
-                                        <TranslateTransform x:Name="slide" X="0"/>
-                                    </Ellipse.RenderTransform>
-                                </Ellipse>
-                            </Grid>
-                        </Grid>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="row" Property="Background" Value="{DynamicResource Hover}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="knob" Property="Fill" Value="{DynamicResource SignalFg}"/>
-                            <Trigger.EnterActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="slide" Storyboard.TargetProperty="X" To="16" Duration="0:0:0.24">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseInOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.24"/>
-                                        <DoubleAnimation Storyboard.TargetName="moon" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.24"/>
-                                        <DoubleAnimation Storyboard.TargetName="sun" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/>
-                                        <DoubleAnimation Storyboard.TargetName="spin" Storyboard.TargetProperty="Angle" From="-90" To="0" Duration="0:0:0.32">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.EnterActions>
-                            <Trigger.ExitActions>
-                                <BeginStoryboard>
-                                    <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetName="slide" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.24">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseInOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.24"/>
-                                        <DoubleAnimation Storyboard.TargetName="moon" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.18"/>
-                                        <DoubleAnimation Storyboard.TargetName="sun" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.24"/>
-                                        <DoubleAnimation Storyboard.TargetName="spin" Storyboard.TargetProperty="Angle" From="90" To="0" Duration="0:0:0.32">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                    </Storyboard>
-                                </BeginStoryboard>
-                            </Trigger.ExitActions>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -2295,6 +2225,56 @@
         <Setter Property="FontSize" Value="14"/>
         <!-- As colunas são iguais e o texto fica no meio: a folga lateral pequena deixa caber "Sem limite" em quatro colunas -->
         <Setter Property="Padding" Value="4,5,4,3"/>
+    </Style>
+
+    <!--
+        Tema (rodapé da barra lateral): as duas opções à vista, "Claro" e "Escuro", no mesmo trilho em pílula das configurações dos
+        testes (ConfigSegmentGroup), com a tecla elevada que desliza até a escolhida. O ícone da escolhida acende na cor dela, o sol
+        em cobre e a lua em lavanda (Ui.Channel); a outra fica no tom do texto.
+    -->
+    <Style x:Key="ThemeSegmentGroup" TargetType="Border" BasedOn="{StaticResource ConfigSegmentGroup}">
+        <Setter Property="Background" Value="{DynamicResource Bg}"/>
+    </Style>
+    <Style x:Key="ThemeSegment" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Height" Value="34"/>
+        <Setter Property="GroupName" Value="Theme"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Border Background="Transparent" CornerRadius="17">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Grid Width="16" Height="16" VerticalAlignment="Center">
+                                <local:HwIcon x:Name="ic" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}" Width="16" Height="16" OpticalCenter="True"/>
+                                <local:HwIcon x:Name="icOn" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}" Width="16" Height="16" OpticalCenter="True"
+                                              Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}" Opacity="0"/>
+                            </Grid>
+                            <!-- A DIN 13 assenta 1 px acima do meio: 2 em cima a põem na linha do ícone. A cópia invisível em seminegrito
+                                 dá a largura do escolhido desde o começo, e marcar não desloca o ícone -->
+                            <Grid Margin="8,2,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Visibility="Hidden"/>
+                                <ContentPresenter/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter TargetName="icOn" Property="Opacity" Value="1"/>
+                            <Setter TargetName="ic" Property="Opacity" Value="0"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
     <!--
         Escolha em pílulas soltas (a outra forma de filtro, ao lado do trilho deslizante): cada opção é uma pílula de 42 px, a

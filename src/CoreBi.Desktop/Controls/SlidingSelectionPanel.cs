@@ -12,13 +12,20 @@ namespace CoreBi.Desktop;
 /// </summary>
 public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
 {
-    private static readonly Duration SlideTime = TimeSpan.FromMilliseconds(260);
     private static readonly Duration FadeTime = TimeSpan.FromMilliseconds(140);
 
     public static readonly DependencyProperty HighlightProperty = DependencyProperty.Register(
         nameof(Highlight), typeof(Brush), typeof(SlidingSelectionPanel), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
     /// <summary>Fundo do destaque.</summary>
     public Brush? Highlight { get => (Brush?)GetValue(HighlightProperty); set => SetValue(HighlightProperty, value); }
+
+    public static readonly DependencyProperty SlideDurationProperty = DependencyProperty.Register(
+        nameof(SlideDuration), typeof(Duration), typeof(SlidingSelectionPanel), new PropertyMetadata(new Duration(TimeSpan.FromMilliseconds(260))));
+    /// <summary>
+    /// Quanto o destaque leva para chegar à opção escolhida: 260 ms nos controles segmentados; a navegação lateral usa o tempo
+    /// em que a página assenta (PageMotion.PageShift), e a pílula chega junto com ela.
+    /// </summary>
+    public Duration SlideDuration { get => (Duration)GetValue(SlideDurationProperty); set => SetValue(SlideDurationProperty, value); }
 
     public static readonly DependencyProperty HighlightBorderProperty = DependencyProperty.Register(
         nameof(HighlightBorder), typeof(Brush), typeof(SlidingSelectionPanel), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -113,7 +120,7 @@ public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
             _target = target;
             if (slide)
             {
-                BeginAnimation(SpotProperty, new RectAnimation(target, SlideTime) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+                BeginAnimation(SpotProperty, new RectAnimation(target, SlideDuration) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
             }
             else
             {

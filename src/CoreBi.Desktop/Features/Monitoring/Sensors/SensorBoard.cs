@@ -69,7 +69,7 @@ public static class SensorBoard
         _ => ("Outro", "", 70)
     };
 
-    /// <summary>Canal de cor do componente: o mesmo da Visão geral, da barra lateral e do Sistema.</summary>
+    /// <summary>Canal de cor do componente: o mesmo da Visão geral e do Sistema.</summary>
     private static string ToneOf(HardwareType t) => t switch
     {
         HardwareType.Cpu => "Cpu",
@@ -86,7 +86,7 @@ public static class SensorBoard
     /// <summary>
     /// A biblioteca mede a memória física e a virtual ou no mesmo bloco (sensores "Virtual Memory...") ou em dois
     /// ("Total Memory" e "Virtual Memory"). Nenhuma das duas entra em Sensores (Gabriel, 2026-11-21): são o uso que o Windows
-    /// faz da memória, não uma peça com sensor, e o uso da RAM já está na Visão geral e na barra lateral. Os módulos de RAM ficam.
+    /// faz da memória, não uma peça com sensor, e o uso da RAM já está na Visão geral. Os módulos de RAM ficam.
     /// </summary>
     private static bool IsVirtualMemory(SensorRow r) => TypeOf(r) == HardwareType.Memory
         && (r.Name.StartsWith("Virtual Memory", StringComparison.Ordinal) || r.Component.StartsWith("Virtual Memory", StringComparison.Ordinal));

@@ -111,7 +111,7 @@
         </DataTemplate>
 
         <!-- Grupo de um tipo: o título é o maior e mais forte do bloco, com um filete na cor do canal do componente (o mesmo da
-             Visão geral e da barra lateral) e a unidade do grupo ao lado ("em °C"), que vale para mínimo, média e máximo; sem
+             Visão geral e do Sistema) e a unidade do grupo ao lado ("em °C"), que vale para mínimo, média e máximo; sem
              contagem, que o cabeçalho do componente já dá. Os sensores entram recuados embaixo. A segunda metade de um grupo
              longo (coluna da direita) não repete o título, mas guarda a altura dele para as linhas das duas colunas alinharem. -->
         <DataTemplate x:Key="SectionTemplate">

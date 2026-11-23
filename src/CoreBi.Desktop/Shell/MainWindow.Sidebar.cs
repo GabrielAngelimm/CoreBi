@@ -1,89 +1,32 @@
-using System.IO;
 using System.Windows;
-using CoreBi.Engine.Monitoring.Memory;
 using CoreBi.Engine.Monitoring.Sensors;
-using CoreBi.Engine.Monitoring.Storage;
 using CoreBi.Engine.Performance;
 using CoreBi.Engine.Tools.Apps;
 
 namespace CoreBi.Desktop;
 
-/// <summary>Monitor lateral (CPU, GPU, RAM e disco do sistema) e o aviso de sensores do processador.</summary>
+/// <summary>
+/// Rodapé da barra lateral: o aviso de sensores do processador e o tema. A barra é só navegação; as leituras ao vivo ficam nas
+/// páginas (a central de monitoramento que ficava aqui repetia a Visão geral e era redesenhada a cada segundo).
+/// </summary>
 public partial class MainWindow
 {
-    private int _sideDiskTicks;
-    private bool _sideDiskReading;
-
-    private void UpdateSidebarTelemetry()
-    {
-        UpdateSidebarCpu();
-        if (_context.PrimaryGpu != null)
-        {
-            float? load = _context.PrimaryGpuLoad();
-            SideGpuTemp.Text = _context.PrimaryGpuTemp() is float t ? $"{t:0.#} °C" : "—";
-            SideGpuLoad.Text = load is float l ? $"{l:0} %" : "—";
-            Ui.Glide(SideGpuBar, (load ?? 0) / 100.0, LiveMotion);
-        }
-
-        if (MemoryInfo.ReadPhysicalUsage() is { Total: > 0 } mem)
-        {
-            double used = (double)mem.Used / mem.Total;
-            SideRam.Text = $"{mem.Used / 1073741824.0:0.0} GB";
-            SideRamLoad.Text = $"{used * 100:0} %";
-            Ui.Glide(SideRamBar, used, LiveMotion);
-        }
-
-        if (++_sideDiskTicks >= 5)
-        {
-            _sideDiskTicks = 0;
-            RefreshSideStorageAsync();
-        }
-    }
-
-    private void UpdateSidebarCpu()
-    {
-        float? temp = _monitor.CpuTemperature;
-        float? load = _monitor.CpuLoad;
-        SideTemp.Text = temp == null ? "—" : $"{temp:0.#} °C";
-        SideLoad.Text = load == null ? "—" : $"{load:0} %";
-        Ui.Glide(SideCpuBar, (load ?? 0) / 100.0, LiveMotion);
-    }
-
-    private async void RefreshSideStorageAsync()
-    {
-        if (_sideDiskReading || _context.IsClosing) return;
-        _sideDiskReading = true;
-        try
-        {
-            var stats = await Task.Run(ReadSystemDriveUsage);
-            if (_context.IsClosing || stats is not { } s) return;
-            double used = (double)s.Used / s.Total;
-            SideDisk.Text = DriveCard.Fmt(s.Used);
-            SideDiskLoad.Text = $"{used * 100:0} %";
-            Ui.Glide(SideDiskBar, used, LiveMotion);
-            SideDiskRow.ToolTip = $"Disco {s.Letter}: {DriveCard.Fmt(s.Used)} em uso de {DriveCard.Fmt(s.Total)}, {DriveCard.Fmt(s.Free)} livres";
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-        finally { _sideDiskReading = false; }
-    }
-
-    private static (string Letter, long Used, long Free, long Total)? ReadSystemDriveUsage()
-    {
-        try
-        {
-            var drive = new DriveInfo(Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\");
-            if (!drive.IsReady || drive.TotalSize <= 0) return null;
-            return (drive.Name.TrimEnd('\\'), drive.TotalSize - drive.TotalFreeSpace, drive.TotalFreeSpace, drive.TotalSize);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
-    }
-
     private void UpdateCpuSensorWarning()
     {
         if (!_monitor.IsOpen) return; // ainda detectando: não acusar falta de sensor antes da hora
         var problem = _monitor.DiagnoseCpuSensors();
         CpuSensorWarn.Visibility = problem == SensorMonitor.CpuSensorProblem.None ? Visibility.Collapsed : Visibility.Visible;
         CpuSensorWarnText.Text = CpuSensorMessages.Sidebar(problem);
+    }
+
+    /// <summary>Clique numa das opções do tema: só troca quando a escolhida é a outra.</summary>
+    private void ThemeOption_Click(object sender, RoutedEventArgs e)
+    {
+        bool light = sender == ThemeLight;
+        if (light == ThemeManager.IsLight) return;
+        ApplyTheme(light, animate: true);
+        _settings.LightTheme = light;
+        SaveSettings();
     }
 
     private async void BtnFixCpuSensors_Click(object sender, RoutedEventArgs e)
