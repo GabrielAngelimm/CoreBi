@@ -53,19 +53,37 @@ public partial class OverlayView : UserControl
         ["Outros"] = new[] { new[] { "hwnames" }, new[] { "game" }, new[] { "clock" } },
     };
 
+    /// <summary>
+    /// A dica de cada item: o que ele mede, numa frase simples. Do que o item precisa para funcionar (administrador, RTSS) quem
+    /// conta é "Onde funciona", não a dica.
+    /// </summary>
     private static readonly Dictionary<string, string> ItemHints = new()
     {
-        ["frametime"] = "Tempo de cada quadro, em milissegundos. Quanto mais estável, mais liso o jogo.",
-        ["low1"] = "O FPS do 1% de quadros mais lentos. Mostra as travadas que a média esconde.",
-        ["graph"] = "O tempo de cada quadro numa linha: os picos são as travadas.",
-        ["gpu_hotspot"] = "O ponto mais quente do chip. Depende da placa de vídeo.",
-        ["gpu_memclock"] = "Depende da placa de vídeo.",
-        ["gpu_fan"] = "Depende da placa de vídeo.",
-        ["hwnames"] = "Mostra o modelo ao lado de CPU e GPU e a quantidade de RAM (ex.: CPU Ryzen 7 5700X).",
-        ["cpu_temp"] = "Precisa do CoreBi aberto como administrador.",
-        ["cpu_clock"] = "Precisa do CoreBi aberto como administrador.",
-        ["cpu_clockmax"] = "O clock do núcleo mais rápido. Precisa do CoreBi aberto como administrador.",
-        ["cpu_power"] = "Precisa do CoreBi aberto como administrador.",
+        ["fps"] = "Quantos quadros o jogo desenha por segundo. Quanto mais, mais fluido.",
+        ["frametime"] = "Quanto tempo cada quadro leva para ficar pronto, em milissegundos. Quanto mais estável, mais liso o jogo.",
+        ["low1"] = "O FPS dos momentos mais lentos (o 1% pior). Mostra as travadas que a média esconde.",
+        ["graph"] = "Uma linha com o tempo de cada quadro. Os picos para cima são as travadas.",
+        ["cpu_load"] = "Quanto do processador está sendo usado, somando todos os núcleos.",
+        ["cpu_maxcore"] = "O uso do núcleo mais ocupado. Perto de 100% indica que o processador está segurando o jogo, mesmo com o uso total baixo.",
+        ["cpu_clock"] = "A velocidade média dos núcleos, em GHz.",
+        ["cpu_clockmax"] = "A velocidade do núcleo mais rápido no momento, em GHz.",
+        ["cpu_temp"] = "A temperatura do processador.",
+        ["cpu_power"] = "Quanta energia o processador está gastando, em watts.",
+        ["gpu_load"] = "Quanto da placa de vídeo está sendo usado. Perto de 100% indica que ela é o limite do FPS.",
+        ["gpu_fan"] = "A velocidade da ventoinha da placa de vídeo.",
+        ["gpu_power"] = "Quanta energia a placa de vídeo está gastando, em watts.",
+        ["gpu_clock"] = "A velocidade do chip da placa de vídeo, em MHz.",
+        ["gpu_memclock"] = "A velocidade da memória da placa de vídeo, em MHz.",
+        ["gpu_volt"] = "A tensão que alimenta o chip da placa de vídeo, em volts.",
+        ["gpu_temp"] = "A temperatura da placa de vídeo.",
+        ["gpu_hotspot"] = "A temperatura do ponto mais quente do chip, um pouco acima da temperatura média.",
+        ["vram_used"] = "Quanto da memória da placa de vídeo está ocupado, em GB.",
+        ["vram_pct"] = "Quanto da memória da placa de vídeo está ocupado, em porcentagem.",
+        ["ram_used"] = "Quanto da memória do computador está ocupado, em GB.",
+        ["ram_pct"] = "Quanto da memória do computador está ocupado, em porcentagem.",
+        ["hwnames"] = "Mostra o modelo ao lado de CPU e GPU e o total de RAM (ex.: CPU Ryzen 7 5700X).",
+        ["game"] = "O nome do jogo que está sendo medido.",
+        ["clock"] = "A hora atual, para acompanhar o tempo de jogo.",
     };
 
     private static readonly Dictionary<string, HashSet<string>> Presets = new()
@@ -427,10 +445,8 @@ public partial class OverlayView : UserControl
     {
         OvPreview.Update(f, lines, show, extra);
         FitScale();
-        // O subtítulo fica sempre, para o monitor não pular quando um jogo começa a ser medido
-        string note = sample ? "Clique num canto para mover a prévia. FPS de exemplo até um jogo abrir; sensores ao vivo." : "Clique num canto para mover a prévia. FPS e sensores ao vivo, do jogo aberto.";
-        if (OvSampleNote.Text != note) OvSampleNote.Text = note;
-        OvSampleNote.ToolTip = sample ? "Enquanto o CoreBi não mede um jogo, a prévia mostra 144 FPS de exemplo. Os sensores são lidos ao vivo." : null;
+        // O subtítulo é fixo (XAML); a dica diz de onde vem o FPS da prévia agora
+        OvSampleNote.ToolTip = sample ? "Até um jogo abrir, a prévia mostra 144 FPS de exemplo. Os sensores já são lidos ao vivo." : "FPS e sensores ao vivo, do jogo aberto.";
         OvLed.SetResourceReference(Shape.FillProperty, overlayOn ? "HudSignal" : "HudSep");
     }
 

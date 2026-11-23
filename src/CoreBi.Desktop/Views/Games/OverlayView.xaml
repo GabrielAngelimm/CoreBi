@@ -264,9 +264,9 @@
                                         <TextBlock x:Name="OvStatus" FontSize="13" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="460" Style="{StaticResource Num}" VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Grid>
-                                <TextBlock x:Name="OvSampleNote" Text="Clique num canto para mover a prévia. FPS de exemplo até um jogo abrir; sensores ao vivo." Style="{StaticResource Caption}" Margin="0,-5,0,0"
+                                <TextBlock x:Name="OvSampleNote" Text="Assim o overlay vai aparecer no jogo. Clique num canto para mudar de lugar e ajuste o tamanho embaixo." Style="{StaticResource Caption}" Margin="0,-5,0,0"
                                            TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
-                                           ToolTip="Enquanto o CoreBi não mede um jogo, a prévia mostra 144 FPS de exemplo. Os sensores são lidos ao vivo." />
+                                           ToolTip="Até um jogo abrir, a prévia mostra 144 FPS de exemplo. Os sensores já são lidos ao vivo." />
                             </StackPanel>
 
                             <!--
