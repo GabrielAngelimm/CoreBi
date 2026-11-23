@@ -376,40 +376,42 @@
                                 <TextBlock Grid.Column="2" Text="Upload" Style="{StaticResource TableHead}" HorizontalAlignment="Right" ToolTip="Em Mbps" />
                                 <TextBlock Grid.Column="3" Text="Latência" Style="{StaticResource TableHead}" HorizontalAlignment="Right" ToolTip="Até a internet, em ms" />
                             </Grid>
-                            <ListBox x:Name="NetHistory" Grid.Row="2" ItemContainerStyle="{StaticResource ListNavItem}" Padding="0" Margin="0,0,0,0"
-                                     ScrollViewer.VerticalScrollBarVisibility="Auto" SelectionChanged="NetHistory_SelectionChanged" Focusable="False">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="0,0,8,0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="68" />
-                                                <ColumnDefinition Width="68" />
-                                                <ColumnDefinition Width="64" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding When}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" />
-                                            <TextBlock Grid.Column="1" Text="{Binding Down}" Style="{StaticResource Num}" HorizontalAlignment="Right" Foreground="{DynamicResource Fg}" />
-                                            <TextBlock Grid.Column="2" Text="{Binding Up}" Style="{StaticResource Num}" HorizontalAlignment="Right" Foreground="{DynamicResource Fg}" />
-                                            <TextBlock Grid.Column="3" Text="{Binding Ping}" HorizontalAlignment="Right">
-                                                <TextBlock.Style>
-                                                    <!-- Teste com atenção ou ruim: a latência leva a cor do veredito -->
-                                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Num}">
-                                                        <Setter Property="Foreground" Value="{DynamicResource Fg}" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Tone}" Value="Warn">
-                                                                <Setter Property="Foreground" Value="{DynamicResource Warn}" />
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding Tone}" Value="Danger">
-                                                                <Setter Property="Foreground" Value="{DynamicResource Danger}" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
+                            <local:SpareHeightBox Grid.Row="2">
+                                <ListBox x:Name="NetHistory" ItemContainerStyle="{StaticResource ListNavItem}" Padding="0" Margin="0,0,0,0"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto" SelectionChanged="NetHistory_SelectionChanged" Focusable="False">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,0,8,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="68" />
+                                                    <ColumnDefinition Width="68" />
+                                                    <ColumnDefinition Width="64" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding When}" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular" />
+                                                <TextBlock Grid.Column="1" Text="{Binding Down}" Style="{StaticResource Num}" HorizontalAlignment="Right" Foreground="{DynamicResource Fg}" />
+                                                <TextBlock Grid.Column="2" Text="{Binding Up}" Style="{StaticResource Num}" HorizontalAlignment="Right" Foreground="{DynamicResource Fg}" />
+                                                <TextBlock Grid.Column="3" Text="{Binding Ping}" HorizontalAlignment="Right">
+                                                    <TextBlock.Style>
+                                                        <!-- Teste com atenção ou ruim: a latência leva a cor do veredito -->
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource Num}">
+                                                            <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Tone}" Value="Warn">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource Warn}" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Tone}" Value="Danger">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </local:SpareHeightBox>
                             <TextBlock x:Name="NetHistoryEmpty" Grid.Row="2" Text="Cada teste fica guardado aqui, para comparar com os próximos." Style="{StaticResource Caption}"
                                        Foreground="{DynamicResource Faint}" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8,0,16,0" />
                         </Grid>
