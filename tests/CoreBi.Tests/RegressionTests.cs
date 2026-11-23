@@ -204,22 +204,18 @@ internal static partial class Program
             Require(working.Backups.Count == 1, $"Corrupt JSON broke backup listing (count={working.Backups.Count})");
             return new { rollbackClean = true, corruptIsolated = true };
         });
-        Check("startup: friendly names, boot events and Store assets", () =>
+        Check("startup: friendly names, origins and Store assets", () =>
         {
             Require(StartupManager.LooksLikeId("GoogleChromeAutoLaunch_579CF1F2F611610737FD8852B51") && StartupManager.LooksLikeId("{0F6A3B2C-1D4E-4F5A-8B9C-0D1E2F3A4B5C}")
                     && !StartupManager.LooksLikeId("Discord") && !StartupManager.LooksLikeId("EADM"), "Entry names that are ids");
-            string xml = "<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><EventData><Data Name='BootStartTime'>2026-11-22T19:10:17.000000000Z</Data>"
-                         + "<Data Name='BootTime'>31842</Data><Data Name='MainPathBootTime'>17320</Data><Data Name='BootPostBootTime'>14522</Data><Data Name='BootNumStartupApps'>9</Data></EventData></Event>";
-            var boot = BootTimes.Parse(xml, null) ?? throw new InvalidOperationException("Boot event not parsed");
-            Require(boot.TotalMs == 31842 && boot.MainPathMs == 17320 && boot.PostBootMs == 14522 && boot.StartupApps == 9, "Boot event fields");
-            Require(boot.When == new DateTime(2026, 11, 22, 19, 10, 17, DateTimeKind.Utc).ToLocalTime(), "Boot start time is UTC");
-            Require(BootTimes.Parse(xml.Replace("31842", "0"), null) == null, "Empty boot accepted");
             using var folder = new CaseFolder();
             string assets = Directory.CreateDirectory(Path.Combine(folder.Path, "Assets")).FullName;
             File.WriteAllText(Path.Combine(assets, "Square44x44Logo.scale-200.png"), "");
             File.WriteAllText(Path.Combine(assets, "Square44x44Logo.targetsize-32.png"), "");
             Require(StoreStartup.AssetFile(folder.Path, @"Assets\Square44x44Logo.png")?.EndsWith("targetsize-32.png") == true, "Store icon picks the 32 px variant");
-            return new { boot = boot.TotalMs };
+            Require(StartupEntry.OriginOf("Run", false) == "Registro, só você" && StartupEntry.OriginOf("Folder", true) == "Pasta Inicializar, todos"
+                    && StartupEntry.OriginOf("Store", false) == "Microsoft Store", "Startup origins");
+            return new { origins = true };
         });
 
         Check("drivers: backup folders, packages and device problem codes", () =>

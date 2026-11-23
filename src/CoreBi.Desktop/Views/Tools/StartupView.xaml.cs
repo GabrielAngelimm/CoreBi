@@ -24,24 +24,29 @@ public sealed class StartupRow(StartupEntry entry, ImageSource? icon)
         Entry.Name != Entry.Title ? "Entrada: " + Entry.Name : "",
         Entry.Detail.Length > 0 && Entry.Detail != Entry.Title ? Entry.Detail : "",
     }.Where(s => s.Length > 0));
-    public string CommandTip => Entry.Store ? "Tarefa de inicialização de um app da Microsoft Store." : Entry.Command + "\n" + Entry.Source;
+    public string CommandTip => Entry.Store ? "Tarefa de inicialização de um app da Microsoft Store.\n" + Entry.Command : Entry.Command + "\n" + Entry.Source;
+    public string OriginTip => Entry.Origin switch
+    {
+        "Microsoft Store" => "Tarefa do app da Store: liga e desliga aqui, mas sai só desinstalando o app.",
+        var o when o.EndsWith("todos") => "Vale para todos os usuários do PC. Mudar pede o CoreBi como administrador.",
+        _ => "Vale só para o seu usuário.",
+    };
 }
 
-/// <summary>Linha de "Removidos".</summary>
+/// <summary>Linha de "Removidos", nas mesmas colunas da tabela: quando saiu, o fabricante, o comando e a origem.</summary>
 public sealed class RemovedRow(StartupBackup backup, ImageSource? icon)
 {
     public StartupBackup Backup { get; } = backup;
     public ImageSource? Icon { get; } = icon;
     public bool Glyph { get; } = FileIcons.IsGlyph(backup.IconPath);
     public string Title => Backup.DisplayName;
-    public string When => Backup.RemovedAt is { } at ? StartupView.Day(at) : "";
-    public string Tip => string.Join("\n", new[] { Backup.Publisher ?? "", Backup.Command ?? Backup.Original ?? "" }.Where(s => s.Length > 0));
+    public string When => Backup.RemovedAt is { } at ? "removido " + StartupView.Day(at) : "";
+    public string Publisher => Backup.Publisher ?? "";
+    public string Command => Backup.Command ?? Backup.Original ?? "";
+    public string Origin => StartupEntry.OriginOf(Backup.Kind, Backup.Machine);
 }
 
-/// <summary>Uma barra dos últimos inícios: as duas partes do Windows em pixels e a dica com a data e os tempos.</summary>
-public sealed record BootBarItem(double MainHeight, double PostHeight, string Day, string Tip, bool Last);
-
-/// <summary>Aba Ferramentas · Inicialização: programas que abrem junto com o Windows e quanto o início demora.</summary>
+/// <summary>Aba Ferramentas · Inicialização: programas que abrem junto com o Windows e os que saíram por aqui.</summary>
 public partial class StartupView : UserControl
 {
     private FeatureContext _context = null!;
@@ -50,14 +55,11 @@ public partial class StartupView : UserControl
         InitializeComponent();
         // Esqueleto já no primeiro quadro: ligado só depois da entrada, o painel vazio aparecia por um instante e piscava
         Skeleton.SetActive(StartupCard, true);
-        Skeleton.SetActive(BootCard, true);
     }
     internal void Initialize(FeatureContext context) => _context = context;
     private bool RequireAdmin() => PermissionGuard.RequireAdmin(_context.Owner);
 
     private const string NextBoot = "Vale no próximo início do Windows.";
-    private const int Bars = 10;
-    private const double BarHeight = 96;
     private static readonly Thickness HeadMargin = new(8, 10, 8, 0);
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
@@ -69,7 +71,7 @@ public partial class StartupView : UserControl
     private HashSet<StartupRow> _passing = new();
     /// <summary>Por que a lista de removidos está vazia quando não deu para ler (sem administrador); null, o texto de sempre.</summary>
     private string? _removedNote;
-    private const string EmptyRemovedText = "Nada removido. O que você tirar pela lixeira fica aqui, para devolver quando quiser.";
+    private const string EmptyRemovedText = "Nada removido. O que você tirar pela lixeira aparece aqui, para devolver quando quiser.";
 
     private void StartupListScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
         => ToolPage.AlignHead(StartupListScroll, StartupHead, HeadMargin);
@@ -85,7 +87,7 @@ public partial class StartupView : UserControl
         string.Join("\n", list.Select(e => $"{e.Source}|{e.Name}|{e.Title}|{e.Command}|{e.Enabled}|{e.Machine}|{e.FileMissing}|{e.IconPath}"));
     private static string Signature(IEnumerable<StartupBackup> list) => string.Join("\n", list.Select(b => b.Id));
 
-    /// <summary>Lê a lista, os removidos e os inícios. Depois de uma ação (announce = false) o estado continua mostrando o resultado dela.</summary>
+    /// <summary>Lê a lista e os removidos. Depois de uma ação (announce = false) o estado continua mostrando o resultado dela.</summary>
     private async Task ScanAsync(bool announce, bool entering = false)
     {
         if (_scanning || _context == null || _context.IsClosing) return;
@@ -93,9 +95,8 @@ public partial class StartupView : UserControl
         // Voltar à página relê em silêncio: sem "Lendo…" nem medidor, só a hora no fim (e a lista só muda se mudou)
         bool quiet = entering && StartupList.ItemsSource != null;
         if (announce && !quiet) Say("Lendo programas…");
-        if (StartupList.ItemsSource == null) Skeleton.Set(true, StartupCard, BootCard);
+        if (StartupList.ItemsSource == null) Skeleton.Set(true, StartupCard);
         List<StartupEntry> list;
-        BootReport? boots = null;
         string backupError = "";
         try
         {
@@ -105,7 +106,6 @@ public partial class StartupView : UserControl
             try { _removed = await Task.Run(() => _startup.Backups, _context.Lifetime); }
             catch (UnauthorizedAccessException) { _removed = Array.Empty<StartupBackup>(); _removedNote = "Abra o CoreBi como administrador para ver os removidos."; }
             catch (Exception ex) { _removed = Array.Empty<StartupBackup>(); backupError = "Não foi possível ler os removidos: " + ex.Message; }
-            boots = await Task.Run(_startup.Boots, _context.Lifetime);
             // Ícones lidos fora da tela (o primeiro acesso a cada arquivo leva alguns milissegundos); depois vêm do cache
             await Task.Run(() =>
             {
@@ -113,7 +113,7 @@ public partial class StartupView : UserControl
                 foreach (var b in _removed) FileIcons.IsGlyph(b.IconPath);
             }, _context.Lifetime);
         }
-        catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); _scanning = false; Skeleton.Set(false, StartupCard, BootCard); return; }
+        catch (Exception ex) { Say("Não foi possível ler a inicialização", ex.Message); _scanning = false; Skeleton.Set(false, StartupCard); return; }
         if (entering) await PageMotion.EntranceDone(this);
         _scanning = false;
         if (_context.IsClosing) return;
@@ -131,8 +131,7 @@ public partial class StartupView : UserControl
         StartupEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         UpdateCounts();
         ShowRemoved();
-        if (boots != null) { _realBoots = boots; ShowBoots(boots); }
-        Skeleton.Set(false, StartupCard, BootCard);
+        Skeleton.Set(false, StartupCard);
         if (announce) Say($"Lido às {DateTime.Now:HH:mm}", backupError);
         else if (backupError.Length > 0) StartupResult.Text = backupError;
     }
@@ -152,6 +151,11 @@ public partial class StartupView : UserControl
     /// </summary>
     private void ApplyFilter()
     {
+        bool removed = _filter == "removed";
+        if (ActivePane == null || RemovedPane == null) return;
+        ActivePane.Visibility = removed ? Visibility.Collapsed : Visibility.Visible;
+        RemovedPane.Visibility = removed ? Visibility.Visible : Visibility.Collapsed;
+        BtnStartupRestore.Visibility = removed && _removed.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
         _passing = _rows.Where(r => _filter switch { "on" => r.Entry.Enabled, "off" => !r.Entry.Enabled, _ => true }).ToHashSet();
         _view?.Refresh();
         StartupListScroll?.ScrollToTop();
@@ -163,6 +167,7 @@ public partial class StartupView : UserControl
         Ui.SetSuffix(FilterAll, _rows.Count.ToString(PtBr));
         Ui.SetSuffix(FilterOn, on.ToString(PtBr));
         Ui.SetSuffix(FilterOff, (_rows.Count - on).ToString(PtBr));
+        Ui.SetSuffix(FilterRemoved, _removedNote != null ? "—" : _removed.Count.ToString(PtBr));
     }
 
     // ---------- Removidos ----------
@@ -173,7 +178,8 @@ public partial class StartupView : UserControl
             RemovedList.ItemsSource = _removed.Select(b => new RemovedRow(b, FileIcons.Get(b.IconPath))).ToList();
         RemovedEmpty.Text = _removedNote ?? EmptyRemovedText;
         RemovedEmpty.Visibility = _removed.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        BtnStartupRestore.Visibility = _removed.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+        BtnStartupRestore.Visibility = _filter == "removed" && _removed.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+        UpdateCounts();
     }
 
     /// <summary>"hoje às 14:05", "ontem às 09:12", "21/11 às 18:30".</summary>
@@ -183,84 +189,8 @@ public partial class StartupView : UserControl
         return $"{day} às {at:HH:mm}";
     }
 
-    // ---------- Tempo de início ----------
-
-    private static string Seconds(double ms) => ms >= 10_000 ? (ms / 1000).ToString("0", PtBr) + " s" : (ms / 1000).ToString("0.0", PtBr) + " s";
-
-    private void ShowBoots(BootReport report)
-    {
-        var last = report.Last;
-        string fastNote = report.FastStartup
-            ? " Com a Inicialização rápida do Windows ligada, desligar e ligar o PC não é um início completo: só reiniciar entra nesta conta."
-            : "";
-        if (last == null)
-        {
-            BootShown.Visibility = Visibility.Hidden;
-            BootMissing.Visibility = Visibility.Visible;
-            BootWhen.Text = "";
-            BootMissing.Text = report.Unavailable == "admin"
-                ? "Abra o CoreBi como administrador para ver o tempo de início."
-                : "Ainda não há um início completo registrado. Reinicie o PC e volte aqui." + fastNote;
-            return;
-        }
-        BootShown.Visibility = Visibility.Visible;
-        BootMissing.Visibility = Visibility.Collapsed;
-        BootWhen.Text = "Início de " + Day(last.When);
-
-        // A BIOS que o Windows guarda é a do início atual: só soma quando o último medido é este mesmo início
-        double bios = report.Stale ? 0 : report.BiosMs ?? 0, total = bios + last.TotalMs;
-        // Total em segundos inteiros (décimos abaixo de 10 s); acima de 2 minutos, em minutos e segundos
-        if (total >= 120_000)
-        {
-            var span = TimeSpan.FromMilliseconds(total);
-            BootTotal.Text = $"{(int)span.TotalMinutes}:{span.Seconds:00}";
-            BootUnit.Text = "min";
-        }
-        else
-        {
-            BootTotal.Text = total >= 10_000 ? (total / 1000).ToString("0", PtBr) : (total / 1000).ToString("0.0", PtBr);
-            BootUnit.Text = "s";
-        }
-        if (report.Stale)
-        {
-            // A medição do Windows parou: o número é o do último início medido, e o aviso diz desde quando e quantos ficaram de fora
-            BootSub.Text = $"Medição parada desde {last.When:dd/MM}: {report.Unmeasured.ToString(PtBr)}{(report.Unmeasured >= 99 ? "+" : "")} inícios sem registro.";
-            BootSub.Foreground = (Brush)FindResource("Warn");
-            BootSub.ToolTip = "Quem mede o início é o Diagnóstico do Windows, e ele parou de gravar. Programas de otimização às vezes desligam essa parte."
-                + "\nOs números aqui são os do último início medido.";
-        }
-        else
-        {
-            BootSub.Text = bios > 0 ? "do botão de ligar até o PC ficar pronto" : "do Windows carregar até o PC ficar pronto";
-            BootSub.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-            BootSub.ToolTip = fastNote.Length > 0 ? fastNote.Trim() : null;
-        }
-
-        BootBarBios.Width = new GridLength(bios, GridUnitType.Star);
-        BootBarMain.Width = new GridLength(last.MainPathMs, GridUnitType.Star);
-        BootBarPost.Width = new GridLength(last.PostBootMs, GridUnitType.Star);
-        BootBiosRow.Visibility = bios > 0 ? Visibility.Visible : Visibility.Collapsed;
-        BootBios.Text = bios > 0 ? Seconds(bios) : "—";
-        BootMain.Text = Seconds(last.MainPathMs);
-        BootPost.Text = Seconds(last.PostBootMs);
-
-        // Do mais antigo (esquerda) ao mais novo (direita); as vagas que faltam ficam vazias no fim, sem barra
-        var boots = report.Boots.Take(Bars).Reverse().ToList();
-        double max = Math.Max(1, boots.Max(b => b.TotalMs));
-        var items = new List<BootBarItem>();
-        for (int i = 0; i < boots.Count; i++)
-        {
-            var b = boots[i];
-            double scale = (BarHeight - 4) / max;
-            string tip = $"{Day(b.When)}: {Seconds(b.TotalMs)}\nWindows {Seconds(b.MainPathMs)} · programas e área de trabalho {Seconds(b.PostBootMs)}";
-            items.Add(new BootBarItem(Math.Max(2, b.MainPathMs * scale), b.PostBootMs * scale, b.When.ToString("dd/MM", PtBr), tip, i == boots.Count - 1));
-        }
-        Ui.SetItems(BootBars, items);
-        Ui.SetItems(BootDays, items);
-    }
-
     /// <summary>
-    /// Capturas dos testes ("PageStartup:demo"): dez inícios e três removidos de exemplo, para ver os dois cartões cheios mesmo
+    /// Capturas dos testes ("PageStartup:demo"): três removidos de exemplo, com o filtro em Removidos, para ver a tabela deles mesmo
     /// sem administrador. Nada é lido nem salvo; desligar volta ao que foi lido de verdade.
     /// </summary>
     internal void PreviewDemo(string? mode)
@@ -271,35 +201,29 @@ public partial class StartupView : UserControl
             _realRemoved = null;
             _removedNote = _realNote;
             ShowRemoved();
-            if (_realBoots != null) ShowBoots(_realBoots);
+            FilterAll.IsChecked = true;
             return;
         }
         _realRemoved = _removed;
         _realNote = _removedNote;
         var now = DateTime.Now;
-        double[] mains = { 14_200, 13_800, 15_100, 13_600, 21_400, 14_000, 13_900, 13_700, 14_300, 13_500 };
-        double[] posts = { 9_800, 10_400, 8_900, 11_200, 18_600, 9_100, 8_700, 6_400, 5_900, 5_600 };
-        var boots = Enumerable.Range(0, Bars)
-            .Select(i => new BootTime(now.Date.AddDays(-(Bars - 1 - i) * 1.5).AddHours(8 + i % 4), mains[i] + posts[i], mains[i], posts[i], 12))
-            .Reverse().ToList();
-        ShowBoots(mode == "stale"
-            ? new BootReport(boots.Select(b => b with { When = b.When.AddDays(-29) }).ToList(), 10_310, false, null, 15)
-            : new BootReport(boots, 10_310, false, null));
         string Program(string relative) => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), relative);
+        string steam = Program(@"Steam\steam.exe"), edge = Program(@"Microsoft\Edge\Application\msedge.exe"),
+            spotify = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Spotify\Spotify.exe");
         _removed = new[]
         {
-            new StartupBackup { Name = "Steam", Title = "Steam", Publisher = "Valve Corporation", IconPath = Program(@"Steam\steam.exe"), RemovedAt = now.AddMinutes(-12) },
-            new StartupBackup { Name = "MicrosoftEdgeAutoLaunch", Title = "Microsoft Edge", Publisher = "Microsoft Corporation", IconPath = Program(@"Microsoft\Edge\Application\msedge.exe"), RemovedAt = now.AddDays(-1).AddHours(-3) },
-            new StartupBackup { Name = "Spotify", Title = "Spotify", Publisher = "Spotify AB",
-                IconPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Spotify\Spotify.exe"), RemovedAt = now.AddDays(-4) },
+            new StartupBackup { Name = "Steam", Title = "Steam", Publisher = "Valve Corporation", IconPath = steam, Kind = "Run", Command = $"\"{steam}\" -silent", RemovedAt = now.AddMinutes(-12) },
+            new StartupBackup { Name = "MicrosoftEdgeAutoLaunch", Title = "Microsoft Edge", Publisher = "Microsoft Corporation", IconPath = edge, Kind = "Run",
+                Command = $"\"{edge}\" --no-startup-window --win-session-start", RemovedAt = now.AddDays(-1).AddHours(-3) },
+            new StartupBackup { Name = "Spotify", Title = "Spotify", Publisher = "Spotify AB", IconPath = spotify, Kind = "Run", Command = $"\"{spotify}\" --autostart --minimized", RemovedAt = now.AddDays(-4) },
         };
         _removedNote = null;
         ShowRemoved();
+        FilterRemoved.IsChecked = true;
     }
 
     private IReadOnlyList<StartupBackup>? _realRemoved;
     private string? _realNote;
-    private BootReport? _realBoots;
 
     private async void BtnStartupScan_Click(object sender, RoutedEventArgs e) => await RefreshAsync();
 
@@ -353,7 +277,7 @@ public partial class StartupView : UserControl
     }
 
     /// <summary>
-    /// Remover não pede confirmação: o programa vai para Removidos, ao lado, e volta com um clique. Só os de todos os usuários
+    /// Remover não pede confirmação: o programa vai para o filtro Removidos e volta com um clique. Só os de todos os usuários
     /// pedem o CoreBi como administrador.
     /// </summary>
     internal async void StartupRemove_Click(object sender, RoutedEventArgs e)
@@ -364,7 +288,7 @@ public partial class StartupView : UserControl
         {
             using var critical = _context.BeginCriticalOperation("Aguarde a alteração da inicialização do Windows terminar.");
             await Task.Run(() => _startup.Remove(item));
-            Say($"{item.Title} removido", "Dá para devolver em Removidos.");
+            Say($"{item.Title} removido", "Dá para devolver no filtro Removidos.");
         }
         catch (Exception ex) { Say($"Não foi possível remover {item.Title}", ex.Message); }
         await ScanAsync(announce: false);

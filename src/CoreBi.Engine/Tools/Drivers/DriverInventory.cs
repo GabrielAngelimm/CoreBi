@@ -13,14 +13,15 @@ public static class DriverInventory
 
     /// <summary>
     /// O atalho da placa-mãe por fabricante. ASUS, MSI e ASRock montam o endereço da página do modelo a partir do nome que o
-    /// Windows dá à placa (Direct = true). A Gigabyte separa cada revisão da placa numa página (Rev. 1.0, 1.3...) e o Windows não
-    /// diz qual é a sua, então o atalho abre a busca do site com o modelo. Os outros abrem a central de suporte.
+    /// Windows dá à placa (Direct = true). A Gigabyte separa cada revisão da placa numa página (Rev. 1.0, 1.3...), o Windows não
+    /// diz qual é a sua (o campo vem "x.x") e a busca do próprio site não abre por link; o atalho busca as páginas de suporte do
+    /// modelo dentro de gigabyte.com, onde cada revisão aparece. Os outros abrem a central de suporte.
     /// </summary>
     private static readonly (string[] Tokens, string Brand, Func<string, (string Url, bool Direct)> SupportUrl)[] BoardVendors =
     {
         (new[] { "ASUS" }, "ASUS", m => ("https://www.asus.com/supportonly/" + Uri.EscapeDataString(m) + "/helpdesk_download/", true)),
         (new[] { "Micro-Star", "MSI" }, "MSI", m => ("https://www.msi.com/Motherboard/" + MsiSlug(m) + "/support", true)),
-        (new[] { "GIGABYTE" }, "Gigabyte", m => ("https://www.gigabyte.com/Search?kw=" + Uri.EscapeDataString(m), false)),
+        (new[] { "GIGABYTE" }, "Gigabyte", m => ("https://www.google.com/search?q=" + Uri.EscapeDataString($"site:gigabyte.com \"{m}\" support"), false)),
         (new[] { "ASRock" }, "ASRock", m => AsrockPlatform(m) is { } p
             ? ($"https://www.asrock.com/mb/{p}/{Uri.EscapeDataString(m)}/index.asp#Download", true)
             : ("https://www.asrock.com/support/index.asp", false)),

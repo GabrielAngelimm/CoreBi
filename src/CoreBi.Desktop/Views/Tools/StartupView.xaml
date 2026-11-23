@@ -105,30 +105,12 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Legenda das partes do início: traço na cor da parte, o nome e o tempo à direita, numa linha de 30 -->
-        <Style x:Key="BootPart" TargetType="Grid">
-            <Setter Property="Height" Value="30" />
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
-        <Style x:Key="BootPartName" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Foreground" Value="{DynamicResource Fg}" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="12,0,0,0" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-        </Style>
-        <Style x:Key="BootPartValue" TargetType="TextBlock" BasedOn="{StaticResource ReadoutText}">
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="HorizontalAlignment" Value="Right" />
-        </Style>
     </UserControl.Resources>
 
     <!--
-        Inicialização: à esquerda, a tabela dos programas que abrem com o Windows (interruptor, ícone, nome, fabricante, comando e as
-        ações da linha), com o filtro Todos / Ligados / Desligados no cabeçalho. À direita, numa coluna de 440, o tempo do último início
-        medido pelo próprio Windows (BIOS, Windows e programas) com os inícios anteriores em barras, e os programas removidos por aqui,
-        cada um com "Devolver". Tudo cabe numa tela; a tabela e os removidos rolam por dentro.
+        Inicialização: um cartão só, na largura toda, com a tabela dos programas que abrem com o Windows (interruptor, ícone, nome,
+        fabricante, comando, de onde o Windows o abre e as ações da linha). O filtro no cabeçalho tem Todos / Ligados / Desligados e
+        Removidos: os que saíram pela lixeira ficam na mesma tabela, cada um com "Devolver". A tabela rola por dentro do cartão.
     -->
     <ScrollViewer x:Name="StartupScroll" VerticalScrollBarVisibility="Auto">
         <!-- Altura da janela (e não mínima): assim a lista longa rola dentro do painel; abaixo de 720 px a página rola -->
@@ -141,7 +123,7 @@
 
                 <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Inicialização" Style="{StaticResource PageTitle}" />
-                    <TextBlock Text="Escolha o que abre com o Windows e veja quanto o início demora." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                    <TextBlock Text="Escolha o que abre junto com o Windows." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                     <StackPanel Style="{StaticResource PageActions}">
                         <Grid x:Name="StartupMeter" Style="{StaticResource TaskMeter}">
                             <Grid.ColumnDefinitions>
@@ -162,66 +144,70 @@
                             <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
                         </DockPanel>
                         <Button Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnStartupScan_Click"
-                                ToolTip="Lê a lista de novo e o tempo dos últimos inícios." />
+                                ToolTip="Lê a lista de novo." />
                     </StackPanel>
                 </local:PageHeaderPanel>
 
-                <Grid x:Name="StartupBody" Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="16" />
-                        <ColumnDefinition Width="440" />
-                    </Grid.ColumnDefinitions>
+                <!--
+                    Programas: a tabela tem 16 de respiro e as linhas mais 8 por dentro, então a primeira letra e o interruptor ficam a 24
+                    da borda, como nos outros cartões. O cabeçalho de colunas tem a geometria das linhas.
+                -->
+                <Border x:Name="StartupCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="34"
+                        local:Skeleton.Layout="gap 10; row 32: - 8, - 56, - 36, c 3*@0.24, - 16, c 2*@0.3, - 16, c 4*@0.2, - 16, c 2*@0.3, - 120, - 8; lines 48: - 8, pill 40@1^20, - 16, dot 24, - 12, s 3*, - 16, t 2*, - 16, c 4*, - 16, t 2*, c 120@0.3^14&gt;, - 8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid Style="{StaticResource CardHeader}" Margin="8,0,8,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Programas de inicialização" Style="{StaticResource CardTitle}"
+                                       ToolTip="Programas que abrem sozinhos com o Windows. Desligar deixa o início mais rápido e não desinstala nada." />
+                            <!-- "Devolver todos" só aparece em Removidos, com dois ou mais -->
+                            <Button x:Name="BtnStartupRestore" Grid.Column="1" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE7A7;" Content="Devolver todos"
+                                    VerticalAlignment="Center" Margin="0,0,12,0" Visibility="Collapsed" Click="BtnStartupRestore_Click"
+                                    ToolTip="Devolve todos, do jeito que estavam." />
+                            <!-- Filtro que não tira nada do lugar enquanto se mexe: a linha que muda de estado só sai do filtro na próxima escolha -->
+                            <Border Grid.Column="2" Style="{StaticResource SegmentGroup}">
+                                <local:SlidingSelectionPanel Style="{StaticResource SegmentRail}" ToggleButton.Checked="StartupFilter_Checked">
+                                    <RadioButton x:Name="FilterAll" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Todos" Tag="all" IsChecked="True"
+                                                 ToolTip="Todos os programas da inicialização." />
+                                    <RadioButton x:Name="FilterOn" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Ligados" Tag="on"
+                                                 ToolTip="Só os que abrem com o Windows." />
+                                    <RadioButton x:Name="FilterOff" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Desligados" Tag="off"
+                                                 ToolTip="Só os que estão na lista, mas não abrem com o Windows." />
+                                    <RadioButton x:Name="FilterRemoved" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Removidos" Tag="removed"
+                                                 ToolTip="Os que você tirou pela lixeira. Ficam guardados para devolver quando quiser." />
+                                </local:SlidingSelectionPanel>
+                            </Border>
+                        </Grid>
 
-                    <!--
-                        Programas: a tabela tem 16 de respiro e as linhas mais 8 por dentro, então a primeira letra e o interruptor ficam a 24
-                        da borda, como nos outros cartões. O cabeçalho de colunas tem a geometria das linhas.
-                    -->
-                    <Border x:Name="StartupCard" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="34"
-                            local:Skeleton.Layout="gap 10; row 32: - 8, - 56, - 36, c 3*@0.24, - 16, c 2*@0.3, - 16, c 4*@0.2, - 80, - 8; lines 48: - 8, pill 40@1^20, - 16, dot 24, - 12, s 3*, - 16, t 2*, - 16, c 4*, c 80@0.4^14&gt;, - 8">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-                            <Grid Style="{StaticResource CardHeader}" Margin="8,0,8,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Programas de inicialização" Style="{StaticResource CardTitle}"
-                                           ToolTip="Programas que abrem sozinhos com o Windows. Desligar deixa o início mais rápido e não desinstala nada." />
-                                <!-- Filtro que não tira nada do lugar enquanto se mexe: a linha que muda de estado só sai do filtro na próxima escolha -->
-                                <Border Grid.Column="1" Style="{StaticResource SegmentGroup}">
-                                    <local:SlidingSelectionPanel Style="{StaticResource SegmentRail}" ToggleButton.Checked="StartupFilter_Checked">
-                                        <RadioButton x:Name="FilterAll" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Todos" Tag="all" IsChecked="True"
-                                                     ToolTip="Todos os programas da inicialização." />
-                                        <RadioButton x:Name="FilterOn" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Ligados" Tag="on"
-                                                     ToolTip="Só os que abrem com o Windows." />
-                                        <RadioButton x:Name="FilterOff" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Desligados" Tag="off"
-                                                     ToolTip="Só os que não abrem com o Windows." />
-                                    </local:SlidingSelectionPanel>
-                                </Border>
-                            </Grid>
+                        <Grid x:Name="StartupHead" Grid.Row="1" Height="32" Margin="8,10,8,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="56" />
+                                <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="3*" MinWidth="150" />
+                                <ColumnDefinition Width="2*" MinWidth="120" />
+                                <ColumnDefinition Width="4*" MinWidth="140" />
+                                <ColumnDefinition Width="2*" MinWidth="130" />
+                                <ColumnDefinition Width="120" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="2" Text="Programa" Style="{StaticResource TableHead}" />
+                            <TextBlock Grid.Column="3" Text="Fabricante" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
+                            <TextBlock Grid.Column="4" Text="Comando" Style="{StaticResource TableHead}" Margin="16,0,0,0"
+                                       ToolTip="O que o Windows abre. Passe o mouse para ver o comando inteiro." />
+                            <TextBlock Grid.Column="5" Text="Origem" Style="{StaticResource TableHead}" Margin="16,0,0,0"
+                                       ToolTip="De onde o Windows tira o programa: o registro, a pasta Inicializar ou um app da Microsoft Store. Mexer nos de todos os usuários pede administrador." />
+                        </Grid>
 
-                            <Grid x:Name="StartupHead" Grid.Row="1" Height="32" Margin="8,10,8,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="56" />
-                                    <ColumnDefinition Width="36" />
-                                    <ColumnDefinition Width="3*" MinWidth="150" />
-                                    <ColumnDefinition Width="2*" MinWidth="120" />
-                                    <ColumnDefinition Width="4*" MinWidth="140" />
-                                    <ColumnDefinition Width="80" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="2" Text="Programa" Style="{StaticResource TableHead}" />
-                                <TextBlock Grid.Column="3" Text="Fabricante" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
-                                <TextBlock Grid.Column="4" Text="Comando" Style="{StaticResource TableHead}" Margin="16,0,0,0"
-                                           ToolTip="O que o Windows abre. Passe o mouse para ver o comando inteiro." />
-                            </Grid>
-
-                            <ScrollViewer x:Name="StartupListScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" ScrollChanged="StartupListScroll_ScrollChanged">
-                                <StackPanel>
+                        <ScrollViewer x:Name="StartupListScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" ScrollChanged="StartupListScroll_ScrollChanged">
+                            <Grid>
+                                <StackPanel x:Name="ActivePane">
                                     <ItemsControl x:Name="StartupList" Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
@@ -233,7 +219,8 @@
                                                             <ColumnDefinition Width="3*" MinWidth="150" />
                                                             <ColumnDefinition Width="2*" MinWidth="120" />
                                                             <ColumnDefinition Width="4*" MinWidth="140" />
-                                                            <ColumnDefinition Width="80" />
+                                                            <ColumnDefinition Width="2*" MinWidth="130" />
+                                                            <ColumnDefinition Width="120" />
                                                         </Grid.ColumnDefinitions>
                                                         <!-- O interruptor desce 1 px (2 em cima): o centro dele cai no meio da altura das maiúsculas do nome -->
                                                         <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Entry.Enabled, Mode=OneWay}" Tag="{Binding Entry}" Click="StartupToggle_Click"
@@ -257,9 +244,11 @@
                                                         <TextBlock Grid.Column="3" Text="{Binding Entry.Publisher}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
                                                                    Margin="16,0,0,0" ToolTip="{Binding Entry.Publisher}" />
                                                         <!-- Mono 12 centrado ficava com a base 2 px acima da Segoe 14 das outras colunas: 4 em cima o desce 2 -->
-                                                        <TextBlock x:Name="command" Grid.Column="4" Text="{Binding Entry.Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
+                                                        <TextBlock Grid.Column="4" Text="{Binding Entry.Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
                                                                    TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,4,0,0" ToolTip="{Binding CommandTip}" />
-                                                        <StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                        <TextBlock Grid.Column="5" Text="{Binding Entry.Origin}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                                   Margin="16,0,0,0" ToolTip="{Binding OriginTip}" />
+                                                        <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Right">
                                                             <Button x:Name="open" Style="{StaticResource RowAction}" local:Ui.Icon="&#xE838;" Tag="{Binding Entry}" Click="StartupOpen_Click" Margin="0,0,4,0"
                                                                     AutomationProperties.Name="Abrir local do arquivo" ToolTip="Mostra o programa no Explorador de Arquivos." />
                                                             <Button x:Name="remove" Style="{StaticResource RowAction}" local:Ui.Icon="&#xE74D;" Tag="danger" DataContext="{Binding Entry}" Click="StartupRemove_Click"
@@ -275,14 +264,9 @@
                                                     <DataTrigger Binding="{Binding Entry.Location}" Value="{x:Null}">
                                                         <Setter TargetName="open" Property="Visibility" Value="Hidden" />
                                                     </DataTrigger>
-                                                    <!-- App da Store: a tarefa é do pacote; dá para desligar, não remover. O comando vira a origem, em texto comum -->
+                                                    <!-- App da Store: a tarefa é do pacote; dá para desligar, não remover -->
                                                     <DataTrigger Binding="{Binding Entry.Store}" Value="True">
                                                         <Setter TargetName="remove" Property="Visibility" Value="Hidden" />
-                                                        <Setter TargetName="open" Property="Visibility" Value="Hidden" />
-                                                        <Setter TargetName="command" Property="Text" Value="App da Microsoft Store" />
-                                                        <Setter TargetName="command" Property="FontFamily" Value="{StaticResource UiFont}" />
-                                                        <Setter TargetName="command" Property="FontSize" Value="14" />
-                                                        <Setter TargetName="command" Property="Margin" Value="16,0,0,0" />
                                                     </DataTrigger>
                                                 </DataTemplate.Triggers>
                                             </DataTemplate>
@@ -291,194 +275,48 @@
                                     <TextBlock x:Name="StartupEmpty" Text="Nenhum programa abre com o Windows." Style="{StaticResource Body}" Foreground="{DynamicResource Muted}"
                                                Margin="8,14,8,0" Visibility="Collapsed" />
                                 </StackPanel>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
 
-                    <Grid Grid.Column="2">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="16" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-
-                        <!--
-                            Tempo de início: o total em mostrador (BIOS + Windows + programas), a barra das três partes na proporção e a
-                            legenda com o tempo de cada uma; embaixo, os últimos dez inícios em barras (Windows e programas empilhados), da
-                            esquerda para a direita, o mais novo aceso. O cartão tem altura fixa (454, a do conteúdo completo; o esqueleto cabe nela): sem registro, a mesma área diz por quê.
-                        -->
-                        <Border x:Name="BootCard" Style="{StaticResource CardBorder}" Height="454" local:Skeleton.Top="34"
-                                local:Skeleton.Layout="gap 14; row 52: n 96, - *; row 18: c 62%; gap 16; row 12: box *@1^12; gap 14; rows 3 30: - 2, dot 10, - 12, t 52%, - *, n 44&gt;; gap 16; row 18: c 40%; gap 10; row 96: box *; gap 8; row 16: c *@0.9">
-                            <StackPanel>
-                                <Grid Style="{StaticResource CardHeader}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Tempo de início" Style="{StaticResource CardTitle}"
-                                               ToolTip="Quanto o PC leva do botão de ligar até ficar pronto. Quem mede é o próprio Windows." />
-                                    <TextBlock x:Name="BootWhen" Grid.Column="1" Style="{StaticResource Caption}" VerticalAlignment="Center" Margin="12,1,0,0" />
-                                </Grid>
-                                <Grid Margin="0,14,0,0">
-                                    <StackPanel x:Name="BootShown">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock x:Name="BootTotal" Text="—" Style="{StaticResource ReadoutHero}" />
-                                            <TextBlock x:Name="BootUnit" Text="s" Style="{StaticResource Unit}" FontSize="20" Margin="6,0,0,11" />
-                                        </StackPanel>
-                                        <TextBlock x:Name="BootSub" Text="do botão de ligar até o PC ficar pronto" Style="{StaticResource Caption}" Margin="0,0,0,0" />
-
-                                        <!-- As três partes na proporção, numa trilha de 12 px com cantos redondos -->
-                                        <Border Height="12" CornerRadius="6" Background="{DynamicResource Raised}" Margin="0,16,0,0" ClipToBounds="True">
-                                            <Grid x:Name="BootBar">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition x:Name="BootBarBios" Width="0*" />
-                                                    <ColumnDefinition x:Name="BootBarMain" Width="0*" />
-                                                    <ColumnDefinition x:Name="BootBarPost" Width="0*" />
-                                                </Grid.ColumnDefinitions>
-                                                <Border Background="{DynamicResource Board}" CornerRadius="6,0,0,6" />
-                                                <Border Grid.Column="1" Background="{DynamicResource Signal}" Margin="2,0,0,0" />
-                                                <Border Grid.Column="2" Background="{DynamicResource Steel}" CornerRadius="0,6,6,0" Margin="2,0,0,0" />
-                                            </Grid>
-                                        </Border>
-
-                                        <StackPanel Margin="0,12,0,0">
-                                            <Grid x:Name="BootBiosRow" Style="{StaticResource BootPart}"
-                                                  ToolTip="A placa-mãe se preparando antes do Windows (a tela com o logo). Não depende dos programas.">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Board}" />
-                                                <TextBlock Grid.Column="1" Text="Placa-mãe (BIOS)" Style="{StaticResource BootPartName}" />
-                                                <TextBlock x:Name="BootBios" Grid.Column="2" Text="—" Style="{StaticResource BootPartValue}" />
-                                            </Grid>
-                                            <Grid Style="{StaticResource BootPart}"
-                                                  ToolTip="O Windows carregando até a área de trabalho aparecer.">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Signal}" />
-                                                <TextBlock Grid.Column="1" Text="Windows" Style="{StaticResource BootPartName}" />
-                                                <TextBlock x:Name="BootMain" Grid.Column="2" Text="—" Style="{StaticResource BootPartValue}" />
-                                            </Grid>
-                                            <Grid Style="{StaticResource BootPart}"
-                                                  ToolTip="Da área de trabalho até o PC sossegar. É aqui que os programas da lista pesam.">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <Border Style="{StaticResource ChannelMark}" Background="{DynamicResource Steel}" />
-                                                <TextBlock Grid.Column="1" Text="Programas e área de trabalho" Style="{StaticResource BootPartName}" />
-                                                <TextBlock x:Name="BootPost" Grid.Column="2" Text="—" Style="{StaticResource BootPartValue}" />
-                                            </Grid>
-                                        </StackPanel>
-
-                                        <TextBlock Text="Últimos inícios" Style="{StaticResource StatLabel}" Margin="0,20,0,0"
-                                                   ToolTip="Cada barra é um início. A parte de cima é o tempo dos programas." />
-                                        <ItemsControl x:Name="BootBars" Height="96" Margin="0,10,0,0" Focusable="False">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <UniformGrid Rows="1" Columns="10" />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Grid Background="Transparent" ToolTip="{Binding Tip}">
-                                                        <Border Width="18" CornerRadius="5" Background="{DynamicResource Raised}" />
-                                                        <StackPanel Width="18" VerticalAlignment="Bottom">
-                                                            <Border x:Name="post" Height="{Binding PostHeight}" Background="{DynamicResource Steel}" CornerRadius="5,5,0,0" Opacity="0.75" />
-                                                            <Border x:Name="main" Height="{Binding MainHeight}" Background="{DynamicResource Signal}" CornerRadius="0,0,5,5" Opacity="0.75" />
-                                                        </StackPanel>
-                                                    </Grid>
-                                                    <DataTemplate.Triggers>
-                                                        <DataTrigger Binding="{Binding Last}" Value="True">
-                                                            <Setter TargetName="post" Property="Opacity" Value="1" />
-                                                            <Setter TargetName="main" Property="Opacity" Value="1" />
-                                                        </DataTrigger>
-                                                    </DataTemplate.Triggers>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                        <ItemsControl x:Name="BootDays" Margin="0,8,0,0" Focusable="False">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <UniformGrid Rows="1" Columns="10" />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <TextBlock x:Name="day" Text="{Binding Day}" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" HorizontalAlignment="Center"
-                                                               Typography.NumeralAlignment="Tabular" />
-                                                    <DataTemplate.Triggers>
-                                                        <DataTrigger Binding="{Binding Last}" Value="True">
-                                                            <Setter TargetName="day" Property="Foreground" Value="{DynamicResource Fg}" />
-                                                        </DataTrigger>
-                                                    </DataTemplate.Triggers>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                    <!-- Sem registro: a mesma área (o painel não muda de altura) diz por quê, no meio -->
-                                    <TextBlock x:Name="BootMissing" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextAlignment="Center" MaxWidth="320"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Removidos: o que saiu da inicialização por aqui, o mais recente em cima, cada um com "Devolver" -->
-                        <Border x:Name="RemovedCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="24,16,24,16" local:Skeleton.Top="34"
-                                local:Skeleton.Layout="gap 10; lines 3 48: dot 24, - 12, s 46%, - *, btn 96&gt;">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-                                <Grid Style="{StaticResource CardHeader}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Removidos" Style="{StaticResource CardTitle}"
-                                               ToolTip="Programas tirados pela lixeira. Ficam guardados aqui para devolver quando quiser." />
-                                    <Button x:Name="BtnStartupRestore" Grid.Column="1" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE7A7;" Content="Devolver todos"
-                                            VerticalAlignment="Center" Margin="0,0,-10,0" Visibility="Collapsed" Click="BtnStartupRestore_Click"
-                                            ToolTip="Devolve todos, do jeito que estavam." />
-                                </Grid>
-                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                                <!-- Removidos: as mesmas colunas; no lugar do interruptor, nada; no fim, "Devolver" -->
+                                <StackPanel x:Name="RemovedPane" Visibility="Collapsed">
                                     <ItemsControl x:Name="RemovedList" Focusable="False">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border Style="{StaticResource TableRow}" Height="48">
+                                                <Border Style="{StaticResource TableRow}" Height="48" Padding="8,0">
                                                     <Grid VerticalAlignment="Center">
                                                         <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="56" />
                                                             <ColumnDefinition Width="36" />
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="3*" MinWidth="150" />
+                                                            <ColumnDefinition Width="2*" MinWidth="120" />
+                                                            <ColumnDefinition Width="4*" MinWidth="140" />
+                                                            <ColumnDefinition Width="2*" MinWidth="130" />
+                                                            <ColumnDefinition Width="120" />
                                                         </Grid.ColumnDefinitions>
-                                                        <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource ProgramIcon}" />
-                                                        <TextBlock Grid.Column="1" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Tip}">
+                                                        <ContentPresenter Grid.Column="1" Content="{Binding}" ContentTemplate="{StaticResource ProgramIcon}" />
+                                                        <TextBlock Grid.Column="2" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}">
                                                             <Run Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run Text="{Binding When, Mode=OneWay}" FontSize="12"
                                                                 Foreground="{DynamicResource Faint}" />
                                                         </TextBlock>
-                                                        <Button Grid.Column="2" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE7A7;" Content="Devolver" Tag="{Binding Backup}"
-                                                                Click="StartupRestoreOne_Click" Margin="12,0,-10,0" ToolTip="Devolve à lista, do jeito que estava." />
+                                                        <TextBlock Grid.Column="3" Text="{Binding Publisher}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                                   Margin="16,0,0,0" ToolTip="{Binding Publisher}" />
+                                                        <TextBlock Grid.Column="4" Text="{Binding Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
+                                                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,4,0,0" ToolTip="{Binding Command}" />
+                                                        <TextBlock Grid.Column="5" Text="{Binding Origin}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                                   Margin="16,0,0,0" />
+                                                        <Button Grid.Column="6" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE7A7;" Content="Devolver" Tag="{Binding Backup}"
+                                                                HorizontalAlignment="Right" Click="StartupRestoreOne_Click" Margin="0,0,-10,0" ToolTip="Devolve à lista, do jeito que estava." />
                                                     </Grid>
                                                 </Border>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
-                                </ScrollViewer>
-                                <TextBlock x:Name="RemovedEmpty" Grid.Row="1" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextAlignment="Center" MaxWidth="330"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,8"
-                                           Text="Nada removido. O que você tirar pela lixeira fica aqui, para devolver quando quiser." />
+                                    <TextBlock x:Name="RemovedEmpty" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="8,14,8,0"
+                                               Text="Nada removido. O que você tirar pela lixeira aparece aqui, para devolver quando quiser." />
+                                </StackPanel>
                             </Grid>
-                        </Border>
+                        </ScrollViewer>
                     </Grid>
-                </Grid>
+                </Border>
             </Grid>
         </Grid>
     </ScrollViewer>

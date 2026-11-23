@@ -13,20 +13,30 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <!-- Linha de veredito sobre a tabela (dispositivos com problema ou "todos funcionando"): LED, o que é e o que fazer à direita -->
-        <Style x:Key="DrvVerdictLed" TargetType="Ellipse" BasedOn="{StaticResource StatusLed}">
-            <Setter Property="Width" Value="8" />
-            <Setter Property="Height" Value="8" />
-            <Setter Property="Margin" Value="0,1,12,0" />
+        <!--
+            Glifo de "abre fora do app" dos links fantasma desta página. O desenho da fonte fica 2 px abaixo do meio das maiúsculas do
+            texto ao lado (medido na captura): sobe 2 para a seta e as letras ficarem na mesma linha.
+        -->
+        <Style x:Key="DrvLinkGlyph" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Icons}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="{DynamicResource Signal}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,-2,8,2" />
         </Style>
         <!--
             Placa de números dos cartões da esquerda: um painel embutido (tom Raised, cantos de 14) com duas leituras em colunas
             iguais, centradas, separadas por um fio vertical. É o que dá a cada cartão os três andares: quem é, os números e o que fazer.
         -->
+        <!--
+            Respiro da placa medido na tinta, não na caixa do texto: o rótulo de 13 tem 4 px vazios em cima e o número de 24 tem 5 px
+            embaixo; a frase de 14 (linha de 20), 5 em cima e 5 embaixo. Com 10 em cima, 9 antes e depois do fio e 9 embaixo, a tinta fica
+            a 14 px da borda, do fio e da frase em todos os lados.
+        -->
         <Style x:Key="DrvPlate" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource Raised}" />
             <Setter Property="CornerRadius" Value="{StaticResource RadiusInset}" />
-            <Setter Property="Padding" Value="0,12,0,12" />
+            <Setter Property="Padding" Value="0,10,0,9" />
             <Setter Property="Margin" Value="0,16,0,0" />
         </Style>
         <Style x:Key="DrvPlateRule" TargetType="Border">
@@ -51,7 +61,7 @@
         -->
         <Style x:Key="DrvPlateHair" TargetType="Border">
             <Setter Property="Height" Value="1" />
-            <Setter Property="Margin" Value="20,12,20,0" />
+            <Setter Property="Margin" Value="20,9,20,0" />
             <Setter Property="Background" Value="{DynamicResource Line}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
         </Style>
@@ -70,7 +80,7 @@
         <Style x:Key="DrvPlateNote" TargetType="TextBlock" BasedOn="{StaticResource Body}">
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
             <Setter Property="TextAlignment" Value="Center" />
-            <Setter Property="Margin" Value="20,10,20,0" />
+            <Setter Property="Margin" Value="20,9,20,0" />
         </Style>
     </UserControl.Resources>
 
@@ -146,7 +156,7 @@
                             a ação (que vale para a primeira com download automático) com o tamanho do download, e o Studio à direita
                         -->
                         <Border x:Name="DrvGpuCard" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}" local:Skeleton.Top="36"
-                                local:Skeleton.Layout="gap 20; row 20: s 58%; gap 16; row 115: box *@1^14; gap 20; row 34: btn 200, - 12, c 50, - *, pill 40@1^20, - 8, c 50">
+                                local:Skeleton.Layout="gap 20; row 20: s 58%; gap 16; row 106: box *@1^14; gap 20; row 34: btn 200, - 12, c 50, - *, pill 40@1^20, - 8, c 50">
                             <StackPanel>
                                 <Grid Height="36">
                                     <Grid.ColumnDefinitions>
@@ -157,9 +167,14 @@
                                     <!-- O desenho da placa sobe 4 (fica 1 px abaixo do meio da caixa): o centro cai no meio das maiúsculas do título (medido) -->
                                     <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Gpu" Kind="gpu" Width="36" Height="36" VerticalAlignment="Center" Margin="0,-4,0,4" />
                                     <TextBlock Grid.Column="1" Text="Placa de vídeo" Style="{StaticResource SectionTitle}" VerticalAlignment="Center" Margin="14,0,0,0" />
-                                    <Button x:Name="BtnDrvGpuPage" Grid.Column="2" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE8A7;" Content="Site oficial" Margin="0,-6,-10,0"
+                                    <Button x:Name="BtnDrvGpuPage" Grid.Column="2" Style="{StaticResource GhostButton}" Margin="0,-6,-10,0"
                                             VerticalAlignment="Center" Click="BtnDrvGpuPage_Click" Visibility="Collapsed"
-                                            ToolTip="Abre a página de drivers do fabricante da placa." />
+                                            ToolTip="Abre a página de drivers do fabricante da placa.">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE8A7;" Style="{StaticResource DrvLinkGlyph}" />
+                                            <TextBlock Text="Site oficial" />
+                                        </StackPanel>
+                                    </Button>
                                 </Grid>
                                 <ItemsControl x:Name="DrvGpus" Focusable="False">
                                     <ItemsControl.ItemTemplate>
@@ -222,9 +237,9 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Placa-mãe: a mesma anatomia da placa de vídeo. O modelo; na placa, a BIOS e a data dela e, sob o fio, a idade; no pé, a página do modelo -->
+                        <!-- Placa-mãe: a mesma anatomia da placa de vídeo. O modelo; na placa, a BIOS e a data dela; no pé, a página do modelo -->
                         <Border x:Name="DrvBoardCard" Grid.Row="2" Style="{StaticResource CardBorder}" Padding="{StaticResource PanelPadding}" local:Skeleton.Top="36"
-                                local:Skeleton.Layout="gap 20; row 20: s 52%; gap 16; row 115: box *@1^14; gap 20; row 34: btn 220">
+                                local:Skeleton.Layout="gap 20; row 20: s 52%; gap 16; row 67: box *@1^14; gap 20; row 34: btn 220">
                             <StackPanel>
                                 <Grid Height="36">
                                     <Grid.ColumnDefinitions>
@@ -257,8 +272,6 @@
                                                 <TextBlock x:Name="DrvBoardBiosDate" Style="{StaticResource DrvPlateValue}" />
                                             </StackPanel>
                                         </Grid>
-                                        <Border x:Name="DrvBoardAgeHair" Style="{StaticResource DrvPlateHair}" />
-                                        <TextBlock x:Name="DrvBoardAge" Style="{StaticResource DrvPlateNote}" />
                                     </StackPanel>
                                 </Border>
                                 <TextBlock x:Name="DrvBoardNote" Text="Busque o modelo no site do fabricante para achar os drivers dela." Style="{StaticResource Caption}"
@@ -323,12 +336,15 @@
                         </Border>
                     </Grid>
 
-                    <!-- Drivers instalados: busca no cabeçalho, a linha dos dispositivos com problema e a tabela agrupada por classe -->
+                    <!--
+                        Drivers instalados: tipos e busca no cabeçalho e a tabela agrupada por classe. Dispositivo com problema (o ponto de
+                        exclamação do Gerenciador de Dispositivos) entra na própria tabela, num grupo no topo, com o selo âmbar do que o
+                        Windows diz e o atalho para o Gerenciador na ponta da linha.
+                    -->
                     <Border x:Name="DrvTableCard" Grid.Column="2" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="34"
-                            local:Skeleton.Layout="gap 10; row 40: - 8, dot 8, - 12, t 40%, - *, c 140@0.6&gt;, - 8; gap 2; row 32: - 8, c *@0.1, c 220@0.36, c 170@0.3, c 96@0.42&gt;, - 8; row 40: - 8, s 64, - *; rows 1 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 52, - *; lines 6 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 58, - *; lines 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8">
+                            local:Skeleton.Layout="gap 10; row 32: - 8, c *@0.1, c 220@0.36, c 170@0.3, c 96@0.42&gt;, - 8; row 40: - 8, s 64, - *; rows 1 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 52, - *; lines 6 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8; row 40: - 8, s 58, - *; lines 36: - 8, t *, t 220, t 170, c 96@0.8&gt;, - 8">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
@@ -360,44 +376,7 @@
                                          ToolTip="Busca pelo nome do dispositivo ou pelo fabricante." />
                             </Grid>
 
-                            <!--
-                                Saúde dos dispositivos, sem caixa: uma linha por dispositivo com problema (LED âmbar, o nome, o que o Windows
-                                diz e, na primeira, o atalho para o Gerenciador de Dispositivos) ou uma linha só dizendo que todos funcionam
-                            -->
-                            <StackPanel Grid.Row="1" Margin="8,10,8,0">
-                                <Grid x:Name="DrvHealthy" Height="40" Visibility="Collapsed"
-                                      ToolTip="Nenhum dispositivo conectado aparece com o ponto de exclamação do Gerenciador de Dispositivos.">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Ellipse Style="{StaticResource DrvVerdictLed}" Fill="{DynamicResource Ok}" />
-                                    <TextBlock Grid.Column="1" Text="Todos os dispositivos estão funcionando." FontSize="14" VerticalAlignment="Center" />
-                                </Grid>
-                                <ItemsControl x:Name="DrvProblems" Focusable="False">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Height="40" Background="Transparent" ToolTip="{Binding Tip}">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <Ellipse Style="{StaticResource DrvVerdictLed}" Fill="{DynamicResource Warn}" />
-                                                <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="460" />
-                                                <TextBlock Grid.Column="2" Text="{Binding Meaning}" FontSize="14" Foreground="{DynamicResource Warn}" VerticalAlignment="Center" Margin="12,0,0,0"
-                                                           TextTrimming="CharacterEllipsis" />
-                                                <Button Grid.Column="3" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE8A7;" Content="Gerenciador de Dispositivos" Margin="12,0,-10,0"
-                                                        VerticalAlignment="Center" Click="BtnDrvDeviceManager_Click" Visibility="{Binding First, Converter={StaticResource BoolVis}}"
-                                                        ToolTip="Abre o Gerenciador de Dispositivos, onde dá para ver o problema e atualizar o driver." />
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-
-                            <Grid x:Name="DrvHead" Grid.Row="2" Height="32" Margin="8,2,8,0">
+                            <Grid x:Name="DrvHead" Grid.Row="1" Height="32" Margin="8,10,8,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" MinWidth="200" />
                                     <ColumnDefinition Width="220" />
@@ -409,7 +388,7 @@
                                 <TextBlock Grid.Column="2" Text="Versão" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
                                 <TextBlock Grid.Column="3" Text="Data" Style="{StaticResource TableHead}" HorizontalAlignment="Right" />
                             </Grid>
-                            <ScrollViewer x:Name="DrvListScroll" Grid.Row="3" VerticalScrollBarVisibility="Auto" ScrollChanged="DrvListScroll_ScrollChanged">
+                            <ScrollViewer x:Name="DrvListScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" ScrollChanged="DrvListScroll_ScrollChanged">
                                 <StackPanel>
                                     <ItemsControl x:Name="DrvList" Focusable="False">
                                         <ItemsControl.GroupStyle>
@@ -444,15 +423,36 @@
                                                                     VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed" ToolTip="O Windows não encontrou assinatura digital neste driver.">
                                                                 <TextBlock Text="Sem assinatura" Style="{StaticResource BadgeText}" Foreground="{DynamicResource Warn}" />
                                                             </Border>
+                                                            <Border x:Name="problem" Grid.Column="1" Style="{StaticResource Badge}" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource WarnSoft}"
+                                                                    VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed" ToolTip="{Binding Tip}">
+                                                                <TextBlock Text="{Binding Problem}" Style="{StaticResource BadgeText}" Foreground="{DynamicResource Warn}" />
+                                                            </Border>
                                                         </Grid>
-                                                        <TextBlock Grid.Column="1" Text="{Binding Vendor}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Vendor}" Margin="16,0,0,0" />
-                                                        <TextBlock Grid.Column="2" Text="{Binding Version}" Style="{StaticResource Num}" TextTrimming="CharacterEllipsis" Margin="16,0,0,0" />
-                                                        <TextBlock Grid.Column="3" Text="{Binding Date}" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" ToolTip="{Binding DateTip}" />
+                                                        <TextBlock x:Name="vendor" Grid.Column="1" Text="{Binding Vendor}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Vendor}" Margin="16,0,0,0" />
+                                                        <TextBlock x:Name="version" Grid.Column="2" Text="{Binding Version}" Style="{StaticResource Num}" TextTrimming="CharacterEllipsis" Margin="16,0,0,0" />
+                                                        <TextBlock x:Name="date" Grid.Column="3" Text="{Binding Date}" Style="{StaticResource Num}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Right" ToolTip="{Binding DateTip}" />
+                                                        <!-- Dispositivo com problema: no lugar de versão e data, o atalho para o Gerenciador de Dispositivos -->
+                                                        <Button x:Name="manager" Grid.Column="1" Grid.ColumnSpan="3" Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Margin="0,0,-10,0"
+                                                                Click="BtnDrvDeviceManager_Click" Visibility="Collapsed"
+                                                                ToolTip="Abre o Gerenciador de Dispositivos, onde dá para ver o problema e atualizar o driver.">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="&#xE8A7;" Style="{StaticResource DrvLinkGlyph}" />
+                                                                <TextBlock Text="Gerenciador de Dispositivos" />
+                                                            </StackPanel>
+                                                        </Button>
                                                     </Grid>
                                                 </Border>
                                                 <DataTemplate.Triggers>
                                                     <DataTrigger Binding="{Binding Signed}" Value="False">
                                                         <Setter TargetName="unsigned" Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsProblem}" Value="True">
+                                                        <Setter TargetName="unsigned" Property="Visibility" Value="Collapsed" />
+                                                        <Setter TargetName="problem" Property="Visibility" Value="Visible" />
+                                                        <Setter TargetName="vendor" Property="Visibility" Value="Collapsed" />
+                                                        <Setter TargetName="version" Property="Visibility" Value="Collapsed" />
+                                                        <Setter TargetName="date" Property="Visibility" Value="Collapsed" />
+                                                        <Setter TargetName="manager" Property="Visibility" Value="Visible" />
                                                     </DataTrigger>
                                                 </DataTemplate.Triggers>
                                             </DataTemplate>

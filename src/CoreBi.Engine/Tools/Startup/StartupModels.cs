@@ -28,6 +28,15 @@ public sealed class StartupEntry
     /// <summary>App da Store: dá para ligar e desligar, mas não remover (a tarefa pertence ao pacote do app).</summary>
     public bool Store => Kind == "Store";
     public bool CanRemove => !Store;
+    /// <summary>De onde o Windows abre o programa, em palavras: "Registro, só você", "Pasta Inicializar, todos", "Microsoft Store".</summary>
+    public string Origin => OriginOf(Kind, Machine);
+
+    public static string OriginOf(string kind, bool machine) => kind switch
+    {
+        "Store" => "Microsoft Store",
+        "Folder" => machine ? "Pasta Inicializar, todos" : "Pasta Inicializar, só você",
+        _ => machine ? "Registro, todos" : "Registro, só você",
+    };
 
     internal string Kind { get; init; } = "";     // Run | Run32 | Folder | Store
     internal string? FilePath { get; init; }      // Folder: o atalho; Store: a chave do estado da tarefa

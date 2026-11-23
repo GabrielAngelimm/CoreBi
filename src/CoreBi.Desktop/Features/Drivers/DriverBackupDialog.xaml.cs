@@ -2,7 +2,6 @@ using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -10,8 +9,8 @@ using CoreBi.Engine.Tools.Drivers;
 
 namespace CoreBi.Desktop;
 
-/// <summary>Uma leitura da placa de números da janela, com a linha embaixo (o primeiro não leva o fio à esquerda).</summary>
-public sealed record DriverDialogCell(string Label, string Value, string Sub, bool First);
+/// <summary>Uma leitura da placa de números da janela (o primeiro não leva o fio à esquerda; Tip, quando há, completa o número).</summary>
+public sealed record DriverDialogCell(string Label, string Value, string? Tip, bool First);
 
 /// <summary>
 /// Janela de Fazer backup e Restaurar dos Drivers. O backup confirma a pasta onde salvar (trocável aqui mesmo); a restauração
@@ -38,13 +37,12 @@ public partial class DriverBackupDialog : UserControl
         _count = count;
         _last = last;
         DialogTitle.Text = "Fazer backup dos drivers";
-        Lead.Text = "Uma cópia dos drivers das suas peças, para reinstalar tudo depois de formatar.";
+        Lead.Text = "Guarda uma cópia dos drivers deste PC, para reinstalar tudo depois de formatar.";
         FolderLabel.Text = "Onde salvar";
         BtnFolder.Content = "Trocar";
         BtnFolder.ToolTip = "Escolha outra pasta, de preferência em outro disco ou num pen drive.";
-        Promise.Text = "Só copia: nada é instalado nem apagado.";
         BtnConfirm.Content = "Fazer backup";
-        BtnConfirm.ToolTip = "O CoreBi cria uma pasta nova, com a data, dentro da escolhida.";
+        BtnConfirm.ToolTip = "Só copia: nada é instalado nem apagado. O CoreBi cria uma pasta nova, com a data, dentro da escolhida.";
         SetIcon(BtnConfirm, "");
         Order(folderFirst: false);
         ShowState();
@@ -67,11 +65,10 @@ public partial class DriverBackupDialog : UserControl
     private void RestoreTexts()
     {
         DialogTitle.Text = "Restaurar drivers";
-        Lead.Text = "Reinstala os drivers de um backup. O Windows só troca um driver quando o do backup é melhor.";
+        Lead.Text = "Reinstala os drivers de um backup do CoreBi. Onde você já tiver um driver mais novo, o Windows mantém o seu.";
         FolderLabel.Text = "Backup";
         BtnFolder.Content = "Escolher";
         BtnFolder.ToolTip = "Escolha a pasta do backup, ou a pasta que guarda vários (vale o mais novo).";
-        Promise.Text = "Cria um ponto de restauração antes.";
         SetIcon(BtnConfirm, "");
         Order(folderFirst: true);
     }
@@ -91,8 +88,8 @@ public partial class DriverBackupDialog : UserControl
         ShowFolder();
         if (!_restore)
         {
-            SetCells(("Drivers para copiar", _count > 0 ? _count.ToString(PtBr) : "—", "das suas peças"),
-                     ("Último backup", _last == null ? "Nenhum" : _last.Created.ToString("dd/MM/yyyy", PtBr), _last == null ? "este é o primeiro" : Ago(_last.Created)));
+            SetCells(("Drivers para copiar", _count > 0 ? _count.ToString(PtBr) : "—", null),
+                     ("Último backup", _last == null ? "Nenhum" : _last.Created.ToString("dd/MM/yyyy", PtBr), _last == null ? "Este é o primeiro." : $"Feito {Ago(_last.Created)}."));
             BtnConfirm.IsEnabled = _folder.Length > 0;
             return;
         }
@@ -106,12 +103,13 @@ public partial class DriverBackupDialog : UserControl
             return;
         }
         bool samePc = _found.Computer.Equals(Environment.MachineName, StringComparison.OrdinalIgnoreCase);
-        SetCells(("Drivers", _found.Count.ToString(PtBr), "no backup"),
-                 ("Feito em", _found.Created.ToString("dd/MM/yyyy", PtBr), Ago(_found.Created)),
-                 ("PC", _found.Computer.Length > 0 ? _found.Computer : "—", _found.Computer.Length == 0 ? "" : samePc ? "este PC" : "outro PC"));
+        SetCells(("Drivers", _found.Count.ToString(PtBr), null),
+                 ("Feito em", _found.Created.ToString("dd/MM/yyyy", PtBr), $"Feito {Ago(_found.Created)}."),
+                 ("Do PC", _found.Computer.Length == 0 ? "—" : samePc ? "Este PC" : _found.Computer,
+                  _found.Computer.Length == 0 ? null : samePc ? $"Feito neste PC ({_found.Computer})." : $"Feito em outro PC: {_found.Computer}."));
         BtnConfirm.Content = _found.Count == 1 ? "Restaurar 1 driver" : $"Restaurar {_found.Count} drivers";
         BtnConfirm.IsEnabled = true;
-        BtnConfirm.ToolTip = "Leva alguns minutos. A tela pode piscar quando chegar a vez do driver de vídeo.";
+        BtnConfirm.ToolTip = "Antes de começar, o CoreBi pede ao Windows um ponto de restauração. Leva alguns minutos, e a tela pode piscar na vez do driver de vídeo.";
     }
 
     /// <summary>
@@ -129,22 +127,17 @@ public partial class DriverBackupDialog : UserControl
         FolderWhere.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
         FolderGlyph.SetResourceReference(TextBlock.ForegroundProperty, any ? "Storage" : "Faint");
 
-        Hint.Inlines.Clear();
         if (_restore)
         {
-            Hint.Inlines.Add(new Run("Pode escolher a própria pasta do backup ou a pasta que guarda vários: vale o mais novo."));
-            Hint.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-            Hint.Visibility = Visibility.Visible;
+            // Com o backup achado, a placa embaixo já responde; a dica só ajuda enquanto não há um
+            Hint.Text = "Pode ser a pasta do backup ou a que guarda vários: vale o mais novo.";
+            Hint.Visibility = _found == null ? Visibility.Visible : Visibility.Collapsed;
             return;
         }
         bool systemDisk = any && SameRoot(path, Environment.SystemDirectory);
-        var lead = new Run(systemDisk ? "Vai formatar? " : "Fora do disco do Windows: ") { FontWeight = FontWeights.SemiBold };
-        lead.SetResourceReference(TextElement.ForegroundProperty, systemDisk ? "Warn" : "Ok");
-        Hint.Inlines.Add(lead);
-        Hint.Inlines.Add(new Run(systemDisk
-            ? "Este disco é apagado junto. Troque para outro disco ou um pen drive."
-            : "o backup continua aqui depois de formatar."));
-        Hint.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+        Hint.Text = systemDisk
+            ? "Este disco é apagado ao formatar: prefira outro disco ou um pen drive."
+            : "Fora do disco do Windows, o backup continua aqui depois de formatar.";
         Hint.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -171,9 +164,9 @@ public partial class DriverBackupDialog : UserControl
     private static bool SameRoot(string a, string b) =>
         string.Equals(Path.GetPathRoot(a), Path.GetPathRoot(b), StringComparison.OrdinalIgnoreCase);
 
-    private void SetCells(params (string Label, string Value, string Sub)[] cells)
+    private void SetCells(params (string Label, string Value, string? Tip)[] cells)
     {
-        Cells.ItemsSource = cells.Select((c, i) => new DriverDialogCell(c.Label, c.Value, c.Sub, i == 0)).ToList();
+        Cells.ItemsSource = cells.Select((c, i) => new DriverDialogCell(c.Label, c.Value, c.Tip, i == 0)).ToList();
         Cells.Visibility = cells.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         CellsEmpty.Visibility = cells.Length > 0 ? Visibility.Collapsed : Visibility.Visible;
     }

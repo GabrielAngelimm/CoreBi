@@ -214,47 +214,49 @@ public partial class DriversView : UserControl
         string date = b.BiosDate == "—" ? "" : b.BiosDate.Trim();
         DrvBoardBios.Text = version;
         DrvBoardBiosDate.Text = date.Length > 0 ? date : "—";
-        // Pé da placa no mesmo desenho do da placa de vídeo: a idade na frente, em tinta, e o conselho em Muted
-        string brandName = b.Brand.Length > 0 ? "a " + b.Brand : "o fabricante";
-        DrvBoardAge.Inlines.Clear();
-        if (DateTime.TryParseExact(date, "dd/MM/yyyy", PtBr, DateTimeStyles.None, out var when))
-        {
-            var lead = new System.Windows.Documents.Run(Age(when)) { FontWeight = FontWeights.SemiBold };
-            lead.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Fg");
-            DrvBoardAge.Inlines.Add(lead);
-            var gap = new System.Windows.Documents.Run("  ·  ");
-            gap.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Faint");
-            DrvBoardAge.Inlines.Add(gap);
-            DrvBoardAge.Inlines.Add(new System.Windows.Documents.Run($"Atualize só se {brandName} recomendar."));
-        }
-        var age = DrvBoardAge.Inlines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        DrvBoardAge.Visibility = age;
-        DrvBoardAgeHair.Visibility = age;
+        DrvBoardBiosDate.ToolTip = DateTime.TryParseExact(date, "dd/MM/yyyy", PtBr, DateTimeStyles.None, out var when) ? Age(when) : null;
         DrvBiosBox.Visibility = version.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         string brand = b.Brand.Length > 0 ? b.Brand : "fabricante";
-        BtnDrvBoardPage.Content = $"Abrir no site da {brand}";
+        BtnDrvBoardPage.Content = b.SupportIsModelPage ? $"Abrir no site da {brand}" : b.Brand == "Gigabyte" ? "Achar no site da Gigabyte" : $"Abrir o suporte da {brand}";
         BtnDrvBoardPage.ToolTip = b.SupportIsModelPage
             ? "Abre a página de suporte do seu modelo: drivers de chipset, áudio e rede, e as versões da BIOS."
             : b.Brand == "Gigabyte"
-            ? "Abre o site da Gigabyte já buscando o seu modelo. Ele tem uma página por revisão da placa: a sua está impressa nela, perto dos slots (ex.: Rev. 1.3)."
+            ? "A Gigabyte tem uma página para cada revisão da placa (Rev. 1.0, 1.3...) e o Windows não diz qual é a sua.\n"
+              + "Abre a busca com as páginas do seu modelo no site da Gigabyte: escolha a revisão impressa na placa, perto dos slots."
             : "Abre a central de suporte do fabricante. Busque pelo modelo para achar os drivers e a BIOS.";
         BtnDrvBoardPage.Visibility = known ? Visibility.Visible : Visibility.Collapsed;
         DrvBoardNote.Visibility = known || b.Model.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    /// <summary>"Há 1 ano e 2 meses": a idade da BIOS, na frente do pé da placa.</summary>
+    /// <summary>"Lançada há 1 ano e 2 meses.": a idade da BIOS, na dica da data.</summary>
     internal static string Age(DateTime when)
     {
         int months = Math.Max(0, (DateTime.Today.Year - when.Year) * 12 + DateTime.Today.Month - when.Month - (DateTime.Today.Day < when.Day ? 1 : 0));
         int years = months / 12, rest = months % 12;
         string y = years == 1 ? "1 ano" : $"{years} anos", m = rest == 1 ? "1 mês" : $"{rest} meses";
-        return "Há " + (months == 0 ? "menos de 1 mês" : years == 0 ? m : rest == 0 ? y : $"{y} e {m}");
+        return "Lançada há " + (months == 0 ? "menos de 1 mês" : years == 0 ? m : rest == 0 ? y : $"{y} e {m}") + ".";
     }
+
+    private List<DriverLine> _installed = new();
+    private List<DriverLine> _problems = new();
 
     private void ShowInventory(List<DriverRow> inventory)
     {
-        var lines = inventory.Select(DriverLine.From).OrderBy(l => l.Order).ThenBy(l => l.Device, StringComparer.CurrentCultureIgnoreCase).ToList();
+        _installed = inventory.Select(DriverLine.From).OrderBy(l => l.Order).ThenBy(l => l.Device, StringComparer.CurrentCultureIgnoreCase).ToList();
+        Rebuild();
+    }
+
+    /// <summary>Dispositivos com problema entram na tabela, num grupo no topo; nos filtros por tipo eles saem (não têm driver de tipo).</summary>
+    private void ShowProblems(List<DeviceProblem> problems)
+    {
+        _problems = problems.Select(p => new DriverLine(p.Name, "", "", "", true, DriverLine.ProblemGroup, -1) { Problem = p.Meaning, Tip = ProblemTip(p) }).ToList();
+        Rebuild();
+    }
+
+    private void Rebuild()
+    {
+        var lines = _problems.Concat(_installed).ToList();
         if (_view != null && lines.SequenceEqual(_lines)) { UpdateTableState(); return; } // releitura igual: a tabela fica
         _lines = lines;
         _view = CollectionViewSource.GetDefaultView(_lines);
@@ -274,7 +276,7 @@ public partial class DriversView : UserControl
     /// </summary>
     private void BuildGroups()
     {
-        var groups = _lines.Select(l => l.Group).Distinct().ToList();
+        var groups = _installed.Select(l => l.Group).Distinct().ToList();
         if (_group != null && !groups.Contains(_group)) _group = null;
         DrvGroups.Children.Clear();
         foreach (string? g in groups.Prepend(null))
@@ -331,14 +333,6 @@ public partial class DriversView : UserControl
         DrvGroupBox.Margin = wide ? new Thickness(16, 0, 0, 0) : new Thickness(0, 12, 0, 0);
     }
 
-    /// <summary>Uma linha por dispositivo com problema; sem nenhum, a linha verde de que todos funcionam.</summary>
-    private void ShowProblems(List<DeviceProblem> problems)
-    {
-        var rows = problems.Select((p, i) => new ProblemLine(p.Name, p.Meaning, ProblemTip(p), i == 0)).ToList();
-        Ui.SetItems(DrvProblems, rows);
-        DrvHealthy.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-    }
-
     /// <summary>A dica da linha: o que o problema quer dizer na prática e o que fazer.</summary>
     internal static string ProblemTip(DeviceProblem p) => p.Code == 28
         ? "O Windows reconhece este aparelho, mas não tem o driver dele, então ele não funciona.\n" +
@@ -361,8 +355,10 @@ public partial class DriversView : UserControl
     private void UpdateTableState()
     {
         int shown = _view?.Cast<object>().Count() ?? 0;
-        DrvCount.Text = _lines.Count == 0 ? "" : shown == _lines.Count ? _lines.Count.ToString(PtBr) : $"{shown} de {_lines.Count}";
-        DrvEmpty.Text = _lines.Count == 0 ? "Nenhum driver encontrado." : "Nenhum driver com esse nome ou fabricante neste tipo.";
+        int total = _installed.Count;
+        shown -= _view?.Cast<DriverLine>().Count(l => l.IsProblem) ?? 0;
+        DrvCount.Text = total == 0 ? "" : shown == total ? total.ToString(PtBr) : $"{shown} de {total}";
+        DrvEmpty.Text = total == 0 ? "Nenhum driver encontrado." : "Nenhum driver com esse nome ou fabricante neste tipo.";
         DrvEmpty.Visibility = shown == 0 && _view != null ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -629,6 +625,13 @@ public sealed record DriverLine(string Device, string Vendor, string Version, st
     /// <summary>21/06/2006 é a data fixa que a Microsoft põe nos drivers que vêm com o Windows, não a idade do driver.</summary>
     private const string InboxDate = "21/06/2006";
 
+    /// <summary>Grupo do topo da tabela, com os dispositivos que o Gerenciador de Dispositivos marca com exclamação.</summary>
+    public const string ProblemGroup = "Com problema";
+    /// <summary>O que o Windows diz do dispositivo ("Sem driver instalado"); vazio numa linha de driver.</summary>
+    public string Problem { get; init; } = "";
+    public string? Tip { get; init; }
+    public bool IsProblem => Problem.Length > 0;
+
     /// <summary>Dica da data: só nos drivers com a data padrão do Windows.</summary>
     public string? DateTip => Date == InboxDate ? "Data padrão dos drivers que vêm com o Windows. A versão diz qual é o driver." : null;
 
@@ -652,8 +655,6 @@ public sealed record DriverLine(string Device, string Vendor, string Version, st
     }
 }
 
-/// <summary>Dispositivo com problema, pronto para a linha (a primeira leva o atalho do Gerenciador de Dispositivos).</summary>
-public sealed record ProblemLine(string Name, string Meaning, string Tip, bool First);
 
 /// <summary>Driver encontrado no Windows Update, com o tamanho já formatado.</summary>
 public sealed record WuLine(string Title, string Size);

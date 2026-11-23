@@ -88,8 +88,7 @@ internal static partial class Program
                     else if (parts[0] == "PageApps" && parts.Length == 2 && parts[1] == "installing") { window.PageApps.PreviewRun(true); Wait(900); }
                     // "PageApps:Jogos" filtra pela categoria, como o clique no título dela (volta a todas depois da captura)
                     else if (parts[0] == "PageApps" && parts.Length == 2) { window.PageApps.FilterCategory(parts[1]); Wait(800); }
-                    // "PageStartup:demo" mostra dez inícios e três removidos de exemplo; "PageStartup:stale", os mesmos com a medição do
-                    // Windows parada há dias (nada é lido nem salvo)
+                    // "PageStartup:demo" mostra três removidos de exemplo no filtro Removidos (nada é lido nem salvo)
                     else if (parts[0] == "PageStartup" && parts.Length == 2) { window.PageStartup.PreviewDemo(parts[1]); Wait(900); }
                     // "PageDriver:demo" mostra drivers achados no Windows Update; "PageDriver:searching", a busca em andamento; "PageDriver:backup"
                     // e "PageDriver:restore", as janelas de confirmação (nada é procurado, copiado nem instalado)

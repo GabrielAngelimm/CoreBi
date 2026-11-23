@@ -536,7 +536,12 @@
     </Style>
 
     <!-- ===================== Botões ===================== -->
-    <!-- O mouse acende uma camada por cima (transição curta); o clique afunda 1 px -->
+    <!--
+        O mouse acende uma camada por cima (transição curta); o clique afunda 1 px. O texto desce 2 px: a Bahnschrift reserva mais
+        espaço embaixo da letra (para p, g, q) do que em cima, e centralizada pela caixa ela ficava 2 px acima do meio da pílula
+        (medido: 10 px da borda de cima até o topo das maiúsculas, 14 px da base até a borda de baixo). Descendo pela transformação,
+        e não pela margem, a altura do botão não muda. O ícone já fica no meio sozinho.
+    -->
     <ControlTemplate x:Key="ButtonTemplate" TargetType="Button">
         <Grid x:Name="root">
             <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
@@ -547,7 +552,11 @@
                 <TextBlock x:Name="ic" Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
                            Foreground="{Binding Path=(local:Ui.IconBrush), RelativeSource={RelativeSource TemplatedParent}}"
                            FontFamily="{StaticResource Icons}" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                <ContentPresenter VerticalAlignment="Center"/>
+                <ContentPresenter VerticalAlignment="Center">
+                    <ContentPresenter.RenderTransform>
+                        <TranslateTransform Y="2"/>
+                    </ContentPresenter.RenderTransform>
+                </ContentPresenter>
             </StackPanel>
         </Grid>
         <ControlTemplate.Triggers>

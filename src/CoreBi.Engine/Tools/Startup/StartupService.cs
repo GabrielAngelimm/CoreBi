@@ -15,9 +15,6 @@ public sealed class StartupService
 
     public List<StartupEntry> List() => StartupManager.List();
 
-    /// <summary>Tempo dos últimos inícios do Windows (o log abre só como administrador).</summary>
-    public BootReport Boots() => BootTimes.Read();
-
     public void SetEnabled(StartupEntry entry, bool enabled) => StartupManager.SetEnabled(entry, enabled);
 
     public void Remove(StartupEntry entry)
