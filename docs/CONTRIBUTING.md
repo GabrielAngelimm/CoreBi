@@ -40,6 +40,7 @@ Execute `Bench` com outras cargas pesadas encerradas. Resultados JSON ficam em `
 | `Test.ps1` | Restaura em modo bloqueado e roda o executor de testes no modo escolhido (`-Mode`, `-NoBuild`) | — |
 | `Publish.ps1` | Publica o app self-contained (`CoreBi.exe` com as DLLs nativas ao lado, que não são extraídas para a pasta temporária), copia `licenses/` e o `LICENSE`. A pasta padrão `artifacts/publish/win-x64` é apagada antes; uma pasta passada em `-OutputDirectory` é usada como está | — |
 | `Installer.ps1` | Publica (exceto com `-SkipPublish`) e gera `artifacts/installer/CoreBi-<versão>-win-x64-setup.exe` a partir de `installer/CoreBi.iss`, com a versão do `Directory.Build.props`; mostra o SHA256 | Inno Setup 6 (`ISCC.exe` no caminho padrão, `-Iscc` ou `$env:COREBI_ISCC`) |
+| `InstallerShots.ps1` | Abre o instalador em claro e escuro, salva cada tela em `artifacts/shots/instalador-*.png`, instala só o app para mostrar a conclusão e desinstala. Feito para a CI: instala e desinstala na máquina em que roda | Windows PowerShell 5.1 e um instalador já gerado (`-Setup`) |
 | `SecretScan.ps1` | Procura segredos em todo o histórico Git com o Gitleaks; relatório em `artifacts/secrets.json` | Rede na primeira vez: baixa o Gitleaks em versão fixada e confere o SHA256 |
 | `Dotnet.ps1` | Roda qualquer comando do `dotnet` com o SDK exato do `global.json` | — |
 | `Common.ps1` | Funções comuns dos scripts (localiza ou baixa o SDK); não é chamado diretamente | — |
@@ -47,6 +48,7 @@ Execute `Bench` com outras cargas pesadas encerradas. Resultados JSON ficam em `
 | `check_resources.py` | Confere as chaves `StaticResource`/`DynamicResource` do XAML e as usadas no C# do Desktop, e a paleta do `Theme.xaml` | Python 3 |
 | `collect_licenses.py` | Gera `licenses/` (avisos, `packages.json`, `THIRD-PARTY.md`) a partir dos pacotes restaurados; `--check` compara `licenses/packages.json` com o lock do Desktop e o `THIRD-PARTY.md` com o `packages.json`, sem precisar de restore | Python 3; sem `--check`: restore win-x64, cache NuGet e rede para textos SPDX que faltarem |
 | `generate_brand.py` | Gera a identidade visual (SVG, PNG e ícone) em `brand/` e `artifacts/brand` e copia logo e ícone para `src/CoreBi.Desktop/Assets` | Python 3 com Pillow e as fontes do Windows (Segoe UI, Bahnschrift, Consolas) |
+| `generate_installer_art.py` | Gera as imagens do instalador em `installer/images` (painel das boas-vindas e da conclusão e o símbolo do canto, claro e escuro, uma por escala de tela) a partir de `brand/geometry.json` | Python 3 com Pillow |
 
 Os scripts PowerShell e o `.iss` ficam em UTF-8 com BOM (veja `.editorconfig`): sem o BOM, o Windows PowerShell 5.1 e o Inno Setup leem os acentos como ANSI.
 
