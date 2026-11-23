@@ -74,13 +74,13 @@ public partial class BenchmarksView
             _context.SetBenchmarkIsolation(false, false);
             GbGpuNow.Text = "";
             SetGameBenchRunning(BtnGpuBench, false);
-            GbProgress.ScaleX = 0;
+            Ui.Rewind(GbProgress);
             GbFpsNow.Text = "—";
         }
 
         if (r == null)
         {
-            GbStatus.Text = bench.Cancelled ? "Cancelado" : $"Falhou: {bench.Error}";
+            GbStatus.Text = bench.Cancelled ? "" : $"Falhou: {bench.Error}";
             GbDetail.Text = "";
             return;
         }
@@ -89,7 +89,7 @@ public partial class BenchmarksView
         GbStatus.Text = $"Concluído em {TimeSpan.FromSeconds(r.Seconds):m\\:ss}";
         GbDetail.Text = "";
         GbResult.ItemsSource = GpuStats(r, vs);
-        SaveBenchRecord("gpu", r.Score, $"{r.Score:N0} pts · {r.AvgFps:0} FPS · {r.Height}p");
+        SaveBenchRecord("gpu", r.Score, $"{r.Score:N0} pts · {r.AvgFps:0} FPS · {r.Height}p", GpuStats(r).Select(Figure), GbTrace.Snapshot());
     }
 
     private async void CheckRtSupportOnce()
@@ -199,34 +199,23 @@ public partial class BenchmarksView
             timer.Stop();
             _context.SetBenchmarkIsolation(false, false);
             SetGameBenchRunning(BtnRtBench, false);
-            RtProgress.ScaleX = 0;
+            Ui.Rewind(RtProgress);
             RtFpsNow.Text = "—";
         }
 
         if (r == null)
         {
-            RtStatus.Text = bench.Cancelled ? "Cancelado" : $"Falhou: {bench.Error}";
+            RtStatus.Text = bench.Cancelled ? "" : $"Falhou: {bench.Error}";
             RtDetail.Text = "";
             return;
         }
         string key = $"rt:{r.Preset}:{r.Height}";
         string vs = VsBest(r.Score, _context.Settings.BenchRecords.Where(x => x.Test == key).Select(x => x.Score));
-        string driver = DriverVersionOf(r.Adapter);
         RtStatus.Text = "Concluído";
-        RtDetail.Text = driver.Length > 0 ? $"Driver {driver}" : "";
+        RtDetail.Text = "";
         RtResult.ItemsSource = RtStats(r, vs);
-        SaveBenchRecord(key, r.Score, $"{r.Score:N0} pts · {r.MedianFps:0} FPS · {PresetName(r.Preset)} {r.Height}p" + (r.Reliable ? "" : " · instável"));
-    }
-
-    private string DriverVersionOf(string adapter)
-    {
-        if (_context == null) return "";
-        var match = _context.Gpus.FirstOrDefault(g =>
-                adapter.Contains(g.Name.Trim(), StringComparison.OrdinalIgnoreCase)
-                || g.Name.Contains(adapter, StringComparison.OrdinalIgnoreCase))
-            ?? _context.PrimaryGpu;
-        if (match == null) return "";
-        return GpuSheet.Flatten(match).GetValueOrDefault("Versão do driver") ?? "";
+        SaveBenchRecord(key, r.Score, $"{r.Score:N0} pts · {r.MedianFps:0} FPS · {PresetName(r.Preset)} {r.Height}p" + (r.Reliable ? "" : " · instável"),
+            RtStats(r).Select(Figure), RtTrace.Snapshot());
     }
 
     private static List<BenchStat> SimStats(GameSimResult? r, string vs = "") => new()
@@ -248,6 +237,7 @@ public partial class BenchmarksView
         _simBitmap ??= new WriteableBitmap(SimView, SimView, 96, 96, PixelFormats.Bgra32, null);
         if (_simPixels.Length == 0) _simPixels = new int[SimView * SimView];
         SimImage.Source = _simBitmap;
+        SimImage.Opacity = 1;
         SimIdle.Visibility = Visibility.Collapsed;
 
         var sim = new GameSimBench();
@@ -271,24 +261,35 @@ public partial class BenchmarksView
         try
         {
             r = await Task.Run(() => sim.Run(TimeSpan.FromSeconds(secs), ct), ct);
-            if (ct.IsCancellationRequested) { SimStatus.Text = "Cancelado"; SimDetail.Text = ""; return; }
+            if (ct.IsCancellationRequested) { SimStatus.Text = ""; SimDetail.Text = ""; return; }
         }
-        catch (OperationCanceledException) { SimStatus.Text = "Cancelado"; SimDetail.Text = ""; return; }
+        catch (OperationCanceledException) { SimStatus.Text = ""; SimDetail.Text = ""; return; }
         catch (Exception ex) { SimStatus.Text = "Falhou: " + ex.Message; SimDetail.Text = ""; return; }
         finally
         {
             timer.Stop();
             SetGameBenchRunning(BtnSimBench, false);
-            SimProgress.ScaleX = 0;
+            Ui.Rewind(SimProgress);
             SimFpsNow.Text = "—";
             _gameBenchCts = null;
         }
 
         string vs = VsBest(r.Score, _context.Settings.BenchRecords.Where(x => x.Test == "sim").Select(x => x.Score));
         SimStatus.Text = $"Concluído em {TimeSpan.FromSeconds(r.Seconds):m\\:ss}";
-        SimDetail.Text = $"{r.Frames:N0} quadros";
+        SimDetail.Text = "";
         SimResult.ItemsSource = SimStats(r, vs);
-        SaveBenchRecord("sim", r.Score, $"{r.AvgFps:0} FPS · 1% low {r.Low1Fps:0}");
+        SaveBenchRecord("sim", r.Score, $"{r.AvgFps:0} FPS · 1% low {r.Low1Fps:0}", SimStats(r).Select(Figure));
+    }
+
+    /// <summary>O palco da simulação parado: a formação inicial do teste (a mesma de toda passada), esmaecida.</summary>
+    private void InitSimStage()
+    {
+        _simBitmap ??= new WriteableBitmap(SimView, SimView, 96, 96, PixelFormats.Bgra32, null);
+        if (_simPixels.Length == 0) _simPixels = new int[SimView * SimView];
+        SimImage.Source = _simBitmap;
+        var sim = new GameSimBench();
+        sim.Prepare();
+        DrawSim(sim);
     }
 
     private void DrawSim(GameSimBench sim)

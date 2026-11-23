@@ -35,6 +35,14 @@ public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
     private static readonly DependencyProperty SpotOpacityProperty = DependencyProperty.Register(
         "SpotOpacity", typeof(double), typeof(SlidingSelectionPanel), new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
 
+    public static readonly DependencyProperty UniformProperty = DependencyProperty.Register(
+        nameof(Uniform), typeof(bool), typeof(SlidingSelectionPanel), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsMeasure));
+    /// <summary>
+    /// Opções em colunas iguais que dividem a largura toda (os controles da configuração dos testes): o texto fica no meio de
+    /// cada tecla e nenhuma fica mais estreita que a maior.
+    /// </summary>
+    public bool Uniform { get => (bool)GetValue(UniformProperty); set => SetValue(UniformProperty, value); }
+
     private Rect _target = Rect.Empty;
     private bool _shown;
 
@@ -46,9 +54,45 @@ public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
         IsEnabledChanged += (_, _) => InvalidateVisual(); // desligado, o destaque esmaece junto com as opções
     }
 
+    protected override Size MeasureOverride(Size constraint)
+    {
+        if (!Uniform || Orientation != System.Windows.Controls.Orientation.Horizontal) return base.MeasureOverride(constraint);
+        var items = Children.OfType<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
+        double widest = 0, tallest = 0;
+        foreach (var c in items)
+        {
+            c.Measure(new Size(double.PositiveInfinity, constraint.Height));
+            widest = Math.Max(widest, c.DesiredSize.Width);
+            tallest = Math.Max(tallest, c.DesiredSize.Height);
+        }
+        // Pede a largura de todas iguais à maior, mas nunca mais que o espaço dado: o arranjo divide o que houver
+        double width = widest * items.Count;
+        if (!double.IsInfinity(constraint.Width)) width = Math.Min(width, constraint.Width);
+        return new Size(width, tallest);
+    }
+
     protected override Size ArrangeOverride(Size arrangeSize)
     {
-        var size = base.ArrangeOverride(arrangeSize);
+        Size size;
+        if (Uniform && Orientation == System.Windows.Controls.Orientation.Horizontal)
+        {
+            var items = Children.OfType<UIElement>().Where(c => c.Visibility != Visibility.Collapsed).ToList();
+            double each = items.Count > 0 ? arrangeSize.Width / items.Count : 0;
+            // Colunas iguais quando todas cabem; se uma não cabe ("Tela cheia" entre "720p" e "1440p"), cada uma fica com a
+            // largura dela mais a mesma parte da sobra, e nenhuma corta o texto
+            double natural = items.Sum(c => c.DesiredSize.Width);
+            bool fits = items.All(c => c.DesiredSize.Width <= each + 0.5);
+            double extra = items.Count > 0 ? Math.Max(0, arrangeSize.Width - natural) / items.Count : 0;
+            double x = 0;
+            foreach (var c in items)
+            {
+                double width = fits ? each : c.DesiredSize.Width + extra;
+                c.Arrange(new Rect(x, 0, width, arrangeSize.Height));
+                x += width;
+            }
+            size = arrangeSize;
+        }
+        else size = base.ArrangeOverride(arrangeSize);
         Follow(animate: false);
         return size;
     }

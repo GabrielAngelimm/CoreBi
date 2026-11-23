@@ -171,7 +171,8 @@ public partial class OverlayView : UserControl
 
     /// <summary>
     /// O que mostrar: um grupo por componente, com o ícone, o nome e a legenda numa coluna à esquerda e os itens em três colunas.
-    /// O fio de cada grupo fica no topo da sua faixa, com 8 px até o grupo de cima e até o seu; o cartão termina no último grupo.
+    /// Os grupos se separam só pelo vão (22 px, sem fio); o nome e a legenda têm a altura de uma linha de itens (36), então o vão
+    /// é o mesmo depois de um grupo de uma linha só; o cartão termina no último grupo.
     /// </summary>
     private void BuildPicker()
     {
@@ -183,23 +184,18 @@ public partial class OverlayView : UserControl
         {
             string group = groups[i].Key;
             var slot = new Grid();
-            if (i > 0)
-            {
-                var rule = new Border { VerticalAlignment = VerticalAlignment.Top };
-                rule.SetResourceReference(StyleProperty, "Divider");
-                slot.Children.Add(rule);
-            }
 
-            // 8 px acima e abaixo de cada fio; o último grupo encosta na margem do cartão (-2 px: medido, a legenda fica a 25 px do pé, como o título do topo)
+            // Sem fio: 22 px de vão entre um grupo e o outro; o último encosta na margem do cartão (-2 px: medido, a legenda fica
+            // a 25 px do pé, como o título do topo)
             bool last = i == groups.Count - 1;
-            var row = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, i == 0 ? 0 : 8, 0, last ? -2 : 8) };
+            var row = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, i == 0 ? 0 : 11, 0, last ? -2 : 11) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             // Ícone sutil (20 px, no tom secundário) e, ao lado, o título de 16 e a legenda de 12, cada um numa linha só,
             // no alto da primeira linha de itens (38 px)
             GroupInfo.TryGetValue(group, out var info);
-            var head = new Grid { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 3, 12, 0) };
+            var head = new Grid { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 2, 12, 0) };
             head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             head.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             var icon = new HwIcon { Kind = info.Icon ?? "\uE946", Width = 20, Height = 20, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 1, 10, 0) };
@@ -211,7 +207,7 @@ public partial class OverlayView : UserControl
             name.Children.Add(title);
             if (info.Caption is { Length: > 0 } caption)
             {
-                var sub = new TextBlock { Text = caption, TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 1, 0, 0) };
+                var sub = new TextBlock { Text = caption, TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis };
                 sub.SetResourceReference(StyleProperty, "Caption");
                 name.Children.Add(sub);
             }
@@ -295,13 +291,6 @@ public partial class OverlayView : UserControl
         double opacity = OpacityOf(e.NewValue);
         OvPreviewHost.Opacity = opacity;
         OnOpacityChanged(opacity);
-    }
-
-    private void OvOpacity_Wheel(object sender, MouseWheelEventArgs e)
-    {
-        double step = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 1 : 5;
-        OvOpacity.Value = Math.Clamp(OvOpacity.Value + Math.Sign(e.Delta) * step, OvOpacity.Minimum, OvOpacity.Maximum);
-        e.Handled = true;
     }
 
     private static double OpacityOf(double percent) => Math.Clamp(percent / 100, 0.3, 1);

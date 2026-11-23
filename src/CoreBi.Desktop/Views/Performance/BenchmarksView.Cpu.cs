@@ -43,9 +43,9 @@ public partial class BenchmarksView
         _benchCts = cts;
         var ct = cts.Token;
         Ui.SetRunning(BtnBench, true, "Iniciar teste", "Cancelar");
-        BenchOptions.IsEnabled = BenchTestPanel.IsEnabled = false;
+        BenchOptions.IsEnabled = BenchDurationSection.IsEnabled = BenchTestPanel.IsEnabled = false;
         BenchHint.Text = "";
-        BenchIdle.Visibility = Visibility.Collapsed;
+        BenchIdle.Visibility = BenchPreview.Visibility = Visibility.Collapsed;
         BenchMt.Text = BenchSt.Text = BenchRatio.Text = "—";
         BenchMtVs.Text = BenchStVs.Text = BenchRatioSub.Text = "";
         _benchStart = DateTime.Now;
@@ -77,8 +77,10 @@ public partial class BenchmarksView
             _benchTimer.Stop();
             UpdateCpuView();
             _benchCts = null;
+            // Parado no meio ou concluído, a barra desliza de volta ao zero (a imagem e os números ficam)
+            Ui.Rewind(BenchProgress);
             Ui.SetRunning(BtnBench, false, "Iniciar teste", "Cancelar");
-            BenchOptions.IsEnabled = BenchTestPanel.IsEnabled = true;
+            BenchOptions.IsEnabled = BenchDurationSection.IsEnabled = BenchTestPanel.IsEnabled = true;
             BenchBuckets.Children.Clear();
             BenchElapsed.Text = "";
         }
@@ -86,7 +88,8 @@ public partial class BenchmarksView
         var total = DateTime.Now - _benchStart;
         if (ct.IsCancellationRequested)
         {
-            BenchStatus.Text = "Cancelado";
+            // Cancelado por você, nada a dizer: a placa volta ao estado de espera (como no Teste de carga)
+            BenchStatus.Text = "";
             return;
         }
         BenchStatus.Text = $"Concluído em {total:m\\:ss}";
@@ -152,7 +155,16 @@ public partial class BenchmarksView
             string value = r.Multi is double m ? $"{m:N0} pts" : r.Single is double ss ? $"{ss:N0} pts" : "—";
             double best = Best(r.Sustained, r.Multi != null);
             double frac = best <= 0 ? 0 : r.Multi is double mm ? mm / best : r.Single is double s1 ? s1 / best : 0;
-            return new BenchHistoryRow($"{r.Date:dd/MM HH:mm}", value, string.Join(", ", detail), frac);
+            return new BenchHistoryRow(ReadoutFormat.When(r.Date, compact: true), value, string.Join(", ", detail), frac);
         }).ToList();
+        BenchHistoryClear.Visibility = runs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void BenchHistoryClear_Click(object sender, RoutedEventArgs e)
+    {
+        if (_context == null || !ConfirmButton.Confirm(sender)) return;
+        _context.Settings.BenchRuns.Clear();
+        _context.SaveSettings();
+        UpdateCpuHistory();
     }
 }

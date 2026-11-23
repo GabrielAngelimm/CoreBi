@@ -24,6 +24,8 @@ namespace CoreBi.Desktop.Views
         public BenchmarksView()
         {
             InitializeComponent();
+            // Primeira visita: os nomes das peças (placas e unidades) chegam com a leitura do hardware
+            Skeleton.SetActive(BenchConfigCard, true);
             IsVisibleChanged += (_, e) => { if (e.NewValue is true) CheckRtSupportOnce(); };
         }
 
@@ -33,7 +35,9 @@ namespace CoreBi.Desktop.Views
         {
             _context = context;
             InitCpuBench();
+            InitSimStage();
             ResetStages();
+            ShowLastResults();
             UpdateCpuHistory();
             UpdateGameBenchHistory();
             Tick();
@@ -47,6 +51,7 @@ namespace CoreBi.Desktop.Views
 
         internal void RefreshHardware()
         {
+            Skeleton.SetActive(BenchConfigCard, false);
             UpdatePlates();
             InitDiskBench();
         }
@@ -59,7 +64,7 @@ namespace CoreBi.Desktop.Views
             if (_context.ReadCpuLive().AvgClockMHz is float clock) cells.Add(new("Clock médio", $"{clock:0}", "MHz", Tip: "Média dos núcleos"));
             if (_context.Sensors.CpuPower is float p) cells.Add(new("Consumo", $"{p:0.#}", "W"));
             if (_context.Sensors.CpuLoad is float l) cells.Add(new("Carga", $"{l:0}", "%"));
-            BenchLive.ItemsSource = cells;
+            Ui.SetItems(BenchLive, cells);
             UpdatePlates();
         }
 
@@ -103,6 +108,104 @@ namespace CoreBi.Desktop.Views
             UpdateDiskPlate();
         }
 
+        /// <summary>
+        /// A página abre com o último resultado de cada teste: os números guardados (Figures), a última passada do FPS (Trace) e,
+        /// no estado, quando foi. Resultados de versões antigas, sem os números, mostram só a nota.
+        /// </summary>
+        private void ShowLastResults()
+        {
+            if (_context == null) return;
+            if (_context.Settings.BenchRuns.FirstOrDefault() is { } run)
+            {
+                BenchMt.Text = run.Multi is double m ? $"{m:N0}" : "—";
+                BenchSt.Text = run.Single is double s ? $"{s:N0}" : "—";
+                BenchRatio.Text = run.Multi is double mm && run.Single is double ss && ss > 0 ? $"{mm / ss:0.0}" : "—";
+                BenchMtVs.Text = run.Sustained ? "mínimo de 10 min" : "";
+                BenchElapsed.Text = LastNote(run.Date);
+            }
+
+            var sim = Last(r => r.Test == "sim");
+            SimResult.ItemsSource = Restore(sim, SimStats(null), v => $"{v:0}");
+            SimDetail.Text = sim != null ? LastNote(sim.Date) : "";
+
+            var gpu = Last(r => r.Test == "gpu");
+            GbResult.ItemsSource = Restore(gpu, GpuStats(null), v => $"{v:N0}");
+            GbDetail.Text = gpu != null ? LastNote(gpu.Date) : "";
+            if (gpu != null) GbTrace.Load(gpu.Trace, "Última passada · " + ReadoutFormat.When(gpu.Date));
+
+            var rt = Last(r => r.Test.StartsWith("rt:", StringComparison.Ordinal));
+            RtResult.ItemsSource = Restore(rt, RtStats(null), v => $"{v:N0}");
+            RtDetail.Text = rt != null ? LastNote(rt.Date) : "";
+            if (rt != null) RtTrace.Load(rt.Trace, "Última passada · " + ReadoutFormat.When(rt.Date));
+
+            var mem = Last(r => r.Test == "mem");
+            MemResult.ItemsSource = Merge(MemRows(null, null, null), Saved(mem));
+            MemDetail.Text = mem != null ? LastNote(mem.Date) : "";
+        }
+
+        private static string LastNote(DateTime at) => "Último teste " + ReadoutFormat.When(at);
+
+        private BenchRecord? Last(Func<BenchRecord, bool> test) =>
+            _context?.Settings.BenchRecords.Where(test).OrderByDescending(r => r.Date).FirstOrDefault();
+
+        private static BenchFigure Figure(BenchStat s) => new(s.Label, s.Value, s.Unit, s.Sub, s.Tone, s.Tip);
+
+        private static BenchFigure Figure(MemRow r) => new(r.Label, r.Value, r.Unit, r.Sub, "", r.Hint);
+
+        /// <summary>
+        /// Os números guardados de um teste; nos resultados de versões antigas, a nota e o que o resumo guardou (o resto fica em
+        /// travessão).
+        /// </summary>
+        private static List<BenchStat> Restore(BenchRecord? r, List<BenchStat> empty, Func<double, string> score)
+        {
+            if (r == null) return empty;
+            if (r.Figures is { Count: > 0 } figures) return figures.Select(f => new BenchStat(f.Label, f.Value, f.Unit, f.Sub, f.Tone, f.Tip)).ToList();
+            var legacy = Legacy(r);
+            var list = empty.Select(s => legacy.FirstOrDefault(f => f.Label == s.Label) is { } f ? s with { Value = f.Value } : s).ToList();
+            list[0] = list[0] with { Value = score(r.Score) };
+            return list;
+        }
+
+        private static List<BenchFigure>? Saved(BenchRecord? r) => r == null ? null : r.Figures ?? Legacy(r);
+
+        /// <summary>O que dá para tirar do resumo de um resultado antigo, sem os números guardados ("84 ns · 36 GB/s · mapa 0,19 s").</summary>
+        private static List<BenchFigure> Legacy(BenchRecord r)
+        {
+            var p = SummaryParts(r.Summary);
+            string Part(int i) => i < p.Length ? p[i] : "";
+            static string Num(string part) => part.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(t => t.Length > 0 && char.IsDigit(t[0])) ?? "";
+            var list = new List<BenchFigure>();
+            void Add(string label, string value) { if (value.Length > 0) list.Add(new BenchFigure(label, value)); }
+            switch (r.Test)
+            {
+                case "gpu":
+                    Add("FPS médio", Num(Part(1)));
+                    Add("Resolução", Part(2));
+                    break;
+                case "sim":
+                    Add("1% low", Num(Part(1).Replace("1% low", "", StringComparison.Ordinal)));
+                    break;
+                case "mem":
+                    Add("Latência da RAM", Num(Part(0)));
+                    Add("Leitura da RAM", Num(Part(1)));
+                    Add("Carregamento do mapa", Num(Part(2)));
+                    break;
+                case "disk":
+                    string[] seq = Num(Part(1)).Split('/');
+                    if (seq.Length == 2) { Add("Leitura sequencial", seq[0]); Add("Escrita sequencial", seq[1]); }
+                    break;
+                default:
+                    if (r.Test.StartsWith("rt:", StringComparison.Ordinal)) Add("FPS, mediana", Num(Part(1)));
+                    break;
+            }
+            return list;
+        }
+
+        /// <summary>As linhas de memória ou disco com os valores guardados (os nomes e as explicações vêm sempre da versão atual).</summary>
+        private static List<MemRow> Merge(List<MemRow> rows, List<BenchFigure>? figures) =>
+            figures is not { Count: > 0 } ? rows
+                : rows.Select(row => figures.FirstOrDefault(f => f.Label == row.Label) is { } f ? row with { Value = f.Value, Sub = f.Sub.Length > 0 ? f.Sub : row.Sub } : row).ToList();
+
         /// <summary>Partes do resumo salvo ("valor · detalhe · detalhe"), o mesmo formato que a Visão geral lê (OverviewView.BenchEvent).</summary>
         private static string[] SummaryParts(string summary) =>
             summary.Split('·', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
@@ -116,12 +219,13 @@ namespace CoreBi.Desktop.Views
             return pct > 0 ? $"{pct:0} % acima do melhor anterior" : $"{-pct:0} % abaixo do melhor anterior";
         }
 
-        private void SaveBenchRecord(string test, double score, string summary)
+        private void SaveBenchRecord(string test, double score, string summary, IEnumerable<BenchFigure>? figures = null, List<double>? trace = null)
         {
             if (_context == null) return;
-            var kind = OverviewView.BenchEvent(new BenchRecord(DateTime.Now, test, score, summary));
+            var record = new BenchRecord(DateTime.Now, test, score, summary) { Figures = figures?.ToList(), Trace = trace };
+            var kind = OverviewView.BenchEvent(record);
             _context.RecordEvent(kind.Icon, "Benchmark concluído", summary, "", kind.Channel);
-            _context.Settings.BenchRecords.Insert(0, new BenchRecord(DateTime.Now, test, score, summary));
+            _context.Settings.BenchRecords.Insert(0, record);
             _context.Settings.BenchRecords = _context.Settings.BenchRecords
                 .GroupBy(r => r.Test)
                 .SelectMany(g => g.Take(10))
@@ -142,6 +246,24 @@ namespace CoreBi.Desktop.Views
             SimHistory.ItemsSource = History(Of(r => r.Test == "sim"), _ => "");
             MemHistory.ItemsSource = History(Of(r => r.Test == "mem"), _ => "");
             DiskHistory.ItemsSource = History(Of(r => r.Test == "disk"), r => SummaryParts(r.Summary).FirstOrDefault() ?? "", valueIndex: 1);
+            // Limpar só aparece com algo para limpar
+            foreach (var (list, clear) in new[] { (GbHistory, GbHistoryClear), (RtHistory, RtHistoryClear), (SimHistory, SimHistoryClear), (MemHistory, MemHistoryClear), (DiskHistory, DiskHistoryClear) })
+                clear.Visibility = list.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void GbHistoryClear_Click(object sender, RoutedEventArgs e) => ClearRecords(sender, r => r.Test == "gpu");
+        private void RtHistoryClear_Click(object sender, RoutedEventArgs e) => ClearRecords(sender, r => r.Test.StartsWith("rt:", StringComparison.Ordinal));
+        private void SimHistoryClear_Click(object sender, RoutedEventArgs e) => ClearRecords(sender, r => r.Test == "sim");
+        private void MemHistoryClear_Click(object sender, RoutedEventArgs e) => ClearRecords(sender, r => r.Test == "mem");
+        private void DiskHistoryClear_Click(object sender, RoutedEventArgs e) => ClearRecords(sender, r => r.Test == "disk");
+
+        /// <summary>Apaga o histórico de um teste (no segundo clique do botão, que confirma no lugar).</summary>
+        private void ClearRecords(object sender, Predicate<BenchRecord> test)
+        {
+            if (_context == null || !ConfirmButton.Confirm(sender)) return;
+            _context.Settings.BenchRecords.RemoveAll(test);
+            _context.SaveSettings();
+            UpdateGameBenchHistory();
         }
 
         private static List<BenchHistoryRow> History(IEnumerable<BenchRecord> records, Func<BenchRecord, string> group, int valueIndex = 0)
@@ -154,7 +276,7 @@ namespace CoreBi.Desktop.Views
                 string value = valueIndex < parts.Length ? parts[valueIndex] : r.Summary;
                 string detail = string.Join(", ", parts.Where((_, i) => i != valueIndex));
                 double b = best[group(r)];
-                return new BenchHistoryRow($"{r.Date:dd/MM HH:mm}", value, detail, b > 0 ? r.Score / b : 0);
+                return new BenchHistoryRow(ReadoutFormat.When(r.Date, compact: true), value, detail, b > 0 ? r.Score / b : 0);
             }).ToList();
         }
 

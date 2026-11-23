@@ -77,14 +77,7 @@ public partial class NetworkView : UserControl
     private static string Mbps(double? v) => v is { } x ? Format(x) : "—";
 
     /// <summary>"hoje às 21:40", "ontem às 18:02" ou "17/11 às 09:12" (outro ano: "17/11/2025"); compacto, sem o "às" (linhas do histórico).</summary>
-    internal static string WhenText(DateTime at, bool compact = false)
-    {
-        var day = at.Date;
-        var today = DateTime.Today;
-        string date = day == today ? "hoje" : day == today.AddDays(-1) ? "ontem"
-            : at.Year == today.Year ? at.ToString("dd/MM", PtBr) : at.ToString("dd/MM/yyyy", PtBr);
-        return compact ? $"{date} {at:HH:mm}" : $"{date} às {at:HH:mm}";
-    }
+    internal static string WhenText(DateTime at, bool compact = false) => ReadoutFormat.When(at, compact);
 
     private static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpper(text[0], PtBr) + text[1..];
 
