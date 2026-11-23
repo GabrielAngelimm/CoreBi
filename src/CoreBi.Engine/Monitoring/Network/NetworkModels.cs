@@ -124,7 +124,42 @@ internal sealed class NetworkTransfer
         long bytes = Interlocked.Read(ref Bytes);
         double secs = Clock.Elapsed.TotalSeconds;
         double start = Interlocked.Read(ref _measurementStartTicks) / (double)Stopwatch.Frequency;
-        return CalculateMbps(bytes, secs, Interlocked.Read(ref _measurementStartBytes), start);
+        double? sustained;
+        lock (_samples) sustained = SustainedMbps(_samples, start);
+        return sustained ?? CalculateMbps(bytes, secs, Interlocked.Read(ref _measurementStartBytes), start);
+    }
+
+    /// <summary>Guarda o total recebido até agora; quem mede chama a cada <see cref="SampleSeconds"/>.</summary>
+    public void Sample()
+    {
+        lock (_samples) _samples.Add((Clock.Elapsed.TotalSeconds, Interlocked.Read(ref Bytes)));
+    }
+
+    internal const double SampleSeconds = 0.25;
+    private const int WindowSamples = 4, MinimumWindows = 8;
+    private readonly List<(double Seconds, long Bytes)> _samples = new();
+
+    /// <summary>
+    /// Velocidade sustentada, do jeito dos testes de velocidade comuns: a taxa em janelas de 1 s (deslizando a cada 0,25 s)
+    /// depois do aquecimento, sem as 30 % mais lentas (subida do TCP, soluços do Wi-Fi) e as 10 % mais rápidas (rajadas
+    /// de buffer), e a média do resto. Com menos de 8 janelas (teste curto ou interrompido) não há base e vale a média simples.
+    /// </summary>
+    internal static double? SustainedMbps(IReadOnlyList<(double Seconds, long Bytes)> samples, double fromSeconds)
+    {
+        int first = 0;
+        while (first < samples.Count && samples[first].Seconds < fromSeconds - 1e-6) first++;
+        var rates = new List<double>();
+        for (int i = first + WindowSamples; i < samples.Count; i++)
+        {
+            var (t0, b0) = samples[i - WindowSamples];
+            var (t1, b1) = samples[i];
+            if (t1 - t0 > 0.5 && b1 >= b0) rates.Add((b1 - b0) * 8 / 1e6 / (t1 - t0));
+        }
+        if (rates.Count < MinimumWindows) return null;
+        rates.Sort();
+        int slow = (int)(rates.Count * 0.3), fast = (int)(rates.Count * 0.1);
+        var kept = rates.Skip(slow).Take(rates.Count - slow - fast).ToList();
+        return kept.Count > 0 && kept.Average() > 0 ? kept.Average() : null;
     }
 
     internal static double? CalculateMbps(long bytes, double seconds, long warmupBytes, double warmupSeconds)

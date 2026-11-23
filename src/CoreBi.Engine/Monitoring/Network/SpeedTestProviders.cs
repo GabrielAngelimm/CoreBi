@@ -14,9 +14,9 @@ internal interface ISpeedTestProvider
 
 internal sealed class CloudflareSpeedProvider(NetworkRateLimitStore rateLimit) : ISpeedTestProvider
 {
-    public const int DefaultDownloadSeconds = 8;
+    public const int DefaultDownloadSeconds = 10;
     public const int DefaultUploadSeconds = 6;
-    private const int DownloadStreams = 4, UploadStreams = 3, DownloadWarmupMs = 1000, UploadGraceMs = 3000;
+    private const int DownloadStreams = 6, UploadStreams = 3, DownloadWarmupMs = 1000, UploadGraceMs = 3000;
 
     public string DisplayName => "Cloudflare";
     public int DownloadSeconds => DefaultDownloadSeconds;

@@ -72,8 +72,8 @@ public partial class BenchmarksView
         static string N(double? v) => v is double d ? $"{d:N0}" : "—";
         return new()
         {
-            new("Leitura sequencial", N(r?.SeqReadMBs), "MiB/s", "Blocos de 1 MB", "Pesa ao copiar arquivos grandes e ao carregar jogos."),
-            new("Escrita sequencial", N(r?.SeqWriteMBs), "MiB/s", "Blocos de 1 MB, direto no disco",
+            new("Leitura sequencial", N(r?.SeqReadMBs), "MB/s", "Blocos de 1 MB, 8 na fila", "Pesa ao copiar arquivos grandes e ao carregar jogos."),
+            new("Escrita sequencial", N(r?.SeqWriteMBs), "MB/s", "Blocos de 1 MB, 8 na fila, direto no disco",
                 "Pesa ao instalar jogos e salvar arquivos grandes. SSDs com cache SLC desaceleram depois de dezenas de GB."),
             new("Leitura aleatória de 4 KB", N(r?.ReadIopsQ1), "IOPS", r is null ? "Uma por vez" : $"Uma por vez, latência média de {r.ReadLatencyUs:0.0} µs",
                 "É o que mais pesa na rapidez do Windows e dos programas."),
@@ -119,7 +119,7 @@ public partial class BenchmarksView
             DiskStatus.Text = "Concluído";
             DiskDetail.Text = "";
             SaveBenchRecord("disk", r.Score,
-                $"{r.Drive} · {r.SeqReadMBs:N0}/{r.SeqWriteMBs:N0} MiB/s · 4K {r.ReadIopsQ1 / 1000:0.#}k IOPS", DiskRows(r).Select(Figure));
+                $"{r.Drive} · {r.SeqReadMBs:N0}/{r.SeqWriteMBs:N0} MB/s · 4K {r.ReadIopsQ1 / 1000:0.#}k IOPS", DiskRows(r).Select(Figure));
         }
         catch (OperationCanceledException) { DiskStatus.Text = ""; DiskDetail.Text = ""; } // cancelado por você: a placa fica limpa, como nos outros testes
         catch (Exception ex)

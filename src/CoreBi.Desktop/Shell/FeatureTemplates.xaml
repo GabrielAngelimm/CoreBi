@@ -21,7 +21,7 @@
         </DrawingBrush.Drawing>
     </DrawingBrush>
 
-    <!-- Ficha técnica da placa de vídeo: uma linha chave/valor com a geometria da ficha de Sistema (fio em cima, chave 44 %,
+    <!-- Ficha técnica da placa de vídeo: uma linha chave/valor com a geometria da Ficha técnica (fio em cima, chave 44 %,
          vão de 16, valor 56 %, letra de 14) para as duas fichas lerem igual. O mouse acende o fundo, que avança 10 px para os
          lados. A nota curta ("referência") fica ao lado do valor, num tom abaixo. -->
     <DataTemplate x:Key="GpuSpecRow">

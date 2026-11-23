@@ -29,7 +29,7 @@ As páginas seguem os grupos da barra lateral.
 | Grupo | Páginas | O que oferecem |
 | --- | --- | --- |
 | No topo | Visão geral | Resumo do PC: uso das peças, saúde do sistema, últimos testes e dispositivos conectados |
-| Monitoramento | Sistema, Sensores, Placa de vídeo, Discos, Energia, Rede | Ficha técnica com relatório para exportar (HTML, PDF ou JSON), todos os sensores com mínimo e máximo, a placa de vídeo ao vivo, vida útil e SMART dos discos, consumo da sessão e plano de energia, latência, perda e velocidade da conexão |
+| Monitoramento | Ficha técnica, Sensores, Placa de vídeo, Armazenamento, Energia, Rede | Especificações completas com relatório para exportar (HTML, PDF ou JSON), todos os sensores com mínimo e máximo, a placa de vídeo ao vivo, vida útil e SMART dos discos, consumo da sessão e plano de energia, latência, perda e velocidade da conexão |
 | Jogos e desempenho | OverlayBi, Teste de carga, Benchmark, Gargalo | Overlay de FPS e sensores por cima do jogo (também em tela cheia exclusiva, com o RTSS), testes de estabilidade de CPU, RAM e GPU com corte por temperatura, benchmarks de CPU, GPU, ray tracing, memória e disco com histórico, e a leitura de quem limita o FPS durante o jogo |
 | Ferramentas | Instalar apps, Drivers, Inicialização | Catálogo de 73 apps instalados pelo winget em pacote, drivers da placa de vídeo e do Windows Update com backup e restauração, e os programas que abrem com o Windows, com backup antes de remover |
 

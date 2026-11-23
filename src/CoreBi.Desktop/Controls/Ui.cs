@@ -202,7 +202,7 @@ public static class Ui
 
     /// <summary>
     /// Copia um texto. A área de transferência às vezes está presa por outro programa, então tenta de novo antes de desistir
-    /// (Sistema e Drivers).
+    /// (Ficha técnica e Drivers).
     /// </summary>
     public static async Task<bool> TryCopyAsync(string text)
     {

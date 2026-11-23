@@ -5,7 +5,7 @@ using CoreBi.Engine.Monitoring.Storage;
 
 namespace CoreBi.Desktop;
 
-/// <summary>Base dos instrumentos da página Discos (canal padrão Storage).</summary>
+/// <summary>Base dos instrumentos da página Armazenamento (canal padrão Storage).</summary>
 public abstract class DiskInstrument : InstrumentBase
 {
     protected DiskInstrument() => SetResourceReference(ChannelBrushProperty, "Storage");

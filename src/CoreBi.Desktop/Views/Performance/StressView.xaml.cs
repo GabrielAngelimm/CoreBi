@@ -124,7 +124,7 @@ public partial class StressView : UserControl, IDisposable
     }
     private void TempChart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
 
-    // Com o mouse em cima, o gráfico mostra o valor exato daquele segundo, como os gráficos da Visão geral e dos Discos
+    // Com o mouse em cima, o gráfico mostra o valor exato daquele segundo, como os gráficos da Visão geral e de Armazenamento
     private double? _hoverX;
 
     // Com o mouse em cima, o gráfico congela (como na Visão geral): as leituras novas continuam chegando, mas só aparecem ao tirar

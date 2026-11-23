@@ -182,8 +182,8 @@
                 </Grid.RowDefinitions>
 
                 <local:PageHeaderPanel Style="{StaticResource PageHead}">
-                    <TextBlock Text="Discos" Style="{StaticResource PageTitle}" />
-                    <TextBlock Text="Saúde, temperatura e espaço de cada disco." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                    <TextBlock Text="Armazenamento" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Saúde, vida útil, temperatura e espaço de cada SSD e HD." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                     <StackPanel Style="{StaticResource PageActions}">
                         <TextBlock x:Name="DiskHealthStatus" Text="Lendo os discos…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" />
                         <Button x:Name="BtnDiskRefresh" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnDiskRefresh_Click" />
@@ -226,7 +226,7 @@
                         </Grid.RowDefinitions>
 
                         <!--
-                            Placa de identificação no padrão de Sistema e Placa de vídeo (fundo Selected com o fundo claro do canal Storage
+                            Placa de identificação no padrão da Ficha técnica e Placa de vídeo (fundo Selected com o fundo claro do canal Storage
                             e fio LineStrong): o ícone do disco de 44 px, o tipo e a conexão como sobretítulo na cor do canal, o modelo em
                             DIN 30 e a especificação numa frase. Sem selo: saudável é silencioso (o veredito fica no cartão Integridade);
                             atenção, crítico e "sem dados" ganham a linha com o motivo sob a frase. À direita, separado por fio, o espaço.

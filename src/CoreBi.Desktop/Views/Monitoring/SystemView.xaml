@@ -265,7 +265,7 @@
                                    Visibility="{Binding Free, Converter={StaticResource NotEmptyVis}}" />
                         <!-- Saúde que o Windows informa para o disco -->
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0" Visibility="{Binding Health, Converter={StaticResource NotEmptyVis}}"
-                                    ToolTip="Estado que o Windows informa. Detalhes de vida útil e temperatura em Discos.">
+                                    ToolTip="Estado que o Windows informa. Detalhes de vida útil e temperatura em Armazenamento.">
                             <TextBlock Text="{Binding Health}" FontSize="13" Foreground="{DynamicResource Fg}" />
                         </StackPanel>
                     </StackPanel>
@@ -313,8 +313,8 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <local:PageHeaderPanel Style="{StaticResource PageHead}">
-            <TextBlock Text="Sistema" Style="{StaticResource PageTitle}" />
-            <TextBlock Text="A ficha completa do seu computador, peça por peça." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+            <TextBlock Text="Ficha técnica" Style="{StaticResource PageTitle}" />
+            <TextBlock Text="As especificações completas do seu computador, peça por peça." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
             <StackPanel Style="{StaticResource PageActions}">
                 <TextBlock x:Name="SystemSub" Text="Lendo informações do sistema…" Style="{StaticResource PageStatus}" Margin="0,0,20,2" />
                 <Button x:Name="BtnReport" Style="{StaticResource HeaderPrimary}" local:Ui.Icon="&#xE896;" Content="Exportar relatório" Click="BtnReport_Click"

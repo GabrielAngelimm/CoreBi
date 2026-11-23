@@ -107,9 +107,19 @@ internal static class MlabSpeedTest
             transfer.Clock.Restart();
             using var phase = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token);
             phase.CancelAfter(TimeSpan.FromSeconds(13));
+            // Aquecimento de 1 s e amostras a cada 0,25 s para a velocidade sustentada, como na Cloudflare
             var warmup = Task.Run(async () =>
             {
-                try { await Task.Delay(1000, phase.Token); transfer.FinishWarmup(); }
+                try
+                {
+                    bool warm = false;
+                    while (true)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(NetworkTransfer.SampleSeconds), phase.Token);
+                        if (!warm && transfer.Clock.Elapsed >= TimeSpan.FromSeconds(1)) { transfer.FinishWarmup(); warm = true; }
+                        transfer.Sample();
+                    }
+                }
                 catch (OperationCanceledException) { }
             });
             var buffer = new byte[65_536];
@@ -123,6 +133,7 @@ internal static class MlabSpeedTest
             transfer.Clock.Stop();
             phase.Cancel();
             await warmup;
+            transfer.Sample();
             await CloseOutput(socket, ct);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested) { transfer.Incomplete = true; transfer.Error = "tempo de espera esgotado"; }

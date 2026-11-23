@@ -154,7 +154,7 @@ public sealed class RunTrace : InstrumentBase
         DrawHover(dc, w, top, plotH, samples, points);
     }
 
-    /// <summary>A leitura sob o mouse, no desenho da dica dos gráficos de Discos e Energia: fio, ponto e caixa com o valor.</summary>
+    /// <summary>A leitura sob o mouse, no desenho da dica dos gráficos de Armazenamento e Energia: fio, ponto e caixa com o valor.</summary>
     private void DrawHover(DrawingContext dc, double w, double top, double plotH, List<Point> samples, List<Point> points)
     {
         if (_hoverX is not double mx) return;

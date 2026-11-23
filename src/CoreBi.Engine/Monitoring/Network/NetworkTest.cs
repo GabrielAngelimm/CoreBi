@@ -19,10 +19,12 @@ public static class NetworkTest
     private const int PingCount = 30, PingIntervalMs = 200, TickMs = 200, RetryDelayMs = 400;
     private const int InitialUploadBytes = 64_000, MaximumUploadBytes = 25_000_000, DownloadRequestBytes = 50_000_000;
     private const int MaxConsecutiveFailures = 3;
-    internal const long DownloadBudgetBytes = 350_000_000, UploadBudgetBytes = 200_000_000;
+    // Teto de dados por teste. Com 350 MB (nas versões de teste) uma conexão de 600 Mbps acabava o download em menos de 5 s,
+    // quase todo em subida do TCP; 1 GB dá a janela inteira até perto de 1 Gbps.
+    internal const long DownloadBudgetBytes = 1_000_000_000, UploadBudgetBytes = 400_000_000;
 
-    // Faixas da barra de progresso, proporcionais ao tempo de cada fase na Cloudflare (≈ 6 s de pings, 8 s de download e 6 s de upload).
-    private const double LatencyStart = 0.02, DnsStart = 0.31, LatencyEnd = 0.33, DownloadEnd = 0.71, UploadEnd = 0.98;
+    // Faixas da barra de progresso, proporcionais ao tempo de cada fase na Cloudflare (≈ 6 s de pings, 10 s de download e 6 s de upload).
+    private const double LatencyStart = 0.02, DnsStart = 0.28, LatencyEnd = 0.30, DownloadEnd = 0.74, UploadEnd = 0.98;
 
     private static HttpClient CreateHttpClient()
     {
@@ -322,13 +324,17 @@ public static class NetworkTest
                 }
             }
         })).ToArray();
-        try
+        // Amostra o total a cada 0,25 s (a base da velocidade sustentada) e encerra o aquecimento uma vez, no tempo dele
+        var all = Task.WhenAll(tasks);
+        bool warm = false;
+        var tick = TimeSpan.FromSeconds(NetworkTransfer.SampleSeconds);
+        while (await Task.WhenAny(all, Task.Delay(tick, CancellationToken.None)) != all)
         {
-            await Task.Delay(warmup, cts.Token);
-            transfer.FinishWarmup();
+            if (!warm && transfer.Clock.Elapsed >= warmup) { transfer.FinishWarmup(); warm = true; }
+            transfer.Sample();
         }
-        catch (OperationCanceledException) { }
-        await Task.WhenAll(tasks);
+        await all;
+        transfer.Sample();
         transfer.Clock.Stop();
         ct.ThrowIfCancellationRequested();
         return limit.Limited ? null : transfer.Mbps();

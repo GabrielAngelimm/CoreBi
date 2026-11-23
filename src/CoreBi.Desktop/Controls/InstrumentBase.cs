@@ -12,7 +12,7 @@ public interface ILiveMotionHost
 }
 
 /// <summary>
-/// Base compartilhada de todos os instrumentos desenhados no DrawingContext (Discos, Energia, GPU e Benchmarks).
+/// Base compartilhada de todos os instrumentos desenhados no DrawingContext (Armazenamento, Energia, GPU e Benchmarks).
 /// Os pincéis seguem a paleta via SetResourceReference e acompanham a troca de tema automaticamente.
 /// </summary>
 public abstract class InstrumentBase : FrameworkElement

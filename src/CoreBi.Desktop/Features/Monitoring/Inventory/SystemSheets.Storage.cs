@@ -47,7 +47,7 @@ public static partial class SystemSheets
             },
             Disks = disks,
             Groups = groups,
-            Link = new("Saúde, temperatura e vida útil em Discos", "PageDisks"),
+            Link = new("Saúde, temperatura e vida útil em Armazenamento", "PageDisks"),
         };
     }
 

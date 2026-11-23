@@ -94,7 +94,7 @@ internal static partial class Program
             var written = new SensorRow { Name = "Data Written", HardwareType = HardwareType.Storage, Type = SensorType.Data };
             written.Update(1200, null, null);
             Require(hot.Level == 1 && hot.Number == 64f.ToString("0.0"), "Disk temperature verdict or fixed decimals");
-            // Sensores e Discos usam os mesmos limites (ThermalLimits): NVMe a 72 °C é atenção nas duas páginas.
+            // Sensores e Armazenamento usam os mesmos limites (ThermalLimits): NVMe a 72 °C é atenção nas duas páginas.
             SensorRow Temp(string name, string root, HardwareType type, float value)
             {
                 var row = new SensorRow { Id = root + "/temperature/0", Name = name, RootId = root, RootType = type, HardwareType = type, Type = SensorType.Temperature };

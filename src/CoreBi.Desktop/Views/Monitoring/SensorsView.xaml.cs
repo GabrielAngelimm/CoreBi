@@ -115,7 +115,7 @@ public partial class SensorsView : UserControl
 
     internal void SetStatus(string text) => StatusText.Text = text;
 
-    /// <summary>Atalho de outra página (Sistema): abre já filtrado no componente ("cpu", "ram" ou "board"), sem filtro de tipo nem busca.</summary>
+    /// <summary>Atalho de outra página (Ficha técnica): abre já filtrado no componente ("cpu", "ram" ou "board"), sem filtro de tipo nem busca.</summary>
     internal void ShowComponent(string target)
     {
         _pending = target;

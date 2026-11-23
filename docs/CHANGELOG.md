@@ -2,56 +2,46 @@
 
 ## 1.0.0 — 2026-11-23
 
-Primeira versão completa: as 14 páginas foram refinadas uma a uma e o app passou por uma revisão final de código, interface e documentação.
+A primeira versão do CoreBi: monitoramento, diagnóstico e testes de hardware para Windows num app só, sem conta e sem servidor próprio. São 14 páginas em quatro grupos, com tema claro e escuro, e tudo roda no seu PC.
 
-### Páginas
+### Visão geral
 
-- **Visão geral** (#48): forma mais arredondada, anéis de uso, componentes e atividade recente com testes e dispositivos conectados.
-- **Sistema** (#50): abas com 12 px de vão, versão do app no topo e relatório personalizado (escolha das partes; HTML, PDF ou JSON), num desenho novo.
-- **Sensores e Placa de vídeo** (#53, #56): cabeçalho com respiro e ficha técnica igual à de Sistema; a placa de vídeo cabe numa tela, com as leituras ao vivo na faixa da placa.
-- **Discos** (#55): a página toda para os discos, faixa de vida útil e régua térmica.
-- **Energia** (#54, #57): sessão de consumo no cabeçalho, troca de plano suave e Tensões ocupando o cartão.
-- **Rede** (#60): histórico dos testes, instrumento centrado e números animados.
-- **OverlayBi** (#62): monitor novo, prévia que desliza até o canto, itens em pílula com LED e "Onde funciona" em tópicos.
-- **Gargalo, Benchmark e Teste de carga** (#63): páginas refinadas, com histórico e os últimos resultados de cada teste.
-- **Inicialização e Drivers** (#64): tabela única, apps da Microsoft Store na inicialização, backup e restauração dos drivers na própria janela.
-- **Instalar apps** (#58): catálogo de 73 apps em 13 categorias, com ícones oficiais, kits, busca, filtros e o pacote na ordem em que vai instalar.
-- **Barra lateral** (#65): grupo Jogos e desempenho, malha única de ícone e texto, tema Claro/Escuro em pílula com troca suave. A central de monitoramento saiu da barra: repetia a Visão geral.
+- O PC numa tela só: uso do processador e da placa de vídeo, anéis de RAM, VRAM e disco, saúde do sistema, últimos testes e dispositivos conectados. Cada item leva à página dele.
 
-### Interface
+### Monitoramento
 
-- Navegação fluida (#46, #47, #59): a página troca no instante do clique, os painéis acendem em sequência e a primeira carga mostra o esqueleto da página inteira. A leitura dos sensores saiu da thread da janela, que deixou de travar ~75 ms a cada segundo.
-- Escala única de texto e recuo óptico de 24 px no app todo (#55), cabeçalhos de cartão de 34 px e raios em quatro degraus (#49), botões, campos e filtros em pílula (#51, #52).
-- Revisão final: texto apagado com contraste AA nos dois temas, eixos dos gráficos no piso de 12 px, anel de foco que acompanha a forma de cada controle, botões que afundam ao clicar, botões só de glifo com nome para o leitor de tela e todo o movimento seguindo o "Mostrar animações" do Windows.
-- Textos padronizados: espaço antes de "%", estados vazios iguais, status do cabeçalho com " · " e datas com "ontem" e o ano quando muda.
+- **Ficha técnica:** as especificações completas do computador em seis abas (sistema operacional, processador, placa de vídeo, memória RAM, placa-mãe e BIOS, armazenamento). Exporta um relatório em HTML, PDF (A4) ou JSON com as partes que você escolher, sem números de série nem o nome do usuário.
+- **Sensores:** todos os sensores do hardware com valor atual, mínimo e máximo, filtrados por componente, por tipo ou pela busca.
+- **Placa de vídeo:** a placa ao vivo numa tela (uso, clocks, temperatura, consumo, memória e o que limita o clock) e a ficha técnica completa.
+- **Armazenamento:** saúde, vida útil, temperatura e espaço de cada SSD e HD, com SMART, odômetro (horas ligado, total gravado e lido) e régua térmica.
+- **Energia:** consumo da sessão, plano de energia com troca na hora, bateria (capacidade, desgaste e ciclos) e tensões.
+- **Rede:** latência, jitter e perda até o roteador e a internet, tempo de DNS, velocidade sustentada de download e upload (Cloudflare, com o M-Lab de reserva), latência sob carga e histórico dos testes.
 
-### Segurança e privacidade
+### Jogos e desempenho
 
-- DLLs nativas carregadas só do System32 (a `nvml.dll` também da pasta NVSMI da NVIDIA), e o pacote publicado deixa as DLLs ao lado do `CoreBi.exe` em vez de extraí-las para a pasta temporária do usuário.
-- O Edge usado no PDF vem só do registro da máquina ou de Program Files, e um atalho no lugar do PDF gerado é recusado.
-- Relatório HTML com política de conteúdo restrita e escape do CSS; consultas WMI e o ponto de restauração com escape; respostas dos fabricantes limitadas a 8 MB.
-- Memória do RTSS malformada vira "Incompatível" em vez de derrubar o app.
+- **OverlayBi:** FPS, processador, placa de vídeo, VRAM e RAM por cima do jogo, com a posição escolhida numa prévia do monitor. Funciona também em tela cheia exclusiva com o RTSS, e **Ctrl + Shift + O** liga e desliga mesmo com o jogo aberto.
+- **Teste de carga:** estabilidade de processador, RAM e placa de vídeo, com duração escolhida e corte automático por temperatura.
+- **Benchmark:** render no processador, cena de jogo e ray tracing na placa de vídeo, simulação de jogo, memória e carregamento, e disco (sequencial com 8 pedidos na fila, como os benchmarks de disco conhecidos, e 4K aleatório). Cada teste guarda o seu histórico.
+- **Gargalo:** durante o jogo, estima o que está segurando o FPS (processador, placa de vídeo, memória ou temperatura) e explica o porquê.
 
-### Instalador e distribuição
+### Ferramentas
 
-- Instalador novo: segue o tema claro ou escuro do Windows, com a barra de título no mesmo tom, abre com boas-vindas e fecha com a conclusão no painel da marca (o símbolo e a cor de cada peça), desenhado para cada escala de tela.
-- A release sai do GitHub Actions a partir da `main`: compila, testa e gera o instalador, o zip portátil com a pasta inteira, o `SHA256SUMS.txt` e as notas numa máquina limpa.
-- O programa publicado vai pré-compilado (ReadyToRun): a janela abre cerca de 15% mais rápido e o processador fica mais livre logo depois de abrir.
-- Licença MIT na raiz, que também vai junto do programa publicado.
+- **Instalar apps:** catálogo de 73 apps em 13 categorias, com ícones oficiais, kits prontos, busca e instalação em pacote pelo winget.
+- **Drivers:** o driver da placa de vídeo com download oficial e assinatura conferida, as atualizações do Windows Update e backup e restauração de todos os drivers.
+- **Inicialização:** os programas que abrem com o Windows, inclusive os da Microsoft Store, para ativar, desativar ou remover com backup.
 
-### Código e testes
+### No app todo
 
-- Auditoria de arquitetura (#44): o Engine guarda as regras que a interface repetia, as páginas seguem um contrato só (Tick, RefreshAsync, RefreshHardware, RedrawTheme) e o Desktop ganhou a pasta Controls.
-- Revisão final: limites de temperatura num lugar só, NVML pela placa certa em PCs com duas placas, sessões ETW órfãs limpas ao abrir, cultura pt-BR fixada, cada página isolada para que uma falha não derrube as outras, erros antes silenciosos no log e a NVML lida só quando a página aparece.
-- Testes das regras que viram veredito na tela (1% low, notas, saúde de disco, rede, equilíbrio, históricos, configurações, bateria e plano de energia); saíram verificações que nunca falhavam.
-- Cerca de 600 linhas de estilos e controles sem uso removidas.
-- Corrigidas regressões da organização anterior: capacidades de disco como no Explorador (1 TB = 931 GB), vereditos em caixa de frase, overlay pausado durante os benchmarks de GPU e o TPM ausente como "Ausente".
+- Paleta de comandos (**Ctrl + K**) que leva a qualquer página e às ações mais usadas.
+- Tema claro e escuro, cada peça com a sua cor em todas as telas e animações que seguem o "Mostrar animações" do Windows.
+- Leituras honestas: o que o hardware não informa aparece como ausente, nunca como zero.
+- Sem conta, sem telemetria e sem servidor próprio. A internet só é usada quando você pede: testar a conexão, buscar drivers ou instalar apps.
 
-### Ferramentas e dependências
+### Instalação
 
-- Os scripts de `tools/` baixam o SDK fixado quando ele falta (#36).
-- CI: escrita no repositório só num job pequeno que publica as capturas, `licenses/` e `THIRD-PARTY.md` conferidos com o lock, aviso quando as capturas falham e tempo limite nos testes.
-- TraceEvent 4.0.2 (#61).
+- Instalador no tema claro ou escuro do Windows. Ele oferece o PawnIO (sensores internos do processador) e o RTSS (overlay em tela cheia exclusiva), baixados pelo winget das fontes oficiais. Também há uma versão portátil.
+- O runtime do .NET vai junto e o programa vem pré-compilado, para abrir mais rápido.
+- Código aberto em C# com .NET 10 e WPF, sob a licença MIT.
 
 ## 0.2.6 — 2026-11-20 (sem tag)
 
