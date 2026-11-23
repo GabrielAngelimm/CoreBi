@@ -195,7 +195,9 @@ public static class Skeleton
         });
         // O teto conta a partir de quando a página aparece: as páginas são montadas na abertura do app, e um teto contado dali
         // venceria antes da visita, soltando os companheiros e deixando a página em parte esqueleto, em parte pronta
-        hold.Cap = new DispatcherTimer(PageHoldCap, DispatcherPriority.Background, (_, _) => Release(page, hold), page.Dispatcher);
+        // (o construtor com o tique já liga o relógio: este não)
+        hold.Cap = new DispatcherTimer(DispatcherPriority.Background, page.Dispatcher) { Interval = PageHoldCap };
+        hold.Cap.Tick += (_, _) => Release(page, hold);
         if (page.IsVisible) hold.Cap.Start();
         else
         {
