@@ -50,3 +50,6 @@ public sealed class WuDriver
     public string UpdateId { get; init; } = "";
     public int Revision { get; init; }
 }
+
+/// <summary>Dispositivo com problema no Gerenciador de Dispositivos (código do Windows e o que ele quer dizer).</summary>
+public sealed record DeviceProblem(string Name, string Class, int Code, string Meaning);

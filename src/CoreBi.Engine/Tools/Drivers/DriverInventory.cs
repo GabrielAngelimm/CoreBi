@@ -47,6 +47,46 @@ public static class DriverInventory
         return list.OrderBy(r => r.Class).ThenBy(r => r.Device).ToList();
     }
 
+    /// <summary>
+    /// Dispositivos presentes com problema (o ponto de exclamação do Gerenciador de Dispositivos). Ficam de fora os desativados
+    /// por quem usa (código 22) e os que não estão conectados (45), que não são defeito.
+    /// </summary>
+    public static List<DeviceProblem> ReadProblems()
+    {
+        var list = new List<DeviceProblem>();
+        WmiQuery.ForEach("SELECT Name, Description, PNPClass, ConfigManagerErrorCode, Present FROM Win32_PnPEntity WHERE ConfigManagerErrorCode <> 0", o =>
+        {
+            int code = WmiQuery.GetString(o, "ConfigManagerErrorCode") is { } c && int.TryParse(c, out int n) ? n : 0;
+            if (code is 0 or 22 or 45 || WmiQuery.GetNullableBool(o, "Present") == false) return;
+            string name = WmiQuery.GetString(o, "Name") is { Length: > 0 } nm ? nm : WmiQuery.GetString(o, "Description") ?? "Dispositivo desconhecido";
+            list.Add(new DeviceProblem(name, WmiQuery.GetString(o, "PNPClass") ?? "", code, ProblemMeaning(code)));
+        }, diagnosticOp: "drivers.problems");
+        return list.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+    }
+
+    /// <summary>Os códigos do Gerenciador de Dispositivos em português claro (os mais comuns; o resto vira "código N").</summary>
+    internal static string ProblemMeaning(int code) => code switch
+    {
+        1 or 40 => "Configuração do driver incorreta",
+        3 or 39 => "Driver corrompido ou ausente",
+        10 => "O dispositivo não consegue iniciar",
+        12 => "Sem recursos livres para o dispositivo",
+        14 => "Reinicie o PC para o dispositivo funcionar",
+        18 or 24 => "Reinstale o driver",
+        19 => "Registro do dispositivo com problema",
+        28 => "Driver não instalado",
+        29 => "Desativado pela BIOS",
+        31 => "O driver não carregou direito",
+        32 => "O serviço do driver está desligado",
+        37 or 41 => "O driver não conseguiu iniciar o dispositivo",
+        38 => "Reinicie o PC: o driver antigo ainda está na memória",
+        43 => "O Windows parou o dispositivo após um erro",
+        47 => "Pronto para ser removido com segurança",
+        48 => "Driver bloqueado por incompatibilidade",
+        52 => "Assinatura do driver não verificada",
+        _ => $"Problema código {code}",
+    };
+
     public static List<GpuDriverStatus> ReadGpus()
     {
         var list = new List<GpuDriverStatus>();

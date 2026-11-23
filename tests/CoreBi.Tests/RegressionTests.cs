@@ -204,6 +204,42 @@ internal static partial class Program
             Require(working.Backups.Count == 1, $"Corrupt JSON broke backup listing (count={working.Backups.Count})");
             return new { rollbackClean = true, corruptIsolated = true };
         });
+        Check("startup: friendly names, boot events and Store assets", () =>
+        {
+            Require(StartupManager.LooksLikeId("GoogleChromeAutoLaunch_579CF1F2F611610737FD8852B51") && StartupManager.LooksLikeId("{0F6A3B2C-1D4E-4F5A-8B9C-0D1E2F3A4B5C}")
+                    && !StartupManager.LooksLikeId("Discord") && !StartupManager.LooksLikeId("EADM"), "Entry names that are ids");
+            string xml = "<Event xmlns='http://schemas.microsoft.com/win/2004/08/events/event'><EventData><Data Name='BootStartTime'>2026-11-22T19:10:17.000000000Z</Data>"
+                         + "<Data Name='BootTime'>31842</Data><Data Name='MainPathBootTime'>17320</Data><Data Name='BootPostBootTime'>14522</Data><Data Name='BootNumStartupApps'>9</Data></EventData></Event>";
+            var boot = BootTimes.Parse(xml, null) ?? throw new InvalidOperationException("Boot event not parsed");
+            Require(boot.TotalMs == 31842 && boot.MainPathMs == 17320 && boot.PostBootMs == 14522 && boot.StartupApps == 9, "Boot event fields");
+            Require(boot.When == new DateTime(2026, 11, 22, 19, 10, 17, DateTimeKind.Utc).ToLocalTime(), "Boot start time is UTC");
+            Require(BootTimes.Parse(xml.Replace("31842", "0"), null) == null, "Empty boot accepted");
+            using var folder = new CaseFolder();
+            string assets = Directory.CreateDirectory(Path.Combine(folder.Path, "Assets")).FullName;
+            File.WriteAllText(Path.Combine(assets, "Square44x44Logo.scale-200.png"), "");
+            File.WriteAllText(Path.Combine(assets, "Square44x44Logo.targetsize-32.png"), "");
+            Require(StoreStartup.AssetFile(folder.Path, @"Assets\Square44x44Logo.png")?.EndsWith("targetsize-32.png") == true, "Store icon picks the 32 px variant");
+            return new { boot = boot.TotalMs };
+        });
+
+        Check("drivers: backup folders, packages and device problem codes", () =>
+        {
+            using var folder = new CaseFolder();
+            string older = Directory.CreateDirectory(Path.Combine(folder.Path, "20261101-101010-abcdef12")).FullName;
+            File.WriteAllText(Directory.CreateDirectory(Path.Combine(older, "nvlti.inf_amd64_1")).FullName + Path.DirectorySeparatorChar + "nvlti.inf", "");
+            string newer = Directory.CreateDirectory(Path.Combine(folder.Path, "Drivers PC 2026-11-23 07h40")).FullName;
+            foreach (string pkg in new[] { "a.inf_amd64_1", "b.inf_amd64_2" })
+                File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(newer, pkg)).FullName, pkg.Split('_')[0]), "");
+            Directory.SetCreationTime(older, new DateTime(2026, 11, 1));
+            Directory.SetCreationTime(newer, new DateTime(2026, 11, 23));
+            Require(DriverBackup.Find(newer)?.Count == 2, "Backup folder read directly");
+            Require(DriverBackup.Find(folder.Path)?.Folder == newer, "Parent folder picks the newest backup");
+            Require(DriverBackup.Find(Path.Combine(folder.Path, "missing")) == null && DriverBackup.Find(Directory.CreateDirectory(Path.Combine(folder.Path, "empty")).FullName) == null,
+                "Folder without packages is not a backup");
+            Require(DriverInventory.ProblemMeaning(28) == "Driver não instalado" && DriverInventory.ProblemMeaning(999) == "Problema código 999", "Device problem text");
+            return new { packages = 2 };
+        });
+
         Check("formatting: Explorer capacities, vendor disk sizes and sentence-case verdicts", () =>
         {
             // 1 TB anunciado = 931 GB no Explorador (corta as casas acima de 100); o disco mostra a medida do fabricante.

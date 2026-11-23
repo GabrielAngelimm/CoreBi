@@ -35,7 +35,9 @@ internal sealed class StartupBackupStore
         {
             try
             {
-                result.Add(Read(Path.GetFileNameWithoutExtension(file)));
+                var backup = Read(Path.GetFileNameWithoutExtension(file));
+                backup.RemovedAt ??= File.GetLastWriteTime(file); // backups de antes da data na ficha
+                result.Add(backup);
             }
             catch (Exception ex)
             {
@@ -43,6 +45,6 @@ internal sealed class StartupBackupStore
                 DiagnosticLog.Write("startup.backup.corrupt", ex);
             }
         }
-        return result;
+        return result.OrderByDescending(b => b.RemovedAt).ToList();
     }
 }

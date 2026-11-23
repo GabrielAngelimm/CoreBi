@@ -45,6 +45,9 @@ public sealed class AppSettings
     /// <summary>Abrir o relatório logo depois de salvar.</summary>
     public bool ReportOpen { get; set; } = true;
 
+    /// <summary>Drivers: pasta onde o último backup foi feito ou de onde veio a última restauração; null = Documentos\CoreBi-Drivers.</summary>
+    public string? DriverBackupFolder { get; set; }
+
     public static AppSettings Load()
     {
         try
