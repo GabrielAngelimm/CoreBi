@@ -1009,12 +1009,13 @@
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
         <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Padding" Value="12,5,12,3"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
-                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="12,5,12,3" MinHeight="26">
+                    <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="{TemplateBinding Padding}" MinHeight="26">
                         <Grid>
                             <!-- Cópia invisível em seminegrito: o segmento já nasce com a largura do escolhido, então marcar um não desloca os vizinhos -->
                             <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Visibility="Hidden" HorizontalAlignment="Center"/>
@@ -2232,6 +2233,8 @@
     <Style x:Key="ConfigSegment" TargetType="RadioButton" BasedOn="{StaticResource Segment}">
         <Setter Property="Height" Value="34"/>
         <Setter Property="FontSize" Value="14"/>
+        <!-- As colunas são iguais e o texto fica no meio: a folga lateral pequena deixa caber "Sem limite" em quatro colunas -->
+        <Setter Property="Padding" Value="4,5,4,3"/>
     </Style>
     <!-- Linha de ajuste com o nome à esquerda e o campo à direita (corte por temperatura), na altura das teclas -->
     <Style x:Key="ConfigRow" TargetType="Grid">

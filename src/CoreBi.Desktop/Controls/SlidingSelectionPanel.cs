@@ -65,7 +65,10 @@ public sealed class SlidingSelectionPanel : System.Windows.Controls.StackPanel
             widest = Math.Max(widest, c.DesiredSize.Width);
             tallest = Math.Max(tallest, c.DesiredSize.Height);
         }
-        return new Size(widest * items.Count, tallest);
+        // Pede a largura de todas iguais à maior, mas nunca mais que o espaço dado: o arranjo divide o que houver
+        double width = widest * items.Count;
+        if (!double.IsInfinity(constraint.Width)) width = Math.Min(width, constraint.Width);
+        return new Size(width, tallest);
     }
 
     protected override Size ArrangeOverride(Size arrangeSize)
