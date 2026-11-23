@@ -30,7 +30,8 @@ public static class InstallerWindow
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern bool IsWindowEnabled(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern IntPtr GetParent(IntPtr hwnd);
-    [DllImport("user32.dll")] private static extern IntPtr SendMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll")] private static extern bool PostMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
     [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out Rect rect);
     [DllImport("user32.dll")] private static extern bool PrintWindow(IntPtr hwnd, IntPtr hdc, uint flags);
     [DllImport("dwmapi.dll")] private static extern int DwmGetWindowAttribute(IntPtr hwnd, int attribute, out Rect rect, int size);
@@ -68,11 +69,51 @@ public static class InstallerWindow
             GetWindowText(hwnd, text, text.Capacity);
             if (text.Length == 0 || Other.IsMatch(text.ToString())) return true;
             clicked = text.ToString();
-            // BN_CLICKED (0) para o pai, com o próprio botão no lParam: é como a VCL do Inno entrega o clique ao botão
-            SendMessage(GetParent(hwnd), 0x0111, IntPtr.Zero, hwnd);
+            // BN_CLICKED (0) para o pai, com o próprio botão no lParam: é como a VCL do Inno entrega o clique ao botão.
+            // PostMessage, não SendMessage: se o clique abrir uma caixa de mensagem, o script não fica preso nela.
+            PostMessage(GetParent(hwnd), 0x0111, IntPtr.Zero, hwnd);
             return false;
         }, IntPtr.Zero);
         return clicked;
+    }
+
+    // Caixa de mensagem do instalador (classe #32770, do mesmo processo do assistente), com o texto dela
+    public static IntPtr FindDialog(IntPtr wizard, out string text)
+    {
+        uint owner;
+        GetWindowThreadProcessId(wizard, out owner);
+        IntPtr found = IntPtr.Zero;
+        EnumWindows((hwnd, data) =>
+        {
+            if (!IsWindowVisible(hwnd)) return true;
+            uint pid;
+            GetWindowThreadProcessId(hwnd, out pid);
+            if (pid != owner) return true;
+            var name = new StringBuilder(64);
+            GetClassName(hwnd, name, name.Capacity);
+            if (name.ToString() != "#32770") return true;
+            found = hwnd;
+            return false;
+        }, IntPtr.Zero);
+        var all = new StringBuilder();
+        if (found != IntPtr.Zero)
+            EnumChildWindows(found, (hwnd, data) =>
+            {
+                var piece = new StringBuilder(512);
+                GetWindowText(hwnd, piece, piece.Capacity);
+                if (piece.Length > 0) all.Append(piece).Append(" | ");
+                return true;
+            }, IntPtr.Zero);
+        text = all.ToString();
+        return found;
+    }
+
+    // Responde Sim (ou OK) na caixa: WM_COMMAND para a MessageBox clássica, TDM_CLICK_BUTTON para a TaskDialog
+    public static void Accept(IntPtr dialog)
+    {
+        PostMessage(dialog, 0x0400 + 102, (IntPtr)6, IntPtr.Zero);
+        PostMessage(dialog, 0x0111, (IntPtr)6, IntPtr.Zero);
+        PostMessage(dialog, 0x0111, (IntPtr)1, IntPtr.Zero);
     }
 
     public static void Save(IntPtr hwnd, string path)
@@ -96,6 +137,8 @@ public static class InstallerWindow
 '@
 
 $appDir = Join-Path $env:ProgramFiles 'CoreBi'
+$script:dialogs = 0
+if (Test-Path -LiteralPath $appDir) { Write-Host "A pasta $appDir já existe: $((Get-ChildItem -LiteralPath $appDir -Force | Select-Object -ExpandProperty Name) -join ', ')" }
 
 function Set-AppsTheme([bool]$Light) {
     $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize'
@@ -128,7 +171,19 @@ function Save-Page([IntPtr]$Wizard, [string]$Name) {
 function Next-Page([IntPtr]$Wizard) {
     $clicked = [InstallerWindow]::ClickNext($Wizard)
     if (-not $clicked) { throw 'Botão de avançar não encontrado.' }
+    Write-Host "Clique: $clicked"
     Start-Sleep -Milliseconds 1200
+    # Uma caixa de mensagem no caminho (pasta que já existe, por exemplo) fica registrada e é respondida com Sim
+    for ($i = 0; $i -lt 3; $i++) {
+        $text = ''
+        $dialog = [InstallerWindow]::FindDialog($Wizard, [ref]$text)
+        if ($dialog -eq [IntPtr]::Zero) { return }
+        $script:dialogs++
+        Write-Host "Caixa de mensagem: $text"
+        [InstallerWindow]::Save($dialog, (Join-Path $Output "instalador-caixa-$script:dialogs.png"))
+        [InstallerWindow]::Accept($dialog)
+        Start-Sleep -Milliseconds 1200
+    }
 }
 
 function Remove-App {

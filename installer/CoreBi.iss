@@ -54,8 +54,37 @@ WizardSmallImageFileDynamicDark=images\simbolo-escuro-*.png
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 
 [Messages]
+; A tradução padrão usa "pra" e títulos com cada palavra em maiúscula; aqui o texto segue o do app
 WelcomeLabel1=Bem-vindo ao CoreBi {#AppVersion}
 WelcomeLabel2=Monitoramento, diagnóstico e testes de hardware para Windows, num app só e sem conta.%n%nEste assistente instala o CoreBi no seu computador.
+ClickNext=Clique em Avançar para continuar ou em Cancelar para sair.
+WizardSelectDir=Pasta de instalação
+SelectDirDesc=Onde o [name] deve ser instalado?
+SelectDirLabel3=O [name] será instalado nesta pasta.
+SelectDirBrowseLabel=Para continuar, clique em Avançar. Para escolher outra pasta, clique em Procurar.
+DiskSpaceGBLabel=São necessários pelo menos [gb] GB livres em disco.
+DiskSpaceMBLabel=São necessários pelo menos [mb] MB livres em disco.
+DirExistsTitle=A pasta já existe
+DirExists=A pasta:%n%n%1%n%njá existe. Instalar nela mesmo assim?
+WizardSelectComponents=Componentes
+SelectComponentsDesc=O que deve ser instalado?
+SelectComponentsLabel2=Marque o que você quer instalar e desmarque o que não quer. Clique em Avançar para continuar.
+ComponentsDiskSpaceGBLabel=A seleção atual precisa de pelo menos [gb] GB em disco.
+ComponentsDiskSpaceMBLabel=A seleção atual precisa de pelo menos [mb] MB em disco.
+WizardSelectTasks=Atalhos
+SelectTasksDesc=Quais atalhos devem ser criados?
+SelectTasksLabel2=Escolha os atalhos do [name] e clique em Avançar.
+WizardReady=Pronto para instalar
+ReadyLabel1=Tudo pronto para instalar o [name] no seu computador.
+ReadyLabel2a=Clique em Instalar para continuar ou em Voltar para revisar alguma opção.
+ReadyLabel2b=Clique em Instalar para continuar.
+WizardPreparing=Preparando a instalação
+WizardInstalling=Instalando
+InstallingLabel=Aguarde enquanto o [name] é instalado no seu computador.
+ClickFinish=Clique em Concluir para sair do instalador.
+ExitSetupTitle=Sair do instalador
+UninstallStatusLabel=Aguarde enquanto o %1 é removido do seu computador.
+UninstalledAll=O %1 foi removido do seu computador.
 FinishedHeadingLabel=O CoreBi está pronto
 FinishedLabel=O CoreBi foi instalado e está no menu Iniciar. Ele abre como administrador, que é o que permite ler os sensores e cuidar do sistema.
 FinishedLabelNoIcons=O CoreBi foi instalado. Ele abre como administrador, que é o que permite ler os sensores e cuidar do sistema.
@@ -71,7 +100,7 @@ Name: "pawnio"; Description: "Driver de sensores PawnIO (recomendado)"; Types: f
 Name: "rtss"; Description: "RivaTuner Statistics Server (RTSS) para o overlay em tela cheia (recomendado)"; Types: full
 
 [Tasks]
-Name: "desktopicon"; Description: "Criar atalho na área de trabalho"; GroupDescription: "Atalhos:"; Flags: unchecked
+Name: "desktopicon"; Description: "Criar atalho na área de trabalho"; Flags: unchecked
 
 [Files]
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Components: app; Flags: ignoreversion recursesubdirs createallsubdirs
