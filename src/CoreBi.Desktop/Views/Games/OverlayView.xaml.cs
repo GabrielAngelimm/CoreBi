@@ -38,6 +38,20 @@ public partial class OverlayView : UserControl
         ["Outros"] = ("\uE727", "Nomes e hora"),
     };
 
+    /// <summary>
+    /// Onde cada item fica na grade do seu grupo, coluna por coluna. As colunas têm o mesmo sentido em todos os grupos:
+    /// carga | clock | calor e energia; no FPS, taxa | tempo de quadro. VRAM, RAM e Outros são uma linha só.
+    /// </summary>
+    private static readonly Dictionary<string, string[][]> ItemColumns = new()
+    {
+        ["FPS"] = new[] { new[] { "fps", "low1" }, new[] { "frametime", "graph" } },
+        ["GPU"] = new[] { new[] { "gpu_load", "gpu_fan" }, new[] { "gpu_clock", "gpu_memclock", "gpu_volt" }, new[] { "gpu_temp", "gpu_hotspot", "gpu_power" } },
+        ["VRAM"] = new[] { new[] { "vram_used" }, new[] { "vram_pct" } },
+        ["CPU"] = new[] { new[] { "cpu_load", "cpu_maxcore" }, new[] { "cpu_clock", "cpu_clockmax" }, new[] { "cpu_temp", "cpu_power" } },
+        ["RAM"] = new[] { new[] { "ram_used" }, new[] { "ram_pct" } },
+        ["Outros"] = new[] { new[] { "hwnames" }, new[] { "game" }, new[] { "clock" } },
+    };
+
     private static readonly Dictionary<string, string> ItemHints = new()
     {
         ["frametime"] = "Tempo de cada quadro, em milissegundos. Quanto mais estável, mais liso o jogo.",
@@ -185,9 +199,22 @@ public partial class OverlayView : UserControl
             head.Children.Add(name);
             row.Children.Add(head);
 
-            var grid = new UniformGrid { Columns = 3, VerticalAlignment = VerticalAlignment.Top };
-            foreach (var m in groups[i])
+            // Três colunas com o mesmo sentido em todos os grupos: carga | clock | calor e energia (FPS: taxa | tempo de quadro)
+            var grid = new Grid { VerticalAlignment = VerticalAlignment.Top };
+            for (int c = 0; c < 3; c++) grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var byKey = groups[i].ToDictionary(m => m.Key);
+            var columns = ItemColumns.TryGetValue(group, out var layout) ? layout.Select(col => col.Where(byKey.ContainsKey).ToList()).ToList() : new();
+            // Item sem lugar no desenho (novo no motor) entra em linha, depois dos outros
+            var rest = groups[i].Where(m => !columns.Any(col => col.Contains(m.Key))).Select(m => m.Key).ToList();
+            int rows = columns.Count > 0 ? columns.Max(col => col.Count) : 0;
+            var cells = new List<(string Key, int Row, int Col)>();
+            for (int c = 0; c < columns.Count; c++)
+                for (int r = 0; r < columns[c].Count; r++) cells.Add((columns[c][r], r, c));
+            for (int k = 0; k < rest.Count; k++) cells.Add((rest[k], rows + k / 3, k % 3));
+            foreach (var (key, r, c) in cells)
             {
+                var m = byKey[key];
+                while (grid.RowDefinitions.Count <= r) grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 var item = new CheckBox { Style = itemStyle, Content = m.Label, Tag = m.Key, IsChecked = ShowItems.Contains(m.Key) };
                 if (ItemHints.TryGetValue(m.Key, out var hint)) item.ToolTip = hint;
                 item.Click += (_, _) =>
@@ -196,6 +223,8 @@ public partial class OverlayView : UserControl
                     SaveItems();
                 };
                 _chips[m.Key] = item;
+                Grid.SetRow(item, r);
+                Grid.SetColumn(item, c);
                 grid.Children.Add(item);
             }
             Grid.SetColumn(grid, 1);

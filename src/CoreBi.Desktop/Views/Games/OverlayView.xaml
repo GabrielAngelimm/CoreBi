@@ -107,9 +107,9 @@
         </Style>
 
         <!--
-            Item do overlay: uma pílula sem fio, com um LED e o nome; a pílula inteira é o alvo do clique. Apagado = anel, nome em
-            tom baixo e fundo só sob o mouse; aceso = ponto no sinal, nome em tinta e a pílula tingida do sinal. Os itens de um
-            grupo ficam numa grade de três colunas.
+            Item do overlay: uma pílula com um LED e o nome; a pílula inteira é o alvo do clique. Apagado = anel, nome em tom baixo
+            e fundo só sob o mouse; aceso = ponto no sinal, nome em tinta e um contorno neutro, sem fundo. Os itens de um grupo ficam
+            em três colunas de mesmo sentido (OverlayView.ItemColumns).
         -->
         <Style x:Key="OvItem" TargetType="CheckBox">
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
@@ -121,7 +121,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
-                        <Border x:Name="b" Height="36" Padding="11,0,6,0" CornerRadius="18" Background="Transparent" SnapsToDevicePixels="True">
+                        <Border x:Name="b" Height="36" Padding="10,0,5,0" CornerRadius="18" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" SnapsToDevicePixels="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -139,7 +139,7 @@
                                 <Setter TargetName="led" Property="Stroke" Value="{DynamicResource Muted}" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{DynamicResource SignalSoft}" />
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
                                 <Setter TargetName="led" Property="Fill" Value="{DynamicResource Signal}" />
                                 <Setter TargetName="led" Property="Stroke" Value="{DynamicResource Signal}" />
                                 <Setter Property="Foreground" Value="{DynamicResource Fg}" />
