@@ -54,7 +54,22 @@ public partial class StressView : UserControl, IDisposable
         _context = context;
         UpdateStressColumns();
         StressDurationChanged();
+        ShowLimits();
         ShowHistory();
+    }
+
+    /// <summary>Zerar painel: o resultado do último teste sai da placa e das colunas; o histórico guarda o teste.</summary>
+    private void BtnStressReset_Click(object sender, RoutedEventArgs e)
+    {
+        if (IsRunning || _demo) return;
+        _stressMaxTemp = 0;
+        _gpuMaxTemp = 0;
+        ResetStressReadings();
+        StressDurationChanged();
+        SetStatus("Pronto", aborted: false);
+        StDetail.Text = "";
+        StressHint.Text = "";
+        BtnStressReset.IsEnabled = false;
     }
 
     private void BtnStress_Click(object sender, RoutedEventArgs e)
@@ -66,14 +81,43 @@ public partial class StressView : UserControl, IDisposable
     private void ChkCpu_Click(object sender, RoutedEventArgs e) => StressSelectionChanged();
     private void ChkRam_Click(object sender, RoutedEventArgs e) => StressSelectionChanged();
     private void ChkGpu_Click(object sender, RoutedEventArgs e) => StressSelectionChanged();
-    private void StressDuration_Checked(object sender, RoutedEventArgs e) => StressDurationChanged();
+    private void StressDuration_Changed(object sender, RoutedPropertyChangedEventArgs<double> e) => StressDurationChanged();
+    private void TempLimit_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        ShowLimits();
+        // Parado, o tracejado do corte no gráfico acompanha o controle
+        if (!IsInitialized || IsRunning || _demo) return;
+        _tempLimit = TempLimit.Value;
+        _gpuTempLimit = GpuTempLimit.Value;
+        DrawChart();
+    }
+
+    /// <summary>Os passos do controle de duração, em minutos (0 = sem limite): curtos no começo, onde a escolha fina importa.</summary>
+    private static readonly int[] DurationSteps = { 5, 10, 15, 20, 30, 45, 60, 90, 120, 0 };
+
+    private int ChosenMinutes => DurationSteps[Math.Clamp((int)Math.Round(StressDuration.Value), 0, DurationSteps.Length - 1)];
+
+    private static string DurationName(int minutes) => minutes switch
+    {
+        0 => "Sem limite",
+        < 60 => $"{minutes} min",
+        _ when minutes % 60 == 0 => $"{minutes / 60} h",
+        _ => $"{minutes / 60} h {minutes % 60}",
+    };
+
+    private void ShowLimits()
+    {
+        if (CpuLimitText == null || GpuLimitText == null) return;
+        CpuLimitText.Text = $"{TempLimit.Value:0} °C";
+        GpuLimitText.Text = $"{GpuTempLimit.Value:0} °C";
+    }
     private void TempChart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
 
     private void StressDurationChanged()
     {
-        if (!IsInitialized || StressDurationPanel == null || IsRunning) return;
-        double minutes = double.Parse(Ui.CheckedTag(StressDurationPanel) ?? "10", CultureInfo.InvariantCulture);
-        ShowStressTime(TimeSpan.Zero, TimeSpan.FromMinutes(minutes));
+        if (!IsInitialized || StressDurationText == null) return;
+        StressDurationText.Text = DurationName(ChosenMinutes);
+        if (!IsRunning && !_demo) ShowStressTime(TimeSpan.Zero, TimeSpan.FromMinutes(ChosenMinutes));
     }
 
     private void ShowStressTime(TimeSpan elapsed, TimeSpan duration)
@@ -94,19 +138,30 @@ public partial class StressView : UserControl, IDisposable
     private void UpdateStressColumns()
     {
         bool cpu = ChkCpu.IsChecked == true, ram = ChkRam.IsChecked == true, gpu = ChkGpu.IsChecked == true;
-        // O corte de temperatura do processador vale também para o teste só de RAM, que esquenta o processador.
-        bool cpuSide = cpu || ram || !gpu;
-        static Visibility Show(bool on) => on ? Visibility.Visible : Visibility.Collapsed;
-        CpuLimitRow.Visibility = Show(cpuSide);
-        GpuLimitRow.Visibility = Show(gpu);
-        RamSection.Visibility = Show(ram);
-        GpuOptions.Visibility = Show(gpu);
+        UpdateConfigEnabled(running: IsRunning);
         UpdateColumnStates();
     }
 
     /// <summary>
-    /// As três colunas ficam sempre na tela, do mesmo tamanho; muda só o estado: no teste (LED aceso), escolhida (anel) ou
-    /// fora do teste (a coluna um tom abaixo, com as leituras do sensor ainda ao vivo).
+    /// Os ajustes ficam sempre à vista (o cartão não muda de tamanho); o de uma peça fora do teste esmaece e trava, e durante o
+    /// teste tudo trava. O corte do processador vale também para o teste só de memória, que o esquenta.
+    /// </summary>
+    private void UpdateConfigEnabled(bool running)
+    {
+        bool cpu = ChkCpu.IsChecked == true, ram = ChkRam.IsChecked == true, gpu = ChkGpu.IsChecked == true;
+        StressDurationSection.IsEnabled = !running;
+        CpuLimitSection.IsEnabled = !running && (cpu || ram || !gpu);
+        GpuLimitSection.IsEnabled = GpuOptions.IsEnabled = !running && gpu;
+        RamSection.IsEnabled = !running && ram;
+        const string Off = "Marque a peça em cima para ajustar.";
+        CpuLimitSection.ToolTip = CpuLimitSection.IsEnabled || running ? null : "Marque o processador ou a memória em cima para ajustar.";
+        GpuLimitSection.ToolTip = GpuOptions.ToolTip = GpuOptions.IsEnabled || running ? null : Off;
+        RamSection.ToolTip = RamSection.IsEnabled || running ? null : Off;
+    }
+
+    /// <summary>
+    /// As três colunas ficam sempre na tela, do mesmo tamanho; a que não entra no teste fica um tom abaixo, com "Fora do teste"
+    /// no cabeçalho (as leituras do sensor continuam ao vivo). A que entra não diz nada: a tecla acesa em cima já diz.
     /// </summary>
     private void UpdateColumnStates()
     {
@@ -114,18 +169,15 @@ public partial class StressView : UserControl, IDisposable
         bool cpu = running ? _runCpu : ChkCpu.IsChecked == true;
         bool ram = running ? _runRam : ChkRam.IsChecked == true;
         bool gpu = running ? _runGpu : ChkGpu.IsChecked == true;
-        SetColumn(CpuColumn, CpuLed, CpuState, cpu, running);
-        SetColumn(RamColumn, RamLed, RamState, ram, running);
-        SetColumn(GpuColumn, GpuLed, GpuState, gpu, running);
+        SetColumn(CpuColumn, CpuState, cpu);
+        SetColumn(GpuColumn, GpuState, gpu);
+        SetColumn(RamColumn, RamState, ram);
     }
 
-    private static void SetColumn(Border column, Ellipse led, TextBlock state, bool on, bool running)
+    private static void SetColumn(Border column, TextBlock state, bool on)
     {
         column.Opacity = on ? 1 : 0.5;
-        state.Text = !on ? "Fora do teste" : running ? "No teste" : "Escolhido";
-        if (on && running) led.SetResourceReference(Shape.FillProperty, "Signal");
-        else led.Fill = Brushes.Transparent;
-        led.SetResourceReference(Shape.StrokeProperty, on && running ? "Signal" : on ? "Muted" : "Faint");
+        state.Visibility = on ? Visibility.Collapsed : Visibility.Visible;
     }
 
     internal void StartStress()
@@ -136,24 +188,10 @@ public partial class StressView : UserControl, IDisposable
         bool cpu = ChkCpu.IsChecked == true, ram = ChkRam.IsChecked == true, gpu = ChkGpu.IsChecked == true;
         if (!cpu && !ram && !gpu) { StressHint.Text = "Escolha pelo menos um componente."; return; }
 
-        // Valida em variáveis locais: um valor recusado não pode virar a linha de corte desenhada no gráfico.
-        double tempLimit = _tempLimit, gpuTempLimit = _gpuTempLimit;
-        if ((cpu || ram) && (!double.TryParse(TempLimit.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out tempLimit)
-                             || tempLimit < 40 || tempLimit > 110))
-        {
-            StressHint.Text = "O limite do processador vai de 40 a 110 °C.";
-            return;
-        }
-        if (gpu && (!double.TryParse(GpuTempLimit.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out gpuTempLimit)
-                    || gpuTempLimit < 40 || gpuTempLimit > 100))
-        {
-            StressHint.Text = "O limite da placa de vídeo vai de 40 a 100 °C.";
-            return;
-        }
-        _tempLimit = tempLimit;
-        _gpuTempLimit = gpuTempLimit;
-
-        double minutes = double.Parse(Ui.CheckedTag(StressDurationPanel) ?? "10", CultureInfo.InvariantCulture);
+        // Os controles deslizantes só param dentro da faixa, então o corte já chega válido
+        _tempLimit = TempLimit.Value;
+        _gpuTempLimit = GpuTempLimit.Value;
+        double minutes = ChosenMinutes;
         if ((cpu || ram) && _context.Sensors.CpuTemperature == null)
         {
             string why = SensorMonitor.IsPawnIOInstalled
@@ -208,6 +246,7 @@ public partial class StressView : UserControl, IDisposable
             }
 
             ResetStressReadings();
+            BtnStressReset.IsEnabled = false;
             SetStressControls(running: true);
             UpdateColumnStates();
             SetStatus("Rodando", aborted: false);
@@ -273,6 +312,7 @@ public partial class StressView : UserControl, IDisposable
         if (aborted) status = "Interrompido";
         SetStatus(status, aborted);
         StDetail.Text = reason;
+        BtnStressReset.IsEnabled = true;
 
         var run = new StressRun
         {
@@ -300,8 +340,20 @@ public partial class StressView : UserControl, IDisposable
         ShowHistory();
     }
 
-    private void ShowHistory(IEnumerable<StressRun>? runs = null) =>
-        StressHistory.ItemsSource = (runs ?? _context?.Settings.StressRuns ?? []).Select(HistoryRow).ToList();
+    private void ShowHistory(IEnumerable<StressRun>? runs = null)
+    {
+        var rows = (runs ?? _context?.Settings.StressRuns ?? []).Select(HistoryRow).ToList();
+        StressHistory.ItemsSource = rows;
+        StressHistoryClear.Visibility = rows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void StressHistoryClear_Click(object sender, RoutedEventArgs e)
+    {
+        if (_context == null || _demo || !ConfirmButton.Confirm(sender)) return;
+        _context.Settings.StressRuns.Clear();
+        _context.SaveSettings();
+        ShowHistory();
+    }
 
     /// <summary>Um teste encerrado em palavras: "Estável por 10 min", "Parado aos 3:12" ou "Interrompido aos 4:05", e as máximas.</summary>
     private static StressHistoryRow HistoryRow(StressRun r)
@@ -329,7 +381,7 @@ public partial class StressView : UserControl, IDisposable
     {
         Ui.SetRunning(BtnStress, running, "Iniciar teste");
         ChkCpu.IsEnabled = ChkRam.IsEnabled = ChkGpu.IsEnabled = !running;
-        StressDurationSection.IsEnabled = StressLimitSection.IsEnabled = RamSection.IsEnabled = GpuOptions.IsEnabled = !running;
+        UpdateConfigEnabled(running);
     }
 
     private void SetStatus(string text, bool aborted)

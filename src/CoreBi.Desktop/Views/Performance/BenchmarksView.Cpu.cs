@@ -154,5 +154,14 @@ public partial class BenchmarksView
             double frac = best <= 0 ? 0 : r.Multi is double mm ? mm / best : r.Single is double s1 ? s1 / best : 0;
             return new BenchHistoryRow(ReadoutFormat.When(r.Date, compact: true), value, string.Join(", ", detail), frac);
         }).ToList();
+        BenchHistoryClear.Visibility = runs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void BenchHistoryClear_Click(object sender, RoutedEventArgs e)
+    {
+        if (_context == null || !ConfirmButton.Confirm(sender)) return;
+        _context.Settings.BenchRuns.Clear();
+        _context.SaveSettings();
+        UpdateCpuHistory();
     }
 }

@@ -20,8 +20,8 @@
             <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
         </Style>
         <!--
-            Coluna de um componente nas leituras ao vivo: sempre as três, do mesmo tamanho, com fio entre elas. Em cima o ícone, o
-            nome e o estado (LED aceso no teste); embaixo, à esquerda, a leitura principal no mostrador grande e, à direita, quatro
+            Coluna de um componente nas leituras ao vivo: sempre as três (processador, placa de vídeo e memória, a ordem das teclas),
+            do mesmo tamanho, com fio entre elas. Em cima o ícone, o nome e, só na que não entra no teste, "Fora do teste"; embaixo, à esquerda, a leitura principal no mostrador grande e, à direita, quatro
             linhas fixas de rótulo e valor (travessão sem leitura), então nada muda de lugar com a escolha das peças. A que não
             entra no teste fica um tom abaixo.
         -->
@@ -155,16 +155,22 @@
                 <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Teste de carga" Style="{StaticResource PageTitle}" />
                     <TextBlock Text="Põe as peças no limite para conferir estabilidade e temperatura." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                    <!-- Depois de um teste, o painel guarda o tempo e as máximas até você zerar (o teste continua no histórico) -->
+                    <StackPanel Style="{StaticResource PageActions}">
+                        <Button x:Name="BtnStressReset" Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE777;" Content="Zerar painel" Click="BtnStressReset_Click"
+                                IsEnabled="False" ToolTipService.ShowOnDisabled="True"
+                                ToolTip="Volta o tempo, as máximas e o estado ao início, pronto para outro teste. O que terminou continua no histórico." />
+                    </StackPanel>
                 </local:PageHeaderPanel>
 
                 <!-- O que carregar: uma tecla por componente, várias ao mesmo tempo -->
                 <UniformGrid Grid.Row="1" Rows="1" Margin="-8">
                     <CheckBox x:Name="ChkCpu" Style="{StaticResource TestToggle}" Margin="8" Content="Processador" local:Ui.Icon="cpu" local:Ui.Channel="Cpu" local:Ui.Caption="Todos os núcleos" IsChecked="True"
                               Checked="ChkCpu_Click" Unchecked="ChkCpu_Click" />
-                    <CheckBox x:Name="ChkRam" Style="{StaticResource TestToggle}" Margin="8" Content="Memória RAM" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="Procura erros de memória"
-                              Checked="ChkRam_Click" Unchecked="ChkRam_Click" />
                     <CheckBox x:Name="ChkGpu" Style="{StaticResource TestToggle}" Margin="8" Content="Placa de vídeo" local:Ui.Icon="gpu" local:Ui.Channel="Gpu" local:Ui.Caption="Abre uma janela 3D"
                               Checked="ChkGpu_Click" Unchecked="ChkGpu_Click" />
+                    <CheckBox x:Name="ChkRam" Style="{StaticResource TestToggle}" Margin="8" Content="Memória RAM" local:Ui.Icon="ram" local:Ui.Channel="Memory" local:Ui.Caption="Procura erros de memória"
+                              Checked="ChkRam_Click" Unchecked="ChkRam_Click" />
                 </UniformGrid>
 
                 <Grid Grid.Row="3">
@@ -226,10 +232,7 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <DockPanel Grid.ColumnSpan="2" Margin="0,0,0,12">
-                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Ellipse x:Name="CpuLed" Width="7" Height="7" Stroke="{DynamicResource Faint}" StrokeThickness="1.5" VerticalAlignment="Center" />
-                                                <TextBlock x:Name="CpuState" Text="Fora do teste" Style="{StaticResource ComponentState}" />
-                                            </StackPanel>
+                                            <TextBlock x:Name="CpuState" Text="Fora do teste" Style="{StaticResource ComponentState}" DockPanel.Dock="Right" Visibility="Collapsed" />
                                             <StackPanel Orientation="Horizontal">
                                                 <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Cpu" Kind="cpu" Width="24" Height="24" />
                                                 <TextBlock Text="Processador" Style="{StaticResource ComponentName}" />
@@ -264,54 +267,6 @@
                                         </Grid>
                                     </Grid>
                                 </Border>
-                                <Border x:Name="RamColumn" Style="{StaticResource ComponentColumn}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <DockPanel Grid.ColumnSpan="2" Margin="0,0,0,12">
-                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Ellipse x:Name="RamLed" Width="7" Height="7" Stroke="{DynamicResource Faint}" StrokeThickness="1.5" VerticalAlignment="Center" />
-                                                <TextBlock x:Name="RamState" Text="Fora do teste" Style="{StaticResource ComponentState}" />
-                                            </StackPanel>
-                                            <StackPanel Orientation="Horizontal">
-                                                <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Memory" Kind="ram" Width="24" Height="24" />
-                                                <TextBlock Text="Memória RAM" Style="{StaticResource ComponentName}" />
-                                            </StackPanel>
-                                        </DockPanel>
-                                        <StackPanel Grid.Row="1" VerticalAlignment="Center" MinWidth="128" Background="Transparent" ToolTip="O teste grava padrões na memória e confere a leitura; um erro só já interrompe o teste.">
-                                            <TextBlock Text="Erros" Style="{StaticResource StatLabel}" />
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock x:Name="StRamErrors" Text="—" Style="{StaticResource ColumnHero}" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                        <Grid Grid.Row="1" Grid.Column="1" Style="{StaticResource Facts}">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="26" />
-                                                <RowDefinition Height="26" />
-                                                <RowDefinition Height="26" />
-                                                <RowDefinition Height="26" />
-                                            </Grid.RowDefinitions>
-                                            <TextBlock Grid.Row="0" Text="Passadas" Style="{StaticResource FactName}" Background="Transparent" ToolTip="Quantas vezes o teste já gravou e conferiu toda a memória separada." />
-                                            <TextBlock x:Name="StRam" Grid.Row="0" Grid.Column="1" Text="—" Style="{StaticResource FactValue}" />
-                                            <TextBlock Grid.Row="1" Text="Em teste" Style="{StaticResource FactName}" Background="Transparent" ToolTip="A parte da RAM livre que o teste separou." />
-                                            <TextBlock x:Name="StRamSize" Grid.Row="1" Grid.Column="1" Text="—" Style="{StaticResource FactValue}" />
-                                            <TextBlock Grid.Row="2" Text="RAM em uso" Style="{StaticResource FactName}" />
-                                            <TextBlock x:Name="StRamUse" Grid.Row="2" Grid.Column="1" Text="—" Style="{StaticResource FactValue}" />
-                                            <TextBlock Grid.Row="3" Text="RAM livre" Style="{StaticResource FactName}" />
-                                            <TextBlock x:Name="StRamFree" Grid.Row="3" Grid.Column="1" Text="—" Style="{StaticResource FactValue}" />
-                                        </Grid>
-                                    </Grid>
-                                </Border>
                                 <Border x:Name="GpuColumn" Style="{StaticResource ComponentColumn}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -323,10 +278,7 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <DockPanel Grid.ColumnSpan="2" Margin="0,0,0,12">
-                                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Ellipse x:Name="GpuLed" Width="7" Height="7" Stroke="{DynamicResource Faint}" StrokeThickness="1.5" VerticalAlignment="Center" />
-                                                <TextBlock x:Name="GpuState" Text="Fora do teste" Style="{StaticResource ComponentState}" />
-                                            </StackPanel>
+                                            <TextBlock x:Name="GpuState" Text="Fora do teste" Style="{StaticResource ComponentState}" DockPanel.Dock="Right" Visibility="Collapsed" />
                                             <StackPanel Orientation="Horizontal">
                                                 <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Gpu" Kind="gpu" Width="24" Height="24" />
                                                 <TextBlock Text="Placa de vídeo" Style="{StaticResource ComponentName}" />
@@ -361,6 +313,51 @@
                                         </Grid>
                                     </Grid>
                                 </Border>
+                                <Border x:Name="RamColumn" Style="{StaticResource ComponentColumn}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <DockPanel Grid.ColumnSpan="2" Margin="0,0,0,12">
+                                            <TextBlock x:Name="RamState" Text="Fora do teste" Style="{StaticResource ComponentState}" DockPanel.Dock="Right" Visibility="Collapsed" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <local:HwIcon Style="{StaticResource ChannelIcon}" local:Ui.Channel="Memory" Kind="ram" Width="24" Height="24" />
+                                                <TextBlock Text="Memória RAM" Style="{StaticResource ComponentName}" />
+                                            </StackPanel>
+                                        </DockPanel>
+                                        <StackPanel Grid.Row="1" VerticalAlignment="Center" MinWidth="128" Background="Transparent" ToolTip="O teste grava padrões na memória e confere a leitura; um erro só já interrompe o teste.">
+                                            <TextBlock Text="Erros" Style="{StaticResource StatLabel}" />
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock x:Name="StRamErrors" Text="—" Style="{StaticResource ColumnHero}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <Grid Grid.Row="1" Grid.Column="1" Style="{StaticResource Facts}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="26" />
+                                                <RowDefinition Height="26" />
+                                                <RowDefinition Height="26" />
+                                                <RowDefinition Height="26" />
+                                            </Grid.RowDefinitions>
+                                            <TextBlock Grid.Row="0" Text="Passadas" Style="{StaticResource FactName}" Background="Transparent" ToolTip="Quantas vezes o teste já gravou e conferiu toda a memória separada." />
+                                            <TextBlock x:Name="StRam" Grid.Row="0" Grid.Column="1" Text="—" Style="{StaticResource FactValue}" />
+                                            <TextBlock Grid.Row="1" Text="Em teste" Style="{StaticResource FactName}" Background="Transparent" ToolTip="A parte da RAM livre que o teste separou." />
+                                            <TextBlock x:Name="StRamSize" Grid.Row="1" Grid.Column="1" Text="—" Style="{StaticResource FactValue}" />
+                                            <TextBlock Grid.Row="2" Text="RAM em uso" Style="{StaticResource FactName}" />
+                                            <TextBlock x:Name="StRamUse" Grid.Row="2" Grid.Column="1" Text="—" Style="{StaticResource FactValue}" />
+                                            <TextBlock Grid.Row="3" Text="RAM livre" Style="{StaticResource FactName}" />
+                                            <TextBlock x:Name="StRamFree" Grid.Row="3" Grid.Column="1" Text="—" Style="{StaticResource FactValue}" />
+                                        </Grid>
+                                    </Grid>
+                                </Border>
                             </UniformGrid>
 
                             <!-- Temperatura dos últimos 5 minutos, com os nomes e os limites rotulados no próprio gráfico -->
@@ -380,16 +377,20 @@
                     <!-- Configurações e histórico -->
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <!-- Esqueleto da primeira visita: a página espera a primeira leitura dos sensores (os outros cartões o acompanham) -->
+                        <!--
+                            Configurações: as cinco sempre à vista, na ordem das peças (processador, placa de vídeo, memória), então o
+                            cartão nunca muda de tamanho; o ajuste de uma peça fora do teste esmaece e trava. Esqueleto da primeira
+                            visita: a página espera a primeira leitura dos sensores (os outros cartões o acompanham).
+                        -->
                         <Border x:Name="StressConfigCard" Style="{StaticResource ConfigCard}"
-                                local:Skeleton.Layout="row 34: h 190; foot 42: btn *^42; bands 2; row 17: c 70; gap 10; row 42: pill *^42; endbands">
+                                local:Skeleton.Layout="row 34: h 230; foot 42: btn *^42; gap 12; bands 5; row 17: c 40%, - *, c 15%&gt;; gap 10; row 24: pill *^8; endbands">
                             <DockPanel>
                                 <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
-                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Configurações do teste de carga" Style="{StaticResource CardTitle}" />
                                 </Grid>
                                 <StackPanel DockPanel.Dock="Bottom">
                                     <TextBlock x:Name="StressHint" Style="{StaticResource ConfigHint}" />
@@ -398,44 +399,34 @@
                                 </StackPanel>
                                 <local:ConfigStack Divider="{DynamicResource Line}" MinGap="16" Margin="0,4,0,8">
                                     <StackPanel x:Name="StressDurationSection" Style="{StaticResource ConfigSection}">
-                                        <TextBlock Text="Duração" Style="{StaticResource ConfigName}" ToolTip="O teste para sozinho no fim do tempo, ou antes, no corte de temperatura." />
-                                        <Border Style="{StaticResource ConfigSegmentGroup}">
-                                            <local:SlidingSelectionPanel x:Name="StressDurationPanel" Style="{StaticResource ConfigSegmentRail}" ToggleButton.Checked="StressDuration_Checked">
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StressDur" Content="10 min" Tag="10" IsChecked="True" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StressDur" Content="30 min" Tag="30" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StressDur" Content="1 h" Tag="60" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StressDur" Content="Sem limite" Tag="0" ToolTip="Roda até você parar." />
-                                            </local:SlidingSelectionPanel>
-                                        </Border>
+                                        <DockPanel Style="{StaticResource ConfigHead}">
+                                            <TextBlock x:Name="StressDurationText" Text="10 min" Style="{StaticResource ConfigValue}" />
+                                            <TextBlock Text="Duração" Style="{StaticResource ConfigName}" Margin="0" ToolTip="O teste para sozinho no fim do tempo, ou antes, no corte de temperatura." />
+                                        </DockPanel>
+                                        <!-- Passos: 5, 10, 15, 20, 30 e 45 min, 1 h, 1 h 30, 2 h e sem limite (StressView.DurationSteps) -->
+                                        <local:ValueSlider x:Name="StressDuration" Style="{StaticResource ConfigSlider}" Minimum="0" Maximum="9" Value="1"
+                                                           ValueChanged="StressDuration_Changed" AutomationProperties.Name="Duração" />
                                     </StackPanel>
-                                    <!-- Corte por temperatura: um campo por peça, lado a lado (só as marcadas) -->
-                                    <StackPanel x:Name="StressLimitSection" Style="{StaticResource ConfigSection}">
-                                        <TextBlock Text="Corte por temperatura" Style="{StaticResource ConfigName}" ToolTip="O teste para sozinho quando uma peça chega ao limite." />
-                                        <UniformGrid Rows="1" Margin="-6,0">
-                                            <StackPanel x:Name="CpuLimitRow" Margin="6,0">
-                                                <TextBlock Text="Processador" Style="{StaticResource Caption}" Margin="0,0,0,6" />
-                                                <TextBox x:Name="TempLimit" Text="90" local:Ui.Suffix="°C" Style="{StaticResource NumberField}"
-                                                         local:NumberField.Minimum="40" local:NumberField.Maximum="110" ToolTip="De 40 a 110 °C" />
-                                            </StackPanel>
-                                            <StackPanel x:Name="GpuLimitRow" Margin="6,0" Visibility="Collapsed">
-                                                <TextBlock Text="Placa de vídeo" Style="{StaticResource Caption}" Margin="0,0,0,6" />
-                                                <TextBox x:Name="GpuTempLimit" Text="85" local:Ui.Suffix="°C" Style="{StaticResource NumberField}"
-                                                         local:NumberField.Minimum="40" local:NumberField.Maximum="100" ToolTip="De 40 a 100 °C" />
-                                            </StackPanel>
-                                        </UniformGrid>
+                                    <StackPanel x:Name="CpuLimitSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
+                                        <DockPanel Style="{StaticResource ConfigHead}">
+                                            <TextBlock x:Name="CpuLimitText" Text="90 °C" Style="{StaticResource ConfigValue}" />
+                                            <TextBlock Text="Corte do processador" Style="{StaticResource ConfigName}" Margin="0"
+                                                       ToolTip="O teste para sozinho quando o processador chega a esta temperatura. Vale também no teste de memória, que o esquenta." />
+                                        </DockPanel>
+                                        <local:ValueSlider x:Name="TempLimit" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Cpu}" Minimum="60" Maximum="105" Value="90"
+                                                           ValueChanged="TempLimit_Changed" AutomationProperties.Name="Corte do processador" />
                                     </StackPanel>
-                                    <StackPanel x:Name="RamSection" Style="{StaticResource ConfigSection}" Visibility="Collapsed">
-                                        <TextBlock Text="RAM livre em teste" Style="{StaticResource ConfigName}" ToolTip="Quanto da memória livre o teste separa para gravar e conferir." />
-                                        <Border Style="{StaticResource ConfigSegmentGroup}">
-                                            <local:SlidingSelectionPanel x:Name="RamFractionPanel" Style="{StaticResource ConfigSegmentRail}">
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="Ram" Content="40 %" Tag="0.4" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="Ram" Content="60 %" Tag="0.6" IsChecked="True" />
-                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="Ram" Content="80 %" Tag="0.8" />
-                                            </local:SlidingSelectionPanel>
-                                        </Border>
+                                    <StackPanel x:Name="GpuLimitSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
+                                        <DockPanel Style="{StaticResource ConfigHead}">
+                                            <TextBlock x:Name="GpuLimitText" Text="85 °C" Style="{StaticResource ConfigValue}" />
+                                            <TextBlock Text="Corte da placa de vídeo" Style="{StaticResource ConfigName}" Margin="0"
+                                                       ToolTip="O teste para sozinho quando a placa de vídeo chega a esta temperatura." />
+                                        </DockPanel>
+                                        <local:ValueSlider x:Name="GpuTempLimit" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Gpu}" Minimum="60" Maximum="100" Value="85"
+                                                           ValueChanged="TempLimit_Changed" AutomationProperties.Name="Corte da placa de vídeo" />
                                     </StackPanel>
                                     <!-- Carga da placa de vídeo: resolução da janela, anti-aliasing e camadas num só ajuste -->
-                                    <StackPanel x:Name="GpuOptions" Style="{StaticResource ConfigSection}" Visibility="Collapsed">
+                                    <StackPanel x:Name="GpuOptions" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
                                         <TextBlock Text="Carga da placa de vídeo" Style="{StaticResource ConfigName}"
                                                    ToolTip="A janela 3D fica aberta ao lado do CoreBi, para você acompanhar a temperatura. Mais carga é mais resolução, anti-aliasing e camadas." />
                                         <Border Style="{StaticResource ConfigSegmentGroup}">
@@ -446,12 +437,25 @@
                                             </local:SlidingSelectionPanel>
                                         </Border>
                                     </StackPanel>
+                                    <StackPanel x:Name="RamSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
+                                        <TextBlock Text="RAM livre em teste" Style="{StaticResource ConfigName}" ToolTip="Quanto da memória livre o teste separa para gravar e conferir." />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="RamFractionPanel" Style="{StaticResource ConfigSegmentRail}">
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="Ram" Content="40 %" Tag="0.4" />
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="Ram" Content="60 %" Tag="0.6" IsChecked="True" />
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="Ram" Content="80 %" Tag="0.8" />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
+                                    </StackPanel>
                                 </local:ConfigStack>
                             </DockPanel>
                         </Border>
                         <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}" ToolTip="Os últimos 30 testes encerrados, o mais recente em cima." />
+                                <DockPanel DockPanel.Dock="Top">
+                                    <Button x:Name="StressHistoryClear" Style="{StaticResource HistoryClear}" Click="StressHistoryClear_Click" />
+                                    <TextBlock Text="Histórico" Style="{StaticResource HistoryCardTitle}" ToolTip="Os últimos 30 testes encerrados, o mais recente em cima." />
+                                </DockPanel>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
                                     <ItemsControl x:Name="StressHistory" Style="{StaticResource StressHistoryList}" />
                                 </ScrollViewer>

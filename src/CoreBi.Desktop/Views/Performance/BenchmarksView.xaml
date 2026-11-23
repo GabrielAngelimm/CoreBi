@@ -391,18 +391,18 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Border Style="{StaticResource ConfigCard}" x:Name="BenchConfigCard" local:Skeleton.Layout="row 34: h 190; foot 42: btn *^42; bands 2; row 17: c 70; gap 10; row 42: pill *^42; endbands">
                             <DockPanel>
                                 <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
-                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Configurações do benchmark" Style="{StaticResource CardTitle}" />
                                 </Grid>
                                 <StackPanel DockPanel.Dock="Bottom">
-                                <TextBlock x:Name="BenchHint" Style="{StaticResource ConfigHint}" />
-                                <Button x:Name="BtnBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnBench_Click" />
+                                    <TextBlock x:Name="BenchHint" Style="{StaticResource ConfigHint}" />
+                                    <Button x:Name="BtnBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnBench_Click" />
                                 </StackPanel>
                                 <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
                                     <StackPanel x:Name="BenchOptions" Style="{StaticResource ConfigSection}">
@@ -429,8 +429,11 @@
                         </Border>
                         <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}"
-                                           ToolTip="Cada barra compara com o melhor resultado com a mesma duração." />
+                                <DockPanel DockPanel.Dock="Top">
+                                    <Button x:Name="BenchHistoryClear" Style="{StaticResource HistoryClear}" Click="BenchHistoryClear_Click" />
+                                    <TextBlock Text="Histórico" Style="{StaticResource HistoryCardTitle}"
+                                               ToolTip="Cada barra compara com o melhor resultado com a mesma duração." />
+                                </DockPanel>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="BenchHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Cpu" />
                                 </ScrollViewer>
@@ -502,17 +505,18 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Border Style="{StaticResource ConfigCard}">
                             <DockPanel>
                                 <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
-                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Configurações do benchmark" Style="{StaticResource CardTitle}" />
                                 </Grid>
                                 <StackPanel DockPanel.Dock="Bottom">
-                                <Button x:Name="BtnSimBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnSimBench_Click" />
+                                    <Button x:Name="BtnSimBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnSimBench_Click"
+                                            ToolTip="Lógica, física, colisão e IA de 30 mil unidades num mapa. A nota é quantos quadros por segundo o processador aguenta, sem a placa de vídeo." />
                                 </StackPanel>
                                 <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
                                     <StackPanel Style="{StaticResource ConfigSection}">
@@ -524,16 +528,15 @@
                                             </local:SlidingSelectionPanel>
                                         </Border>
                                     </StackPanel>
-                                    <StackPanel Style="{StaticResource ConfigSection}">
-                                        <TextBlock Text="O que o teste faz" Style="{StaticResource ConfigName}" />
-                                        <TextBlock Text="Lógica, física, colisão e IA de 30 mil unidades num mapa. A nota é quantos quadros por segundo o processador aguenta, sem a placa de vídeo." Style="{StaticResource Caption}" TextWrapping="Wrap" />
-                                    </StackPanel>
                                 </local:ConfigStack>
                             </DockPanel>
                         </Border>
                         <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}" />
+                                <DockPanel DockPanel.Dock="Top">
+                                    <Button x:Name="SimHistoryClear" Style="{StaticResource HistoryClear}" Click="SimHistoryClear_Click" />
+                                    <TextBlock Text="Histórico" Style="{StaticResource HistoryCardTitle}" />
+                                </DockPanel>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="SimHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Cpu" />
                                 </ScrollViewer>
@@ -597,17 +600,17 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Border Style="{StaticResource ConfigCard}">
                             <DockPanel>
                                 <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
-                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Configurações do benchmark" Style="{StaticResource CardTitle}" />
                                 </Grid>
                                 <StackPanel DockPanel.Dock="Bottom">
-                                <Button x:Name="BtnGpuBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnGpuBench_Click" />
+                                    <Button x:Name="BtnGpuBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnGpuBench_Click" />
                                 </StackPanel>
                                 <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
                                     <StackPanel Style="{StaticResource ConfigSection}">
@@ -634,8 +637,11 @@
                         </Border>
                         <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}"
-                                           ToolTip="Cada barra compara com o melhor resultado na mesma resolução." />
+                                <DockPanel DockPanel.Dock="Top">
+                                    <Button x:Name="GbHistoryClear" Style="{StaticResource HistoryClear}" Click="GbHistoryClear_Click" />
+                                    <TextBlock Text="Histórico" Style="{StaticResource HistoryCardTitle}"
+                                               ToolTip="Cada barra compara com o melhor resultado na mesma resolução." />
+                                </DockPanel>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="GbHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Gpu" />
                                 </ScrollViewer>
@@ -697,18 +703,18 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Border Style="{StaticResource ConfigCard}">
                             <DockPanel>
                                 <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
-                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Configurações do benchmark" Style="{StaticResource CardTitle}" />
                                 </Grid>
                                 <StackPanel DockPanel.Dock="Bottom">
-                                <Button x:Name="BtnRtBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnRtBench_Click" ToolTipService.ShowOnDisabled="True"
-                                        ToolTip="Compare só resultados com a mesma resolução, o mesmo preset e o mesmo driver, com o PC na tomada e sem outros programas pesados abertos." />
+                                    <Button x:Name="BtnRtBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnRtBench_Click" ToolTipService.ShowOnDisabled="True"
+                                            ToolTip="Compare só resultados com a mesma resolução, o mesmo preset e o mesmo driver, com o PC na tomada e sem outros programas pesados abertos." />
                                 </StackPanel>
                                 <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
                                     <StackPanel Style="{StaticResource ConfigSection}">
@@ -745,8 +751,11 @@
                         </Border>
                         <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}"
-                                           ToolTip="Cada barra compara com o melhor resultado no mesmo preset e na mesma resolução." />
+                                <DockPanel DockPanel.Dock="Top">
+                                    <Button x:Name="RtHistoryClear" Style="{StaticResource HistoryClear}" Click="RtHistoryClear_Click" />
+                                    <TextBlock Text="Histórico" Style="{StaticResource HistoryCardTitle}"
+                                               ToolTip="Cada barra compara com o melhor resultado no mesmo preset e na mesma resolução." />
+                                </DockPanel>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="RtHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Gpu" />
                                 </ScrollViewer>
@@ -800,37 +809,34 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Border Style="{StaticResource ConfigCard}">
                             <DockPanel>
                                 <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
-                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Configurações do benchmark" Style="{StaticResource CardTitle}" />
                                 </Grid>
                                 <StackPanel DockPanel.Dock="Bottom">
-                                <Button x:Name="BtnMemBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnMemBench_Click" />
+                                    <Button x:Name="BtnMemBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnMemBench_Click"
+                                            ToolTip="Latência e banda da RAM, com blocos maiores que o cache do processador; depois, um pacote de 512 MB e mil arquivos de 64 KB lidos sem o cache do Windows e apagados no fim." />
                                 </StackPanel>
                                 <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
+                                    <!-- Sem ajustes: o que o teste faz fica na dica do botão e em cada linha do palco -->
                                     <StackPanel Style="{StaticResource ConfigSection}">
-                                        <TextBlock Text="Memória RAM" Style="{StaticResource ConfigName}" />
-                                        <TextBlock Text="Latência e banda, com blocos maiores que o cache do processador: o que a RAM entrega de fato." Style="{StaticResource Caption}" TextWrapping="Wrap" />
-                                    </StackPanel>
-                                    <StackPanel Style="{StaticResource ConfigSection}">
-                                        <TextBlock Text="Carregamento" Style="{StaticResource ConfigName}" />
-                                        <TextBlock Text="Um pacote de 512 MB e mil arquivos de 64 KB na pasta temporária, lidos sem o cache do Windows e apagados no fim." Style="{StaticResource Caption}" TextWrapping="Wrap" />
-                                    </StackPanel>
-                                    <StackPanel Style="{StaticResource ConfigSection}">
-                                        <TextBlock Text="Ajustes" Style="{StaticResource ConfigName}" />
-                                        <TextBlock Text="Nenhum: o teste é o mesmo em qualquer PC, para os números se compararem." Style="{StaticResource Caption}" TextWrapping="Wrap" />
+                                        <TextBlock Text="Sem ajustes" Style="{StaticResource ConfigName}" />
+                                        <TextBlock Text="O teste é o mesmo em qualquer PC, para os números se compararem." Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </local:ConfigStack>
                             </DockPanel>
                         </Border>
                         <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}" />
+                                <DockPanel DockPanel.Dock="Top">
+                                    <Button x:Name="MemHistoryClear" Style="{StaticResource HistoryClear}" Click="MemHistoryClear_Click" />
+                                    <TextBlock Text="Histórico" Style="{StaticResource HistoryCardTitle}" />
+                                </DockPanel>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="MemHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Memory" />
                                 </ScrollViewer>
@@ -884,18 +890,18 @@
                     </Border>
                     <Grid Grid.Column="2">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="16" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Border Style="{StaticResource ConfigCard}">
                             <DockPanel>
                                 <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
-                                    <TextBlock Text="Configurações do teste" Style="{StaticResource CardTitle}" />
+                                    <TextBlock Text="Configurações do benchmark" Style="{StaticResource CardTitle}" />
                                 </Grid>
                                 <StackPanel DockPanel.Dock="Bottom">
-                                <Button x:Name="BtnDiskBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnDiskBench_Click"
-                                        ToolTip="Grava um arquivo temporário na unidade escolhida, mede sem o cache do Windows e apaga o arquivo no final. Feche outros programas pesados antes." />
+                                    <Button x:Name="BtnDiskBench" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnDiskBench_Click"
+                                            ToolTip="Grava um arquivo temporário na unidade escolhida, mede sem o cache do Windows e apaga o arquivo no final. Feche outros programas pesados antes." />
                                 </StackPanel>
                                 <local:ConfigStack Divider="{DynamicResource Line}" Margin="0,4,0,8">
                                     <StackPanel Style="{StaticResource ConfigSection}">
@@ -919,8 +925,11 @@
                         </Border>
                         <Border Grid.Row="2" Style="{StaticResource HistoryCard}">
                             <DockPanel>
-                                <TextBlock DockPanel.Dock="Top" Text="Histórico" Style="{StaticResource HistoryCardTitle}"
-                                           ToolTip="Cada barra compara com o melhor resultado da mesma unidade." />
+                                <DockPanel DockPanel.Dock="Top">
+                                    <Button x:Name="DiskHistoryClear" Style="{StaticResource HistoryClear}" Click="DiskHistoryClear_Click" />
+                                    <TextBlock Text="Histórico" Style="{StaticResource HistoryCardTitle}"
+                                               ToolTip="Cada barra compara com o melhor resultado da mesma unidade." />
+                                </DockPanel>
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,16,0">
                                     <ItemsControl x:Name="DiskHistory" Style="{StaticResource HistoryList}" local:Ui.Channel="Storage" />
                                 </ScrollViewer>

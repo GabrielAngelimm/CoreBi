@@ -10,39 +10,41 @@ namespace CoreBi.Desktop
     /// <summary>
     /// Medidor do Gargalo: leitura, fração 0–1 na cor do componente (Channel: Cpu, Gpu, Memory, Danger; vazio = aço) e a marca do
     /// limite que a classificação usa (Mark, 0–1; NaN = sem marca). Atualizado no lugar a cada leitura; Active acende o rótulo da
-    /// leitura que explica o veredito de agora. A linha de complemento nunca fica vazia: sem detalhe, ela diz o limite
-    /// (Limit), e assim as seis linhas têm o mesmo desenho.
+    /// leitura que explica o veredito de agora. Na tela, só o nome, o número e o medidor: o limite e o detalhe da leitura (o
+    /// núcleo, o aviso do driver, a falta do sensor) ficam na dica (Tip), para as seis linhas terem o mesmo desenho e pouco texto.
     /// </summary>
     public sealed class LimitReading : ObservableObject
     {
-        private string _label, _value = "—", _sub = "", _tone = "";
+        private readonly string _tip;
+        private string _label, _value = "—", _note = "", _tone = "";
         private double _fraction;
         private bool _active;
 
-        public LimitReading(string label, string channel, double mark, string limit, string? tip = null, string? hint = null, bool first = false)
+        public LimitReading(string label, string channel, double mark, string limit, string tip, bool first = false)
         {
             _label = label;
             Channel = channel;
             Mark = mark;
-            Limit = limit;
-            Tip = tip;
-            Hint = hint is null ? "" : "  " + hint;
+            _tip = $"{tip}\n{limit}.";
             First = first;
         }
 
         public bool First { get; }
-        public string Limit { get; }
         public string Channel { get; }
         public double Mark { get; }
-        public string? Tip { get; }
-        public string Hint { get; }
+        public string Tip => _note.Length > 0 ? $"{_note}\n\n{_tip}" : _tip;
         public bool HasMark => !double.IsNaN(Mark);
         public GridLength MarkLeft => new(HasMark ? Mark : 0, GridUnitType.Star);
         public GridLength MarkRight => new(HasMark ? 1 - Mark : 1, GridUnitType.Star);
 
         public string Label { get => _label; set => Set(ref _label, value); }
         public string Value { get => _value; set => Set(ref _value, value); }
-        public string Sub { get => _sub.Length > 0 ? _sub : Limit; set => Set(ref _sub, value ?? ""); }
+        /// <summary>O detalhe da leitura agora, no começo da dica (vazio = só a explicação e o limite).</summary>
+        public string Note
+        {
+            get => _note;
+            set { if (Set(ref _note, value ?? "")) OnPropertyChanged(nameof(Tip)); }
+        }
         public string Tone { get => _tone; set => Set(ref _tone, value); }
         public bool Active { get => _active; set => Set(ref _active, value); }
         public double Fraction { get => _fraction; set => Set(ref _fraction, Math.Clamp(value, 0, 1)); }
@@ -60,15 +62,14 @@ namespace CoreBi.Desktop
             Limiter = limiter;
             First = first;
             Label = label;
-            Meaning = meaning;
             Channel = channel;
-            Tip = tip;
+            // O que a situação quer dizer e o que fazer nela: na dica, para a linha ficar só com o nome e o tempo
+            Tip = $"{meaning}\n\n{tip}";
         }
 
         public Limiter Limiter { get; }
         public bool First { get; }
         public string Label { get; }
-        public string Meaning { get; }
         public string Channel { get; }
         public string Tip { get; }
         public string Value { get => _value; set => Set(ref _value, value); }
@@ -109,10 +110,10 @@ namespace CoreBi.Desktop.Views
     public partial class BottleneckView : UserControl
     {
         private const string SessionTip = "Inicie e vá para o jogo: a análise só conta o tempo com ele em primeiro plano, então pode sair e voltar.";
-        private const string IdleStatus = "Jogue com o CoreBi aberto: no fim, você vê o que segurou o FPS e por quanto tempo.";
+        private const string IdleStatus = "Mede o jogo pelo tempo escolhido e conta o que segurou o FPS.";
+        private const string LowTip = "O FPS dos quadros mais lentos (o pior 1 % dos últimos 10 s). Mostra as travadas que o FPS médio esconde.";
         private const string IdleTitle = "Nenhum jogo em primeiro plano";
-        private const string IdleAdvice = "Abra um jogo com esta página aberta. Num segundo monitor, o veredito aparece aqui ao vivo; ao voltar do jogo " +
-                                          "(Alt+Tab), fica o resumo dos últimos 30 segundos dele.";
+        private const string IdleAdvice = "Abra um jogo. Num segundo monitor, o veredito aparece aqui ao vivo; ao voltar dele (Alt+Tab), fica o resumo dos últimos 30 segundos.";
         // Quanto de jogo o cartão guarda para mostrar quando o jogo sai da frente
         private static readonly TimeSpan HeldWindow = TimeSpan.FromSeconds(30);
 
@@ -127,13 +128,13 @@ namespace CoreBi.Desktop.Views
         private bool _demo;
 
         private readonly LimitReading _gpu = new("Uso da GPU", "Gpu", LoadSample.GpuLimitPct / 100.0, $"Limite em {LoadSample.GpuLimitPct:0} %",
-            "Quanto a placa de vídeo está trabalhando. A partir de 90 % ela é o limite, o normal em jogos pesados.", "placa de vídeo", first: true);
+            "Quanto a placa de vídeo está trabalhando. A partir de 90 % ela é o limite, o normal em jogos pesados.", first: true);
         private readonly LimitReading _cpu = new("Núcleo mais ocupado", "Cpu", LoadSample.CpuLimitPct / 100.0, $"Limite em {LoadSample.CpuLimitPct:0} %",
-            "Jogos costumam depender de um ou dois núcleos. A partir de 85 % num núcleo (ou no total) o processador passa a segurar o FPS.", "processador");
+            "Jogos costumam depender de um ou dois núcleos. A partir de 85 % num núcleo (ou no total) o processador passa a segurar o FPS.");
         private readonly LimitReading _vram = new("VRAM em uso", "Gpu", LoadSample.VramLimitPct / 100.0, $"Limite em {LoadSample.VramLimitPct:0} %",
-            "A memória da própria placa de vídeo, onde ficam as texturas. A partir de 97 % ela está cheia e o jogo engasga.", "memória da placa de vídeo");
+            "A memória da própria placa de vídeo, onde ficam as texturas. A partir de 97 % ela está cheia e o jogo engasga.");
         private readonly LimitReading _ram = new("RAM em uso", "Memory", LoadSample.RamLimitPct / 100.0, $"Limite em {LoadSample.RamLimitPct:0} %",
-            "A memória do PC. A partir de 92 % o Windows passa a usar o disco no lugar dela, bem mais lento.", "memória do PC");
+            "A memória do PC. A partir de 92 % o Windows passa a usar o disco no lugar dela, bem mais lento.");
         private readonly LimitReading _gpuTemp = new("Temperatura da GPU", "Gpu", LoadSample.ThermalLimitC / 100.0, $"Limite em {LoadSample.ThermalLimitC:0} °C",
             "A partir de 95 °C, ou quando o driver reduz o clock pela temperatura, o limite é o calor.");
         private readonly LimitReading _cpuTemp = new("Temperatura da CPU", "Cpu", LoadSample.ThermalLimitC / 100.0, $"Limite em {LoadSample.ThermalLimitC:0} °C",
@@ -220,7 +221,7 @@ namespace CoreBi.Desktop.Views
                 string clock = $"{Clock(elapsed)} de {Clock(_session.Duration)}";
                 // Só o nome do processo, de propósito (anticheats): ver FrameMonitor.ResolveProcessName.
                 BnSessionStatus.Text = frames is { Fps: > 0 }
-                    ? $"Medindo {frames.ProcessName} · {clock} · {Samples(_session.Count)}"
+                    ? $"Medindo {frames.ProcessName} · {clock}"
                     : elapsed > TimeSpan.Zero
                         ? $"Pausada fora do jogo: volte para ele e a análise continua · {clock}"
                         : $"Vá para o jogo e deixe-o em primeiro plano · {clock}";
@@ -257,8 +258,8 @@ namespace CoreBi.Desktop.Views
         private void ShowHeld((LoadSample Sample, Limiter Main, string Game, DateTime Last, int Seconds) held)
         {
             SetMode(held: true, held.Game, " · há " + ReadoutFormat.Span(DateTime.Now - held.Last));
-            BnFpsSub.Text = $"média dos últimos {held.Seconds} s";
-            BnLowSub.Text = $"média dos últimos {held.Seconds} s";
+            BnFpsCell.ToolTip = $"A média de quadros por segundo nos últimos {held.Seconds} s do jogo.";
+            BnLowCell.ToolTip = $"A média do 1% low nos últimos {held.Seconds} s do jogo: quanto mais perto do FPS médio, menos travadas.";
             if (held.Main != Limiter.Unknown) SetLive(BottleneckAnalyzer.Title(held.Main), BottleneckAnalyzer.Advice(held.Main), VerdictTone(held.Main));
             else SetLive("Sem veredito", "O jogo esteve na frente, mas faltou o uso da GPU ou da CPU para dizer qual peça limitava.", null);
             BnFpsNow.Text = held.Sample.Fps is > 0 ? $"{held.Sample.Fps:0}" : "—";
@@ -276,11 +277,10 @@ namespace CoreBi.Desktop.Views
             BnLiveGame.Text = game ?? "";
             BnLiveAgo.Text = ago;
             BnFpsLabel.Text = held ? "FPS médio" : "FPS agora";
-            BnFpsCell.ToolTip = held ? "A média de quadros por segundo nos últimos segundos do jogo." : "Quadros que o jogo entregou no último segundo.";
             if (!held)
             {
-                BnFpsSub.Text = "quadros por segundo";
-                BnLowSub.Text = "os quadros mais lentos";
+                BnFpsCell.ToolTip = "Quadros que o jogo entregou no último segundo.";
+                BnLowCell.ToolTip = LowTip;
             }
             BnReadingsTitle.Text = held ? "Leituras do último jogo" : "Leituras";
         }
@@ -290,7 +290,7 @@ namespace CoreBi.Desktop.Views
         {
             SetPct(_gpu, sample.GpuLoad);
             SetPct(_cpu, sample.CpuMaxCore);
-            _cpu.Sub = string.Join(" · ", new[]
+            _cpu.Note = string.Join(" · ", new[]
             {
                 sample.BusiestCore is { Length: > 0 } core ? char.ToUpper(core[0], CultureInfo.CurrentCulture) + core[1..] : null,
                 sample.CpuTotal is float total ? $"total da CPU {total:0} %" : null,
@@ -298,10 +298,10 @@ namespace CoreBi.Desktop.Views
             SetPct(_vram, sample.VramPct);
             SetPct(_ram, sample.RamPct);
             SetTemp(_gpuTemp, sample.GpuTemp);
-            _gpuTemp.Sub = sample.GpuThermalCap ? "O driver está reduzindo o clock pela temperatura" : "";
+            _gpuTemp.Note = sample.GpuThermalCap ? "O driver está reduzindo o clock pela temperatura." : "";
             if (sample.GpuThermalCap) _gpuTemp.Tone = "Danger";
             SetTemp(_cpuTemp, sample.CpuTemp);
-            _cpuTemp.Sub = sample.CpuTemp == null && _context?.SensorsRead == true
+            _cpuTemp.Note = sample.CpuTemp == null && _context?.SensorsRead == true
                 ? CpuSensorMessages.Inline(_context.Sensors.DiagnoseCpuSensors(), "Sem leitura") ?? "" : "";
 
             // A leitura que explica o veredito acende o rótulo; as outras ficam no tom de sempre.
@@ -388,7 +388,11 @@ namespace CoreBi.Desktop.Views
             _coreAvg.Value = Number(run.CoreAvg);
             _vramMax.Value = Number(run.VramMax);
             _gpuTempMax.Value = Number(run.GpuTempMax);
-            if (status) BnSessionStatus.Text = Summary(run);
+            if (status)
+            {
+                BnSessionStatus.Text = Summary(run);
+                BnSessionStatus.ToolTip = $"{Samples(run.Samples)}, uma por segundo de jogo.";
+            }
 
             static string Number(double? v) => v is double d && double.IsFinite(d) ? $"{d:0}" : "—";
         }
@@ -401,13 +405,13 @@ namespace CoreBi.Desktop.Views
             BnResultAdvice.SetResourceReference(TextBlock.ForegroundProperty, tone == null ? "Muted" : "Fg");
         }
 
+        // A linha de baixo do título: só quando e o quê (as amostras ficam na dica)
         private static string Summary(BottleneckRun run) => string.Join(" · ", new[]
         {
             "Última análise",
             run.Process.Length > 0 ? run.Process : null,
             ReadoutFormat.When(run.Date),
             ReadoutFormat.Span(TimeSpan.FromSeconds(run.Seconds)),
-            Samples(run.Samples),
         }.Where(x => x != null));
 
         private static string Samples(int n) => n == 1 ? "1 amostra" : $"{n.ToString("N0", CultureInfo.GetCultureInfo("pt-BR"))} amostras";
@@ -416,11 +420,14 @@ namespace CoreBi.Desktop.Views
 
         private void BnBalanceCanvas_SizeChanged(object sender, SizeChangedEventArgs e) => PositionBalanceDot();
 
-        /// <summary>Posição do marcador: escala logarítmica da razão GPU/CPU (0,4× … 2,5×), centro = equilibrado.</summary>
+        /// <summary>
+        /// Posição do marcador: escala logarítmica da razão GPU/CPU (0,4× … 2,5×), centro = equilibrado. O ponto vai para o lado da
+        /// peça que tende a segurar o FPS (a CPU à esquerda, a placa de vídeo à direita), então os dois nomes bastam como legenda.
+        /// </summary>
         private void PositionBalanceDot()
         {
             double w = BnBalanceCanvas.ActualWidth;
-            double t = Math.Clamp((Math.Log(_balanceRatio) - Math.Log(0.4)) / (Math.Log(2.5) - Math.Log(0.4)), 0, 1);
+            double t = 1 - Math.Clamp((Math.Log(_balanceRatio) - Math.Log(0.4)) / (Math.Log(2.5) - Math.Log(0.4)), 0, 1);
             Canvas.SetLeft(BnBalanceDot, t * (w - BnBalanceDot.Width));
         }
 

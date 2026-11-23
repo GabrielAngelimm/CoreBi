@@ -246,6 +246,24 @@ namespace CoreBi.Desktop.Views
             SimHistory.ItemsSource = History(Of(r => r.Test == "sim"), _ => "");
             MemHistory.ItemsSource = History(Of(r => r.Test == "mem"), _ => "");
             DiskHistory.ItemsSource = History(Of(r => r.Test == "disk"), r => SummaryParts(r.Summary).FirstOrDefault() ?? "", valueIndex: 1);
+            // Limpar só aparece com algo para limpar
+            foreach (var (list, clear) in new[] { (GbHistory, GbHistoryClear), (RtHistory, RtHistoryClear), (SimHistory, SimHistoryClear), (MemHistory, MemHistoryClear), (DiskHistory, DiskHistoryClear) })
+                clear.Visibility = list.Items.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void GbHistoryClear_Click(object sender, RoutedEventArgs e) => ClearRecords(sender, r => r.Test == "gpu");
+        private void RtHistoryClear_Click(object sender, RoutedEventArgs e) => ClearRecords(sender, r => r.Test.StartsWith("rt:", StringComparison.Ordinal));
+        private void SimHistoryClear_Click(object sender, RoutedEventArgs e) => ClearRecords(sender, r => r.Test == "sim");
+        private void MemHistoryClear_Click(object sender, RoutedEventArgs e) => ClearRecords(sender, r => r.Test == "mem");
+        private void DiskHistoryClear_Click(object sender, RoutedEventArgs e) => ClearRecords(sender, r => r.Test == "disk");
+
+        /// <summary>Apaga o histórico de um teste (no segundo clique do botão, que confirma no lugar).</summary>
+        private void ClearRecords(object sender, Predicate<BenchRecord> test)
+        {
+            if (_context == null || !ConfirmButton.Confirm(sender)) return;
+            _context.Settings.BenchRecords.RemoveAll(test);
+            _context.SaveSettings();
+            UpdateGameBenchHistory();
         }
 
         private static List<BenchHistoryRow> History(IEnumerable<BenchRecord> records, Func<BenchRecord, string> group, int valueIndex = 0)
