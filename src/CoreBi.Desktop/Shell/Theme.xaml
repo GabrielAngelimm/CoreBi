@@ -2236,6 +2236,112 @@
         <Setter Property="Padding" Value="4,5,4,3"/>
     </Style>
     <!--
+        Escolha em pílulas soltas (a outra forma de filtro, ao lado do trilho deslizante): cada opção é uma pílula de 42 px, a
+        altura do trilho, com fio LineStrong; sob o mouse, o fundo Hover; escolhida, fundo SignalSoft, fio SignalDeep e texto em
+        tinta e seminegrito. As cores entram e saem em 140 ms. Vão de 8 entre elas (UniformGrid com Margin -4 e cada uma com 4).
+    -->
+    <Style x:Key="ConfigChip" TargetType="RadioButton">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+        <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="Margin" Value="4,0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid>
+                        <Border x:Name="b" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource LineStrong}" Background="Transparent" SnapsToDevicePixels="True"/>
+                        <Border x:Name="on" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource SignalDeep}" Background="{DynamicResource SignalSoft}" Opacity="0" SnapsToDevicePixels="True"/>
+                        <ContentPresenter x:Name="content" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8,1,8,0"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!--
+        A mesma pílula com um medidor de nível antes do nome (três barras de 4 px, de 6 a 14 de altura), para escolhas que sobem
+        de intensidade: Tag 0, 1 ou 2 acende uma, duas ou três barras na cor do componente (Ui.Channel); fora da escolha, o
+        medidor fica a meia luz.
+    -->
+    <Style x:Key="LevelChip" TargetType="RadioButton" BasedOn="{StaticResource ConfigChip}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid>
+                        <Border x:Name="b" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource LineStrong}" Background="Transparent" SnapsToDevicePixels="True"/>
+                        <Border x:Name="on" CornerRadius="21" BorderThickness="1" BorderBrush="{DynamicResource SignalDeep}" Background="{DynamicResource SignalSoft}" Opacity="0" SnapsToDevicePixels="True"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8,0">
+                            <StackPanel x:Name="bars" Orientation="Horizontal" VerticalAlignment="Center" Height="14" Margin="0,0,8,0" Opacity="0.55">
+                                <Border x:Name="l1" Width="4" Height="6" CornerRadius="1.5" VerticalAlignment="Bottom" Margin="0,0,2,0" Background="{DynamicResource Gpu}"/>
+                                <Border x:Name="l2" Width="4" Height="10" CornerRadius="1.5" VerticalAlignment="Bottom" Margin="0,0,2,0" Background="{DynamicResource Gpu}"/>
+                                <Border x:Name="l3" Width="4" Height="14" CornerRadius="1.5" VerticalAlignment="Bottom" Background="{DynamicResource Gpu}"/>
+                            </StackPanel>
+                            <ContentPresenter VerticalAlignment="Center" Margin="0,1,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Tag" Value="0">
+                            <Setter TargetName="l2" Property="Background" Value="{DynamicResource LineStrong}"/>
+                            <Setter TargetName="l3" Property="Background" Value="{DynamicResource LineStrong}"/>
+                        </Trigger>
+                        <Trigger Property="Tag" Value="1">
+                            <Setter TargetName="l3" Property="Background" Value="{DynamicResource LineStrong}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource Fg}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter TargetName="bars" Property="Opacity" Value="1"/>
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="on" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <!--
         Ajuste por controle deslizante (duração, corte por temperatura): o rótulo à esquerda e o valor escolhido à direita na mesma
         linha (ConfigValue, 14 seminegrito, o mesmo peso do texto da tecla escolhida), 10 até o trilho. A cor do trilho aceso é a
         do ajuste: sinal na duração, a cor da peça no corte (a mesma do tracejado do gráfico).

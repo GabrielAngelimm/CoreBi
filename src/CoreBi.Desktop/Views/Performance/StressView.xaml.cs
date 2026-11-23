@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -124,20 +123,18 @@ public partial class StressView : UserControl, IDisposable
         ("Normal", 96, 32), ("Alta", 128, 48), ("Extrema", 160, 64),
     };
 
-    private static T Stop<T>(T[] stops, RangeBase slider) => stops[Math.Clamp((int)Math.Round(slider.Value), 0, stops.Length - 1)];
+    private static readonly double[] RamFractions = { 0.4, 0.5, 0.6, 0.7, 0.8 };
 
-    private void StressOption_Changed(object sender, RoutedPropertyChangedEventArgs<double> e) => ShowLimits();
+    /// <summary>A opção escolhida numa fileira de pílulas: a Tag de cada uma é a posição dela na lista do código.</summary>
+    private static T Chosen<T>(T[] options, Panel panel, int fallback) =>
+        options[int.TryParse(Ui.CheckedTag(panel), NumberStyles.Integer, CultureInfo.InvariantCulture, out int i) ? Math.Clamp(i, 0, options.Length - 1) : fallback];
 
     /// <summary>O valor de cada controle deslizante ao lado do nome dele.</summary>
     private void ShowLimits()
     {
-        if (CpuLimitText == null || GpuLimitText == null || GpuLoadText == null || RamFractionText == null || GpuResText == null || GpuMsaaText == null) return;
+        if (CpuLimitText == null || GpuLimitText == null) return;
         CpuLimitText.Text = $"{TempLimit.Value:0} °C";
         GpuLimitText.Text = $"{GpuTempLimit.Value:0} °C";
-        GpuResText.Text = Stop(GpuResolutions, GpuRes).Name;
-        GpuMsaaText.Text = Stop(GpuMsaa, GpuMsaaSlider).Name;
-        GpuLoadText.Text = Stop(GpuLoads, GpuLoad).Name;
-        RamFractionText.Text = $"{RamFraction.Value:0} %";
     }
     private void TempChart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
 
@@ -239,7 +236,7 @@ public partial class StressView : UserControl, IDisposable
             if (r != MessageBoxResult.Yes) return;
         }
 
-        double fraction = RamFraction.Value / 100;
+        double fraction = Chosen(RamFractions, RamPanel, 2);
         _stressDuration = TimeSpan.FromMinutes(minutes);
         _stressStart = DateTime.Now;
         _stressMaxTemp = 0;
@@ -258,14 +255,14 @@ public partial class StressView : UserControl, IDisposable
             if (gpu)
             {
                 // Em janela, a temperatura continua à vista no CoreBi; em tela cheia, o corte por temperatura continua valendo
-                var res = Stop(GpuResolutions, GpuRes);
-                var load = Stop(GpuLoads, GpuLoad);
+                var res = Chosen(GpuResolutions, GpuResPanel, 1);
+                var load = Chosen(GpuLoads, GpuLoadPanel, 1);
                 _burn.Start(new GpuBurnSettings
                 {
                     Fullscreen = res.Width == 0,
                     Width = res.Width,
                     Height = res.Height,
-                    Msaa = Stop(GpuMsaa, GpuMsaaSlider).Samples,
+                    Msaa = Chosen(GpuMsaa, GpuMsaaPanel, 1).Samples,
                     Shells = load.Shells,
                     Iterations = load.Iterations,
                     AdapterName = _context.PrimaryGpu?.Name ?? "",

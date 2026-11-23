@@ -401,7 +401,7 @@
                             espera a primeira leitura dos sensores (os outros cartões o acompanham).
                         -->
                         <Border x:Name="StressConfigCard" Style="{StaticResource ConfigCard}"
-                                local:Skeleton.Layout="row 34: h 230; foot 42: btn *^42; footgap 24; gap 12; bands 7; row 17: c 40%, - *, c 15%&gt;; gap 10; row 24: pill *^8; endbands">
+                                local:Skeleton.Layout="row 34: h 230; foot 42: btn *^42; footgap 20; gap 8; bands 7; row 17: c 40%, - *, c 15%&gt;; gap 10; row 24: pill *^8; endbands">
                             <DockPanel>
                                 <Grid DockPanel.Dock="Top" Style="{StaticResource CardHeader}">
                                     <TextBlock Text="Configurações do teste de carga" Style="{StaticResource CardTitle}" />
@@ -411,7 +411,7 @@
                                     <Button x:Name="BtnStress" Style="{StaticResource ConfigStart}" local:Ui.Icon="&#xE768;" Content="Iniciar teste" Click="BtnStress_Click"
                                             ToolTip="Põe as peças marcadas no máximo e acompanha a temperatura, para ver se o PC aguenta sem travar." />
                                 </StackPanel>
-                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="28" MaxGap="56" Margin="0,12,0,24">
+                                <local:ConfigStack Divider="{DynamicResource Line}" MinGap="24" MaxGap="56" Margin="0,8,0,20">
                                     <StackPanel x:Name="StressDurationSection" Style="{StaticResource ConfigSection}">
                                         <DockPanel Style="{StaticResource ConfigHead}">
                                             <TextBlock x:Name="StressDurationText" Text="10 min" Style="{StaticResource ConfigValue}" />
@@ -439,41 +439,54 @@
                                         <local:ValueSlider x:Name="GpuTempLimit" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Gpu}" Minimum="60" Maximum="100" Value="85"
                                                            ValueChanged="TempLimit_Changed" AutomationProperties.Name="Corte da placa de vídeo" />
                                     </StackPanel>
-                                    <!-- A janela 3D da placa de vídeo: resolução, anti-aliasing e carga do desenho (StressView.GpuResolutions, GpuMsaa, GpuLoads) -->
+                                    <!--
+                                        A janela 3D da placa de vídeo e a fatia da RAM em pílulas grandes, alternando as duas formas de filtro:
+                                        trilho deslizante para resolução e RAM (muitas opções, uma vizinha da outra) e pílulas soltas para o
+                                        anti-aliasing e a carga, esta com um medidor de nível na cor da placa de vídeo. A Tag é a posição na
+                                        lista do código (StressView.GpuResolutions, GpuMsaa, GpuLoads, RamFractions).
+                                    -->
                                     <StackPanel x:Name="GpuResSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
-                                        <DockPanel Style="{StaticResource ConfigHead}">
-                                            <TextBlock x:Name="GpuResText" Text="1080p" Style="{StaticResource ConfigValue}" />
-                                            <TextBlock Text="Resolução da placa de vídeo" Style="{StaticResource ConfigName}" Margin="0"
-                                                       ToolTip="O tamanho da janela 3D. Em janela, a temperatura continua à vista no CoreBi; em tela cheia, o corte por temperatura continua valendo." />
-                                        </DockPanel>
-                                        <local:ValueSlider x:Name="GpuRes" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Gpu}" Minimum="0" Maximum="3" Value="1"
-                                                           ValueChanged="StressOption_Changed" AutomationProperties.Name="Resolução da placa de vídeo" />
+                                        <TextBlock Text="Resolução da placa de vídeo" Style="{StaticResource ConfigName}" Background="Transparent"
+                                                   ToolTip="O tamanho da janela 3D. Em janela, a temperatura continua à vista no CoreBi; em tela cheia, o corte por temperatura continua valendo." />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="GpuResPanel" Style="{StaticResource ConfigSegmentRail}">
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StGpuRes" Content="720p" Tag="0" />
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StGpuRes" Content="1080p" Tag="1" IsChecked="True" />
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StGpuRes" Content="1440p" Tag="2" />
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StGpuRes" Content="Tela cheia" Tag="3" ToolTip="No tamanho do monitor. Esc fecha a janela 3D." />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
                                     </StackPanel>
                                     <StackPanel x:Name="GpuMsaaSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
-                                        <DockPanel Style="{StaticResource ConfigHead}">
-                                            <TextBlock x:Name="GpuMsaaText" Text="4x" Style="{StaticResource ConfigValue}" />
-                                            <TextBlock Text="Anti-aliasing (MSAA)" Style="{StaticResource ConfigName}" Margin="0"
-                                                       ToolTip="Suaviza as bordas desenhando cada pixel várias vezes: mais amostras, mais trabalho para a placa de vídeo." />
-                                        </DockPanel>
-                                        <local:ValueSlider x:Name="GpuMsaaSlider" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Gpu}" Minimum="0" Maximum="2" Value="1"
-                                                           ValueChanged="StressOption_Changed" AutomationProperties.Name="Anti-aliasing" />
+                                        <TextBlock Text="Anti-aliasing (MSAA)" Style="{StaticResource ConfigName}" Background="Transparent"
+                                                   ToolTip="Suaviza as bordas desenhando cada pixel várias vezes: mais amostras, mais trabalho para a placa de vídeo." />
+                                        <UniformGrid x:Name="GpuMsaaPanel" Rows="1" Margin="-4,0">
+                                            <RadioButton Style="{StaticResource ConfigChip}" GroupName="StGpuMsaa" Content="Desligado" Tag="0" />
+                                            <RadioButton Style="{StaticResource ConfigChip}" GroupName="StGpuMsaa" Content="4x" Tag="1" IsChecked="True" />
+                                            <RadioButton Style="{StaticResource ConfigChip}" GroupName="StGpuMsaa" Content="8x" Tag="2" />
+                                        </UniformGrid>
                                     </StackPanel>
                                     <StackPanel x:Name="GpuOptions" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
-                                        <DockPanel Style="{StaticResource ConfigHead}">
-                                            <TextBlock x:Name="GpuLoadText" Text="Alta" Style="{StaticResource ConfigValue}" />
-                                            <TextBlock Text="Carga da placa de vídeo" Style="{StaticResource ConfigName}" Margin="0"
-                                                       ToolTip="Quantas camadas a cena desenha por quadro e quanto cálculo cada pixel faz. Extrema esquenta mais rápido." />
-                                        </DockPanel>
-                                        <local:ValueSlider x:Name="GpuLoad" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Gpu}" Minimum="0" Maximum="2" Value="1"
-                                                           ValueChanged="StressOption_Changed" AutomationProperties.Name="Carga da placa de vídeo" />
+                                        <TextBlock Text="Carga da placa de vídeo" Style="{StaticResource ConfigName}" Background="Transparent"
+                                                   ToolTip="Quantas camadas a cena desenha por quadro e quanto cálculo cada pixel faz. Extrema esquenta mais rápido." />
+                                        <UniformGrid x:Name="GpuLoadPanel" Rows="1" Margin="-4,0">
+                                            <RadioButton Style="{StaticResource LevelChip}" GroupName="StGpuLoad" Content="Normal" Tag="0" />
+                                            <RadioButton Style="{StaticResource LevelChip}" GroupName="StGpuLoad" Content="Alta" Tag="1" IsChecked="True" />
+                                            <RadioButton Style="{StaticResource LevelChip}" GroupName="StGpuLoad" Content="Extrema" Tag="2" />
+                                        </UniformGrid>
                                     </StackPanel>
                                     <StackPanel x:Name="RamSection" Style="{StaticResource ConfigSection}" ToolTipService.ShowOnDisabled="True">
-                                        <DockPanel Style="{StaticResource ConfigHead}">
-                                            <TextBlock x:Name="RamFractionText" Text="60 %" Style="{StaticResource ConfigValue}" />
-                                            <TextBlock Text="RAM livre em teste" Style="{StaticResource ConfigName}" Margin="0" ToolTip="Quanto da memória livre o teste separa para gravar e conferir." />
-                                        </DockPanel>
-                                        <local:ValueSlider x:Name="RamFraction" Style="{StaticResource ConfigSlider}" Fill="{DynamicResource Memory}" Minimum="40" Maximum="80" Step="10" Value="60"
-                                                           SmallChange="10" LargeChange="10" ValueChanged="StressOption_Changed" AutomationProperties.Name="RAM livre em teste" />
+                                        <TextBlock Text="RAM livre em teste" Style="{StaticResource ConfigName}" Background="Transparent"
+                                                   ToolTip="Quanto da memória livre o teste separa para gravar e conferir." />
+                                        <Border Style="{StaticResource ConfigSegmentGroup}">
+                                            <local:SlidingSelectionPanel x:Name="RamPanel" Style="{StaticResource ConfigSegmentRail}">
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StRam" Content="40 %" Tag="0" />
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StRam" Content="50 %" Tag="1" />
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StRam" Content="60 %" Tag="2" IsChecked="True" />
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StRam" Content="70 %" Tag="3" />
+                                                <RadioButton Style="{StaticResource ConfigSegment}" GroupName="StRam" Content="80 %" Tag="4" />
+                                            </local:SlidingSelectionPanel>
+                                        </Border>
                                     </StackPanel>
                                 </local:ConfigStack>
                             </DockPanel>
