@@ -19,7 +19,7 @@ Operações administrativas usam comandos específicos e diálogos Windows. Sele
 - Rede: Cloudflare é a opção inicial; se a medição ficar incompleta, o M-Lab é tentado automaticamente, sem confirmação na tela (decisão do mantenedor para a 1.0, de uso pessoal e entre amigos; veja [PRIVACY.md](PRIVACY.md)). A origem acompanha o resultado, e a espera da Cloudflare não bloqueia o M-Lab. Se o público mudar, a página pede o consentimento antes da primeira troca; o motor já tem a trava.
 - Cargas pesadas: apenas uma operação ativa, incluindo sua preparação. Cancelar a operação correta, restaurar botões/monitoramento e limpar temporários.
 - Inicialização/drivers/apps: preservar confirmação e resultado por operação; não alegar teste de instalação quando só houve inventário.
-- Relatórios e configurações pertencem ao CoreBi. O projeto de origem (ResetExplode) aparece só nos créditos legais ([NOTICE.md](../NOTICE.md) e [LICENSE](../LICENSE)), sem marca na interface.
+- Relatórios, configurações e a interface levam só a marca do CoreBi.
 - Estimativa (o equilíbrio teórico do Gargalo) e medição (ETW, RTSS e sensores) têm fontes distintas; não converter a estimativa em leitura medida.
 
 - Botões de iniciar e parar trocam de papel no mesmo lugar (`Ui.SetRunning`): cor, glifo e texto mudam juntos.

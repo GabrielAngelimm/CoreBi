@@ -31,7 +31,7 @@ Primeira versão completa: as 14 páginas foram refinadas uma a uma e o app pass
 - O Edge usado no PDF vem só do registro da máquina ou de Program Files, e um atalho no lugar do PDF gerado é recusado.
 - Relatório HTML com política de conteúdo restrita e escape do CSS; consultas WMI e o ponto de restauração com escape; respostas dos fabricantes limitadas a 8 MB.
 - Memória do RTSS malformada vira "Incompatível" em vez de derrubar o app.
-- Licença MIT restaurada na raiz, com o aviso do projeto de origem (ResetExplode) em `NOTICE.md`; os dois vão junto do programa publicado.
+- Licença MIT na raiz, que também vai junto do programa publicado.
 
 ### Código e testes
 

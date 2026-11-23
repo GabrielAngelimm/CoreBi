@@ -137,6 +137,6 @@ Leia o [guia de contribuição](docs/CONTRIBUTING.md) antes de abrir um PR: ele 
 
 ## Licença e créditos
 
-O CoreBi é distribuído sob a [licença MIT](LICENSE). Ele começou como um derivado independente do [ResetExplode](https://github.com/GustavoReset/ResetExplode), de GustavoReset, cujo aviso MIT continua no arquivo de licença; a origem está em [NOTICE.md](NOTICE.md).
+O CoreBi é distribuído sob a [licença MIT](LICENSE).
 
 Os sensores vêm do [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) (MPL-2.0), os eventos de FPS do TraceEvent e os testes gráficos do Vortice, cada um com a própria licença, listada em [licenses/THIRD-PARTY.md](licenses/THIRD-PARTY.md). PawnIO e RTSS são programas de terceiros, instalados à parte e com as licenças dos autores. Os ícones dos apps do catálogo pertencem aos seus donos ([licenses/APP-ICONS.md](licenses/APP-ICONS.md)).

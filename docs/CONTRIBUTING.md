@@ -2,7 +2,7 @@
 
 Use Windows 10 ou 11 x64, com Python 3 para as verificações e Inno Setup 6 se for gerar o instalador. Os scripts de `tools/` usam o SDK exato de `global.json` e baixam uma cópia se ele faltar (veja o README); para os demais comandos, use `.\tools\Dotnet.ps1` no lugar de `dotnet`. Se o PowerShell recusar os scripts, libere só a sessão atual com `Set-ExecutionPolicy -Scope Process Bypass`.
 
-Leia [arquitetura](ARCHITECTURE.md), [design da interface](DESIGN.md) e [contrato da interface](UI-CONTRACT.md). Mudanças visuais seguem o design validado: a identidade (cores por peça, raios, escala de texto, movimento) não muda sem uma decisão do mantenedor. Mantenha créditos e licenças ([LICENSE](../LICENSE), [NOTICE.md](../NOTICE.md) e `licenses/`).
+Leia [arquitetura](ARCHITECTURE.md), [design da interface](DESIGN.md) e [contrato da interface](UI-CONTRACT.md). Mudanças visuais seguem o design validado: a identidade (cores por peça, raios, escala de texto, movimento) não muda sem uma decisão do mantenedor. Mantenha a licença ([LICENSE](../LICENSE)) e os avisos de terceiros em `licenses/`.
 
 ## Antes de enviar uma alteração
 
@@ -38,7 +38,7 @@ Execute `Bench` com outras cargas pesadas encerradas. Resultados JSON ficam em `
 | --- | --- | --- |
 | `Build.ps1` | Restaura em modo bloqueado e compila a solução (`-Configuration`, padrão Release) | — |
 | `Test.ps1` | Restaura em modo bloqueado e roda o executor de testes no modo escolhido (`-Mode`, `-NoBuild`) | — |
-| `Publish.ps1` | Publica o app self-contained (`CoreBi.exe` com as DLLs nativas ao lado, que não são extraídas para a pasta temporária), copia `licenses/`, `LICENSE` e `NOTICE.md`. A pasta padrão `artifacts/publish/win-x64` é apagada antes; uma pasta passada em `-OutputDirectory` é usada como está | — |
+| `Publish.ps1` | Publica o app self-contained (`CoreBi.exe` com as DLLs nativas ao lado, que não são extraídas para a pasta temporária), copia `licenses/` e o `LICENSE`. A pasta padrão `artifacts/publish/win-x64` é apagada antes; uma pasta passada em `-OutputDirectory` é usada como está | — |
 | `Installer.ps1` | Publica (exceto com `-SkipPublish`) e gera `artifacts/installer/CoreBi-<versão>-win-x64-setup.exe` a partir de `installer/CoreBi.iss`, com a versão do `Directory.Build.props`; mostra o SHA256 | Inno Setup 6 (`ISCC.exe` no caminho padrão, `-Iscc` ou `$env:COREBI_ISCC`) |
 | `SecretScan.ps1` | Procura segredos em todo o histórico Git com o Gitleaks; relatório em `artifacts/secrets.json` | Rede na primeira vez: baixa o Gitleaks em versão fixada e confere o SHA256 |
 | `Dotnet.ps1` | Roda qualquer comando do `dotnet` com o SDK exato do `global.json` | — |
