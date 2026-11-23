@@ -44,7 +44,7 @@ internal static class ReportExportService
                     Caption = networkTested ? "O último teste desta sessão" : "Faça o teste em Rede" },
             new() { Key = Sensors, Title = "Sensores", Icon = "\uE9D9", Available = sensors > 0,
                     Caption = sensors > 0 ? $"{sensors} leituras" : "Nenhum sensor respondeu" },
-            new() { Key = Bench, Title = "Benchmarks", Icon = "\uEC4A", Available = bench > 0,
+            new() { Key = Bench, Title = "Benchmarks", Icon = "gauge", Available = bench > 0,
                     Caption = bench > 0 ? $"{bench} {(bench == 1 ? "resultado" : "resultados")}" : "Nenhum teste feito ainda" },
         };
         return (sheets, diag);

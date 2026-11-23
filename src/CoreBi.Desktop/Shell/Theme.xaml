@@ -922,10 +922,11 @@
                                 <ColumnDefinition Width="12"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
+                            <!-- Glifo centrado pela tinta (OpticalCenter): os da fonte ficavam de meio a um pixel acima do texto -->
                             <local:HwIcon x:Name="ic" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Width="20" Height="20" VerticalAlignment="Center"/>
+                                          Width="20" Height="20" VerticalAlignment="Center" OpticalCenter="True"/>
                             <local:HwIcon x:Name="icOn" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}"
-                                          Width="20" Height="20" VerticalAlignment="Center" Foreground="{DynamicResource Signal}" Opacity="0"/>
+                                          Width="20" Height="20" VerticalAlignment="Center" OpticalCenter="True" Foreground="{DynamicResource Signal}" Opacity="0"/>
                             <!-- A DIN assenta 1,5 px acima do centro da caixa: 3 px em cima a descem até o meio do ícone e da pílula -->
                             <Grid Grid.Column="2" VerticalAlignment="Center" Margin="0,3,0,0">
                                 <TextBlock x:Name="txt" Text="{TemplateBinding Content}" TextTrimming="CharacterEllipsis"/>
@@ -2248,8 +2249,8 @@
                     <Border Background="Transparent" CornerRadius="17">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Grid Width="16" Height="16" VerticalAlignment="Center">
-                                <local:HwIcon x:Name="ic" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}" Width="16" Height="16"/>
-                                <local:HwIcon x:Name="icOn" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}" Width="16" Height="16"
+                                <local:HwIcon x:Name="ic" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}" Width="16" Height="16" OpticalCenter="True"/>
+                                <local:HwIcon x:Name="icOn" Kind="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}" Width="16" Height="16" OpticalCenter="True"
                                               Style="{StaticResource ChannelIcon}" local:Ui.Channel="{Binding Path=(local:Ui.Channel), RelativeSource={RelativeSource TemplatedParent}}" Opacity="0"/>
                             </Grid>
                             <!-- A DIN 13 assenta 1 px acima do meio: 2 em cima a põem na linha do ícone. A cópia invisível em seminegrito

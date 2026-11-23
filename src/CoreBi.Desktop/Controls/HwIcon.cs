@@ -8,7 +8,7 @@ namespace CoreBi.Desktop;
 /// <summary>
 /// Ícone de linha sem fundo, na cor do texto (Foreground herdado): as peças do computador desenhadas à mão numa malha de 24 × 24
 /// (traço de 1,5, pontas redondas) e, para o resto, o glifo da fonte de ícones do Windows. Kind é o nome de uma peça ("cpu",
-/// "gpu", "ram", "vram", "storage", "board", "net", "router", "desktop", "fan", "ramv", "temp") ou um glifo (um caractere da Segoe Fluent
+/// "gpu", "ram", "vram", "storage", "board", "net", "router", "desktop", "fan", "ramv", "temp", "gauge") ou um glifo (um caractere da Segoe Fluent
 /// Icons). O tamanho é o Width e o Height; o desenho acompanha o menor deles.
 /// </summary>
 public sealed class HwIcon : Control
@@ -17,6 +17,15 @@ public sealed class HwIcon : Control
         nameof(Kind), typeof(string), typeof(HwIcon), new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.AffectsRender));
 
     public string Kind { get => (string)GetValue(KindProperty); set => SetValue(KindProperty, value); }
+
+    public static readonly DependencyProperty OpticalCenterProperty = DependencyProperty.Register(
+        nameof(OpticalCenter), typeof(bool), typeof(HwIcon), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
+    /// <summary>
+    /// Glifo centrado pela tinta, no pixel inteiro, e não pela caixa da linha da fonte: os glifos da Segoe Fluent assentam de meio a
+    /// um pixel acima do meio da caixa, o que ao lado de um texto centrado (a navegação lateral) aparece. Os desenhos próprios já
+    /// nascem no meio da malha e não mudam.
+    /// </summary>
+    public bool OpticalCenter { get => (bool)GetValue(OpticalCenterProperty); set => SetValue(OpticalCenterProperty, value); }
 
     private const double Cells = 24, Weight = 1.5;
 
@@ -74,6 +83,11 @@ public sealed class HwIcon : Control
         var family = TryFindResource("Icons") as FontFamily ?? new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets");
         var text = new FormattedText(kind, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
             new Typeface(family, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal), size * 0.94, brush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
+        if (OpticalCenter && text.BuildGeometry(new Point()).Bounds is { IsEmpty: false } ink)
+        {
+            dc.DrawText(text, new Point(Math.Round((ActualWidth - ink.Width) / 2 - ink.X), Math.Round((ActualHeight - ink.Height) / 2 - ink.Y)));
+            return;
+        }
         dc.DrawText(text, new Point((ActualWidth - text.Width) / 2, (ActualHeight - text.Height) / 2));
     }
 
@@ -157,6 +171,8 @@ public sealed class HwIcon : Control
             ["desktop"] = new[] { Box(3, 4.5, 18, 11.5, 2), Line("M12,16 V19.5"), Line("M8,19.5 H16") },
             ["fan"] = fan.ToArray(),
             // Termômetro: os sensores de temperatura (saúde do PC na Visão geral)
+            // Velocímetro: o benchmark (arco aberto embaixo, ponteiro para o alto à direita e o eixo)
+            ["gauge"] = new[] { Line("M4.64,18.25 A8.5,8.5 0 1 1 19.36,18.25"), Line("M12,14 L16.25,9.75"), Dot(12, 14, 1.6) },
             ["temp"] = new[] { Line("M10,13.9 V5 A2,2 0 0 1 14,5 V13.9 A4,4 0 1 1 10,13.9 Z"), Line("M12,9.5 V15"), Dot(12, 17.36, 1.75) },
         };
     }
