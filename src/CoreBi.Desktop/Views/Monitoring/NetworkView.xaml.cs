@@ -29,6 +29,7 @@ public partial class NetworkView : UserControl
         DrawDial(null, null);
     }
 
+
     // O adaptador é lido já na abertura do app, fora da interface: a primeira visita encontra a ficha pronta e entra sem esqueleto
     private Task<NetworkAdapterInfo?>? _adapterRead;
 
@@ -36,6 +37,73 @@ public partial class NetworkView : UserControl
     {
         _context = context;
         _adapterRead = Task.Run(NetworkTest.ReadAdapter);
+        // O último teste guardado já abre na página (sem animar: a página ainda nem apareceu), em vez de travessões
+        ShowHistory(select: 0);
+    }
+
+    // ── Histórico ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+    /// <summary>Uma linha do histórico; Tone pinta a latência de um teste com atenção ou ruim.</summary>
+    internal sealed record HistoryRow(NetworkRun Run, string When, string Down, string Up, string Ping, string Tone);
+
+    private bool _historySync;
+
+    /// <summary>Remonta a lista a partir de AppSettings.NetRuns e, com select, mostra aquele teste no diagnóstico.</summary>
+    private void ShowHistory(int? select)
+    {
+        var runs = _context.Settings.NetRuns;
+        var rows = runs.Select(r => new HistoryRow(r, Capitalize(WhenText(r.Date, compact: true)), Mbps(r.DownloadMbps), Mbps(r.UploadMbps),
+            r.LatencyMs is { } l ? $"{Format(l)} ms" : "—",
+            r.Verdict switch { HealthVerdict.Warning => "Warn", HealthVerdict.Critical => "Danger", _ => "" })).ToList();
+        _historySync = true;
+        try
+        {
+            NetHistory.ItemsSource = rows;
+            NetHistory.SelectedIndex = select is { } i && i < rows.Count ? i : -1;
+        }
+        finally { _historySync = false; }
+        NetHistoryEmpty.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        NetHistoryHead.Visibility = rows.Count == 0 ? Visibility.Hidden : Visibility.Visible;
+        NetHistoryCount.Text = rows.Count switch { 0 => "", 1 => "1 teste", _ => $"{rows.Count} testes" };
+        if (select is { } s && s < rows.Count && !_running) DisplayResult(NetworkHistory.ToResult(runs[s]), animate: false, fromHistory: true);
+    }
+
+    private void NetHistory_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_historySync || _running || NetHistory.SelectedItem is not HistoryRow row) return;
+        DisplayResult(NetworkHistory.ToResult(row.Run), animate: true, fromHistory: true);
+    }
+
+    private static string Mbps(double? v) => v is { } x ? Format(x) : "—";
+
+    /// <summary>"hoje às 21:40", "ontem às 18:02" ou "17/11 às 09:12" (outro ano: "17/11/2025"); compacto, sem o "às" (linhas do histórico).</summary>
+    internal static string WhenText(DateTime at, bool compact = false)
+    {
+        var day = at.Date;
+        var today = DateTime.Today;
+        string date = day == today ? "hoje" : day == today.AddDays(-1) ? "ontem"
+            : at.Year == today.Year ? at.ToString("dd/MM", PtBr) : at.ToString("dd/MM/yyyy", PtBr);
+        return compact ? $"{date} {at:HH:mm}" : $"{date} às {at:HH:mm}";
+    }
+
+    private static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpper(text[0], PtBr) + text[1..];
+
+    /// <summary>Para as capturas: um histórico de exemplo só na memória (nada é gravado).</summary>
+    internal void UseSampleHistory(IEnumerable<NetworkRun> runs)
+    {
+        _context.Settings.NetRuns = runs.ToList();
+        ShowHistory(select: null);
+    }
+
+    // Abaixo desta largura da fila de baixo, o histórico sai e o caminho fica com a largura dele (a página continua numa tela)
+    private const double HistoryMinRow = 1240;
+
+    private void NetBottom_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        bool show = NetBottom.ActualWidth >= HistoryMinRow;
+        NetHistoryCard.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        NetHistoryColumn.Width = new GridLength(show ? 380 : 0);
+        NetHistoryGap.Width = new GridLength(show ? 16 : 0);
     }
 
     // Larguras do painel de diagnóstico: abaixo de NarrowDiag a latência e as grandezas de apoio descem para uma faixa sob o
@@ -100,6 +168,9 @@ public partial class NetworkView : UserControl
         _cancellation = cancellation;
         Ui.SetRunning(BtnNetTest, true, "Testar a rede", "Cancelar");
         LastResult = null;
+        _historySync = true;
+        try { NetHistory.SelectedIndex = -1; } finally { _historySync = false; }
+        NetHistory.IsHitTestVisible = false; // durante o teste o diagnóstico é o dele
         DisplayResult(null);
         SetProgress(0, animate: false);
         ShowStages(NetworkPhase.Latency);
@@ -128,6 +199,15 @@ public partial class NetworkView : UserControl
             if (_context.IsClosing) return;
             LastResult = new[] { result.Card };
             DisplayResult(result);
+            if (NetworkHistory.Keeps(result))
+            {
+                NetworkHistory.Add(_context.Settings.NetRuns, NetworkHistory.ToRun(result));
+                _context.SaveSettings();
+                // Entra no topo da lista já escolhido: é o que o diagnóstico mostra agora
+                ShowHistory(select: null);
+                _historySync = true;
+                try { NetHistory.SelectedIndex = 0; } finally { _historySync = false; }
+            }
             if (result.InterruptedPhase != null)
             {
                 Say(result.RetryAfterUtc != null ? "Aguardando o servidor" : "Teste incompleto");
@@ -153,6 +233,7 @@ public partial class NetworkView : UserControl
         {
             _running = false;
             _cancellation = null;
+            NetHistory.IsHitTestVisible = true;
             if (!_context.IsClosing)
             {
                 Ui.SetRunning(BtnNetTest, false, LastResult != null ? "Testar de novo" : "Testar a rede");
@@ -180,10 +261,8 @@ public partial class NetworkView : UserControl
         SetProgress(p.Fraction, animate: true);
         // Leituras parciais: só o que já foi medido; o restante continua com travessão.
         SetReadout(NetLatency, p.LatencyMs);
-        SetReadout(NetDown, p.DownloadMbps);
-        SetReadout(NetUp, p.UploadMbps);
         NetLatencyCaption.Text = p.LatencyMs != null ? "\u2002ms até a internet" : "\u2002ms";
-        DrawDial(p.DownloadMbps, p.UploadMbps);
+        SetSpeeds(p.DownloadMbps, p.UploadMbps, animate: true);
     }
 
     /// <summary>
@@ -235,15 +314,13 @@ public partial class NetworkView : UserControl
         _ => "Faint",
     };
 
-    internal void DisplayResult(NetworkResult? r)
+    internal void DisplayResult(NetworkResult? r, bool animate = false, bool fromHistory = false)
     {
         _result = r;
-        SetReadout(NetDown, r?.DownloadMbps);
-        SetReadout(NetUp, r?.UploadMbps);
+        SetSpeeds(r?.DownloadMbps, r?.UploadMbps, animate);
         NetUp.ToolTip = r?.UploadIncludesProtocol == true ? "Upload medido pelo contador TCP do servidor; inclui a sobrecarga do protocolo." : null;
         SetReadout(NetLatency, r?.LatencyMs);
         NetLatencyCaption.Text = r?.LatencyMs != null ? "\u2002ms até a internet" : "\u2002ms";
-        DrawDial(r?.DownloadMbps, r?.UploadMbps);
 
         SetReadout(NetJitter, r?.JitterMs);
         NetLoss.Text = r?.LossPct is { } loss ? loss.ToString("0.#", PtBr) : "—";
@@ -257,11 +334,13 @@ public partial class NetworkView : UserControl
         {
             NetBadge.Visibility = Visibility.Collapsed;
             NetVerdict.Visibility = Visibility.Collapsed;
-            NetMeta.Text = LastResult == null ? "Ainda não testado nesta sessão" : NetMeta.Text;
+            NetMeta.Text = LastResult == null ? "Ainda não testado" : NetMeta.Text;
         }
         else
         {
-            NetMeta.Text = r.Card.Meta;
+            // A fonte do teste e quando foi ("Ethernet (cabo) · Cloudflare · hoje às 21:40"); o "testado às" do motor sai
+            var source = r.Card.Meta.Split(" · ").Where(part => !part.StartsWith("testado", StringComparison.Ordinal));
+            NetMeta.Text = string.Join(" · ", source.Append(WhenText(r.TestedAt)));
             string key = VerdictKey(r.Card.Verdict == HealthVerdict.Unknown ? HealthVerdict.Warning : r.Card.Verdict);
             // Estável: a linha do veredito ("Latência baixa e sem perda…", com o visto) já diz isso; o selo repetiria (U14).
             // Atenção e ruim mantêm o selo, que resume a gravidade dos achados listados embaixo.
@@ -273,7 +352,8 @@ public partial class NetworkView : UserControl
 
         ShowRoute(r);
         DrawTrace();
-        if (r != null) ShowAdapter(r.Adapter);
+        // Um teste do histórico não guarda o adaptador: a ficha da conexão continua a de agora
+        if (r != null && !fromHistory) ShowAdapter(r.Adapter);
     }
 
     private void ShowNotes(NetworkResult r, string key)
@@ -292,14 +372,14 @@ public partial class NetworkView : UserControl
             var glyph = new TextBlock
             {
                 Text = good ? "" : info ? "" : "",
-                FontSize = 12,
-                Width = 22,
-                Margin = new Thickness(0, 3, 10, 0),
+                FontSize = 16,
+                Width = 26,
+                Margin = new Thickness(0, 2, 8, 0),
                 VerticalAlignment = VerticalAlignment.Top,
             };
             glyph.SetResourceReference(TextBlock.FontFamilyProperty, "Icons");
             glyph.SetResourceReference(TextBlock.ForegroundProperty, noteKey);
-            var text = new TextBlock { Text = note, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 1, 0, 0) };
+            var text = new TextBlock { Text = note, VerticalAlignment = VerticalAlignment.Center };
             text.SetResourceReference(StyleProperty, "Body");
             Grid.SetColumn(text, 1);
             row.Children.Add(glyph);
@@ -361,7 +441,7 @@ public partial class NetworkView : UserControl
 
     private async void NetworkView_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (!IsVisible || _running || _result != null || _context == null || _context.IsClosing) return;
+        if (!IsVisible || _running || _adapterShown || _context == null || _context.IsClosing) return;
         // Primeira visita: a leitura feita na abertura (o esqueleto só aparece se ela ainda não terminou); depois, uma releitura
         var read = _adapterRead ?? Task.Run(NetworkTest.ReadAdapter);
         _adapterRead = null;
@@ -371,12 +451,15 @@ public partial class NetworkView : UserControl
         try { adapter = await read; }
         catch { adapter = null; }
         finally { Skeleton.SetActive(NetInfoCard, false); }
-        if (_context.IsClosing || _running || _result != null) return;
+        if (_context.IsClosing || _running || _adapterShown) return;
         ShowAdapter(adapter);
     }
 
+    private bool _adapterShown;
+
     private void ShowAdapter(NetworkAdapterInfo? a)
     {
+        _adapterShown = true;
         if (a == null)
         {
             NetInfo.ItemsSource = new[] { new KeyValuePair<string, string>("Adaptador", "nenhuma conexão ativa") };
@@ -432,6 +515,46 @@ public partial class NetworkView : UserControl
         new(DialCx + r * Math.Sin(deg * Math.PI / 180), DialCy - r * Math.Cos(deg * Math.PI / 180));
 
     internal static double DialFraction(double? mbps) => mbps is not { } v ? 0 : Math.Clamp(Math.Log10(Math.Max(1, v)) / 3, 0, 1);
+
+    // Download e upload como propriedades animáveis: o número conta e o arco acende juntos até o valor novo (450 ms, desacelerando),
+    // seja a leitura parcial do teste, seja um teste do histórico. NaN = sem leitura (travessão e arco apagado, na hora).
+    private static readonly DependencyProperty DownShownProperty = DependencyProperty.Register(nameof(DownShown), typeof(double),
+        typeof(NetworkView), new PropertyMetadata(double.NaN, (d, _) => ((NetworkView)d).ShowSpeeds()));
+    private static readonly DependencyProperty UpShownProperty = DependencyProperty.Register(nameof(UpShown), typeof(double),
+        typeof(NetworkView), new PropertyMetadata(double.NaN, (d, _) => ((NetworkView)d).ShowSpeeds()));
+    private double DownShown => (double)GetValue(DownShownProperty);
+    private double UpShown => (double)GetValue(UpShownProperty);
+    private static readonly IEasingFunction SpeedEase = new QuinticEase { EasingMode = EasingMode.EaseOut };
+
+    private void SetSpeeds(double? down, double? up, bool animate)
+    {
+        Animate(DownShownProperty, down, animate);
+        Animate(UpShownProperty, up, animate);
+        ShowSpeeds();
+    }
+
+    private void Animate(DependencyProperty property, double? value, bool animate)
+    {
+        double from = (double)GetValue(property);
+        if (value is not { } to || !animate || double.IsNaN(from) && to <= 0)
+        {
+            BeginAnimation(property, null);
+            SetValue(property, value ?? double.NaN);
+            return;
+        }
+        // Do valor que está na tela (ou do zero, se estava sem leitura) até o novo
+        var animation = new DoubleAnimation(double.IsNaN(from) ? 0 : from, to, TimeSpan.FromMilliseconds(450)) { EasingFunction = SpeedEase };
+        animation.Completed += (_, _) => { if ((double)GetValue(property) == to) ShowSpeeds(); };
+        BeginAnimation(property, animation);
+    }
+
+    private void ShowSpeeds()
+    {
+        double down = DownShown, up = UpShown;
+        SetReadout(NetDown, double.IsNaN(down) ? null : down);
+        SetReadout(NetUp, double.IsNaN(up) ? null : up);
+        DrawDial(double.IsNaN(down) ? null : down, double.IsNaN(up) ? null : up);
+    }
 
     private void DrawDial(double? down, double? up)
     {
@@ -496,8 +619,8 @@ public partial class NetworkView : UserControl
 
         AddTraceLine(0, w, top, "Line", dashed: true);
         AddTraceLine(0, w, bottom, "Line", dashed: false);
-        // 3 px abaixo: a escala (Bahnschrift 10,5) fica na mesma base do rótulo "Pings até 1.1.1.1" (Segoe 11,5) à esquerda (medido)
-        AddTraceText($"{max:0} ms", w - 40, 3, "Faint", null, readout: true, align: TextAlignment.Right, width: 40);
+        // Mesma base do rótulo "Pings até 1.1.1.1" à esquerda (Bahnschrift e Segoe a 12 assentam juntas com 1 px de diferença)
+        AddTraceText($"{max:0} ms", w - 48, 1, "Faint", null, readout: true, align: TextAlignment.Right, width: 48);
 
         var idleGeo = new StreamGeometry();
         var loadGeo = new StreamGeometry();
@@ -565,7 +688,8 @@ public partial class NetworkView : UserControl
     private void AddTraceText(string text, double x, double y, string key, string? value, bool readout, string valueKey = "Fg",
         TextAlignment align = TextAlignment.Left, double width = double.NaN)
     {
-        var block = new TextBlock { FontSize = readout ? 10.5 : 11.5, TextAlignment = align, Width = width };
+        // 12 nos dois: nada abaixo de 12 na escala do app; a escala em mostrador e o rótulo em letra de interface
+        var block = new TextBlock { FontSize = 12, TextAlignment = align, Width = width };
         if (readout)
         {
             block.SetResourceReference(TextBlock.FontFamilyProperty, "Readout");

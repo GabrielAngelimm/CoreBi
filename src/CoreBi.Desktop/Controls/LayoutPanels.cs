@@ -106,6 +106,33 @@ public sealed class JustifyPanel : System.Windows.Controls.Panel
     }
 }
 
+/// <summary>
+/// Não pede altura: o filho é medido só no arranjo, com a altura que a página deu. Para uma lista que rola dentro do cartão
+/// numa linha "*" (o histórico de Rede): medida sem limite, ela pediria todas as linhas e faria a página rolar.
+/// </summary>
+public sealed class SpareHeightBox : System.Windows.Controls.Decorator
+{
+    protected override Size MeasureOverride(Size constraint)
+    {
+        Child?.Measure(new Size(constraint.Width, 0));
+        return new Size(Child?.DesiredSize.Width ?? 0, 0);
+    }
+
+    // O filho é medido duas vezes por passada (sem altura aqui, com a altura toda no arranjo), então a altura desejada dele
+    // sempre "muda": o padrão pediria nova medida ao pai e a página entraria num laço de layout. Basta rearranjar.
+    protected override void OnChildDesiredSizeChanged(UIElement child) => InvalidateArrange();
+
+    protected override Size ArrangeOverride(Size arrangeSize)
+    {
+        if (Child != null)
+        {
+            Child.Measure(arrangeSize);
+            Child.Arrange(new Rect(arrangeSize));
+        }
+        return arrangeSize;
+    }
+}
+
 /// <summary>Grid que não pede altura aos filhos: ocupa só o espaço que sobra, para a lista decidir quantas linhas cabem.</summary>
 public sealed class FitHost : System.Windows.Controls.Grid
 {
