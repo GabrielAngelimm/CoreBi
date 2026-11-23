@@ -6,7 +6,13 @@ using CoreBi.Engine.Performance.Stress;
 
 namespace CoreBi.Engine.Persistence;
 
-public sealed record BenchRun(DateTime Date, double? Multi, double? Single, bool Sustained, string Cpu);
+public sealed record BenchRun(DateTime Date, double? Multi, double? Single, bool Sustained, string Cpu)
+{
+    public const int Capacity = 10;
+
+    public static List<BenchRun> Normalize(List<BenchRun>? runs) =>
+        (runs ?? []).Where(r => r != null).OrderByDescending(r => r.Date).Take(Capacity).ToList();
+}
 
 /// <summary>Resultado dos benchmarks (Test = "gpu", "sim", "mem", "disk" ou "rt:&lt;qualidade&gt;:&lt;altura&gt;").</summary>
 public sealed record BenchRecord(DateTime Date, string Test, double Score, string Summary)
@@ -15,6 +21,13 @@ public sealed record BenchRecord(DateTime Date, string Test, double Score, strin
     public List<BenchFigure>? Figures { get; init; }
     /// <summary>O FPS ao longo da passada, reamostrado em até 120 pontos de progresso igual (Cena de jogo, Ray tracing, Simulação).</summary>
     public List<double>? Trace { get; init; }
+
+    /// <summary>Quantos resultados cada teste guarda no histórico.</summary>
+    public const int CapacityPerTest = 10;
+
+    public static List<BenchRecord> Normalize(List<BenchRecord>? records) =>
+        (records ?? []).Where(r => r != null).OrderByDescending(r => r.Date)
+            .GroupBy(r => r.Test).SelectMany(g => g.Take(CapacityPerTest)).OrderByDescending(r => r.Date).ToList();
 }
 
 /// <summary>Um número de resultado de benchmark: rótulo, valor já formatado, unidade, contexto, tom e a dica.</summary>
@@ -95,8 +108,8 @@ public sealed class AppSettings
 
     private void Normalize()
     {
-        BenchRuns = (BenchRuns ?? new()).Where(x => x != null).Take(100).ToList();
-        BenchRecords = (BenchRecords ?? new()).Where(x => x != null).Take(1000).ToList();
+        BenchRuns = BenchRun.Normalize(BenchRuns);
+        BenchRecords = BenchRecord.Normalize(BenchRecords);
         NetRuns = NetworkHistory.Normalize(NetRuns);
         BottleneckRuns = BottleneckRun.Normalize(BottleneckRuns);
         StressRuns = StressRun.Normalize(StressRuns);

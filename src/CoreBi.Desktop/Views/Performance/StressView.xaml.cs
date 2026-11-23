@@ -235,8 +235,7 @@ public partial class StressView : UserControl, IDisposable
         {
             string why = SensorMonitor.IsPawnIOInstalled
                 ? ""
-                : "\n\nO driver PawnIO, que lê o sensor, não está instalado. Instale com:\n" +
-                  "winget install namazso.PawnIO\ne abra o CoreBi de novo.";
+                : "\n\nFalta o driver PawnIO, que lê o sensor. Instale em Corrigir, no pé do menu, e abra o CoreBi de novo.";
             var r = MessageBox.Show(_context.Owner,
                 "O processador não tem leitura de temperatura, então o teste não vai parar sozinho se ele esquentar demais. Continuar mesmo assim?" + why,
                 "CoreBi", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -343,7 +342,7 @@ public partial class StressView : UserControl, IDisposable
         _stressLease = null;
 
         var elapsed = DateTime.Now - _stressStart;
-        _context?.RecordEvent("", "Teste de carga", aborted ? "Interrompido. " + reason : reason, elapsed.ToString(@"hh\:mm\:ss"), "");
+        _context?.RecordEvent("", "Teste de carga", aborted ? "Interrompido. " + reason : reason, $"{(int)elapsed.TotalHours:00}:{elapsed:mm\\:ss}", ""); // sem limite passa de 24 h
         SetStressControls(running: false);
         UpdateColumnStates();
 
@@ -455,7 +454,6 @@ public partial class StressView : UserControl, IDisposable
         float? load = _context.Sensors.CpuLoad;
         float? power = _context.Sensors.CpuPower;
         float? gTemp = _context.PrimaryGpuTemp();
-        float? gPower = _context.PrimaryGpuPower();
 
         if (temp is float t)
         {
@@ -469,6 +467,11 @@ public partial class StressView : UserControl, IDisposable
             if (_gpuTempHistory.Count > HistoryLength) _gpuTempHistory.RemoveAt(0);
             if (_gpuBurnOn && gt > _gpuMaxTemp) _gpuMaxTemp = gt;
         }
+
+        // Fora da tela e sem teste só o histórico de temperatura anda (vem da leitura já feita dos sensores). O resto pede o
+        // driver da placa de vídeo, e o CoreBi fica aberto durante jogos e benchmarks: o próximo tique à vista preenche tudo.
+        if (!IsVisible && !IsRunning) return;
+        float? gPower = _context.PrimaryGpuPower();
 
         // Toda linha sempre com valor ou travessão: as colunas não mudam de tamanho nem de lugar.
         StTemp.Text = temp == null ? "—" : $"{temp:0.#}";
@@ -508,7 +511,7 @@ public partial class StressView : UserControl, IDisposable
             else if (_gpuBurnOn && gTemp >= _gpuTempLimit)
                 StopStress($"A placa de vídeo chegou a {gTemp:0.#} °C, no limite de {_gpuTempLimit:0} °C", aborted: true);
             else if (_stress.MemoryErrors > 0)
-                StopStress($"{_stress.MemoryErrors} erros de memória encontrados", aborted: true);
+                StopStress(_stress.MemoryErrors == 1 ? "1 erro de memória encontrado" : $"{_stress.MemoryErrors:N0} erros de memória encontrados", aborted: true);
             else if (_gpuBurnOn && !_burn.Running)
             {
                 if (_burn.Error != null) StopStress($"Falha na placa de vídeo: {_burn.Error}", aborted: true);

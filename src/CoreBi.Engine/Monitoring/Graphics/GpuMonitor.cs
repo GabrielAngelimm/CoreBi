@@ -17,7 +17,8 @@ public sealed record GpuLiveSample(
     double? VramUsedGb,
     double? VramTotalGb,
     double? VramPct,
-    bool ThermalThrottled);
+    bool ThermalThrottled,
+    bool HardwareThrottled);
 
 /// <summary>
 /// Centraliza a telemetria ao vivo de GPU (WDDM PDH + NVML + fallback LibreHardwareMonitor),
@@ -97,10 +98,12 @@ public sealed class GpuMonitor : IDisposable
             vramPct = 100.0 * usedMb / totalMb;
         }
 
-        bool thermal = nvml && Nvml.ThrottleReasons(h) is ulong reasons && (reasons & Nvml.ThermalSlowdownMask) != 0;
+        ulong reasons = nvml && Nvml.ThrottleReasons(h) is ulong r ? r : 0;
 
         return new GpuLiveSample(load, coreClock, memClock, temp, hotspot, power, powerLimit, voltage, fanPct, fanRpm,
-            vramUsedGb, vramTotalGb, vramPct, thermal);
+            vramUsedGb, vramTotalGb, vramPct,
+            ThermalThrottled: (reasons & Nvml.ThermalSlowdownMask) != 0,
+            HardwareThrottled: (reasons & (Nvml.HwSlowdownMask | Nvml.PowerBrakeMask)) != 0);
     }
 
     public void Dispose() => _windowsUsage.Dispose();

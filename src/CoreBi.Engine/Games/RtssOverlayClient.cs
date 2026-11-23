@@ -58,16 +58,19 @@ public sealed class RtssOverlayClient : IDisposable
     /// </summary>
     public RtssStatus Probe() => Access(_ => RtssStatus.Ready);
 
-    /// <summary>O RTSS está instalado na pasta padrão (o instalador do RTSS e o do MSI Afterburner usam a mesma).</summary>
-    public static bool IsInstalled()
+    /// <summary>O RTSS.exe na pasta padrão (o instalador do RTSS e o do MSI Afterburner usam a mesma); null se não está lá.</summary>
+    public static string? InstallPath()
     {
         try
         {
             string x86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-            return x86.Length > 0 && File.Exists(Path.Combine(x86, "RivaTuner Statistics Server", "RTSS.exe"));
+            string exe = Path.Combine(x86, "RivaTuner Statistics Server", "RTSS.exe");
+            return x86.Length > 0 && File.Exists(exe) ? exe : null;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
     }
+
+    public static bool IsInstalled() => InstallPath() != null;
 
     public RtssStatus Inspect(int processId, out RtssTarget target)
     {
@@ -193,6 +196,12 @@ public sealed class RtssOverlayClient : IDisposable
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
             return RtssStatus.Unavailable;
+        }
+        // A memória compartilhada pode mudar entre a validação e o uso (outro programa, uma versão defeituosa do RTSS):
+        // um tamanho fora do mapa vira "incompatível" em vez de derrubar o CoreBi no meio do jogo.
+        catch (Exception ex) when (ex is ArgumentOutOfRangeException or IndexOutOfRangeException or OverflowException)
+        {
+            return RtssStatus.Incompatible;
         }
     }
 

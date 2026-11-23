@@ -19,6 +19,7 @@ public sealed partial class SensorMonitor : IDisposable
     private volatile bool _open;
     private volatile bool _paused, _gpuRetired;
     private HashSet<string>? _networks; // placas de rede físicas e ativas; interfaces virtuais não são lidas
+    private long _networksReadAt;
     private SensorReading[]? _snapshot; // cópia da última leitura; refeita só depois de Refresh, ResetStats ou mudança de linhas
 
     public ObservableCollection<SensorRow> Rows { get; } = new();
@@ -122,7 +123,7 @@ public sealed partial class SensorMonitor : IDisposable
             ObjectDisposedException.ThrowIf(_disposed, this);
             return _openTask ??= Task.Run(() =>
             {
-                try { _source.Open(); _networks = PhysicalNetwork.ActiveNames(); }
+                try { _source.Open(); _networks = PhysicalNetwork.ActiveNames(); _networksReadAt = Environment.TickCount64; }
                 catch
                 {
                     CloseSource();
@@ -154,12 +155,12 @@ public sealed partial class SensorMonitor : IDisposable
         {
             if (!_open || _disposed || _paused) return null;
             var readings = new List<PolledSensor>(256); // _index é da thread da interface: não é lido aqui
-            var failed = new List<(string RootId, string Name)>();
+            var failed = new List<string>();
             foreach (var hw in _source.Hardware)
             {
                 if (_paused) return null; // o Windows começou a trocar dispositivos no meio da leitura
                 if (_gpuRetired && SensorTypeMeta.IsGpu(hw.HardwareType)) continue;
-                if (hw.HardwareType == HardwareType.Network && _networks != null && !_networks.Contains(hw.Name)) continue;
+                if (hw.HardwareType == HardwareType.Network && !IsActiveNetwork(hw.Name)) continue;
                 string rootId = hw.Identifier.ToString();
                 int mark = readings.Count;
                 try { Walk(hw, hw, readings); _failedHardware.Remove(rootId); }
@@ -167,11 +168,25 @@ public sealed partial class SensorMonitor : IDisposable
                 {
                     if (_failedHardware.Add(rootId)) DiagnosticLog.Write("sensors.refresh", ex);
                     readings.RemoveRange(mark, readings.Count - mark);
-                    failed.Add((rootId, hw.Name));
+                    failed.Add(rootId);
                 }
             }
             return new SensorPoll(readings, failed);
         }
+    }
+
+    /// <summary>
+    /// Placa de rede física e ativa. A lista é refeita no máximo a cada 30 s quando aparece uma placa fora dela, para que
+    /// o Wi-Fi ou o cabo conectado depois da abertura entre nas leituras sem reabrir o app.
+    /// </summary>
+    private bool IsActiveNetwork(string name)
+    {
+        if (_networks == null || _networks.Contains(name)) return true;
+        long now = Environment.TickCount64;
+        if (now - _networksReadAt < 30_000) return false;
+        _networksReadAt = now;
+        _networks = PhysicalNetwork.ActiveNames();
+        return _networks == null || _networks.Contains(name);
     }
 
     /// <summary>Passa uma leitura para as linhas (e cria as de sensores novos). Na thread da interface, que observa as linhas.</summary>
@@ -202,8 +217,9 @@ public sealed partial class SensorMonitor : IDisposable
                 }
                 row.Update(r.Value, r.Min, r.Max);
             }
-            foreach (var (rootId, name) in poll.Failed)
-                foreach (var row in Rows.Where(r => r.RootId == rootId || r.Hardware == name))
+            // Só pelo RootId: duas peças com o mesmo nome (dois SSDs iguais) não apagam as linhas uma da outra.
+            foreach (string rootId in poll.Failed)
+                foreach (var row in Rows.Where(r => r.RootId == rootId))
                     row.Update(null, null, null);
             _snapshot = null;
         }
@@ -297,7 +313,7 @@ public sealed partial class SensorMonitor : IDisposable
 }
 
 /// <summary>Uma leitura completa da biblioteca, pronta para <see cref="SensorMonitor.Apply"/>.</summary>
-public sealed record SensorPoll(IReadOnlyList<PolledSensor> Readings, IReadOnlyList<(string RootId, string Name)> Failed);
+public sealed record SensorPoll(IReadOnlyList<PolledSensor> Readings, IReadOnlyList<string> Failed);
 
 /// <summary>Um sensor lido: identificação (para criar a linha na primeira vez) e os valores.</summary>
 public readonly record struct PolledSensor(string Id, string Hardware, string RootId, string RootName, HardwareType RootType, string Name,

@@ -163,9 +163,10 @@ public partial class MainWindow : Window, ILiveMotionHost
     private async void OnTelemetryTick(object? sender, EventArgs e)
     {
         // Durante benchmarks de GPU/disco as leituras de sensores (NVML/driver) ficam pausadas para não gerar engasgos no 1% low.
+        // O Teste de carga só segue se estiver rodando (o corte por temperatura não pode parar).
         if (_sensorsHeldForBenchmark)
         {
-            PageStress.Tick();
+            if (PageStress.IsRunning) RunTick(nameof(PageStress), PageStress.Tick);
             return;
         }
 
@@ -180,17 +181,29 @@ public partial class MainWindow : Window, ILiveMotionHost
         if (_context.IsClosing || _sensorsHeldForBenchmark) return;
         if (poll != null) _monitor.Apply(poll);
         _gpuMonitor.UpdateLoads(_context.Gpus);
-        PageSensors.Tick();
-        PageStress.Tick();
-        PageGpu.Tick();
-        UpdateCpuSensorWarning();
-        PageDash.Tick();
-        PageDisks.Tick();
-        PageEnergy.Tick();
-        SyncFrameMonitoring();
-        PageBottleneck.Tick();
-        if (PageBench.IsVisible) PageBench.Tick();
-        PageOverlay.UpdatePreview();
+        RunTick(nameof(PageSensors), PageSensors.Tick);
+        RunTick(nameof(PageStress), PageStress.Tick);
+        RunTick(nameof(PageGpu), PageGpu.Tick);
+        RunTick(nameof(UpdateCpuSensorWarning), UpdateCpuSensorWarning);
+        RunTick(nameof(PageDash), PageDash.Tick);
+        RunTick(nameof(PageDisks), PageDisks.Tick);
+        RunTick(nameof(PageEnergy), PageEnergy.Tick);
+        RunTick(nameof(SyncFrameMonitoring), SyncFrameMonitoring);
+        RunTick(nameof(PageBottleneck), PageBottleneck.Tick);
+        if (PageBench.IsVisible) RunTick(nameof(PageBench), PageBench.Tick);
+        RunTick(nameof(PageOverlay), PageOverlay.UpdatePreview);
+    }
+
+    private readonly HashSet<string> _tickFailures = new();
+
+    /// <summary>
+    /// O tique roda a cada segundo em todas as páginas, à vista ou não: um valor inesperado numa delas para só aquele cartão,
+    /// não fecha o CoreBi. O primeiro erro de cada página vai para o diagnóstico; os seguintes, iguais, não enchem o arquivo.
+    /// </summary>
+    private void RunTick(string name, Action tick)
+    {
+        try { tick(); }
+        catch (Exception ex) { if (_tickFailures.Add(name)) DiagnosticLog.Write("tick." + name, ex); }
     }
 
     internal async Task LoadHardwareAsync()
@@ -208,7 +221,9 @@ public partial class MainWindow : Window, ILiveMotionHost
                 return;
             }
             if (_context.IsClosing) return;
-            if (await _monitor.PollAsync() is { } poll && !_context.IsClosing) _monitor.Apply(poll); // primeira leitura também fora da janela
+            // Primeira leitura também fora da janela, e protegida como a do tique: sem ela a página mostra só os nomes.
+            try { if (await _monitor.PollAsync() is { } poll && !_context.IsClosing) _monitor.Apply(poll); }
+            catch (Exception ex) { DiagnosticLog.Write("sensors.poll", ex); }
             if (_context.IsClosing) return;
             _context.SensorsRead = true;
             UpdateCpuSensorWarning();
@@ -223,10 +238,10 @@ public partial class MainWindow : Window, ILiveMotionHost
             // Falhas independentes: uma placa de vídeo ilegível não apaga o nome do processador.
             List<GpuInfo> gpus;
             try { gpus = await gpuTask; }
-            catch { gpus = new(); }
+            catch (Exception ex) { gpus = new(); DiagnosticLog.Write("gpu.collect", ex); }
             string cpuName;
             try { cpuName = await cpuTask; }
-            catch { cpuName = ""; }
+            catch (Exception ex) { cpuName = ""; DiagnosticLog.Write("cpu.name", ex); }
             if (_context.IsClosing) return;
 
             _context.Gpus = gpus;

@@ -169,7 +169,7 @@ public partial class DriversView : UserControl
     internal static void Verdict(GpuDriverStatus g, bool studio)
     {
         g.Lead = ""; g.Tone = "";
-        if (g.Vendor != "NVIDIA" || g.Latest.Length == 0 || g.Installed.Length == 0) return;
+        if (!g.CanCompare) return;
         string line = studio ? "Studio" : "Game Ready";
         if (g.UpdateAvailable) { g.Lead = "Driver novo"; g.Tone = "warn"; g.Message = $"Saiu um {line} mais novo."; }
         else { g.Lead = "Em dia"; g.Tone = "ok"; g.Message = $"É o {line} mais novo da NVIDIA."; }
@@ -517,10 +517,10 @@ public partial class DriversView : UserControl
         if (!RequireAdmin()) return;
         using var workload = _context.Workloads.TryBegin(WorkloadOperations.WindowsUpdate);
         if (workload == null) { DrvSet("Termine a outra operação antes"); return; }
-        using var critical = _context.BeginCriticalOperation("Aguarde a instalação de drivers do Windows Update terminar.");
-
         if (_drvBusy || _drvWu.Count == 0) return;
         if (!await AskWuInstall()) return;
+        // Só depois da confirmação: com a pergunta aberta nada está instalando e fechar o CoreBi tem de funcionar
+        using var critical = _context.BeginCriticalOperation("Aguarde a instalação de drivers do Windows Update terminar.");
         DrvBusy(true);
         DrvSet("Baixando drivers do Windows Update…");
         try

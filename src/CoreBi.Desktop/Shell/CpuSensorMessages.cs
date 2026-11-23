@@ -2,7 +2,7 @@ using CoreBi.Engine.Monitoring.Sensors;
 
 namespace CoreBi.Desktop;
 
-/// <summary>Mensagens curtas consistentes para o diagnóstico de sensores da CPU (barra lateral, Energia e Stress).</summary>
+/// <summary>Mensagens curtas consistentes para o diagnóstico de sensores da CPU (barra lateral, Energia e Gargalo).</summary>
 internal static class CpuSensorMessages
 {
     public static string Sidebar(SensorMonitor.CpuSensorProblem problem) => problem switch

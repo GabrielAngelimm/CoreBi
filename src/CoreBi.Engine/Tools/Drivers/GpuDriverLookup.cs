@@ -30,7 +30,7 @@ public static partial class GpuDriverLookup
 
     private static HttpClient CreateClient()
     {
-        var c = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        var c = new HttpClient { Timeout = TimeSpan.FromSeconds(30), MaxResponseContentBufferSize = 8 * 1024 * 1024 }; // as respostas dos fabricantes têm poucos KB
         c.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) CoreBi");
         return c;
     }
@@ -66,7 +66,8 @@ public static partial class GpuDriverLookup
             status.Latest = ver.Trim();
             status.DownloadUrl = dl.Replace("http://", "https://");
             status.SizeText = size ?? "";
-            status.Message = status.UpdateAvailable ? "Há um driver mais novo." : "Você já está com o mais recente.";
+            status.Message = !status.CanCompare ? $"A mais recente da NVIDIA é a {status.Latest}; não deu para comparar com a instalada."
+                : status.UpdateAvailable ? "Há um driver mais novo." : "Você já está com o mais recente.";
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex) { status.Message = "Não foi possível consultar a NVIDIA: " + ex.Message; }

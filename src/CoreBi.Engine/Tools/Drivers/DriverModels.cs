@@ -29,8 +29,9 @@ public sealed class GpuDriverStatus
     public string LeadGap => Lead.Length > 0 ? "  ·  " : "";
 
     public bool CanAutoInstall => Vendor is "NVIDIA" or "AMD" && DownloadUrl.Length > 0;
-    public bool UpdateAvailable =>
-        Vendor == "NVIDIA" && Latest.Length > 0 && Installed.Length > 0 && CompareVersions(Latest, Installed) > 0;
+    /// <summary>A NVIDIA devolveu a versão mais nova e as duas versões são números comparáveis.</summary>
+    public bool CanCompare => Vendor == "NVIDIA" && Version.TryParse(Latest, out _) && Version.TryParse(Installed, out _);
+    public bool UpdateAvailable => CanCompare && CompareVersions(Latest, Installed) > 0;
 
     internal static int CompareVersions(string a, string b) =>
         Version.TryParse(a, out var left) && Version.TryParse(b, out var right) ? left.CompareTo(right) : 0;

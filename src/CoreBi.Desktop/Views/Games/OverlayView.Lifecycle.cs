@@ -277,14 +277,7 @@ public partial class OverlayView : IDisposable
     /// <summary>O botão do aviso do RTSS: abre o RTSS instalado ou a página oficial de download (Guru3D).</summary>
     private void OvReadyAction_Click(object sender, RoutedEventArgs e)
     {
-        string? exe = null;
-        try
-        {
-            string x86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-            exe = System.IO.Path.Combine(x86, "RivaTuner Statistics Server", "RTSS.exe");
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-        if (_rtssProbe != RtssStatus.Incompatible && exe != null && File.Exists(exe))
+        if (_rtssProbe != RtssStatus.Incompatible && RtssOverlayClient.InstallPath() is { } exe)
         {
             try { using var process = Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true }); }
             catch (Exception ex) { DiagnosticLog.Write("rtss-open", ex); }

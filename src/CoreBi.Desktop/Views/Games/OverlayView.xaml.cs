@@ -453,7 +453,11 @@ public partial class OverlayView : UserControl
         var memory = MemoryInfo.ReadPhysicalUsage();
         var sensors = _context.Sensors.Snapshot();
         var gpuInfo = _context.PrimaryGpu;
-        var gpuLive = gpuInfo != null ? GpuMonitor.ReadLive(gpuInfo, sensors) : null;
+        // A leitura completa custa seis consultas ao driver, duas vezes por segundo, dentro do jogo: só quando um item precisa
+        // dela. Uso e temperatura sozinhos vêm do contador do Windows e dos sensores, sem consultar o driver.
+        bool needsLive = show.Any(i => i.StartsWith("vram_", StringComparison.Ordinal)
+            || i.StartsWith("gpu_", StringComparison.Ordinal) && i is not ("gpu_load" or "gpu_temp"));
+        var gpuLive = gpuInfo != null && needsLive ? GpuMonitor.ReadLive(gpuInfo, sensors) : null;
         var cpuLive = CpuTelemetry.Read(_context.Sensors, sensors);
         var lines = new List<OverlayLine>();
         static string Temp(float? v) => v is float x ? $"{x:0} °C" : "—";
@@ -474,8 +478,8 @@ public partial class OverlayView : UserControl
         Line("CPU", cpu, ShortOverlayName(HardwareNaming.ShortCpuName(_context.CpuName)));
 
         var gpu = new List<string>();
-        if (show.Contains("gpu_load")) gpu.Add(Pct(gpuLive?.LoadPct));
-        if (show.Contains("gpu_temp")) gpu.Add(Temp(gpuLive?.TempC));
+        if (show.Contains("gpu_load")) gpu.Add(Pct(gpuLive?.LoadPct ?? gpuInfo?.WindowsLoad));
+        if (show.Contains("gpu_temp")) gpu.Add(Temp(gpuLive?.TempC ?? (gpuInfo != null ? GpuMonitor.ReadTemp(gpuInfo, sensors) : null)));
         if (show.Contains("gpu_hotspot")) gpu.Add("HS " + Temp(gpuLive?.HotspotTempC));
         if (show.Contains("gpu_clock")) gpu.Add(gpuLive?.CoreClockMHz is float c ? $"{c:0} MHz" : "— MHz");
         if (show.Contains("gpu_memclock")) gpu.Add(gpuLive?.MemoryClockMHz is float mc ? $"mem {mc:0} MHz" : "mem —");

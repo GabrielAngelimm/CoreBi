@@ -14,7 +14,8 @@ public sealed record FrameStats(int ProcessId, string ProcessName, double Fps, d
 /// </summary>
 public sealed class FrameMonitor : IDisposable
 {
-    private readonly string _sessionName = $"CoreBi-Frames-{Environment.ProcessId}-{Guid.NewGuid():N}";
+    private const string SessionPrefix = "CoreBi-Frames-";
+    private readonly string _sessionName = $"{SessionPrefix}{Environment.ProcessId}-{Guid.NewGuid():N}";
     private static readonly Guid DxgiProvider = new("CA11C036-0102-4A2D-A6AD-F03CFED5D3C9");
     private static readonly Guid D3D9Provider = new("783ACA0A-790E-4D7F-8451-AA850511C6B9");
     private const int DxgiPresentStart = 42, D3D9PresentStart = 1;
@@ -48,6 +49,7 @@ public sealed class FrameMonitor : IDisposable
             if (Running) return;
             try
             {
+                StopOrphanSessions();
                 var session = new TraceEventSession(_sessionName, TraceEventSessionOptions.Create) { StopOnDispose = true };
                 _session = session;
                 _session.EnableProvider(DxgiProvider, TraceEventLevel.Informational, ulong.MaxValue, null);
@@ -69,6 +71,30 @@ public sealed class FrameMonitor : IDisposable
                 _session = null;
             }
         }
+    }
+
+    /// <summary>
+    /// A sessão ETW é da máquina, não do processo: se o CoreBi fechar à força, ela segue ligada até reiniciar o Windows,
+    /// que aceita só 64 sessões. Para as sobras de execuções anteriores cujo processo já não existe. Os PIDs vêm de um
+    /// retrato do sistema, sem abrir handle de nenhum processo (anticheat).
+    /// </summary>
+    private static void StopOrphanSessions()
+    {
+        try
+        {
+            var names = TraceEventSession.GetActiveSessionNames().Where(n => n.StartsWith(SessionPrefix, StringComparison.Ordinal)).ToList();
+            if (names.Count == 0) return;
+            var alive = new HashSet<int>();
+            foreach (var process in Process.GetProcesses())
+                using (process) alive.Add(process.Id);
+            foreach (string name in names)
+            {
+                string pid = name[SessionPrefix.Length..].Split('-')[0];
+                if (int.TryParse(pid, out int id) && !alive.Contains(id))
+                    using (var orphan = TraceEventSession.GetActiveSession(name)) orphan?.Stop(noThrow: true);
+            }
+        }
+        catch (Exception ex) { DiagnosticLog.Write("frames.orphans", ex); }
     }
 
     private void OnEvent(TraceEvent e)

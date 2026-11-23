@@ -36,27 +36,31 @@ internal static class StartupManager
             foreach (var name in key.GetValueNames())
             {
                 if (string.IsNullOrEmpty(name)) continue;
-                string cmd = key.GetValue(name)?.ToString() ?? "";
-                string? exe = ExeFromCommand(cmd);
-                var info = Identify(name, cmd, exe);
-                list.Add(new StartupEntry
+                try
                 {
-                    Name = name,
-                    Title = info.Title,
-                    Publisher = info.Publisher,
-                    Command = cmd,
-                    Source = source,
-                    Machine = machine,
-                    Kind = kind,
-                    Enabled = IsApproved(machine, kind, name),
-                    Detail = info.Description,
-                    IconPath = info.Icon,
-                    Location = info.Location,
-                    FileMissing = exe != null && !File.Exists(exe),
-                });
+                    string cmd = key.GetValue(name)?.ToString() ?? "";
+                    string? exe = ExeFromCommand(cmd);
+                    var info = Identify(name, cmd, exe);
+                    list.Add(new StartupEntry
+                    {
+                        Name = name,
+                        Title = info.Title,
+                        Publisher = info.Publisher,
+                        Command = cmd,
+                        Source = source,
+                        Machine = machine,
+                        Kind = kind,
+                        Enabled = IsApproved(machine, kind, name),
+                        Detail = info.Description,
+                        IconPath = info.Icon,
+                        Location = info.Location,
+                        FileMissing = exe != null && !File.Exists(exe),
+                    });
+                }
+                catch (Exception ex) { DiagnosticLog.Write("startup.read", ex); } // uma entrada ruim não esconde as outras
             }
         }
-        catch { }
+        catch (Exception ex) { DiagnosticLog.Write("startup.read", ex); }
     }
 
     private static void ReadFolder(List<StartupEntry> list, string folder, bool machine, string source)
@@ -68,29 +72,33 @@ internal static class StartupManager
             {
                 string fn = Path.GetFileName(file);
                 if (fn.Equals("desktop.ini", StringComparison.OrdinalIgnoreCase)) continue;
-                string? target = file.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) ? ShortcutTarget(file) : null;
-                string? exe = target != null ? ExeFromCommand(target) : file;
-                string name = Path.GetFileNameWithoutExtension(fn);
-                var info = Identify(ShortcutName(name), target ?? file, exe);
-                list.Add(new StartupEntry
+                try
                 {
-                    Name = name,
-                    Title = info.Title,
-                    Publisher = info.Publisher,
-                    Command = target ?? file,
-                    Source = source,
-                    Machine = machine,
-                    Kind = "Folder",
-                    FilePath = file,
-                    Enabled = IsApproved(machine, "StartupFolder", fn),
-                    Detail = info.Description,
-                    IconPath = info.Icon ?? file,
-                    Location = info.Location,
-                    FileMissing = target != null && exe != null && !File.Exists(exe),
-                });
+                    string? target = file.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) ? ShortcutTarget(file) : null;
+                    string? exe = target != null ? ExeFromCommand(target) : file;
+                    string name = Path.GetFileNameWithoutExtension(fn);
+                    var info = Identify(ShortcutName(name), target ?? file, exe);
+                    list.Add(new StartupEntry
+                    {
+                        Name = name,
+                        Title = info.Title,
+                        Publisher = info.Publisher,
+                        Command = target ?? file,
+                        Source = source,
+                        Machine = machine,
+                        Kind = "Folder",
+                        FilePath = file,
+                        Enabled = IsApproved(machine, "StartupFolder", fn),
+                        Detail = info.Description,
+                        IconPath = info.Icon ?? file,
+                        Location = info.Location,
+                        FileMissing = target != null && exe != null && !File.Exists(exe),
+                    });
+                }
+                catch (Exception ex) { DiagnosticLog.Write("startup.read", ex); }
             }
         }
-        catch { }
+        catch (Exception ex) { DiagnosticLog.Write("startup.read", ex); }
     }
 
     private static string ApprovedKind(StartupEntry e) => e.Kind == "Folder" ? "StartupFolder" : e.Kind;

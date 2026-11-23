@@ -106,7 +106,7 @@ public static class DriverInstaller
         try
         {
             var result = await ProcessRunner.RunAsync(Path.Combine(Environment.SystemDirectory, @"WindowsPowerShell\v1.0\powershell.exe"),
-                new[] { "-NoProfile", "-NonInteractive", "-Command", $"Checkpoint-Computer -Description '{description}' -RestorePointType MODIFY_SETTINGS -ErrorAction Stop" }, timeout.Token).ConfigureAwait(false);
+                new[] { "-NoProfile", "-NonInteractive", "-Command", $"Checkpoint-Computer -Description '{description.Replace("'", "''")}' -RestorePointType MODIFY_SETTINGS -ErrorAction Stop" }, timeout.Token).ConfigureAwait(false);
             return result.ExitCode == 0 ? "Ponto de restauração criado." : "Ponto de restauração não criado (verifique a proteção do sistema).";
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }

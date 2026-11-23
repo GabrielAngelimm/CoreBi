@@ -30,7 +30,8 @@ public partial class OverviewView
 
     private void DashOption_Checked(object sender, RoutedEventArgs e)
     {
-        if (!_metricAuto && sender is RadioButton { GroupName: "DashMetric" }) _metricChosen = true;
+        // O IsChecked do XAML dispara este evento dentro do InitializeComponent: só conta como escolha depois de carregada
+        if (!_metricAuto && IsLoaded && sender is RadioButton { GroupName: "DashMetric" }) _metricChosen = true;
         if (DashChart != null) DrawChart();
     }
 
@@ -336,7 +337,7 @@ public partial class OverviewView
         BeginAnimation(RingRevealProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(400)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
     }
 
-    private void UpdateRings()
+    private void UpdateRings(GpuLiveSample? gpuLive)
     {
         if (_context == null) return;
         static string Gb(double bytes) => $"{bytes / 1073741824.0:0.0} GB";
@@ -350,7 +351,7 @@ public partial class OverviewView
         var rings = new List<(double Frac, string Channel, DashRingItem Item)>();
         if (mem is { Total: > 0 } mu)
             rings.Add((ram, "Memory", new(memoryBrush, "RAM", Pct(ram), $"{Gb(mu.Used)} de {mu.Total / 1073741824.0:0} GB · {Gb(mu.Available)} livres", "PageSystem:Memória RAM")));
-        if (_context.PrimaryGpu is { } gpu && GpuMonitor.ReadLive(gpu, _context.Sensors.Snapshot()) is { VramUsedGb: double vu, VramTotalGb: > 0 and double vt })
+        if (gpuLive is { VramUsedGb: double vu, VramTotalGb: > 0 and double vt })
         {
             double vram = vu / vt;
             rings.Add((vram, "Gpu", new(gpuBrush, "VRAM", Pct(vram), $"{vu:0.0} GB de {vt:0} GB · {Math.Max(0, vt - vu):0.0} GB livres", "PageGpu")));

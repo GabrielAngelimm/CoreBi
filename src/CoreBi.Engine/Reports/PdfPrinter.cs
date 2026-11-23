@@ -11,17 +11,18 @@ namespace CoreBi.Engine.Reports;
 /// </summary>
 public static class PdfPrinter
 {
+    /// <summary>
+    /// Só o registro da máquina e as pastas de programas: o processo é iniciado com a elevação do CoreBi, e o App Paths
+    /// do usuário (HKCU) qualquer programa da conta pode apontar para outro executável.
+    /// </summary>
     private static string? FindEdge()
     {
-        foreach (var hive in new[] { Registry.LocalMachine, Registry.CurrentUser })
+        try
         {
-            try
-            {
-                using var key = hive.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe");
-                if (key?.GetValue(null) is string path && File.Exists(path)) return path;
-            }
-            catch { }
+            using var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe");
+            if (key?.GetValue(null) is string path && File.Exists(path)) return path;
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException) { }
         foreach (var root in new[] { Environment.SpecialFolder.ProgramFilesX86, Environment.SpecialFolder.ProgramFiles })
         {
             string path = Path.Combine(Environment.GetFolderPath(root), @"Microsoft\Edge\Application\msedge.exe");
@@ -79,6 +80,10 @@ public static class PdfPrinter
             }
             if (!File.Exists(output) || new FileInfo(output).Length == 0)
                 throw new InvalidOperationException("O Microsoft Edge não gerou o PDF. Exporte em HTML e use Imprimir > Salvar como PDF.");
+            // A pasta de trabalho é do usuário (o Edge sem elevação escreve nela). Um atalho de sistema de arquivos no
+            // lugar do PDF faria a cópia, elevada, ler outro arquivo: só copia um arquivo comum.
+            if ((File.GetAttributes(work) | File.GetAttributes(output)).HasFlag(FileAttributes.ReparsePoint))
+                throw new InvalidOperationException("O PDF gerado foi trocado por um atalho. Exporte de novo.");
             File.Copy(output, pdfPath, overwrite: true);
         }
         finally

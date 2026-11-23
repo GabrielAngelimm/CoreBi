@@ -12,7 +12,9 @@ internal static class ReportHtmlRenderer
     private const string IconPrint = "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2\"/><path d=\"M7 14h10v7H7z\"/></svg>";
 
     private static string E(string? s) => WebUtility.HtmlEncode(s ?? "");
-    private static string CssText(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+    // Texto dentro de uma string CSS no <style>: "<" escapado impede fechar a tag; quebras de linha não valem numa string CSS.
+    private static string CssText(string s) =>
+        s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("<", "\\3C ").Replace("\r", " ").Replace("\n", " ");
     private static string Channel(string? c) => c is "cpu" or "gpu" or "memory" or "storage" or "board" or "net" ? c : "steel";
 
     public static string Render(ReportData d)
@@ -23,6 +25,8 @@ internal static class ReportHtmlRenderer
 
         sb.Append($"<!doctype html><html lang=\"pt-BR\" data-theme=\"{(d.Dark ? "dark" : "light")}\"><head><meta charset=\"utf-8\">");
         sb.Append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"color-scheme\" content=\"light dark\">");
+        // O relatório é um arquivo solto que a pessoa abre e compartilha: nada de fora carrega nele, só o que veio embutido.
+        sb.Append("<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'\">");
         sb.Append($"<title>Relatório CoreBi · {E(d.Machine)} · {E(d.Date.ToString("dd/MM/yyyy", ByteFormat.PtBr))}</title><style>{ReportAssets.Css}");
         // Cabeçalho e rodapé de cada folha impressa (navegadores Chromium; os outros só ignoram).
         sb.Append($"@page{{@top-left{{content:\"CoreBi · Relatório do sistema\"}}@top-right{{content:\"{CssText(d.Machine)}\"}}");

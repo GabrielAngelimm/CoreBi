@@ -46,9 +46,6 @@ public sealed class InstallableApp : INotifyPropertyChanged
     public IReadOnlyList<AppPackage> Packages { get; init; } = Array.Empty<AppPackage>();
     public AppKit Kits { get; init; }
 
-    /// <summary>O primeiro pacote, que identifica o cartão.</summary>
-    public string WingetId => Packages.Count > 0 ? Packages[0].Id : "";
-
     private bool _selected, _installed;
     private string _status = "";
 

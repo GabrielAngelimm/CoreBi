@@ -1,6 +1,7 @@
 using CoreBi.Desktop.Features.Monitoring.Inventory;
 using CoreBi.Desktop.Features.Reports;
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Monitoring;
 using CoreBi.Engine.Monitoring.Health;
 using CoreBi.Engine.Monitoring.Inventory;
@@ -90,7 +91,7 @@ public partial class SystemView : UserControl
             _context.Drives = _drives;
             Rebuild();
         }
-        catch { }
+        catch (Exception ex) { DiagnosticLog.Write("system.storage", ex); } // a ficha segue com o que já leu
     }
 
     /// <summary>As especificações das placas de vídeo (chip, arquitetura, VRAM exata) chegam depois do inventário.</summary>
@@ -242,15 +243,14 @@ public partial class SystemView : UserControl
     internal async Task ExportReportAsync()
     {
         if ((_context.Owner as MainWindow)?.ReportLayer is not { } dialog) return;
-        var network = _networkResult();
-        var (sheetParts, diagParts) = ReportExportService.Parts(_context, Built, network != null);
-        var choice = await dialog.AskAsync(_context.Settings, sheetParts, diagParts);
-        if (choice == null) return;
-        _context.SaveSettings();
-
-        BtnReport.IsEnabled = false;
         try
         {
+            var network = _networkResult();
+            var (sheetParts, diagParts) = ReportExportService.Parts(_context, Built, network != null);
+            var choice = await dialog.AskAsync(_context.Settings, sheetParts, diagParts);
+            if (choice == null) return;
+            _context.SaveSettings();
+            BtnReport.IsEnabled = false;
             string path = await ReportExportService.ExportAsync(
                 _context, Built, Nodes, network, choice, status => HeaderMotion.Say(SystemSub, null, status));
             // O estado conta o andamento ("Gerando PDF…") e termina no nome do arquivo; o caminho inteiro fica na dica
@@ -259,6 +259,7 @@ public partial class SystemView : UserControl
         }
         catch (Exception ex)
         {
+            DiagnosticLog.Write("report.export", ex);
             HeaderMotion.Say(SystemSub, null, "O relatório não foi gerado");
             MessageBox.Show(_context.Owner, "Não foi possível gerar o relatório:\n" + ex.Message, "CoreBi", MessageBoxButton.OK, MessageBoxImage.Warning);
         }

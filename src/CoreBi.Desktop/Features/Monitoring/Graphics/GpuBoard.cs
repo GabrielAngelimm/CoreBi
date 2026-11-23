@@ -96,9 +96,7 @@ internal sealed class GpuBoard
         Push("core", core, gap);
         _core.Value = core is float cc ? $"{cc:N0}" : "—";
         // O limitador do driver só aparece quando segura a placa por calor ou por proteção do hardware (energia e ociosa são o normal)
-        string cap = _gpu.LiveExtras().FirstOrDefault(kv => kv.Key.StartsWith("PerfCap", StringComparison.Ordinal)).Value ?? "";
-        _core.Sub = cap.Contains("Térmico") ? "segurado pela temperatura"
-            : cap.Contains("HW slowdown") || cap.Contains("Power brake") ? "segurado pelo hardware" : "";
+        _core.Sub = live.ThermalThrottled ? "segurado pela temperatura" : live.HardwareThrottled ? "segurado pelo hardware" : "";
         _core.Tone = _core.Sub.Length > 0 ? "Warn" : "";
         _core.Unit = "MHz";
         _core.Max = Ceiling(core is null ? _coreCeiling : Math.Max(_coreCeiling, Peak("core")), 500);
@@ -112,7 +110,7 @@ internal sealed class GpuBoard
         _temp.Value = temp is float tt ? $"{tt:0}" : "—";
         _temp.Unit = "°C";
         _temp.Sub = hot is float hs ? $"ponto quente {hs:0} °C" : "";
-        _temp.Tone = temp >= 95 || hot >= 105 ? "Danger" : "";
+        _temp.Tone = temp >= ThermalLimits.ChipCritC || hot >= ThermalLimits.JunctionCritC ? "Danger" : "";
         _temp.Max = 100;
 
         Push("power", power, gap);

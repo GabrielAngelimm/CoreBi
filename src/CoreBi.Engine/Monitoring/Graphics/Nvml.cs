@@ -1,6 +1,11 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using CoreBi.Engine.Infrastructure;
+
+// O app roda como administrador: as DLLs nativas do Engine (todas do Windows, mais a nvml.dll do driver NVIDIA)
+// vêm só do System32, nunca da pasta atual nem do PATH, onde qualquer programa da conta pode deixar uma DLL falsa.
+[assembly: DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
 
 namespace CoreBi.Engine.Monitoring.Graphics;
 
@@ -8,6 +13,18 @@ namespace CoreBi.Engine.Monitoring.Graphics;
 internal static class Nvml
 {
     private const string Dll = "nvml.dll";
+
+    // Drivers anteriores ao DCH (2019) instalam a NVML só em Arquivos de Programas\NVIDIA Corporation\NVSMI.
+    // A pasta é protegida como o System32, então é o único lugar além dele em que a DLL é procurada.
+    static Nvml() => NativeLibrary.SetDllImportResolver(typeof(Nvml).Assembly, Resolve);
+
+    private static IntPtr Resolve(string name, Assembly assembly, DllImportSearchPath? paths)
+    {
+        if (name != Dll) return IntPtr.Zero; // o resto segue a busca padrão (System32, pelo atributo acima)
+        if (NativeLibrary.TryLoad(name, assembly, DllImportSearchPath.System32, out IntPtr handle)) return handle;
+        string nvsmi = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "NVIDIA Corporation", "NVSMI", Dll);
+        return NativeLibrary.TryLoad(nvsmi, out handle) ? handle : IntPtr.Zero;
+    }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
     internal struct PciInfo
@@ -24,6 +41,7 @@ internal static class Nvml
 
     public const int ClockGraphics = 0, ClockMem = 2, ClockVideo = 3;
     public const ulong ThermalSlowdownMask = 0x60UL; // SW + HW thermal slowdown bits
+    public const ulong HwSlowdownMask = 0x8UL, PowerBrakeMask = 0x80UL; // proteção do hardware e freio da fonte
 
     [DllImport(Dll, EntryPoint = "nvmlInit_v2")] private static extern int nvmlInit();
     [DllImport(Dll, EntryPoint = "nvmlDeviceGetCount_v2")] private static extern int nvmlDeviceGetCount(out uint count);
@@ -32,6 +50,7 @@ internal static class Nvml
     [DllImport(Dll, CharSet = CharSet.Ansi)] private static extern int nvmlDeviceGetVbiosVersion(IntPtr device, StringBuilder version, uint length);
     [DllImport(Dll, CharSet = CharSet.Ansi)] private static extern int nvmlSystemGetDriverVersion(StringBuilder version, uint length);
     [DllImport(Dll, EntryPoint = "nvmlSystemGetCudaDriverVersion_v2")] private static extern int nvmlSystemGetCudaDriverVersion(out int version);
+    [DllImport(Dll)] private static extern int nvmlDeviceGetUtilizationRates(IntPtr device, out Utilization util);
     [DllImport(Dll)] private static extern int nvmlDeviceGetMemoryInfo(IntPtr device, out Memory memory);
     [DllImport(Dll)] private static extern int nvmlDeviceGetBAR1MemoryInfo(IntPtr device, out Memory bar1);
     [DllImport(Dll)] private static extern int nvmlDeviceGetMemoryBusWidth(IntPtr device, out uint width);
@@ -47,11 +66,7 @@ internal static class Nvml
     [DllImport(Dll)] private static extern int nvmlDeviceGetEnforcedPowerLimit(IntPtr device, out uint mw);
     [DllImport(Dll)] private static extern int nvmlDeviceGetPowerManagementLimitConstraints(IntPtr device, out uint minMw, out uint maxMw);
     [DllImport(Dll)] private static extern int nvmlDeviceGetPowerUsage(IntPtr device, out uint mw);
-    [DllImport(Dll)] private static extern int nvmlDeviceGetPerformanceState(IntPtr device, out int pstate);
     [DllImport(Dll)] private static extern int nvmlDeviceGetCurrentClocksThrottleReasons(IntPtr device, out ulong reasons);
-    [DllImport(Dll)] private static extern int nvmlDeviceGetEncoderUtilization(IntPtr device, out uint util, out uint periodUs);
-    [DllImport(Dll)] private static extern int nvmlDeviceGetDecoderUtilization(IntPtr device, out uint util, out uint periodUs);
-    [DllImport(Dll)] private static extern int nvmlDeviceGetUtilizationRates(IntPtr device, out Utilization util);
 
     private static readonly object _initSync = new();
     private static bool? _ok;
@@ -145,11 +160,9 @@ internal static class Nvml
         return Call(() => nvmlDeviceGetCudaComputeCapability(h, out a, out b)) ? $"{a}.{b}" : null;
     }
 
-    public static int? PState(IntPtr h) { int v = 0; return Call(() => nvmlDeviceGetPerformanceState(h, out v)) ? v : null; }
-    public static ulong? ThrottleReasons(IntPtr h) { ulong v = 0; return Call(() => nvmlDeviceGetCurrentClocksThrottleReasons(h, out v)) ? v : null; }
-    public static uint? EncoderUtil(IntPtr h) { uint v = 0; return Call(() => nvmlDeviceGetEncoderUtilization(h, out v, out _)) ? v : null; }
-    public static uint? DecoderUtil(IntPtr h) { uint v = 0; return Call(() => nvmlDeviceGetDecoderUtilization(h, out v, out _)) ? v : null; }
+    /// <summary>Uso do núcleo pelo driver; só o teste de telemetria usa, para comparar com o contador do Windows.</summary>
     public static Utilization? Util(IntPtr h) { Utilization u = default; return Call(() => nvmlDeviceGetUtilizationRates(h, out u)) ? u : null; }
+    public static ulong? ThrottleReasons(IntPtr h) { ulong v = 0; return Call(() => nvmlDeviceGetCurrentClocksThrottleReasons(h, out v)) ? v : null; }
 
     private delegate int UFunc(IntPtr h, out uint v);
     private static uint? U(IntPtr h, UFunc f) { uint v = 0; return Call(() => f(h, out v)) ? v : null; }

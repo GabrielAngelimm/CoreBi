@@ -23,30 +23,19 @@ public sealed class GpuInfo
     internal IntPtr NvmlHandle { get; set; }
     internal ulong? AdapterLuid { get; set; }
 
-    public List<KeyValuePair<string, string>> LiveExtras()
-    {
-        var list = new List<KeyValuePair<string, string>>();
-        var h = NvmlHandle;
-        if (h == IntPtr.Zero) return list;
-
-        if (Nvml.PState(h) is int p) list.Add(new("Estado de desempenho", $"P{p}"));
-        if (Nvml.ThrottleReasons(h) is ulong r) list.Add(new("PerfCap (limitador)", PerfCap(r)));
-        if (Nvml.PowerUsageMw(h) is uint pw && Nvml.PowerLimitMw(h) is uint lim && lim > 0)
-            list.Add(new("Consumo / limite", $"{pw / 1000.0:0.0} W · {100.0 * pw / lim:0} %"));
-        if (Nvml.Util(h) is Nvml.Utilization u) list.Add(new("Controlador de memória", $"{u.Memory} %"));
-        if (Nvml.EncoderUtil(h) is uint enc) list.Add(new("Encoder (NVENC)", $"{enc} %"));
-        if (Nvml.DecoderUtil(h) is uint dec) list.Add(new("Decoder (NVDEC)", $"{dec} %"));
-        if (Nvml.CurPcieGen(h) is uint g && Nvml.CurPcieWidth(h) is uint w) list.Add(new("PCIe em uso", $"{PcieName(g)} x{w}"));
-        return list;
-    }
+    /// <summary>
+    /// Por que o driver segura o clock agora ("Energia", "Térmico", "HW slowdown", "Power brake", "Ociosa" ou "Nenhum"),
+    /// numa única consulta NVML: Teste de carga mostra a cada segundo, inclusive com jogo aberto. Vazio sem NVML.
+    /// </summary>
+    public string PerfCapNow() => NvmlHandle != IntPtr.Zero && Nvml.ThrottleReasons(NvmlHandle) is ulong r ? PerfCap(r) : "";
 
     private static string PerfCap(ulong r)
     {
         var parts = new List<string>();
         if ((r & 0x4) != 0) parts.Add("Energia");
         if ((r & Nvml.ThermalSlowdownMask) != 0) parts.Add("Térmico");
-        if ((r & 0x8) != 0) parts.Add("HW slowdown");
-        if ((r & 0x80) != 0) parts.Add("Power brake");
+        if ((r & Nvml.HwSlowdownMask) != 0) parts.Add("HW slowdown");
+        if ((r & Nvml.PowerBrakeMask) != 0) parts.Add("Power brake");
         if (parts.Count == 0) return (r & 0x1) != 0 ? "Ociosa" : "Nenhum";
         return string.Join(" + ", parts);
     }
@@ -65,6 +54,9 @@ public sealed class GpuInfo
 
 public static class GpuInfoCollector
 {
+    /// <summary>Texto entre aspas simples numa consulta WQL: a barra e o apóstrofo precisam de escape.</summary>
+    private static string WqlLiteral(string value) => value.Replace("\\", "\\\\").Replace("'", "\\'");
+
     private static readonly Regex PciIdRegex = new(
         @"VEN_([0-9A-F]{4})&DEV_([0-9A-F]{4})(?:&SUBSYS_([0-9A-F]{4})([0-9A-F]{4}))?(?:&REV_([0-9A-F]{2}))?",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -107,16 +99,19 @@ public static class GpuInfoCollector
         var matchingDxgi = adapters.Where(a => a.VendorId.ToString("X4") == ven && a.DeviceId.ToString("X4") == dev).ToList();
         var dx = matchingDxgi.FirstOrDefault();
 
+        var pnpProps = PnpProperties(pnp);
+
         IntPtr h = IntPtr.Zero;
         if (ven == "10DE" && uint.TryParse(dev, System.Globalization.NumberStyles.HexNumber, null, out uint devNum))
         {
             uint pciId = (devNum << 16) | 0x10DE;
-            var matchingNv = nvDevices.Where(d => d.Pci.PciDeviceId == pciId).ToList();
+            // Duas placas iguais têm o mesmo ID PCI; só o barramento separa uma da outra. Sem ele, a placa fica sem as
+            // leituras do NVML em vez de mostrar as da gêmea.
+            uint? pciBus = AsUInt(pnpProps.GetValueOrDefault("DEVPKEY_Device_BusNumber"));
+            var matchingNv = nvDevices.Where(d => d.Pci.PciDeviceId == pciId && (pciBus is not uint b || d.Pci.Bus == b)).ToList();
             if (matchingNv.Count == 1) h = matchingNv[0].Handle;
-            else if (matchingNv.Count > 1 && dx != null) h = matchingNv[0].Handle;
         }
 
-        var pnpProps = PnpProperties(pnp);
         var reg = GpuRegistryReader.ReadDriverHardwareInfo(pnpProps.GetValueOrDefault("DEVPKEY_Device_Driver") as string);
 
         var gpu = new GpuInfo
@@ -294,7 +289,7 @@ public static class GpuInfoCollector
         var dict = new Dictionary<string, object?>();
         if (pnpId.Length == 0) return dict;
         // Instanciar pelo caminho do objeto falha ("Não encontrado"); via consulta WQL funciona.
-        WmiQuery.ForEach($"SELECT * FROM Win32_PnPEntity WHERE DeviceID='{pnpId.Replace("\\", "\\\\")}'", item =>
+        WmiQuery.ForEach($"SELECT * FROM Win32_PnPEntity WHERE DeviceID='{WqlLiteral(pnpId)}'", item =>
         {
             if (dict.Count > 0 || item is not ManagementObject mo) return;
             using var input = mo.GetMethodParameters("GetDeviceProperties");
@@ -302,7 +297,7 @@ public static class GpuInfoCollector
             {
                 "DEVPKEY_PciDevice_CurrentLinkSpeed", "DEVPKEY_PciDevice_CurrentLinkWidth",
                 "DEVPKEY_PciDevice_MaxLinkSpeed", "DEVPKEY_PciDevice_MaxLinkWidth",
-                "DEVPKEY_Device_Driver", "DEVPKEY_Device_LocationInfo"
+                "DEVPKEY_Device_Driver", "DEVPKEY_Device_LocationInfo", "DEVPKEY_Device_BusNumber"
             };
             using var output = mo.InvokeMethod("GetDeviceProperties", input, null);
             if (output?["deviceProperties"] is ManagementBaseObject[] props)
@@ -317,7 +312,7 @@ public static class GpuInfoCollector
     {
         if (pnpId.Length == 0) return "—";
         string? result = WmiQuery.FirstOrDefault(
-            $"SELECT IsSigned, Signer FROM Win32_PnPSignedDriver WHERE DeviceID='{pnpId.Replace("\\", "\\\\")}'",
+            $"SELECT IsSigned, Signer FROM Win32_PnPSignedDriver WHERE DeviceID='{WqlLiteral(pnpId)}'",
             d =>
             {
                 bool signed = WmiQuery.GetNullableBool(d, "IsSigned") == true;

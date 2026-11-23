@@ -434,8 +434,11 @@ public partial class NetworkView : UserControl
 
     private async void NetworkView_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (!IsVisible || _running || _adapterShown || _context == null || _context.IsClosing) return;
-        // Primeira visita: a leitura feita na abertura (o esqueleto só aparece se ela ainda não terminou); depois, uma releitura
+        if (!IsVisible || _running || _context == null || _context.IsClosing) return;
+        // Primeira visita: a leitura feita na abertura (o esqueleto só aparece se ela ainda não terminou). Depois, uma
+        // releitura quando a última não achou conexão (o CoreBi pode abrir antes da rede) ou tem mais de 30 s (troca de
+        // Wi-Fi para cabo); o cartão fica como está enquanto relê e só muda se algum valor mudou.
+        if (_adapterRead == null && _adapterAt is { } at && _adapterFound && DateTime.UtcNow - at < TimeSpan.FromSeconds(30)) return;
         var read = _adapterRead ?? Task.Run(NetworkTest.ReadAdapter);
         _adapterRead = null;
         if (read.IsCompletedSuccessfully) { ShowAdapter(read.Result); return; }
@@ -444,18 +447,20 @@ public partial class NetworkView : UserControl
         try { adapter = await read; }
         catch { adapter = null; }
         finally { Skeleton.SetActive(NetInfoCard, false); }
-        if (_context.IsClosing || _running || _adapterShown) return;
+        if (_context.IsClosing || _running) return;
         ShowAdapter(adapter);
     }
 
-    private bool _adapterShown;
+    private DateTime? _adapterAt;
+    private bool _adapterFound;
 
     private void ShowAdapter(NetworkAdapterInfo? a)
     {
-        _adapterShown = true;
+        _adapterAt = DateTime.UtcNow;
+        _adapterFound = a != null;
         if (a == null)
         {
-            NetInfo.ItemsSource = new[] { new KeyValuePair<string, string>("Adaptador", "nenhuma conexão ativa") };
+            Ui.SetItems(NetInfo, new[] { new KeyValuePair<string, string>("Adaptador", "nenhuma conexão ativa") });
             NetPcLink.Text = "—"; NetPcLinkUnit.Text = "de link"; NetPcDetail.Text = "sem conexão"; NetRouterIp.Text = "—";
             return;
         }
@@ -464,7 +469,7 @@ public partial class NetworkView : UserControl
         var rows = new List<KeyValuePair<string, string>>();
         if (!IsGenericName(a.Name, a.Kind)) rows.Add(new("Adaptador", a.Name));
         if (!IsGenericName(a.Description, a.Kind) && !a.Description.Equals(a.Name, StringComparison.OrdinalIgnoreCase)) rows.Add(new("Placa", a.Description));
-        NetInfo.ItemsSource = rows.Concat(new KeyValuePair<string, string>[]
+        Ui.SetItems(NetInfo, rows.Concat(new KeyValuePair<string, string>[]
         {
             new("Tipo", a.Kind),
             new("Velocidade do link", a.LinkText),
@@ -472,7 +477,7 @@ public partial class NetworkView : UserControl
             new("Gateway", a.Gateway.ToString()),
             new("Servidor DNS", a.Dns),
             new("Endereço físico", a.Mac),
-        }).ToList();
+        }).ToList());
         if (a.LinkMbps is { } mbps)
         {
             bool giga = mbps >= 1000;

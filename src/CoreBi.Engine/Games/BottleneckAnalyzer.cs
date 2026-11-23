@@ -13,7 +13,7 @@ public sealed record LoadSample(
     double? Low1Fps = null, string? Process = null)
 {
     public const double VramLimitPct = 97;
-    public const float ThermalLimitC = 95;
+    public const float ThermalLimitC = ThermalLimits.ChipCritC;
     public const float GpuLimitPct = 90;
     public const float CpuLimitPct = 85;
     public const float RamLimitPct = 92;
