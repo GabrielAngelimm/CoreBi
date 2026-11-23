@@ -22,7 +22,8 @@ internal static class StartupManager
         ReadRun(list, RegistryHive.LocalMachine, RegistryView.Registry32, "Run32", true, "Registro 32 bits (todos os usuários)");
         ReadFolder(list, Environment.GetFolderPath(Environment.SpecialFolder.Startup), false, "Pasta Inicializar (usuário)");
         ReadFolder(list, Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup), true, "Pasta Inicializar (todos os usuários)");
-        return list.OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+        StoreStartup.Read(list);
+        return list.OrderBy(e => e.Title, StringComparer.CurrentCultureIgnoreCase).ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
     private static void ReadRun(List<StartupEntry> list, RegistryHive hive, RegistryView view, string kind, bool machine, string source)
@@ -37,15 +38,20 @@ internal static class StartupManager
                 if (string.IsNullOrEmpty(name)) continue;
                 string cmd = key.GetValue(name)?.ToString() ?? "";
                 string? exe = ExeFromCommand(cmd);
+                var info = Identify(name, cmd, exe);
                 list.Add(new StartupEntry
                 {
                     Name = name,
+                    Title = info.Title,
+                    Publisher = info.Publisher,
                     Command = cmd,
                     Source = source,
                     Machine = machine,
                     Kind = kind,
                     Enabled = IsApproved(machine, kind, name),
-                    Detail = Describe(exe),
+                    Detail = info.Description,
+                    IconPath = info.Icon,
+                    Location = info.Location,
                     FileMissing = exe != null && !File.Exists(exe),
                 });
             }
@@ -64,16 +70,22 @@ internal static class StartupManager
                 if (fn.Equals("desktop.ini", StringComparison.OrdinalIgnoreCase)) continue;
                 string? target = file.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) ? ShortcutTarget(file) : null;
                 string? exe = target != null ? ExeFromCommand(target) : file;
+                string name = Path.GetFileNameWithoutExtension(fn);
+                var info = Identify(ShortcutName(name), target ?? file, exe);
                 list.Add(new StartupEntry
                 {
-                    Name = Path.GetFileNameWithoutExtension(fn),
+                    Name = name,
+                    Title = info.Title,
+                    Publisher = info.Publisher,
                     Command = target ?? file,
                     Source = source,
                     Machine = machine,
                     Kind = "Folder",
                     FilePath = file,
                     Enabled = IsApproved(machine, "StartupFolder", fn),
-                    Detail = Describe(exe),
+                    Detail = info.Description,
+                    IconPath = info.Icon ?? file,
+                    Location = info.Location,
                     FileMissing = target != null && exe != null && !File.Exists(exe),
                 });
             }
@@ -97,6 +109,7 @@ internal static class StartupManager
 
     public static void SetEnabled(StartupEntry e, bool enabled)
     {
+        if (e.Store) { StoreStartup.SetEnabled(e, enabled); e.Enabled = enabled; return; }
         var data = new byte[12];
         data[0] = enabled ? (byte)2 : (byte)3;
         if (!enabled) BitConverter.GetBytes(DateTime.UtcNow.ToFileTimeUtc()).CopyTo(data, 4);
@@ -108,7 +121,17 @@ internal static class StartupManager
     internal static StartupBackup PrepareRemoval(StartupEntry entry, string folder)
     {
         ValidateKind(entry.Kind);
-        var backup = new StartupBackup { Kind = entry.Kind, Machine = entry.Machine, Name = entry.Name, Original = entry.FilePath };
+        var backup = new StartupBackup
+        {
+            Kind = entry.Kind,
+            Machine = entry.Machine,
+            Name = entry.Name,
+            Original = entry.FilePath,
+            RemovedAt = DateTime.Now,
+            Title = entry.Title,
+            Publisher = entry.Publisher,
+            IconPath = entry.IconPath,
+        };
         using (var approved = (entry.Machine ? Registry.LocalMachine : Registry.CurrentUser).OpenSubKey(ApprovedPath + ApprovedKind(entry)))
             backup.ApprovedState = approved?.GetValue(ApprovedName(entry)) as byte[];
         backup.ApprovedStateCaptured = true;
@@ -179,6 +202,7 @@ internal static class StartupManager
 
     private static void ValidateKind(string kind)
     {
+        if (kind == "Store") throw new IOException("Apps da Microsoft Store só podem ser desligados, não removidos.");
         if (kind is not ("Run" or "Run32" or "Folder")) throw new IOException("Origem de inicialização inválida.");
     }
 
@@ -224,16 +248,80 @@ internal static class StartupManager
         return File.Exists(sys) ? sys : null;
     }
 
-    private static string Describe(string? exe)
+    private readonly record struct Identity(string Title, string Publisher, string Description, string? Icon, string? Location);
+
+    /// <summary>
+    /// Nome, fabricante e ícone de uma entrada. O nome é o da entrada no Windows, a não ser que seja um identificador
+    /// ("GoogleChromeAutoLaunch_579CF1F2…"): aí vale o nome do produto. Pelo rundll32 o que abre é a DLL, então fabricante e
+    /// ícone vêm dela; nos instaladores Squirrel (Discord, Teams antigo) o ícone vem do programa que o Update.exe abre.
+    /// </summary>
+    private static Identity Identify(string name, string command, string? exe)
+    {
+        string? module = exe;
+        if (exe != null && Path.GetFileName(exe).Equals("rundll32.exe", StringComparison.OrdinalIgnoreCase)) module = RundllModule(command) ?? exe;
+        FileVersionInfo? v = null;
+        try { if (module != null && File.Exists(module)) v = FileVersionInfo.GetVersionInfo(module); } catch { }
+        string product = Clean(v?.ProductName), description = Clean(v?.FileDescription), company = Clean(v?.CompanyName);
+        string title = name;
+        if (LooksLikeId(name)) title = product.Length > 0 ? product : description.Length > 0 ? description : name;
+        string? icon = module != null && File.Exists(module) ? module : null;
+        if (exe != null && SquirrelTarget(exe, command) is { } app) icon = app;
+        string? location = module != null && File.Exists(module) ? Path.GetDirectoryName(module) : null;
+        return new Identity(title, company, description, icon, location);
+    }
+
+    private static string Clean(string? s) => string.IsNullOrWhiteSpace(s) ? "" : s.Trim().TrimEnd('.');
+
+    /// <summary>"Discord - Atalho" → "Discord": o sufixo que o Explorer põe nos atalhos não é parte do nome.</summary>
+    private static string ShortcutName(string name)
+    {
+        foreach (string suffix in new[] { " - Atalho", " - Shortcut", " – Atalho" })
+            if (name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) return name[..^suffix.Length];
+        return name;
+    }
+
+    /// <summary>Nome de entrada que é identificador: um trecho hexadecimal longo, um GUID ou "AutoLaunch_".</summary>
+    internal static bool LooksLikeId(string name)
+    {
+        if (name.Contains("AutoLaunch", StringComparison.OrdinalIgnoreCase)) return true;
+        int run = 0;
+        foreach (char c in name)
+        {
+            run = Uri.IsHexDigit(c) ? run + 1 : 0;
+            if (run >= 12) return true;
+        }
+        return Guid.TryParse(name.Trim('{', '}'), out _);
+    }
+
+    /// <summary>"rundll32.exe C:\x\LogiLDA.dll,LogiFetch" → C:\x\LogiLDA.dll.</summary>
+    private static string? RundllModule(string command)
+    {
+        string cmd = Environment.ExpandEnvironmentVariables(command);
+        int at = cmd.IndexOf("rundll32", StringComparison.OrdinalIgnoreCase);
+        if (at < 0) return null;
+        int space = cmd.IndexOf(' ', at);
+        if (space < 0) return null;
+        string rest = cmd[(space + 1)..].Trim();
+        string path = rest.StartsWith('"') ? rest[1..].Split('"')[0] : rest.Split(',')[0].Trim();
+        if (!Path.IsPathRooted(path)) path = Path.Combine(Environment.SystemDirectory, path);
+        return File.Exists(path) ? path : null;
+    }
+
+    /// <summary>Update.exe --processStart Discord.exe: o executável do app na pasta app-* mais nova, para o ícone.</summary>
+    private static string? SquirrelTarget(string exe, string command)
     {
         try
         {
-            if (exe == null || !File.Exists(exe)) return "";
-            var v = FileVersionInfo.GetVersionInfo(exe);
-            return string.Join(", ", new[] { v.FileDescription, v.CompanyName }
-                .Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s!.Trim()).Distinct());
+            if (!Path.GetFileName(exe).Equals("Update.exe", StringComparison.OrdinalIgnoreCase)) return null;
+            int at = command.IndexOf("--processStart", StringComparison.OrdinalIgnoreCase);
+            if (at < 0) return null;
+            string target = command[(at + 14)..].Trim().Trim('"').Split(' ', '"')[0];
+            string? root = Path.GetDirectoryName(exe);
+            if (root == null || target.Length == 0) return null;
+            return Directory.EnumerateDirectories(root, "app-*").OrderByDescending(d => d, StringComparer.OrdinalIgnoreCase)
+                .Select(d => Path.Combine(d, target)).FirstOrDefault(File.Exists);
         }
-        catch { return ""; }
+        catch { return null; }
     }
 
     private static string? ShortcutTarget(string lnk)

@@ -1,4 +1,5 @@
 using CoreBi.Desktop.Services;
+using CoreBi.Engine.Infrastructure;
 using CoreBi.Engine.Performance;
 using CoreBi.Engine.Tools.Drivers;
 using System.ComponentModel;
@@ -6,11 +7,13 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
+using System.Diagnostics;
+using System.IO;
+using System.Windows.Media;
 
 namespace CoreBi.Desktop.Views;
 
-/// <summary>Aba Drivers: inventário, NVIDIA (verifica e instala), AMD/placa-mãe (página oficial), Windows Update e backup.</summary>
+/// <summary>Aba Drivers: placa de vídeo (verifica e instala), placa-mãe, Windows Update, backup e restauração, e o inventário com os dispositivos com problema.</summary>
 public partial class DriversView : UserControl
 {
     private FeatureContext _context = null!;
@@ -30,22 +33,21 @@ public partial class DriversView : UserControl
     internal CancellationTokenSource? _drvCts;
 
     private static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
-    private static readonly Thickness HeadMargin = new(8, 2, 8, 0);
+    private static readonly Thickness HeadMargin = new(8, 16, 8, 6);
     private List<DriverLine> _lines = new();
     private ICollectionView? _view;
-    private string? _group;      // classe escolhida no filtro (null = todas)
     private string _query = "";
+    private string? _group;
     private bool? _narrowBody;
 
     internal void InitDriver()
     {
         if (_drvInit) return;
         _drvInit = true;
-        // Primeira leitura: esqueleto nos três painéis, cada um sai quando a parte dele chega
+        // Primeira leitura: esqueleto nos painéis, cada um sai quando a parte dele chega
         Skeleton.Set(true, DrvGpuCard, DrvBoardCard, DrvTableCard);
         BtnDrvScan_Click(this, new RoutedEventArgs());
     }
-
 
     /// <summary>Abaixo de 1180 px a tabela desce para baixo da coluna da esquerda (com altura própria) e a página rola.</summary>
     private void DrvBody_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -88,6 +90,7 @@ public partial class DriversView : UserControl
         _drvBusy = busy;
         BtnDrvScan.IsEnabled = !busy;
         BtnDrvBackup.IsEnabled = !busy;
+        BtnDrvRestore.IsEnabled = !busy;
         BtnDrvWuSearch.IsEnabled = !busy;
         DrvStudio.IsEnabled = !busy;
         BtnDrvInstall.IsEnabled = !busy && _drvGpus.Any(g => g.CanAutoInstall);
@@ -104,13 +107,15 @@ public partial class DriversView : UserControl
             // Uma mensagem só durante a leitura inteira, sem medidor (é rápida): o estado passa direto a "Lido às"
             DrvSet("Lendo drivers instalados…");
             var inv = await Task.Run(DriverInventory.ListInstalled);
+            var problems = await Task.Run(DriverInventory.ReadProblems);
             ShowInventory(inv);
+            ShowProblems(problems);
             Skeleton.SetActive(DrvTableCard, false);
-            _drvGpus = await Task.Run(DriverInventory.ReadGpus);
             _drvBoardInfo = await Task.Run(DriverInventory.ReadBoard);
             ShowBoard();
             Skeleton.SetActive(DrvBoardCard, false);
 
+            _drvGpus = await Task.Run(DriverInventory.ReadGpus);
             bool studio = DrvStudio.IsChecked == true;
             foreach (var g in _drvGpus) await GpuDriverLookup.CheckAsync(g, studio, _drvCts.Token);
             if (_context.IsClosing) return;
@@ -135,12 +140,16 @@ public partial class DriversView : UserControl
 
     private void ShowGpus()
     {
+        bool studioOn = DrvStudio.IsChecked == true;
+        foreach (var g in _drvGpus) Verdict(g, studioOn);
         DrvGpus.ItemsSource = null;
         DrvGpus.ItemsSource = _drvGpus;
         DrvGpuEmpty.Visibility = _drvGpus.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        DrvStudio.Visibility = _drvGpus.Any(g => g.Vendor == "NVIDIA") ? Visibility.Visible : Visibility.Collapsed;
-        BtnDrvInstall.Visibility = _drvGpus.Any(g => g.Vendor is "NVIDIA" or "AMD") ? Visibility.Visible : Visibility.Collapsed;
-        // Só há página oficial quando o fabricante é conhecido (NVIDIA, AMD, Intel); sem ela, o botão não aparece.
+        bool nvidia = _drvGpus.Any(g => g.Vendor == "NVIDIA"), install = _drvGpus.Any(g => g.Vendor is "NVIDIA" or "AMD");
+        DrvStudio.Visibility = nvidia ? Visibility.Visible : Visibility.Collapsed;
+        BtnDrvInstall.Visibility = install ? Visibility.Visible : Visibility.Collapsed;
+        DrvGpuActions.Visibility = install || nvidia ? Visibility.Visible : Visibility.Collapsed;
+        // Só há página oficial quando o fabricante é conhecido (NVIDIA, AMD, Intel); sem ela, o atalho não aparece.
         BtnDrvGpuPage.Visibility = _drvGpus.Any(g => g.OfficialPage.Length > 0) ? Visibility.Visible : Visibility.Collapsed;
 
         // O botão diz a versão que vai instalar. Sem driver mais novo, reinstalar não é a ação principal da tela.
@@ -148,12 +157,35 @@ public partial class DriversView : UserControl
         BtnDrvInstall.Content = target == null ? "Baixar e instalar"
             : target.Vendor == "NVIDIA" && !target.UpdateAvailable ? $"Reinstalar {target.Latest}"
             : $"Baixar e instalar {target.Latest}";
+        DrvGpuSize.Text = target == null ? "" : SizePt(target.SizeText);
+        DrvGpuSize.ToolTip = DrvGpuSize.Text.Length > 0 ? "Tamanho do instalador." : null;
         UpdatePrimary();
     }
 
     /// <summary>
-    /// Uma ação principal por tela: o driver novo da placa de vídeo, quando há; senão, instalar o que o Windows Update achou;
-    /// senão, procurar no Windows Update. As outras ficam secundárias.
+    /// O veredito no pé da placa. Com a NVIDIA dá para comparar as versões: "Em dia" em verde ou "Driver novo" em âmbar, e uma
+    /// frase curta que diz a linha do driver (Game Ready ou Studio). Nos outros casos fica só a frase do motor, sem palavra da frente.
+    /// </summary>
+    internal static void Verdict(GpuDriverStatus g, bool studio)
+    {
+        g.Lead = ""; g.Tone = "";
+        if (g.Vendor != "NVIDIA" || g.Latest.Length == 0 || g.Installed.Length == 0) return;
+        string line = studio ? "Studio" : "Game Ready";
+        if (g.UpdateAvailable) { g.Lead = "Driver novo"; g.Tone = "warn"; g.Message = $"Saiu um {line} mais novo."; }
+        else { g.Lead = "Em dia"; g.Tone = "ok"; g.Message = $"É o {line} mais novo da NVIDIA."; }
+    }
+
+    /// <summary>"1.04 GB" da NVIDIA em português: "1,04 GB".</summary>
+    internal static string SizePt(string size)
+    {
+        size = size.Trim();
+        var m = System.Text.RegularExpressions.Regex.Match(size, @"^(\d+)\.(\d+)(\s*\w+)$");
+        return m.Success ? $"{m.Groups[1].Value},{m.Groups[2].Value}{m.Groups[3].Value}" : size;
+    }
+
+    /// <summary>
+    /// Uma ação principal por tela: o driver novo da placa de vídeo, quando há; senão, instalar o que o Windows Update achou.
+    /// Sem nenhum dos dois, nada grita: tudo fica secundário.
     /// </summary>
     private void UpdatePrimary()
     {
@@ -162,7 +194,6 @@ public partial class DriversView : UserControl
         bool wuInstall = !gpu && _drvWu.Count > 0;
         Emphasize(BtnDrvInstall, gpu);
         Emphasize(BtnDrvWuInstall, wuInstall);
-        Emphasize(BtnDrvWuSearch, !gpu && !wuInstall);
     }
 
     private void Emphasize(Button button, bool primary)
@@ -175,57 +206,147 @@ public partial class DriversView : UserControl
         var b = _drvBoardInfo;
         DrvBoard.Text = b.Model;
         DrvBoard.ToolTip = b.Model.Length > 0 ? b.Model : null;
-        DrvBoardMaker.Text = b.Maker.Equals(b.Model, StringComparison.OrdinalIgnoreCase) ? "" : b.Maker;
+        bool known = b.SupportUrl.Length > 0;
+        // Com o fabricante conhecido, o nome dele está no botão; a linha do fabricante só aparece quando não há botão
+        DrvBoardMaker.Text = known || b.Maker.Equals(b.Model, StringComparison.OrdinalIgnoreCase) ? "" : b.Maker;
         DrvBoardMaker.Visibility = DrvBoardMaker.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
         string version = b.BiosVersion.Trim();
         string date = b.BiosDate == "—" ? "" : b.BiosDate.Trim();
         DrvBoardBios.Text = version;
-        DrvBoardBiosDate.Text = date;
-        DrvBoardBiosDate.Visibility = date.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+        DrvBoardBiosDate.Text = date.Length > 0 ? date : "—";
+        DrvBoardBiosDate.ToolTip = DateTime.TryParseExact(date, "dd/MM/yyyy", PtBr, DateTimeStyles.None, out var when) ? Age(when) : null;
         DrvBiosBox.Visibility = version.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        bool known = b.SupportUrl.Length > 0;
-        BtnDrvBoardPage.Content = b.Brand.Length > 0 ? $"Suporte da {b.Brand}" : "Suporte do fabricante";
+        string brand = b.Brand.Length > 0 ? b.Brand : "fabricante";
+        // Na Gigabyte o botão abre uma busca do Google (o link e o glifo dizem isso); nas outras, a página da própria marca
+        bool google = !b.SupportIsModelPage && b.Brand == "Gigabyte";
+        BtnDrvBoardPage.Content = b.SupportIsModelPage ? $"Abrir no site da {brand}" : google ? "Buscar o suporte no Google" : $"Abrir o suporte da {brand}";
+        Ui.SetIcon(BtnDrvBoardPage, google ? "\uE721" : "\uE8A7");
+        BtnDrvBoardPage.ToolTip = b.SupportIsModelPage
+            ? "Abre a página de suporte do seu modelo: drivers de chipset, áudio e rede, e as versões da BIOS."
+            : google
+            ? "A Gigabyte tem uma página para cada revisão da placa (Rev. 1.0, 1.3...), o Windows não diz qual é a sua e a busca do site\n"
+              + "deles não abre de fora. O Google, só no gigabyte.com, lista a página de suporte de cada revisão: escolha a impressa na placa."
+            : "Abre a central de suporte do fabricante. Busque pelo modelo para achar os drivers e a BIOS.";
         BtnDrvBoardPage.Visibility = known ? Visibility.Visible : Visibility.Collapsed;
-        BtnDrvBoardPage.IsEnabled = known;
         DrvBoardNote.Visibility = known || b.Model.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
 
+    /// <summary>"Lançada há 1 ano e 2 meses.": a idade da BIOS, na dica da data.</summary>
+    internal static string Age(DateTime when)
+    {
+        int months = Math.Max(0, (DateTime.Today.Year - when.Year) * 12 + DateTime.Today.Month - when.Month - (DateTime.Today.Day < when.Day ? 1 : 0));
+        int years = months / 12, rest = months % 12;
+        string y = years == 1 ? "1 ano" : $"{years} anos", m = rest == 1 ? "1 mês" : $"{rest} meses";
+        return "Lançada há " + (months == 0 ? "menos de 1 mês" : years == 0 ? m : rest == 0 ? y : $"{y} e {m}") + ".";
+    }
+
+    private List<DriverLine> _installed = new();
+    private List<DriverLine> _problems = new();
+
     private void ShowInventory(List<DriverRow> inventory)
     {
-        _lines = inventory.Select(DriverLine.From).OrderBy(l => l.Order).ThenBy(l => l.Device, StringComparer.CurrentCultureIgnoreCase).ToList();
+        _installed = inventory.Select(DriverLine.From).OrderBy(l => l.Order).ThenBy(l => l.Device, StringComparer.CurrentCultureIgnoreCase).ToList();
+        Rebuild();
+    }
+
+    /// <summary>Dispositivos com problema entram na tabela, num grupo no topo; nos filtros por tipo eles saem (não têm driver de tipo).</summary>
+    private void ShowProblems(List<DeviceProblem> problems)
+    {
+        _problems = problems.Select(p => new DriverLine(p.Name, "", "", "", true, DriverLine.ProblemGroup, -1) { Problem = p.Meaning, Tip = ProblemTip(p) }).ToList();
+        Rebuild();
+    }
+
+    private void Rebuild()
+    {
+        var lines = _problems.Concat(_installed).ToList();
+        if (_view != null && lines.SequenceEqual(_lines)) { UpdateTableState(); return; } // releitura igual: a tabela fica
+        _lines = lines;
         _view = CollectionViewSource.GetDefaultView(_lines);
         _view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(DriverLine.Group)));
         _view.Filter = o => o is DriverLine l && (_group == null || l.Group == _group)
-                            && (_query.Length == 0 || l.Device.Contains(_query, StringComparison.CurrentCultureIgnoreCase)
-                                                   || l.Vendor.Contains(_query, StringComparison.CurrentCultureIgnoreCase));
+                                              && (_query.Length == 0 || l.Device.Contains(_query, StringComparison.CurrentCultureIgnoreCase)
+                                                                     || l.Vendor.Contains(_query, StringComparison.CurrentCultureIgnoreCase)
+                                                                     || l.Group.Contains(_query, StringComparison.CurrentCultureIgnoreCase));
         DrvList.ItemsSource = _view;
-        if (_group != null && _lines.All(l => l.Group != _group)) _group = null;
-        BuildChips();
+        BuildGroups();
         UpdateTableState();
     }
 
-    /// <summary>Um filtro por classe, com a quantidade; "Todos" fica separado das classes.</summary>
-    private void BuildChips()
+    /// <summary>
+    /// Os tipos de peça do inventário como segmentos (Todos primeiro, depois na ordem da tabela). O escolhido continua escolhido
+    /// numa releitura, se o tipo ainda existir.
+    /// </summary>
+    private void BuildGroups()
     {
-        DrvChips.Children.Clear();
-        if (_lines.Count == 0) return;
-        DrvChips.Children.Add(Chip("Todos", _lines.Count, null));
-        foreach (var g in _lines.GroupBy(l => l.Group)) DrvChips.Children.Add(Chip(g.Key, g.Count(), g.Key));
+        var groups = _installed.Select(l => l.Group).Distinct().ToList();
+        if (_group != null && !groups.Contains(_group)) _group = null;
+        DrvGroups.Children.Clear();
+        foreach (string? g in groups.Prepend(null))
+        {
+            var segment = new RadioButton
+            {
+                Content = g ?? "Todos",
+                Tag = g,
+                GroupName = "DrvGroup",
+                IsChecked = g == _group,
+                ToolTip = g == null ? "Todos os drivers." : $"Só os drivers de {g.ToLower(PtBr)}.",
+            };
+            segment.SetResourceReference(StyleProperty, "Segment");
+            DrvGroups.Children.Add(segment);
+        }
+        DrvGroupBox.Visibility = groups.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+        _headWide = null;
+        PlaceGroups();
     }
 
-    private RadioButton Chip(string name, int count, string? group)
+    private void DrvGroup_Checked(object sender, RoutedEventArgs e)
     {
-        var text = new TextBlock { Typography = { NumeralAlignment = FontNumeralAlignment.Tabular } };
-        text.Inlines.Add(new Run(name));
-        var n = new Run("  " + count.ToString(PtBr));
-        n.SetResourceReference(TextElement.ForegroundProperty, "Faint");
-        text.Inlines.Add(n);
-        var chip = new RadioButton { Content = text, GroupName = "DrvClass", IsChecked = _group == group };
-        chip.SetResourceReference(StyleProperty, "Chip");
-        chip.Checked += (_, _) => { _group = group; _view?.Refresh(); UpdateTableState(); };
-        return chip;
+        if (e.OriginalSource is not RadioButton { IsLoaded: true } segment || !IsLoaded) return;
+        _group = segment.Tag as string;
+        _view?.Refresh();
+        DrvListScroll.ScrollToTop();
+        UpdateTableState();
+    }
+
+    private bool? _headWide;
+
+    private void DrvTableHead_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (e.WidthChanged) PlaceGroups();
+    }
+
+    /// <summary>
+    /// Os tipos ficam entre o título e a busca quando cabem; senão descem para uma linha só deles, embaixo do título, alinhados à
+    /// esquerda. A decisão compara a largura do cabeçalho com a soma do título, do trilho e da busca.
+    /// </summary>
+    private void PlaceGroups()
+    {
+        if (DrvGroupBox.Visibility != Visibility.Visible || DrvTableHead.ActualWidth <= 0) return;
+        DrvGroupBox.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        var title = (FrameworkElement)DrvTableHead.Children[0];
+        title.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        double need = title.DesiredSize.Width + DrvGroupBox.DesiredSize.Width + DrvSearch.Width + 16 + 12;
+        bool wide = need <= DrvTableHead.ActualWidth;
+        if (wide == _headWide) return;
+        _headWide = wide;
+        Grid.SetRow(DrvGroupBox, wide ? 0 : 1);
+        Grid.SetColumn(DrvGroupBox, wide ? 1 : 0);
+        Grid.SetColumnSpan(DrvGroupBox, wide ? 1 : 3);
+        DrvGroupBox.Margin = wide ? new Thickness(16, 0, 0, 0) : new Thickness(0, 12, 0, 0);
+    }
+
+    /// <summary>A dica da linha: o que o problema quer dizer na prática e o que fazer.</summary>
+    internal static string ProblemTip(DeviceProblem p) => p.Code == 28
+        ? "O Windows reconhece este aparelho, mas não tem o driver dele, então ele não funciona.\n" +
+          "Procure no Windows Update (no cartão ao lado) ou no site do fabricante. Se for um modo que você não usa, como o de atualizar firmware, pode ignorar."
+        : $"{p.Meaning}.\nÉ o ponto de exclamação do Gerenciador de Dispositivos (código {p.Code}). Lá dá para atualizar o driver ou ver detalhes.";
+
+    private void BtnDrvDeviceManager_Click(object sender, RoutedEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo(Path.Combine(Environment.SystemDirectory, "mmc.exe")) { ArgumentList = { "devmgmt.msc" }, UseShellExecute = false })?.Dispose(); }
+        catch (Exception ex) { DrvSet("Não foi possível abrir o Gerenciador de Dispositivos", null, ex.Message); }
     }
 
     private void DrvSearch_TextChanged(object sender, TextChangedEventArgs e)
@@ -238,8 +359,10 @@ public partial class DriversView : UserControl
     private void UpdateTableState()
     {
         int shown = _view?.Cast<object>().Count() ?? 0;
-        DrvCount.Text = _lines.Count == 0 ? "" : shown == _lines.Count ? _lines.Count.ToString(PtBr) : $"{shown} de {_lines.Count}";
-        DrvEmpty.Text = _lines.Count == 0 ? "Nenhum driver encontrado." : "Nenhum driver com esse nome ou fabricante.";
+        int total = _installed.Count;
+        shown -= _view?.Cast<DriverLine>().Count(l => l.IsProblem) ?? 0;
+        DrvCount.Text = total == 0 ? "" : shown == total ? total.ToString(PtBr) : $"{shown} de {total}";
+        DrvEmpty.Text = total == 0 ? "Nenhum driver encontrado." : "Nenhum driver com esse nome ou fabricante neste tipo.";
         DrvEmpty.Visibility = shown == 0 && _view != null ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -251,6 +374,64 @@ public partial class DriversView : UserControl
 
     internal void BtnDrvBoardPage_Click(object sender, RoutedEventArgs e) => ExternalLinks.OpenHttps(_drvBoardInfo.SupportUrl);
 
+    /// <summary>
+    /// Copia o nome do dispositivo (para colar numa busca). O glifo vira um visto verde e a dica diz "Copiado" por 1,4 s; a
+    /// área de transferência às vezes está presa por outro programa, então tenta de novo antes de desistir.
+    /// </summary>
+    internal async void DrvCopy_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: DriverLine line } button) return;
+        bool ok = false;
+        for (int attempt = 0; attempt < 3 && !ok; attempt++)
+        {
+            try { Clipboard.SetText(line.Device); ok = true; }
+            catch (System.Runtime.InteropServices.COMException) { await Task.Delay(60); }
+        }
+        if (!ok) return;
+        Ui.SetIcon(button, "\uE73E");
+        button.Tag = "copied";
+        button.ToolTip = "Copiado";
+        await Task.Delay(1400);
+        Ui.SetIcon(button, "\uE8C8");
+        button.ClearValue(TagProperty);
+        button.ClearValue(ToolTipProperty);
+    }
+
+    /// <summary>
+    /// A confirmação de instalar o driver da placa, na janela do próprio app (a mesma do backup): o que acontece e, lado a lado, o
+    /// que está instalado, o que vem e o tamanho do download. Reinstalar a mesma versão não repete o número.
+    /// </summary>
+    private Task<bool> AskGpuInstall(GpuDriverStatus g)
+    {
+        if (Dialog is not { } dialog) return Task.FromResult(false);
+        bool amd = g.Vendor == "AMD", update = amd || g.UpdateAvailable;
+        string title = amd ? "Instalar o AMD Software" : g.UpdateAvailable ? "Atualizar o driver da NVIDIA" : "Reinstalar o driver da NVIDIA";
+        string lead = amd ? "O CoreBi baixa o instalador oficial da AMD e abre ele.\nÉ só seguir o instalador até o fim."
+            : g.UpdateAvailable ? "O CoreBi baixa o instalador oficial da NVIDIA e abre ele.\nA tela pode piscar enquanto o driver troca."
+            : "Você já tem a versão mais nova; reinstalar ajuda quando o driver dá problema.\nO CoreBi baixa o instalador oficial de novo e abre ele.";
+        string action = amd ? "Baixar e abrir" : g.UpdateAvailable ? $"Instalar {g.Latest}" : $"Reinstalar {g.Latest}";
+        const string tip = "O arquivo vem do servidor oficial e tem a assinatura conferida. Antes de abrir, o CoreBi pede ao Windows um ponto de restauração.";
+        var cells = new (string Label, string Value, string? Tip)[]
+        {
+            ("Instalado", g.Installed, null),
+            ("Mais recente", update ? g.Latest : "", null),
+            ("Download", g.SizeText, null),
+        };
+        return dialog.ConfirmAsync(title, lead, action, tip, cells.Where(c => c.Value.Length > 0).ToArray());
+    }
+
+    /// <summary>A confirmação de instalar a lista do Windows Update: quantos drivers e o tamanho do download.</summary>
+    private Task<bool> AskWuInstall()
+    {
+        if (Dialog is not { } dialog) return Task.FromResult(false);
+        string what = _drvWu.Count == 1 ? "1 driver" : $"{_drvWu.Count} drivers";
+        long bytes = _drvWu.Sum(w => Math.Max(0, w.SizeBytes));
+        return dialog.ConfirmAsync("Instalar do Windows Update",
+            "O próprio Windows Update baixa e instala os drivers da lista.\nNo fim, ele pode pedir para reiniciar o PC.",
+            $"Instalar {what}", "Nada além da lista é instalado.",
+            ("Drivers", _drvWu.Count.ToString(PtBr), null), ("Download", bytes > 0 ? Size(bytes) : "—", null));
+    }
+
     internal async void BtnDrvInstall_Click(object sender, RoutedEventArgs e)
     {
         if (!RequireAdmin()) return;
@@ -259,12 +440,7 @@ public partial class DriversView : UserControl
 
         var g = _drvGpus.FirstOrDefault(x => x.CanAutoInstall);
         if (g == null || _drvBusy) return;
-        string msg = g.Vendor == "AMD"
-            ? $"Baixar e abrir o instalador AMD Software {g.Latest}?\nO arquivo vem do servidor oficial da AMD."
-            : g.UpdateAvailable
-            ? $"Instalar o driver NVIDIA {g.Latest} ({g.SizeText})?\nO CoreBi baixa e abre o instalador oficial."
-            : $"Você já está com a versão {g.Installed}. Baixar e abrir o instalador {g.Latest} de novo, para reinstalar?";
-        if (MessageBox.Show(_context.Owner, msg, "Drivers", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (!await AskGpuInstall(g)) return;
 
         DrvBusy(true);
         _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
@@ -279,13 +455,26 @@ public partial class DriversView : UserControl
         finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
     }
 
-    private void ShowWu()
+    /// <summary>Início da conversa com o Windows Update: o que a busca faz, antes da primeira.</summary>
+    private const string WuIdle = "Procure para saber se a Microsoft tem drivers novos para as peças deste PC.";
+
+    /// <summary>
+    /// A lista do Windows Update ou, sem nada nela, o estado: o desenho de atualizar (ainda não procurou), o visto verde (tudo em
+    /// dia ou instalado) ou o alerta âmbar (sem resposta), com a frase embaixo.
+    /// </summary>
+    private void ShowWu(string? note = null, string tone = "idle")
     {
-        DrvWuItems.ItemsSource = _drvWu.Select(w => new WuLine(w.Title,
-            w.SizeBytes > 0 ? (w.SizeBytes / 1048576.0).ToString("0", PtBr) + " MB" : "")).ToList();
+        DrvWuItems.ItemsSource = _drvWu.Select(WuLine.From).ToList();
         DrvWuCount.Text = _drvWu.Count > 0 ? _drvWu.Count.ToString(PtBr) : "";
         BtnDrvWuInstall.Visibility = _drvWu.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-        BtnDrvWuInstall.Content = _drvWu.Count == 1 ? "Instalar 1 driver" : $"Instalar {_drvWu.Count} drivers";
+        BtnDrvWuInstall.Content = _drvWu.Count == 1 ? "Instalar 1" : $"Instalar {_drvWu.Count}";
+        if (note != null)
+        {
+            DrvWuList.Text = note;
+            bool ok = tone == "ok", warn = tone == "warn";
+            DrvWuGlyph.Text = ok ? "\uE73E" : warn ? "\uE7BA" : "\uE895";
+            DrvWuGlyph.SetResourceReference(TextBlock.ForegroundProperty, ok ? "Ok" : warn ? "Warn" : "Faint");
+        }
         DrvWuEmpty.Visibility = _drvWu.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
         DrvWuScroll.Visibility = _drvWu.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         UpdatePrimary();
@@ -295,24 +484,32 @@ public partial class DriversView : UserControl
     {
         if (_drvBusy) return;
         DrvBusy(true);
-        // Sem etapas para contar, o medidor não abre: só o estado, que passa de "Procurando…" ao resultado
+        // Sem etapas para contar, o medidor não abre: o estado diz "Procurando…" e, dentro do cartão, as linhas da lista pulsam
+        // (o esqueleto) até a resposta chegar; o botão diz o que está fazendo
         DrvSet("Procurando no Windows Update…", null, "pode levar 1 minuto");
+        Searching(true);
         try
         {
             _drvWu = await WindowsUpdateService.SearchAsync();
-            DrvWuList.Text = "Nenhum driver novo.";
-            ShowWu();
+            ShowWu($"Tudo em dia: nenhum driver novo às {DateTime.Now:HH:mm}.", "ok");
             DrvSet(_drvWu.Count == 0 ? "Nenhum driver novo no Windows Update"
                  : _drvWu.Count == 1 ? "1 driver no Windows Update" : $"{_drvWu.Count} drivers no Windows Update");
         }
         catch (Exception ex)
         {
             _drvWu = new();
-            ShowWu();
-            DrvWuList.Text = "Não foi possível procurar: " + ex.Message;
+            ShowWu("Não deu para falar com o Windows Update agora. Tente de novo em alguns minutos.", "warn");
             DrvFail("Não foi possível procurar no Windows Update", ex.Message);
         }
-        finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
+        finally { Searching(false); _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
+    }
+
+    /// <summary>Durante a busca: o esqueleto pulsa no lugar da lista e o botão vira "Procurando…".</summary>
+    private void Searching(bool on)
+    {
+        BtnDrvWuSearch.Content = on ? "Procurando…" : "Procurar";
+        DrvWuEmpty.Visibility = on ? Visibility.Hidden : _drvWu.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
+        Skeleton.SetActive(DrvWuCard, on);
     }
 
     internal async void BtnDrvWuInstall_Click(object sender, RoutedEventArgs e)
@@ -323,9 +520,7 @@ public partial class DriversView : UserControl
         using var critical = _context.BeginCriticalOperation("Aguarde a instalação de drivers do Windows Update terminar.");
 
         if (_drvBusy || _drvWu.Count == 0) return;
-        string what = _drvWu.Count == 1 ? "1 driver" : $"{_drvWu.Count} drivers";
-        if (MessageBox.Show(_context.Owner, $"Instalar {what} do Windows Update? Pode ser preciso reiniciar.", "Drivers",
-                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        if (!await AskWuInstall()) return;
         DrvBusy(true);
         DrvSet("Baixando drivers do Windows Update…");
         try
@@ -333,30 +528,176 @@ public partial class DriversView : UserControl
             string r = await WindowsUpdateService.InstallAsync(_drvWu, t => Dispatcher.BeginInvoke(new Action(() => DrvSet(t))));
             DrvSet(r);
             _drvWu = new();
-            ShowWu();
-            DrvWuList.Text = r;
+            ShowWu(r, r.StartsWith("Instalação concluída", StringComparison.Ordinal) ? "ok" : "warn");
         }
         catch (Exception ex) { DrvFail("Não foi possível instalar pelo Windows Update", ex.Message); }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
     }
 
+    // ---------- Backup e restauração ----------
+
+    private static string Size(long bytes) => bytes >= 1L << 30
+        ? (bytes / (double)(1L << 30)).ToString("0.0", PtBr) + " GB"
+        : (bytes / 1048576.0).ToString("0", PtBr) + " MB";
+
+    private DriverBackupDialog? Dialog => (_context.Owner as MainWindow)?.DriverLayer;
+
+    /// <summary>Onde salvar por padrão: ao lado do último backup; sem nenhum, Documentos\CoreBi-Drivers.</summary>
+    private string BackupRoot()
+    {
+        string? last = _context.Settings.DriverBackupFolder;
+        string? parent = last is { Length: > 0 } ? Path.GetDirectoryName(last) : null;
+        return parent != null && Directory.Exists(parent) ? parent : DriverBackup.DefaultRoot;
+    }
+
     internal async void BtnDrvBackup_Click(object sender, RoutedEventArgs e)
     {
-        if (!RequireAdmin()) return;
+        if (!RequireAdmin() || _drvBusy || Dialog is not { } dialog) return;
+        string? lastFolder = _context.Settings.DriverBackupFolder;
+        var count = DriverBackup.CountInstalledAsync(_context.Lifetime);
+        var last = lastFolder is { Length: > 0 } ? await Task.Run(() => DriverBackup.Find(lastFolder)) : null;
+        int total;
+        try { total = await count; } catch { total = 0; }
+        string? root = await dialog.AskBackupAsync(BackupRoot(), total, last);
+        if (root == null) return;
+        // Daqui em diante tudo acontece na própria janela (andamento, faixa e resultado); o cabeçalho só registra o fim
         using var workload = _context.Workloads.TryBegin(WorkloadOperations.DriverBackup);
-        if (workload == null) { DrvSet("Termine a outra operação antes"); return; }
+        if (workload == null) { dialog.Failed("Outra tarefa em andamento", "Termine a outra operação do CoreBi e tente de novo."); return; }
 
-        if (_drvBusy) return;
         DrvBusy(true);
-        _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
-        DrvSet("Fazendo backup dos drivers…");
+        var cts = _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
+        dialog.OnStop(() => cts.Cancel());
         try
         {
-            string r = await DriverBackup.ExportAsync(_ => { }, _drvCts.Token);
-            DrvSet(r);
+            Directory.CreateDirectory(root);
+            // O progresso conta os pacotes que o Windows já copiou contra o total, a cada 400 ms
+            var info = await DriverBackup.ExportAsync(root, (done, all) => Dispatcher.BeginInvoke(new Action(() =>
+                dialog.Progress(Math.Min(done, Math.Max(all, done)), all))), cts.Token);
+            _context.Settings.DriverBackupFolder = info.Folder;
+            _context.SaveSettings();
+            dialog.BackupDone(info, Size(info.Bytes));
+            DrvSet($"Backup salvo às {DateTime.Now:HH:mm}", null, $"{info.Count} drivers · {Size(info.Bytes)}");
+            DrvDetail.ToolTip = info.Folder;
         }
-        catch (Exception ex) { DrvFail("Não foi possível fazer o backup", ex.Message); }
+        catch (OperationCanceledException) when (!_context.IsClosing)
+        {
+            dialog.Dismiss();
+            DrvSet("Backup cancelado", null, "nada foi guardado");
+        }
+        catch (Exception ex)
+        {
+            dialog.Failed("O backup não terminou", ex.Message);
+            DrvSet("Backup não concluído", null, ex.Message);
+        }
         finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
+    }
+
+    /// <summary>
+    /// Restaurar: a janela mostra o backup achado (o último usado, ou o que for escolhido ali) e só confirma com um backup de verdade;
+    /// então um ponto de restauração e cada driver devolvido ao Windows, que instala nos dispositivos em que ele é o melhor.
+    /// </summary>
+    internal async void BtnDrvRestore_Click(object sender, RoutedEventArgs e)
+    {
+        if (!RequireAdmin() || _drvBusy || Dialog is not { } dialog) return;
+        string start = _context.Settings.DriverBackupFolder is { Length: > 0 } last && Directory.Exists(last) ? last
+            : Directory.Exists(DriverBackup.DefaultRoot) ? DriverBackup.DefaultRoot : "";
+        var info = await dialog.AskRestoreAsync(start);
+        if (info == null) return;
+        // Como no backup, o andamento e o resultado ficam na janela; o cabeçalho só registra o fim
+        using var workload = _context.Workloads.TryBegin(WorkloadOperations.DriverBackup);
+        if (workload == null) { dialog.Failed("Outra tarefa em andamento", "Termine a outra operação do CoreBi e tente de novo."); return; }
+        using var critical = _context.BeginCriticalOperation("Aguarde a restauração dos drivers terminar.");
+
+        DrvBusy(true);
+        var cts = _drvCts = CancellationTokenSource.CreateLinkedTokenSource(_context.Lifetime);
+        // "Parar depois do atual": a restauração olha o pedido entre um pacote e outro, sem cortar o que está instalando
+        dialog.OnStop(() => cts.Cancel());
+        try
+        {
+            string point = await DriverBackup.RestorePointAsync(CancellationToken.None);
+            var result = await DriverBackup.RestoreAsync(info,
+                (done, total, name) => Dispatcher.BeginInvoke(new Action(() => dialog.Progress(done, total, name))), cts.Token,
+                (index, outcome) => Dispatcher.BeginInvoke(new Action(() => dialog.Mark(index, outcome))));
+            _context.Settings.DriverBackupFolder = info.Folder;
+            _context.SaveSettings();
+            // As marcas e o andamento chegam pela fila do despacho: o resultado entra depois deles
+            await Dispatcher.InvokeAsync(() => dialog.RestoreDone(result, point), System.Windows.Threading.DispatcherPriority.Background);
+            string summary = result.Installed == 0 ? "Nenhum driver precisou ser instalado"
+                : result.Installed == 1 ? "1 driver instalado" : $"{result.Installed} drivers instalados";
+            string detail = (result.Current > 0 ? $"{result.Current} já em dia. " : "") + (result.Reboot ? "Reinicie o PC para terminar." : "");
+            if (result.Failed.Count > 0) DrvSet($"{summary}, {result.Failed.Count} com erro", null, "Com erro:\n" + string.Join("\n", result.Failed));
+            else DrvSet(result.Canceled ? $"Restauração parada: {summary.ToLowerInvariant()}" : summary, null, detail.Trim());
+            // Os drivers mudaram: a tabela e os dispositivos com problema relidos em silêncio
+            ShowInventory(await Task.Run(DriverInventory.ListInstalled));
+            ShowProblems(await Task.Run(DriverInventory.ReadProblems));
+        }
+        catch (Exception ex)
+        {
+            dialog.Failed("A restauração não terminou", ex.Message);
+            DrvSet("Restauração não concluída", null, ex.Message);
+        }
+        finally { _drvCts?.Dispose(); _drvCts = null; if (!_context.IsClosing) DrvBusy(false); }
+    }
+
+    // ---------- Capturas dos testes ----------
+
+    /// <summary>
+    /// "PageDriver:demo": quatro drivers achados no Windows Update; "searching": a busca em andamento; "backup" e "restore": as
+    /// janelas com dados de exemplo; "backup-work", "backup-done", "restore-work" e "restore-done": o andamento e o fim dentro
+    /// delas; "gpu-confirm" e "wu-confirm", as confirmações de instalar. Nada é procurado, copiado nem instalado; null volta ao normal.
+    /// </summary>
+    internal void PreviewDemo(string? mode)
+    {
+        if (mode == null)
+        {
+            Dialog?.Cancel();
+            Searching(false);
+            _drvWu = new();
+            ShowWu(WuIdle);
+            return;
+        }
+        string folder = Path.Combine(DriverBackup.DefaultRoot, $"Drivers {Environment.MachineName} 2026-11-20 21h14");
+        var sample = new DriverBackupInfo(folder, DateTime.Now.AddDays(-3).Date.AddHours(21).AddMinutes(14), Environment.MachineName, 69, 1_840_000_000);
+        switch (mode)
+        {
+            case "demo":
+                _drvWu = new()
+                {
+                    new WuDriver { Title = "Realtek Semiconductor Corp. - Extension - 10.0.26100.31", SizeBytes = 1_200_000 },
+                    new WuDriver { Title = "Intel - Bluetooth - 23.100.1.1", SizeBytes = 18_400_000 },
+                    new WuDriver { Title = "Advanced Micro Devices, Inc. - System - 5.24.0.0", SizeBytes = 2_600_000 },
+                    new WuDriver { Title = "Logitech - HIDClass - 1.10.84.0", SizeBytes = 900_000 },
+                    new WuDriver { Title = "GuangZhou FiiO Electronics Co.,Ltd - USB - 5.12.0.0", SizeBytes = 4_100_000 },
+                };
+                ShowWu();
+                break;
+            case "searching":
+                BtnDrvWuSearch.Content = "Procurando…";
+                DrvWuEmpty.Visibility = Visibility.Hidden;
+                Skeleton.SetActive(DrvWuCard, true);
+                break;
+            case "backup":
+                Dialog?.Preview(false, DriverBackup.DefaultRoot, 69, sample);
+                break;
+            case "restore":
+                Dialog?.Preview(true, folder, 69, sample);
+                break;
+            case "backup-work":
+            case "backup-done":
+                Dialog?.PreviewStage(false, mode.EndsWith("done"), DriverBackup.DefaultRoot, sample);
+                break;
+            case "restore-work":
+            case "restore-done":
+                Dialog?.PreviewStage(true, mode.EndsWith("done"), DriverBackup.DefaultRoot, sample);
+                break;
+            case "gpu-confirm":
+                _ = AskGpuInstall(new GpuDriverStatus { Vendor = "NVIDIA", GpuName = "NVIDIA GeForce RTX 4060 Ti", Installed = "621.24", Latest = "623.10", SizeText = "1,04 GB" });
+                break;
+            case "wu-confirm":
+                PreviewDemo("demo");
+                _ = AskWuInstall();
+                break;
+        }
     }
 }
 
@@ -381,6 +722,15 @@ public sealed record DriverLine(string Device, string Vendor, string Version, st
     /// <summary>21/06/2006 é a data fixa que a Microsoft põe nos drivers que vêm com o Windows, não a idade do driver.</summary>
     private const string InboxDate = "21/06/2006";
 
+    /// <summary>Grupo do topo da tabela, com os dispositivos que o Gerenciador de Dispositivos marca com exclamação.</summary>
+    public const string ProblemGroup = "Com problema";
+    /// <summary>O que o Windows diz do dispositivo ("Sem driver instalado"); vazio numa linha de driver.</summary>
+    public string Problem { get; init; } = "";
+    public string? Tip { get; init; }
+    /// <summary>O fabricante como o Windows escreve (a coluna mostra sem a razão social).</summary>
+    public string? VendorTip { get; init; }
+    public bool IsProblem => Problem.Length > 0;
+
     /// <summary>Dica da data: só nos drivers com a data padrão do Windows.</summary>
     public string? DateTip => Date == InboxDate ? "Data padrão dos drivers que vêm com o Windows. A versão diz qual é o driver." : null;
 
@@ -392,18 +742,30 @@ public sealed record DriverLine(string Device, string Vendor, string Version, st
             "MEDIA" => ("Som", 1),
             "NET" => ("Rede", 2),
             "BLUETOOTH" => ("Bluetooth", 3),
-            "SCSIADAPTER" => ("Controladoras de armazenamento", 4),
-            "HDC" => ("Controladoras de disco", 5),
+            "SCSIADAPTER" or "HDC" => ("Armazenamento", 4),
             "USB" => ("USB", 6),
             "SYSTEM" => ("Sistema", 7),
             _ => (r.Class.Length > 0 ? r.Class : "Outros", 8),
         };
         // Versão ou data ausente chega como "—": a célula fica vazia em vez de mostrar o travessão.
         static string Value(string v) => v == "—" ? "" : v;
-        string vendor = StandardVendors.TryGetValue(r.Vendor.Trim(), out var pt) ? pt : r.Vendor;
-        return new DriverLine(r.Device, vendor, Value(r.Version), Value(r.Date), r.Signed, group, order);
+        // Os genéricos do Windows em português; os outros sem a razão social ("Mellanox Technologies Ltd." → "Mellanox Technologies")
+        string vendor = StandardVendors.TryGetValue(r.Vendor.Trim(), out var pt) ? pt : HardwareNaming.CompanyName(r.Vendor);
+        return new DriverLine(r.Device, vendor, Value(r.Version), Value(r.Date), r.Signed, group, order) { VendorTip = r.Vendor };
     }
 }
 
+
 /// <summary>Driver encontrado no Windows Update, com o tamanho já formatado.</summary>
-public sealed record WuLine(string Title, string Size);
+public sealed record WuLine(string Title, string Maker, string Kind, string Version, string Size)
+{
+    /// <summary>"Realtek Semiconductor Corp. - Extension - 10.0.1" vira o fabricante, o tipo em português e a versão em colunas.</summary>
+    internal static WuLine From(WuDriver w)
+    {
+        var (maker, kind, version) = DriverNames.WindowsUpdate(w.Title);
+        string size = w.SizeBytes <= 0 ? "" : w.SizeBytes < 1048576 ? "< 1 MB" : (w.SizeBytes / 1048576.0).ToString("0", CultureInfo.GetCultureInfo("pt-BR")) + " MB";
+        return new WuLine(w.Title, maker, kind, version, size);
+    }
+
+    public string KindGap => Kind.Length > 0 ? "  ·  " : "";
+}

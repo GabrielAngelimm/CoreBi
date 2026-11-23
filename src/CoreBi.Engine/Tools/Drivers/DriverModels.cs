@@ -22,6 +22,11 @@ public sealed class GpuDriverStatus
     public string SizeText { get; set; } = "";
     public string OfficialPage { get; set; } = "";
     public string Message { get; set; } = "";
+    /// <summary>A palavra da frente do veredito ("Em dia", "Driver novo"), na cor de <see cref="Tone"/>; vazia quando não há veredito.</summary>
+    public string Lead { get; set; } = "";
+    /// <summary>"ok", "warn" ou vazio: a cor da palavra da frente.</summary>
+    public string Tone { get; set; } = "";
+    public string LeadGap => Lead.Length > 0 ? "  ·  " : "";
 
     public bool CanAutoInstall => Vendor is "NVIDIA" or "AMD" && DownloadUrl.Length > 0;
     public bool UpdateAvailable =>
@@ -40,6 +45,8 @@ public sealed class BoardSupportInfo
     public string BiosDate { get; set; } = "";
     public string Brand { get; set; } = "";
     public string SupportUrl { get; set; } = "";
+    /// <summary>true quando o endereço é a página do próprio modelo; false quando é a busca ou a central de suporte do fabricante.</summary>
+    public bool SupportIsModelPage { get; set; }
 }
 
 /// <summary>Um driver disponível no Windows Update.</summary>
@@ -50,3 +57,6 @@ public sealed class WuDriver
     public string UpdateId { get; init; } = "";
     public int Revision { get; init; }
 }
+
+/// <summary>Dispositivo com problema no Gerenciador de Dispositivos (código do Windows e o que ele quer dizer).</summary>
+public sealed record DeviceProblem(string Name, string Class, int Code, string Meaning);

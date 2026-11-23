@@ -299,6 +299,9 @@
 
             <!-- ================= Instalar apps: confirmação com o pacote inteiro ================= -->
             <local:InstallConfirmDialog x:Name="InstallLayer" Grid.ColumnSpan="2" />
+
+            <!-- ================= Drivers: confirmar o backup (onde salvar) e a restauração (qual backup) ================= -->
+            <local:DriverBackupDialog x:Name="DriverLayer" Grid.ColumnSpan="2" />
         </Grid>
     </Border>
 </Window>

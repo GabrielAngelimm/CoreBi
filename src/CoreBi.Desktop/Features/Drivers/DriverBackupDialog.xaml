@@ -1,0 +1,145 @@
+﻿<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.DriverBackupDialog" xmlns:local="clr-namespace:CoreBi.Desktop"
+             Visibility="Collapsed" Focusable="False" PreviewKeyDown="Dialog_PreviewKeyDown">
+    <!--
+        Fazer backup e Restaurar backup dos Drivers, sobre o app (a mesma moldura da confirmação de apps), do começo ao fim, em três
+        momentos na mesma janela:
+        1. Confirmar: título, uma frase do que acontece, a placa de números (só rótulo e número: quantos drivers e o último backup; ou
+           quantos, de quando e de qual PC) e o cartão da pasta (desenho de pasta na cor dos discos, nome em destaque, disco e caminho
+           embaixo, botão de trocar) com uma dica discreta. Rodapé: Voltar e a ação.
+        2. Trabalhando: a placa vira o andamento (rótulo e a contagem "34 de 69" em mostrador, e a faixa com uma célula por driver
+           que acende no sinal); a frase de cima diz o que acontece agora. Rodapé: só Cancelar (backup) ou Parar depois do atual.
+        3. Pronto: a faixa varre para o verde, o visto entra ao lado do título e a frase diz o resultado. Rodapé: só Concluir.
+        No backup os números vêm antes da pasta (o quê, depois onde); na restauração, a pasta (de onde, depois o quê).
+    -->
+    <Grid x:Name="Scrim" Background="{DynamicResource Scrim}" MouseLeftButtonDown="Scrim_MouseDown">
+        <Border x:Name="Panel" Width="520" HorizontalAlignment="Center" VerticalAlignment="Center" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource LineStrong}"
+                BorderThickness="1" CornerRadius="{StaticResource RadiusPanel}" MouseLeftButtonDown="Panel_MouseDown" RenderTransformOrigin="0.5,0.5">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="48" ShadowDepth="14" Direction="270" Opacity="0.45" Color="#000000" />
+            </Border.Effect>
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="PanelShift" />
+            </Border.RenderTransform>
+            <DockPanel x:Name="PanelContent">
+                <StackPanel DockPanel.Dock="Top" Margin="24,16,16,0">
+                    <Grid Style="{StaticResource CardHeader}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- O visto (ou o alerta) do resultado entra crescendo ao lado do título -->
+                            <TextBlock x:Name="TitleMark" FontFamily="{StaticResource Icons}" FontSize="18" VerticalAlignment="Center" Margin="0,0,10,0"
+                                       Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
+                                <TextBlock.RenderTransform>
+                                    <ScaleTransform x:Name="TitleMarkScale" />
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
+                            <TextBlock x:Name="DialogTitle" Style="{StaticResource CardTitle}" />
+                        </StackPanel>
+                        <Button x:Name="BtnClose" Style="{StaticResource IconButton}" Content="&#xE8BB;" HorizontalAlignment="Right" Click="Cancel_Click" ToolTip="Fechar (Esc)" />
+                    </Grid>
+                    <TextBlock x:Name="Lead" Style="{StaticResource Caption}" Margin="0,0,8,0" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Rodapé: só os botões, à direita; cada momento mostra os seus -->
+                <Border DockPanel.Dock="Bottom" Background="{DynamicResource Raised}" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0"
+                        CornerRadius="{StaticResource RadiusPanelBottom}" Padding="24,14">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="BtnBack" Style="{StaticResource SecondaryButton}" Content="Voltar" Click="Cancel_Click" Margin="0,0,10,0" ToolTip="Fecha sem fazer nada (Esc)" />
+                        <Button x:Name="BtnConfirm" Style="{StaticResource PrimaryButton}" MinWidth="150" Click="Confirm_Click" ToolTipService.ShowOnDisabled="True" />
+                        <Button x:Name="BtnStop" Style="{StaticResource SecondaryButton}" Click="Stop_Click" Visibility="Collapsed" ToolTipService.ShowOnDisabled="True" />
+                        <Button x:Name="BtnDone" Style="{StaticResource PrimaryButton}" Content="Concluir" MinWidth="150" Click="Done_Click" Visibility="Collapsed" />
+                    </StackPanel>
+                </Border>
+
+                <StackPanel x:Name="Body" Margin="24,20,24,24">
+                    <!-- Placa: os números da confirmação ou, depois, o andamento; os dois ocupam o mesmo painel -->
+                    <Border x:Name="Plate" Background="{DynamicResource Raised}" CornerRadius="{StaticResource RadiusInset}" MinHeight="84">
+                        <Grid>
+                            <Grid x:Name="AskPane" Margin="0,14">
+                                <ItemsControl x:Name="Cells" Focusable="False" VerticalAlignment="Center">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="1" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Border x:Name="rule" Width="1" HorizontalAlignment="Left" Margin="0,4" Background="{DynamicResource Line}" SnapsToDevicePixels="True" />
+                                                <StackPanel HorizontalAlignment="Center" Margin="12,0">
+                                                    <TextBlock Text="{Binding Label}" Style="{StaticResource StatLabel}" HorizontalAlignment="Center" />
+                                                    <TextBlock Text="{Binding Value}" Style="{StaticResource StatValue}" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding Tip}" />
+                                                </StackPanel>
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding First}" Value="True">
+                                                    <Setter TargetName="rule" Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock x:Name="CellsEmpty" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           TextAlignment="Center" Margin="24,0" Visibility="Collapsed" />
+                            </Grid>
+
+                            <!--
+                                Andamento: o rótulo à esquerda e a contagem à direita, na mesma linha de base; a faixa embaixo; na restauração,
+                                a legenda das cores da faixa com a conta de cada uma (a de erro só aparece quando há erro).
+                            -->
+                            <StackPanel x:Name="WorkPane" Margin="20,14,20,18" Visibility="Collapsed">
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Right" Style="{StaticResource StatValue}" Margin="0" VerticalAlignment="Bottom">
+                                        <Run x:Name="WorkDone" Text="0" /><Run x:Name="WorkOf" Text=" de 0" Foreground="{DynamicResource Faint}" FontSize="16" />
+                                    </TextBlock>
+                                    <TextBlock x:Name="WorkLabel" Style="{StaticResource StatLabel}" VerticalAlignment="Bottom" Margin="0,0,16,3" />
+                                </DockPanel>
+                                <local:DriverStrip x:Name="Strip" Margin="0,10,0,0" />
+                                <WrapPanel x:Name="Legend" Margin="0,12,0,0" Visibility="Collapsed">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,20,0" ToolTip="Entraram em algum dispositivo deste PC.">
+                                        <Border x:Name="SwatchInstalled" Width="8" Height="8" Background="{DynamicResource Signal}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock Style="{StaticResource Caption}"><Run Text="Instalados " /><Run x:Name="LegendInstalled" Text="0" Foreground="{DynamicResource Fg}" /></TextBlock>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,20,0" ToolTip="O PC já tinha esse driver (ou um mais novo), ou não tem a peça dele.">
+                                        <Border x:Name="SwatchCurrent" Width="8" Height="8" Background="{DynamicResource Signal}" Opacity="0.47" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock Style="{StaticResource Caption}"><Run Text="Já em dia " /><Run x:Name="LegendCurrent" Text="0" Foreground="{DynamicResource Fg}" /></TextBlock>
+                                    </StackPanel>
+                                    <StackPanel x:Name="LegendFailedItem" Orientation="Horizontal" Visibility="Collapsed">
+                                        <Border Width="8" Height="8" Background="{DynamicResource Danger}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                        <TextBlock Style="{StaticResource Caption}"><Run Text="Com erro " /><Run x:Name="LegendFailed" Text="0" Foreground="{DynamicResource Fg}" /></TextBlock>
+                                    </StackPanel>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!--
+                        Cartão da pasta: rótulo em cima; dentro, o desenho de pasta (sem fundo, na cor dos discos), o nome da pasta em destaque
+                        e, embaixo, o disco e o caminho até ela; o botão à direita (trocar, escolher, ou abrir a pasta pronta). A dica embaixo
+                        lê o disco escolhido.
+                    -->
+                    <StackPanel x:Name="FolderBlock">
+                        <TextBlock x:Name="FolderLabel" Style="{StaticResource StatLabel}" Margin="0,0,0,8" />
+                        <Border BorderBrush="{DynamicResource Line}" BorderThickness="1" CornerRadius="{StaticResource RadiusInset}" Padding="16,14,14,14">
+                            <Grid MinHeight="34">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="FolderGlyph" Text="&#xE8B7;" FontFamily="{StaticResource Icons}" FontSize="32" Foreground="{DynamicResource Storage}"
+                                           VerticalAlignment="Center" Margin="0,0,16,0" />
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock x:Name="FolderName" Style="{StaticResource GroupTitle}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock x:Name="FolderWhere" Style="{StaticResource Caption}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                </StackPanel>
+                                <Button x:Name="BtnFolder" Grid.Column="2" Style="{StaticResource SecondaryButton}" local:Ui.Icon="&#xE8DA;" Margin="16,0,0,0"
+                                        VerticalAlignment="Center" Click="Folder_Click" />
+                            </Grid>
+                        </Border>
+                        <TextBlock x:Name="Hint" Style="{StaticResource Caption}" Foreground="{DynamicResource Faint}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -10,6 +10,25 @@ public static partial class HardwareNaming
     [GeneratedRegex(@"\d+th Gen\s*")]
     private static partial Regex IntelGenRegex();
 
+    [GeneratedRegex(@"[\s,]+(Corp\.?|Corporation|Inc\.?|Incorporated|Co\.?,?\s*Ltd\.?|Co\.?|Ltd\.?|Limited|LLC|PBC|GmbH(\s*&\s*Co\.?\s*KG)?|AG|S\.?A\.?|B\.?V\.?|AB)$", RegexOptions.IgnoreCase)]
+    private static partial Regex CorporateSuffixRegex();
+
+    /// <summary>
+    /// A empresa sem a razão social, para caber numa coluna: "Microsoft Corporation" → "Microsoft", "Epic Games, Inc" → "Epic
+    /// Games", "GuangZhou FiiO Electronics Co.,Ltd" → "GuangZhou FiiO Electronics". O nome inteiro continua na dica de quem mostra.
+    /// </summary>
+    public static string CompanyName(string? vendor)
+    {
+        string v = (vendor ?? "").Trim();
+        for (int pass = 0; pass < 3; pass++)
+        {
+            string cut = CorporateSuffixRegex().Replace(v, "").TrimEnd(' ', ',', '.', '-');
+            if (cut.Length == 0 || cut == v) break;
+            v = cut;
+        }
+        return v;
+    }
+
     internal static bool IsMobileGpu(string? name) =>
         !string.IsNullOrWhiteSpace(name) && MobileGpuRegex().IsMatch(name);
 

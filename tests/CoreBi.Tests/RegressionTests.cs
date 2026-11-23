@@ -218,6 +218,63 @@ internal static partial class Program
             Require(working.Backups.Count == 1, $"Corrupt JSON broke backup listing (count={working.Backups.Count})");
             return new { rollbackClean = true, corruptIsolated = true };
         });
+        Check("startup: friendly names, origins and Store assets", () =>
+        {
+            Require(StartupManager.LooksLikeId("GoogleChromeAutoLaunch_579CF1F2F611610737FD8852B51") && StartupManager.LooksLikeId("{0F6A3B2C-1D4E-4F5A-8B9C-0D1E2F3A4B5C}")
+                    && !StartupManager.LooksLikeId("Discord") && !StartupManager.LooksLikeId("EADM"), "Entry names that are ids");
+            using var folder = new CaseFolder();
+            string assets = Directory.CreateDirectory(Path.Combine(folder.Path, "Assets")).FullName;
+            File.WriteAllText(Path.Combine(assets, "Square44x44Logo.scale-200.png"), "");
+            File.WriteAllText(Path.Combine(assets, "Square44x44Logo.targetsize-32.png"), "");
+            Require(StoreStartup.AssetFile(folder.Path, @"Assets\Square44x44Logo.png")?.EndsWith("targetsize-32.png") == true, "Store icon picks the 32 px variant");
+            Require(StartupEntry.OriginOf("Run", false) == "Registro, só você" && StartupEntry.OriginOf("Folder", true) == "Pasta Inicializar, todos"
+                    && StartupEntry.OriginOf("Store", false) == "Microsoft Store", "Startup origins");
+            return new { origins = true };
+        });
+        Check("header: progress of one step keeps its stem", () =>
+        {
+            // O andamento de uma mesma etapa troca direto (sem piscar) porque o texto até as reticências não muda
+            Require(CoreBi.Desktop.HeaderMotion.Stem("Copiando os drivers… 3 de 69") == "Copiando os drivers…"
+                    && CoreBi.Desktop.HeaderMotion.Stem("Baixando… 41 MiB") == CoreBi.Desktop.HeaderMotion.Stem("Baixando… 34 MiB")
+                    && CoreBi.Desktop.HeaderMotion.Stem("Lido às 06:21") == "Lido às 06:21", "Header progress stem");
+            return new { stem = true };
+        });
+
+        Check("drivers: backup folders, packages and device problem codes", () =>
+        {
+            using var folder = new CaseFolder();
+            string older = Directory.CreateDirectory(Path.Combine(folder.Path, "20261101-101010-abcdef12")).FullName;
+            File.WriteAllText(Directory.CreateDirectory(Path.Combine(older, "nvlti.inf_amd64_1")).FullName + Path.DirectorySeparatorChar + "nvlti.inf", "");
+            string newer = Directory.CreateDirectory(Path.Combine(folder.Path, "Drivers PC 2026-11-23 07h40")).FullName;
+            foreach (string pkg in new[] { "a.inf_amd64_1", "b.inf_amd64_2" })
+                File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(newer, pkg)).FullName, pkg.Split('_')[0]), "");
+            Directory.SetCreationTime(older, new DateTime(2026, 11, 1));
+            Directory.SetCreationTime(newer, new DateTime(2026, 11, 23));
+            Require(DriverBackup.Find(newer)?.Count == 2, "Backup folder read directly");
+            Require(DriverBackup.Find(folder.Path)?.Folder == newer, "Parent folder picks the newest backup");
+            Require(DriverBackup.Find(Path.Combine(folder.Path, "missing")) == null && DriverBackup.Find(Directory.CreateDirectory(Path.Combine(folder.Path, "empty")).FullName) == null,
+                "Folder without packages is not a backup");
+            Require(DriverInventory.MsiSlug("MAG B550 TOMAHAWK (MS-7C91)") == "MAG-B550-TOMAHAWK" && DriverInventory.AsrockPlatform("B550M Pro4") == "AMD"
+                && DriverInventory.AsrockPlatform("B660M Pro RS") == "Intel" && DriverInventory.AsrockPlatform("Fatal1ty") == null, "Board support page slugs");
+            Require(DriverInventory.ProblemMeaning(28) == "Sem driver instalado" && DriverInventory.ProblemMeaning(999) == "Problema código 999", "Device problem text");
+            // Os nomes da tela: o pacote pelo [Version] do .inf, o título do Windows Update em colunas e a empresa sem a razão social
+            string inf = Path.Combine(folder.Path, "nvhdci.inf");
+            File.WriteAllText(inf, "; comentário\r\n[Version]\r\nSignature=\"$WINDOWS NT$\"\r\nClass=MEDIA\r\nProvider=%NVIDIA%\r\n[Strings]\r\nNVIDIA=\"NVIDIA Corporation\"\r\n[Strings.0416]\r\nNVIDIA=\"Outra\"\r\n",
+                System.Text.Encoding.Unicode);
+            string bare = Path.Combine(folder.Path, "x.inf");
+            File.WriteAllText(bare, "[Version]\nClass=Unknown\n");
+            Require(DriverNames.Package(inf) == "driver de som da NVIDIA" && DriverNames.Package(bare) == "x.inf"
+                    && DriverNames.Package(Path.Combine(folder.Path, "missing.inf")) == "missing.inf", "Backup package names");
+            Require(DriverNames.WindowsUpdate("Realtek Semiconductor Corp. - Extension - 10.0.26100.31") == ("Realtek Semiconductor", "Extensão", "10.0.26100.31")
+                    && DriverNames.WindowsUpdate("Intel - Bluetooth - 23.100.1.1").Kind == "Bluetooth"
+                    && DriverNames.WindowsUpdate("Atualização qualquer").Maker == "Atualização qualquer", "Windows Update titles");
+            Require(HardwareNaming.CompanyName("Epic Games, Inc") == "Epic Games" && HardwareNaming.CompanyName("GuangZhou FiiO Electronics Co.,Ltd") == "GuangZhou FiiO Electronics"
+                    && HardwareNaming.CompanyName("Anthropic, PBC") == "Anthropic" && HardwareNaming.CompanyName("Microsoft Windows") == "Microsoft Windows"
+                    && HardwareNaming.CompanyName("Thesycon Software Solutions GmbH & Co. KG") == "Thesycon Software Solutions" && HardwareNaming.CompanyName(null) == "",
+                "Company names");
+            return new { packages = 2 };
+        });
+
         Check("formatting: Explorer capacities, vendor disk sizes and sentence-case verdicts", () =>
         {
             // 1 TB anunciado = 931 GB no Explorador (corta as casas acima de 100); o disco mostra a medida do fabricante.

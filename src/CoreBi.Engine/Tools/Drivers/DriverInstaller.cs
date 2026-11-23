@@ -99,14 +99,14 @@ public static class DriverInstaller
         throw new HttpRequestException("Limite de redirecionamentos excedido.");
     }
 
-    private static async Task<string> TryRestorePointAsync(CancellationToken token)
+    internal static async Task<string> TryRestorePointAsync(CancellationToken token, string description = "CoreBi - antes do driver")
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
         timeout.CancelAfter(TimeSpan.FromSeconds(60));
         try
         {
             var result = await ProcessRunner.RunAsync(Path.Combine(Environment.SystemDirectory, @"WindowsPowerShell\v1.0\powershell.exe"),
-                new[] { "-NoProfile", "-NonInteractive", "-Command", "Checkpoint-Computer -Description 'CoreBi - antes do driver' -RestorePointType MODIFY_SETTINGS -ErrorAction Stop" }, timeout.Token).ConfigureAwait(false);
+                new[] { "-NoProfile", "-NonInteractive", "-Command", $"Checkpoint-Computer -Description '{description}' -RestorePointType MODIFY_SETTINGS -ErrorAction Stop" }, timeout.Token).ConfigureAwait(false);
             return result.ExitCode == 0 ? "Ponto de restauração criado." : "Ponto de restauração não criado (verifique a proteção do sistema).";
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }

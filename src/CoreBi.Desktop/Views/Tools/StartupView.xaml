@@ -1,7 +1,7 @@
 <UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="CoreBi.Desktop.Views.StartupView" xmlns:local="clr-namespace:CoreBi.Desktop">
     <UserControl.Resources>
-        <!-- Remover da lista: só o glifo, discreto; acende em vermelho sob o mouse porque apaga a entrada -->
-        <Style x:Key="RowRemove" TargetType="Button">
+        <!-- Ação de linha: só o glifo, discreto, num círculo de 32 que acende sob o mouse; a lixeira acende em vermelho porque apaga a entrada -->
+        <Style x:Key="RowAction" TargetType="Button">
             <Setter Property="Width" Value="32" />
             <Setter Property="Height" Value="32" />
             <Setter Property="Foreground" Value="{DynamicResource Faint}" />
@@ -11,13 +11,22 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="b" Background="Transparent" CornerRadius="16">
-                            <TextBlock Text="&#xE74D;" Style="{StaticResource IconGlyph}" FontSize="13" Foreground="{TemplateBinding Foreground}" />
+                            <TextBlock Text="{Binding Path=(local:Ui.Icon), RelativeSource={RelativeSource TemplatedParent}}" Style="{StaticResource IconGlyph}" FontSize="14"
+                                       Foreground="{TemplateBinding Foreground}" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}" />
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="Tag" Value="danger" />
+                                </MultiTrigger.Conditions>
                                 <Setter TargetName="b" Property="Background" Value="{DynamicResource DangerSoft}" />
                                 <Setter Property="Foreground" Value="{DynamicResource Danger}" />
-                            </Trigger>
+                            </MultiTrigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="b" Property="RenderTransform">
                                     <Setter.Value>
@@ -33,28 +42,88 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Segmento com a quantidade depois do nome (a mesma voz dos números da página, um tom abaixo); a largura nasce em seminegrito -->
+        <Style x:Key="CountSegment" TargetType="RadioButton" BasedOn="{StaticResource Segment}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="b" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="14" Padding="12,5,12,3" MinHeight="26">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Grid>
+                                    <TextBlock Text="{TemplateBinding Content}" FontWeight="SemiBold" Visibility="Hidden" HorizontalAlignment="Center" />
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Grid>
+                                <TextBlock x:Name="count" Text="{Binding Path=(local:Ui.Suffix), RelativeSource={RelativeSource TemplatedParent}}" FontFamily="{StaticResource Readout}"
+                                           FontStretch="SemiCondensed" FontSize="14" FontWeight="Normal" Foreground="{DynamicResource Faint}" Typography.NumeralAlignment="Tabular"
+                                           Margin="7,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                                <Setter TargetName="count" Property="Foreground" Value="{DynamicResource Muted}" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="True" />
+                                    <Condition Property="local:Ui.SlidingGroup" Value="False" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}" />
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Ícone do programa: 24 px sobre a vaga de 24; sem ícone, o glifo neutro de app no lugar -->
+        <DataTemplate x:Key="ProgramIcon">
+            <Grid Width="24" Height="24" VerticalAlignment="Center" HorizontalAlignment="Left">
+                <TextBlock x:Name="glyph" Text="&#xE71D;" Style="{StaticResource IconGlyph}" FontSize="16" Foreground="{DynamicResource Faint}" Visibility="Collapsed" />
+                <Image x:Name="image" Source="{Binding Icon}" Width="24" Height="24" RenderOptions.BitmapScalingMode="HighQuality" />
+                <!-- Ícone de uma cor só (app da Store sem placa): o desenho pintado com a cor do texto, visível nos dois temas -->
+                <Rectangle x:Name="tinted" Width="24" Height="24" Fill="{DynamicResource Fg}" Visibility="Collapsed">
+                    <Rectangle.OpacityMask>
+                        <ImageBrush ImageSource="{Binding Icon}" Stretch="Uniform" />
+                    </Rectangle.OpacityMask>
+                </Rectangle>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding Icon}" Value="{x:Null}">
+                    <Setter TargetName="glyph" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Glyph}" Value="True">
+                    <Setter TargetName="image" Property="Visibility" Value="Collapsed" />
+                    <Setter TargetName="tinted" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
     </UserControl.Resources>
 
     <!--
-        Inicialização: o console ao lado do título diz o que acabou de acontecer (leitura, interruptor, remoção) e o painel é uma
-        tabela de linhas de 44 px: interruptor, programa (com o selo só quando o arquivo sumiu), descrição, origem, o comando em
-        mono e a lixeira discreta no fim. A contagem e quantos estão desligados ficam ao lado do título da tabela, uma linha
-        embaixo dele diz o que é a lista, e restaurar só aparece quando há algo removido. A tabela ocupa a altura que sobra e
-        rola por dentro.
+        Inicialização: um cartão só, na largura toda, com a tabela dos programas que abrem com o Windows (interruptor, ícone, nome,
+        fabricante, comando, de onde o Windows o abre e as ações da linha). O filtro no cabeçalho tem Todos / Ligados / Desligados e
+        Removidos: os que saíram pela lixeira ficam na mesma tabela, cada um com "Devolver". A tabela rola por dentro do cartão.
     -->
     <ScrollViewer x:Name="StartupScroll" VerticalScrollBarVisibility="Auto">
-        <!-- Altura da janela (e não mínima): assim a lista longa rola dentro do painel; abaixo de 520 px a página rola -->
-        <Grid Height="{Binding ViewportHeight, ElementName=StartupScroll}" MinHeight="520">
+        <!-- Altura da janela (e não mínima): assim a lista longa rola dentro do painel; abaixo de 720 px a página rola -->
+        <Grid Height="{Binding ViewportHeight, ElementName=StartupScroll}" MinHeight="720">
             <Grid Style="{StaticResource PageGrid}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" MinHeight="320" />
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!-- Cabeçalho padrão (PageHeaderPanel): título, estado vivo embaixo e a barra de ações à direita, na linha do título -->
                 <local:PageHeaderPanel Style="{StaticResource PageHead}">
                     <TextBlock Text="Inicialização" Style="{StaticResource PageTitle}" />
-                    <TextBlock Text="Escolha o que abre com o Windows e deixe o início mais rápido." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
+                    <TextBlock Text="Escolha o que abre junto com o Windows." Style="{StaticResource PageSubtitle}" local:PageHeaderPanel.Subtitle="True" />
                     <StackPanel Style="{StaticResource PageActions}">
                         <Grid x:Name="StartupMeter" Style="{StaticResource TaskMeter}">
                             <Grid.ColumnDefinitions>
@@ -75,111 +144,176 @@
                             <TextBlock x:Name="StartupSummary" Text="Lendo programas…" Style="{StaticResource PageStatus}" Typography.NumeralAlignment="Tabular" TextAlignment="Right" />
                         </DockPanel>
                         <Button Style="{StaticResource HeaderSecondary}" local:Ui.Icon="&#xE72C;" Content="Ler novamente" Click="BtnStartupScan_Click"
-                                ToolTip="Lê de novo as chaves Run do registro e as pastas Inicializar do usuário e de todos os usuários." />
+                                ToolTip="Lê a lista de novo." />
                     </StackPanel>
                 </local:PageHeaderPanel>
 
-                <!-- Tabela: as larguras das colunas são as mesmas no cabeçalho e nas linhas -->
-                <!-- Esqueleto: cabeçalho de colunas e linhas de 44 com o interruptor, o nome e as colunas da tabela -->
-                <Border x:Name="StartupCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="38"
-                        local:Skeleton.Layout="gap 10; row 32: - 8, - 56, c 3*@0.24, - 16, c 4*@0.24, - 16, c 5*@0.2, - 36, - 8; lines 44: - 8, pill 56@0.68^20, s 3*, - 16, t 4*, - 16, c 5*, c 36@0.4^14~, - 8">
+                <!--
+                    Programas: a tabela tem 16 de respiro e as linhas mais 8 por dentro, então a primeira letra e o interruptor ficam a 24
+                    da borda, como nos outros cartões. O cabeçalho de colunas tem a geometria das linhas.
+                -->
+                <Border x:Name="StartupCard" Grid.Row="1" Style="{StaticResource CardBorder}" Padding="16,16,16,8" local:Skeleton.Top="34"
+                        local:Skeleton.Layout="gap 16; row 32: - 8, - 56, - 36, c 3*@0.24, - 16, c 2*@0.3, - 16, c 4*@0.2, - 16, c 2*@0.3, - 120, - 8; lines 48: - 8, pill 40@1^20, - 16, dot 24, - 12, s 3*, - 16, t 2*, - 16, c 4*, - 16, t 2*, c 120@0.3^14&gt;, - 8">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
-                        <!-- Cabeçalho de 34 px (CardHeader), o mesmo de todos os painéis: título centrado e o botão auxiliar à direita -->
                         <Grid Style="{StaticResource CardHeader}" Margin="8,0,8,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <!--
-                                Título, quantos são e quantos estão desligados ("24  21 desligados") num TextBlock só: os Runs de
-                                fontes e tamanhos diferentes ficam na mesma linha de base. Os vãos de 10 px são caixas vazias, sem altura.
-                            -->
-                            <TextBlock Style="{StaticResource CardTitle}" ToolTip="Programas que abrem junto com o Windows. Desligue os que não usa.">
-                                <Run Text="Programas de inicialização" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="StartupCount"
-                                    FontFamily="{StaticResource Readout}" FontStretch="SemiCondensed" FontSize="16" FontWeight="Normal" Foreground="{DynamicResource Faint}"
-                                    Typography.NumeralAlignment="Tabular" /><InlineUIContainer><Border Width="10" /></InlineUIContainer><Run x:Name="StartupOff"
-                                    FontFamily="{StaticResource SmallFont}" FontSize="13" FontWeight="Normal" Foreground="{DynamicResource Muted}" />
-                            </TextBlock>
-                            <Button x:Name="BtnStartupRestore" Grid.Column="1" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE7A7;" Content="Restaurar removidos"
-                                    VerticalAlignment="Center" Margin="0,0,-10,0" Visibility="Collapsed" Click="BtnStartupRestore_Click"
-                                    ToolTip="Devolve à inicialização os programas removidos por aqui, do jeito que estavam (ligados ou desligados)." />
+                            <TextBlock Text="Programas de inicialização" Style="{StaticResource CardTitle}"
+                                       ToolTip="Programas que abrem sozinhos com o Windows. Desligar deixa o início mais rápido e não desinstala nada." />
+                            <!-- "Devolver todos" só aparece em Removidos, com dois ou mais -->
+                            <Button x:Name="BtnStartupRestore" Grid.Column="1" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE7A7;" Content="Devolver todos"
+                                    VerticalAlignment="Center" Margin="0,0,12,0" Visibility="Collapsed" Click="BtnStartupRestore_Click"
+                                    ToolTip="Devolve todos, do jeito que estavam." />
+                            <!-- Filtro que não tira nada do lugar enquanto se mexe: a linha que muda de estado só sai do filtro na próxima escolha -->
+                            <Border Grid.Column="2" Style="{StaticResource SegmentGroup}">
+                                <local:SlidingSelectionPanel Style="{StaticResource SegmentRail}" ToggleButton.Checked="StartupFilter_Checked">
+                                    <RadioButton x:Name="FilterAll" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Todos" Tag="all" IsChecked="True"
+                                                 ToolTip="Todos os programas da inicialização." />
+                                    <RadioButton x:Name="FilterOn" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Ligados" Tag="on"
+                                                 ToolTip="Só os que abrem com o Windows." />
+                                    <RadioButton x:Name="FilterOff" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Desligados" Tag="off"
+                                                 ToolTip="Só os que estão na lista, mas não abrem com o Windows." />
+                                    <RadioButton x:Name="FilterRemoved" Style="{StaticResource CountSegment}" GroupName="StartupFilter" Content="Removidos" Tag="removed"
+                                                 ToolTip="Os que você tirou pela lixeira. Ficam guardados para devolver quando quiser." />
+                                </local:SlidingSelectionPanel>
+                            </Border>
                         </Grid>
 
-                        <Grid x:Name="StartupHead" Grid.Row="1" Height="32" Margin="8,10,8,0">
+                        <Grid x:Name="StartupHead" Grid.Row="1" Height="32" Margin="8,16,8,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="56" />
-                                <ColumnDefinition Width="3*" MinWidth="160" />
-                                <ColumnDefinition Width="4*" MinWidth="140" />
-                                <ColumnDefinition Width="5*" MinWidth="160" />
                                 <ColumnDefinition Width="36" />
+                                <ColumnDefinition Width="3*" MinWidth="150" />
+                                <ColumnDefinition Width="2*" MinWidth="120" />
+                                <ColumnDefinition Width="4*" MinWidth="140" />
+                                <ColumnDefinition Width="2*" MinWidth="130" />
+                                <ColumnDefinition Width="120" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="1" Text="Programa" Style="{StaticResource TableHead}" />
-                            <TextBlock Grid.Column="2" Text="Descrição" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
-                            <TextBlock Grid.Column="3" Text="Comando" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
+                            <TextBlock Grid.Column="2" Text="Programa" Style="{StaticResource TableHead}" />
+                            <TextBlock Grid.Column="3" Text="Fabricante" Style="{StaticResource TableHead}" Margin="16,0,0,0" />
+                            <TextBlock Grid.Column="4" Text="Comando" Style="{StaticResource TableHead}" Margin="16,0,0,0"
+                                       ToolTip="O que o Windows abre. Passe o mouse para ver o comando inteiro." />
+                            <TextBlock Grid.Column="5" Text="Origem" Style="{StaticResource TableHead}" Margin="16,0,0,0"
+                                       ToolTip="De onde o Windows tira o programa: o registro, a pasta Inicializar ou um app da Microsoft Store. Mexer nos de todos os usuários pede administrador." />
                         </Grid>
 
                         <ScrollViewer x:Name="StartupListScroll" Grid.Row="2" VerticalScrollBarVisibility="Auto" ScrollChanged="StartupListScroll_ScrollChanged">
-                            <StackPanel>
-                                <ItemsControl x:Name="StartupList" Focusable="False">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Style="{StaticResource TableRow}" Height="44" Padding="8,0">
-                                                <Grid VerticalAlignment="Center">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="56" />
-                                                        <ColumnDefinition Width="3*" MinWidth="160" />
-                                                        <ColumnDefinition Width="4*" MinWidth="140" />
-                                                        <ColumnDefinition Width="5*" MinWidth="160" />
-                                                        <ColumnDefinition Width="36" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <!-- O interruptor desce 1 px (2 em cima): o centro dele cai no meio da altura das maiúsculas do nome -->
-                                                    <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Enabled, Mode=OneWay}" Tag="{Binding}" Click="StartupToggle_Click"
-                                                              VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,2,0,0" AutomationProperties.Name="{Binding Name}"
-                                                              ToolTip="Abrir com o Windows. Desligado, o programa continua na lista para religar quando quiser." />
-                                                    <Grid Grid.Column="1">
+                            <Grid>
+                                <StackPanel x:Name="ActivePane">
+                                    <ItemsControl x:Name="StartupList" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource TableRow}" Height="48" Padding="8,0">
+                                                    <Grid VerticalAlignment="Center">
                                                         <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*" />
-                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="56" />
+                                                            <ColumnDefinition Width="36" />
+                                                            <ColumnDefinition Width="3*" MinWidth="150" />
+                                                            <ColumnDefinition Width="2*" MinWidth="120" />
+                                                            <ColumnDefinition Width="4*" MinWidth="140" />
+                                                            <ColumnDefinition Width="2*" MinWidth="130" />
+                                                            <ColumnDefinition Width="120" />
                                                         </Grid.ColumnDefinitions>
-                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding Name}" />
-                                                        <Border x:Name="missing" Grid.Column="1" Style="{StaticResource Badge}" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource WarnSoft}"
-                                                                VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"
-                                                                ToolTip="O programa desta entrada não está mais no disco.">
-                                                            <TextBlock Text="Arquivo ausente" Style="{StaticResource BadgeText}" Foreground="{DynamicResource Warn}" />
-                                                        </Border>
+                                                        <!-- O interruptor desce 1 px (2 em cima): o centro dele cai no meio da altura das maiúsculas do nome -->
+                                                        <CheckBox Style="{StaticResource Switch}" IsChecked="{Binding Entry.Enabled, Mode=OneWay}" Tag="{Binding Entry}" Click="StartupToggle_Click"
+                                                                  local:Ui.SwitchMotion="True" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,2,0,0"
+                                                                  AutomationProperties.Name="{Binding Entry.Title}"
+                                                                  ToolTip="Ligado: abre com o Windows. Desligado: fica na lista, sem abrir." />
+                                                        <ContentPresenter Grid.Column="1" Content="{Binding}" ContentTemplate="{StaticResource ProgramIcon}" />
+                                                        <Grid Grid.Column="2">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="Auto" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                                <ColumnDefinition Width="*" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding Entry.Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" ToolTip="{Binding NameTip}" />
+                                                            <Border x:Name="missing" Grid.Column="1" Style="{StaticResource Badge}" Background="{DynamicResource WarnSoft}" BorderBrush="{DynamicResource WarnSoft}"
+                                                                    VerticalAlignment="Center" Margin="10,0,0,0" Visibility="Collapsed"
+                                                                    ToolTip="O programa não está mais no PC. Pode remover sem medo.">
+                                                                <TextBlock Text="Arquivo ausente" Style="{StaticResource BadgeText}" Foreground="{DynamicResource Warn}" />
+                                                            </Border>
+                                                        </Grid>
+                                                        <TextBlock Grid.Column="3" Text="{Binding Publisher}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                                   Margin="16,0,0,0" ToolTip="{Binding Entry.Publisher}" />
+                                                        <!-- Mono 12 centrado ficava com a base 2 px acima da Segoe 14 das outras colunas: 4 em cima o desce 2 -->
+                                                        <TextBlock Grid.Column="4" Text="{Binding Entry.Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
+                                                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,4,0,0" ToolTip="{Binding CommandTip}" />
+                                                        <TextBlock Grid.Column="5" Text="{Binding Entry.Origin}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                                   Margin="16,0,0,0" ToolTip="{Binding OriginTip}" />
+                                                        <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                            <Button x:Name="open" Style="{StaticResource RowAction}" local:Ui.Icon="&#xE838;" Tag="{Binding Entry}" Click="StartupOpen_Click" Margin="0,0,4,0"
+                                                                    AutomationProperties.Name="Abrir local do arquivo" ToolTip="Mostra o programa no Explorador de Arquivos." />
+                                                            <Button x:Name="remove" Style="{StaticResource RowAction}" local:Ui.Icon="&#xE74D;" Tag="danger" DataContext="{Binding Entry}" Click="StartupRemove_Click"
+                                                                    AutomationProperties.Name="Remover da inicialização"
+                                                                    ToolTip="Tira da lista. O programa continua instalado e dá para devolver em Removidos." />
+                                                        </StackPanel>
                                                     </Grid>
-                                                    <TextBlock Grid.Column="2" Text="{Binding Detail}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,0,0,0" ToolTip="{Binding Detail}" />
-                                                    <!-- Mono 12 centrado ficava com a base 2 px acima da Segoe 13 das outras colunas: 4 em cima o desce 2 -->
-                                                    <TextBlock Grid.Column="3" Text="{Binding Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
-                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,4,0,0">
-                                                        <!-- A origem (registro ou pasta Inicializar) saiu da tabela e fica na dica, junto do comando inteiro -->
-                                                        <TextBlock.ToolTip>
-                                                            <TextBlock>
-                                                                <Run Text="{Binding Command, Mode=OneWay}" /><LineBreak /><Run Text="{Binding Source, Mode=OneWay}" Foreground="{DynamicResource Muted}" />
-                                                            </TextBlock>
-                                                        </TextBlock.ToolTip>
-                                                    </TextBlock>
-                                                    <Button Grid.Column="4" Style="{StaticResource RowRemove}" Tag="{Binding}" Click="StartupRemove_Click" HorizontalAlignment="Right"
-                                                            AutomationProperties.Name="Remover da inicialização"
-                                                            ToolTip="Remover da inicialização. Sai da lista; dá para desfazer em Restaurar removidos." />
-                                                </Grid>
-                                            </Border>
-                                            <DataTemplate.Triggers>
-                                                <DataTrigger Binding="{Binding FileMissing}" Value="True">
-                                                    <Setter TargetName="missing" Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                            </DataTemplate.Triggers>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                <TextBlock x:Name="StartupEmpty" Text="Nenhum programa abre com o Windows." Style="{StaticResource Body}" Foreground="{DynamicResource Muted}"
-                                           Margin="8,14,8,0" Visibility="Collapsed" />
-                            </StackPanel>
+                                                </Border>
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding Entry.FileMissing}" Value="True">
+                                                        <Setter TargetName="missing" Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Entry.Location}" Value="{x:Null}">
+                                                        <Setter TargetName="open" Property="Visibility" Value="Hidden" />
+                                                    </DataTrigger>
+                                                    <!-- App da Store: a tarefa é do pacote; dá para desligar, não remover -->
+                                                    <DataTrigger Binding="{Binding Entry.Store}" Value="True">
+                                                        <Setter TargetName="remove" Property="Visibility" Value="Hidden" />
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock x:Name="StartupEmpty" Text="Nenhum programa abre com o Windows." Style="{StaticResource Body}" Foreground="{DynamicResource Muted}"
+                                               Margin="8,14,8,0" Visibility="Collapsed" />
+                                </StackPanel>
+
+                                <!-- Removidos: as mesmas colunas; no lugar do interruptor, nada; no fim, "Devolver" -->
+                                <StackPanel x:Name="RemovedPane" Visibility="Collapsed">
+                                    <ItemsControl x:Name="RemovedList" Focusable="False">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource TableRow}" Height="48" Padding="8,0">
+                                                    <Grid VerticalAlignment="Center">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="56" />
+                                                            <ColumnDefinition Width="36" />
+                                                            <ColumnDefinition Width="3*" MinWidth="150" />
+                                                            <ColumnDefinition Width="2*" MinWidth="120" />
+                                                            <ColumnDefinition Width="4*" MinWidth="140" />
+                                                            <ColumnDefinition Width="2*" MinWidth="130" />
+                                                            <ColumnDefinition Width="120" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <ContentPresenter Grid.Column="1" Content="{Binding}" ContentTemplate="{StaticResource ProgramIcon}" />
+                                                        <TextBlock Grid.Column="2" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}">
+                                                            <Run Text="{Binding Title, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="   " /><Run Text="{Binding When, Mode=OneWay}" FontSize="12"
+                                                                Foreground="{DynamicResource Faint}" />
+                                                        </TextBlock>
+                                                        <TextBlock Grid.Column="3" Text="{Binding Publisher}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                                   Margin="16,0,0,0" ToolTip="{Binding PublisherTip}" />
+                                                        <TextBlock Grid.Column="4" Text="{Binding Command}" FontFamily="{StaticResource Mono}" FontSize="12" Foreground="{DynamicResource Faint}"
+                                                                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="16,4,0,0" ToolTip="{Binding Command}" />
+                                                        <TextBlock Grid.Column="5" Text="{Binding Origin}" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                                   Margin="16,0,0,0" />
+                                                        <Button Grid.Column="6" Style="{StaticResource GhostButton}" local:Ui.Icon="&#xE7A7;" Content="Devolver" Tag="{Binding Backup}"
+                                                                HorizontalAlignment="Right" Click="StartupRestoreOne_Click" Margin="0,0,-10,0" ToolTip="Devolve à lista, do jeito que estava." />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock x:Name="RemovedEmpty" Style="{StaticResource Body}" Foreground="{DynamicResource Muted}" Margin="8,14,8,0"
+                                               Text="Nada removido. O que você tirar pela lixeira aparece aqui, para devolver quando quiser." />
+                                </StackPanel>
+                            </Grid>
                         </ScrollViewer>
                     </Grid>
                 </Border>
