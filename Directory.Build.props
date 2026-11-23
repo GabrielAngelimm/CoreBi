@@ -6,7 +6,7 @@
     <Deterministic>true</Deterministic>
     <Version>1.0.0</Version>
     <Product>CoreBi</Product>
-    <Authors>CoreBi contributors</Authors>
+    <Authors>Gabriel Angelim</Authors>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditMode>all</NuGetAuditMode>

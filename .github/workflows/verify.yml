@@ -39,6 +39,18 @@ jobs:
         run: dotnet run --project tests/CoreBi.Tests -c Release --no-build -- --shots artifacts/shots 6 "PageDash,PageSystem,PageSensors,PageGpu,PageDisks,PageEnergy,PageNet,PageOverlay,PageBottleneck,PageBench,PageStress,PageStartup,PageStartup:demo,PageApps,PageApps:pack,PageApps:confirm,PageApps:installing,PageApps:Jogos,PageDriver,PageDriver:demo,PageDriver:searching,PageDriver:backup,PageDriver:restore,PageDriver:backup-work,PageDriver:backup-done,PageDriver:restore-work,PageDriver:restore-done,PageDriver:gpu-confirm,PageDriver:wu-confirm" dark,light
       - if: steps.shots.outcome == 'failure'
         run: echo "::warning::As capturas falharam; veja o log do passo 'Capturas das páginas'"
+      - run: ./tools/Publish.ps1
+      - run: choco install innosetup --version 6.7.1 --allow-downgrade --no-progress -y
+      - run: ./tools/Installer.ps1 -SkipPublish
+      # As telas do instalador, em claro e escuro, vão junto das capturas das páginas (instala e desinstala nesta máquina)
+      - name: Capturas do instalador (claro e escuro)
+        id: setupshots
+        continue-on-error: true
+        timeout-minutes: 6
+        shell: powershell
+        run: ./tools/InstallerShots.ps1 -Setup (Get-ChildItem artifacts/installer/*.exe | Select-Object -First 1).FullName
+      - if: steps.setupshots.outcome == 'failure'
+        run: echo "::warning::As capturas do instalador falharam; veja o log do passo 'Capturas do instalador'"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         continue-on-error: true
@@ -47,9 +59,6 @@ jobs:
           path: artifacts/shots/*.png
           if-no-files-found: ignore
           retention-days: 7
-      - run: ./tools/Publish.ps1
-      - run: choco install innosetup --version 6.7.1 --allow-downgrade --no-progress -y
-      - run: ./tools/Installer.ps1 -SkipPublish
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:

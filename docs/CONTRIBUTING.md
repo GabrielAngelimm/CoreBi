@@ -2,7 +2,7 @@
 
 Use Windows 10 ou 11 x64, com Python 3 para as verificações e Inno Setup 6 se for gerar o instalador. Os scripts de `tools/` usam o SDK exato de `global.json` e baixam uma cópia se ele faltar (veja o README); para os demais comandos, use `.\tools\Dotnet.ps1` no lugar de `dotnet`. Se o PowerShell recusar os scripts, libere só a sessão atual com `Set-ExecutionPolicy -Scope Process Bypass`.
 
-Leia [arquitetura](ARCHITECTURE.md), [design da interface](DESIGN.md) e [contrato da interface](UI-CONTRACT.md). Mudanças visuais seguem o design validado: a identidade (cores por peça, raios, escala de texto, movimento) não muda sem uma decisão do mantenedor. Mantenha créditos e licenças ([LICENSE](../LICENSE), [NOTICE.md](../NOTICE.md) e `licenses/`).
+Leia [arquitetura](ARCHITECTURE.md), [design da interface](DESIGN.md) e [contrato da interface](UI-CONTRACT.md). Mudanças visuais seguem o design validado: a identidade (cores por peça, raios, escala de texto, movimento) não muda sem uma decisão do mantenedor. Mantenha a licença ([LICENSE](../LICENSE)) e os avisos de terceiros em `licenses/`.
 
 ## Antes de enviar uma alteração
 
@@ -38,8 +38,9 @@ Execute `Bench` com outras cargas pesadas encerradas. Resultados JSON ficam em `
 | --- | --- | --- |
 | `Build.ps1` | Restaura em modo bloqueado e compila a solução (`-Configuration`, padrão Release) | — |
 | `Test.ps1` | Restaura em modo bloqueado e roda o executor de testes no modo escolhido (`-Mode`, `-NoBuild`) | — |
-| `Publish.ps1` | Publica o app self-contained (`CoreBi.exe` com as DLLs nativas ao lado, que não são extraídas para a pasta temporária), copia `licenses/`, `LICENSE` e `NOTICE.md`. A pasta padrão `artifacts/publish/win-x64` é apagada antes; uma pasta passada em `-OutputDirectory` é usada como está | — |
+| `Publish.ps1` | Publica o app self-contained (`CoreBi.exe` com as DLLs nativas ao lado, que não são extraídas para a pasta temporária), copia `licenses/` e o `LICENSE`. A pasta padrão `artifacts/publish/win-x64` é apagada antes; uma pasta passada em `-OutputDirectory` é usada como está | — |
 | `Installer.ps1` | Publica (exceto com `-SkipPublish`) e gera `artifacts/installer/CoreBi-<versão>-win-x64-setup.exe` a partir de `installer/CoreBi.iss`, com a versão do `Directory.Build.props`; mostra o SHA256 | Inno Setup 6 (`ISCC.exe` no caminho padrão, `-Iscc` ou `$env:COREBI_ISCC`) |
+| `InstallerShots.ps1` | Abre o instalador em claro e escuro, salva cada tela em `artifacts/shots/instalador-*.png`, instala só o app para mostrar a conclusão e desinstala. Feito para a CI: instala e desinstala na máquina em que roda | Windows PowerShell 5.1 e um instalador já gerado (`-Setup`) |
 | `SecretScan.ps1` | Procura segredos em todo o histórico Git com o Gitleaks; relatório em `artifacts/secrets.json` | Rede na primeira vez: baixa o Gitleaks em versão fixada e confere o SHA256 |
 | `Dotnet.ps1` | Roda qualquer comando do `dotnet` com o SDK exato do `global.json` | — |
 | `Common.ps1` | Funções comuns dos scripts (localiza ou baixa o SDK); não é chamado diretamente | — |
@@ -47,6 +48,7 @@ Execute `Bench` com outras cargas pesadas encerradas. Resultados JSON ficam em `
 | `check_resources.py` | Confere as chaves `StaticResource`/`DynamicResource` do XAML e as usadas no C# do Desktop, e a paleta do `Theme.xaml` | Python 3 |
 | `collect_licenses.py` | Gera `licenses/` (avisos, `packages.json`, `THIRD-PARTY.md`) a partir dos pacotes restaurados; `--check` compara `licenses/packages.json` com o lock do Desktop e o `THIRD-PARTY.md` com o `packages.json`, sem precisar de restore | Python 3; sem `--check`: restore win-x64, cache NuGet e rede para textos SPDX que faltarem |
 | `generate_brand.py` | Gera a identidade visual (SVG, PNG e ícone) em `brand/` e `artifacts/brand` e copia logo e ícone para `src/CoreBi.Desktop/Assets` | Python 3 com Pillow e as fontes do Windows (Segoe UI, Bahnschrift, Consolas) |
+| `generate_installer_art.py` | Gera as imagens do instalador em `installer/images` (painel das boas-vindas e da conclusão e o símbolo do canto, claro e escuro, uma por escala de tela) a partir de `brand/geometry.json` | Python 3 com Pillow |
 
 Os scripts PowerShell e o `.iss` ficam em UTF-8 com BOM (veja `.editorconfig`): sem o BOM, o Windows PowerShell 5.1 e o Inno Setup leem os acentos como ANSI.
 
@@ -80,13 +82,13 @@ Uma troca de versão passa por:
 
 O texto de `SideVersion` em `src/CoreBi.Desktop/Shell/MainWindow.xaml` é só para o designer; em execução o app mostra a versão do assembly.
 
-Uma release é manual e sai de um commit da `main` com a CI verde:
+Uma release sai da `main` com a CI verde, pelo workflow **Release** (Actions > Release > Run workflow, com a versão):
 
-1. Troque a versão como acima e feche a seção do CHANGELOG com a data.
-2. `.\tools\Installer.ps1` gera o instalador e mostra o SHA256.
-3. Para a versão portátil, compacte a pasta `artifacts/publish/win-x64` inteira (o `CoreBi.exe` não roda sozinho: as DLLs nativas e `licenses/` vão junto). Use uma ferramenta que grave caminhos com `/`, porque o `Compress-Archive` do Windows PowerShell 5.1 grava `\`.
-4. Gere o zip do código-fonte daquele commit e um `SHA256SUMS.txt` com os três arquivos.
-5. Crie a tag `vX.Y.Z` no commit e publique a release com as notas em português, tiradas do CHANGELOG.
+1. Troque a versão como acima e feche a seção do CHANGELOG com a data (`## X.Y.Z — AAAA-MM-DD`); sem a data o workflow para.
+2. O workflow compila, roda os testes e gera numa máquina limpa o instalador, o zip portátil (a pasta `artifacts/publish/win-x64` inteira dentro de `CoreBi/`, com caminhos em `/`), o `SHA256SUMS.txt` e as notas, tiradas da seção do CHANGELOG (`tools/release_assets.py`).
+3. Um segundo job, o único com escrita, confere os SHA256, cria a tag `vX.Y.Z` no commit e publica a release como a mais recente. O código-fonte daquele commit o GitHub anexa sozinho.
+
+Para gerar os mesmos arquivos no PC: `.\tools\Installer.ps1` e depois `python -B tools/release_assets.py X.Y.Z` (saem em `artifacts/release`).
 
 ## Dados e publicação
 
