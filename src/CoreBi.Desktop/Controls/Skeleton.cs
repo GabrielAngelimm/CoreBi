@@ -193,8 +193,21 @@ public static class Skeleton
                 ((card.GetValue(LayerProperty) as SkeletonLayer) ?? Inject(card))?.Show();
             }
         });
+        // O teto conta a partir de quando a página aparece: as páginas são montadas na abertura do app, e um teto contado dali
+        // venceria antes da visita, soltando os companheiros e deixando a página em parte esqueleto, em parte pronta
         hold.Cap = new DispatcherTimer(PageHoldCap, DispatcherPriority.Background, (_, _) => Release(page, hold), page.Dispatcher);
-        hold.Cap.Start();
+        if (page.IsVisible) hold.Cap.Start();
+        else
+        {
+            DependencyPropertyChangedEventHandler? shown = null;
+            shown = (_, _) =>
+            {
+                if (!page.IsVisible) return;
+                page.IsVisibleChanged -= shown;
+                if (!hold.Released) hold.Cap.Start();
+            };
+            page.IsVisibleChanged += shown;
+        }
     }
 
     /// <summary>Os painéis da página que não estão dentro de outro painel, na ordem do XAML.</summary>
