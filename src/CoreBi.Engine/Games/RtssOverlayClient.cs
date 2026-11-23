@@ -52,6 +52,23 @@ public sealed class RtssOverlayClient : IDisposable
 
     public RtssOverlayClient(string mappingName = "RTSSSharedMemoryV2") => _mappingName = mappingName;
 
+    /// <summary>
+    /// Só confere se o servidor do RTSS está aberto e numa versão compatível (lê o cabeçalho, não ocupa slot nem procura
+    /// processos): a página do OverlayBi diz se a tela cheia exclusiva vai funcionar antes de o jogo abrir.
+    /// </summary>
+    public RtssStatus Probe() => Access(_ => RtssStatus.Ready);
+
+    /// <summary>O RTSS está instalado na pasta padrão (o instalador do RTSS e o do MSI Afterburner usam a mesma).</summary>
+    public static bool IsInstalled()
+    {
+        try
+        {
+            string x86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            return x86.Length > 0 && File.Exists(Path.Combine(x86, "RivaTuner Statistics Server", "RTSS.exe"));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
+    }
+
     public RtssStatus Inspect(int processId, out RtssTarget target)
     {
         RtssTarget result = default;

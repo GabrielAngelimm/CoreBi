@@ -21,7 +21,7 @@
             <TextBlock x:Name="OLow" Text="1% low —" Foreground="{StaticResource HudMuted}"/>
             <!-- Gráfico de frametime -->
             <Canvas x:Name="OGraph" Width="190" Height="30" Margin="0,6,0,4" ClipToBounds="True" HorizontalAlignment="Left"/>
-            <!-- Linhas de sensores: GPU, VRAM, CPU, RAM... montadas pelo que foi escolhido -->
+            <!-- Linhas de sensores: CPU, GPU, VRAM, RAM... montadas pelo que foi escolhido -->
             <ItemsControl x:Name="ORows" Margin="0,2,0,0" Grid.IsSharedSizeScope="True">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>

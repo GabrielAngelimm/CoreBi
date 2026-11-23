@@ -21,6 +21,13 @@ public static class OverlayMetrics
         new("low1", "FPS", "1% low", true),
         new("graph", "FPS", "Gráfico de frametime", false),
 
+        new("cpu_load", "CPU", "Uso total", true),
+        new("cpu_maxcore", "CPU", "Núcleo mais ocupado", false),
+        new("cpu_temp", "CPU", "Temperatura", true),
+        new("cpu_clock", "CPU", "Clock médio", true),
+        new("cpu_clockmax", "CPU", "Clock máximo", false),
+        new("cpu_power", "CPU", "Consumo", true),
+
         new("gpu_load", "GPU", "Uso", true),
         new("gpu_temp", "GPU", "Temperatura", true),
         new("gpu_hotspot", "GPU", "Hotspot", false),
@@ -32,13 +39,6 @@ public static class OverlayMetrics
 
         new("vram_used", "VRAM", "Usada (GB)", true),
         new("vram_pct", "VRAM", "Uso (%)", true),
-
-        new("cpu_load", "CPU", "Uso total", true),
-        new("cpu_maxcore", "CPU", "Núcleo mais ocupado", false),
-        new("cpu_temp", "CPU", "Temperatura", true),
-        new("cpu_clock", "CPU", "Clock médio", true),
-        new("cpu_clockmax", "CPU", "Clock máximo (núcleo)", false),
-        new("cpu_power", "CPU", "Consumo", true),
 
         new("ram_used", "RAM", "Usada (GB)", true),
         new("ram_pct", "RAM", "Uso (%)", true),

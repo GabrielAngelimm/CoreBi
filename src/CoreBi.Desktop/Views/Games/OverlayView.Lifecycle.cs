@@ -1,8 +1,13 @@
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using CoreBi.Desktop.Services;
 using CoreBi.Engine.Games;
+using CoreBi.Engine.Infrastructure;
 
 namespace CoreBi.Desktop.Views;
 
@@ -18,6 +23,9 @@ public partial class OverlayView : IDisposable
     private int _rtssProcess;
     private long _rtssLastUpdate, _rtssLastAck, _rtssRetryAfter, _rtssPendingSince;
     private uint _rtssPublishedFrame;
+    private long _rtssProbeAfter;
+    private RtssStatus _rtssProbe = RtssStatus.Unavailable;
+    private bool _rtssInstalled;
 
     internal void SuspendForBenchmark(bool suspended)
     {
@@ -194,7 +202,7 @@ public partial class OverlayView : IDisposable
             : _context.Frames.Error != null ? ($"Detecção de FPS indisponível: {_context.Frames.Error}", "Danger")
             : !_context.Frames.Running ? ("", "Faint")
             : frames != null ? ($"Medindo {frames.ProcessName}", "Signal")
-            : ("Aguardando um jogo", "Muted");
+            : ("", "Faint"); // sem jogo, nada a dizer: a prévia já avisa que o FPS é de exemplo
         OvStatus.Text = text;
         OvStatusDot.Visibility = text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         OvStatus.ToolTip = _rtssShowing ? null : _rtssStatus switch
@@ -206,6 +214,84 @@ public partial class OverlayView : IDisposable
             _ => _context.Frames.Error != null ? text : null,
         };
         OvStatusDot.SetResourceReference(Shape.FillProperty, brushKey);
+    }
+
+    /// <summary>
+    /// "Onde funciona": janela e tela cheia sem borda sempre funcionam (o overlay é uma janela por cima do jogo); a tela cheia
+    /// exclusiva depende do RTSS. Um tópico que pede ação ganha o que fazer e o botão na própria linha. O RTSS é consultado a cada 3 s, só com a página
+    /// à vista (abre a seção compartilhada dele e lê o cabeçalho, sem ocupar slot nem procurar processos).
+    /// </summary>
+    private void UpdateReady()
+    {
+        if (_context == null) return;
+        long now = Environment.TickCount64;
+        if (now >= _rtssProbeAfter)
+        {
+            _rtssProbeAfter = now + 3000;
+            _rtssProbe = _rtssOverlay.Probe();
+            _rtssInstalled = _rtssProbe != RtssStatus.Unavailable || RtssOverlayClient.IsInstalled();
+        }
+
+        // Tela cheia exclusiva: depende do RTSS. Os outros tópicos só mudam quando falta algo.
+        if (_rtssShowing || _rtssProbe is RtssStatus.Ready or RtssStatus.Busy)
+            SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Ok", "Pelo RTSS");
+        else if (_rtssProbe == RtssStatus.Incompatible)
+            SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Warn", "RTSS desatualizado",
+                "Este RTSS é antigo demais para o CoreBi. Instale a versão 7.3.7 ou mais nova.", "Baixar o RTSS");
+        else if (_rtssInstalled)
+            SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Warn", "RTSS fechado",
+                "Abra o RTSS antes do jogo para o overlay aparecer em tela cheia exclusiva.", "Abrir o RTSS");
+        else
+            SetTopic(OvRtssLed, OvRtssState, OvRtssHint, OvRtssAction, "Faint", "Precisa do RTSS",
+                "Nesse modo o Windows não deixa outra janela por cima do jogo. O RTSS, gratuito, desenha o overlay dentro dele.", "Baixar o RTSS");
+
+        if (ProcessElevation.IsElevated)
+            SetTopic(OvAdminLed, OvAdminState, OvAdminHint, null, "Ok", "Funciona");
+        else
+            SetTopic(OvAdminLed, OvAdminState, OvAdminHint, null, "Warn", "Sem administrador",
+                "Temperatura, clock e consumo da CPU aparecem com travessão. Abra o CoreBi como administrador.");
+
+        string? error = _context.Frames.Error;
+        if (error == null)
+            SetTopic(OvFpsLed, OvFpsState, OvFpsHint, null, "Ok", "Funciona");
+        else
+            SetTopic(OvFpsLed, OvFpsState, OvFpsHint, null, "Danger", "Indisponível", error);
+    }
+
+    /// <summary>Um tópico de "Onde funciona": o LED e o estado no tom do veredito; quando falta algo, o que fazer embaixo e o botão.</summary>
+    private static void SetTopic(System.Windows.Shapes.Ellipse led, TextBlock state, TextBlock hint, Button? action, string tone, string text,
+        string? howTo = null, string? actionText = null)
+    {
+        led.SetResourceReference(Shape.FillProperty, tone);
+        if (state.Text != text) state.Text = text;
+        state.SetResourceReference(TextBlock.ForegroundProperty, tone is "Ok" or "Faint" ? "Muted" : tone);
+        if (hint.Text != (howTo ?? "")) hint.Text = howTo ?? "";
+        hint.Visibility = howTo != null ? Visibility.Visible : Visibility.Collapsed;
+        if (action != null)
+        {
+            action.Content = actionText;
+            action.Visibility = actionText != null ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    /// <summary>O botão do aviso do RTSS: abre o RTSS instalado ou a página oficial de download (Guru3D).</summary>
+    private void OvReadyAction_Click(object sender, RoutedEventArgs e)
+    {
+        string? exe = null;
+        try
+        {
+            string x86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            exe = System.IO.Path.Combine(x86, "RivaTuner Statistics Server", "RTSS.exe");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        if (_rtssProbe != RtssStatus.Incompatible && exe != null && File.Exists(exe))
+        {
+            try { using var process = Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true }); }
+            catch (Exception ex) { DiagnosticLog.Write("rtss-open", ex); }
+            _rtssProbeAfter = 0; // confere de novo no próximo segundo
+            return;
+        }
+        ExternalLinks.OpenHttps("https://www.guru3d.com/download/rtss-rivatuner-statistics-server-download/");
     }
 
     public void Dispose()
