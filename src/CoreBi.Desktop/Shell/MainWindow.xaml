@@ -95,7 +95,7 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" WindowChrome.IsHitTestVisibleInChrome="True">
                     <!-- Versão: a palavra num tom apagado e o número um degrau acima, na letra da estrutura, em todas as páginas -->
                     <TextBlock FontFamily="{StaticResource LabelFont}" Foreground="{DynamicResource Faint}" FontSize="12" Margin="0,0,16,0" VerticalAlignment="Top" Padding="0,12,0,0" Style="{StaticResource Num}" ToolTip="Versão do CoreBi">
-                        <Run Text="Versão" /><Run Text=" " /><Run x:Name="SideVersion" Text="0.2.6" Foreground="{DynamicResource Muted}" />
+                        <Run Text="Versão" /><Run Text=" " /><Run x:Name="SideVersion" Text="1.0.0" Foreground="{DynamicResource Muted}" />
                     </TextBlock>
                     <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" Click="Min_Click" ToolTip="Minimizar" />
                     <Button x:Name="BtnMax" Style="{StaticResource CaptionButton}" Content="&#xE922;" Click="Max_Click" ToolTip="Maximizar" />

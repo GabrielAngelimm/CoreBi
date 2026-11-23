@@ -299,7 +299,7 @@
       "corebi.desktop": {
         "type": "Project",
         "dependencies": {
-          "CoreBi.Engine": "[0.2.6, )"
+          "CoreBi.Engine": "[1.0.0, )"
         }
       },
       "corebi.engine": {
