@@ -2276,6 +2276,11 @@
         <Setter Property="Height" Value="42"/>
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
     </Style>
+    <!-- O mesmo botão rodando (Ui.SetRunning): a mesma altura, para nada no cartão se mexer quando o teste começa -->
+    <Style x:Key="ConfigStop" TargetType="Button" BasedOn="{StaticResource StopButton}">
+        <Setter Property="Height" Value="42"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+    </Style>
     <!-- O aviso do botão (falta algo para começar) fica em cima dele, para o botão não sair do pé -->
     <Style x:Key="ConfigHint" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
         <Setter Property="Foreground" Value="{DynamicResource Warn}"/>
@@ -2304,13 +2309,16 @@
     <!--
         Limpar o histórico: um texto com a lixeira em tom secundário, sem fundo; sob o mouse, a pílula Hover e o texto em tinta. O
         primeiro clique arma (ConfirmButton.Armed): "Limpar" esmaece e "Confirmar" acende no tom de perigo sobre a pílula
-        DangerSoft com fio Danger, em 160 ms; o segundo apaga. Os dois textos ocupam o mesmo lugar (a largura é a do maior), então o
-        botão não muda de tamanho nem empurra o título. Só aparece com algo para limpar.
+        DangerSoft com fio Danger, em 160 ms; o segundo apaga. Os dois ficam presos à direita (o texto parado termina na linha das
+        datas, a pílula cresce para a esquerda), e o botão reserva a largura do maior, então nada empurra o título. Só aparece com
+        algo para limpar.
     -->
     <Style x:Key="HistoryClear" TargetType="Button">
         <Setter Property="HorizontalAlignment" Value="Right"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Height" Value="30"/>
+        <!-- A pílula passa 12 px da borda, para o texto parado terminar na mesma linha das datas do histórico -->
+        <Setter Property="Margin" Value="0,0,-12,0"/>
         <Setter Property="FontFamily" Value="{StaticResource LabelFont}"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
@@ -2320,15 +2328,19 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Grid x:Name="root" Background="Transparent">
-                        <Border x:Name="hover" CornerRadius="15" Background="{DynamicResource Hover}" Opacity="0"/>
-                        <Border x:Name="alarm" CornerRadius="15" Background="{DynamicResource DangerSoft}" BorderBrush="{DynamicResource Danger}" BorderThickness="1" Opacity="0"/>
-                        <Grid Margin="12,0" VerticalAlignment="Center">
-                            <StackPanel x:Name="rest" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Grid x:Name="root">
+                        <!-- Parado: a pílula do mouse tem a largura de "Limpar", presa à direita -->
+                        <Grid x:Name="restLayer" HorizontalAlignment="Right" Background="Transparent">
+                            <Border x:Name="hover" CornerRadius="15" Background="{DynamicResource Hover}" Opacity="0"/>
+                            <StackPanel x:Name="rest" Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
                                 <TextBlock Text="&#xE74D;" FontFamily="{StaticResource Icons}" FontSize="13" Margin="0,0,7,0" VerticalAlignment="Center"/>
                                 <TextBlock Text="Limpar" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <StackPanel x:Name="ask" Orientation="Horizontal" HorizontalAlignment="Center" Opacity="0">
+                        </Grid>
+                        <!-- Armado: a pílula de perigo cresce para a esquerda, a partir da mesma borda -->
+                        <Grid x:Name="askLayer" HorizontalAlignment="Right" Background="Transparent" IsHitTestVisible="False">
+                            <Border x:Name="alarm" CornerRadius="15" Background="{DynamicResource DangerSoft}" BorderBrush="{DynamicResource Danger}" BorderThickness="1" Opacity="0"/>
+                            <StackPanel x:Name="ask" Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center" Opacity="0">
                                 <TextBlock Text="&#xE74D;" FontFamily="{StaticResource Icons}" FontSize="13" Margin="0,0,7,0" VerticalAlignment="Center" Foreground="{DynamicResource Danger}"/>
                                 <TextBlock Text="Confirmar" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource Danger}"/>
                             </StackPanel>
@@ -2354,6 +2366,7 @@
                         </Trigger>
                         <Trigger Property="local:ConfirmButton.Armed" Value="True">
                             <Setter Property="ToolTip" Value="Clique de novo para apagar. Esc ou 5 segundos sem clicar cancelam."/>
+                            <Setter TargetName="askLayer" Property="IsHitTestVisible" Value="True"/>
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>

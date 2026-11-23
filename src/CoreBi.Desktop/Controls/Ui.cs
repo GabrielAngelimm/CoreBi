@@ -141,7 +141,9 @@ public static class Ui
             button.SetValue(IdleStyleProperty, idle);
         }
         bool header = button.TryFindResource("HeaderPrimary") is Style hp && ReferenceEquals(idle, hp);
-        var target = running ? button.TryFindResource(header ? "HeaderStop" : "StopButton") as Style : idle;
+        // O botão do pé das configurações (ConfigStart, 42 px) para no ConfigStop, da mesma altura
+        bool config = button.TryFindResource("ConfigStart") is Style cs && ReferenceEquals(idle, cs);
+        var target = running ? button.TryFindResource(header ? "HeaderStop" : config ? "ConfigStop" : "StopButton") as Style : idle;
         bool changed = !ReferenceEquals(button.Style, target) || !Equals(button.Content, running ? runningText : idleText);
         if (target != null) button.Style = target;
         SetIcon(button, running ? "\uE71A" : idleIcon);
