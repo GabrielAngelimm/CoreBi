@@ -434,7 +434,7 @@
                                                     <StackPanel MaxWidth="290">
                                                         <TextBlock Text="Essencial" FontWeight="SemiBold" />
                                                         <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="O básico para jogar sem poluir a tela: o que a placa de vídeo e o processador estão fazendo agora, e quanta memória está em uso." />
-                                                        <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="FPS, frametime e 1% low · GPU: uso, temperatura, clock e consumo · VRAM · CPU: uso, temperatura, clock e consumo · RAM · nome do hardware" />
+                                                        <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="FPS, frametime e 1% low · CPU: uso, temperatura, clock e consumo · GPU: uso, temperatura, clock e consumo · VRAM · RAM · nome do hardware" />
                                                     </StackPanel>
                                                 </RadioButton.ToolTip>
                                             </RadioButton>
@@ -452,7 +452,7 @@
                                                     <StackPanel MaxWidth="290">
                                                         <TextBlock Text="Gargalo" FontWeight="SemiBold" />
                                                         <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="Para descobrir quem está limitando o jogo: compara o uso da GPU com o do núcleo de CPU mais ocupado e mostra se a memória aperta." />
-                                                        <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="FPS, 1% low e gráfico · GPU: uso, clock e limitador · VRAM · CPU: uso, núcleo mais ocupado e clock · RAM em %" />
+                                                        <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="FPS, 1% low e gráfico · CPU: uso, núcleo mais ocupado e clock · GPU: uso e clock · VRAM · RAM em %" />
                                                     </StackPanel>
                                                 </RadioButton.ToolTip>
                                             </RadioButton>
@@ -461,7 +461,7 @@
                                                     <StackPanel MaxWidth="290">
                                                         <TextBlock Text="Térmico" FontWeight="SemiBold" />
                                                         <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="Para acompanhar calor e consumo em sessões longas e testar a refrigeração." />
-                                                        <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="FPS · GPU: temperatura, hotspot, consumo e ventoinha · CPU: temperatura, consumo e clock · hora" />
+                                                        <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="FPS · CPU: temperatura, consumo e clock · GPU: temperatura, hotspot, consumo e ventoinha · hora" />
                                                     </StackPanel>
                                                 </RadioButton.ToolTip>
                                             </RadioButton>
@@ -470,7 +470,7 @@
                                                     <StackPanel MaxWidth="290">
                                                         <TextBlock Text="Tudo" FontWeight="SemiBold" />
                                                         <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0" Text="Liga todos os itens disponíveis. Fica grande: combina melhor com o tamanho Pequeno." />
-                                                        <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="Todos os grupos: FPS, GPU, VRAM, CPU, RAM e rodapé" />
+                                                        <TextBlock Style="{StaticResource Footnote}" Margin="0,8,0,0" Text="Todos os grupos: FPS, CPU, GPU, VRAM, RAM e outros" />
                                                     </StackPanel>
                                                 </RadioButton.ToolTip>
                                             </RadioButton>

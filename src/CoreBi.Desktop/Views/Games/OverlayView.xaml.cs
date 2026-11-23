@@ -459,6 +459,15 @@ public partial class OverlayView : UserControl
             if (parts.Count > 0) lines.Add(new OverlayLine(label, parts, names ? detail : null));
         }
 
+        var cpu = new List<string>();
+        if (show.Contains("cpu_load")) cpu.Add(Pct(cpuLive.LoadPct));
+        if (show.Contains("cpu_maxcore")) cpu.Add(cpuLive.BusiestCoreLoadPct is float mx ? $"núcleo {mx:0}%" : "núcleo —");
+        if (show.Contains("cpu_temp")) cpu.Add(Temp(cpuLive.TempC));
+        if (show.Contains("cpu_clock")) cpu.Add(cpuLive.AvgClockMHz is float ca ? $"{ca / 1000:0.00} GHz" : "— GHz");
+        if (show.Contains("cpu_clockmax")) cpu.Add(cpuLive.MaxClockMHz is float cm ? $"pico {cm / 1000:0.00} GHz" : "pico —");
+        if (show.Contains("cpu_power")) cpu.Add(cpuLive.PowerW is float cw && cw > 0 ? $"{cw:0} W" : "— W"); // 0 = sem leitura (precisa de administrador)
+        Line("CPU", cpu, ShortOverlayName(HardwareNaming.ShortCpuName(_context.CpuName)));
+
         var gpu = new List<string>();
         if (show.Contains("gpu_load")) gpu.Add(Pct(gpuLive?.LoadPct));
         if (show.Contains("gpu_temp")) gpu.Add(Temp(gpuLive?.TempC));
@@ -476,15 +485,6 @@ public partial class OverlayView : UserControl
         if (show.Contains("vram_used")) vram.Add(gpuLive?.VramUsedGb is double vu ? $"{vu:0.0} GB" : "—");
         if (show.Contains("vram_pct")) vram.Add(Pct(gpuLive?.VramPct));
         Line("VRAM", vram);
-
-        var cpu = new List<string>();
-        if (show.Contains("cpu_load")) cpu.Add(Pct(cpuLive.LoadPct));
-        if (show.Contains("cpu_maxcore")) cpu.Add(cpuLive.BusiestCoreLoadPct is float mx ? $"núcleo {mx:0}%" : "núcleo —");
-        if (show.Contains("cpu_temp")) cpu.Add(Temp(cpuLive.TempC));
-        if (show.Contains("cpu_clock")) cpu.Add(cpuLive.AvgClockMHz is float ca ? $"{ca / 1000:0.00} GHz" : "— GHz");
-        if (show.Contains("cpu_clockmax")) cpu.Add(cpuLive.MaxClockMHz is float cm ? $"pico {cm / 1000:0.00} GHz" : "pico —");
-        if (show.Contains("cpu_power")) cpu.Add(cpuLive.PowerW is float cw && cw > 0 ? $"{cw:0} W" : "— W"); // 0 = sem leitura (precisa de administrador)
-        Line("CPU", cpu, ShortOverlayName(HardwareNaming.ShortCpuName(_context.CpuName)));
 
         var ram = new List<string>();
         if (show.Contains("ram_used")) ram.Add(memory is { } used ? $"{used.Used / 1073741824.0:0.0} GB" : "—");
