@@ -3,7 +3,7 @@
         <WindowChrome CaptionHeight="52" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
     <Border x:Name="Root" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1">
-        <Grid>
+        <Grid x:Name="ShellGrid">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="SideCol" Width="244" />
                 <ColumnDefinition Width="*" />
@@ -182,6 +182,9 @@
 
             <!-- ================= Drivers: confirmar o backup (onde salvar) e a restauração (qual backup) ================= -->
             <local:DriverBackupDialog x:Name="DriverLayer" Grid.ColumnSpan="2" />
+
+            <!-- ================= Troca de tema: a foto da tela no tema anterior, que se dissolve sobre o novo ================= -->
+            <Image x:Name="ThemeFade" Grid.ColumnSpan="2" Stretch="Fill" IsHitTestVisible="False" Visibility="Collapsed" />
         </Grid>
     </Border>
 </Window>

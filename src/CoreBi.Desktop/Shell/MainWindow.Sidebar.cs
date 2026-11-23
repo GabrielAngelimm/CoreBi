@@ -24,7 +24,7 @@ public partial class MainWindow
     {
         bool light = sender == ThemeLight;
         if (light == ThemeManager.IsLight) return;
-        ApplyTheme(light);
+        ApplyTheme(light, animate: true);
         _settings.LightTheme = light;
         SaveSettings();
     }

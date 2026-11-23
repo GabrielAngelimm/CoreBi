@@ -2,6 +2,8 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using CoreBi.Desktop.Services;
 using CoreBi.Engine.Games;
@@ -252,16 +254,56 @@ public partial class MainWindow : Window, ILiveMotionHost
 
     internal void Theme_Click(object sender, RoutedEventArgs e)
     {
-        ApplyTheme(!ThemeManager.IsLight);
+        ApplyTheme(!ThemeManager.IsLight, animate: true);
         _settings.LightTheme = ThemeManager.IsLight;
         SaveSettings();
     }
 
-    internal void ApplyTheme(bool light)
+    internal void ApplyTheme(bool light, bool animate = false)
     {
+        if (animate) BeginThemeFade();
         ThemeManager.Apply(light);
         UpdateThemeButton();
         RedrawThemedVisuals();
+    }
+
+    private static readonly TimeSpan ThemeFadeTime = TimeSpan.FromMilliseconds(420);
+
+    /// <summary>
+    /// Troca de tema sem corte seco: antes de trocar as cores, a tela inteira vira uma foto (no fundo do tema atual, porque a área
+    /// das páginas é transparente) posta por cima de tudo; o tema novo é aplicado embaixo dela no mesmo quadro e a foto se dissolve
+    /// em 420 ms. Cada cor, gráfico e ícone passa de um tema para o outro ao mesmo tempo, sem animar pincel por pincel. Uma troca
+    /// no meio de outra fotografa o que está na tela (a mistura) e segue dali. Sem animações no Windows, a troca é direta.
+    /// </summary>
+    private void BeginThemeFade()
+    {
+        if (!SystemParameters.ClientAreaAnimation || ShellGrid.ActualWidth <= 0 || ShellGrid.ActualHeight <= 0) return;
+        var dpi = VisualTreeHelper.GetDpi(this);
+        double width = ShellGrid.ActualWidth, height = ShellGrid.ActualHeight;
+        var snapshot = new DrawingVisual();
+        using (var dc = snapshot.RenderOpen())
+        {
+            dc.DrawRectangle(ThemeManager.Brush("Bg"), null, new Rect(0, 0, width, height));
+            dc.DrawRectangle(new VisualBrush(ShellGrid) { Stretch = Stretch.None, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top },
+                null, new Rect(0, 0, width, height));
+        }
+        var bitmap = new RenderTargetBitmap((int)Math.Ceiling(width * dpi.DpiScaleX), (int)Math.Ceiling(height * dpi.DpiScaleY),
+            dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        bitmap.Render(snapshot);
+        bitmap.Freeze();
+
+        ThemeFade.BeginAnimation(OpacityProperty, null);
+        ThemeFade.Source = bitmap;
+        ThemeFade.Opacity = 1;
+        ThemeFade.Visibility = Visibility.Visible;
+        var fade = new DoubleAnimation(1, 0, ThemeFadeTime) { EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut } };
+        fade.Completed += (_, _) =>
+        {
+            if (ThemeFade.Source != bitmap) return; // outra troca começou depois desta
+            ThemeFade.Visibility = Visibility.Collapsed;
+            ThemeFade.Source = null;
+        };
+        ThemeFade.BeginAnimation(OpacityProperty, fade);
     }
 
     private void UpdateThemeButton() => (ThemeManager.IsLight ? ThemeLight : ThemeDark).IsChecked = true;
