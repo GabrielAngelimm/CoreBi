@@ -446,9 +446,8 @@ namespace CoreBi.Desktop.Views
             {
                 _session = null;
                 StopUi();
-                var last = _context?.Settings.BottleneckRuns.FirstOrDefault();
-                ShowRun(last);
-                if (last == null) BnSessionStatus.Text = "Análise cancelada";
+                // Cancelada por você, nada a dizer: volta a análise anterior (ou o estado de quem nunca analisou)
+                ShowRun(_context?.Settings.BottleneckRuns.FirstOrDefault());
                 return;
             }
 

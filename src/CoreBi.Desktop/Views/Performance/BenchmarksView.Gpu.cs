@@ -80,7 +80,7 @@ public partial class BenchmarksView
 
         if (r == null)
         {
-            GbStatus.Text = bench.Cancelled ? "Cancelado" : $"Falhou: {bench.Error}";
+            GbStatus.Text = bench.Cancelled ? "" : $"Falhou: {bench.Error}";
             GbDetail.Text = "";
             return;
         }
@@ -205,7 +205,7 @@ public partial class BenchmarksView
 
         if (r == null)
         {
-            RtStatus.Text = bench.Cancelled ? "Cancelado" : $"Falhou: {bench.Error}";
+            RtStatus.Text = bench.Cancelled ? "" : $"Falhou: {bench.Error}";
             RtDetail.Text = "";
             return;
         }
@@ -261,9 +261,9 @@ public partial class BenchmarksView
         try
         {
             r = await Task.Run(() => sim.Run(TimeSpan.FromSeconds(secs), ct), ct);
-            if (ct.IsCancellationRequested) { SimStatus.Text = "Cancelado"; SimDetail.Text = ""; return; }
+            if (ct.IsCancellationRequested) { SimStatus.Text = ""; SimDetail.Text = ""; return; }
         }
-        catch (OperationCanceledException) { SimStatus.Text = "Cancelado"; SimDetail.Text = ""; return; }
+        catch (OperationCanceledException) { SimStatus.Text = ""; SimDetail.Text = ""; return; }
         catch (Exception ex) { SimStatus.Text = "Falhou: " + ex.Message; SimDetail.Text = ""; return; }
         finally
         {

@@ -13,7 +13,6 @@ using CoreBi.Engine.Performance.Stress;
 
 namespace CoreBi.Desktop.Views;
 
-/// <summary>Linha do histórico do Teste de carga: título, motivo (vazio quando foi o tempo), máximas, data e tom do LED.</summary>
 /// <summary>Linha do histórico: o título, as máximas por sigla e, na dica, o motivo e os números completos (Detail).</summary>
 public sealed record StressHistoryRow(string Title, string Detail, string Facts, string Date, string Tone)
 {
@@ -173,7 +172,6 @@ public partial class StressView : UserControl, IDisposable
 
     private void UpdateStressColumns()
     {
-        bool cpu = ChkCpu.IsChecked == true, ram = ChkRam.IsChecked == true, gpu = ChkGpu.IsChecked == true;
         UpdateConfigEnabled(running: IsRunning);
         UpdateColumnStates();
     }
@@ -374,11 +372,11 @@ public partial class StressView : UserControl, IDisposable
         }
         ShowHistory();
 
-        // Encerrado, o cronômetro e a barra voltam ao início sozinhos, prontos para o próximo; o estado diz como terminou, com
-        // as mesmas palavras do histórico ("Parado aos 3:12"), e as máximas nas colunas ficam até o próximo teste começar
-        SetStatus(HistoryRow(run).Title, aborted);
-        // O motivo só aparece quando acrescenta algo (o corte, a janela fechada, a falha)
-        StDetail.Text = reason is "Parado por você" or "Tempo de teste concluído" ? "" : reason;
+        // Encerrado, o cronômetro e a barra voltam ao início sozinhos, prontos para o próximo, e o resultado fica só no histórico
+        // (a linha nova no topo); as máximas nas colunas ficam até o próximo teste começar. Só uma interrupção (o corte, a
+        // janela fechada, a falha) continua escrita no painel, em vermelho, porque pede atenção
+        SetStatus(aborted ? HistoryRow(run).Title : "", aborted);
+        StDetail.Text = aborted ? reason : "";
         GlideProgressToZero();
         StressDurationChanged();
     }

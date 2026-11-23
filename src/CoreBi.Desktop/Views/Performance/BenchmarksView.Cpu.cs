@@ -88,7 +88,8 @@ public partial class BenchmarksView
         var total = DateTime.Now - _benchStart;
         if (ct.IsCancellationRequested)
         {
-            BenchStatus.Text = "Cancelado";
+            // Cancelado por você, nada a dizer: a placa volta ao estado de espera (como no Teste de carga)
+            BenchStatus.Text = "";
             return;
         }
         BenchStatus.Text = $"Concluído em {total:m\\:ss}";

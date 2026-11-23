@@ -121,7 +121,7 @@ public partial class BenchmarksView
             SaveBenchRecord("disk", r.Score,
                 $"{r.Drive} · {r.SeqReadMBs:N0}/{r.SeqWriteMBs:N0} MiB/s · 4K {r.ReadIopsQ1 / 1000:0.#}k IOPS", DiskRows(r).Select(Figure));
         }
-        catch (OperationCanceledException) { DiskStatus.Text = "Cancelado"; DiskDetail.Text = "Arquivo de teste apagado"; }
+        catch (OperationCanceledException) { DiskStatus.Text = ""; DiskDetail.Text = "Arquivo de teste apagado"; }
         catch (Exception ex)
         {
             var inner = (ex as AggregateException)?.InnerException ?? ex;
@@ -201,7 +201,7 @@ public partial class BenchmarksView
             SaveBenchRecord("mem", MemoryBench.Score(lat.Value, load.MapLoadSeconds),
                 $"{lat:0} ns · {bw.Value.Read:0} GB/s · mapa {load.MapLoadSeconds:0.00} s", MemRows(lat, bw, load).Select(Figure));
         }
-        catch (OperationCanceledException) { MemStatus.Text = "Cancelado"; MemDetail.Text = "Arquivos de teste apagados"; }
+        catch (OperationCanceledException) { MemStatus.Text = ""; MemDetail.Text = "Arquivos de teste apagados"; }
         catch (Exception ex) { MemStatus.Text = $"Falhou: {ex.Message}"; MemDetail.Text = ""; }
         finally
         {
