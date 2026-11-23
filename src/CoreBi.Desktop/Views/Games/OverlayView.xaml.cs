@@ -68,6 +68,8 @@ public partial class OverlayView : UserControl
     private bool _ready;
     private readonly Dictionary<string, CheckBox> _chips = new();
     private readonly List<Action> _rowRefresh = new();
+    /// <summary>O que cada linha tinha marcado quando o interruptor dela foi desligado, para voltar igual.</summary>
+    private readonly Dictionary<string, HashSet<string>> _groupMemory = new();
 
     public OverlayView()
     {
@@ -149,9 +151,16 @@ public partial class OverlayView : UserControl
             string group = groups[i].Key;
             var items = groups[i].ToList();
             var meta = Groups.FirstOrDefault(g => g.Group == group);
-            var row = new Border { BorderThickness = new Thickness(0, 0, 0, i < groups.Count - 1 ? 1 : 0), Padding = new Thickness(0, 10, 0, 10) };
-            row.SetResourceReference(Border.BorderBrushProperty, "Line");
+            var row = new Border
+            {
+                SnapsToDevicePixels = true,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(14),
+                Padding = new Thickness(14, 10, 14, 10),
+                Margin = new Thickness(0, i == 0 ? 0 : 3, 0, i < groups.Count - 1 ? 3 : 0),
+            };
 
+            row.SetResourceReference(Border.BorderBrushProperty, "Line");
             var grid = new Grid { VerticalAlignment = VerticalAlignment.Center };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(132) });
@@ -174,46 +183,38 @@ public partial class OverlayView : UserControl
             Grid.SetColumn(name, 1);
             grid.Children.Add(name);
 
-            // Marcar ou desmarcar a linha inteira: um tique por item e a contagem (GroupToggle)
-            var ticks = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            var tickBars = items.Select(_ =>
-            {
-                var t = new Border { Width = 4, Height = 14, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 3, 0), SnapsToDevicePixels = true };
-                ticks.Children.Add(t);
-                return t;
-            }).ToList();
-            var count = new TextBlock { FontSize = 13, Margin = new Thickness(7, 0, 0, 1), VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Right };
-            count.SetResourceReference(TextBlock.FontFamilyProperty, "Readout");
-            count.SetBinding(TextBlock.ForegroundProperty, new System.Windows.Data.Binding(nameof(Control.Foreground)) { RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.FindAncestor, typeof(Button), 1) });
-            Typography.SetNumeralAlignment(count, FontNumeralAlignment.Tabular);
-            count.MinWidth = 26;
-            var face = new StackPanel { Orientation = Orientation.Horizontal };
-            face.Children.Add(ticks);
-            face.Children.Add(count);
-            var toggle = new Button { Content = face, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(8, 0, -10, 0) };
-            toggle.Style = (Style)Resources["GroupToggle"];
+            // A linha inteira liga e desliga num interruptor: desligada some do overlay; religada volta com o que estava marcado
+            // (ou com os itens padrão do grupo). A linha ligada vira um bloco elevado; a desligada fica só no contorno, apagada.
+            var toggle = new CheckBox { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(16, 5, 0, 0) };
+            toggle.SetResourceReference(StyleProperty, "Switch");
             Grid.SetColumn(toggle, 3);
             grid.Children.Add(toggle);
 
             void Refresh()
             {
-                int on = items.Count(m => ShowItems.Contains(m.Key));
-                count.Text = $"{on}/{items.Count}";
-                for (int k = 0; k < items.Count; k++)
-                    tickBars[k].SetResourceReference(Border.BackgroundProperty, ShowItems.Contains(items[k].Key) ? "Signal" : "LineStrong");
-                toggle.ToolTip = on == items.Count ? $"Desmarcar {(items.Count == 2 ? "os dois" : "todos")} de {group}"
-                    : on == 0 ? $"Nada marcado: a linha {group} não aparece no overlay. Clique para marcar {(items.Count == 2 ? "os dois" : "todos")}."
-                    : $"{on} de {items.Count} no overlay. Clique para marcar todos.";
-                glyph.SetResourceReference(Control.ForegroundProperty, on > 0 ? meta.ResourceKey ?? "Signal" : "Faint");
+                bool on = items.Any(m => ShowItems.Contains(m.Key));
+                toggle.IsChecked = on;
+                toggle.ToolTip = on ? $"Tirar a linha {group} do overlay" : $"Mostrar a linha {group} no overlay";
+                glyph.SetResourceReference(Control.ForegroundProperty, on ? meta.ResourceKey ?? "Signal" : "Faint");
+                title.SetResourceReference(TextBlock.ForegroundProperty, on ? "Fg" : "Muted");
+                row.SetResourceReference(Border.BackgroundProperty, on ? "Raised" : "Surface");
                 foreach (var m in items)
                     if (_chips.TryGetValue(m.Key, out var c)) c.IsChecked = ShowItems.Contains(m.Key);
             }
 
             toggle.Click += (_, _) =>
             {
-                bool all = items.All(m => ShowItems.Contains(m.Key));
-                foreach (var m in items)
-                    if (all) ShowItems.Remove(m.Key); else ShowItems.Add(m.Key);
+                if (toggle.IsChecked == true)
+                {
+                    var back = _groupMemory.TryGetValue(group, out var kept) && kept.Count > 0 ? kept
+                        : items.Where(m => m.Default).Select(m => m.Key).DefaultIfEmpty(items[0].Key).ToHashSet();
+                    ShowItems.UnionWith(back);
+                }
+                else
+                {
+                    _groupMemory[group] = items.Where(m => ShowItems.Contains(m.Key)).Select(m => m.Key).ToHashSet();
+                    foreach (var m in items) ShowItems.Remove(m.Key);
+                }
                 Refresh();
                 SaveItems();
             };

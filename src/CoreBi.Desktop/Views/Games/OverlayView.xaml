@@ -111,54 +111,46 @@
         </Style>
 
         <!--
-            Marcar ou desmarcar a linha inteira: um tique por item (aceso no sinal = no overlay) e a contagem. Um clique liga todos;
-            com todos ligados, desliga todos. Pílula sem fio, como os atalhos de cartão; sob o mouse ganha o fundo.
+            "Onde funciona": um item pronto é uma linha (visto, o caso e o estado à direita); um item que pede ação vira um aviso no tom
+            do veredito (âmbar: falta algo; neutro: opcional), com o que fazer numa frase e, quando dá, o botão que resolve.
         -->
-        <Style x:Key="GroupToggle" TargetType="Button">
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
-            <Setter Property="FocusVisualStyle" Value="{StaticResource PillFocusRing}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Height="28" CornerRadius="14" Padding="10,0,10,0" Background="Transparent" SnapsToDevicePixels="True">
-                            <ContentPresenter VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{DynamicResource Hover}" />
-                                <Setter Property="Foreground" Value="{DynamicResource Fg}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{DynamicResource Selected}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <!-- "Onde funciona": glifo de veredito, o caso e, à direita, o estado agora -->
         <Style x:Key="ReadyGlyph" TargetType="TextBlock" BasedOn="{StaticResource IconGlyph}">
             <Setter Property="FontSize" Value="14" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,0,12,0" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Margin" Value="0,3,12,0" />
         </Style>
         <Style x:Key="ReadyName" TargetType="TextBlock">
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Foreground" Value="{DynamicResource Fg}" />
-            <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
         <Style x:Key="ReadyState" TargetType="TextBlock">
             <Setter Property="FontSize" Value="13" />
             <Setter Property="Foreground" Value="{DynamicResource Muted}" />
-            <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="HorizontalAlignment" Value="Right" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-            <Setter Property="Margin" Value="16,0,0,0" />
+            <Setter Property="Margin" Value="16,1,0,0" />
         </Style>
-        <Style x:Key="ReadyRow" TargetType="Grid">
-            <Setter Property="Height" Value="32" />
+        <Style x:Key="ReadyHint" TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+            <Setter Property="Margin" Value="0,3,0,0" />
+            <Setter Property="Visibility" Value="Collapsed" />
+        </Style>
+        <Style x:Key="ReadyAction" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="16,0,0,0" />
+            <Setter Property="Visibility" Value="Collapsed" />
+        </Style>
+        <!-- O bloco de um item: sem fundo quando pronto; no aviso, fundo e fio no tom do veredito (OverlayView.SetReady) -->
+        <Style x:Key="ReadyBox" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Padding" Value="15,6,14,6" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
         </Style>
     </UserControl.Resources>
 
@@ -269,22 +261,26 @@
                                                     <Grid.Clip>
                                                         <RectangleGeometry Rect="0,0,984,554" RadiusX="4" RadiusY="4" />
                                                     </Grid.Clip>
-                                                    <!-- Cena de jogo à noite, em planos chapados que escurecem do céu para o chão -->
+                                                    <!--
+                                                        Papel de parede do monitor: noite na serra em planos chapados (low poly), do céu para o chão cada vez mais escuro:
+                                                        estrelas, lua, a serra do fundo com neve nos picos, a do meio, um morro com pinheiros pequenos e, na frente, o
+                                                        chão com pinheiros grandes nos dois lados. As faces à direita dos picos ficam um tom abaixo (luz da lua à esquerda).
+                                                        Gerado por um script (pinheiros em três camadas, picos e faces calculados), sem linhas soltas.
+                                                    -->
                                                     <Rectangle Fill="{StaticResource HudScene}" />
                                                     <Canvas IsHitTestVisible="False">
-                                                        <Path Fill="{StaticResource HudSceneStar}" Data="M88.6,60 a1.4,1.4 0 1 0 2.8,0 a1.4,1.4 0 1 0 -2.8,0 Z M209,110 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M328.8,44 a1.2,1.2 0 1 0 2.4,0 a1.2,1.2 0 1 0 -2.4,0 Z M469,92 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M558.6,36 a1.4,1.4 0 1 0 2.8,0 a1.4,1.4 0 1 0 -2.8,0 Z M818.8,70 a1.2,1.2 0 1 0 2.4,0 a1.2,1.2 0 1 0 -2.4,0 Z M904,140 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M149,170 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M759,150 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M410,180 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M640,120 a1.2,1.2 0 1 0 2.4,0 a1.2,1.2 0 1 0 -2.4,0 Z" />
-                                                        <Ellipse Canvas.Left="654" Canvas.Top="174" Width="116" Height="116" Fill="{StaticResource HudSceneHalo}" />
-                                                        <Ellipse Canvas.Left="672" Canvas.Top="192" Width="80" Height="80" Fill="{StaticResource HudSceneMoon}" />
-                                                        <Path Fill="{StaticResource HudSceneFar}" Data="M0,330 L70,282 L120,300 L210,232 L280,268 L350,240 L430,290 L520,226 L600,262 L690,214 L760,250 L840,222 L984,288 L984,554 L0,554 Z" />
-                                                        <Path Fill="{StaticResource HudSceneNear}" Data="M0,372 L90,318 L150,342 L250,286 L330,338 L400,312 L490,360 L590,300 L670,344 L760,308 L860,352 L984,318 L984,554 L0,554 Z" />
-                                                        <Rectangle Canvas.Top="420" Width="984" Height="134" Fill="{StaticResource HudSceneLake}" />
-                                                        <Path Stroke="{StaticResource HudSceneRipple}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                                              Data="M560,440 L640,440 M680,452 L760,452 M640,466 L700,466 M200,448 L250,448 M380,474 L440,474" />
-                                                        <Path Stroke="{StaticResource HudSceneGlint}" StrokeThickness="3" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                                              Data="M690,432 L734,432 M698,444 L726,444 M704,456 L720,456" />
-                                                        <Path Fill="{StaticResource HudSceneGround}" Data="M0,554 L0,470 C120,452 220,480 330,486 C470,494 560,520 640,554 Z" />
-                                                        <Path Fill="{StaticResource HudSceneShore}" Data="M984,554 L984,440 C900,438 840,470 780,500 C740,520 720,540 700,554 Z" />
-                                                        <Path Fill="{StaticResource HudScenePine}" Data="M60,476 L74,420 L88,476 Z M96,470 L114,396 L132,470 Z M140,474 L152,434 L164,474 Z M880,452 L900,374 L920,452 Z M920,448 L938,392 L956,448 Z M846,464 L860,418 L874,464 Z" />
+                                                        <Path Fill="{StaticResource HudSceneStar}" Data="M88,58 a1.4,1.4 0 1 0 2.8,0 a1.4,1.4 0 1 0 -2.8,0 Z M208,104 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M330,40 a1.2,1.2 0 1 0 2.4,0 a1.2,1.2 0 1 0 -2.4,0 Z M452,86 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M560,34 a1.4,1.4 0 1 0 2.8,0 a1.4,1.4 0 1 0 -2.8,0 Z M812,64 a1.2,1.2 0 1 0 2.4,0 a1.2,1.2 0 1 0 -2.4,0 Z M900,128 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M150,160 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M612,120 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M396,170 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z M740,40 a1,1 0 1 0 2,0 a1,1 0 1 0 -2,0 Z" />
+                                                        <Ellipse Canvas.Left="654" Canvas.Top="92" Width="116" Height="116" Fill="{StaticResource HudSceneHalo}" />
+                                                        <Ellipse Canvas.Left="672" Canvas.Top="110" Width="80" Height="80" Fill="{StaticResource HudSceneMoon}" />
+                                                        <Path Fill="{StaticResource HudSceneFar}" Data="M0,300 L60,262 L96,276 L170,206 L214,236 L262,214 L330,262 L420,190 L470,222 L540,174 L610,238 L680,210 L742,248 L820,196 L880,232 L984,250 L984,554 L0,554 Z" />
+                                                        <Path Fill="{StaticResource HudSceneFarShade}" Data="M60,262 L96,276 L87.0,416 L70.8,416 Z M170,206 L214,236 L203.0,376 L183.2,376 Z M262,214 L330,262 L313.0,402 L282.4,402 Z M420,190 L470,222 L457.5,362 L435.0,362 Z M540,174 L610,238 L592.5,378 L561.0,378 Z M680,210 L742,248 L726.5,388 L698.6,388 Z M820,196 L880,232 L865.0,372 L838.0,372 Z" />
+                                                        <Path Fill="{StaticResource HudSceneSnow}" Data="M170,206 L183.2,215.0 L176.6,211.0 L172.0,213.5 L158.9,224.0 L147.8,227.0 Z M262,214 L282.4,228.4 L272.2,224.4 L264.0,224.2 L254.8,217.6 L247.6,220.6 Z M420,190 L435.0,199.6 L427.5,195.6 L422.0,197.8 L406.5,208.6 L393.0,211.6 Z M540,174 L561.0,193.2 L550.5,189.2 L542.0,186.6 L529.5,185.4 L519.0,188.4 Z M680,210 L698.6,221.4 L689.3,217.4 L682.0,218.7 L669.5,215.4 L659.0,218.4 Z M820,196 L838.0,206.8 L829.0,202.8 L822.0,204.4 L808.3,208.6 L796.6,211.6 Z" />
+                                                        <Path Fill="{StaticResource HudSceneNear}" Data="M0,350 L80,302 L140,326 L230,270 L300,318 L370,292 L450,338 L560,276 L640,322 L720,288 L820,334 L900,300 L984,330 L984,554 L0,554 Z" />
+                                                        <Path Fill="{StaticResource HudSceneNearShade}" Data="M80,302 L140,326 L125.0,476 L98.0,476 Z M230,270 L300,318 L282.5,468 L251.0,468 Z M370,292 L450,338 L430.0,488 L394.0,488 Z M560,276 L640,322 L620.0,472 L584.0,472 Z M720,288 L820,334 L795.0,484 L750.0,484 Z M900,300 L984,330 L963.0,480 L925.2,480 Z" />
+                                                        <Path Fill="{StaticResource HudSceneHill}" Data="M0,554 L0,428.2 L12,424.4 L24,421.3 L36,419.0 L48,417.4 L60,416.5 L72,416.3 L84,416.8 L96,417.7 L108,419.0 L120,420.5 L132,422.1 L144,423.6 L156,424.9 L168,425.9 L180,426.4 L192,426.5 L204,426.1 L216,425.1 L228,423.7 L240,421.9 L252,419.8 L264,417.5 L276,415.3 L288,413.1 L300,411.3 L312,409.9 L324,409.1 L336,408.9 L348,409.5 L360,410.9 L372,413.1 L384,416.2 L396,420.0 L408,424.4 L420,429.3 L432,434.7 L444,440.2 L456,445.7 L468,451.1 L480,456.2 L492,460.8 L504,464.8 L516,468.0 L528,470.5 L540,472.1 L552,472.9 L564,472.9 L576,472.1 L588,470.8 L600,468.9 L612,466.7 L624,464.2 L636,461.7 L648,459.3 L660,457.2 L672,455.3 L684,454.0 L696,453.1 L708,452.7 L720,452.8 L732,453.4 L744,454.4 L756,455.6 L768,457.0 L780,458.4 L792,459.7 L804,460.6 L816,461.2 L828,461.2 L840,460.6 L852,459.2 L864,457.1 L876,454.3 L888,450.8 L900,446.6 L912,442.0 L924,436.9 L936,431.7 L948,426.3 L960,421.1 L972,416.3 L984,411.8 L984,554 Z" />
+                                                        <Path Fill="{StaticResource HudSceneForest}" Data="M-6.0,404.5 L-2.3,417.4 L-4.3,417.4 L-0.7,425.1 L-3.6,425.1 L0.7,433.2 L-4.5,433.2 L-4.5,436.3 L-7.5,436.3 L-7.5,433.2 L-12.7,433.2 L-8.4,425.1 L-11.3,425.1 L-7.7,417.4 L-9.7,417.4 Z M13.0,401.4 L16.3,413.1 L14.5,413.1 L17.8,420.0 L15.2,420.0 L19.0,427.3 L14.5,427.3 L14.5,430.1 L11.5,430.1 L11.5,427.3 L7.0,427.3 L10.8,420.0 L8.2,420.0 L11.5,413.1 L9.7,413.1 Z M32.0,387.9 L36.4,403.2 L34.0,403.2 L38.3,412.4 L34.9,412.4 L39.9,421.9 L33.5,421.9 L33.5,425.7 L30.5,425.7 L30.5,421.9 L24.1,421.9 L29.1,412.4 L25.7,412.4 L30.0,403.2 L27.6,403.2 Z M51.0,395.8 L54.2,406.8 L52.4,406.8 L55.6,413.5 L53.1,413.5 L56.7,420.4 L52.5,420.4 L52.5,423.1 L49.5,423.1 L49.5,420.4 L45.3,420.4 L48.9,413.5 L46.4,413.5 L49.6,406.8 L47.8,406.8 Z M70.0,386.7 L74.1,401.1 L71.9,401.1 L76.0,409.8 L72.7,409.8 L77.5,418.8 L71.5,418.8 L71.5,422.3 L68.5,422.3 L68.5,418.8 L62.5,418.8 L67.3,409.8 L64.0,409.8 L68.1,401.1 L65.9,401.1 Z M89.0,390.5 L92.8,403.7 L90.7,403.7 L94.5,411.7 L91.5,411.7 L95.8,419.9 L90.5,419.9 L90.5,423.1 L87.5,423.1 L87.5,419.9 L82.2,419.9 L86.5,411.7 L83.5,411.7 L87.3,403.7 L85.2,403.7 Z M108.0,398.0 L111.1,408.9 L109.4,408.9 L112.5,415.5 L110.0,415.5 L113.7,422.3 L109.5,422.3 L109.5,425.0 L106.5,425.0 L106.5,422.3 L102.3,422.3 L106.0,415.5 L103.5,415.5 L106.6,408.9 L104.9,408.9 Z M127.0,392.3 L131.1,406.6 L128.8,406.6 L132.9,415.1 L129.7,415.1 L134.4,424.0 L128.5,424.0 L128.5,427.5 L125.5,427.5 L125.5,424.0 L119.6,424.0 L124.3,415.1 L121.1,415.1 L125.2,406.6 L122.9,406.6 Z M146.0,403.2 L149.1,414.0 L147.4,414.0 L150.5,420.5 L148.0,420.5 L151.6,427.2 L147.5,427.2 L147.5,429.9 L144.5,429.9 L144.5,427.2 L140.4,427.2 L144.0,420.5 L141.5,420.5 L144.6,414.0 L142.9,414.0 Z M165.0,397.9 L168.9,411.6 L166.8,411.6 L170.7,419.8 L167.6,419.8 L172.1,428.3 L166.5,428.3 L166.5,431.7 L163.5,431.7 L163.5,428.3 L157.9,428.3 L162.4,419.8 L159.3,419.8 L163.2,411.6 L161.1,411.6 Z M184.0,405.3 L187.1,416.3 L185.4,416.3 L188.6,422.9 L186.1,422.9 L189.7,429.8 L185.5,429.8 L185.5,432.5 L182.5,432.5 L182.5,429.8 L178.3,429.8 L181.9,422.9 L179.4,422.9 L182.6,416.3 L180.9,416.3 Z M203.0,404.5 L206.2,415.7 L204.4,415.7 L207.6,422.4 L205.1,422.4 L208.8,429.3 L204.5,429.3 L204.5,432.1 L201.5,432.1 L201.5,429.3 L197.2,429.3 L200.9,422.4 L198.4,422.4 L201.6,415.7 L199.8,415.7 Z M222.0,396.8 L225.9,410.4 L223.7,410.4 L227.7,418.6 L224.5,418.6 L229.1,427.1 L223.5,427.1 L223.5,430.4 L220.5,430.4 L220.5,427.1 L214.9,427.1 L219.5,418.6 L216.3,418.6 L220.3,410.4 L218.1,410.4 Z M241.0,386.8 L245.7,403.4 L243.1,403.4 L247.9,413.3 L244.1,413.3 L249.6,423.6 L242.5,423.6 L242.5,427.7 L239.5,427.7 L239.5,423.6 L232.4,423.6 L237.9,413.3 L234.1,413.3 L238.9,403.4 L236.3,403.4 Z M260.0,396.1 L263.3,407.5 L261.5,407.5 L264.7,414.4 L262.1,414.4 L265.9,421.5 L261.5,421.5 L261.5,424.3 L258.5,424.3 L258.5,421.5 L254.1,421.5 L257.9,414.4 L255.3,414.4 L258.5,407.5 L256.7,407.5 Z M279.0,390.7 L282.5,402.9 L280.6,402.9 L284.0,410.2 L281.3,410.2 L285.3,417.7 L280.5,417.7 L280.5,420.7 L277.5,420.7 L277.5,417.7 L272.7,417.7 L276.7,410.2 L274.0,410.2 L277.4,402.9 L275.5,402.9 Z M298.0,380.3 L302.3,395.4 L299.9,395.4 L304.3,404.5 L300.8,404.5 L305.8,413.9 L299.5,413.9 L299.5,417.6 L296.5,417.6 L296.5,413.9 L290.2,413.9 L295.2,404.5 L291.7,404.5 L296.1,395.4 L293.7,395.4 Z M317.0,372.4 L322.0,389.9 L319.2,389.9 L324.2,400.3 L320.3,400.3 L326.0,411.2 L318.5,411.2 L318.5,415.5 L315.5,415.5 L315.5,411.2 L308.0,411.2 L313.7,400.3 L309.8,400.3 L314.8,389.9 L312.0,389.9 Z M336.0,378.5 L340.2,393.2 L337.9,393.2 L342.1,402.1 L338.8,402.1 L343.6,411.3 L337.5,411.3 L337.5,414.9 L334.5,414.9 L334.5,411.3 L328.4,411.3 L333.2,402.1 L329.9,402.1 L334.1,393.2 L331.8,393.2 Z M355.0,383.1 L358.8,396.5 L356.7,396.5 L360.6,404.6 L357.5,404.6 L362.0,412.9 L356.5,412.9 L356.5,416.2 L353.5,416.2 L353.5,412.9 L348.0,412.9 L352.5,404.6 L349.4,404.6 L353.3,396.5 L351.2,396.5 Z M374.0,376.0 L379.0,393.7 L376.3,393.7 L381.3,404.3 L377.3,404.3 L383.2,415.2 L375.5,415.2 L375.5,419.6 L372.5,419.6 L372.5,415.2 L364.8,415.2 L370.7,404.3 L366.7,404.3 L371.7,393.7 L369.0,393.7 Z M393.0,398.1 L396.1,409.0 L394.4,409.0 L397.5,415.5 L395.0,415.5 L398.6,422.3 L394.5,422.3 L394.5,425.0 L391.5,425.0 L391.5,422.3 L387.4,422.3 L391.0,415.5 L388.5,415.5 L391.6,409.0 L389.9,409.0 Z M412.0,390.5 L416.8,407.3 L414.2,407.3 L419.0,417.4 L415.1,417.4 L420.7,427.8 L413.5,427.8 L413.5,432.0 L410.5,432.0 L410.5,427.8 L403.3,427.8 L408.9,417.4 L405.0,417.4 L409.8,407.3 L407.2,407.3 Z M431.0,409.0 L434.6,421.6 L432.6,421.6 L436.2,429.2 L433.4,429.2 L437.6,437.1 L432.5,437.1 L432.5,440.2 L429.5,440.2 L429.5,437.1 L424.4,437.1 L428.6,429.2 L425.8,429.2 L429.4,421.6 L427.4,421.6 Z M450.0,420.4 L453.3,431.9 L451.5,431.9 L454.8,438.9 L452.2,438.9 L456.0,446.1 L451.5,446.1 L451.5,449.0 L448.5,449.0 L448.5,446.1 L444.0,446.1 L447.8,438.9 L445.2,438.9 L448.5,431.9 L446.7,431.9 Z M469.0,429.4 L472.2,440.8 L470.5,440.8 L473.7,447.7 L471.1,447.7 L474.9,454.7 L470.5,454.7 L470.5,457.6 L467.5,457.6 L467.5,454.7 L463.1,454.7 L466.9,447.7 L464.3,447.7 L467.5,440.8 L465.8,440.8 Z M488.0,433.8 L491.6,446.5 L489.6,446.5 L493.3,454.2 L490.4,454.2 L494.6,462.2 L489.5,462.2 L489.5,465.3 L486.5,465.3 L486.5,462.2 L481.4,462.2 L485.6,454.2 L482.7,454.2 L486.4,446.5 L484.4,446.5 Z M507.0,431.0 L511.7,447.4 L509.1,447.4 L513.8,457.3 L510.1,457.3 L515.5,467.6 L508.5,467.6 L508.5,471.7 L505.5,471.7 L505.5,467.6 L498.5,467.6 L503.9,457.3 L500.2,457.3 L504.9,447.4 L502.3,447.4 Z M526.0,446.9 L529.4,458.7 L527.5,458.7 L530.9,465.8 L528.2,465.8 L532.1,473.2 L527.5,473.2 L527.5,476.1 L524.5,476.1 L524.5,473.2 L519.9,473.2 L523.8,465.8 L521.1,465.8 L524.5,458.7 L522.6,458.7 Z M545.0,442.1 L549.2,456.8 L546.9,456.8 L551.1,465.7 L547.8,465.7 L552.7,474.9 L546.5,474.9 L546.5,478.5 L543.5,478.5 L543.5,474.9 L537.3,474.9 L542.2,465.7 L538.9,465.7 L543.1,456.8 L540.8,456.8 Z M564.0,441.4 L568.3,456.6 L565.9,456.6 L570.3,465.7 L566.8,465.7 L571.9,475.1 L565.5,475.1 L565.5,478.9 L562.5,478.9 L562.5,475.1 L556.1,475.1 L561.2,465.7 L557.7,465.7 L562.1,456.6 L559.7,456.6 Z M583.0,444.7 L586.8,458.0 L584.7,458.0 L588.5,465.9 L585.5,465.9 L589.9,474.1 L584.5,474.1 L584.5,477.4 L581.5,477.4 L581.5,474.1 L576.1,474.1 L580.5,465.9 L577.5,465.9 L581.3,458.0 L579.2,458.0 Z M602.0,438.7 L606.1,453.2 L603.9,453.2 L608.0,461.9 L604.7,461.9 L609.5,471.0 L603.5,471.0 L603.5,474.5 L600.5,474.5 L600.5,471.0 L594.5,471.0 L599.3,461.9 L596.0,461.9 L600.1,453.2 L597.9,453.2 Z M621.0,443.7 L624.1,454.7 L622.4,454.7 L625.6,461.3 L623.1,461.3 L626.7,468.1 L622.5,468.1 L622.5,470.8 L619.5,470.8 L619.5,468.1 L615.3,468.1 L618.9,461.3 L616.4,461.3 L619.6,454.7 L617.9,454.7 Z M640.0,439.8 L643.1,450.8 L641.4,450.8 L644.5,457.4 L642.0,457.4 L645.7,464.2 L641.5,464.2 L641.5,466.9 L638.5,466.9 L638.5,464.2 L634.3,464.2 L638.0,457.4 L635.5,457.4 L638.6,450.8 L636.9,450.8 Z M659.0,433.6 L662.4,445.6 L660.5,445.6 L664.0,452.9 L661.2,452.9 L665.2,460.4 L660.5,460.4 L660.5,463.3 L657.5,463.3 L657.5,460.4 L652.8,460.4 L656.8,452.9 L654.0,452.9 L657.5,445.6 L655.6,445.6 Z M678.0,422.3 L682.4,437.8 L680.0,437.8 L684.4,447.1 L680.9,447.1 L686.0,456.8 L679.5,456.8 L679.5,460.6 L676.5,460.6 L676.5,456.8 L670.0,456.8 L675.1,447.1 L671.6,447.1 L676.0,437.8 L673.6,437.8 Z M697.0,425.3 L700.9,439.0 L698.8,439.0 L702.7,447.2 L699.5,447.2 L704.1,455.6 L698.5,455.6 L698.5,459.0 L695.5,459.0 L695.5,455.6 L689.9,455.6 L694.5,447.2 L691.3,447.2 L695.2,439.0 L693.1,439.0 Z M716.0,427.1 L719.7,439.9 L717.6,439.9 L721.3,447.6 L718.4,447.6 L722.6,455.6 L717.5,455.6 L717.5,458.7 L714.5,458.7 L714.5,455.6 L709.4,455.6 L713.6,447.6 L710.7,447.6 L714.4,439.9 L712.3,439.9 Z M735.0,423.1 L739.2,437.9 L736.9,437.9 L741.1,446.8 L737.8,446.8 L742.7,456.0 L736.5,456.0 L736.5,459.6 L733.5,459.6 L733.5,456.0 L727.3,456.0 L732.2,446.8 L728.9,446.8 L733.1,437.9 L730.8,437.9 Z M754.0,427.2 L757.9,441.1 L755.8,441.1 L759.7,449.4 L756.6,449.4 L761.2,458.0 L755.5,458.0 L755.5,461.4 L752.5,461.4 L752.5,458.0 L746.8,458.0 L751.4,449.4 L748.3,449.4 L752.2,441.1 L750.1,441.1 Z M773.0,432.2 L776.6,444.9 L774.6,444.9 L778.3,452.6 L775.4,452.6 L779.6,460.5 L774.5,460.5 L774.5,463.6 L771.5,463.6 L771.5,460.5 L766.4,460.5 L770.6,452.6 L767.7,452.6 L771.4,444.9 L769.4,444.9 Z M792.0,425.4 L796.7,441.7 L794.1,441.7 L798.8,451.5 L795.0,451.5 L800.5,461.6 L793.5,461.6 L793.5,465.7 L790.5,465.7 L790.5,461.6 L783.5,461.6 L789.0,451.5 L785.2,451.5 L789.9,441.7 L787.3,441.7 Z M811.0,428.4 L815.5,444.1 L813.0,444.1 L817.5,453.4 L813.9,453.4 L819.1,463.2 L812.5,463.2 L812.5,467.0 L809.5,467.0 L809.5,463.2 L802.9,463.2 L808.1,453.4 L804.5,453.4 L809.0,444.1 L806.5,444.1 Z M830.0,436.7 L833.5,449.0 L831.6,449.0 L835.1,456.4 L832.3,456.4 L836.4,464.1 L831.5,464.1 L831.5,467.1 L828.5,467.1 L828.5,464.1 L823.6,464.1 L827.7,456.4 L824.9,456.4 L828.4,449.0 L826.5,449.0 Z M849.0,429.3 L853.2,444.0 L850.9,444.0 L855.1,452.8 L851.7,452.8 L856.6,462.0 L850.5,462.0 L850.5,465.6 L847.5,465.6 L847.5,462.0 L841.4,462.0 L846.3,452.8 L842.9,452.8 L847.1,444.0 L844.8,444.0 Z M868.0,426.8 L872.1,441.2 L869.8,441.2 L874.0,449.8 L870.7,449.8 L875.4,458.7 L869.5,458.7 L869.5,462.3 L866.5,462.3 L866.5,458.7 L860.6,458.7 L865.3,449.8 L862.0,449.8 L866.2,441.2 L863.9,441.2 Z M887.0,415.3 L891.8,432.2 L889.2,432.2 L894.0,442.4 L890.2,442.4 L895.8,452.9 L888.5,452.9 L888.5,457.1 L885.5,457.1 L885.5,452.9 L878.2,452.9 L883.8,442.4 L880.0,442.4 L884.8,432.2 L882.2,432.2 Z M906.0,411.2 L910.5,427.1 L908.0,427.1 L912.6,436.6 L909.0,436.6 L914.2,446.4 L907.5,446.4 L907.5,450.4 L904.5,450.4 L904.5,446.4 L897.8,446.4 L903.0,436.6 L899.4,436.6 L904.0,427.1 L901.5,427.1 Z M925.0,411.3 L928.6,423.9 L926.6,423.9 L930.2,431.5 L927.4,431.5 L931.5,439.4 L926.5,439.4 L926.5,442.5 L923.5,442.5 L923.5,439.4 L918.5,439.4 L922.6,431.5 L919.8,431.5 L923.4,423.9 L921.4,423.9 Z M944.0,390.5 L949.0,408.1 L946.3,408.1 L951.3,418.8 L947.3,418.8 L953.2,429.7 L945.5,429.7 L945.5,434.1 L942.5,434.1 L942.5,429.7 L934.8,429.7 L940.7,418.8 L936.7,418.8 L941.7,408.1 L939.0,408.1 Z M963.0,397.8 L966.2,409.2 L964.5,409.2 L967.7,416.0 L965.1,416.0 L968.9,423.1 L964.5,423.1 L964.5,425.9 L961.5,425.9 L961.5,423.1 L957.1,423.1 L960.9,416.0 L958.3,416.0 L961.5,409.2 L959.8,409.2 Z M982.0,385.0 L985.9,398.6 L983.7,398.6 L987.6,406.7 L984.5,406.7 L989.0,415.2 L983.5,415.2 L983.5,418.5 L980.5,418.5 L980.5,415.2 L975.0,415.2 L979.5,406.7 L976.4,406.7 L980.3,398.6 L978.1,398.6 Z M1001.0,373.0 L1005.6,389.0 L1003.1,389.0 L1007.7,398.7 L1004.0,398.7 L1009.3,408.6 L1002.5,408.6 L1002.5,412.6 L999.5,412.6 L999.5,408.6 L992.7,408.6 L998.0,398.7 L994.3,398.7 L998.9,389.0 L996.4,389.0 Z" />
+                                                        <Path Fill="{StaticResource HudSceneGround}" Data="M0,554 L0,481.8 L12,480.5 L24,479.3 L36,478.4 L48,477.8 L60,477.5 L72,477.6 L84,478.1 L96,479.1 L108,480.5 L120,482.3 L132,484.6 L144,487.2 L156,490.0 L168,493.2 L180,496.5 L192,499.8 L204,503.2 L216,506.5 L228,509.6 L240,512.5 L252,515.0 L264,517.3 L276,519.1 L288,520.5 L300,521.5 L312,522.0 L324,522.1 L336,521.8 L348,521.2 L360,520.3 L372,519.2 L384,517.9 L396,516.5 L408,515.1 L420,513.8 L432,512.5 L444,511.5 L456,510.7 L468,510.1 L480,509.9 L492,509.9 L504,510.2 L516,510.7 L528,511.5 L540,512.5 L552,513.5 L564,514.7 L576,515.8 L588,516.8 L600,517.7 L612,518.3 L624,518.7 L636,518.7 L648,518.4 L660,517.6 L672,516.5 L684,514.9 L696,512.9 L708,510.6 L720,507.9 L732,504.9 L744,501.7 L756,498.5 L768,495.1 L780,491.8 L792,488.6 L804,485.6 L816,482.9 L828,480.5 L840,478.4 L852,476.8 L864,475.7 L876,475.0 L888,474.7 L900,474.9 L912,475.5 L924,476.4 L936,477.6 L948,479.1 L960,480.7 L972,482.4 L984,484.1 L984,554 Z" />
+                                                        <Path Fill="{StaticResource HudScenePine}" Data="M12.0,423.0 L19.6,449.5 L15.4,449.5 L23.0,465.4 L16.9,465.4 L25.7,481.9 L13.5,481.9 L13.5,488.5 L10.5,488.5 L10.5,481.9 L-1.7,481.9 L7.1,465.4 L1.0,465.4 L8.6,449.5 L4.4,449.5 Z M40.0,408.6 L49.0,440.0 L44.0,440.0 L53.0,458.8 L45.9,458.8 L56.3,478.4 L41.5,478.4 L41.5,486.2 L38.5,486.2 L38.5,478.4 L23.7,478.4 L34.1,458.8 L27.0,458.8 L36.0,440.0 L31.0,440.0 Z M66.0,424.1 L73.1,448.9 L69.2,448.9 L76.3,463.9 L70.6,463.9 L78.9,479.3 L67.5,479.3 L67.5,485.5 L64.5,485.5 L64.5,479.3 L53.1,479.3 L61.4,463.9 L55.7,463.9 L62.8,448.9 L58.9,448.9 Z M96.0,403.0 L105.7,437.1 L100.4,437.1 L110.1,457.5 L102.4,457.5 L113.7,478.7 L97.5,478.7 L97.5,487.1 L94.5,487.1 L94.5,478.7 L78.3,478.7 L89.6,457.5 L81.9,457.5 L91.6,437.1 L86.3,437.1 Z M128.0,404.3 L138.1,439.7 L132.5,439.7 L142.7,461.0 L134.6,461.0 L146.4,483.0 L129.5,483.0 L129.5,491.8 L126.5,491.8 L126.5,483.0 L109.6,483.0 L121.4,461.0 L113.3,461.0 L123.5,439.7 L117.9,439.7 Z M158.0,417.9 L167.3,450.6 L162.2,450.6 L171.5,470.2 L164.1,470.2 L174.9,490.5 L159.5,490.5 L159.5,498.5 L156.5,498.5 L156.5,490.5 L141.1,490.5 L151.9,470.2 L144.5,470.2 L153.8,450.6 L148.7,450.6 Z M800.0,395.6 L811.4,435.7 L805.1,435.7 L816.6,459.7 L807.5,459.7 L820.8,484.7 L801.5,484.7 L801.5,494.6 L798.5,494.6 L798.5,484.7 L779.2,484.7 L792.5,459.7 L783.4,459.7 L794.9,435.7 L788.6,435.7 Z M832.0,411.2 L840.8,442.2 L836.0,442.2 L844.9,460.8 L837.8,460.8 L848.1,480.1 L833.5,480.1 L833.5,487.7 L830.5,487.7 L830.5,480.1 L815.9,480.1 L826.2,460.8 L819.1,460.8 L828.0,442.2 L823.2,442.2 Z M866.0,391.7 L876.6,428.9 L870.8,428.9 L881.4,451.2 L872.9,451.2 L885.3,474.3 L867.5,474.3 L867.5,483.5 L864.5,483.5 L864.5,474.3 L846.7,474.3 L859.1,451.2 L850.6,451.2 L861.2,428.9 L855.4,428.9 Z M900.0,395.1 L910.1,430.7 L904.6,430.7 L914.7,452.0 L906.6,452.0 L918.4,474.1 L901.5,474.1 L901.5,482.9 L898.5,482.9 L898.5,474.1 L881.6,474.1 L893.4,452.0 L885.3,452.0 L895.4,430.7 L889.9,430.7 Z M934.0,398.2 L944.1,433.5 L938.5,433.5 L948.6,454.7 L940.6,454.7 L952.3,476.7 L935.5,476.7 L935.5,485.4 L932.5,485.4 L932.5,476.7 L915.7,476.7 L927.4,454.7 L919.4,454.7 L929.5,433.5 L923.9,433.5 Z M966.0,407.3 L975.5,440.6 L970.3,440.6 L979.8,460.6 L972.2,460.6 L983.3,481.3 L967.5,481.3 L967.5,489.6 L964.5,489.6 L964.5,481.3 L948.7,481.3 L959.8,460.6 L952.2,460.6 L961.7,440.6 L956.5,440.6 Z" />
                                                         <!-- Mira no centro da tela -->
                                                         <Path Stroke="{StaticResource HudSceneAim}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                                               Data="M478,277 L486,277 M498,277 L506,277 M492,263 L492,271 M492,283 L492,291" />
@@ -444,48 +440,78 @@
                                 pedem administrador; o FPS vem dos eventos do Windows, sem tocar no processo do jogo.
                             -->
                             <StackPanel Grid.Row="2">
-                                <Border Style="{StaticResource Divider}" />
-                                <TextBlock Text="Onde funciona" Style="{StaticResource GroupTitle}" Margin="0,16,0,4" />
-                                <Grid Style="{StaticResource ReadyRow}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="&#xE73E;" Style="{StaticResource ReadyGlyph}" Foreground="{DynamicResource Ok}" />
-                                    <TextBlock Grid.Column="1" Text="Janela e tela cheia sem borda" Style="{StaticResource ReadyName}" />
-                                    <TextBlock Grid.Column="2" Text="Janela do CoreBi por cima do jogo" Style="{StaticResource ReadyState}" />
+                                <Grid Margin="0,18,0,6">
+                                    <TextBlock Text="Onde funciona" Style="{StaticResource GroupTitle}" />
+                                    <TextBlock x:Name="OvReadySummary" Text="Tudo pronto" Style="{StaticResource ReadyState}" VerticalAlignment="Center" />
                                 </Grid>
-                                <Grid Style="{StaticResource ReadyRow}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="OvRtssGlyph" Text="&#xE946;" Style="{StaticResource ReadyGlyph}" Foreground="{DynamicResource Faint}" />
-                                    <TextBlock Grid.Column="1" Text="Tela cheia exclusiva" Style="{StaticResource ReadyName}" />
-                                    <TextBlock x:Name="OvRtssState" Grid.Column="2" Text="Pelo RTSS 7.3.7 ou mais novo" Style="{StaticResource ReadyState}" />
-                                </Grid>
-                                <Grid Style="{StaticResource ReadyRow}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="OvAdminGlyph" Text="&#xE73E;" Style="{StaticResource ReadyGlyph}" Foreground="{DynamicResource Ok}" />
-                                    <TextBlock Grid.Column="1" Text="Sensores da CPU" Style="{StaticResource ReadyName}" />
-                                    <TextBlock x:Name="OvAdminState" Grid.Column="2" Text="Temperatura, clock e consumo" Style="{StaticResource ReadyState}" />
-                                </Grid>
-                                <Grid Style="{StaticResource ReadyRow}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="OvFpsGlyph" Text="&#xE73E;" Style="{StaticResource ReadyGlyph}" Foreground="{DynamicResource Ok}" />
-                                    <TextBlock Grid.Column="1" Text="Contagem de FPS" Style="{StaticResource ReadyName}" />
-                                    <TextBlock x:Name="OvFpsState" Grid.Column="2" Text="Eventos do Windows, sem tocar no jogo" Style="{StaticResource ReadyState}" />
-                                </Grid>
+                                <Border Style="{StaticResource ReadyBox}" ToolTip="O overlay é uma janela do CoreBi por cima do jogo">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="&#xE73E;" Style="{StaticResource ReadyGlyph}" Foreground="{DynamicResource Ok}" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" Text="Janela do CoreBi por cima do jogo" Style="{StaticResource ReadyState}" Visibility="Collapsed" />
+                                                <TextBlock Text="Janela e tela cheia sem borda" Style="{StaticResource ReadyName}" />
+                                            </DockPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <Border x:Name="OvRtssBox" Style="{StaticResource ReadyBox}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="OvRtssGlyph" Text="&#xE946;" Style="{StaticResource ReadyGlyph}" Foreground="{DynamicResource Faint}" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <DockPanel>
+                                                <TextBlock x:Name="OvRtssState" DockPanel.Dock="Right" Text="Pelo RTSS" Style="{StaticResource ReadyState}" />
+                                                <TextBlock Text="Tela cheia exclusiva" Style="{StaticResource ReadyName}" />
+                                            </DockPanel>
+                                            <TextBlock x:Name="OvRtssHint" Style="{StaticResource ReadyHint}" />
+                                        </StackPanel>
+                                        <Button x:Name="OvRtssAction" Grid.Column="2" Style="{StaticResource ReadyAction}" Click="OvReadyAction_Click" />
+                                    </Grid>
+                                </Border>
+                                <Border x:Name="OvAdminBox" Style="{StaticResource ReadyBox}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="OvAdminGlyph" Text="&#xE73E;" Style="{StaticResource ReadyGlyph}" Foreground="{DynamicResource Ok}" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <DockPanel>
+                                                <TextBlock x:Name="OvAdminState" DockPanel.Dock="Right" Text="Temperatura, clock e consumo" Style="{StaticResource ReadyState}" />
+                                                <TextBlock Text="Sensores da CPU" Style="{StaticResource ReadyName}" />
+                                            </DockPanel>
+                                            <TextBlock x:Name="OvAdminHint" Style="{StaticResource ReadyHint}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <Border x:Name="OvFpsBox" Style="{StaticResource ReadyBox}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="OvFpsGlyph" Text="&#xE73E;" Style="{StaticResource ReadyGlyph}" Foreground="{DynamicResource Ok}" />
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <DockPanel>
+                                                <TextBlock x:Name="OvFpsState" DockPanel.Dock="Right" Text="Eventos do Windows, sem tocar no jogo" Style="{StaticResource ReadyState}" />
+                                                <TextBlock Text="Contagem de FPS" Style="{StaticResource ReadyName}" />
+                                            </DockPanel>
+                                            <TextBlock x:Name="OvFpsHint" Style="{StaticResource ReadyHint}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
                             </StackPanel>
                         </Grid>
                     </Border>
