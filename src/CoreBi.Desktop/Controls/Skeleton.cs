@@ -88,7 +88,13 @@ public static class Skeleton
         if ((bool)e.NewValue)
         {
             layer ??= Inject(border);
-            layer?.Show();
+            if (layer != null) layer.Show();
+            // Num modelo de item (Skeleton.Active="{Binding Loading}"), o binding liga antes de o painel receber o conteúdo: tenta
+            // de novo logo depois, ainda antes do primeiro quadro (prioridade acima da de desenho)
+            else border.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, () =>
+            {
+                if (GetActive(border) && border.GetValue(LayerProperty) == null) (Inject(border))?.Show();
+            });
         }
         else layer?.Hide(Animate && border.IsVisible);
     }
